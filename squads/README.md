@@ -2,7 +2,7 @@
 
 本目录维护 Squad 的协作指令。Squad 是协作单元，Agent 角色配置见 [Agent 索引](../agents/README.md)，执行方法见 [Workspace Skill 索引](../skills/README.md)。
 
-当前 Requirement 研发由单一 `Engineer` 承担完整 Change。下表与 [provisioning manifest](../skills/_shared/provisioning.json) 的成员声明一致；实际 Workspace 成员与发布状态需回读核实。
+当前 Requirement 研发由单一 `Engineer` 承担完整 Change。下表与 [provisioning manifest](../workspace-config/provisioning.json) 的成员声明一致；实际 Workspace 成员与发布状态需回读核实。
 
 ## Squad 索引
 
@@ -18,7 +18,7 @@ Backend / Frontend Engineer 已从 manifest 的 Agent 和成员清单移除，�
 
 [Delivery Squad Instructions](delivery-squad/squad-instructions.md) 维护成员选择、当前 Issue 内的 `@mention` 协作、交接、人工等待与异常升级原则，仅由 Leader 接收。Member 的执行义务由其自身 [Agent Instructions](../agents/README.md) 与绑定 Skill 承载。
 
-Leader 与成员名单由 [provisioning.json](../skills/_shared/provisioning.json) 的 `squad` 字段维护；本页表格提供配置索引，不代表远端发布状态。交付门禁、事实字段与确定性行为见对应 [Skill](../skills/README.md) 的契约及 `rondo` 实现。
+Leader 与成员名单由 [provisioning.json](../workspace-config/provisioning.json) 的 `squad` 字段维护；本页表格提供配置索引，不代表远端发布状态。交付门禁、事实字段与确定性行为见对应 [Skill](../skills/README.md) 的契约及 `rondo` 实现。
 
 ## 维护与发布入口
 

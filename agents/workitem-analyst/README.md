@@ -16,7 +16,7 @@ Delivery Squad 的分析成员：负责当前 Issue 的需求与问题分析、�
 
 ## 注册与维护
 
-Agent、Skill 绑定及 Squad 成员由 [provisioning.json](../../skills/_shared/provisioning.json) 维护；使用 `rondo workspace provision` 收敛平台对象，`rondo workspace sync` 发布 Skill 内容。远端状态须回读确认，仓内记录不代表当前 Runtime 或工作区发布结果。
+Agent、Skill 绑定及 Squad 成员由 [provisioning.json](../../workspace-config/provisioning.json) 维护；使用 `rondo workspace provision` 收敛平台对象，`rondo workspace sync` 发布 Skill 内容。远端状态须回读确认，仓内记录不代表当前 Runtime 或工作区发布结果。
 
 Issue 的入口分流以 [rondo delivery handoff](../../../../tools/rondo/src/commands/delivery/handoff.ts) 为准。
 

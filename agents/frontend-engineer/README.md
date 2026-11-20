@@ -8,6 +8,6 @@ Delivery Squad 的专业实现成员。长期职责以 [Instructions](instructio
 - [frontend-engineering](../../skills/frontend-engineering/SKILL.md)：领域反馈信号、验证与工程审查标准。
 - [pull-request](../../skills/pull-request/SKILL.md)：PR 物化契约。
 
-Agent 的 Skill 绑定和 Squad 成员配置唯一来源为 [provisioning.json](../../skills/_shared/provisioning.json)；本页不维护复制的绑定 ID 或历史 Runtime 快照。
+Agent 的 Skill 绑定和 Squad 成员配置唯一来源为 [provisioning.json](../../workspace-config/provisioning.json)；本页不维护复制的绑定 ID 或历史 Runtime 快照。
 
 平台对象通过 `rondo workspace provision --workspace <name>` 发布与回读；Skill 内容通过 `rondo workspace sync --workspace <name>` 同步。

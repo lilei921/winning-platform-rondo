@@ -76,7 +76,7 @@ npm root -g                 # 全局 node_modules 实际位置
 
 ### 5.2 workspace 组命令
 
-`workspace` 组命令需要定位包含 `skills/_shared` 的配置根目录：默认从当前目录向上查找；同时支持 monorepo 的 `projects/multica/skills/_shared` 布局。
+`workspace` 组命令需要定位包含 `workspace-config` 的配置根目录：默认从当前目录向上查找；同时支持 monorepo 的 `projects/multica/workspace-config` 布局。
 在仓库目录之外执行时显式指定 Rondo 配置仓库根目录（或 monorepo 根目录）：
 
 ```bash

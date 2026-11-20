@@ -61,7 +61,7 @@ nvm 切换 Node 版本会改变全局目录，切换后需重装。
 
 ### 定位 Multica 配置根
 
-`workspace` 组命令默认从当前目录上溯查找 `skills/_shared`，兼容 monorepo 的 `projects/multica/skills/_shared`。在仓库外执行时显式指定：
+`workspace` 组命令默认从当前目录上溯查找 `workspace-config`，兼容 monorepo 的 `projects/multica/workspace-config`。在仓库外执行时显式指定：
 
 ```bash
 export MULTICA_REPO_ROOT="D:/UserProgram/winning-platform-rondo"

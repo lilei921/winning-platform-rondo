@@ -1,6 +1,6 @@
 # Workspace 远程 MCP 维护
 
-本目录保存三个远程 MCP 的公开配置模板。受管清单和绑定以 [provisioning.json](../skills/_shared/provisioning.json) 为准；执行与验收边界见 [08-A §2.2.1](../08a-remote-analysis-bug-fix-foundation.md#221-workspace-mcp-配置供给与维护)。
+本目录保存三个远程 MCP 的公开配置模板。受管清单和绑定以 [provisioning.json](../workspace-config/provisioning.json) 为准；执行与验收边界见 [08-A §2.2.1](../08a-remote-analysis-bug-fix-foundation.md#221-workspace-mcp-配置供给与维护)。
 
 ## 配置输入与保存
 

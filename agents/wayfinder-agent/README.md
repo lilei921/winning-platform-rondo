@@ -9,7 +9,7 @@ Wayfinder Agent 是 Delivery Squad 外的 Intake Triage Agent；不加入 Squad 
 | [workitem-triage](../../skills/workitem-triage/SKILL.md) | 准入判定与 `/note`，`eligible` 后调用 `rondo delivery handoff` 受控交接 |
 | [codebase-explorer](../../skills/codebase-explorer/SKILL.md) | 只读工程探索与 Evidence |
 
-注册名称、`visibility=workspace` 和两项 Skill 绑定，以 [provisioning.json](../../skills/_shared/provisioning.json) 为准。通过 `rondo workspace provision --workspace <name>` 注册与收敛，再执行 `rondo workspace sync --workspace <name>` 同步 Skill 内容；这些命令不自动启用 TFS Sync 的新入口。
+注册名称、`visibility=workspace` 和两项 Skill 绑定，以 [provisioning.json](../../workspace-config/provisioning.json) 为准。通过 `rondo workspace provision --workspace <name>` 注册与收敛，再执行 `rondo workspace sync --workspace <name>` 同步 Skill 内容；这些命令不自动启用 TFS Sync 的新入口。
 
 **上线边界**：正式使用前需核对 `unsupported` 自定义状态、Wayfinder 的 Runtime / CodeGraph / Repository 权限、首次 TFS Sync Assignment、`/note` 顶层与回复回读、按来源类型单次 `todo + Bug Fix Agent / Delivery Squad` 交接及对应唯一 Bug Fix Agent / Delivery Lead Run。`unsupported (closed)` 的显式恢复须单独 E2E 验证。隔离 POC 不代表正式 Workspace 已验收。
 

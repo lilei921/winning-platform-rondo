@@ -8,7 +8,8 @@
 
 | 目录 | 职责 |
 | --- | --- |
-| [`skills/`](skills/README.md) | Multica Skill 源文件、共享 manifest 与 Workspace overlay。 |
+| [`skills/`](skills/README.md) | 独立 Skill 方法与配套文件。 |
+| [`workspace-config/`](workspace-config/) | Workspace 受管 manifest、配置底稿与各 Workspace Overlay。 |
 | [`mcps/`](mcps/README.md) | 远程 MCP 模板和连接配置说明。 |
 | [`agents/`](agents/README.md) | Agent Description、Instructions 与绑定说明。 |
 | [`squads/`](squads/README.md) | Squad 协作指令。 |
@@ -18,7 +19,7 @@
 | [`validation/`](validation/) | 测试和运行验证证据。 |
 | [`archive/`](archive/) | 历史设计与退役资产。 |
 
-上述目录均为本仓库根目录下的路径；`skills` 与 `mcps` 仅调整目录名称，不改变 Skill / MCP 对象名称。
+上述目录均为本仓库根目录下的路径；`skills`、`mcps` 与 `workspace-config` 按资产职责分离，不改变 Skill / MCP 对象名称及绑定关系。
 
 ## 定位与阅读顺序
 
@@ -106,7 +107,7 @@ Wayfinder 与 Bug Fix 按 [08-A 共享基础](08a-remote-analysis-bug-fix-founda
 
 ### Skill（skills/）
 
-Agent ↔ Skill 绑定矩阵唯一来源：[`_shared/provisioning.json`](skills/_shared/provisioning.json)；registry / sync 渲染底稿与各 Workspace 定义在 `_shared/` 下维护。各 Skill 目录含 `SKILL.md` 及按需的 `references/` / `methods/` / `config/`。
+Agent ↔ Skill 绑定矩阵唯一来源：[`workspace-config/provisioning.json`](workspace-config/provisioning.json)；配置底稿及 Workspace Overlay 在 [`workspace-config/`](workspace-config/) 维护。各 Skill 目录含 `SKILL.md` 及按需的 `references/` / `methods/` / `config/`。
 
 | Skill | 说明 |
 | --- | --- |

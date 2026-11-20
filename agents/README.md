@@ -35,7 +35,7 @@
 | `<agent>/README.md` | 角色资产说明及注册、维护记录。 |
 | [_shared/review-checklist.md](_shared/review-checklist.md) | Agent / Skill 资产评审清单。 |
 
-Agent 名称、可见性、Skill 绑定及 Squad 关系由 [provisioning.json](../skills/_shared/provisioning.json) 维护，本页不另设绑定矩阵。各 Agent README 中的注册记录用于历史溯源；Workspace 的对象 ID 映射见 [_shared/workspaces/](../skills/_shared/workspaces/)，远端实际状态需回读核实。
+Agent 名称、可见性、Skill 绑定及 Squad 关系由 [provisioning.json](../workspace-config/provisioning.json) 维护，本页不另设绑定矩阵。各 Agent README 中的注册记录用于历史溯源；Workspace 的对象 ID 映射见 [_shared/workspaces/](../workspace-config/workspaces/)，远端实际状态需回读核实。
 
 ## 维护与发布入口
 

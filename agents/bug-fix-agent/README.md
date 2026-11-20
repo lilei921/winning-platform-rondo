@@ -13,7 +13,7 @@ Bug Fix Agent 负责当前 Issue 中已授权缺陷的故障诊断、代码修�
 
 当前 **不绑定** `bug-analysis`、`backend-engineering`、`frontend-engineering`，也不因同一 Agent 使用就合并独立方法。外部 Skill 适配来源、差异及 MIT License 见 [diagnosing-bugs](../../skills/diagnosing-bugs/SKILL.md)。
 
-Agent 与 Skill 绑定只由 [provisioning.json](../../skills/_shared/provisioning.json) 维护；**不注册为 Delivery Squad Member**，不绑定依赖 `change_ref` / `tasks.md` 的 `development-execution`。
+Agent 与 Skill 绑定只由 [provisioning.json](../../workspace-config/provisioning.json) 维护；**不注册为 Delivery Squad Member**，不绑定依赖 `change_ref` / `tasks.md` 的 `development-execution`。
 
 Issue 的入口分流以 [rondo delivery handoff](../../../../tools/rondo/src/commands/delivery/handoff.ts) 为准。
 

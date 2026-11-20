@@ -5,9 +5,9 @@
 ## 资产
 
 - [Description](description.md)、[Instructions](instructions.md)、[Autopilot Prompt](autopilot-prompt.md)。
-- [pr-status-sync](../../workspace-skills/pr-status-sync/SKILL.md)：PR 状态核实与同步。
-- [issue-closeout](../../workspace-skills/issue-closeout/SKILL.md)：具备收口条件时使用的独立交付能力。
-- [provisioning.json](../../workspace-skills/_shared/provisioning.json)：Agent、Skill 绑定和 Autopilot 配置的唯一来源。
+- [pr-status-sync](../../skills/pr-status-sync/SKILL.md)：PR 状态核实与同步。
+- [issue-closeout](../../skills/issue-closeout/SKILL.md)：具备收口条件时使用的独立交付能力。
+- [provisioning.json](../../workspace-config/provisioning.json)：Agent、Skill 绑定和 Autopilot 配置的唯一来源。
 
 PR 的终态聚合、幂等和状态副作用由 `rondo` 实现；Agent 不独立解释 abandoned 或 PR Review 的业务语义。Skill 内配置相对自身目录定位，不规定某一 Agent Runtime 的物化目录。
 
