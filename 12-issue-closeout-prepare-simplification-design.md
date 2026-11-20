@@ -1,202 +1,153 @@
-# 12 — Issue Closeout Prepare 收口门禁精简与 Worktree 释放方案
+# 12 — Issue Closeout Prepare 精简与 Archive 根仓复用方案
 
-> Status: Proposed（仅设计，尚未实施 / 验收）  
+> Status: Proposed（仅设计；尚未实施或真实环境验收）  
 > Date: 2026-11-20  
-> Scope: `issue-closeout` / Rondo Finalize、PR Status Sync Autopilot 的同 Repository/Branch 批次根仓复用与安全清理、Engineer Worktree 释放；不改变 PR Review/Merge、TFS 子任务 KPI 或 OpenSpec 原生 Archive
+> Scope: PR Status Sync Autopilot / `issue-closeout` / Rondo Archive、TFS Writeback 兼容；Engineer Worktree Release 作为独立实施项
 
-## 1. 设计结论
+## 1. 目标与不可放宽的契约
 
-`Prepare` 仅负责**已登记 PR 的最终交付事实、OpenSpec 归档及 `finalize.pending` 恢复事实**，不重新执行 Analysis / Engineer 已有的质量与授权 Gate。
+将 Closeout 收敛为**全部 PR 终态核实 → OpenSpec Archive / Push / 远端回读 → TFS Writeback → Issue Done**，不重复 Analysis / Engineer 的专业质量检查。
 
-- **铁律**：本次交付登记的**全部 PR 均已由 TFS 确认 `completed`**；不能用仅 `closed`、本地分支状态或 Metadata 声称代替。`abandoned`、`active` 或未知均不得自动收口。
-- **必须归档**：有 OpenSpec Change 的交付，`Prepare` 仍执行/核验 Archive、Git Push 与远端回读成功后，才允许 TFS 写入；**不将 Archive 后移到 Complete**。独立 Bug 不存在 OpenSpec Change，维持 `route_archive=skipped`。
-- **必须保留**：`finalize.pending` 及 PR 完成事件的绑定和幂等恢复；只有 Archive（或独立 Bug 的准备事实）确认成功后，才写入可供 TFS Writer 使用的 `prepared_*` 标记。
-- **Closeout 根仓来源与复用**：仅对需要 OpenSpec Archive 的 Requirement，以**每个 Issue 的 `analysis.source.repo_url` / `branch`** 为权威输入；同一 Autopilot Run 内按 `repo_url + branch` 分组，**每组原生 `git clone` 一次，同组 Issue 顺序执行 Archive**。不同 Repository 或 Branch 仍隔离；不使用 Multica `repo checkout`、不绑定 `workspace-preparation`。
-- **TFS 写入安全独立**：Work Item 类型与身份、已保存任务计划、真实业务 Commit 的准确仓库/SHA、Commit→TFS Task 全球唯一归属、工时、回读与恢复仍由 `tfs writeback` 负责，不能因为缩小 Prepare 而删除。
+- **PR 铁律**：当前 Issue 登记的每一个 PR 都必须由 TFS 确认 `completed`，PR 身份、仓库、源/目标分支必须正确；其他状态或未知时停止。
+- **Archive 必须先于 TFS 写入**：Requirement 的当前 `change_ref` 必须已在正确的远端根仓分支完成归档并回读；Archive 留在 `Prepare`，**不后移到 Complete**。独立 Bug 不需要根仓或 OpenSpec Archive。
+- **保留 `finalize.pending`**：由 PR 完成事件关联本次收口；仅在 Archive、Push、回读均确认后登记 `prepared_change_ref`。重复运行依据远端事实继续，不凭上次本地目录推断成功。
+- **TFS 独立 Hard Gate**：TFS 工作项身份、1–5 个子任务、工时、真实 PR 业务 Commit、Commit→TFS Task 独占、TFS 写回/回读与幂等性不放宽。
+- **不得带入额外状态体系**：不新增 Agent、Skill、Workspace Manager、跨 Run Clone Cache、批次 Metadata、锁服务或并行归档框架。
 
-上位原则：[01 — 设计规范](01-multica-openspec-design-guideline.md) 的 KISS、Specialist Focus、One Rule One Owner、Minimal Sufficient 和 Native First。
+依据：[01 统一设计原则](01-multica-openspec-design-guideline.md) 的 KISS、YAGNI、Specialist Focus、Minimal Sufficient、One Rule One Owner 和 Deterministic First，以及 [10 TFS 子任务](10-tfs-subtask-estimation-design.md)。
 
-## 2. Prepare 检查边界
+## 2. 减少重复检查，不删除必要事实
 
-| 检查 | 目标规则 | 归属 |
-| --- | --- | --- |
-| 登记 PR 的身份和终态 | **保留 Hard Gate**：有效 `current_pr`，逐个 TFS 回读，仓库 / PR ID / 分支对应且全部 `completed` | PR Status Sync / Prepare |
-| 合并源 Candidate SHA = 研发登记 Candidate | **从 Closeout 删除**；不因 `sourceCommitId` 缺失或与旧 Candidate 不相等而阻断 | Engineer / PR 创建前保证交付候选；Closeout 仍以真实已合并 PR 识别业务 Commit |
-| `analysis.human_approval` | **不在 Prepare / Writeback / Complete 重新校验** | Analysis 授权与 Engineer PR 准入 |
-| `analysis.ai_review` | **删除收口检查** | Analysis |
-| `verify_agent.required` / Independent Verify | **删除收口检查**；不再让 `required=true` 单独阻断自动 Finalize | 具体 Verify 交付能力应另行负责，本次不补建 |
-| `analysis.gate.result`、Change Kind / Schema 交叉一致性 | **删除收口重复 Gate**；保留定位当前 Change / Archive 必需的最小身份检查 | Analysis；Archive 仅关心目标 Change 是否可明确定位 |
-| `tasks.md` 完成、Local Validation、Code Review、Evidence 质量 | **删除收口重复验收**；由 `dev check-change` 和 `pr materialize` 在创建 PR 前把关 | Engineer / PR 创建 |
-| 业务仓 Hub 对账 / Worktree 回收 / 源分支删除 | **从 Prepare 删除**；不能误删 Closeout 为 Archive 单独 Clone 的根仓 | Engineer PR 创建后的业务 Worktree Release |
-| Closeout Archive 根仓 | 按当前批次 Issue 的 `analysis.source.repo_url + branch` **分组 Clone 与复用**；逐 Issue 确认 Change 身份，使用前同步该组目标分支 | `issue-closeout` 编排，Git / Archive 由 Rondo 或原生命令执行 |
-| OpenSpec Archive、限定范围 Commit / Push / 远端回读 | **保留 Hard Gate**，不得夹带其他 Change、强制覆盖或只凭本地 Archive 判成功 | Prepare |
-| `finalize.pending` | **保留**：PR 事件一致性、准备成功标记与幂等恢复 | Prepare / Complete |
+| Closeout 现有规则 | 目标 |
+| --- | --- |
+| PR 终态 / 身份 | **保留**：所有 PR `completed`，从 TFS 回读，不依赖声称或推断 |
+| 合并源 `sourceCommitId` 与旧 `candidate_commit` 相等 | **移除该相等断言**；不影响真实 PR Commit 来源、仓库身份和 TFS 独占校验 |
+| `analysis.human_approval`、AI Review、Analysis Gate | **移除 Closeout 的重复校验**；由上游阶段负责 |
+| Independent Verify / `verify_agent.required` | **按已确定决定移除 Closeout 阻断**；这是实质性规则放宽，不等于上游已执行 Verify |
+| 工程完成、`tasks.md` 勾选、Validation / Code Review / Evidence 质量 | **移除 Closeout 的重复 Gate**；Engineer 在 PR 创建前验收 |
+| 旧业务 Hub / Workspace Reconciliation | **移除**，Closeout 不负责 Engineer Git 现场 |
+| OpenSpec Archive / Git Push / 远端回读 | **保留 Hard Gate**：准确 Change、限制提交范围、不覆盖远端、不捏造结果 |
+| `finalize.pending` / TFS 回读 | **保留**，用于恢复与防重复写入 |
 
-这里“删除 Candidate 校验”特指**收口时不再将最终 PR 源提交与旧 `candidate_commit` 做相等断言**，并非允许为 TFS KPI 使用伪造或来源不明的 Commit。`tfs writeback --inspect` 应从真实已完成 PR 的提交范围取得业务 Commit，保留仓库身份、SHA、PR 归属和 Commit 独占的确定性核验；不得继续以“等于准备时 Candidate”为必要前提。
+这里删除的只是**质量及 Candidate 相等的重复断言**，并非删除批准版工件的**读取身份**、归档目标分支、安全 Git 操作或真实业务 Commit 归属验证。特别是 `analysis.source.commit` 仍用于定位批准版 `tasks.md`，而非作为归档时需要 Checkout 的旧 HEAD。
 
-**已知语义变化**：删除 Independent Verify 检查后，即使批准事实中 `verify_agent.required=true`，Closeout 也可能自动完成。此项是明确的规则放宽，不能解释成“Verify 已由其他阶段自动验收”；本次不实现 Verify 新闭环。
+## 3. Owner 与执行流程
 
-## 3. 目标流程
+| Owner | 唯一职责 |
+| --- | --- |
+| `pr-status-sync` / `rondo pr reconcile-status` | 只负责 PR 外部状态回核、同步和输出 `finalize` / `resume_finalize`；不 Clone |
+| PR Status Sync Agent（当前 Autopilot Run） | 读取待处理 Issue 的 `analysis.source`，按 Repo+Branch 分组，顺序调用单 Issue `issue-closeout`；组结束时触发安全清理 |
+| `issue-closeout` | 单 Issue 的 Prepare、TFS 子任务规划与 Writeback、Complete；消费已有组根仓路径，不拥有整个批次 |
+| Rondo 的受控 Git / Archive 能力 | 确定性 Clone、Git 认证与身份核实、Archive / Push / 远端回读、安全 Cleanup |
+| Multica Issue / TFS / Git | 分别保持交付状态、工作项/PR 事实、已发布 Change/Commit 的权威来源 |
+
+`pr reconcile-status` 的现有返回形状不改；Autopilot 仅在同 Run 获取 `finalize` / `resume_finalize` 后按需准备工作区。Bug 直接执行现有单 Issue Closeout，无需 Clone。
 
 ```text
-Engineer
-  → 实现 / Local Validation / Code Review / Commit / Push
-  → dev publish → dev check-change
-  → pr materialize：全部 PR 创建/复用、current_pr 回读、Issue=in_review
-  → 安全释放业务 Worktree（失败保留现场，不回退 PR）
-
-PR Review / Merge（必要时另起 Engineer Run，重建 Worktree 返工）
-  → pr reconcile-status：全部 PR completed → finalize / resume_finalize
-  → issue-closeout
-       - 独立 Bug：不准备根仓
-       - Requirement + OpenSpec：逐 Issue 读取 analysis.source
-         → 按 repo_url + branch 分组，同组只 git clone 一次
-         → 同组 Issue 顺序执行，逐项核实 Origin / 分支 / Change / 最终发布版本
-       1. delivery finalize --phase prepare --root-repo <所属仓库/分支组的根仓路径>
-          - 逐仓 PR completed / 身份回核
-          - 核对或建立 finalize.pending
-          - Requirement：Archive → Git Push → 远端回读
-          - 确认后标记 prepared
-       2. Requirement：inspect → 规划或复用 TFS Task Plan
-       3. tfs writeback：子任务/Commit 独占/工时/父项回写和回读
-       4. delivery finalize --phase complete：核对 TFS 已写入 → Summary → Issue done → 清 pending
-       - 同组所有 Requirement 的 Prepare / Writeback / Complete 复用**同一个** --root-repo；
-         一组处理结束后，确认 Git 现场安全再清理本组 Clone；不在某个 Issue 归档后立即删除
+PR Status Sync Agent
+  └─ pr reconcile-status
+       ├─ noop / unknown / abandoned → 按现有机制报告或停止
+       ├─ 独立 Bug → issue-closeout（不准备根仓）
+       └─ Requirement：逐 Issue 读 analysis.source
+            → 按 repo_url + branch 分组
+            → 每组 Git Clone 一次
+            → 每个 Issue 顺序执行：
+               Prepare（PR completed → Archive → Push → 远端回读 → prepared）
+               TFS Writeback（含 Inspect / 规划 / Commit 独占）
+               Complete（TFS 回读 → Issue done → 清 pending）
+            → 本组不再需要根仓时安全 Cleanup
 ```
 
-`Complete` 不重新运行 Engineer、Approval、Analysis Gate、Verify 等质量检查；对 TFS 是否真正写成、归档是否仍可从权威远端确认和 Issue 状态转换保持可信回读。归档失败时**停止于 Prepare**，绝不提前写 TFS。
+## 4. Requirement Archive 根仓：同 Repo + Branch 复用
 
-## 4. PR Status Sync Autopilot：按 Repository + Branch 复用归档根仓
+### 4.1 输入与分组
 
-### 4.1 触发与权威输入
+仅使用每个 Issue 的 `analysis.source`：
 
-`pr reconcile-status` 仍只核实 PR/TFS 状态，不执行 Git。仅当返回当前 Issue 的 `finalize` 或 `resume_finalize`、并确认该 Issue 有待归档的 OpenSpec Change 时，`issue-closeout` 才准备根仓；独立 Bug 无需根仓。
-
-仓库和分支**只能**来自当前 Issue 持久化的 `analysis.source`：
-
-| 属性 | 用途 |
+| 字段 | 用途 |
 | --- | --- |
-| `repo_url` | 唯一根仓地址；校验 Clone 的 Fetch / Push Origin 身份 |
-| `branch` | 该 Issue 的 OpenSpec 归档目标分支，也是 Clone 指定的远端分支 |
-| `commit` | 原批准版本指针；用于溯源，不强制归档 Checkout 回旧提交 |
-| `change_ref` | 本次必须存在的唯一 OpenSpec Change，归档范围限于它 |
+| `repo_url` | 指定权威 TFS 根仓，并与已核实的 Git Origin / Push 地址对应 |
+| `branch` | 当前 Issue 的 OpenSpec 归档目标分支 |
+| `commit` | 批准版工件的不可变 Commit；读取批准版 `tasks.md` 时使用 |
+| `change_ref` | 只处理本 Issue 对应的唯一 Change |
 
-归档版本应反映该 Issue **最终已经发布**的 Change 进度与证据（必要时参照 `dev.publication.commit`），而不是仅使用早期批准 SHA；不能根据另一 Issue、Autopilot Task 当前 HEAD、`RONDO_WORKSPACE_BRANCH`、默认 `main` 等推测目标分支。若当前目标分支未包含所需 Change，报告明确的 `UNKNOWN`；不得遍历其他分支寻找相似目录。
+同一 Autopilot Run 按既有仓库身份规则识别 `repo_url + branch`：相同的分组**只 Clone 一次**，不同 Repo 或 Branch 不共享可变工作树。只做 Run 内临时分组，**不新建分组状态或存储**；Group 是环境复用单位，Issue 仍是 Archive、`finalize.pending`、TFS Writeback 和 Done 的最小原子业务单位。
 
-### 4.2 分组 Git Clone、同组顺序归档
+当前 Issue 的目标分支取自 `analysis.source.branch`；禁止使用 Autopilot 全局 `RONDO_WORKSPACE_BRANCH`、默认 `main`、另一个 Issue 的分支或当前本地 HEAD 猜测。若对应分支没有此 Change（活跃或唯一归档目录），应明确返回 `UNKNOWN`，不在其他分支搜索并自动归档。
 
-在当前 Autopilot Run 内，先从待收口的 Requirement Issue 读取 `analysis.source`，以**规范化的 Repository 身份 + 精确 Branch** 构成分组键。相同 Repo URL 且 Branch 相同的 Issue **共用本批次一次 Clone**；不同 Repository 或 Branch 使用不同目录。分组只控制本地根仓复用，**不合并多个 Issue 的 Archive、`finalize.pending`、TFS Writeback 或 Complete**。
+### 4.2 受控 Clone 与顺序归档
 
-按每组的 `analysis.source.branch` 执行原生 Git Clone：
+按组从 `analysis.source.repo_url` Clone 指定分支，目录只在当前 Run 临时使用：
 
 ```bash
 git clone --single-branch --branch "<analysis.source.branch>" \
   "<analysis.source.repo_url>" "<repo-branch-group-root>"
 ```
 
-优先复用 Rondo 已有认证 Git / Clone 能力（`remote-artifacts.ts` / `runAuthenticatedRootGit`），不复制 PAT 处理方法，不引入 Multica `repo checkout` 或新的 Workspace Manager。现有 `checkoutArchiveRoot()` 要求事先物化 TFS API 工件，实施时应最小化复用其认证 Clone 部分，**不要让远端 API 物化失败继续成为本地 Clone 的必经前置**。
+- 复用 Rondo 现有 `runAuthenticatedGit` / TFS 认证机制，不通过 Skill 手动拼接 PAT。**同一受控认证还必须用于后续 Fetch / Push**，不能 Clone 成功后退化为未认证的普通 Git。Clone 的 URL/Branch 必须核对 Git Top-Level、Origin/Push Identity 和 HEAD。
+- 默认使用包含所需历史的 Clone（**不强制 `--depth 1`**）：本地读取批准版 `tasks.md` 需要 `analysis.source.commit` 可达。若 Commit 不在本地历史，应按已确认的源获取，不允许从最新 `tasks.md` 冒充批准版本；无法确认则停止。
+- 同组 Issue **顺序**执行完整的单 Issue Closeout；下一 Issue 开始前核实 Git 现场与最新远端分支状态（安全 Fetch / Fast-forward），以及该 Issue 自己的 Change。上一 Issue 的 Archive Push 不替代下一 Issue 的 PR/Archive 检查。
+- 同组中 Archive / Push 的 Git 状态未知且无法安全继续时，**停止本组**，保留现场；其他 Repo+Branch 组可继续。若某 Issue 已确认归档而 TFS Writeback 失败，Git 状态安全时可处理同组其他 Issue，失败 Issue 留待下轮恢复。
+- 远端其他 Run 仍可能同时 Push，继续使用现有非强制 Push、Git 分叉检测和必要的安全重试；不增加分布式锁。单组工作树不并行 Archive。
 
-Clone 后确认实际 Git Top-Level、Origin/Push URL、HEAD 当前本地分支与组内 `analysis.source.branch` 相等；每处理一个 Issue 前，仍需核实它自己的 Change 身份、最新已发布工件以及 Git 现场，必要时安全 Fetch / Fast-forward。对重复执行，仅复用当前组且身份、分支、工作树状态可确认的目录，不自动 reset / clean / force checkout。
+### 4.3 现有 Rondo 调用链必须适配
 
-推荐布局（示意，不规定 CLI 自动创建的真实目录名）：
+1. **`finalize.ts`**：显式 `--root-repo` 目前会走旧本地业务 Hub/Workspace Reconciliation，必须从新 Requirement Closeout 删除。`routeArchive()` 当前根据本地 HEAD 决定 Push 分支；进入 Archive 前应确定性确认该 HEAD 等于本 Issue 的 `analysis.source.branch`，并且 Repo URL/Origin 正确。
+2. **认证与回读**：显式 `--root-repo` 的 `RuntimePaths` 当前不自动携带 `gitRemoteUrl`。Archive 的 Fetch/Push 必须继承受控 TFS Git 认证；完成 Push 后回读**远端目标分支**上的归档目录/内容，不能仅看本地 `openspec archive` 或 Push 退出码。可使用已有 Git / 远端读取能力，不另建双套 Archive 机制。
+3. **`writeback.ts` / `requirement-commits.ts`**：去除从 `verifyRemoteRequirement()` 或后续 Commit Inspect 绕回的 AI Review / Analysis / Engineer Gate、旧 Candidate 相等比较。以**已完成 PR 的权威 PR Commit 列表**提供真实业务 Commit，保留仓库/PR 身份、Commit 存在性与 TFS Task 全球独占；不得通过缺失 Candidate 就自动认定 Commit 合法。
+4. **批准版 `tasks.md`**：现行 `inspectRequirementCommits()` 通过 `RemoteArtifactReader` 调 TFS Git API 获取 `analysis.source.commit` 的文件。新 Clone 路径优先从已核实的 Git Commit 读取批准版工件；不能把先通过 TFS API 物化整份 Change 作为 Clone/Closeout 的必要前置。TFS API 可继续用于 PR / Work Item / Commit 的权威事实核验。
+5. **`Complete` / 重入**：新路径的 `Prepare / Writeback / Complete` 消费该组相同的 `--root-repo`；`Complete` 仅核实归档已在远端、TFS 写入真实完成并转换 Issue 状态。已 `done` 的恢复路径也不能因已经移除的旧 Analysis Gate 再次阻断。
+6. **最低代码改动原则**：只复用/局部提取 Rondo 的受控 Clone、归档和清理能力。若现有命令无法安全对外执行受控 Clone/Cleanup，可在 Delivery 现有 CLI 范围提供最小入口；不建立通用 Git Workspace Manager，不改变 `pr reconcile-status` 的状态检测算法。
 
-```text
-autopilot-task-workdir/
-  root-repo-main/       # 同根仓 main：LEI-101
-  root-repo-dev/        # 同根仓 dev：LEI-102、LEI-103、LEI-104
-  root-repo-release/    # 同根仓 release/2026：LEI-105
-```
+### 4.4 本组完成后的 Clone Cleanup
 
-同组 Issue **依次**执行 `Prepare → Writeback → Complete`；第一项 Archive Push 成功后，下一项从同一工作树继续操作，但必须重新核对所需 Change 和目标分支。每个 Issue 的成功/失败、`finalize.pending`、TFS 子任务和业务 Commit 仍独立记录，不以“分组成功”替代单 Issue 的回读。**Archive 或 Git 状态 UNKNOWN 且当前根仓是否安全不可确认时，停止本组后续归档并保留现场；其他独立组可继续。** 如果某 Issue Archive 已确认且根仓干净，但独立 TFS Writeback 失败，可记录该 Issue 待恢复并继续同组其他 Issue。
+**Cleanup 时机：本组最后一个需要该 Clone 的 Prepare / Writeback / Complete 已结束，或本组已确定停止。** 不能在单个 Issue Archive 后立即删除；即使 TFS Writeback 失败，若 Git 现场可确认安全且本组已不再使用该目录，也可以清理，下轮从远端及 `finalize.pending` 恢复。
 
-同一 Repository + Branch 的并发 Archive **不共享一个可写 Clone 并行执行**；由当前 Run 顺序处理，远端发生并发 Push 时仍按现有安全机制检测和处理。下次 Autopilot Run 可重新 Clone，并通过远端归档和 `finalize.pending` 恢复，不依赖旧本地目录。
+Rondo 安全清理只需确认：① 是当前 Run 创建的受控临时目录，且路径未越界；② Git 工作树/暂存区干净；③ 本地无未 Push Commit，且无正在使用该目录的操作。满足后删除并确认目录不存在；无法确认、存在 WIP 或未发布 Commit 时保留现场并报告。不得 `reset --hard`、`clean -fd` 或强制删除其他人的根仓。
 
-### 4.3 Rondo 现有接口的最小兼容修复
+Cleanup 只释放本轮临时 Clone，不创建 Cleanup 状态、独立任务或后台机制。
 
-- `issue-closeout` 将同组根仓路径作为**该组每个 Issue 的同一个** `--root-repo <path>` 传给 `delivery finalize --phase prepare`、`tfs writeback` 和 `delivery finalize --phase complete`，避免后一阶段重新进入远端工件物化模式。
-- 当前显式 `--root-repo` 会走旧本地路径的业务 Hub / Workspace Reconciliation；按 §2 删除这一非收口职责，否则即使 Clone 成功也可能因业务仓不存在而失败。
-- 当前 `routeArchive()` 默认向本地 HEAD 分支 Push；本方案直接 Clone 指定目标分支，且归档执行前必须**显式核对** HEAD 与该 Issue 的 `analysis.source.branch` 一致。保留现有 Archive 安全检查、Git Push、远端回读和 `finalize.pending`。
-- 同组逐 Issue Archive 后本地目标分支随归档提交向前推进；下一个 Issue 必须以最新确认的目标分支为起点。外部 Run 也可能同时推进远端，继续使用既有 Fetch / Fast-forward / 非强制 Push 的冲突与重试规则，不得用分组复用代替远端并发保护。
-- 不要求改变 Engineer 的 Root / Worktree 管理、Analysis 发布或 PR Status Sync 状态检测；若现有 Git Auth 无法被 Skill 安全复用，只在 Rondo 内补一个最小的受控 Clone 调用入口，不引入独立仓库管理框架。
+## 5. Engineer Worktree Release：独立实施
 
-**边界**：此处 Clone 用于 Closeout Archive，与 §5 中 Engineer PR 创建后释放的业务 Worktree 是两类不同工作区，不得混同。分组复用根仓仅限当前 Autopilot Run，不引入跨 Run 持久 Workspace Cache。
+另一个已确认设计：Engineer 在 `pr materialize` 创建/复用本 Issue 所有 PR、回读 `current_pr` 且 Issue 进入 `in_review` 后，立即安全释放**业务 Worktree**，不等待 PR Merge。
 
-### 4.4 归档根仓的安全清理
+- 仅清理确认属于该 Issue、工作树干净、HEAD 已推送至预期远端 Feature Branch 的 Worktree；保留 Git Hub 与本地/远端 Feature Branch，供 Review 返工时 `rondo dev prepare --mode requirement` 重新准备。
+- 既有 `pr worktree remove` 的旧 `.worktrees/<issue>-<repo_key>` 布局与新 Requirement 的 `<root>/<repo_path>-<tfs.id>` 不一致，实施时最小扩展已有 Remove；不新增 Cleanup Skill。
+- **本节与 PR Status Sync Clone Cleanup 完全独立**，不纳入第一阶段 Archive 修复的回归范围；不因本节存在而扩大本次 PR 的研发改动。
 
-清理范围是**本次 Autopilot Run 创建的 Repo+Branch 分组 Clone**，不清理 Analyst / Engineer 工作区、Multica Native Checkout、Git Cache 或已有持久根仓。分组内归档成功后仍有 `tfs writeback` 和 `delivery finalize --phase complete` 需要该路径，因此**在这一组完成最后一个 Issue 的 Closeout（或本组确定停止）后**才回收；不能按单个 Issue 的 Archive 返回码立即删除。
+## 6. 最小实施范围与顺序
 
-回收前至少确认：
+**阶段 A（先实施）：PR Status Sync Closeout 修复。**
 
-1. 目录确实由本次 Run 创建、位于预期临时根目录内，且无符号链接或路径越界；不要对外部传入的 `--root-repo` 执行递归删除。
-2. 本组所有需要本地根仓的 CLI 调用已结束，不存在并行写入；工作树（含未跟踪文件）与暂存区干净。
-3. 使用远端 Fetch/回读确认本地 HEAD 无未 Push 的提交（例如 `origin/<branch>..HEAD` 为空）；各已成功 Archive 的 Issue 均有远端归档确认事实。
-
-满足条件时，安全删除本组 Clone 并确认目录已消失；即使某个 Issue 的 **TFS Writeback 失败**，只要相关 Archive 已确定成功、Git 现场安全且不再被本 Run 使用，也允许清理 Clone，恢复时重新 Clone，不影响 `finalize.pending`。Archive / Push 状态未知、存在 WIP 或未 Push 提交、目录身份不可信时**保留现场并报告**，不做 `reset --hard` / `clean -fd` / 强制删除。
-
-这里的清理是 Closeout 当次执行的临时资源释放，不是 Engineer PR 后的业务 Worktree Release；无需新的持久化 Cleanup 任务、Metadata 或后台守护进程。
-
-## 5. Engineer Worktree 释放时机与安全边界
-
-### 5.1 释放时机
-
-**Engineer 当次 Run 中，`rondo pr materialize` 确认全部 PR 已登记且 Issue 转为 `in_review` 后立即释放本地业务 Worktree。** 不等待 PR Merge；不用由跨 Runtime 的 PR Status Sync 删除另一个 Runtime 的工作目录。
-
-清理对象仅为本 Issue 的业务 Worktree；**保留基础仓 Hub、本地和远端 `feature/<tfs.id>` 分支及远端提交**。Reviewer 要求返工时，继续通过既有 `rondo dev prepare --mode requirement` 在新 Run 创建/恢复同一分支 Worktree，不增加新恢复机制。
-
-### 5.2 Remove 前置（仅数据安全）
-
-1. 本次所有 PR 创建/复用及 `current_pr` / `in_review` 回读确认。
-2. Worktree 必须能确认属于本 Issue / Repository，且工作区干净（无未提交、未暂存或未跟踪的待保留改动）。
-3. Worktree 当前 HEAD 必须已被预期远端 Feature Branch 包含，避免删除尚未 Push 的本地提交；不能仅依据 `git status clean` 判断可删。
-4. 使用 `git worktree remove`，不执行 `--force`、`reset --hard`、`clean -fd` 或强制删分支。
-
-清理不成功时：**保留现场并报告**，不把已确认的 PR 创建判失败，不阻断 PR Review、Merge 或后续 Prepare。没有必要为此引入新的 Metadata Cleanup 状态、Agent、锁或后台任务。
-
-### 5.3 现有实现差异与最小修复
-
-- 新 Requirement `dev prepare` 当前使用：`<root>/<repo_path>-<tfs.id>`。
-- 既有 `pr worktree remove` 仍定位旧路径：`<root>/.worktrees/<issue>-<repo_key>`。
-- 两者不一致，**不能把旧 Remove 命令直接用于新 Requirement Worktree**。
-
-优先扩展已有 `rondo pr worktree remove` 以正确识别 Requirement 布局和仓库身份，复用 Git 原生 Worktree 操作；由 `change-development` Skill 在 PR 创建成功后简要指导调用。不增加独立 Cleanup Skill / 命令组。旧 Worktree 和 Bug Native Checkout 保持原行为。
-
-## 6. 最小实施范围
-
-| 文件 / 能力 | 调整 |
+| 修改处 | 必要动作 |
 | --- | --- |
-| `rondo/src/commands/delivery/finalize.ts` | 删除重复的 Approval / AI Review / Verify / Analysis / Completion Gate；移除旧业务 Workspace Reconciliation；保留 PR 终态、Archive、pending；Requirement 按 Issue `analysis.source.branch` 归档且 `--root-repo` 可消费本地 Clone；Complete 不重复旧 Gate |
-| `rondo/src/commands/delivery/remote-artifacts.ts` | 复用现有 Git 认证 / Clone 基础能力，按需支持直接从 `analysis.source` Clone 指定分支，不以 TFS API 工件物化作为 Clone 必经前置；保留归档前后必要的身份和远端回读检查，不重复 Analysis 质量 Gate |
-| `rondo/src/commands/tfs/writeback.ts`、`requirement-commits.ts` | 去除 `verifyRemoteRequirement` 等重复质量校验和 Candidate 相等断言；保留归档事实、真实已完成 PR Commit 来源、全局独占和 TFS 写入验证 |
-| `rondo/src/commands/pr/worktree.ts` | 现有 Remove 支持 Requirement 同级 Worktree，并在删除前确认 HEAD 已发布 |
-| `skills/change-development/SKILL.md` | PR 创建成功后增加简短 Worktree Release 指引 |
-| `skills/issue-closeout/SKILL.md`、`agents/pr-status-sync-agent/autopilot-prompt.md` | 基于返回的 `finalize` / `resume_finalize` Issue 的 `analysis.source.repo_url + branch` 分组；按组 Clone 一次、顺序调用单 Issue Closeout；同组复用 `--root-repo` 并在组结束时安全清理；保留三段调用和 TFS 规划 |
-| 相关测试 | 覆盖 Gate/Archive/Writeback/Worktree、同 Repository+Branch 多 Issue 仅 Clone 一次、不同分支独立 Clone、Archive 顺序执行、错误分支阻断、成功安全清理与异常保留现场 |
+| `agents/pr-status-sync-agent/autopilot-prompt.md` / `skills/issue-closeout/SKILL.md` | 分组与单 Issue Closeout 职责清晰，简短说明共享 `--root-repo` 与 Cleanup |
+| `rondo/src/commands/delivery/finalize.ts` | 去重复 Gate / Workspace 对账，保留 PR completed / pending / Archive，修复本地目标分支与 Git Auth/回读 |
+| `rondo/src/commands/delivery/remote-artifacts.ts`、现有 Git Auth | 最小复用认证 Clone，不再要求先物化远端 Change 才能 Clone |
+| `rondo/src/commands/tfs/writeback.ts`、`requirement-commits.ts`、必要的 `commit-facts.ts` | 保留真实 PR Commit 与 TFS 独占，删除重复 Candidate/质量 Gate；从批准 Commit 读取 `tasks.md` |
+| 聚焦测试 | 多 Issue 同 Repo+Branch 一次 Clone、不同分支隔离、归档/认证、失败恢复、Cleanup 安全、TFS KPI |
 
-不修改 `workspace-preparation`，不给 PR Status Sync Agent 绑定该 Skill；不使用 Multica Native Repo Checkout 执行 Closeout。避免改动 Analysis / Engineer 的质量规则、OpenSpec Schema、TFS Task KPI 契约、PR 状态生命周期及其他无关 Skills。实现前先核对现有函数调用链，不以粗暴跳过整个 Helper 的方式误删归档或 TFS 必需的身份校验。
+**阶段 B（独立实施）：Engineer Worktree Release。** 仅调整 `rondo/src/commands/pr/worktree.ts`、`skills/change-development/SKILL.md` 和相关测试，不在阶段 A 同时改研发工作区生命周期。
 
-## 7. 验收重点
+不修改 `workspace-preparation`、Engineer/Analyst 质量规则、OpenSpec Schema、TFS KPI、PR 状态同步算法或其他无关 Skills。
 
-1. 任意 PR 未 `completed`、PR 身份不符、TFS PR 状态不可确认时，Prepare 不通过且不写 TFS。
-2. PR 全部 `completed` 后，缺少旧 Candidate 相等证明、历史 AI Review / Analysis Gate / Verify 执行标记不再单独阻断；仅当前 Change 定位和归档所需事实必须有效。
-3. Requirement Archive 失败、Push 未确认、远端无法确认唯一归档目录时，不产生 TFS 副作用；重跑只补未确认步骤。
-4. 成功归档后，`finalize.pending` 持久、事件一致、`prepared_change_ref` 回读成功；TFS 部分成功时恢复不重复创建。
-5. `tfs writeback` 继续核实真实 PR Commit 与 TFS Task 全局独占，且 Complete 只在 TFS 事实回读通过后设置 Issue `done`。
-6. 所有 PR 创建成功后，干净且 HEAD 已 Push 的 Requirement Worktree 可释放；有 WIP、未 Push HEAD、路径/仓库不符则保留现场，但不回退已创建的 PR。
-7. 释放后 Reviewer 请求返工，`dev prepare --mode requirement` 能复用保留的分支重建 Worktree。
-8. 独立 Bug 继续跳过 OpenSpec Archive、无需 Clone 根仓；旧 `dev.dispatch` 路线不因新 Requirement 的 Worktree 清理而回归。
-9. 单个 Autopilot Run 包含同一 Repo+Branch 的三个 Requirement，**只 Clone 一次**，按 Issue 顺序 Archive / Push / 回读 / Writeback / Complete；不同 Branch 或 Repo 使用不同 Clone，绝不误选其他分支的 Change。
-10. `analysis.source.branch` 不存在、目标分支无当前 `change_ref`、Origin 不符、最终发布版本不可确认时，仅当前 Issue 返回 `FAIL/UNKNOWN`，不搜索或切换其他分支，不执行 TFS Writeback。
-11. 每次 Archive 前 HEAD 必须与该组的 `analysis.source.branch` 一致，已确认安全的同组根仓可复用到最后一个 Issue 的 Complete；绝不提前清理。
-12. 一组所有 Issue 处理结束后，核实目录归属、`git status` 干净且没有未发布 Commit，删除本次 Clone 并回读确认目录不存在；不因单个 Issue 的 TFS Writeback 失败而删除未确认的 Git 现场。若 Archive / Git 状态 UNKNOWN、目录不安全或有未发布提交，则保留并报告位置与原因，后续重跑从权威远端恢复。
+## 7. 最小验收矩阵
 
-**验证纪律**：以上是目标契约，不代表已通过测试或真实 Multica / TFS E2E；未经验证不得声明 PASS。
+| 场景 | 期望结果 |
+| --- | --- |
+| 同一 Repo+Branch 的 3 个 Requirement 都满足收口 | 仅 Clone 一次；每个 Issue 独立 Archive、Push、回读、Writeback、Complete |
+| 同 Repo 不同 Branch，或不同 Repo | 分别 Clone；不跨分支查找 Change、错误 Push 或覆盖 |
+| 有 PR 非 `completed` 或 PR 身份不一致 | 本 Issue 不归档、不写 TFS |
+| Clone 成功但 Git Auth/Fetch/Push 失败，或目标分支无 Change | `UNKNOWN` / `FAIL`，无 TFS Writeback；Git 不安全时保留现场 |
+| TFS Writeback 未成功、后续重入 | 归档已确认时可安全清理当前 Clone；下轮重新 Clone 并按 `finalize.pending` 恢复，无重复 TFS Task/Commit |
+| 收口成功后的 Cleanup | 工作树干净、无未 Push Commit、目录归属可确认；删除本组 Clone，其他组不受影响 |
+| Engineer Worktree Release（阶段 B） | PR 已登记后安全 remove；保留分支用于返工；未 Push 或 dirty 不强制删除 |
+
+验收必须结合 Rondo Build / 对应单测和真实 Autopilot / TFS / Git 场景；文档不代表这些用例已通过。
 
 ## 8. 不做
 
-- 不将 Archive 后移到 Complete，也不让 Archive 变成 Best-effort。
-- 不放宽 PR completed 铁律。
-- 不撤销 TFS Commit 独占、工时和回读。
-- 不新增 Cleanup Agent / Skill / Workflow、独立状态表或跨 Runtime 文件同步。
-- 不为自动清理 Git 工作树使用强制删除。
-- 不将 Multica Native Repo Checkout 用于 Closeout Archive，不依赖 Task Branch 归档，也不修改 `workspace-preparation` Skill 或 Agent 绑定。
-- 不添加全局根仓分支配置、跨 Run 共享 Checkout、通用 Workspace Manager 或新持久化状态；同组复用仅限当前 Run，顺序而非并发归档。
+- 不将 Archive 后移至 Complete、不放宽 PR `completed` 铁律，也不降低 TFS Commit 独占要求。
+- 不采用 Multica Native Repo Checkout 做 Closeout，不给 PR Status Sync Agent 绑定 `workspace-preparation`。
+- 不创建第二套 Archive 流程、跨 Run Clone Cache、Batch 状态机、持久 Metadata 或额外 Agent。
+- 不为 Cleanup 使用强制 Git 操作；未知时保留现场。
