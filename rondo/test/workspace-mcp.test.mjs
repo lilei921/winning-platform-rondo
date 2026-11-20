@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
 const cli = fileURLToPath(new URL("../dist/index.js", import.meta.url));
-const source = fileURLToPath(new URL("../../../projects/multica/workspace-skills/_shared/", import.meta.url));
+const source = fileURLToPath(new URL("../../mcps/", import.meta.url));
 const names = ["remote-codegraph", "remote-filesystem", "remote-ripgrep"];
 
 /** 本地有状态 CLI 替身，禁止连接真实平台；不把 stdin 凭据写入 trace 或状态文件。 */
@@ -18,7 +18,7 @@ function fixture(t) {
     const path = join(root, name); mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, typeof content === "string" ? content : JSON.stringify(content)); return path;
   };
-  const shared = "projects/multica/workspace-skills/_shared/";
+  const shared = "projects/multica/skills/_shared/";
   const manifest = {
     mcp_servers: names.map(name => ({ name, template: name + ".json" })),
     managed_skills: ["demo"], agents: [
@@ -27,15 +27,15 @@ function fixture(t) {
     ], squad: { name: "Delivery", leader: "Wayfinder", members: [] }, project: { title: "Project" }, autopilots: [],
   };
   write(shared + "provisioning.json", manifest);
-  for (const name of names) write(shared + "mcp/" + name + ".json", readFileSync(join(source, "mcp", name + ".json"), "utf8"));
-  for (const name of names) write(shared + "mcp/connections/" + name + ".local.json", {
+  for (const name of names) write("projects/multica/mcps/" + name + ".json", readFileSync(join(source, name + ".json"), "utf8"));
+  for (const name of names) write("projects/multica/mcps/connections/" + name + ".local.json", {
     url: "https://test.invalid/private-token", headers: { Authorization: "Bearer private-secret" },
   });
   for (const dir of ["wayfinder", "analyst"]) {
     write(`projects/multica/agents/${dir}/instructions.md`, "instructions");
     write(`projects/multica/agents/${dir}/description.md`, "description");
   }
-  write("projects/multica/workspace-skills/demo/SKILL.md", "---\nname: demo\ndescription: fixture\n---\n");
+  write("projects/multica/skills/demo/SKILL.md", "---\nname: demo\ndescription: fixture\n---\n");
   write("projects/multica/squads/delivery-squad/squad-instructions.md", "instructions");
   const overlayPath = write(shared + "workspaces/pilot.json", { workspace_id: "ws-1" });
   const trace = join(root, "trace.jsonl");
@@ -101,8 +101,8 @@ fs.writeFileSync(process.env.MC_STATE,JSON.stringify(s)); console.log(JSON.strin
   };
   const calls = () => existsSync(trace) ? readFileSync(trace, "utf8").trim().split("\n").map(JSON.parse) : [];
   return { run, calls, state: () => JSON.parse(readFileSync(statePath, "utf8")), overlay: () => JSON.parse(readFileSync(overlayPath, "utf8")),
-    setConnection: (name, value) => write(shared + "mcp/connections/" + name + ".local.json", value),
-    removeConnection: name => rmSync(join(root, shared + "mcp/connections/" + name + ".local.json")),
+    setConnection: (name, value) => write("projects/multica/mcps/connections/" + name + ".local.json", value),
+    removeConnection: name => rmSync(join(root, "projects/multica/mcps/connections/" + name + ".local.json")),
     setState: s => writeFileSync(statePath, JSON.stringify(s)),
     setOverlay: value => writeFileSync(overlayPath, JSON.stringify(value)), overlayPath, root };
 }

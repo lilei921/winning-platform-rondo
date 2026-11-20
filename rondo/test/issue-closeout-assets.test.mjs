@@ -4,16 +4,16 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const multicaRoot = fileURLToPath(new URL("../../../projects/multica/", import.meta.url));
+const multicaRoot = fileURLToPath(new URL("../../", import.meta.url));
 const read = (path) => readFileSync(join(multicaRoot, path), "utf8");
 
 test("issue-closeout 名称、Manifest 与 Agent 绑定一致", () => {
-  const manifest = JSON.parse(read("workspace-skills/_shared/provisioning.json"));
-  const skillDir = join(multicaRoot, "workspace-skills/issue-closeout");
-  const skill = read("workspace-skills/issue-closeout/SKILL.md");
+  const manifest = JSON.parse(read("skills/_shared/provisioning.json"));
+  const skillDir = join(multicaRoot, "skills/issue-closeout");
+  const skill = read("skills/issue-closeout/SKILL.md");
   assert.equal(skill.split("\n")[1], "name: issue-closeout");
   assert.ok(existsSync(join(skillDir, "references/remote-artifacts.md")));
-  assert.ok(!existsSync(join(multicaRoot, "workspace-skills/finalize-delivery")));
+  assert.ok(!existsSync(join(multicaRoot, "skills/finalize-delivery")));
   assert.ok(manifest.managed_skills.includes("issue-closeout"));
   assert.ok(!manifest.managed_skills.includes("finalize-delivery"));
   const agent = manifest.agents.find((a) => a.name === "PR Status Sync Agent");
@@ -27,7 +27,7 @@ test("issue-closeout 名称、Manifest 与 Agent 绑定一致", () => {
 });
 
 test("issue-closeout 保留三段 CLI 收口顺序和停止条件", () => {
-  const skill = read("workspace-skills/issue-closeout/SKILL.md");
+  const skill = read("skills/issue-closeout/SKILL.md");
   const commands = [
     "rondo delivery finalize --phase prepare --issue",
     "rondo tfs writeback --issue",
