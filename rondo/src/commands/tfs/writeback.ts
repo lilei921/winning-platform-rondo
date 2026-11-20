@@ -32,6 +32,7 @@ import { readAnalysisSource } from "../analysis/source.js";
 import { resolveStableEvidenceCommit, type EvidenceCommit, type EvidenceRepository } from "../delivery/evidence-repository.js";
 import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
 import { isDirectBugDelivery, assertBugFinalizationFacts, bugDeliveryDigest, type BugCurrentPr } from "../bug/finalize-facts.js";
+import { verifyCloseoutRoot, confirmPublishedArchive, assertCloseoutChange } from "../delivery/closeout-root.js";
 import {
   estimateIssue,
   extractTaskText,
@@ -435,7 +436,7 @@ export async function writebackParent(clients: Pick<Clients, "tfsQuery" | "tfsSe
 }
 
 /** 只读后置条件：核对 TFS 外部真实状态，不创建任务、不更新工时/状态、不追加评论。 */
-export async function verifyTfsWriteback(cfg: RegistryConfig, issue: IssueRecord, changeDir?: string): Promise<Record<string, unknown>> {
+export async function verifyTfsWriteback(cfg: RegistryConfig, issue: IssueRecord, rootRepo?: string): Promise<Record<string, unknown>> {
   const md = issue.metadata ?? {};
   if (md["delivery.tfs_written"] !== "true") {
     throw new UnknownError("未确认 TFS Writeback 完成，拒绝 Issue done");
@@ -456,8 +457,8 @@ export async function verifyTfsWriteback(cfg: RegistryConfig, issue: IssueRecord
   if (isRequirementChangeDelivery(md)) {
     const saved = parseStoredTaskPlan(md["delivery.tfs_task_plan"], "delivery.tfs_task_plan");
     if (!saved) throw new FailError("新 Requirement 缺少已确认的 TFS 子任务计划");
-    if (!changeDir) throw new UnknownError("Complete 缺少已核验的归档 Change 工件，不能证明业务 Commit 来源");
-    const snapshot = await inspectRequirementCommits(cfg.registry ?? {}, md, changeDir);
+    if (!rootRepo) throw new UnknownError("Complete 缺少已核验的根仓，不能证明业务 Commit 来源");
+    const snapshot = await inspectRequirementCommits(cfg.registry ?? {}, md, rootRepo);
     const plan = validateRequirementTaskPlan(saved, snapshot.approvedTasks, snapshot.commits);
     const api = new TfsApiClient();
     const ids = await findExistingPlannedTasks(clients, issue.identifier ?? issue.id,
@@ -566,12 +567,12 @@ async function verifyPlannedTaskFacts(
 /** Only new Change-level Requirements use planned Task ownership. */
 async function executePlannedRequirement(
   cfg: RegistryConfig, clients: Clients, issue: IssueRecord, issueKey: string,
-  md: Record<string,string>, tfsId: number, changeDir: string, opts: PlannedWritebackOptions,
+  md: Record<string,string>, tfsId: number, rootRepo: string, opts: PlannedWritebackOptions,
 ): Promise<Record<string,unknown>> {
-  const snapshot = await inspectRequirementCommits(cfg.registry ?? {}, md, changeDir);
+  const snapshot = await inspectRequirementCommits(cfg.registry ?? {}, md, rootRepo);
   if (opts.inspect) return {
-    mode: "inspect", approved_tasks_source: "analysis.source.commit",
-    commits: snapshot.commits, evidence: snapshot.evidence,
+    mode: "inspect", approved_tasks_source: "analysis.source.commit", approved_tasks: snapshot.approvedTasks,
+    commits: snapshot.commits,
     available_unique_commits: snapshot.commits.filter(c => !c.owners.length).length,
     saved_plan: Boolean(md["delivery.tfs_task_plan"]),
   };
@@ -583,6 +584,8 @@ async function executePlannedRequirement(
     const fresh = latestIssue.metadata ?? {};
     if (fresh["finalize.pending"] !== md["finalize.pending"] ||
         fresh["analysis.change_ref"] !== md["analysis.change_ref"] ||
+        fresh["analysis.source"] !== md["analysis.source"] ||
+        fresh["current_pr"] !== md["current_pr"] ||
         fresh["tfs.id"] !== md["tfs.id"]) {
       throw new UnknownError("收口期间 Issue 事实发生变化，停止外部 TFS 写入");
     }
@@ -700,8 +703,8 @@ export async function executeWriteback(cfg: RegistryConfig, issue: IssueRecord, 
     if (!paths) throw new FailError("Requirement TFS Writeback 缺少 OpenSpec 根仓");
     const changeRef = md["analysis.change_ref"];
     if (!changeRef) throw new FailError("Change 身份缺失");
-    const change = resolveChangeDir(paths, changeRef);
-    return { ...detail, ...await executePlannedRequirement(cfg, clients, issue, issueKey, md, tfsId, change.dir, opts) };
+    resolveChangeDir(paths, changeRef);
+    return { ...detail, ...await executePlannedRequirement(cfg, clients, issue, issueKey, md, tfsId, paths.rootRepo, opts) };
   } else {
     if (opts.inspect || opts.taskPlan !== undefined) throw new FailError("--inspect / --task-plan 只适用于新 Change-level Requirement");
     if (!paths) throw new FailError("Requirement TFS Writeback 缺少 OpenSpec 根仓");
@@ -755,7 +758,8 @@ async function main(rawArgs: string[]): Promise<number> {
     const client = new MulticaClient(cfg.runtime);
     const issue = client.getIssue(args.issue as string);
     const md = issue.metadata ?? {};
-    if (!isDirectBugDelivery(md) && !args["root-repo"] && (cfg.runtime.root_branch !== undefined || isRequirementChangeDelivery(md))) {
+    if (isRequirementChangeDelivery(md) && !args["root-repo"]) throw new UnknownError("Requirement TFS Writeback 必须显式使用同组 --root-repo");
+    if (!isDirectBugDelivery(md) && !args["root-repo"] && cfg.runtime.root_branch !== undefined) {
       if (!cfg.runtime.workspace_id) throw new UnknownError("远端回写必须显式配置 workspace_id");
       const source = readAnalysisSource(md);
       remote = await materializeDeliveryArtifacts(new RemoteArtifactReader(source.repo_url), md,
@@ -764,6 +768,12 @@ async function main(rawArgs: string[]): Promise<number> {
       await verifyRemoteRequirement({ ...cfg, registry: cfg.registry ?? {} }, issue, remote.paths);
     }
     const paths = isDirectBugDelivery(md) ? null : remote?.paths ?? resolveRuntimePaths(cfg, { issue, rootRepoArg: args["root-repo"] as string | undefined, need: ["openspec"] });
+    if (paths && isRequirementChangeDelivery(md)) {
+      const source = readAnalysisSource(md);
+      Object.assign(paths, verifyCloseoutRoot(paths, source));
+      assertCloseoutChange(paths, source);
+      confirmPublishedArchive(paths, source);
+    }
     if (args.inspect && args["task-plan"]) throw new FailError("--inspect 与 --task-plan 不能同时使用");
     if (args.inspect && args.inspect !== true) throw new FailError("--inspect 不接受值");
     let taskPlan: unknown;

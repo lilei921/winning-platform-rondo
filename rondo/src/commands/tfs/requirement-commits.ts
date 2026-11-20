@@ -1,12 +1,11 @@
-/** Read-only Requirement Commit candidates bound to completed PRs and delivered Evidence. */
-import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+/** Requirement business commits are derived from verified completed PRs, not old candidates. */
 import { FailError, UnknownError } from "../../cli/errors.js";
+import { runCommand } from "../../clients/spawn.js";
+import { assertTfsRepository } from "../../clients/authenticated-git.js";
 import { TfsClient as FlowTfsClient } from "../../clients/tfs.js";
 import { TfsClient as ApiTfsClient } from "../../tfs/client.js";
 import { readAnalysisSource } from "../analysis/source.js";
-import { RemoteArtifactReader } from "../delivery/remote-artifacts.js";
-import { resolveStableEvidenceCommit, type EvidenceRepository } from "../delivery/evidence-repository.js";
+import type { EvidenceRepository } from "../delivery/evidence-repository.js";
 import { commitTaskOwners, prChangedCommits, verifiedRepo, type VerifiedRepo } from "../../tfs/api/commit-facts.js";
 import type { PlannedCommit } from "./requirement-tasks.js";
 
@@ -14,12 +13,8 @@ export interface AvailableCommit extends PlannedCommit {
   repo: string; project: string; projectId: string; repoId: string; owners: number[];
   changed_paths: string[]; message: string;
 }
-export interface RequirementEvidenceSummary {
-  repo_key: string; file: string; candidate_commit: string;
-  local_validation: string; code_review: string;
-}
 export interface RequirementInspection {
-  approvedTasks: string; commits: AvailableCommit[]; evidence: RequirementEvidenceSummary[];
+  approvedTasks: string; commits: AvailableCommit[];
 }
 
 function readArray(raw: string | undefined, label: string): any[] {
@@ -29,96 +24,73 @@ function readArray(raw: string | undefined, label: string): any[] {
   return value;
 }
 
-/** The approved task source is immutable; archived, checked boxes are NOT a substitute. */
+/** Read the immutable approved tasks directly from the checked Git commit, never latest archive content. */
+export function approvedTasksAtCommit(root: string, commit: string, changeRef: string): string {
+  const shown = runCommand(["git", "show", commit + ":openspec/changes/" + changeRef + "/tasks.md"], root);
+  if (shown.status !== 0 || !shown.stdout.trim()) throw new UnknownError("批准版 tasks.md 在根仓指定 Commit 中不存在或不可读");
+  return shown.stdout;
+}
+
 export async function inspectRequirementCommits(
   registry: Record<string, EvidenceRepository & { default_target_branch?: string }>, md: Record<string, string>,
-  changeDir: string, api = new ApiTfsClient(), flow = new FlowTfsClient(),
+  rootRepo: string, api = new ApiTfsClient(), flow = new FlowTfsClient(),
 ): Promise<RequirementInspection> {
   const source = readAnalysisSource(md);
   const changeRef = md["analysis.change_ref"];
   if (!changeRef || source.change_ref !== changeRef) throw new FailError("批准来源与当前 Change 不一致");
-  const approvedTasks = await new RemoteArtifactReader(source.repo_url, api)
-    .read(source.commit, `/openspec/changes/${changeRef}/tasks.md`);
-  if (!approvedTasks.trim()) throw new FailError("批准版本的 tasks.md 为空");
-  const preps = readArray(md.pr_prep, "pr_prep");
+  const approvedTasks = approvedTasksAtCommit(rootRepo, source.commit, changeRef);
   const prs = readArray(md.current_pr, "current_pr");
-  if (!preps.length || preps.length !== prs.length) throw new FailError("pr_prep/current_pr 缺失或数量不一致");
+  const preps = readArray(md.pr_prep, "pr_prep");
+  if (!prs.length || prs.length !== preps.length) throw new FailError("current_pr/pr_prep 仓库数量不一致");
   const commits: AvailableCommit[] = [];
-  const evidence: RequirementEvidenceSummary[] = [];
   const seenRepo = new Set<string>();
-  for (const prep of preps) {
-    if (!prep || typeof prep.repo_key !== "string" || !registry[prep.repo_key]?.repo_url ||
-        typeof prep.candidate_commit !== "string" || !/^[a-f0-9]{40}$/i.test(prep.candidate_commit)) {
-      throw new FailError("PR Preparation 缺少登记仓库或完整 Candidate SHA");
+  for (const pr of prs) {
+    if (!pr || typeof pr.repo_key !== "string" || !registry[pr.repo_key]?.repo_url ||
+        !Number.isSafeInteger(pr.pr_id) || pr.pr_id <= 0 ||
+        typeof pr.source_branch !== "string" || typeof pr.target_branch !== "string") {
+      throw new FailError("current_pr 缺少合法的仓库、PR 身份或分支");
     }
-    if (seenRepo.has(prep.repo_key)) throw new FailError("重复的 PR Preparation Repository");
-    seenRepo.add(prep.repo_key);
-    const pr = prs.find(x => x?.repo_key === prep.repo_key);
-    if (!pr || !Number.isSafeInteger(pr.pr_id) || pr.pr_id <= 0 ||
-        pr.source_branch !== prep.source_branch ||
-        pr.target_branch !== (prep.target_branch ?? registry[prep.repo_key].default_target_branch ?? "dev")) {
-      throw new FailError("已登记 PR 与 Preparation 的仓库或分支不一致");
+    if (seenRepo.has(pr.repo_key)) throw new FailError("同一仓库登记了重复 PR");
+    seenRepo.add(pr.repo_key);
+    const registered = registry[pr.repo_key];
+    const matches = preps.filter(p => p?.repo_key === pr.repo_key);
+    if (matches.length !== 1 ||
+        matches[0].source_branch !== pr.source_branch ||
+        (matches[0].target_branch ?? registered.default_target_branch ?? "dev") !== pr.target_branch) {
+      throw new FailError("current_pr 与已登记 PR Preparation 的仓库或分支不一致");
     }
-    // Identity derives from registry's canonical TFS URL, never a local path or loose repo name.
-    const stable = resolveStableEvidenceCommit(registry, {
-      repo_key: prep.repo_key, repo_url: registry[prep.repo_key].repo_url,
-      sha: prep.candidate_commit,
-    }, api.config.serverUrl);
-    const repo = await verifiedRepo(api, stable.project, stable.repo);
-    const cmd = ["pr", "get", "--id", String(pr.pr_id), "--repo", repo.repo, "--project", repo.project];
-    const live = await flow.run(cmd, `读取已完成 PR ${pr.pr_id}`) as {
-      id?: number; status?: string; sourceCommitId?: string; sourceBranch?: string; targetBranch?: string;
-    };
+    const url = assertTfsRepository(registered.repo_url!, api.config.serverUrl);
+    const segments = url.pathname.split("/").map(decodeURIComponent);
+    const repoName = segments.at(-1)!;
+    const project = segments.at(-3)!;
+    if ((registered.tfs_repo && registered.tfs_repo.toLowerCase() !== repoName.toLowerCase()) ||
+        (registered.tfs_project && registered.tfs_project.toLowerCase() !== project.toLowerCase())) {
+      throw new FailError("PR 登记仓库与 TFS registry 身份不一致");
+    }
+    const repo = await verifiedRepo(api, project, repoName);
+    const live = await flow.run(
+      ["pr", "get", "--id", String(pr.pr_id), "--repo", repo.repo, "--project", repo.project],
+      `读取已完成 PR ${pr.pr_id}`,
+    ) as { id?: number; status?: string; sourceBranch?: string; targetBranch?: string };
     if (live?.id !== pr.pr_id || live.status !== "completed" ||
-        live.sourceCommitId?.toLowerCase() !== prep.candidate_commit.toLowerCase() ||
-        live.sourceBranch !== prep.source_branch ||
-        live.targetBranch !== (prep.target_branch ?? registry[prep.repo_key].default_target_branch ?? "dev")) {
-      throw new UnknownError(`PR ${pr.pr_id} 尚未核实 completed / Candidate 来源`);
+        live.sourceBranch !== pr.source_branch || live.targetBranch !== pr.target_branch) {
+      throw new UnknownError(`PR ${pr.pr_id} 外部状态或身份与 current_pr 不一致`);
     }
-    const evidenceFiles = readdirSync(changeDir).filter(f => /^evidence.*\.json$/i.test(f));
-    const matches: Array<{file:string; ev:any}> = [];
-    for (const file of evidenceFiles) {
-      let ev: any;
-      try { ev = JSON.parse(readFileSync(join(changeDir, file), "utf8")); }
-      catch { continue; }
-      if (ev?.repo_key !== prep.repo_key || ev?.change_ref !== changeRef ||
-          ev?.candidate_commit?.toLowerCase() !== prep.candidate_commit.toLowerCase() ||
-          !Array.isArray(ev.commits) || ev.local_validation?.result !== "PASS" ||
-          ev.code_review?.result !== "PASS" ||
-          typeof ev.local_validation.summary !== "string" || !ev.local_validation.summary.trim() ||
-          typeof ev.code_review.summary !== "string" || !ev.code_review.summary.trim() ||
-          (ev.blockers !== undefined && (!Array.isArray(ev.blockers) || ev.blockers.length > 0))) continue;
-      if (ev.commits.some((c: any) => {
-        try {
-          const id = resolveStableEvidenceCommit(registry, c, api.config.serverUrl);
-          return id.key === prep.repo_key && id.sha === stable.sha;
-        } catch { return false; }
-      })) matches.push({file,ev});
+    const changed = await prChangedCommits(api, repo, pr.pr_id);
+    for (const item of changed) {
+      commits.push({ repo_key: pr.repo_key, ...item,
+        repo: repo.repo, project: repo.project, projectId: repo.projectId, repoId: repo.repoId,
+        owners: await commitTaskOwners(api, repo, item.sha) });
     }
-    if (matches.length !== 1) {
-      throw new FailError(`PR ${pr.pr_id} Candidate 缺少唯一且已验证的归档 Evidence`);
-    }
-    evidence.push({ repo_key: prep.repo_key, file: matches[0].file,
-      candidate_commit: stable.sha,
-      local_validation: matches[0].ev.local_validation.summary,
-      code_review: matches[0].ev.code_review.summary });
-    const changes = await prChangedCommits(api, repo, pr.pr_id, stable.sha);
-    for (const entry of changes) commits.push({
-      repo_key: prep.repo_key, ...entry, repo: repo.repo, project: repo.project,
-      projectId: repo.projectId, repoId: repo.repoId,
-      owners: await commitTaskOwners(api, repo, entry.sha),
-    });
   }
-  const identities = commits.map(c => c.repo_key + "/" + c.sha);
-  if (!commits.length || new Set(identities).size !== identities.length) {
-    throw new UnknownError("可用业务 Commit 为空或存在重复");
+  const ids = commits.map(c => c.repo_key + "/" + c.sha);
+  if (!commits.length || new Set(ids).size !== ids.length) {
+    throw new UnknownError("真实 PR 业务 Commit 为空或存在重复");
   }
-  return { approvedTasks, commits, evidence };
+  return { approvedTasks, commits };
 }
 
-export async function currentCommitOwners(
-  api: ApiTfsClient, commit: AvailableCommit,
-): Promise<number[]> {
+export async function currentCommitOwners(api: ApiTfsClient, commit: AvailableCommit): Promise<number[]> {
   const repo: VerifiedRepo = { project: commit.project, repo: commit.repo,
     projectId: commit.projectId, repoId: commit.repoId };
   return commitTaskOwners(api, repo, commit.sha);
