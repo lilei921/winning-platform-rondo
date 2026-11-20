@@ -49,6 +49,7 @@ import { registerPrWorktree } from "./commands/pr/worktree.js";
 import { registerPrReconcileStatus } from "./commands/pr/reconcile-status.js";
 import { registerDeliveryRouteDecision } from "./commands/delivery/route-decision.js";
 import { registerDeliveryFinalize } from "./commands/delivery/finalize.js";
+import { registerCloseoutRoot } from "./commands/delivery/closeout-root.js";
 import { registerWorkspaceProvision } from "./commands/workspace/provision.js";
 import { registerWorkspaceSync } from "./commands/workspace/sync.js";
 import { registerWorkspaceMigrateRepoKeys } from "./commands/workspace/migrate-repo-keys.js";
@@ -121,6 +122,7 @@ const delivery = bareGroup(program.command("delivery").description("入口交接
 registerDeliveryRouteDecision(delivery);
 registerDeliveryHandoff(delivery);
 registerDeliveryFinalize(delivery);
+registerCloseoutRoot(delivery);
 
 // workspace 组(运维/供给,与 flow 组隔离)
 const workspace = bareGroup(program.command("workspace").description("平台供给 / 资产同步 / 迁移 / daemon 检查"));

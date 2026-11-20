@@ -45,8 +45,8 @@ function gitUrl(client: TfsClient, repo: VerifiedRepo, suffix: string): URL {
 
 /** Read PR-scoped changed commits. The Agent, not file-count heuristics, chooses business commits. */
 export interface PrChangedCommit { sha: string; changed_paths: string[]; message: string }
-export async function prChangedCommits(client: TfsClient, repo: VerifiedRepo, prId: number, candidate: string): Promise<PrChangedCommit[]> {
-  if (!Number.isSafeInteger(prId) || prId <= 0 || !fullSha(candidate)) throw new UnknownError("PR/候选 Commit 身份非法");
+export async function prChangedCommits(client: TfsClient, repo: VerifiedRepo, prId: number, candidate?: string): Promise<PrChangedCommit[]> {
+  if (!Number.isSafeInteger(prId) || prId <= 0 || (candidate !== undefined && !fullSha(candidate))) throw new UnknownError("PR/Commit 身份非法");
   const url = gitUrl(client, repo, `pullRequests/${prId}/commits`);
   url.searchParams.set("$top", "200");
   url.searchParams.set("api-version", "4.1");
@@ -56,7 +56,7 @@ export async function prChangedCommits(client: TfsClient, repo: VerifiedRepo, pr
     throw new UnknownError("TFS PR Commit 列表缺失、截断或包含非法 SHA");
   }
   const all = [...new Set(body.value.map((v: any) => String(v.commitId).toLowerCase()))] as string[];
-  if (!all.includes(candidate.toLowerCase())) throw new UnknownError("Candidate 不在已完成 PR 的真实 Commit 列表内");
+  if (candidate !== undefined && !all.includes(candidate.toLowerCase())) throw new UnknownError("Candidate 不在 PR Commit 列表内");
   const changed: PrChangedCommit[] = [];
   for (const sha of all) {
     const changesUrl = gitUrl(client, repo, `commits/${sha}/changes`);
@@ -71,7 +71,7 @@ export async function prChangedCommits(client: TfsClient, repo: VerifiedRepo, pr
       message: typeof info?.comment === "string" ? info.comment.split("\n")[0].slice(0, 200) : "",
     });
   }
-  if (!changed.some(c => c.sha === candidate.toLowerCase())) throw new UnknownError("Candidate Commit 没有真实变更，不能作为 TFS Task 证据");
+  if (candidate !== undefined && !changed.some(c => c.sha === candidate.toLowerCase())) throw new UnknownError("Candidate Commit 没有真实变更");
   return changed;
 }
 

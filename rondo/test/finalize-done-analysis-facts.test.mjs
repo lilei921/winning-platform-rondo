@@ -47,12 +47,10 @@ function runDone(t, metadata) {
   return { code: out.status, body, state: JSON.parse(readFileSync(stateFile, "utf8")) };
 }
 
-test("done replay validates minimum Analysis facts before clearing pending", (t) => {
+test("done replay checks only stable Change identity and completed Writeback", (t) => {
   for (const bad of [
-    { "analysis.change_kind": "other" },
-    { "analysis.change_kind": "" },
     { "analysis.change_ref": "../bad" },
-    { "analysis.gate.result": "FAIL" },
+    { "delivery.tfs_written": "false" },
   ]) {
     const metadata = { ...good, ...bad, "finalize.pending": "pending" };
     const r = runDone(t, metadata);
@@ -77,13 +75,14 @@ test("done replay with valid facts and no pending remains a no-op", (t) => {
   assert.deepEqual(r.body.steps, {});
 });
 
-test("completed facts checker rejects missing classification and invalid Change ID", () => {
+test("completed facts checker keeps identity and TFS hard gates, not upstream classification", () => {
   assert.doesNotThrow(() => assertCompletedAnalysisFacts(good));
-  assert.throws(() => assertCompletedAnalysisFacts({ ...good, "analysis.change_kind": "production-fix" }), /change_kind/);
+  assert.doesNotThrow(() => assertCompletedAnalysisFacts({ ...good, "analysis.change_kind": "production-fix" }));
   assert.throws(() => assertCompletedAnalysisFacts({ ...good, "analysis.change_ref": "/etc/passwd" }), /change_ref/);
+  assert.throws(() => assertCompletedAnalysisFacts({ ...good, "delivery.tfs_written": "false" }), /TFS Writeback/);
 });
 
-test("done replay refuses missing or contradictory final Verify Decision before clearing pending", (t) => {
+test("done replay does not re-run upstream Approval or Verify Decision", (t) => {
   for (const metadata of [
     { ...good, "verify_agent.required": undefined, "finalize.pending": "pending" },
     { ...good, "verify_agent.required": "true", "finalize.pending": "pending" },
@@ -93,8 +92,8 @@ test("done replay refuses missing or contradictory final Verify Decision before 
     }), "verify_agent.required": "true", "finalize.pending": "pending" },
   ]) {
     const r = runDone(t, metadata);
-    assert.equal(r.code, 3, JSON.stringify(r.body));
-    assert.equal(r.body.result, "UNKNOWN");
-    assert.equal(r.state.metadata["finalize.pending"], "pending");
+    assert.equal(r.code, 0, JSON.stringify(r.body));
+    assert.equal(r.body.result, "PASS");
+    assert.equal(r.state.metadata["finalize.pending"], undefined);
   }
 });
