@@ -15,4 +15,4 @@ Lead 按 Instructions 协调成员；已批准 Change 的研发交接操作见 [
 
 Agent / Squad 通过 `rondo workspace provision --workspace <name>` 收敛，Skill 通过 `rondo workspace sync --workspace <name>` 发布；发布后须回读 Workspace 对象。当前仓内配置不代表远端已同步。
 
-审核依据：[01 统一规范](../../01-multica-openspec-design-guideline.md)与[资产评审清单](../_shared/review-checklist.md)。
+审核依据：[01 统一规范](../../01-multica-openspec-design-guideline.md)。

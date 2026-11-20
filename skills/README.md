@@ -82,4 +82,4 @@ Agent ↔ Skill 绑定以 manifest 的 `agents[].skills` 为准，不在 README 
 | 只渲染本地配置 | `rondo workspace sync --workspace <name> --local-only` |
 | 检查 Skill 内容漂移 | `rondo workspace sync --workspace <name> --check` |
 
-操作说明见 [Workspace 同步操作手册](../archive/docs-2026-11-18/workspace-sync-operations-guide.md)，命令行为以 `rondo` 实现为准。新增或修改资产时，按 [编写规范](../../../docs/conventions/agent-authoring.md) 与 [评审清单](../agents/_shared/review-checklist.md) 核对职责、引用和跨资产一致性。
+操作说明见 [Workspace 同步操作手册](../archive/docs-2026-11-18/workspace-sync-operations-guide.md)，命令行为以 `rondo` 实现为准。新增或修改资产时，参照 [01 统一设计规范](../01-multica-openspec-design-guideline.md) 核对职责、引用和跨资产一致性。

@@ -25,4 +25,4 @@ Leader 与成员名单由 [provisioning.json](../workspace-config/provisioning.j
 - 调整协作原则时编辑 `delivery-squad/squad-instructions.md`；调整 Leader 或成员时修改 manifest，并核对对应 Agent 资产。
 - 涉及 Member 职责变化时同步检查其 Agent Instructions 与绑定 Skill，避免仅在 Squad Instructions 中定义执行义务。
 - 配置发布使用 `rondo workspace provision --workspace <name>`；操作入口见 [Workspace 同步操作手册](../archive/docs-2026-11-18/workspace-sync-operations-guide.md)，具体行为以 `rondo` 实现为准。
-- 修改后按 [资产评审清单](../agents/_shared/review-checklist.md) 核对角色边界与跨资产一致性；[01 统一设计规范](../01-multica-openspec-design-guideline.md) 与 [02 交付生命周期设计](../02-multica-delivery-lifecycle-design.md) 仅作语义背景。
+- 修改后核对角色边界与跨资产一致性；设计原则参照 [01 统一设计规范](../01-multica-openspec-design-guideline.md)，协作背景见 [02 交付生命周期设计](../02-multica-delivery-lifecycle-design.md)。

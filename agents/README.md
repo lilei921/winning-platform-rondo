@@ -33,7 +33,6 @@
 | `<agent>/instructions.md` | Agent 的长期职责、边界、原则与交付要求。 |
 | `<agent>/autopilot-prompt.md` | Autopilot 触发时使用的任务提示词，仅相关 Agent 提供。 |
 | `<agent>/README.md` | 角色资产说明及注册、维护记录。 |
-| [_shared/review-checklist.md](_shared/review-checklist.md) | Agent / Skill 资产评审清单。 |
 
 Agent 名称、可见性、Skill 绑定及 Squad 关系由 [provisioning.json](../workspace-config/provisioning.json) 维护，本页不另设绑定矩阵。各 Agent README 中的注册记录用于历史溯源；Workspace 的对象 ID 映射见 [workspace-config/workspaces/](../workspace-config/workspaces/)，远端实际状态需回读核实。
 
@@ -41,7 +40,7 @@ Agent 名称、可见性、Skill 绑定及 Squad 关系由 [provisioning.json](.
 
 - 修改职责与边界时编辑对应 `instructions.md`；执行方法及其契约在绑定 Skill 中维护。
 - 新增 Agent 或调整绑定时同步修改 manifest；更新本页的配置入口。
-- 内容质量按根仓 [Agent 指令与 Skill 编写规范](../../../docs/conventions/agent-authoring.md) 和 [评审清单](_shared/review-checklist.md) 核对。
+- 新增或修改 Agent 时核对职责、边界与 Skill 归属，设计原则见 [01 统一设计规范](../01-multica-openspec-design-guideline.md)。
 - Agent、Squad、Autopilot 配置通过 `rondo workspace provision --workspace <name>` 收敛；Skill 内容使用 `rondo workspace sync`。操作入口见 [Workspace 同步操作手册](../archive/docs-2026-11-18/workspace-sync-operations-guide.md)，具体行为以 `rondo` 实现为准。
 
-规范性契约引用 Skill 内的 `references/` 或 `rondo` 实现；根级 [01 统一设计规范](../01-multica-openspec-design-guideline.md) 与 [02 交付生命周期设计](../02-multica-delivery-lifecycle-design.md) 仅作语义背景。
+规范性契约引用 Skill 内的 `references/` 或 `rondo` 实现；[01 统一设计规范](../01-multica-openspec-design-guideline.md) 维护设计原则，[02 交付生命周期设计](../02-multica-delivery-lifecycle-design.md) 提供协作背景。
