@@ -6,17 +6,17 @@ Delivery Squad 的分析成员：负责当前 Issue 的需求与问题分析、�
 
 - [description.md](description.md)：用于 Agent 展示。
 - [instructions.md](instructions.md)：长期角色职责与边界。
-- [codebase-explorer](../../workspace-skills/codebase-explorer/SKILL.md)：按需定位工程事实与依赖。
-- [bug-analysis](../../workspace-skills/bug-analysis/SKILL.md)：Corrective 根因诊断。
-- [requirement-analysis](../../workspace-skills/requirement-analysis/SKILL.md)：Intentional 需求探索与方案分析。
-- [spec-preparation](../../workspace-skills/spec-preparation/SKILL.md)：CLI-only 工程工件准备。
-- [analysis-completion](../../workspace-skills/analysis-completion/SKILL.md)：分析收口与状态写入。
+- [codebase-explorer](../../skills/codebase-explorer/SKILL.md)：按需定位工程事实与依赖。
+- [bug-analysis](../../skills/bug-analysis/SKILL.md)：Corrective 根因诊断。
+- [requirement-analysis](../../skills/requirement-analysis/SKILL.md)：Intentional 需求探索与方案分析。
+- [spec-preparation](../../skills/spec-preparation/SKILL.md)：CLI-only 工程工件准备。
+- [analysis-completion](../../skills/analysis-completion/SKILL.md)：分析收口与状态写入。
 
-**Retired（保留源文件）：** 原 [workitem-analysis](../../workspace-skills/workitem-analysis/SKILL.md) 不再是 Workitem Analyst 的有效执行 Skill，已退出受管清单与 Agent 绑定，目录及 References 暂不删除；现有远端对象需根据实际 Workspace Provision / 回读确认未再绑定。
+**Retired（保留源文件）：** 原 [workitem-analysis](../../skills/workitem-analysis/SKILL.md) 不再是 Workitem Analyst 的有效执行 Skill，已退出受管清单与 Agent 绑定，目录及 References 暂不删除；现有远端对象需根据实际 Workspace Provision / 回读确认未再绑定。
 
 ## 注册与维护
 
-Agent、Skill 绑定及 Squad 成员由 [provisioning.json](../../workspace-skills/_shared/provisioning.json) 维护；使用 `rondo workspace provision` 收敛平台对象，`rondo workspace sync` 发布 Skill 内容。远端状态须回读确认，仓内记录不代表当前 Runtime 或工作区发布结果。
+Agent、Skill 绑定及 Squad 成员由 [provisioning.json](../../skills/_shared/provisioning.json) 维护；使用 `rondo workspace provision` 收敛平台对象，`rondo workspace sync` 发布 Skill 内容。远端状态须回读确认，仓内记录不代表当前 Runtime 或工作区发布结果。
 
 Issue 的入口分流以 [rondo delivery handoff](../../../../tools/rondo/src/commands/delivery/handoff.ts) 为准。
 

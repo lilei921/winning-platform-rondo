@@ -59,12 +59,12 @@ nvm 切换 Node 版本会改变全局目录，切换后需重装。
 | `TFS_URL` + `TFS_COLLECTION` | 替代 | 分两段配置；`TFS_COLLECTION` 默认 `WN_Data_Platform` |
 | `TFS_PROJECT` | 可选 | 默认团队项目，可被 `--project` 覆盖 |
 
-### 定位 monorepo 根
+### 定位 Multica 配置根
 
-`workspace` 组命令默认从当前目录上溯查找 `projects/multica/workspace-skills/_shared`。在 monorepo 之外执行时显式指定：
+`workspace` 组命令默认从当前目录上溯查找 `skills/_shared`，兼容 monorepo 的 `projects/multica/skills/_shared`。在仓库外执行时显式指定：
 
 ```bash
-export MULTICA_REPO_ROOT="D:/UserProgram/winning-platform-monorepo"
+export MULTICA_REPO_ROOT="D:/UserProgram/winning-platform-rondo"
 ```
 
 定位失败返回 `exit 3`，不产生任何写入。

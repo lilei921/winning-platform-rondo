@@ -1,6 +1,6 @@
 # Multica Agent 配置资产
 
-本目录维护 Multica Agent 的角色说明、长期执行指令与 Autopilot Prompt。协作配置见 [Squad 索引](../squads/README.md)，执行方法见 [Workspace Skill 索引](../workspace-skills/README.md)。
+本目录维护 Multica Agent 的角色说明、长期执行指令与 Autopilot Prompt。协作配置见 [Squad 索引](../squads/README.md)，执行方法见 [Workspace Skill 索引](../skills/README.md)。
 
 当前 Requirement 研发统一由 `Engineer` 承担完整 Change，使用 `change-development` 完成实现、验证与 PR 交付；独立 Bug 继续由 `Bug Fix Agent` 处理。旧研发角色暂保留源文件，见下方待整理清单。
 
@@ -35,7 +35,7 @@
 | `<agent>/README.md` | 角色资产说明及注册、维护记录。 |
 | [_shared/review-checklist.md](_shared/review-checklist.md) | Agent / Skill 资产评审清单。 |
 
-Agent 名称、可见性、Skill 绑定及 Squad 关系由 [provisioning.json](../workspace-skills/_shared/provisioning.json) 维护，本页不另设绑定矩阵。各 Agent README 中的注册记录用于历史溯源；Workspace 的对象 ID 映射见 [_shared/workspaces/](../workspace-skills/_shared/workspaces/)，远端实际状态需回读核实。
+Agent 名称、可见性、Skill 绑定及 Squad 关系由 [provisioning.json](../skills/_shared/provisioning.json) 维护，本页不另设绑定矩阵。各 Agent README 中的注册记录用于历史溯源；Workspace 的对象 ID 映射见 [_shared/workspaces/](../skills/_shared/workspaces/)，远端实际状态需回读核实。
 
 ## 维护与发布入口
 
