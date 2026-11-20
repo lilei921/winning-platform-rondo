@@ -1,124 +1,49 @@
-# Multica + OpenSpec 研发协作资料
+# Multica + OpenSpec
 
-本目录集中维护 Multica + OpenSpec 的设计方案、配置文本、工具与验证资料。本页只提供阅读导航和目录维护规则；技术设计、实现契约及待决项由对应专题文档维护。
+本仓库维护 Multica + OpenSpec 研发协作所需的设计文档、Agent / Skill / MCP 配置，以及 Rondo CLI。本文只提供**现行入口与职责导航**；具体规则以对应设计文档、配置或实现为准。
 
-索引核对日期：2026-11-20。以下“最新”指本目录内的最新设计版本，不表示方案已实现、配置已发布或 Workspace 已完成同步。
+## 目录导航
 
-## 仓库目录
-
-| 目录 | 职责 |
+| 目录 | 用途 |
 | --- | --- |
-| [`skills/`](skills/README.md) | 独立 Skill 方法与配套文件。 |
-| [`workspace-config/`](workspace-config/) | Workspace 受管 manifest、配置底稿与各 Workspace Overlay。 |
-| [`mcps/`](mcps/README.md) | 远程 MCP 模板和连接配置说明。 |
-| [`agents/`](agents/README.md) | Agent Description、Instructions 与绑定说明。 |
-| [`squads/`](squads/README.md) | Squad 协作指令。 |
-| [`rondo/`](rondo/package.json) | Rondo CLI 源码、构建与测试。 |
-| [`tools/`](tools/README.md) | Rondo CLI 命令与使用指南。 |
-| [`openspec/`](openspec/config.yaml) | OpenSpec Schema 与工件模板。 |
-| [`validation/`](validation/) | 测试和运行验证证据。 |
-| [`archive/`](archive/) | 历史设计与退役资产。 |
+| [agents/](agents/README.md) | Agent 角色描述和长期 Instructions |
+| [squads/](squads/README.md) | Squad 协作 Instructions |
+| [skills/](skills/README.md) | Skill 方法及支持文件 |
+| [mcps/](mcps/README.md) | MCP 模板与连接文件说明 |
+| [workspace-config/](workspace-config/provisioning.json) | Workspace 受管 Manifest、底稿和 Overlay |
+| [rondo/](rondo/package.json) | Rondo CLI 源码、构建和测试 |
+| [tools/](tools/README.md) | Rondo 安装、使用与命令参考 |
+| [openspec/](openspec/config.yaml) | OpenSpec Schema 和模板 |
+| [projects/](projects/description.md) | Multica Project 描述资产 |
+| [validation/](validation/) | 实际验证材料 |
+| [archive/](archive/README.md) | 历史资料索引 |
 
-上述目录均为本仓库根目录下的路径；`skills`、`mcps` 与 `workspace-config` 按资产职责分离，不改变 Skill / MCP 对象名称及绑定关系。
+Workspace 的受管 Agent、Skill、MCP 与 Squad 配置以 [provisioning.json](workspace-config/provisioning.json) 为准。源文件存在不代表远端已发布；执行结果以目标 Workspace 回读和实际验证为准。
 
-## 定位与阅读顺序
+## 设计文档
 
-Multica 组织交付运行与角色协作，OpenSpec 承载工程契约与工件。组合架构与规则归属由 [统一设计规范](01-multica-openspec-design-guideline.md#document-ownership) 维护。
+按工作需要阅读，不把历史方案直接当作当前运行契约。
 
-首次阅读建议按 **01 统一规范 → 02 研发闭环 → 03 Analysis → 04 Development** 的顺序；实施 Schema 与模板时阅读 **05**，实施工程方法模块时阅读 **06**。
-
-进入实施阶段前，先核对[执行前工程准备](#执行前工程准备)，再以 **[07 实施推进路线](07-multica-openspec-implementation-roadmap.md)** 作为 Backlog、并行工作线与里程碑入口；工程准备未就绪时，不进入研发任务派发。
-
-**文档边界**：01–06 维护架构、阶段与工程实施契约；07 只维护实施顺序、优先级、验收里程碑、风险与阶段性进展，不替代上游设计，也不作为运行结果的独立事实源。实际验证结论以 `validation/` 中的执行证据为准。
-
-## 执行前工程准备
-
-**范围与状态**：待实施。先覆盖 `dataintegration-web` 与 `frame`。根仓脚本负责准备与预检编排；子仓维护工具版本、依赖配置及构建、测试命令。
-
-**执行时机**：首次接入或环境基线变化时执行完整准备；每单派发前执行轻量预检，仅补齐缺失或变化项。
-
-| 要做的事情 | 完成条件 |
+| 文档 | 主要内容 |
 | --- | --- |
-| 检查运行权限与 Git 认证 | Delivery Lead、Engineer、PR Status Sync Agent 在各自实际运行环境中能访问所需仓库、写入工作目录并读取远端；不能以维护终端的检查结果替代。 |
-| 固定前端工程基线 | 固定 Node、包管理器、依赖源和锁文件；私包及下载地址可用；业务仓枢纽克隆冻结安装不改变锁文件，组件测试、Lint 和构建通过。 |
-| 固定 Java 工程基线 | 固定 JDK、Maven 和测试 profile；目标 JUnit/TestNG 测试实际执行，报告互不覆盖，JaCoCo 数据有效；测试失败必须返回失败。 |
-| 预热并复用依赖缓存 | 提前下载前端依赖及 Maven 依赖、插件；各业务仓枢纽克隆独立维护 `node_modules`、`target` 和测试输出，不在每个 Run 重复全量安装。 |
-| 保存可复用的验证证据 | 记录源码内容、依赖、工具链、命令和相关配置的指纹，以及测试数量、结果和日志；输入一致时可复用成功证据，变化后重新验证。 |
+| [01 统一设计规范](01-multica-openspec-design-guideline.md) | 系统边界、职责归属与设计原则 |
+| [02 交付生命周期](02-multica-delivery-lifecycle-design.md) | 阶段协作和交付边界 |
+| [03 Workitem Analysis](03-workitem-analysis-design.md) | 分析与需求澄清 |
+| [04 Engineer Development](04-engineer-development-design.md) | 工程开发与验证 |
+| [05 OpenSpec Schema](05-openspec-schema-implementation-design.md) | Change 工件及 Schema |
+| [06 Method Skill Library](06-method-skill-library-implementation-design.md) | Skill 方法资产设计 |
+| [07 实施路线](07-multica-openspec-implementation-roadmap.md) | 实施规划和验收入口 |
+| [08 远程分析与 Git 工作区](08-remote-analysis-git-workspace-design.md) | 远程分析和工作区总体方案 |
+| [08-A Bug Fix 基础](08a-remote-analysis-bug-fix-foundation.md) | Bug 修复和共享基础 |
+| [08-B Requirement 远程 Git 交付](08b-requirement-remote-git-delivery.md) | 跨 Runtime 的需求交付 |
+| [08-B 根仓分支与发布](08b-requirement-root-branch-and-publish-plan.md) | Requirement 根仓分支和发布修复 |
+| [09 统一 Engineer](09-unified-engineer-development-design.md) | Change 级单 Engineer 研发 |
+| [09-A Repository Scope](09a-repository-scope-authority-analysis.md) | 受影响仓库范围的权威来源分析 |
+| [10 TFS 子任务](10-tfs-subtask-estimation-design.md) | 子任务、工时和 Commit 归属 |
+| [11 Workspace Preparation](11-workspace-preparation-skill-design.md) | Git 工作区准备能力解耦 |
 
-**派发条件**：未就绪时停止派发并报告具体缺口。失败、零目标测试或中断不得记为通过。
+## 配置与使用
 
-## 核心设计与实施规划文档（01–09）
-
-索引不重复维护版本号；文档版本以各专题正文声明为准，实际部署与运行基线以配置快照和验证证据为准。
-
-| 文档 | 说明 |
-| --- | --- |
-| [Multica + OpenSpec 统一设计规范](01-multica-openspec-design-guideline.md) | 组合架构、公共术语、系统边界、规则归属与配置规范。 |
-| [研发交付生命周期设计方案](02-multica-delivery-lifecycle-design.md) | 跨角色协作、人工审核、研发组织、验证、PR 与交付收口。 |
-| [Workitem Analysis 设计方案](03-workitem-analysis-design.md) | 分析职责、专业方法、产物准备、审核提交与返工边界。 |
-| [Engineer Development 设计方案](04-engineer-development-design.md) | 工程实现、验证、代码审查、证据与研发完成要求。 |
-| [OpenSpec Schema 实施设计](05-openspec-schema-implementation-design.md) | Schema、工件模板、任务契约及校验与归档接口。 |
-| [Method Skill Library 实施设计](06-method-skill-library-implementation-design.md) | 内部工程方法模块的组织、装配、调用与来源治理。 |
-| **[Multica + OpenSpec 实施推进路线](07-multica-openspec-implementation-roadmap.md)** | **实施管理入口**：Step 01 盘点结论、OpenSpec Foundation / Multica Runtime 两条并行工作线、16 Step 实施 Backlog、集成准入、里程碑与 Pilot；不替代 01–06 的权威规则。 |
-| [08 远程源码分析与 Git 工作区](08-remote-analysis-git-workspace-design.md) | 远程分析与 Git 工作区的分阶段实施。 |
-| [08a 远程分析与 Bug Fix 共享基础](08a-remote-analysis-bug-fix-foundation.md) | 共享基础与 Bug Fix 交付设计。 |
-| [08b Requirement 跨 Runtime 交付](08b-requirement-remote-git-delivery.md) | 需求交付的远程 Git 协作设计。 |
-| [08-B 专题：常驻根仓分支与单需求发布修复方案](08b-requirement-root-branch-and-publish-plan.md) | 已确认、待实施。涵盖项目分支配置、切换前本地保存、逐需求发布、远端 SHA 回读及独立验收。 |
-| [09 统一 Engineer Development 设计](09-unified-engineer-development-design.md) | 基于 OpenSpec Change 的单 Agent 研发与 PR 提交。 |
-| [09-A 专题：Repository Scope 权威来源与执行期维护方式分析](09a-repository-scope-authority-analysis.md) | 核查结论，决策待定。分析 `proposal.md` `## Repository Scope` 在执行期的冻结语义、`.openspec.yaml` 承载授权范围的代价，以及 A/B/C 三条路径。 |
-
-2026-10-11 已将 04 的同仓唯一 Engineer / 按需唯一 Sub-Issue、持久共享工作区、完成发布顺序与最终根仓提交同步到 02 的生命周期、01 的交接原则及 05 的读写接口，并修正 02 / 03 对 Conditional Design 硬依赖的旧描述。05 P0-2 已按 Native First 收口，04 §7.3 已明确由 `development-execution` 执行研发及 Native Verify 策略；06 的 Analysis Skill 层级专项仍暂缓。以上是设计文档同步，实际 Skill / Script、配置发布与运行验收仍需单独完成。
-
-### Wayfinder Agent / Skill 源文件（已纳入 manifest，正式 Workspace 待部署验收）
-
-入口约定：**研发测试阶段**初始化后停放 `backlog + Wayfinder Agent`，Human 手动改 `todo`；**目标态**仍由 TFS Sync 自动改 `todo`，均保留 Wayfinder 指派。阶段边界与验收以 [02 阶段约定](02-multica-delivery-lifecycle-design.md#wayfinder-entry-stages)为准。`eligible` 后按来源类型单次交接 Bug Fix Agent / Delivery Squad，并回读对应 Run；`needs_human` 停放于 `blocked`，Human 补充信息后改 `todo`、保留 Wayfinder 指派，按现行契约恢复。隔离 E2E 证据不等于正式 Workspace 部署验收。
-
-[Wayfinder Agent](agents/wayfinder-agent/README.md) 已有 Description / Instructions，并在 manifest 绑定 [`codebase-explorer`](skills/codebase-explorer/SKILL.md) 与 [`workitem-triage`](skills/workitem-triage/SKILL.md)。二者不修改 Workitem Analyst 的 `context-analysis`；当前源码保持研发测试入口，目标自动入口须另行接入与验收。正式 Workspace 的配置发布与真实 Run 联调仍未验收，仓内实现不等于已部署。
-
-Wayfinder 与 Bug Fix 按 [08-A 共享基础](08a-remote-analysis-bug-fix-foundation.md) 使用原生 checkout。Requirement 的 Workitem Analyst 和统一 Engineer 需要准备常驻根仓时，使用 [08-B 工作区约定](08b-requirement-remote-git-delivery.md)。只读和派发不触发 Git 准备。
-
-## Squad / Agent / Skill 配置资产（squads/、agents/、skills/）
-
-2026-10-26 起，Squad、Agent 与 Skill 的现行配置以这三个目录内的源文件为准（原 20–34 号配置文档已归档至 `archive/squad-agent-docs-2026-10-26/`，编号段 20–39 废止）。平台侧发布经 `rondo workspace sync` 同步，现行命令入口见 [工具说明](tools/README.md)；原操作说明已归档，见 [历史索引](archive/README.md)。
-
-### Project（projects/）
-
-[业务交付项目描述](projects/description.md) 保存发布到 Multica Project Description 的项目用途与目录访问边界。该文件是本地维护源，保存不代表已发布；不由上述 Agent / Skill 同步说明推定其已自动同步。
-
-### Squad（squads/）
-
-| 资产 | 说明 |
-| --- | --- |
-| [Delivery Squad](squads/delivery-squad/squad-instructions.md) | Squad Instructions（仅 Leader 接收）：成员协作关系、角色路由、协作交接与 Gate 约定。 |
-
-### Agent（agents/）
-
-每个 Agent 目录含 `description.md`（平台 Agent Description）、`instructions.md`（Agent Instructions 执行指令）、`README.md`（绑定 Skill 清单与维护记录）；Autopilot 驱动的 Agent 另含 `autopilot-prompt.md`。Agent / Skill 的设计原则见 [01 统一设计规范](01-multica-openspec-design-guideline.md)。
-
-| Agent | Description 摘要 |
-| --- | --- |
-| [delivery-lead](agents/delivery-lead/README.md) | 研发交付阶段边界推进、跨任务协调与异常处理，确保交付流程正确闭环。 |
-| [wayfinder-agent](agents/wayfinder-agent/README.md) | Squad 外的入口准入判断、工程探索与受控交接。 |
-| [workitem-analyst](agents/workitem-analyst/README.md) | 需求与问题分析、技术路由判断及研发准备，产出可审核的 Analysis Package 并提交人工分析审核。 |
-| [backend-engineer](agents/backend-engineer/README.md) | 后端实现成员：在已批准范围与 assigned task_refs 内完成后端实现、Local Validation、Code Review 与整改，交付 Commit/Push、PR Preparation 与 Development Evidence。 |
-| [frontend-engineer](agents/frontend-engineer/README.md) | 前端实现成员：同一研发闭环，覆盖前端实现、本地与必要浏览器验证。 |
-| [tfs-sync-agent](agents/tfs-sync-agent/README.md) | 定时同步 TFS Work Item 并初始化 Delivery Issue 的自动驾驶薄适配器（含 Autopilot Prompt）。 |
-| [pr-status-sync-agent](agents/pr-status-sync-agent/README.md) | 核实和同步已登记 PR 状态，交付异常及待处理结果（含 Autopilot Prompt）。 |
-
-### Skill（skills/）
-
-Agent ↔ Skill 绑定矩阵唯一来源：[`workspace-config/provisioning.json`](workspace-config/provisioning.json)；配置底稿及 Workspace Overlay 在 [`workspace-config/`](workspace-config/) 维护。各 Skill 目录含 `SKILL.md` 及按需的 `references/` / `methods/` / `config/`。
-
-| Skill | 说明 |
-| --- | --- |
-| `delivery-flow` | Development 派发物化、TFS 任务物化/解决汇总、PR Abandoned 后 Human Decision 路由。 |
-| `delivery-gate` | 确定性门禁集合（当前实现 Analysis Gate，其余随阶段补齐）。 |
-| `pull-request` | PR 物化。 |
-| `issue-closeout` | 在交付条件满足后顺序调用 Rondo Prepare、TFS Writeback、Complete 完成 Issue 收口。 |
-| `workitem-analysis` | 需求与问题分析方法：路由判断、Change 身份解析与创建、Engineering Truth 沉淀、Verify 推荐。 |
-| `analysis-completion` | 分析收口：Analysis Gate 先行，PASS 后发布 Facts、写入并回读 analysis_review、TFS 需求置已分析。 |
-| `development-execution` | 研发统一执行骨架（Ground → Implementation → Local Validation → Code Review → Commit/Push → PR Preparation → Evidence → Completion Check → Task Progress Patch）。 |
-| `backend-engineering` / `frontend-engineering` | 后端 / 前端领域方法：反馈信号选择、本地验证命令映射、工程标准审查依据；与 development-execution 配套。 |
-| `tfs-sync` | 同步符合条件的 TFS Work Item 并初始化对应 Delivery Issue。 |
-| `pr-status-sync` | 已登记 PR 的状态核实与终态事实同步；交付收口由独立 `issue-closeout` 能力处理。 |
-| `codebase-explorer` / `workitem-triage` | Wayfinder 准入配套（已纳入仓内 manifest，平台发布与 E2E 待验证）：代码库探索、准入评估与受控交接。 |
+- **职责**：Agent Instructions 定义角色边界，Squad Instructions 定义协作方式，Skill 提供专业方法；遵循 [01 设计规范](01-multica-openspec-design-guideline.md)。
+- **发布**：修改受管对象或绑定时使用 `rondo workspace provision`；同步 Skill 时使用 `rondo workspace sync`，具体参数见 [工具使用说明](tools/README.md) 和 [命令参考](tools/COMMANDS.md)。
+- **验证**：仓内修改、配置发布和真实运行是不同状态；不以文件存在或历史验证结果代替最新验收。

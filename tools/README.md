@@ -7,8 +7,8 @@ owner: winning\li_lei
 
 # Rondo CLI：安装与使用
 
-本目录提供 Multica 统一 CLI **rondo** 的安装包（`.tgz`）与成员使用说明。安装、配置和常用操作以本页为入口；各命令的完整参数见 [COMMANDS.md](COMMANDS.md)。
-源码与详细命令契约在根仓 `tools/rondo/`（包 `@winning/rondo`，命令 `rondo`）。
+本目录提供 Multica 统一 CLI **rondo** 的安装、配置与常用操作说明；分发包（`.tgz`）按版本单独构建或分发，不保证随 Git 仓库提供。完整参数见 [COMMANDS.md](COMMANDS.md)。
+源码位于根仓 [`rondo/`](../rondo/package.json)（包 `@winning/rondo`，命令 `rondo`）。
 
 ## 1. 分发包与版本
 
@@ -16,7 +16,7 @@ owner: winning\li_lei
 | --- | --- | --- |
 | `winning-rondo-<version>.tgz` | `@winning/rondo` | `rondo` |
 
-版本以 `tools/rondo/package.json` 为准；本页不维护固定版本号或安装包数量。旧包可留作回溯，安装时应明确指定版本。
+版本以 [`rondo/package.json`](../rondo/package.json) 为准；本页不维护固定版本号或安装包数量。旧包可留作回溯，安装时应明确指定版本。
 
 ## 2. 前置条件
 
@@ -30,7 +30,7 @@ owner: winning\li_lei
 先在分发目录确认实际存在的安装包，再明确指定版本（`npm install -g` 支持本地 tgz）：
 
 ```bash
-cd projects/multica/tools
+cd tools
 ls winning-rondo-*.tgz
 
 # 将 <version> 换成目录内实际存在的版本号
@@ -76,11 +76,11 @@ npm root -g                 # 全局 node_modules 实际位置
 
 ### 5.2 workspace 组命令
 
-`workspace` 组命令需要定位 monorepo 根：默认从当前目录上溯查找 `projects/multica/workspace-skills/_shared`。
-在 monorepo 之外执行时必须显式指定：
+`workspace` 组命令需要定位包含 `workspace-config/` 的配置根目录；Rondo 也支持 monorepo 中的 `projects/multica/workspace-config/` 布局。
+如果无法从当前目录识别配置根，可显式指定：
 
 ```powershell
-$env:MULTICA_REPO_ROOT = "D:/UserProgram/winning-platform-monorepo"
+$env:MULTICA_REPO_ROOT = "D:/UserProgram/winning-platform-rondo"
 ```
 
 在 Bash 中使用 `export MULTICA_REPO_ROOT=/path/to/monorepo`。
@@ -149,7 +149,7 @@ npm uninstall -g @winning/rondo
 2. **全局安装不改变既有流水线调用**：现有 Skill 仍按配置里的 `node + dist/index.js 绝对路径` 调用，
    安装全局命令不等于配置已切换，切换需同步改配置。
 3. **生产不用 `npm link`**：`npm link` 依赖源码目录，仅限开发机临时使用。
-4. 重新构建分发包在根仓 `tools/rondo/` 执行：`npm pack`（`prepack` 自动 `npm run build`），产物文件名形如
+4. 重新构建分发包在根仓 `rondo/` 执行：`npm pack`（`prepack` 自动 `npm run build`），产物文件名形如
    `winning-rondo-<version>.tgz`，复制回本目录即可；本页不记录每次发布的版本清单。
 
 ## 9. 相关文档
