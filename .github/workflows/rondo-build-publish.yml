@@ -41,6 +41,22 @@ jobs:
         run: npm pack
         working-directory: rondo
 
+      - name: Check immutable package version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./rondo/package.json').version")"
+          package="rondo/winning-rondo-${version}.tgz"
+          existing="tools/winning-rondo-${version}.tgz"
+          if [[ ! -f "$package" ]]; then
+            echo "::error::Package does not match rondo/package.json version"
+            exit 1
+          fi
+          if [[ -f "$existing" ]] && ! cmp -s "$package" "$existing"; then
+            echo "::error::Version $version already exists with different content. Bump rondo/package.json version."
+            exit 1
+          fi
+
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
