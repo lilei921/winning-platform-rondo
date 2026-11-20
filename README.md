@@ -122,37 +122,3 @@ Agent ↔ Skill 绑定矩阵唯一来源：[`workspace-config/provisioning.json`
 | `tfs-sync` | 同步符合条件的 TFS Work Item 并初始化对应 Delivery Issue。 |
 | `pr-status-sync` | 已登记 PR 的状态核实与终态事实同步；交付收口由独立 `issue-closeout` 能力处理。 |
 | `codebase-explorer` / `workitem-triage` | Wayfinder 准入配套（已纳入仓内 manifest，平台发布与 E2E 待验证）：代码库探索、准入评估与受控交接。 |
-
-## 工具、快照与验证资料
-
-| 入口 | 范围 |
-| --- | --- |
-| [DF-7 交付流程修复实施计划](../plans/df7-delivery-remediation-plan.md) | 当前代码核实结果、修复优先级、任务依赖与验收矩阵；计划状态，不代表已经实施或部署。 |
-| [DF-4 范围同步与进度回流实施计划](../plans/df4-delivery-remediation-plan.md) | 任务取消、有效派发、Completion 顺序及里程碑回流的核实结果、实施依赖和验收标准；标明与 DF-7 公共任务的契约差异。 |
-| [TFS MCP 能力对比](validation/tfs-mcp-capability-comparison.md) | MCP 接口能力、版本核查与证据限制。 |
-| [Step 01：资产盘点与 Runtime Spike 结果](validation/01-runtime-asset-inventory-and-spike-result-2026-10-12.md) | Multica 0.6.1 隔离 Spike R01–R05 的实测证据、正式部署缺口与后续条件；对应 07 的 Step 01。 |
-| [Wayfinder WFP-8 单次 Update E2E](validation/wayfinder-needs-human-resume-single-update-e2e-2026-10-13.md) | 隔离 Workspace `needs_human → eligible → Lead` 自动指派正常分支 PASS；生产故障恢复尚待验收。 |
-| [PR 关键事件验证](validation/pr/README.md) | PR 快照、候选规则检查与验证结果。 |
-| [需求详情与附件获取验证](validation/workitem/README.md) | TFS 详情与附件获取验证及已知限制。 |
-
-快照与验证资料的适用版本、采集时间和限制以各自说明为准；它们不代表当前远端状态或最新方案已经完成部署与验收。
-
-## 历史版本与归档
-
-2026-11-18 将顶层除 01–09 系列（含 08a、08b）与本导航页外的 22 份文档统一归档至 [本次归档索引](archive/docs-2026-11-18/README.md)。子目录中的配置、工具、模板和验证资料继续按原职责维护；归档不表示原计划已实施或通过验证。
-
-已归档的方案和配置见 [archive/ 历史索引](archive/README.md)，仅供追溯。2026-10-10 将 Analysis v1.17 / v1.18.1、Development v1.14 / v1.15 / v1.15.1 共 5 份旧版移入归档；同日追加归档 OpenSpec Schema v1.5、Method Skill Library v1.4。顶层按系列保留当前设计版本；版本号按系列独立管理，不将其他系列的低版本号视为过期。
-
-维护规则：
-
-1. 新版替代旧版时，将旧版移入 `archive/`，保留版本文件名与历史正文，并更新本页和历史索引。
-2. 未归档方案只能引用当前未归档版本，禁止通过链接、文件名、关联基线或章节引用依赖已归档文档。归档时必须将未归档方案的引用更新到当前版本，并核对链接文字、章节号与锚点；历史版本的文件入口统一放在归档索引中。版本记录中的历史名称与章节含义不改写为当前规则。
-3. 同文件内的旧版 Prompt 单独拆出归档，当前文件仅保留最新版本。
-4. 顶层文档采用“两位编号 + 连字符 + 文档名称”：01–09 为核心设计与实施规划文档（含 08a、08b 扩展设计，其中 07 是实施路线图）。原 20–39 编号段（Squad / Agent / 外部同步配置）已于 2026-10-26 废止，10 份配置文档保留编号归档至 `archive/squad-agent-docs-2026-10-26/`；Squad / Agent / Skill 现行配置以 `squads/`、`agents/`、`skills/` 目录内源文件为准，不再占用顶层编号。
-5. 顶层保留 01–09 系列设计文档（含 08a、08b）与 `README.md`；其他独立文档按批次归入 `archive/` 并维护归档索引。现有子目录资产保留原名与职责，归档文档保留原文件名。
-6. 本页只维护入口和职责摘要，不在当前文档索引中重复维护版本号；版本声明与技术规则在对应专题文档维护，操作步骤在对应工具或子目录说明中维护。历史归档与验证证据中的版本号保留，用于追溯实际基线。
-7. 方案之间的引用和文内章节引用使用相对 Markdown 超链接；章节引用定位到目标锚点，优先复用已有锚点。连续引用须明确所属文档，章节范围可分别链接起止章节。调整章节时同步核对链接文字、章节号与锚点；历史记录和代码示例不机械改链到现行章节。
-
-`scripts/`、`tests/` 与 `validation/` 分别承担工具、测试或证据职责，不随旧版设计文档一并归档。
-
-验证资料记录当时的验证对象，继续指向实际验证过的历史版本；修复其路径时不改写验证基线或将历史证据视为当前方案的验收结果。
