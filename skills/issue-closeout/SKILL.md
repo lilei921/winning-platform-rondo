@@ -1,52 +1,62 @@
 ---
 name: issue-closeout
-description: 在 PR 终态满足收口条件后，依序 Prepare、Requirement 任务规划、TFS Writeback、Complete；Bug 沿用原流程。
+description: 当 PR 状态同步返回 finalize 或 resume_finalize 时，完成或恢复 Bug、Requirement 的 TFS 回写与 Issue 收口。
 ---
 
 # Issue Closeout
 
-## 输入
+使用 PR 状态同步给出的 Issue `<KEY>`。下文 `<config-path>` 为当前 Workspace 渲染的本 Skill 配置 `config/repo-registry.json` 的绝对路径。
 
-- PR 状态同步明确返回 `finalize` 或 `resume_finalize` 的 Issue `<KEY>`。
-- `rondo`、本 Skill 的 `config/repo-registry.json` 绝对路径；远端 OpenSpec 读取方式见[配置说明](references/remote-artifacts.md)。
+Requirement 默认由 Rondo 通过 TFS 读取并核验远端 OpenSpec 工件。使用本地工件时，在 `delivery finalize` 和 `tfs writeback` 命令中都追加 `--root-repo "<根仓绝对路径>"`。独立 Bug 无需根仓，`route_archive=skipped` 为正常结果。
 
-## 执行
-
-先执行：
+## 1. Prepare
 
 ```bash
 rondo delivery finalize --phase prepare --issue <KEY> --config "<config-path>"
 ```
 
-仅 `result=PASS` 且 `status=prepared` 时继续；`already=done` 直接结束。
+`result=PASS` 且 `already=done` 时，报告已完成并结束。`result=PASS` 且 `status=prepared` 时，进入 TFS 回写。
 
-**新 Change-level Requirement（`tfs.type=需求`）**：
+## 2. TFS 回写
 
-1. 使用 `rondo analysis read --issue <KEY> --config "<config-path>" --file tasks.md` 获取**批准版**工程任务；它不是最新 checkbox 进度。
-2. 执行 `rondo tfs writeback --issue <KEY> --config "<config-path>" --inspect`，读取 PR Commit 的仓库身份、SHA、变更路径及现有 Task 归属；根据实际修改选择业务 Commit，不为凑数分配无关提交。
-3. 基于 `tasks.md`、执行证据及真实业务 Commit，形成 JSON 计划：`tasks: [{summary, estimate_hours, source_refs, commits:[{repo_key,sha}]}]`。归并为 1–5 项，每项 0.5–4h、引用有效工程任务、至少一个独占 Commit；未选中的 PR Commit 无需分配。不要调整 `tasks.md` 或制造 Commit。
-4. 首次调用 `rondo tfs writeback --issue <KEY> --config "<config-path>" --task-plan "<plan.json>"`。中断恢复优先复用 Issue 已保存计划，直接重跑不带 `--task-plan`；不可自行覆盖已有计划。
-
-**Bug 与旧 `dev.dispatch` Requirement**：不生成新计划，继续使用原入口：
+**独立 Bug 或已有任务计划的 Requirement**，直接执行回写。Rondo 会复用 Issue 已保存的计划。
 
 ```bash
 rondo tfs writeback --issue <KEY> --config "<config-path>"
 ```
 
-Writeback 必须为 `result=PASS`，再执行：
+**首次规划的 Requirement**，先查看业务 Commit、变更路径、执行证据和现有 Task 归属。若不确定计划是否已保存，也可用此命令确认。
+
+```bash
+rondo tfs writeback --issue <KEY> --config "<config-path>" --inspect
+```
+
+若 `saved_plan=true`，使用上面的无计划参数命令恢复回写。若尚无计划，读取批准版工程任务。
+
+```bash
+rondo analysis read --issue <KEY> --config "<config-path>" --file tasks.md
+```
+
+根据批准版 `tasks.md` 确定工作范围，结合执行证据和 Commit 的实际改动，按业务成果归并为 1–5 个 TFS 子任务。每项估时 0.5–4 小时，引用可在 `tasks.md` 中定位的工程任务，并关联至少一个与该成果对应的独占业务 Commit。只分配能说明该项工作的提交。
+
+将计划写入 `<plan.json>`，顶层为 `tasks` 数组。每项包含 `summary`、`estimate_hours`、`source_refs` 和 `commits`。每个 Commit 使用 Inspect 返回的 `repo_key` 和完整 `sha`。
+
+```bash
+rondo tfs writeback --issue <KEY> --config "<config-path>" --task-plan "<plan.json>"
+```
+
+## 3. Complete
+
+实际回写返回 `result=PASS` 后执行 Complete。`--inspect` 的 `PASS` 只确认检查成功。
 
 ```bash
 rondo delivery finalize --phase complete --issue <KEY> --config "<config-path>"
 ```
 
-要求 Complete 返回 `result=PASS`、`status=done` 且 `pending` 已清理。
+`result=PASS`、`status=done` 且 `pending` 已清理时，报告收口完成。若返回 `result=PASS` 且 `already=done`，报告已完成。
 
-## 停止与恢复
+## 异常与恢复
 
-- 任一步 `FAIL`、`UNKNOWN`、退出码非 0 或外部回读不可信，停止，不将未知结果视为成功。
-- 新 Requirement 的 Commit 全局独占检查、关联和工时由 Rondo 确定性强制；执行环境无法验证 TFS 2018 反向查询或跨 Runtime 排他写入时保持 `UNKNOWN`，不手工绕过。
-- 重跑遵循 Rondo 的已确认计划和 TFS 实际状态，不重复创建子任务、链接 Commit 或评论。Bug 的 `route_archive=skipped` 为正常结果。
+遇到 `FAIL`、`UNKNOWN`、非零退出码或回读不一致时，暂停依赖该结果的操作。根据报错自主核查，在授权范围内修复后续跑。若写入结果不明，先核对 Issue 计划与 TFS 实际状态，再通过 Rondo 恢复。
 
-## 输出
-
-报告 Prepare、规划依据、Writeback 与 Complete 的已确认结果；失败时提供阻断原因和仍待验证的 TFS 事实。
+报告 Issue 和已确认的结果。首次规划时简述任务归并与 Commit 选择依据。仍有阻断时，说明已完成的步骤、待确认的事实和恢复条件。

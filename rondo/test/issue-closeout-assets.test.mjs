@@ -12,7 +12,7 @@ test("issue-closeout 名称、Manifest 与 Agent 绑定一致", () => {
   const skillDir = join(multicaRoot, "skills/issue-closeout");
   const skill = read("skills/issue-closeout/SKILL.md");
   assert.equal(skill.split("\n")[1], "name: issue-closeout");
-  assert.ok(existsSync(join(skillDir, "references/remote-artifacts.md")));
+  assert.ok(existsSync(join(skillDir, "config/repo-registry.json")));
   assert.ok(!existsSync(join(multicaRoot, "skills/finalize-delivery")));
   assert.ok(manifest.managed_skills.includes("issue-closeout"));
   assert.ok(!manifest.managed_skills.includes("finalize-delivery"));
@@ -26,7 +26,7 @@ test("issue-closeout 名称、Manifest 与 Agent 绑定一致", () => {
   assert.ok(!sync.includes('"finalize-delivery"'));
 });
 
-test("issue-closeout 保留三段 CLI 收口顺序和停止条件", () => {
+test("issue-closeout 保留三段 CLI 收口顺序和异常回执", () => {
   const skill = read("skills/issue-closeout/SKILL.md");
   const commands = [
     "rondo delivery finalize --phase prepare --issue",
