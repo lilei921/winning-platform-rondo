@@ -67,10 +67,10 @@ test("引用全部合法 → 零问题", (t) => {
 });
 
 test("真实仓库清扫：全部技能包零缺页（F6 回归闸）", () => {
-  // 本文件编译后位于 tools/rondo/dist/commands/workspace/ → 上 5 级 = 仓根
-  const skillsRoot = fileURLToPath(new URL("../../../../../projects/multica/workspace-skills/", import.meta.url));
+  // 本文件编译后位于 rondo/dist/commands/workspace/ → 上 4 级 = 仓根
+  const skillsRoot = fileURLToPath(new URL("../../../../skills/", import.meta.url));
   const skills = readdirSync(skillsRoot, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && d.name !== "_shared")
+    .filter((d) => d.isDirectory())
     .map((d) => d.name);
   const all = skills.flatMap((s) => validateSkillReferences(skillsRoot, s));
   assert.deepEqual(all, [], `真实技能包存在缺页引用: ${JSON.stringify(all, null, 2)}`);
