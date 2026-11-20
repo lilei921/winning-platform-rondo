@@ -76,11 +76,11 @@ npm root -g                 # 全局 node_modules 实际位置
 
 ### 5.2 workspace 组命令
 
-`workspace` 组命令需要定位 monorepo 根：默认从当前目录上溯查找 `projects/multica/workspace-skills/_shared`。
-在 monorepo 之外执行时必须显式指定：
+`workspace` 组命令需要定位包含 `workspace-config` 的配置根目录：默认从当前目录向上查找；同时支持 monorepo 的 `projects/multica/workspace-config` 布局。
+在仓库目录之外执行时显式指定 Rondo 配置仓库根目录（或 monorepo 根目录）：
 
 ```bash
-export MULTICA_REPO_ROOT="D:/UserProgram/winning-platform-monorepo"
+export MULTICA_REPO_ROOT="D:/UserProgram/winning-platform-rondo"
 ```
 
 定位失败会返回 `exit 3`（UNKNOWN），不产生任何写入。

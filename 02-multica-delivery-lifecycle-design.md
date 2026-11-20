@@ -132,7 +132,7 @@ TFS Close / Issue Done
 
 ### 2.1.1 Professional Goal 与 Capability Composition（专业目标和能力组合）
 
-以下三个案例说明目标归属与可组合能力；**实际绑定以 `workspace-skills/_shared/provisioning.json` 为准**，未登记的 Skill 不视作已部署。
+以下三个案例说明目标归属与可组合能力；**实际绑定以 `workspace-config/provisioning.json` 为准**，未登记的 Skill 不视作已部署。
 
 | Agent | Professional Goal（专业目标） | 可组合能力（已实现 / 候选） | 结果责任 |
 |---|---|---|---|
@@ -3046,7 +3046,7 @@ Workitem Analyst 的需求与问题分析不依赖当前 Roster 或具体 Agent 
 
 说明：
 
-- 表中候选能力与已实现绑定不得混淆；以 `workspace-skills/_shared/provisioning.json` 为当前仓内配置权威，不以概念图要求创建七个 Analysis Skills。
+- 表中候选能力与已实现绑定不得混淆；以 `workspace-config/provisioning.json` 为当前仓内配置权威，不以概念图要求创建七个 Analysis Skills。
 - Delivery Lead 正常承担父 Delivery 的成员选择、工作分工、委派与交接；已有安排直接复用，明确硬条件使用 Gate / Check，不以 `UNKNOWN` 作为协作判断的准入条件。
 - Workitem Analyst 输出需求与问题分析结论及研发准备，并在 `analysis-completion` 中提交审核、确认状态后结束；Delivery Lead 理解后续 Human 意见，组织返工或获准研发，最终成员与 Sub-Issue 分工仍由 Lead 负责。
 - 职责明确的 Development Sub-Issue 默认直接分配给对应 Specialist Agent；只有 Task Set 本身需要持续多角色协调时才 Squad-owned。

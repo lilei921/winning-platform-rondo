@@ -16,7 +16,7 @@ function fixture(t, scenario = "normal") {
     const path = join(root, name); mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, typeof value === "string" ? value : JSON.stringify(value)); return path;
   };
-  const shared = "projects/multica/workspace-skills/_shared/";
+  const shared = "projects/multica/workspace-config/";
   const overlay = write(shared + "workspaces/pilot.json", { workspace_id: "ws-1" });
   const agents = [{ dir: "analyst", name: "Analyst", skills: ["spec-preparation"] }];
   if (scenario === "branch") agents.push({ dir: "engineer", name: "Engineer", skills: [] });
@@ -25,7 +25,7 @@ function fixture(t, scenario = "normal") {
     squad: { name: "Delivery", leader: "Analyst", members: [] }, project: { title: "Project", workspace_branch: scenario === "branch" ? "release" : undefined }, autopilots: [],
     workflow: { statuses: [{ key: "analysis_review", name: "Analysis Review", category: "started" }] },
   });
-  write("projects/multica/workspace-skills/spec-preparation/SKILL.md", "---\nname: spec-preparation\ndescription: fixture\n---\n");
+  write("projects/multica/skills/spec-preparation/SKILL.md", "---\nname: spec-preparation\ndescription: fixture\n---\n");
   write("projects/multica/agents/analyst/instructions.md", "instructions");
   write("projects/multica/agents/analyst/description.md", "description");
   if (scenario === "branch") {
@@ -174,7 +174,7 @@ test("sync dry-run 报告缺失引用且不上传；正式同步在上传前阻�
   const f = fixture(t);
   f.write(f.shared + "provisioning.json", { managed_skills: ["demo"] });
   f.write(f.shared + "workspaces/pilot.json", { workspace_id: "ws-1", skills: { "demo": "skill-1" } });
-  f.write("projects/multica/workspace-skills/demo/SKILL.md", "缺页：`references/missing.md`\n");
+  f.write("projects/multica/skills/demo/SKILL.md", "缺页：`references/missing.md`\n");
   const preview = f.run("workspace", "sync", "--workspace", "pilot", "--dry-run");
   assert.equal(preview.code, 0, preview.stderr);
   assert.match(preview.stderr, /references 引用问题.*1/);

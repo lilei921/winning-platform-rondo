@@ -115,7 +115,7 @@ function loadOverlay(workspace: string): WorkspaceOverlay {
   if (!/^[A-Za-z0-9._-]+$/.test(workspace) || workspace === "." || workspace === "..") {
     throw new UnknownError(`非法 workspace 名称: ${workspace}`);
   }
-  const path = join(REPO_ROOT, "workspace-skills", "_shared", "workspaces", `${workspace}.json`);
+  const path = join(REPO_ROOT, "workspace-config", "workspaces", `${workspace}.json`);
   const overlay = parseJsonFile(path) as WorkspaceOverlay;
   if (!isObject(overlay) || typeof overlay.workspace_id !== "string" || !overlay.workspace_id) {
     throw new UnknownError(`overlay 缺少 workspace_id: ${path}`);
@@ -477,7 +477,7 @@ function main(rawArgs: string[]): number {
     const overlay = loadOverlay(args.flags.workspace);
     const configPath = args.flags.config
       ? resolve(args.flags.config)
-      : join(REPO_ROOT, "workspace-skills", "delivery-flow", "config", "repo-registry.json");
+      : join(REPO_ROOT, "skills", "delivery-flow", "config", "repo-registry.json");
     if (!existsSync(configPath)) {
       throw new UnknownError(`渲染配置不存在: ${configPath}；先运行 sync-workspace.ts --workspace ${args.flags.workspace} --local-only`);
     }

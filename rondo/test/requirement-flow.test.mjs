@@ -290,7 +290,7 @@ test("Proposal 不保存仓库清单；Change 元数据由 spec-preparation Skil
     const proposal = readFileSync(new URL("../../../openspec/schemas/" + schema + "/templates/proposal.md", import.meta.url), "utf8");
     assert.doesNotMatch(proposal, /^## Repository Scope$/m);
   }
-  const skill = readFileSync(new URL("../../../projects/multica/workspace-skills/spec-preparation/SKILL.md", import.meta.url), "utf8");
+  const skill = readFileSync(new URL("../../skills/spec-preparation/SKILL.md", import.meta.url), "utf8");
   assert.match(skill, /x-repositories/);
 });
 

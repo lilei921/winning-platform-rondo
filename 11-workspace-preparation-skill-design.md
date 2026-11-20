@@ -46,7 +46,7 @@ Skill 只说明**何时准备、调用哪个现有入口、如何使用结果及
 
 ## 3. Agent 绑定及现有 Skill 精简
 
-在 `workspace-skills/_shared/provisioning.json` 的 `managed_skills` 增加 `workspace-preparation`，并为以下 Agent 追加绑定：
+在 `workspace-config/provisioning.json` 的 `managed_skills` 增加 `workspace-preparation`，并为以下 Agent 追加绑定：
 
 | Agent | 使用场景 |
 | --- | --- |

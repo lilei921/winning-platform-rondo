@@ -43,15 +43,15 @@ Desktop 0.9.0 的真实 TT-5 / TT-6 运行表明，Resource 清单不自动触�
 
 #### 2.2.1 Workspace MCP 配置供给与维护
 
-**实现状态（2026-11-15）**：三个 MCP 已纳入 `rondo workspace provision` 的仓内配置与供给逻辑；本次仅实施代码和本地验证，按用户要求不修改平台。实际平台响应适配、连接配置生效与新 Task 调用仍须在服务恢复后验收；不把本地夹具结果视为线上通过。操作说明与连接输入格式见 [MCP 维护说明](workspace-skills/_shared/mcp/README.md)。
+**实现状态（2026-11-15）**：三个 MCP 已纳入 `rondo workspace provision` 的仓内配置与供给逻辑；本次仅实施代码和本地验证，按用户要求不修改平台。实际平台响应适配、连接配置生效与新 Task 调用仍须在服务恢复后验收；不把本地夹具结果视为线上通过。操作说明与连接输入格式见 [MCP 维护说明](mcps/README.md)。
 
 配置归属如下，不新增第二份仓库路径映射：
 
 | 内容 | 权威位置 | 保存规则 |
 | --- | --- | --- |
-| 受管 MCP 名称、模板及 Agent 绑定 | [`_shared/provisioning.json`](workspace-skills/_shared/provisioning.json) | 纳入 Git，初始化与后续维护同源 |
-| 连接文件名、只读工具白名单与兼容策略 | [`_shared/mcp/`](workspace-skills/_shared/mcp/README.md) | 纳入 Git，禁止实际 endpoint / token / headers 值 |
-| 已解析 MCP ID、可选连接文件引用覆盖、部署阶段 | `_shared/workspaces/<name>.json` | provision 保存 ID 与显式阶段；不保存凭据 |
+| 受管 MCP 名称、模板及 Agent 绑定 | [`workspace-config/provisioning.json`](workspace-config/provisioning.json) | 纳入 Git，初始化与后续维护同源 |
+| 连接文件名、只读工具白名单与兼容策略 | [`mcps/`](mcps/README.md) | 纳入 Git，禁止实际 endpoint / token / headers 值 |
+| 已解析 MCP ID、可选连接文件引用覆盖、部署阶段 | `workspace-config/workspaces/<name>.json` | provision 保存 ID 与显式阶段；不保存凭据 |
 | 完整连接配置 | Multica workspace MCP library | 创建 / 显式更新时通过 stdin 注入；完整连接源文件在维护前准备并受控备份，不从环境变量读取 |
 | 实际绑定及 enabled 状态 | Multica Agent MCP assignments | 写后回读校验；注册条目不等于 Agent 已绑定 |
 

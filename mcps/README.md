@@ -1,6 +1,6 @@
 # Workspace 远程 MCP 维护
 
-本目录保存三个远程 MCP 的公开配置模板。受管清单和绑定以 [provisioning.json](../provisioning.json) 为准；执行与验收边界见 [08-A §2.2.1](../../../08a-remote-analysis-bug-fix-foundation.md#221-workspace-mcp-配置供给与维护)。
+本目录保存三个远程 MCP 的公开配置模板。受管清单和绑定以 [provisioning.json](../workspace-config/provisioning.json) 为准；执行与验收边界见 [08-A §2.2.1](../08a-remote-analysis-bug-fix-foundation.md#221-workspace-mcp-配置供给与维护)。
 
 ## 配置输入与保存
 
@@ -10,7 +10,7 @@
 | `remote-filesystem.json` | `remote-filesystem.local.json` | 授权目录、目录列表、文本 / 多文件读取、文件信息与查找 |
 | `remote-ripgrep.json` | `remote-ripgrep.local.json` | `search`，沿用限定自动批准兼容配置 |
 
-**地址直接维护在连接文件的 `url` 字段，不从环境变量取值。** 在执行维护前，将对应的 `connections/*.example.json` 复制为 `*.local.json`（已有文件不要覆盖），填写实际地址和所需认证信息。示例中的空地址不能用于正式维护；下列内容仅展示格式：
+**地址直接维护在连接文件的 `url` 字段，不从环境变量取值。** 在执行维护前，在 `mcps/connections/` 内准备对应的 `*.local.json`（已有文件不要覆盖），填写实际地址和所需认证信息。示例中的空地址不能用于正式维护；下列内容仅展示格式：
 
 ```json
 {
@@ -55,23 +55,23 @@ workspace overlay 的可选配置形态如下，`id` 由 provision 解析并保�
 
 ```powershell
 # 先构建本地 CLI（全局安装的旧 rondo 不包含新增能力）。
-npm --prefix tools/rondo run build
+npm --prefix rondo run build
 
 # 新 workspace 完整初始化；运行前填写三个连接文件的 url / headers。
-node tools/rondo/dist/index.js workspace provision --workspace pilot --slug pilot --create-workspace --runtime-id <runtime-id>
+node rondo/dist/index.js workspace provision --workspace pilot --slug pilot --create-workspace --runtime-id <runtime-id>
 
 # 已有 workspace 只维护 MCP 与绑定，保留其他平台资产。
-node tools/rondo/dist/index.js workspace provision --workspace pilot --mcp-only --dry-run
-node tools/rondo/dist/index.js workspace provision --workspace pilot --mcp-only
+node rondo/dist/index.js workspace provision --workspace pilot --mcp-only --dry-run
+node rondo/dist/index.js workspace provision --workspace pilot --mcp-only
 
 # 只读检查公开身份、绑定与启用状态，不验证连接内容或连通性。
-node tools/rondo/dist/index.js workspace provision --workspace pilot --mcp-only --check
+node rondo/dist/index.js workspace provision --workspace pilot --mcp-only --check
 
 # 显式替换完整配置：先准备该 MCP 的完整连接输入，再执行更新。
-node tools/rondo/dist/index.js workspace provision --workspace pilot --mcp-only --update-mcp remote-ripgrep
+node rondo/dist/index.js workspace provision --workspace pilot --mcp-only --update-mcp remote-ripgrep
 
 # 08-B 部署时追加 Analyst / Engineer 绑定，并保存阶段。
-node tools/rondo/dist/index.js workspace provision --workspace pilot --mcp-only --mcp-phase 08-b
+node rondo/dist/index.js workspace provision --workspace pilot --mcp-only --mcp-phase 08-b
 ```
 
 `--mcp-only` 仅用于已有 workspace 和 Agent，不接受 `--create-workspace`。新 workspace 仍需按原供给流程具备可用 runtime；无 runtime 时保存已创建 workspace 身份后停止。`--check` 不接受 `--update-mcp` 或创建操作。省略 `--mcp-only` 时检查 / 供给还覆盖原有平台对象，依赖原有 runtime 和资产前置条件。

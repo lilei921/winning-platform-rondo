@@ -4,9 +4,9 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { resolve, dirname } from "node:path";
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-const multica = resolve(repoRoot, "projects/multica");
-const manifest = JSON.parse(readFileSync(resolve(multica, "workspace-skills/_shared/provisioning.json"), "utf8"));
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+const multica = repoRoot;
+const manifest = JSON.parse(readFileSync(resolve(multica, "workspace-config/provisioning.json"), "utf8"));
 
 test("Bug Fix Agent is managed independently of Delivery Squad", () => {
   const agent = manifest.agents.find((a) => a.dir === "bug-fix-agent");
@@ -22,8 +22,8 @@ test("Bug Fix Agent is managed independently of Delivery Squad", () => {
     assert.ok(!agent.skills.includes(skill), `Bug Fix Agent must not bind legacy ${skill}`);
   }
   assert.ok(agent.skills.every((skill) => ["codebase-explorer", "diagnosing-bugs", "bug-delivery", "workspace-preparation"].includes(skill)));
-  assert.match(readFileSync(resolve(multica, "workspace-skills/diagnosing-bugs/SKILL.md"), "utf8"), /name: diagnosing-bugs/);
-  assert.match(readFileSync(resolve(multica, "workspace-skills/diagnosing-bugs/LICENSE.md"), "utf8"), /Matt Pocock/);
+  assert.match(readFileSync(resolve(multica, "skills/diagnosing-bugs/SKILL.md"), "utf8"), /name: diagnosing-bugs/);
+  assert.match(readFileSync(resolve(multica, "skills/diagnosing-bugs/LICENSE.md"), "utf8"), /Matt Pocock/);
   for (const skill of agent.skills) assert.ok(manifest.managed_skills.includes(skill));
   for (const file of ["instructions.md", "description.md", "README.md"]) {
     assert.ok(readFileSync(resolve(multica, "agents/bug-fix-agent", file), "utf8").length > 0);

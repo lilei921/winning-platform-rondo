@@ -7,7 +7,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
-const SKILLS = fileURLToPath(new URL("../../../projects/multica/workspace-skills/", import.meta.url));
+const SKILLS = fileURLToPath(new URL("../../skills/", import.meta.url));
 const FRONT = (name) => readFileSync(join(SKILLS, name, "SKILL.md"), "utf8");
 
 function fixture(t) {
@@ -79,9 +79,9 @@ test("D1 identity: duplicate, archived, wrong Schema and unknown remain safe", (
 
 test("D1 workspace sync renders spec-preparation config in dry-run and local-only modes", (t) => {
   const root = fixture(t);
-  const shared = join(root, "projects", "multica", "workspace-skills", "_shared");
-  const skill = join(root, "projects", "multica", "workspace-skills", "spec-preparation");
-  const workspaceSkill = join(root, "projects", "multica", "workspace-skills", "workspace-preparation");
+  const shared = join(root, "projects", "multica", "workspace-config");
+  const skill = join(root, "projects", "multica", "skills", "spec-preparation");
+  const workspaceSkill = join(root, "projects", "multica", "skills", "workspace-preparation");
   const tools = join(root, "tools");
   const docs = join(root, "docs", "config");
   mkdirSync(join(shared, "workspaces"), { recursive: true });
@@ -133,9 +133,9 @@ test("D1 workspace sync renders spec-preparation config in dry-run and local-onl
 
 test("D1 workspace sync refuses missing squad identity rather than writing fallback registry", (t) => {
   const root = fixture(t);
-  const shared = join(root, "projects", "multica", "workspace-skills", "_shared");
+  const shared = join(root, "projects", "multica", "workspace-config");
   mkdirSync(join(shared, "workspaces"), { recursive: true });
-  mkdirSync(join(root, "projects", "multica", "workspace-skills", "spec-preparation"), { recursive: true });
+  mkdirSync(join(root, "projects", "multica", "skills", "spec-preparation"), { recursive: true });
   writeFileSync(join(shared, "workspaces", "badpilot.json"), JSON.stringify({
     workspace_id: "ws-pilot", skills: { "spec-preparation": "skill-id" },
   }));
@@ -147,7 +147,7 @@ test("D1 workspace sync refuses missing squad identity rather than writing fallb
 });
 
 test("D2 skill contracts: retire legacy without deletion and bind composable Analyst methods", () => {
-  const manifest = JSON.parse(readFileSync(join(SKILLS, "_shared", "provisioning.json"), "utf8"));
+  const manifest = JSON.parse(readFileSync(join(SKILLS, "..", "workspace-config", "provisioning.json"), "utf8"));
   const analyst = manifest.agents.find((a) => a.name === "Workitem Analyst");
   assert.deepEqual(analyst.skills, [
     "codebase-explorer", "bug-analysis", "requirement-analysis", "spec-preparation",

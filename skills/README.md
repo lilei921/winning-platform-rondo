@@ -54,10 +54,10 @@ Requirement 研发已收敛为 `Engineer` + `change-development`，Lead 按职�
 
 | 文件 / 目录 | 职责 |
 | --- | --- |
-| [_shared/provisioning.json](_shared/provisioning.json) | 受管理 Skill、Agent 属性及绑定、Squad 成员、Project 与 Autopilot 定义的来源。 |
-| [_shared/repo-registry.base.json](_shared/repo-registry.base.json) | 仓库交付配置的渲染底稿。仓库元数据仍来自根仓 [repo-context.yaml](../../../docs/config/repo-context.yaml)。 |
-| [_shared/sync-config.base.json](_shared/sync-config.base.json) | TFS 同步配置的渲染底稿。 |
-| [_shared/workspaces/](_shared/workspaces/) | Workspace overlay，保存工作区及平台对象 ID 映射，由 provision 生成维护。 |
+| [workspace-config/provisioning.json](../workspace-config/provisioning.json) | 受管理 Skill、Agent 属性及绑定、Squad 成员、Project 与 Autopilot 定义的来源。 |
+| [workspace-config/repo-registry.base.json](../workspace-config/repo-registry.base.json) | 仓库交付配置的渲染底稿。仓库元数据仍来自根仓 [repo-context.yaml](../../../docs/config/repo-context.yaml)。 |
+| [workspace-config/sync-config.base.json](../workspace-config/sync-config.base.json) | TFS 同步配置的渲染底稿。 |
+| [workspace-config/workspaces/](../workspace-config/workspaces/) | Workspace overlay，保存工作区及平台对象 ID 映射，由 provision 生成维护。 |
 
 Agent ↔ Skill 绑定以 manifest 的 `agents[].skills` 为准，不在 README 中重复定义。渲染后的运行配置由 `rondo workspace sync` 按目标 Workspace 生成。
 

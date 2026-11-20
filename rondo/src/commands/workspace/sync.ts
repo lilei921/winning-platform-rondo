@@ -40,14 +40,14 @@ import { validateSkillReferences } from "./skill-refs.js";
 // 模块级可变绑定由 main() 开头的 initRoots() 填充，helper 函数引用。
 let REPO_ROOT = "";
 let MONOREPO_ROOT = "";
-let SHARED = "";
+let CONFIG_ROOT = "";
 let SKILLS_ROOT = "";
 function initRoots(): void {
   const r = resolveMulticaRoot();
   REPO_ROOT = r.multicaRoot;
   MONOREPO_ROOT = r.monorepoRoot;
-  SHARED = join(REPO_ROOT, "workspace-skills", "_shared");
-  SKILLS_ROOT = join(REPO_ROOT, "workspace-skills");
+  CONFIG_ROOT = join(REPO_ROOT, "workspace-config");
+  SKILLS_ROOT = join(REPO_ROOT, "skills");
 }
 
 /** 消费 repo-registry.json 的 Skill；仅渲染本次同步范围内的配置。 */
@@ -238,7 +238,7 @@ function renderConfigs(overlay: Overlay, scope: Set<string>): RenderTarget[] {
     if (!overlay.delivery_squad_id) {
       throw new UnknownError("overlay 缺少 delivery_squad_id（repo-registry 渲染必需； Squad 未建时先只同步其他 Skill）");
     }
-    const base = readJson(join(SHARED, "repo-registry.base.json"), "repo-registry base");
+    const base = readJson(join(CONFIG_ROOT, "repo-registry.base.json"), "repo-registry base");
     requiredString(base.runtime?.multica_cli, "repo-registry base.runtime.multica_cli");
     const registry = renderRegistry(base);
     // 显式构造键序，保证渲染产物字节稳定（MG-1 与存量逐字节比对依赖键序）
@@ -268,7 +268,7 @@ function renderConfigs(overlay: Overlay, scope: Set<string>): RenderTarget[] {
     if (!overlay.project) {
       throw new UnknownError("overlay 缺少 project（tfs-sync 的 sync-config 渲染必需；项目未建时先跳过 tfs-sync）");
     }
-    const base = readJson(join(SHARED, "sync-config.base.json"), "sync-config base");
+    const base = readJson(join(CONFIG_ROOT, "sync-config.base.json"), "sync-config base");
     const merged = {
       tfs: base.tfs,
       multica: {
@@ -288,7 +288,7 @@ function renderConfigs(overlay: Overlay, scope: Set<string>): RenderTarget[] {
   return targets;
 }
 
-/** 仓内 Skill 清单：workspace-skills/ 下排除 _shared 的目录；SKILL.md = content，其余文件全量 = skill files */
+/** 仓内 Skill 清单：skills/ 下排除 _shared 的目录；SKILL.md = content，其余文件全量 = skill files */
 function listSkillFiles(skill: string): string[] {
   const dir = join(SKILLS_ROOT, skill);
   if (!existsSync(dir)) throw new UnknownError(`Skill 目录不存在: ${dir}`);
@@ -335,7 +335,7 @@ function main(rawArgs: string[]): number {
 
   try {
     initRoots();
-    const overlayPath = join(SHARED, "workspaces", `${args.workspace}.json`);
+    const overlayPath = join(CONFIG_ROOT, "workspaces", `${args.workspace}.json`);
     const overlay = readJson(overlayPath, `工作区 overlay ${args.workspace}`) as Overlay;
 
     if (overlay.provisioning_required?.length) {
@@ -358,7 +358,7 @@ function main(rawArgs: string[]): number {
     }
     MC = multicaPrefix({ multica_cli: "multica", ...overlay });
     // 全量同步前发现旧 overlay 缺少受管 Skills 时停止；不能静默发布不完整的 Analyst。
-    const manifestPath = join(SHARED, "provisioning.json");
+    const manifestPath = join(CONFIG_ROOT, "provisioning.json");
     if (args.skill === undefined && existsSync(manifestPath)) {
       const managed = readJson(manifestPath, "provisioning manifest").managed_skills as string[];
       const missing = managed.filter(name => !overlay.skills?.[name]);
@@ -438,7 +438,7 @@ function main(rawArgs: string[]): number {
     }
 
     const skippedUnregistered = readdirSync(SKILLS_ROOT)
-      .filter((d) => d !== "_shared" && statSync(join(SKILLS_ROOT, d)).isDirectory())
+      .filter((d) => statSync(join(SKILLS_ROOT, d)).isDirectory())
       .filter((d) => !registered.includes(d));
 
     if (localOnly || dryRun) {

@@ -7,9 +7,9 @@ Delivery Lead 是 `Delivery Squad` 的 Leader，负责协作交接、阶段边�
 - [Description](description.md)：平台展示说明。
 - [Instructions](instructions.md)：长期 Role Contract。
 - [Squad Instructions](../../squads/delivery-squad/squad-instructions.md)：Leader-only 协作规则。
-- [Agent / Skill / Squad manifest](../../workspace-skills/_shared/provisioning.json)：唯一绑定来源。
+- [Agent / Skill / Squad manifest](../../workspace-config/provisioning.json)：唯一绑定来源。
 
-Lead 按 Instructions 协调成员；已批准 Change 的研发交接操作见 [change-handoff](../../workspace-skills/change-handoff/SKILL.md)。PR 技术交付由 Engineer 完成，PR 状态同步与交付收口由 PR Status Sync Agent 承担。
+Lead 按 Instructions 协调成员；已批准 Change 的研发交接操作见 [change-handoff](../../skills/change-handoff/SKILL.md)。PR 技术交付由 Engineer 完成，PR 状态同步与交付收口由 PR Status Sync Agent 承担。
 
 ## 发布与验收
 

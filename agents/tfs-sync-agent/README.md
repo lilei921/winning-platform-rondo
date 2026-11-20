@@ -7,8 +7,8 @@ TFS Sync Agent 是 Squad 外的 Autopilot 薄适配器；TFS 来源同步和 Iss
 - [Description](description.md)：展示角色定位。
 - [Instructions](instructions.md)：稳定职责与停止边界。
 - [Autopilot Prompt](autopilot-prompt.md)：单次同步意图。
-- [tfs-sync Skill](../../workspace-skills/tfs-sync/SKILL.md)：命令、回读与失败恢复。
-- [配置及绑定来源](../../workspace-skills/_shared/provisioning.json)：Managed Skill 与 Agent / Autopilot 配置。
+- [tfs-sync Skill](../../skills/tfs-sync/SKILL.md)：命令、回读与失败恢复。
+- [配置及绑定来源](../../workspace-config/provisioning.json)：Managed Skill 与 Agent / Autopilot 配置。
 
 ## 同步入口
 

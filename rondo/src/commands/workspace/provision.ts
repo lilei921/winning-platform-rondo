@@ -4,7 +4,7 @@
  * （rondo 收编：实现位置为 @winning/skill-flow 包内 commands/workspace/provision.ts，
  * 原 projects/multica/scripts/provision-workspace.ts 在迁移窗口期保持有效。）
  *
- * 职责：按 _shared/provisioning.json manifest + 仓内资产（agents/、squads/、workspace-skills/）
+ * 职责：按 workspace-config/provisioning.json manifest + 仓内资产（agents/、squads/、skills/）
  *   在目标工作区 reconcile manifest 显式受管的平台对象（MCP/Skill/Agent/Squad/Project/Autopilot），
  *   并把解析到的对象 ID 原子写入 workspaces/<name>.json overlay（脚本是 overlay 唯一写入者）。
  *   manifest.workflow.statuses 存在时另做 Workflow 自定义状态 reconcile（只增不删不改序，
@@ -19,7 +19,7 @@
  *   rondo workspace provision --workspace <name> [--slug <slug>]
  *                                  [--create-workspace [--display-name <n>]]
  *                                  [--runtime-id <uuid>] [--profile <name>] [--dry-run] [--skip-workflow]
- *   --workspace        overlay 名（workspace-skills/_shared/workspaces/<name>.json）
+ *   --workspace        overlay 名（workspace-config/workspaces/<name>.json）
  *   --slug             工作区 slug，经 workspace list 解析 workspace_id；缺省用 overlay 已有的 workspace_id
  *   --create-workspace 工作区不存在时先创建（需要 --slug）
  *   --runtime-id       agent create 用 runtime；缺省时 runtime list 唯一则自动取，多个/零个 → exit 3
@@ -53,15 +53,15 @@ import { loadMcpSpecs, mcpPayload, reconcileMcpServers, reconcileMcpBindings, ty
 // 根定位见 clients/repo-root.ts（npm pack 全局安装后不能按包内位置回推）。
 // 模块级可变绑定由 main() 开头的 initRoots() 填充，helper 函数引用。
 let REPO_ROOT = "";
-let SHARED = "";
+let CONFIG_ROOT = "";
 let SKILLS_ROOT = "";
 let AGENTS_ROOT = "";
 let SQUAD_INSTRUCTIONS = "";
 function initRoots(): void {
   const r = resolveMulticaRoot();
   REPO_ROOT = r.multicaRoot;
-  SHARED = join(REPO_ROOT, "workspace-skills", "_shared");
-  SKILLS_ROOT = join(REPO_ROOT, "workspace-skills");
+  CONFIG_ROOT = join(REPO_ROOT, "workspace-config");
+  SKILLS_ROOT = join(REPO_ROOT, "skills");
   AGENTS_ROOT = join(REPO_ROOT, "agents");
   SQUAD_INSTRUCTIONS = join(REPO_ROOT, "squads", "delivery-squad", "squad-instructions.md");
 }
@@ -216,9 +216,9 @@ function main(rawArgs: string[]): number {
 
   try {
     initRoots();
-    overlayPath = join(SHARED, "workspaces", `${args.workspace}.json`);
+    overlayPath = join(CONFIG_ROOT, "workspaces", `${args.workspace}.json`);
     overlay = existsSync(overlayPath) ? readJson(overlayPath, `工作区 overlay ${args.workspace}`) : {};
-    const manifest = readJson(join(SHARED, "provisioning.json"), "provisioning manifest") as Manifest;
+    const manifest = readJson(join(CONFIG_ROOT, "provisioning.json"), "provisioning manifest") as Manifest;
     const branch = manifest.project?.workspace_branch;
     if (branch !== undefined && (typeof branch !== "string" || !branch.trim() || branch !== branch.trim())) {
       throw new UnknownError("project.workspace_branch 必须是非空分支名");
@@ -227,13 +227,13 @@ function main(rawArgs: string[]): number {
       if (!["08-a", "08-b"].includes(String(args["mcp-phase"]))) throw new UnknownError("--mcp-phase 仅支持 08-a / 08-b");
       overlay.mcp_phase = args["mcp-phase"] as "08-a" | "08-b";
     }
-    const mcpSpecs = loadMcpSpecs(manifest, overlay, file => readJson(join(SHARED, "mcp", file), "MCP 模板"));
+    const mcpSpecs = loadMcpSpecs(manifest, overlay, file => readJson(join(REPO_ROOT, "mcps", file), "MCP 模板"));
     if (mcpOnly && !mcpSpecs.length) throw new UnknownError("manifest 尚未登记受管 MCP");
     if (updates.some(name => !mcpSpecs.some(s => s.name === name))) throw new UnknownError("--update-mcp 包含未登记 MCP");
     // 正式维护前先备齐所有连接文件；缓存本次内容，确保预检与实际写入使用同一份配置。
     const connectionFiles = new Map<string, string>();
     const readConnection = (file: string): string => {
-      if (!connectionFiles.has(file)) connectionFiles.set(file, readFileSync(join(SHARED, "mcp", "connections", file), "utf8"));
+      if (!connectionFiles.has(file)) connectionFiles.set(file, readFileSync(join(REPO_ROOT, "mcps", "connections", file), "utf8"));
       return connectionFiles.get(file)!;
     };
     if (!dryRun) for (const spec of mcpSpecs) mcpPayload(spec, readConnection);

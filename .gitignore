@@ -76,14 +76,14 @@ graph/**/*.db
 .multica/
 
 # Multica 本地仓库注册配置（保留本地文件，不共享）
-/projects/multica/workspace-skills/bug-delivery/config/repo-registry.json
-/projects/multica/workspace-skills/workitem-triage/config/repo-registry.json
+/skills/bug-delivery/config/repo-registry.json
+/skills/workitem-triage/config/repo-registry.json
 
 # Multica Run 日志（本地运行证据，可由平台侧会话重新导出，不进版本控制）
 projects/multica/logs/
 
 # Multica 运行时物化的 Agent 绑定技能（in_place 模式下 daemon 写入 <根仓>/.claude/skills/，
-# 唯一事实源在平台侧 / projects/multica/workspace-skills/，每次 Run 幂等重写，不进版本控制；
+# 唯一事实源在平台侧，仓内维护源为 /skills/，每次 Run 幂等重写，不进版本控制；
 # 新绑定 Skill 落进根仓时在此补一行）
 .claude/skills/analysis-completion*/
 .claude/skills/backend-engineering*/
@@ -123,3 +123,6 @@ tools/archive/tfs-cli/config/tfs.config.json
 
 # cli tgz
 tools/**/*.tgz
+
+# 远程 MCP 本机连接文件（可能包含认证信息）
+/mcps/connections/*.local.json
