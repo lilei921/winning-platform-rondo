@@ -41,6 +41,7 @@ Workspace 的受管 Agent、Skill、MCP 与 Squad 配置以 [provisioning.json](
 | [09-A Repository Scope](09a-repository-scope-authority-analysis.md) | 受影响仓库范围的权威来源分析 |
 | [10 TFS 子任务](10-tfs-subtask-estimation-design.md) | 子任务、工时和 Commit 归属 |
 | [11 Workspace Preparation](11-workspace-preparation-skill-design.md) | Git 工作区准备能力解耦 |
+| [12 Issue Closeout Prepare 精简](12-issue-closeout-prepare-simplification-design.md) | PR 终态与归档硬闸门、Worktree 释放时机 |
 
 ## 配置与使用
 
