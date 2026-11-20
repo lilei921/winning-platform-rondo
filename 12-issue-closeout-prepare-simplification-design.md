@@ -111,6 +111,16 @@ autopilot-task-workdir/
 
 同一 Repository + Branch 的并发 Archive **不共享一个可写 Clone 并行执行**；由当前 Run 顺序处理，远端发生并发 Push 时仍按现有安全机制检测和处理。下次 Autopilot Run 可重新 Clone，并通过远端归档和 `finalize.pending` 恢复，不依赖旧本地目录。
 
+### 4.3 Rondo 现有接口的最小兼容修复
+
+- `issue-closeout` 将同组根仓路径作为**该组每个 Issue 的同一个** `--root-repo <path>` 传给 `delivery finalize --phase prepare`、`tfs writeback` 和 `delivery finalize --phase complete`，避免后一阶段重新进入远端工件物化模式。
+- 当前显式 `--root-repo` 会走旧本地路径的业务 Hub / Workspace Reconciliation；按 §2 删除这一非收口职责，否则即使 Clone 成功也可能因业务仓不存在而失败。
+- 当前 `routeArchive()` 默认向本地 HEAD 分支 Push；本方案直接 Clone 指定目标分支，且归档执行前必须**显式核对** HEAD 与该 Issue 的 `analysis.source.branch` 一致。保留现有 Archive 安全检查、Git Push、远端回读和 `finalize.pending`。
+- 同组逐 Issue Archive 后本地目标分支随归档提交向前推进；下一个 Issue 必须以最新确认的目标分支为起点。外部 Run 也可能同时推进远端，继续使用既有 Fetch / Fast-forward / 非强制 Push 的冲突与重试规则，不得用分组复用代替远端并发保护。
+- 不要求改变 Engineer 的 Root / Worktree 管理、Analysis 发布或 PR Status Sync 状态检测；若现有 Git Auth 无法被 Skill 安全复用，只在 Rondo 内补一个最小的受控 Clone 调用入口，不引入独立仓库管理框架。
+
+**边界**：此处 Clone 用于 Closeout Archive，与 §5 中 Engineer PR 创建后释放的业务 Worktree 是两类不同工作区，不得混同。分组复用根仓仅限当前 Autopilot Run，不引入跨 Run 持久 Workspace Cache。
+
 ### 4.4 归档根仓的安全清理
 
 清理范围是**本次 Autopilot Run 创建的 Repo+Branch 分组 Clone**，不清理 Analyst / Engineer 工作区、Multica Native Checkout、Git Cache 或已有持久根仓。分组内归档成功后仍有 `tfs writeback` 和 `delivery finalize --phase complete` 需要该路径，因此**在这一组完成最后一个 Issue 的 Closeout（或本组确定停止）后**才回收；不能按单个 Issue 的 Archive 返回码立即删除。
@@ -124,16 +134,6 @@ autopilot-task-workdir/
 满足条件时，安全删除本组 Clone 并确认目录已消失；即使某个 Issue 的 **TFS Writeback 失败**，只要相关 Archive 已确定成功、Git 现场安全且不再被本 Run 使用，也允许清理 Clone，恢复时重新 Clone，不影响 `finalize.pending`。Archive / Push 状态未知、存在 WIP 或未 Push 提交、目录身份不可信时**保留现场并报告**，不做 `reset --hard` / `clean -fd` / 强制删除。
 
 这里的清理是 Closeout 当次执行的临时资源释放，不是 Engineer PR 后的业务 Worktree Release；无需新的持久化 Cleanup 任务、Metadata 或后台守护进程。
-
-### 4.3 Rondo 现有接口的最小兼容修复
-
-- `issue-closeout` 将同组根仓路径作为**该组每个 Issue 的同一个** `--root-repo <path>` 传给 `delivery finalize --phase prepare`、`tfs writeback` 和 `delivery finalize --phase complete`，避免后一阶段重新进入远端工件物化模式。
-- 当前显式 `--root-repo` 会走旧本地路径的业务 Hub / Workspace Reconciliation；按 §2 删除这一非收口职责，否则即使 Clone 成功也可能因业务仓不存在而失败。
-- 当前 `routeArchive()` 默认向本地 HEAD 分支 Push；本方案直接 Clone 指定目标分支，且归档执行前必须**显式核对** HEAD 与该 Issue 的 `analysis.source.branch` 一致。保留现有 Archive 安全检查、Git Push、远端回读和 `finalize.pending`。
-- 同组逐 Issue Archive 后本地目标分支随归档提交向前推进；下一个 Issue 必须以最新确认的目标分支为起点。外部 Run 也可能同时推进远端，继续使用既有 Fetch / Fast-forward / 非强制 Push 的冲突与重试规则，不得用分组复用代替远端并发保护。
-- 不要求改变 Engineer 的 Root / Worktree 管理、Analysis 发布或 PR Status Sync 状态检测；若现有 Git Auth 无法被 Skill 安全复用，只在 Rondo 内补一个最小的受控 Clone 调用入口，不引入独立仓库管理框架。
-
-**边界**：此处 Clone 用于 Closeout Archive，与 §5 中 Engineer PR 创建后释放的业务 Worktree 是两类不同工作区，不得混同。分组复用根仓仅限当前 Autopilot Run，不引入跨 Run 持久 Workspace Cache。
 
 ## 5. Engineer Worktree 释放时机与安全边界
 
