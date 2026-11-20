@@ -1,0 +1,7 @@
+{
+  "started_at": "2026-11-13T06:05:01.580Z",
+  "scope": "controller_diagnostic_only",
+  "result": "FAIL",
+  "error": "命令无法执行: git: Command timed out after 300000 milliseconds: git -c \"core.symlinks=false\" clone --depth 1 --no-tags --single-branch --branch codex/m10-260986-20261113-root -- \"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\" .\nspawnSync git ETIMEDOUT\n\nCloning into '.'...",
+  "finished_at": "2026-11-13T06:10:03.098Z"
+}

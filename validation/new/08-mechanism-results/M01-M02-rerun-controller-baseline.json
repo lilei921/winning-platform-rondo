@@ -1,0 +1,200 @@
+{
+  "captured_at": "2026-11-13T11:32:44.6654170+08:00",
+  "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+  "project_id": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97",
+  "resources": {
+    "created_at": "2026-11-13T10:29:20+08:00",
+    "created_by": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+    "id": "eee149cc-9c37-415c-a1d8-b0c3b3b56585",
+    "label": "M01 TFS root checkout validation",
+    "position": 0,
+    "project_id": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97",
+    "resource_ref": {
+      "ref": "main",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo"
+    },
+    "resource_type": "github_repo",
+    "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+  },
+  "daemon": {
+    "active_task_count": 0,
+    "agents": [
+      "claude",
+      "codex",
+      "copilot",
+      "dsh"
+    ],
+    "cli_commit": "b1ea927def6490c43bedff537b6f4ed9a47fa828",
+    "cli_version": "0.8.1",
+    "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+    "device_name": "lileipc",
+    "failed_terminal_report_bytes": 0,
+    "failed_terminal_report_count": 0,
+    "os": "windows",
+    "pending_terminal_report_bytes": 0,
+    "pending_terminal_report_count": 0,
+    "pid": 32136,
+    "profile": "",
+    "resource_wait_task_count": 0,
+    "running_task_count": 0,
+    "server_url": "http://172.17.1.97:8080",
+    "skipped_agents": {
+      "copilot": "version detection failed: detect version for D:\\Program Files\\VSCode-win32-x64\\bin\\copilot-shim\\copilot.exe: exit status 127",
+      "dsh": "the Multica runtime profile is not installed; add the Multica DSH runtime bundle to the `multica` profile with `dsh plugin`, or set MULTICA_DSH_PROFILE_BUNDLE so the daemon installs it"
+    },
+    "status": "running",
+    "uptime": "1h31m0s",
+    "workspaces": [
+      {
+        "id": "a9469044-700c-4206-80d2-b39bad65de56",
+        "runtimes": [
+          "a35e3e28-0fd8-44d3-b39c-af9eb326e4bf",
+          "c0ae7474-866b-4bd1-b869-a361ab6d8be3"
+        ]
+      },
+      {
+        "id": "3c542bd3-4749-453c-9b77-7dc32b466538",
+        "runtimes": [
+          "97664dcf-bed1-46b0-8a3f-714d9c81cc42",
+          "9a110f41-1faa-42e8-9bfe-b85615b5287f"
+        ]
+      },
+      {
+        "id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+        "runtimes": [
+          "ff1ff20b-e112-4011-a8b3-f65a9472f5fa",
+          "c55feddd-7910-480a-8f9f-9d6180b1f061"
+        ]
+      }
+    ]
+  },
+  "runtimes": [
+    {
+      "created_at": "2026-11-13T10:21:48+08:00",
+      "custom_name": null,
+      "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+      "device_info": "lileipc · 2.1.319 (Claude Code)",
+      "id": "ff1ff20b-e112-4011-a8b3-f65a9472f5fa",
+      "last_seen_at": "2026-11-13T11:32:47+08:00",
+      "launch_header": "claude (stream-json)",
+      "metadata": {
+        "capabilities": [
+          "skill-bundles-v1",
+          "coalesced-comments-v1",
+          "local-worktree-v1",
+          "source_context_quick_create_v1",
+          "rpc-v1",
+          "platform-skill-v1",
+          "checkout-keeps-work-v1",
+          "joined-wakeups-v1",
+          "workflow-status-rules-v1",
+          "cli-comment-steer-v1"
+        ],
+        "cli_version": "0.8.1",
+        "launched_by": "",
+        "version": "2.1.319 (Claude Code)"
+      },
+      "name": "Claude (lileipc)",
+      "owner_id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+      "profile_id": null,
+      "provider": "claude",
+      "runtime_mode": "local",
+      "status": "online",
+      "updated_at": "2026-11-13T10:21:48+08:00",
+      "visibility": "private",
+      "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+    },
+    {
+      "created_at": "2026-11-13T10:21:48+08:00",
+      "custom_name": null,
+      "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+      "device_info": "lileipc · codex-cli 0.166.0",
+      "id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+      "last_seen_at": "2026-11-13T11:32:47+08:00",
+      "launch_header": "codex app-server",
+      "metadata": {
+        "capabilities": [
+          "skill-bundles-v1",
+          "coalesced-comments-v1",
+          "local-worktree-v1",
+          "source_context_quick_create_v1",
+          "rpc-v1",
+          "platform-skill-v1",
+          "checkout-keeps-work-v1",
+          "joined-wakeups-v1",
+          "workflow-status-rules-v1",
+          "cli-comment-steer-v1"
+        ],
+        "cli_version": "0.8.1",
+        "launched_by": "",
+        "version": "codex-cli 0.166.0"
+      },
+      "name": "Codex (lileipc)",
+      "owner_id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+      "profile_id": null,
+      "provider": "codex",
+      "runtime_mode": "local",
+      "status": "online",
+      "updated_at": "2026-11-13T10:21:48+08:00",
+      "visibility": "private",
+      "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+    }
+  ],
+  "agents": {
+    "archived_at": null,
+    "archived_by": null,
+    "avatar_url": "emoji:🐵",
+    "conversation_starters": [],
+    "created_at": "2026-11-13T10:29:20+08:00",
+    "custom_args": [],
+    "custom_env_key_count": 0,
+    "description": "仅在隔离测试 Task 验证原生 TFS 根仓 checkout 与重入",
+    "disabled_runtime_skills": [],
+    "has_custom_env": false,
+    "id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+    "instructions": "你是隔离测试环境中的 Git checkout 机制验证器。仅执行所分配 Issue 的验证步骤，收集可复核、脱敏的证据。只允许在当前真实 Task 的工作目录使用 Multica 原生 checkout；不修改生产交付事实或凭据配置。前置条件缺失时返回 NOT_RUN；实际命令失败时记录退出码、错误类别和保留下来的状态，不通过 reset、clean、fresh 或手工 clone 绕过问题。",
+    "invocation_targets": [],
+    "max_concurrent_tasks": 1,
+    "mcp_config": null,
+    "mcp_config_redacted": false,
+    "model": "",
+    "name": "M01 checkout 验证器",
+    "owner_id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+    "permission_mode": "private",
+    "runtime_bound": true,
+    "runtime_config": {},
+    "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+    "runtime_mode": "local",
+    "service_tier": "",
+    "skills": [],
+    "status": "idle",
+    "thinking_level": "",
+    "updated_at": "2026-11-13T11:00:06+08:00",
+    "visibility": "private",
+    "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+  },
+  "controller_head": "e21292336401e74eb0e58d29776e9b9815a46d59",
+  "controller_branch": "rondo",
+  "controller_status": [
+    "?? projects/multica/validation/new/08-mechanism-results/M01-M02-rerun-A-request.md"
+  ],
+  "powershell": "7.6.9",
+  "git": "git version 2.54.0.windows.1",
+  "multica": [
+    "multica 0.8.1 (commit: b1ea927de, built: 2026-11-06T10:12:35Z)",
+    "go: go1.27.3, os/arch: windows/amd64"
+  ],
+  "rondo": [
+    "{",
+    "  \"name\": \"@winning/rondo\",",
+    "  \"version\": \"1.2.20\",",
+    "  \"node\": \"v22.22.2\",",
+    "  \"sea\": false",
+    "}"
+  ],
+  "design_blob": "ccb57d9380725cd7b5d116121e023e30ba29cc43",
+  "controller_task_context": {
+    "token_present": false,
+    "port_present": false
+  }
+}

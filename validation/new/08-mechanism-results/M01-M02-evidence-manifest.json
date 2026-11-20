@@ -1,0 +1,53 @@
+{
+  "date": "2026-11-13",
+  "timezone": "Asia/Shanghai",
+  "scope": [
+    "M01",
+    "M02"
+  ],
+  "old_results_reused": false,
+  "results": {
+    "M01_mechanism": "PASS",
+    "M02_nested_repository_and_lifecycle_PoC": "PASS",
+    "M02_fixture_preparation": "controller external support",
+    "current_task_sandbox_autonomous_clone": "FAIL",
+    "rondo_dev_prepare_command": "NOT_RUN"
+  },
+  "evidence_copies": [
+    {
+      "issue": "TEST-4",
+      "run": "01a1d2f7-1194-711e-8a65-d94092ff9604",
+      "source_path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir\\validation-evidence\\M01-M02-run-A-evidence.json",
+      "copy_file": "M01-M02-rerun-A-evidence.json",
+      "sha256": "90f0c93d1e18891085d10df9822a22b4bf9580eb1011e47347f17b535308ba3a",
+      "byte_identical": true
+    },
+    {
+      "issue": "TEST-5",
+      "run": "01a1d2fc-da3a-796b-9584-f8f23e188c07",
+      "source_path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\validation-evidence\\M01-M02-run-A2-evidence.json",
+      "copy_file": "M01-M02-rerun-A2-evidence.json",
+      "sha256": "df7f9c960ec4535834005e271b5d27e8a55a1fbfe293eb44aaf90da7a7fde02a",
+      "byte_identical": true
+    },
+    {
+      "issue": "TEST-6",
+      "run": "01a1d30c-a957-7a02-883e-b569fc44cf1b",
+      "source_path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-6-b569fc44cf1b\\workdir\\validation-evidence\\M01-M02-run-B-evidence.json",
+      "copy_file": "M01-M02-rerun-B-evidence.json",
+      "sha256": "e6d5bef575c2f9d6e73ac196fceb84228c0716ac07945c24bbb869ed4d5c4b31",
+      "byte_identical": true
+    }
+  ],
+  "controller_verification": "M01-M02-final-controller-check.json",
+  "project_resources": "M01-M02-final-project-resources.json",
+  "json_files_validated": 18,
+  "credential_pattern_hits": [],
+  "limitations": [
+    "Current sandbox clone requires separate resolution",
+    "Rondo command adaptation not executed",
+    "Four business Agent types not executed",
+    "Cross-machine and real business authentication not executed",
+    "No remote writes or product code fixes"
+  ]
+}

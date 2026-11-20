@@ -1,0 +1,210 @@
+TAP version 13
+# Subtest: T1 happy finalize：PASS + steps 键序 golden + archive<writeback<summary 顺序 + push 到达
+not ok 1 - T1 happy finalize：PASS + steps 键序 golden + archive<writeback<summary 顺序 + push 到达
+  ---
+  duration_ms: 6614.4392
+  type: 'test'
+  location: 'D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\finalize-contract.test.mjs:361:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    stderr=$ D:\UserProgram\winning-platform-monorepo\tools\rondo\test\mock-multica.cjs issue get WNDF-T --workspace-id ws-test --output json
+    $ D:\UserProgram\winning-platform-monorepo\tools\rondo\test\mock-multica.cjs project resource list project1 --workspace-id ws-test --output json
+    $ git rev-parse --show-toplevel
+    $ git rev-parse --show-prefix
+    UNKNOWN: 回核 PR #1(repo1) UNKNOWN: {
+      "unknown": true,
+      "reason": "connect EACCES 127.0.0.1:54046"
+    }
+    
+    
+    3 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 3
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/UserProgram/winning-platform-monorepo/tools/rondo/test/finalize-contract.test.mjs:364:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: T2 gate 三态：旧 hash → exit 2；缺 contract_files → exit 3；无适用 Evidence → exit 3
+not ok 2 - T2 gate 三态：旧 hash → exit 2；缺 contract_files → exit 3；无适用 Evidence → exit 3
+  ---
+  duration_ms: 6738.2784
+  type: 'test'
+  location: 'D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\finalize-contract.test.mjs:396:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    stdout={
+      "result": "UNKNOWN",
+      "reason": "回核 PR #1(repo1) UNKNOWN: {\n  \"unknown\": true,\n  \"reason\": \"connect EACCES 127.0.0.1:59325\"\n}"
+    }
+    
+    
+    3 !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 3
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/UserProgram/winning-platform-monorepo/tools/rondo/test/finalize-contract.test.mjs:399:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: T3 M2.3：未提交 Change 工件先 finalize: 提交再归档；foreign 预暂存 → exit 3 不提交
+not ok 3 - T3 M2.3：未提交 Change 工件先 finalize: 提交再归档；foreign 预暂存 → exit 3 不提交
+  ---
+  duration_ms: 5220.1023
+  type: 'test'
+  location: 'D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\finalize-contract.test.mjs:414:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    stdout={
+      "result": "UNKNOWN",
+      "reason": "回核 PR #1(repo1) UNKNOWN: {\n  \"unknown\": true,\n  \"reason\": \"connect EACCES 127.0.0.1:63151\"\n}"
+    }
+     stderr=$ D:\UserProgram\winning-platform-monorepo\tools\rondo\test\mock-multica.cjs issue get WNDF-T --workspace-id ws-test --output json
+    $ D:\UserProgram\winning-platform-monorepo\tools\rondo\test\mock-multica.cjs project resource list project1 --workspace-id ws-test --output json
+    $ git rev-parse --show-toplevel
+    $ git rev-parse --show-prefix
+    UNKNOWN: 回核 PR #1(repo1) UNKNOWN: {
+      "unknown": true,
+      "reas
+    
+    3 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 3
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/UserProgram/winning-platform-monorepo/tools/rondo/test/finalize-contract.test.mjs:417:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: T4 M2.5：未涉及 capability 的 specs 脏文件 → exit 3；涉及的 → 随归档提交
+not ok 4 - T4 M2.5：未涉及 capability 的 specs 脏文件 → exit 3；涉及的 → 随归档提交
+  ---
+  duration_ms: 5226.6491
+  type: 'test'
+  location: 'D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\finalize-contract.test.mjs:435:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /本 Change 之外的改动/. Input:
+    
+    '回核 PR #1(repo1) UNKNOWN: {\n' +
+      '  "unknown": true,\n' +
+      '  "reason": "connect EACCES 127.0.0.1:61654"\n' +
+      '}'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    回核 PR #1(repo1) UNKNOWN: {
+      "unknown": true,
+      "reason": "connect EACCES 127.0.0.1:61654"
+    }
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/UserProgram/winning-platform-monorepo/tools/rondo/test/finalize-contract.test.mjs:441:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: T5 续走：完成后重跑 → done-shortcut；预置已归档+writeback 完成 → summary 恰一次
+not ok 5 - T5 续走：完成后重跑 → done-shortcut；预置已归档+writeback 完成 → summary 恰一次
+  ---
+  duration_ms: 5908.1055
+  type: 'test'
+  location: 'D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\finalize-contract.test.mjs:451:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    3 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 3
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/UserProgram/winning-platform-monorepo/tools/rondo/test/finalize-contract.test.mjs:454:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: 归档移动后提交前中断：重跑提交本次归档，不再次 archive
+not ok 6 - 归档移动后提交前中断：重跑提交本次归档，不再次 archive
+  ---
+  duration_ms: 6507.8509
+  type: 'test'
+  location: 'D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\finalize-contract.test.mjs:474:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    {
+      "result": "UNKNOWN",
+      "reason": "回核 PR #1(repo1) UNKNOWN: {\n  \"unknown\": true,\n  \"reason\": \"connect EACCES 127.0.0.1:52093\"\n}"
+    }
+    $ D:\UserProgram\winning-platform-monorepo\tools\rondo\test\mock-multica.cjs issue get WNDF-T --workspace-id ws-test --output json
+    $ D:\UserProgram\winning-platform-monorepo\tools\rondo\test\mock-multica.cjs project resource list project1 --workspace-id ws-test --output json
+    $ git rev-parse --show-toplevel
+    $ git rev-parse --show-prefix
+    UNKNOWN: 回核 PR #1(repo1) UNKNOWN: {
+      "unknown": true,
+      "reason": "connect EACCES 127.0.0.1:52093"
+    }
+    
+    
+    3 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 3
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/UserProgram/winning-platform-monorepo/tools/rondo/test/finalize-contract.test.mjs:480:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: 归档恢复仍拒绝夹带其他 Change，保留未提交现场
+not ok 7 - 归档恢复仍拒绝夹带其他 Change，保留未提交现场
+  ---
+  duration_ms: 6305.4973
+  type: 'test'
+  location: 'D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\finalize-contract.test.mjs:488:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /本 Change 之外的改动/. Input:
+    
+    '回核 PR #1(repo1) UNKNOWN: {\n' +
+      '  "unknown": true,\n' +
+      '  "reason": "connect EACCES 127.0.0.1:63684"\n' +
+      '}'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    回核 PR #1(repo1) UNKNOWN: {
+      "unknown": true,
+      "reason": "connect EACCES 127.0.0.1:63684"
+    }
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/UserProgram/winning-platform-monorepo/tools/rondo/test/finalize-contract.test.mjs:495:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...

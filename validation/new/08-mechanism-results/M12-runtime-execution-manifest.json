@@ -1,0 +1,47 @@
+{
+  "level": "isolated mechanism PoC in real Runtime; not production orchestration acceptance",
+  "issue_id": "01a1d352-18e5-715e-bcf7-39b7850c4cdb",
+  "task_id": "01a1d352-18f1-7df7-b547-ba03548482d5",
+  "run_id": "01a1d352-18f1-7df7-b547-ba03548482d5",
+  "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+  "runtime_name": "Codex (lileipc)",
+  "runtime_id_source": "Verified: multica runtime list --output json and multica issue runs 01a1d352-18e5-715e-bcf7-39b7850c4cdb --active --output json agree on this run's runtime_id",
+  "command": [
+    "python",
+    "D:\\UserProgram\\winning-platform-monorepo\\projects\\multica\\validation\\new\\08-mechanism-results\\m12-runtime-fallback.py"
+  ],
+  "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-11-ba03548482d5\\workdir",
+  "started_at_utc": "2026-11-13T05:13:49.812807+00:00",
+  "finished_at_utc": "2026-11-13T05:13:51.580608+00:00",
+  "exit_code": 0,
+  "process_environment_override": {
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "input_sha256_before": {
+    "D:\\UserProgram\\winning-platform-monorepo\\projects\\multica\\validation\\new\\08-mechanism-results\\m12-runtime-fallback.py": "09cdee88ee7151281cece7a590298a2dd5dde4203c79aca9aa0aa8f445501451",
+    "D:\\UserProgram\\winning-platform-monorepo\\projects\\multica\\validation\\new\\08-mechanism-results\\m12-index-snapshot.py": "71d237157d89f06e3380b67c0e5ee3a407bbb45ca4a26507e82161c78014e92f",
+    "D:\\UserProgram\\winning-platform-monorepo\\projects\\multica\\validation\\new\\08-mechanism-results\\m12-fixed-source.mjs": "1e65ba246a80120071718665f48ac6508bbb6a22d9774cc2b9acc1ca61aad84d",
+    "D:\\UserProgram\\winning-platform-monorepo\\projects\\multica\\validation\\new\\08-mechanism-results\\M12-index-commit-audit.json": "a1d137b8934a0b04d5ed926f7d1bd617029c6c6fcb8737e4a6ee788bff9e2dad"
+  },
+  "input_sha256_after": {
+    "D:\\UserProgram\\winning-platform-monorepo\\projects\\multica\\validation\\new\\08-mechanism-results\\m12-runtime-fallback.py": "09cdee88ee7151281cece7a590298a2dd5dde4203c79aca9aa0aa8f445501451",
+    "D:\\UserProgram\\winning-platform-monorepo\\projects\\multica\\validation\\new\\08-mechanism-results\\m12-index-snapshot.py": "71d237157d89f06e3380b67c0e5ee3a407bbb45ca4a26507e82161c78014e92f",
+    "D:\\UserProgram\\winning-platform-monorepo\\projects\\multica\\validation\\new\\08-mechanism-results\\m12-fixed-source.mjs": "1e65ba246a80120071718665f48ac6508bbb6a22d9774cc2b9acc1ca61aad84d",
+    "D:\\UserProgram\\winning-platform-monorepo\\projects\\multica\\validation\\new\\08-mechanism-results\\M12-index-commit-audit.json": "a1d137b8934a0b04d5ed926f7d1bd617029c6c6fcb8737e4a6ee788bff9e2dad"
+  },
+  "stdout": {
+    "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-11-ba03548482d5\\workdir\\M12-command-stdout.log",
+    "bytes": 3003,
+    "sha256": "a5bf60a7a1fc4ab9de962bbc0e10d785f9316ce74b14967878d8627d3d80d3e6"
+  },
+  "stderr": {
+    "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-11-ba03548482d5\\workdir\\M12-command-stderr.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "evidence": {
+    "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-11-ba03548482d5\\workdir\\M12-runtime-fallback-evidence.json",
+    "exists": true,
+    "sha256": "a5bf60a7a1fc4ab9de962bbc0e10d785f9316ce74b14967878d8627d3d80d3e6"
+  }
+}

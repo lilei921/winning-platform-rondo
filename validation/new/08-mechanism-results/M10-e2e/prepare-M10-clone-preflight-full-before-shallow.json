@@ -1,0 +1,7 @@
+{
+  "task_id": "01a1d37b-5117-7426-b380-ec79b716a4b4",
+  "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir",
+  "at": "2026-11-13T05:57:50.113Z",
+  "overall": "FAIL",
+  "error": "命令无法执行: git: Command timed out after 300000 milliseconds: git -c \"core.symlinks=false\" clone --single-branch --branch codex/m10-260986-20261113-root -- \"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\" .\nspawnSync git ETIMEDOUT\n\nCloning into '.'..."
+}

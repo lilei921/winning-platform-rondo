@@ -1,0 +1,2325 @@
+
+> @winning/rondo@1.2.20 test
+> node --test test/*.test.mjs "dist/**/*.test.js"
+
+TAP version 13
+# Subtest: 工作区环境绑定、继承与跨环境拒绝
+ok 1 - 工作区环境绑定、继承与跨环境拒绝
+  ---
+  duration_ms: 4.6887
+  type: 'test'
+  ...
+# Subtest: 绑定默认环境后不再读取进程 profile，未绑定配置仍支持环境变量
+ok 2 - 绑定默认环境后不再读取进程 profile，未绑定配置仍支持环境变量
+  ---
+  duration_ms: 0.9075
+  type: 'test'
+  ...
+# Subtest: provisioning manifest workflow.statuses 覆盖流水线消费的自定义状态键
+ok 3 - provisioning manifest workflow.statuses 覆盖流水线消费的自定义状态键
+  ---
+  duration_ms: 20.2972
+  type: 'test'
+  ...
+# Subtest: manifest workflow.statuses 不重复声明 multica 内建状态键
+ok 4 - manifest workflow.statuses 不重复声明 multica 内建状态键
+  ---
+  duration_ms: 0.9916
+  type: 'test'
+  ...
+# Subtest: manifest workflow.statuses 的 name 与 category 成对出现
+ok 5 - manifest workflow.statuses 的 name 与 category 成对出现
+  ---
+  duration_ms: 1.0368
+  type: 'test'
+  ...
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-YxtYAU\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-YxtYAU\\counter.txt flaky
+# [rondo] transient retry: 读取测试（第 1 次尝试 stdout 为空，1ms 后重试）
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-YxtYAU\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-YxtYAU\\counter.txt flaky
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-IfyOcE\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-IfyOcE\\counter.txt always-empty
+# [rondo] transient retry: 读取测试（第 1 次尝试 stdout 为空，1ms 后重试）
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-IfyOcE\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-IfyOcE\\counter.txt always-empty
+# [rondo] transient retry: 读取测试（第 2 次尝试 stdout 为空，3ms 后重试）
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-IfyOcE\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-IfyOcE\\counter.txt always-empty
+# [rondo] transient retry: 读取测试（第 3 次尝试 stdout 为空，10ms 后重试）
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-IfyOcE\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-IfyOcE\\counter.txt always-empty
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-MbGPki\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-MbGPki\\counter.txt empty-array
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-f9GTuG\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-f9GTuG\\counter.txt always-empty
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-inf5td\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-inf5td\\counter.txt tls-flaky
+# [rondo] transient retry: 读取测试（第 1 次尝试 rc=1 命中网络签名，1ms 后重试）
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-inf5td\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-inf5td\\counter.txt tls-flaky
+# [rondo] transient retry: 读取测试（第 2 次尝试 rc=1 命中网络签名，4ms 后重试）
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-inf5td\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-inf5td\\counter.txt tls-flaky
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-mCfG15\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-mCfG15\\counter.txt rc3-flaky
+# [rondo] transient retry: 读取测试（第 1 次尝试 rc=3 命中网络签名，1ms 后重试）
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-mCfG15\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-mCfG15\\counter.txt rc3-flaky
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-zz4BO3\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-zz4BO3\\counter.txt tls-always
+# [rondo] transient retry: 读取测试（第 1 次尝试 rc=1 命中网络签名，1ms 后重试）
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-zz4BO3\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-zz4BO3\\counter.txt tls-always
+# [rondo] transient retry: 读取测试（第 2 次尝试 rc=1 命中网络签名，3ms 后重试）
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-zz4BO3\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-zz4BO3\\counter.txt tls-always
+# [rondo] transient retry: 读取测试（第 3 次尝试 rc=1 命中网络签名，10ms 后重试）
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-zz4BO3\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-zz4BO3\\counter.txt tls-always
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-9m7m4b\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-9m7m4b\\counter.txt fatal
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-H1IKlx\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-H1IKlx\\counter.txt tls-always
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-P3Smj0\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-P3Smj0\\counter.txt truncated
+# [rondo] transient retry: 读取测试（第 1 次尝试 JSON 截断，1ms 后重试）
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-P3Smj0\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-P3Smj0\\counter.txt truncated
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-365hSS\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-365hSS\\counter.txt network-then-business
+# [rondo] transient retry: 读取测试（第 1 次尝试 rc=3 命中网络签名，1ms 后重试）
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-365hSS\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-365hSS\\counter.txt network-then-business
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-y6v1Ff\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-y6v1Ff\\counter.txt always-truncated
+# [rondo] transient retry: 读取测试（第 1 次尝试 JSON 截断，1ms 后重试）
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-y6v1Ff\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-y6v1Ff\\counter.txt always-truncated
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-wGUE5Y\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-wGUE5Y\\counter.txt network-error
+# $ D:\\UserApp\\nvm\\nodejs\\node.exe C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-UZHXDt\\stub.cjs C:\\Users\\lilei\\AppData\\Local\\Temp\\rondo-spawn-UZHXDt\\counter.txt json-fail
+# Subtest: flaky read: first empty stdout retried once, second attempt succeeds
+ok 6 - flaky read: first empty stdout retried once, second attempt succeeds
+  ---
+  duration_ms: 459.5253
+  type: 'test'
+  ...
+# Subtest: always empty stdout: UnknownError after retries, reason records retries and [network]
+ok 7 - always empty stdout: UnknownError after retries, reason records retries and [network]
+  ---
+  duration_ms: 1011.0933
+  type: 'test'
+  ...
+# Subtest: legitimate empty JSON array is not treated as transient
+ok 8 - legitimate empty JSON array is not treated as transient
+  ---
+  duration_ms: 314.9028
+  type: 'test'
+  ...
+# Subtest: without transient flag, empty stdout fails immediately without retry
+ok 9 - without transient flag, empty stdout fails immediately without retry
+  ---
+  duration_ms: 238.1087
+  type: 'test'
+  ...
+# Subtest: rc=1 with ECONNRESET signature retried then succeeds (M3.1)
+ok 10 - rc=1 with ECONNRESET signature retried then succeeds (M3.1)
+  ---
+  duration_ms: 831.0297
+  type: 'test'
+  ...
+# Subtest: rc=3 with network signature retried then succeeds (M3.1)
+ok 11 - rc=3 with network signature retried then succeeds (M3.1)
+  ---
+  duration_ms: 557.7346
+  type: 'test'
+  ...
+# Subtest: exhausted signature retries: original failure message + [network] suffix
+ok 12 - exhausted signature retries: original failure message + [network] suffix
+  ---
+  duration_ms: 1076.1049
+  type: 'test'
+  ...
+# Subtest: rc=1 without signature throws immediately, no retry
+ok 13 - rc=1 without signature throws immediately, no retry
+  ---
+  duration_ms: 255.6342
+  type: 'test'
+  ...
+# Subtest: guard: non-transient caller never retries even when signature matches
+ok 14 - guard: non-transient caller never retries even when signature matches
+  ---
+  duration_ms: 382.1998
+  type: 'test'
+  ...
+# Subtest: truncated JSON hits signature and is retried (M3.1)
+ok 15 - truncated JSON hits signature and is retried (M3.1)
+  ---
+  duration_ms: 551.4546
+  type: 'test'
+  ...
+# Subtest: transientBackoffMs: base*3^attempt with 0–20% jitter
+ok 16 - transientBackoffMs: base*3^attempt with 0–20% jitter
+  ---
+  duration_ms: 0.597
+  type: 'test'
+  ...
+# Subtest: 网络恢复后业务 UNKNOWN 立即停止，不沿用前次网络分类
+ok 17 - 网络恢复后业务 UNKNOWN 立即停止，不沿用前次网络分类
+  ---
+  duration_ms: 644.8144
+  type: 'test'
+  ...
+# Subtest: 持续截断 JSON 耗尽重试后保留 network 分类
+ok 18 - 持续截断 JSON 耗尽重试后保留 network 分类
+  ---
+  duration_ms: 669.1114
+  type: 'test'
+  ...
+# Subtest: isTransientNetworkText: 大小写不敏感签名表
+ok 19 - isTransientNetworkText: 大小写不敏感签名表
+  ---
+  duration_ms: 0.3912
+  type: 'test'
+  ...
+# Subtest: exit 2 with empty stdout preserves the transport error and remains UNKNOWN
+ok 20 - exit 2 with empty stdout preserves the transport error and remains UNKNOWN
+  ---
+  duration_ms: 258.8277
+  type: 'test'
+  ...
+# Subtest: exit 2 with valid JSON still returns the failure contract without mixing stderr
+ok 21 - exit 2 with valid JSON still returns the failure contract without mixing stderr
+  ---
+  duration_ms: 273.6227
+  type: 'test'
+  ...
+# Subtest: Analysis requires in_progress; blocked is not automatic reanalysis permission
+ok 22 - Analysis requires in_progress; blocked is not automatic reanalysis permission
+  ---
+  duration_ms: 2.2956
+  type: 'test'
+  ...
+# Subtest: historical Human Approval does not permanently prevent authorized reanalysis
+ok 23 - historical Human Approval does not permanently prevent authorized reanalysis
+  ---
+  duration_ms: 0.3145
+  type: 'test'
+  ...
+# Subtest: complete reuses identical review facts without replaying delivery writes
+ok 24 - complete reuses identical review facts without replaying delivery writes
+  ---
+  duration_ms: 0.5236
+  type: 'test'
+  ...
+# Subtest: TFS management type is classified independently of route
+ok 25 - TFS management type is classified independently of route
+  ---
+  duration_ms: 0.2511
+  type: 'test'
+  ...
+# Subtest: Registry Workspace identity is always validated; tfs_cli no longer required
+ok 26 - Registry Workspace identity is always validated; tfs_cli no longer required
+  ---
+  duration_ms: 5.0784
+  type: 'test'
+  ...
+# Subtest: 来源必须完整且与 Issue Change 一致，禁止凭据和非 TFS 地址
+ok 27 - 来源必须完整且与 Issue Change 一致，禁止凭据和非 TFS 地址
+  ---
+  duration_ms: 5.0651
+  type: 'test'
+  ...
+# Subtest: 分支仅作追溯，来源身份由仓库、commit 和 Change 决定
+ok 28 - 分支仅作追溯，来源身份由仓库、commit 和 Change 决定
+  ---
+  duration_ms: 0.5086
+  type: 'test'
+  ...
+# Subtest: 读取路径仅限当前 Change，阻止穿越及编码路径
+ok 29 - 读取路径仅限当前 Change，阻止穿越及编码路径
+  ---
+  duration_ms: 0.7949
+  type: 'test'
+  ...
+# Subtest: 任务编号精确匹配，重复编号不得派发
+ok 30 - 任务编号精确匹配，重复编号不得派发
+  ---
+  duration_ms: 1.4584
+  type: 'test'
+  ...
+# Subtest: 保持既有可读任务编号兼容，不强制纯数字格式
+ok 31 - 保持既有可读任务编号兼容，不强制纯数字格式
+  ---
+  duration_ms: 0.5455
+  type: 'test'
+  ...
+# Subtest: --out writes atomically and matches stdout byte-for-byte; dirs auto-created
+ok 32 - --out writes atomically and matches stdout byte-for-byte; dirs auto-created
+  ---
+  duration_ms: 23.9024
+  type: 'test'
+  ...
+# Subtest: null outPath emits stdout only
+ok 33 - null outPath emits stdout only
+  ---
+  duration_ms: 1.6335
+  type: 'test'
+  ...
+# Subtest: second emit overwrites previous result (overwrite via rename)
+ok 34 - second emit overwrites previous result (overwrite via rename)
+  ---
+  duration_ms: 4.2704
+  type: 'test'
+  ...
+# Subtest: normalizeContractText: CRLF/CR→LF；tasks.md checkbox [xX]→[ ]，其他文件不动
+ok 35 - normalizeContractText: CRLF/CR→LF；tasks.md checkbox [xX]→[ ]，其他文件不动
+  ---
+  duration_ms: 2.0871
+  type: 'test'
+  ...
+# Subtest: listContractFiles: 必选项 + design + specs 递归排序；缺必选抛错
+ok 36 - listContractFiles: 必选项 + design + specs 递归排序；缺必选抛错
+  ---
+  duration_ms: 51.8812
+  type: 'test'
+  ...
+# Subtest: compute + verify: 全一致 ok；checkbox 变化不改变哈希
+ok 37 - compute + verify: 全一致 ok；checkbox 变化不改变哈希
+  ---
+  duration_ms: 28.8486
+  type: 'test'
+  ...
+# Subtest: verify: mismatch / missing / added / algorithm 分类
+ok 38 - verify: mismatch / missing / added / algorithm 分类
+  ---
+  duration_ms: 9.3091
+  type: 'test'
+  ...
+# Subtest: touchedCapabilities: specs 顶层子目录；无 specs → []
+ok 39 - touchedCapabilities: specs 顶层子目录；无 specs → []
+  ---
+  duration_ms: 26.5768
+  type: 'test'
+  ...
+# Subtest: 当前有效 Evidence 覆盖同任务时，历史哈希不阻断且不改写历史
+ok 40 - 当前有效 Evidence 覆盖同任务时，历史哈希不阻断且不改写历史
+  ---
+  duration_ms: 25.8262
+  type: 'test'
+  ...
+# Subtest: 只有旧哈希或缺哈希 Evidence 均不得收口
+ok 41 - 只有旧哈希或缺哈希 Evidence 均不得收口
+  ---
+  duration_ms: 30.531
+  type: 'test'
+  ...
+# Subtest: 无 Evidence 且派发缺失时不得空集合放行
+ok 42 - 无 Evidence 且派发缺失时不得空集合放行
+  ---
+  duration_ms: 14.378
+  type: 'test'
+  ...
+# Subtest: 相同 SHA 的其他仓 Evidence 不得覆盖当前候选
+ok 43 - 相同 SHA 的其他仓 Evidence 不得覆盖当前候选
+  ---
+  duration_ms: 16.4384
+  type: 'test'
+  ...
+# Subtest: 候选与契约均有效的无关 Task 不能补足 active 任务
+ok 44 - 候选与契约均有效的无关 Task 不能补足 active 任务
+  ---
+  duration_ms: 11.5691
+  type: 'test'
+  ...
+# Subtest: 其他 Change 的 active 派发与损坏派发均阻断
+ok 45 - 其他 Change 的 active 派发与损坏派发均阻断
+  ---
+  duration_ms: 14.6417
+  type: 'test'
+  ...
+# Subtest: Human override required -> not_required: original Analyst recommendation does not block completion
+ok 46 - Human override required -> not_required: original Analyst recommendation does not block completion
+  ---
+  duration_ms: 15.5086
+  type: 'test'
+  ...
+# Subtest: Human override not_required -> required: blocks until actual independent validation is available
+ok 47 - Human override not_required -> required: blocks until actual independent validation is available
+  ---
+  duration_ms: 7.6216
+  type: 'test'
+  ...
+# Subtest: missing or inconsistent effective Verify fact blocks before any completion decision
+ok 48 - missing or inconsistent effective Verify fact blocks before any completion decision
+  ---
+  duration_ms: 8.51
+  type: 'test'
+  ...
+# Subtest: Human overrides Analyst required to not_required without a Verify Run
+ok 49 - Human overrides Analyst required to not_required without a Verify Run
+  ---
+  duration_ms: 2.9554
+  type: 'test'
+  ...
+# Subtest: Human overrides Analyst not_required to required; final fact must be true
+ok 50 - Human overrides Analyst not_required to required; final fact must be true
+  ---
+  duration_ms: 0.4398
+  type: 'test'
+  ...
+# Subtest: matches recommendation when Human accepts it
+ok 51 - matches recommendation when Human accepts it
+  ---
+  duration_ms: 0.2742
+  type: 'test'
+  ...
+# Subtest: missing final fact never falls back to Analyst Recommendation
+ok 52 - missing final fact never falls back to Analyst Recommendation
+  ---
+  duration_ms: 1.2274
+  type: 'test'
+  ...
+# Subtest: missing, malformed or non-Boolean Human decision is never defaulted
+ok 53 - missing, malformed or non-Boolean Human decision is never defaulted
+  ---
+  duration_ms: 0.5364
+  type: 'test'
+  ...
+# Subtest: approval decision and comment source are mandatory
+ok 54 - approval decision and comment source are mandatory
+  ---
+  duration_ms: 0.4122
+  type: 'test'
+  ...
+# Subtest: tampered or inconsistent projection is rejected
+ok 55 - tampered or inconsistent projection is rejected
+  ---
+  duration_ms: 0.5982
+  type: 'test'
+  ...
+# Subtest: 仅真正的旧数据允许无来源收口，新派发丢失来源不能退化成 legacy
+ok 56 - 仅真正的旧数据允许无来源收口，新派发丢失来源不能退化成 legacy
+  ---
+  duration_ms: 0.7684
+  type: 'test'
+  ...
+# Subtest: 收口拒绝混入旧版本 active 派发，但允许保留失效的历史来源
+ok 57 - 收口拒绝混入旧版本 active 派发，但允许保留失效的历史来源
+  ---
+  duration_ms: 2.0401
+  type: 'test'
+  ...
+# Subtest: aggregateLeg: 聚合成败与 RTT，last_error 取最后一个错误
+ok 58 - aggregateLeg: 聚合成败与 RTT，last_error 取最后一个错误
+  ---
+  duration_ms: 2.7527
+  type: 'test'
+  ...
+# Subtest: aggregateLeg: 全成功无 last_error；全失败 rtt 归零
+ok 59 - aggregateLeg: 全成功无 last_error；全失败 rtt 归零
+  ---
+  duration_ms: 0.3582
+  type: 'test'
+  ...
+# Subtest: parseCurlWriteOut: 标准输出与畸形输出
+ok 60 - parseCurlWriteOut: 标准输出与畸形输出
+  ---
+  duration_ms: 0.5531
+  type: 'test'
+  ...
+# Subtest: detectProxyEnv: set/unset 与 HTTPS 优先
+ok 61 - detectProxyEnv: set/unset 与 HTTPS 优先
+  ---
+  duration_ms: 1.0646
+  type: 'test'
+  ...
+# Subtest: checkNetworkBaseline: 配置全缺、目标不可达时也不抛，返回 WARN 级 CheckOutcome
+ok 62 - checkNetworkBaseline: 配置全缺、目标不可达时也不抛，返回 WARN 级 CheckOutcome
+  ---
+  duration_ms: 2410.2181
+  type: 'test'
+  ...
+# Subtest: 必检项未实际完成时不得通过门禁
+ok 63 - 必检项未实际完成时不得通过门禁
+  ---
+  duration_ms: 1.8743
+  type: 'test'
+  ...
+# Subtest: 单选版本一致性检查时自动包含版本探测依赖
+ok 64 - 单选版本一致性检查时自动包含版本探测依赖
+  ---
+  duration_ms: 1.7047
+  type: 'test'
+  ...
+# Subtest: 探测参数中的空格和 shell 元字符必须原样传递
+ok 65 - 探测参数中的空格和 shell 元字符必须原样传递
+  ---
+  duration_ms: 248.3687
+  type: 'test'
+  ...
+# Subtest: 超时探测返回失败，不能当成正常退出
+ok 66 - 超时探测返回失败，不能当成正常退出
+  ---
+  duration_ms: 90.8867
+  type: 'test'
+  ...
+# Subtest: 四态分类：local/cross × 存在/缺失
+ok 67 - 四态分类：local/cross × 存在/缺失
+  ---
+  duration_ms: 20.8068
+  type: 'test'
+  ...
+# Subtest: 嵌套 md 文件也被扫描；非反引号路径不报
+ok 68 - 嵌套 md 文件也被扫描；非反引号路径不报
+  ---
+  duration_ms: 25.9555
+  type: 'test'
+  ...
+# Subtest: 引用全部合法 → 零问题
+ok 69 - 引用全部合法 → 零问题
+  ---
+  duration_ms: 11.7303
+  type: 'test'
+  ...
+# Subtest: 真实仓库清扫：全部技能包零缺页（F6 回归闸）
+ok 70 - 真实仓库清扫：全部技能包零缺页（F6 回归闸）
+  ---
+  duration_ms: 34.2122
+  type: 'test'
+  ...
+# Subtest: manifest members require named, nonempty roles and known agents
+ok 71 - manifest members require named, nonempty roles and known agents
+  ---
+  duration_ms: 3.925
+  type: 'test'
+  ...
+# Subtest: new member uses the configured role, not the generic member label
+ok 72 - new member uses the configured role, not the generic member label
+  ---
+  duration_ms: 0.5634
+  type: 'test'
+  ...
+# Subtest: existing member with a stale role is updated in place
+ok 73 - existing member with a stale role is updated in place
+  ---
+  duration_ms: 0.4146
+  type: 'test'
+  ...
+# Subtest: unchanged member is a no-op; human member does not impersonate agent
+ok 74 - unchanged member is a no-op; human member does not impersonate agent
+  ---
+  duration_ms: 3.4121
+  type: 'test'
+  ...
+# Subtest: a member without a resolved Agent ID is deferred
+ok 75 - a member without a resolved Agent ID is deferred
+  ---
+  duration_ms: 0.3996
+  type: 'test'
+  ...
+# Subtest: 异常或重复的远端 steps 必须停止，不能按空工作流覆盖
+ok 76 - 异常或重复的远端 steps 必须停止，不能按空工作流覆盖
+  ---
+  duration_ms: 4.9524
+  type: 'test'
+  ...
+# Subtest: 预演要求迁移或无法解释预演时禁止真实更新
+ok 77 - 预演要求迁移或无法解释预演时禁止真实更新
+  ---
+  duration_ms: 9.3682
+  type: 'test'
+  ...
+# Subtest: 预演期间工作流发生变化时停止，保留远端并发编辑
+ok 78 - 预演期间工作流发生变化时停止，保留远端并发编辑
+  ---
+  duration_ms: 4.1883
+  type: 'test'
+  ...
+# Subtest: 1. 远端已全量具备（wn_df_1029 蓝本）→ 全 unchanged，零写调用
+ok 79 - 1. 远端已全量具备（wn_df_1029 蓝本）→ 全 unchanged，零写调用
+  ---
+  duration_ms: 2.3003
+  type: 'test'
+  ...
+# Subtest: 2. 缺 2 个状态 → 锚点插入合并，update 恰好 1 次，写后回读 PASS
+ok 80 - 2. 缺 2 个状态 → 锚点插入合并，update 恰好 1 次，写后回读 PASS
+  ---
+  duration_ms: 17.5498
+  type: 'test'
+  ...
+# Subtest: 3. 锚点 after 不存在 → 降级插到 done 前并注明
+ok 81 - 3. 锚点 after 不存在 → 降级插到 done 前并注明
+  ---
+  duration_ms: 5.2666
+  type: 'test'
+  ...
+# Subtest: 4. 远端多出未受管状态 → unmanaged 列明，不删不写
+ok 82 - 4. 远端多出未受管状态 → unmanaged 列明，不删不写
+  ---
+  duration_ms: 0.7065
+  type: 'test'
+  ...
+# Subtest: 5. --dry-run → 只回读 + diff 输出，零写
+ok 83 - 5. --dry-run → 只回读 + diff 输出，零写
+  ---
+  duration_ms: 0.7231
+  type: 'test'
+  ...
+# Subtest: 6. multica 0.7.0 → UNKNOWN 且提示升级，零平台调用
+ok 84 - 6. multica 0.7.0 → UNKNOWN 且提示升级，零平台调用
+  ---
+  duration_ms: 0.9166
+  type: 'test'
+  ...
+# Subtest: 7. 写后回读 key 派生漂移（R1）→ UNKNOWN 并列出实际键
+ok 85 - 7. 写后回读 key 派生漂移（R1）→ UNKNOWN 并列出实际键
+  ---
+  duration_ms: 5.1363
+  type: 'test'
+  ...
+# Subtest: 9. cliArgs（--profile 等全局参数）透传到每次 multica 调用
+ok 86 - 9. cliArgs（--profile 等全局参数）透传到每次 multica 调用
+  ---
+  duration_ms: 4.7245
+  type: 'test'
+  ...
+# Subtest: 8. 无 name/category 的条目 → status_key 引用形态；版本解析与回读校验纯函数
+ok 87 - 8. 无 name/category 的条目 → status_key 引用形态；版本解析与回读校验纯函数
+  ---
+  duration_ms: 0.7935
+  type: 'test'
+  ...
+# Subtest: workItemsUrl：ids 逗号连接 + $expand=all + api-version=4.1
+ok 88 - workItemsUrl：ids 逗号连接 + $expand=all + api-version=4.1
+  ---
+  duration_ms: 1.4748
+  type: 'test'
+  ...
+# Subtest: workItemsUrl：空数组与单元素边界
+ok 89 - workItemsUrl：空数组与单元素边界
+  ---
+  duration_ms: 0.4424
+  type: 'test'
+  ...
+# Subtest: WORKITEM_BATCH = 50（raw GET URL 长度与单批体量的稳妥值）
+ok 90 - WORKITEM_BATCH = 50（raw GET URL 长度与单批体量的稳妥值）
+  ---
+  duration_ms: 0.2748
+  type: 'test'
+  ...
+# Subtest: 签名分类：传输层短语命中（大小写不敏感）
+ok 91 - 签名分类：传输层短语命中（大小写不敏感）
+  ---
+  duration_ms: 2.6676
+  type: 'test'
+  ...
+# Subtest: 签名分类：ECONNREFUSED 与业务错误不算瞬态
+ok 92 - 签名分类：ECONNREFUSED 与业务错误不算瞬态
+  ---
+  duration_ms: 0.5643
+  type: 'test'
+  ...
+# Subtest: 退避序列：base*3^attempt + 0–20% jitter
+ok 93 - 退避序列：base*3^attempt + 0–20% jitter
+  ---
+  duration_ms: 0.4379
+  type: 'test'
+  ...
+# Subtest: withTransientRetry：首次成功零开销（无 sleep、无 onBeforeRetry）
+ok 94 - withTransientRetry：首次成功零开销（无 sleep、无 onBeforeRetry）
+  ---
+  duration_ms: 1.9222
+  type: 'test'
+  ...
+# Subtest: withTransientRetry：瞬态失败后成功——onBeforeRetry 每次重试前恰好调一次
+ok 95 - withTransientRetry：瞬态失败后成功——onBeforeRetry 每次重试前恰好调一次
+  ---
+  duration_ms: 0.9177
+  type: 'test'
+  ...
+# Subtest: withTransientRetry：耗尽后原类型抛出且 message 尾带 [network]
+ok 96 - withTransientRetry：耗尽后原类型抛出且 message 尾带 [network]
+  ---
+  duration_ms: 0.909
+  type: 'test'
+  ...
+# Subtest: withTransientRetry：非瞬态错误直通（不重试、不标记）
+ok 97 - withTransientRetry：非瞬态错误直通（不重试、不标记）
+  ---
+  duration_ms: 0.6227
+  type: 'test'
+  ...
+# Subtest: markNetworkError：幂等且不重复追加
+ok 98 - markNetworkError：幂等且不重复追加
+  ---
+  duration_ms: 0.2649
+  type: 'test'
+  ...
+# Subtest: 真实 Stage → Validate → Complete：Gate PASS 必须含当前 Metadata Digest
+ok 99 - 真实 Stage → Validate → Complete：Gate PASS 必须含当前 Metadata Digest
+  ---
+  duration_ms: 20293.2127
+  type: 'test'
+  ...
+# Subtest: stage 将 change_kind 写入并回读 Multica Issue Metadata
+ok 100 - stage 将 change_kind 写入并回读 Multica Issue Metadata
+  ---
+  duration_ms: 3101.2013
+  type: 'test'
+  ...
+# Subtest: stage 缺少 change_kind 时拒绝写入 Metadata
+ok 101 - stage 缺少 change_kind 时拒绝写入 Metadata
+  ---
+  duration_ms: 2493.2201
+  type: 'test'
+  ...
+# Subtest: stage 能覆盖原有错误分类且失败写入不会伪装 PASS
+ok 102 - stage 能覆盖原有错误分类且失败写入不会伪装 PASS
+  ---
+  duration_ms: 3998.2561
+  type: 'test'
+  ...
+# Subtest: complete 拒绝仅凭 Facts 声称 Gate PASS 而缺少真实 Gate Result
+ok 103 - complete 拒绝仅凭 Facts 声称 Gate PASS 而缺少真实 Gate Result
+  ---
+  duration_ms: 2760.723
+  type: 'test'
+  ...
+# Subtest: complete 拒绝外部 Issue、失败检查项与已过期 Change 的 Gate Result
+ok 104 - complete 拒绝外部 Issue、失败检查项与已过期 Change 的 Gate Result
+  ---
+  duration_ms: 5706.7947
+  type: 'test'
+  ...
+# Subtest: 首次分析：Change 提交并推送成功后才进入 analysis_review
+ok 105 - 首次分析：Change 提交并推送成功后才进入 analysis_review
+  ---
+  duration_ms: 8924.8301
+  type: 'test'
+  ...
+# Subtest: 审核重放保留原 commit，本地工件与 HEAD 前进不会覆盖已发布来源
+ok 106 - 审核重放保留原 commit，本地工件与 HEAD 前进不会覆盖已发布来源
+  ---
+  duration_ms: 10196.8365
+  type: 'test'
+  ...
+# Subtest: 审核重跑必须核对固定版本 Gate，不能只凭同名 tasks.md 放行
+ok 107 - 审核重跑必须核对固定版本 Gate，不能只凭同名 tasks.md 放行
+  ---
+  duration_ms: 8286.0569
+  type: 'test'
+  ...
+# Subtest: 来源已落账但状态切换失败，重跑必须复用原来源而非新的 HEAD
+ok 108 - 来源已落账但状态切换失败，重跑必须复用原来源而非新的 HEAD
+  ---
+  duration_ms: 10731.9959
+  type: 'test'
+  ...
+# Subtest: Git clean filter 改写审核工件时，不能把工作树 Gate 绑定到不同正文的 commit
+ok 109 - Git clean filter 改写审核工件时，不能把工作树 Gate 绑定到不同正文的 commit
+  ---
+  duration_ms: 4526.1077
+  type: 'test'
+  ...
+# Subtest: 状态成功但响应丢失后，可从固定远端 Gate 恢复，不依赖本地 Gate
+ok 110 - 状态成功但响应丢失后，可从固定远端 Gate 恢复，不依赖本地 Gate
+  ---
+  duration_ms: 7300.616
+  type: 'test'
+  ...
+# Subtest: 来源核验期间 Issue 被阻塞时，不得重新发布 analysis_review
+ok 111 - 来源核验期间 Issue 被阻塞时，不得重新发布 analysis_review
+  ---
+  duration_ms: 5112.7263
+  type: 'test'
+  ...
+# Subtest: 旧审核记录缺少来源时拒绝猜测，重新获准分析后可正常建立来源
+ok 112 - 旧审核记录缺少来源时拒绝猜测，重新获准分析后可正常建立来源
+  ---
+  duration_ms: 6944.9087
+  type: 'test'
+  ...
+# Subtest: 远端读取失败或来源写入失败均不进入 analysis_review，可恢复重跑
+ok 113 - 远端读取失败或来源写入失败均不进入 analysis_review，可恢复重跑
+  ---
+  duration_ms: 13914.2743
+  type: 'test'
+  ...
+# Subtest: push 冲突触发真实 rebase 后，记录最终 SHA 而非 rebase 前 SHA
+ok 114 - push 冲突触发真实 rebase 后，记录最终 SHA 而非 rebase 前 SHA
+  ---
+  duration_ms: 9822.5776
+  type: 'test'
+  ...
+# Subtest: 收口期间来源被其他流程更新时停止，保留新事实
+ok 115 - 收口期间来源被其他流程更新时停止，保留新事实
+  ---
+  duration_ms: 5473.1764
+  type: 'test'
+  ...
+# Subtest: 返工：状态重置后再次 complete 产生第二个提交并推送
+ok 116 - 返工：状态重置后再次 complete 产生第二个提交并推送
+  ---
+  duration_ms: 13644.6929
+  type: 'test'
+  ...
+# Subtest: push 失败：UNKNOWN 退出 3，状态保持 in_progress，本地 Commit 保留
+ok 117 - push 失败：UNKNOWN 退出 3，状态保持 in_progress，本地 Commit 保留
+  ---
+  duration_ms: 3381.3677
+  type: 'test'
+  ...
+# Subtest: 幂等重放：无新改动跳过提交，rev-list=0 跳过 push，仍正常收口
+ok 118 - 幂等重放：无新改动跳过提交，rev-list=0 跳过 push，仍正常收口
+  ---
+  duration_ms: 9743.4616
+  type: 'test'
+  ...
+# Subtest: Handoff 补写 gate 不失效，修改专业 Facts 或 Review 日志必须失效
+ok 119 - Handoff 补写 gate 不失效，修改专业 Facts 或 Review 日志必须失效
+  ---
+  duration_ms: 64.4025
+  type: 'test'
+  ...
+# Subtest: Gate 后即使 Facts 与 metadata 一起被替换也不能复用旧 PASS
+ok 120 - Gate 后即使 Facts 与 metadata 一起被替换也不能复用旧 PASS
+  ---
+  duration_ms: 18.6332
+  type: 'test'
+  ...
+# Subtest: 外部 Facts 必须与 Gate 审核的 metadata 一致
+ok 121 - 外部 Facts 必须与 Gate 审核的 metadata 一致
+  ---
+  duration_ms: 20.5837
+  type: 'test'
+  ...
+# Subtest: 拒绝错配的 Gate issue_id
+ok 122 - 拒绝错配的 Gate issue_id
+  ---
+  duration_ms: 27.2997
+  type: 'test'
+  ...
+# Subtest: 拒绝错配的 Gate workspace_id
+ok 123 - 拒绝错配的 Gate workspace_id
+  ---
+  duration_ms: 19.5759
+  type: 'test'
+  ...
+# Subtest: 拒绝错配的 Gate schema
+ok 124 - 拒绝错配的 Gate schema
+  ---
+  duration_ms: 19.4928
+  type: 'test'
+  ...
+# Subtest: 拒绝错配的 Gate change_digest
+ok 125 - 拒绝错配的 Gate change_digest
+  ---
+  duration_ms: 20.4501
+  type: 'test'
+  ...
+# Subtest: 拒绝错配的 Gate metadata_digest
+ok 126 - 拒绝错配的 Gate metadata_digest
+  ---
+  duration_ms: 23.7837
+  type: 'test'
+  ...
+# Subtest: Gate 缺项、重复检查与伪 PASS 都不得提交
+ok 127 - Gate 缺项、重复检查与伪 PASS 都不得提交
+  ---
+  duration_ms: 32.4518
+  type: 'test'
+  ...
+# Subtest: 未引用的运行日志不使 Gate 过期；明确引用的 Review Evidence 受摘要保护
+ok 128 - 未引用的运行日志不使 Gate 过期；明确引用的 Review Evidence 受摘要保护
+  ---
+  duration_ms: 40.3956
+  type: 'test'
+  ...
+# Subtest: Handoff 的派生 gate 不影响摘要；专业字段改变或 JSON 损坏仍拒绝
+ok 129 - Handoff 的派生 gate 不影响摘要；专业字段改变或 JSON 损坏仍拒绝
+  ---
+  duration_ms: 28.6455
+  type: 'test'
+  ...
+# Subtest: 缺失、跨 Change 和不安全的被引用证据不得悄悄忽略
+ok 130 - 缺失、跨 Change 和不安全的被引用证据不得悄悄忽略
+  ---
+  duration_ms: 21.4712
+  type: 'test'
+  ...
+# Subtest: Gate 不接受符号链接形式的 Change 或被引用 Evidence
+ok 131 - Gate 不接受符号链接形式的 Change 或被引用 Evidence # SKIP
+  ---
+  duration_ms: 0.1493
+  type: 'test'
+  ...
+# Subtest: analysis read 无需根仓挂载，按固定 commit 完整返回中文多行正文
+ok 132 - analysis read 无需根仓挂载，按固定 commit 完整返回中文多行正文
+  ---
+  duration_ms: 3283.5996
+  type: 'test'
+  ...
+# Subtest: 缺失来源、穿越路径、凭据 URL、跨 TFS 服务在发请求前失败
+ok 133 - 缺失来源、穿越路径、凭据 URL、跨 TFS 服务在发请求前失败
+  ---
+  duration_ms: 6541.995
+  type: 'test'
+  ...
+# Subtest: 404 与权限/服务错误均不会回退本地或其他版本
+ok 134 - 404 与权限/服务错误均不会回退本地或其他版本
+  ---
+  duration_ms: 5321.1611
+  type: 'test'
+  ...
+# Subtest: 错误 commit、路径、正文或无效 JSON 不能伪装成功
+ok 135 - 错误 commit、路径、正文或无效 JSON 不能伪装成功
+  ---
+  duration_ms: 7534.672
+  type: 'test'
+  ...
+# Subtest: 缺少显式 Workspace 时不能落入默认工作区
+ok 136 - 缺少显式 Workspace 时不能落入默认工作区
+  ---
+  duration_ms: 935.2327
+  type: 'test'
+  ...
+# Subtest: 缺少 TFS 凭据返回 UNKNOWN JSON，不产生请求
+ok 137 - 缺少 TFS 凭据返回 UNKNOWN JSON，不产生请求
+  ---
+  duration_ms: 1165.0118
+  type: 'test'
+  ...
+# $ openspec status --change fixture-123 --json
+# Subtest: Issue change_kind 持久化且与 Change Schema 校验一致，不再输出独立 Route
+ok 138 - Issue change_kind 持久化且与 Change Schema 校验一致，不再输出独立 Route
+  ---
+  duration_ms: 18.0728
+  type: 'test'
+  ...
+# Subtest: 来源管理类型不自动推断 Schema，但拒绝 Bug + Intentional 自动处理
+ok 139 - 来源管理类型不自动推断 Schema，但拒绝 Bug + Intentional 自动处理
+  ---
+  duration_ms: 0.9455
+  type: 'test'
+  ...
+# Subtest: Intentional 的 AI Review 为硬约束，Corrective 无强制 AI Review
+ok 140 - Intentional 的 AI Review 为硬约束，Corrective 无强制 AI Review
+  ---
+  duration_ms: 0.5385
+  type: 'test'
+  ...
+# Subtest: Acceptance Contract 根据 Schema 选择而非 Issue 分类字段
+ok 141 - Acceptance Contract 根据 Schema 选择而非 Issue 分类字段
+  ---
+  duration_ms: 2205.9836
+  type: 'test'
+  ...
+# Subtest: Schema 必须来自顶层字段，嵌套、重复和非法声明不得被接受
+ok 142 - Schema 必须来自顶层字段，嵌套、重复和非法声明不得被接受
+  ---
+  duration_ms: 8.8552
+  type: 'test'
+  ...
+# Subtest: 工件摘要仅保护实际工程内容与明确引用的 Review Evidence
+ok 143 - 工件摘要仅保护实际工程内容与明确引用的 Review Evidence
+  ---
+  duration_ms: 41.0781
+  type: 'test'
+  ...
+# Subtest: 未知 Schema 与不安全 Change ID 均安全停止
+ok 144 - 未知 Schema 与不安全 Change ID 均安全停止
+  ---
+  duration_ms: 5.9469
+  type: 'test'
+  ...
+# Subtest: D3-A: legal native skip_specs does not require Delta Specs
+ok 145 - D3-A: legal native skip_specs does not require Delta Specs
+  ---
+  duration_ms: 22918.1171
+  type: 'test'
+  ...
+# Subtest: D3-A: missing required Delta Specs still fails acceptance_contract
+ok 146 - D3-A: missing required Delta Specs still fails acceptance_contract
+  ---
+  duration_ms: 5466.9028
+  type: 'test'
+  ...
+# Subtest: D3-A: corrective-change enforces Corrective Proposal instead of Intentional specs skip
+ok 147 - D3-A: corrective-change enforces Corrective Proposal instead of Intentional specs skip
+  ---
+  duration_ms: 3941.1988
+  type: 'test'
+  ...
+# Subtest: D3-B: Requirement Analysis Gate PASS does not require TFS work estimate
+ok 148 - D3-B: Requirement Analysis Gate PASS does not require TFS work estimate
+  ---
+  duration_ms: 5030.7445
+  type: 'test'
+  ...
+# Subtest: D3-B: a historical legal estimate is not a Gate requirement
+ok 149 - D3-B: a historical legal estimate is not a Gate requirement
+  ---
+  duration_ms: 5481.8786
+  type: 'test'
+  ...
+# Subtest: direct Bug delivery has no OpenSpec dependency
+ok 150 - direct Bug delivery has no OpenSpec dependency
+  ---
+  duration_ms: 4.6032
+  type: 'test'
+  ...
+# Subtest: Bug delivery fails when a PR is not covered or candidate differs
+ok 151 - Bug delivery fails when a PR is not covered or candidate differs
+  ---
+  duration_ms: 1.4109
+  type: 'test'
+  ...
+# Subtest: blocking review findings, explicit verification and blocked issue fail closed
+ok 152 - blocking review findings, explicit verification and blocked issue fail closed
+  ---
+  duration_ms: 0.9799
+  type: 'test'
+  ...
+# Subtest: finalize blocks if required Bug repositories have changed after PR readiness
+ok 153 - finalize blocks if required Bug repositories have changed after PR readiness
+  ---
+  duration_ms: 0.6414
+  type: 'test'
+  ...
+# Subtest: prepare digest detects modification to committed Bug evidence
+ok 154 - prepare digest detects modification to committed Bug evidence
+  ---
+  duration_ms: 0.4629
+  type: 'test'
+  ...
+# Subtest: OpenSpec Bug remains on existing Change-based path
+ok 155 - OpenSpec Bug remains on existing Change-based path
+  ---
+  duration_ms: 0.3395
+  type: 'test'
+  ...
+# Subtest: merged PR must point to the exact candidate verified by Bug Agent
+ok 156 - merged PR must point to the exact candidate verified by Bug Agent
+  ---
+  duration_ms: 0.5258
+  type: 'test'
+  ...
+# Subtest: Bug Fix Agent is managed independently of Delivery Squad
+ok 157 - Bug Fix Agent is managed independently of Delivery Squad
+  ---
+  duration_ms: 4.3383
+  type: 'test'
+  ...
+# Subtest: Bug PR description uses saved facts and actual validation
+ok 158 - Bug PR description uses saved facts and actual validation
+  ---
+  duration_ms: 2.5945
+  type: 'test'
+  ...
+# Subtest: Bug PR description includes probable diagnosis and nonblocking review risks
+ok 159 - Bug PR description includes probable diagnosis and nonblocking review risks
+  ---
+  duration_ms: 0.7021
+  type: 'test'
+  ...
+# Subtest: Bug PR description blocks missing evidence, FAIL validation and unresolved blocking findings
+ok 160 - Bug PR description blocks missing evidence, FAIL validation and unresolved blocking findings
+  ---
+  duration_ms: 1.2349
+  type: 'test'
+  ...
+# Subtest: default Bug PR description is generated on the materialization host; explicit file stays unchanged
+ok 161 - default Bug PR description is generated on the materialization host; explicit file stays unchanged
+  ---
+  duration_ms: 4.7519
+  type: 'test'
+  ...
+# Subtest: Bug evidence allows a bounded, verified repair without OpenSpec fields
+ok 162 - Bug evidence allows a bounded, verified repair without OpenSpec fields
+  ---
+  duration_ms: 8.0908
+  type: 'test'
+  ...
+# Subtest: Bug evidence rejects identity mismatch and missing regression
+ok 163 - Bug evidence rejects identity mismatch and missing regression
+  ---
+  duration_ms: 0.5617
+  type: 'test'
+  ...
+# Subtest: probable Root Cause must describe remaining risk
+ok 164 - probable Root Cause must describe remaining risk
+  ---
+  duration_ms: 0.5073
+  type: 'test'
+  ...
+# Subtest: blocking review findings and unresolved blockers reject readiness
+ok 165 - blocking review findings and unresolved blockers reject readiness
+  ---
+  duration_ms: 0.6526
+  type: 'test'
+  ...
+# Subtest: Human recovery only accepts exact abandoned PR identity
+ok 166 - Human recovery only accepts exact abandoned PR identity
+  ---
+  duration_ms: 3.8979
+  type: 'test'
+  ...
+# Subtest: Mixed active or completed PR set is not automatically reset
+ok 167 - Mixed active or completed PR set is not automatically reset
+  ---
+  duration_ms: 0.4151
+  type: 'test'
+  ...
+# Subtest: Invalid duplicate identities fail before recovery
+ok 168 - Invalid duplicate identities fail before recovery
+  ---
+  duration_ms: 0.324
+  type: 'test'
+  ...
+# Subtest: Bug PR gate accepts an exact multi-repo scope irrespective of entry order
+ok 169 - Bug PR gate accepts an exact multi-repo scope irrespective of entry order
+  ---
+  duration_ms: 4.269
+  type: 'test'
+  ...
+# Subtest: Bug PR gate blocks incomplete preparation before any PR is created
+ok 170 - Bug PR gate blocks incomplete preparation before any PR is created
+  ---
+  duration_ms: 1.4133
+  type: 'test'
+  ...
+# Subtest: Bug PR gate rejects unregistered, changed or duplicate repository scope
+ok 171 - Bug PR gate rejects unregistered, changed or duplicate repository scope
+  ---
+  duration_ms: 3.1659
+  type: 'test'
+  ...
+# Subtest: Direct Bug preparation must verify native Agent assignment
+ok 172 - Direct Bug preparation must verify native Agent assignment
+  ---
+  duration_ms: 0.8392
+  type: 'test'
+  ...
+# Subtest: 全新根仓（openspec/ 无 changes/）：resolve-identity 返回 NOT_FOUND exit 0，stdout 为纯 JSON
+ok 173 - 全新根仓（openspec/ 无 changes/）：resolve-identity 返回 NOT_FOUND exit 0，stdout 为纯 JSON
+  ---
+  duration_ms: 937.4207
+  type: 'test'
+  ...
+# Subtest: 直接传 openspec/ 目录且无 changes/：同样 NOT_FOUND exit 0
+ok 174 - 直接传 openspec/ 目录且无 changes/：同样 NOT_FOUND exit 0
+  ---
+  duration_ms: 1009.7123
+  type: 'test'
+  ...
+# Subtest: openspec/ 定位不到：结构化 INVALID exit 3，stdout 为纯 JSON，无未捕获堆栈
+ok 175 - openspec/ 定位不到：结构化 INVALID exit 3，stdout 为纯 JSON，无未捕获堆栈
+  ---
+  duration_ms: 879.8195
+  type: 'test'
+  ...
+# Subtest: changes/ 存在但无匹配：NOT_FOUND exit 0（既有行为回归锚点）
+ok 176 - changes/ 存在但无匹配：NOT_FOUND exit 0（既有行为回归锚点）
+  ---
+  duration_ms: 951.4688
+  type: 'test'
+  ...
+# Subtest: changes/ 下 tfs-id 后缀命中：ACTIVE_FOUND exit 0（既有行为回归锚点）
+ok 177 - changes/ 下 tfs-id 后缀命中：ACTIVE_FOUND exit 0（既有行为回归锚点）
+  ---
+  duration_ms: 1003.6491
+  type: 'test'
+  ...
+# Subtest: LF tasks.md：UPDATED 且勾选行重写
+ok 178 - LF tasks.md：UPDATED 且勾选行重写
+  ---
+  duration_ms: 975.8028
+  type: 'test'
+  ...
+# Subtest: CRLF tasks.md：UPDATED（D1 回归：CHECKBOX_LINE 须容忍 \\r）
+ok 179 - CRLF tasks.md：UPDATED（D1 回归：CHECKBOX_LINE 须容忍 \\r）
+  ---
+  duration_ms: 1037.8948
+  type: 'test'
+  ...
+# Subtest: CRLF tasks.md：重跑幂等 ALREADY_COMPLETE
+ok 180 - CRLF tasks.md：重跑幂等 ALREADY_COMPLETE
+  ---
+  duration_ms: 1825.115
+  type: 'test'
+  ...
+# Subtest: F3: current contract hash passes Engineer Completion
+ok 181 - F3: current contract hash passes Engineer Completion
+  ---
+  duration_ms: 950.9037
+  type: 'test'
+  ...
+# Subtest: F3: missing contract_files is caught before Finalize
+ok 182 - F3: missing contract_files is caught before Finalize
+  ---
+  duration_ms: 1008.1261
+  type: 'test'
+  ...
+# Subtest: F3: stale contract hash fails Engineer Completion
+ok 183 - F3: stale contract hash fails Engineer Completion
+  ---
+  duration_ms: 1045.6039
+  type: 'test'
+  ...
+# Subtest: empty_stdout ×2：重试后 PASS，stdout 干净 JSON，stderr 有重试行
+ok 184 - empty_stdout ×2：重试后 PASS，stdout 干净 JSON，stderr 有重试行
+  ---
+  duration_ms: 15261.3973
+  type: 'test'
+  ...
+# Subtest: tls_stderr ×1：网络签名命中，重试后 PASS
+ok 185 - tls_stderr ×1：网络签名命中，重试后 PASS
+  ---
+  duration_ms: 4614.2995
+  type: 'test'
+  ...
+# Subtest: tls_stderr ×9：超过重试上限 → issue_read UNKNOWN，分类文案不变
+ok 186 - tls_stderr ×9：超过重试上限 → issue_read UNKNOWN，分类文案不变
+  ---
+  duration_ms: 45263.1109
+  type: 'test'
+  ...
+# Subtest: 全部命令组:bare 调用 exit 64,stderr 帮助列出全部叶子
+ok 187 - 全部命令组:bare 调用 exit 64,stderr 帮助列出全部叶子
+  ---
+  duration_ms: 9516.9036
+  type: 'test'
+  ...
+# Subtest: 顶层叶子 query:缺 --wiql exit 64,用法走 stderr,stdout 纯净
+ok 188 - 顶层叶子 query:缺 --wiql exit 64,用法走 stderr,stdout 纯净
+  ---
+  duration_ms: 905.5432
+  type: 'test'
+  ...
+# Subtest: 命令总数 = 37（analysis read 新增只读入口）
+ok 189 - 命令总数 = 37（analysis read 新增只读入口）
+  ---
+  duration_ms: 0.4784
+  type: 'test'
+  ...
+# Subtest: --version 输出 JSON:name/version/node/sea,exit 0
+ok 190 - --version 输出 JSON:name/version/node/sea,exit 0
+  ---
+  duration_ms: 780.3462
+  type: 'test'
+  ...
+# Subtest: TFS 配置缺失:exit 3 且 stdout 为 {unknown:true}(ConfigError → UNKNOWN)
+ok 191 - TFS 配置缺失:exit 3 且 stdout 为 {unknown:true}(ConfigError → UNKNOWN)
+  ---
+  duration_ms: 752.0685
+  type: 'test'
+  ...
+# Subtest: workitem 叶子参数错误:exit 64(set-state 缺 --id/--state)
+ok 192 - workitem 叶子参数错误:exit 64(set-state 缺 --id/--state)
+  ---
+  duration_ms: 721.7316
+  type: 'test'
+  ...
+# Subtest: D1 identity: stale change_ref + tfs.id reuses the existing active Change
+ok 193 - D1 identity: stale change_ref + tfs.id reuses the existing active Change
+  ---
+  duration_ms: 1893.2228
+  type: 'test'
+  ...
+# Subtest: D1 identity: duplicate, archived, wrong Schema and unknown remain safe
+ok 194 - D1 identity: duplicate, archived, wrong Schema and unknown remain safe
+  ---
+  duration_ms: 4018.4158
+  type: 'test'
+  ...
+# Subtest: D1 workspace sync renders spec-preparation config in dry-run and local-only modes
+ok 195 - D1 workspace sync renders spec-preparation config in dry-run and local-only modes
+  ---
+  duration_ms: 3490.4653
+  type: 'test'
+  ...
+# Subtest: D1 workspace sync refuses missing squad identity rather than writing fallback registry
+ok 196 - D1 workspace sync refuses missing squad identity rather than writing fallback registry
+  ---
+  duration_ms: 906.2546
+  type: 'test'
+  ...
+# Subtest: D2 skill contracts: retire legacy without deletion and bind composable Analyst methods
+ok 197 - D2 skill contracts: retire legacy without deletion and bind composable Analyst methods
+  ---
+  duration_ms: 5.6756
+  type: 'test'
+  ...
+# Subtest: OpenSpec v1.13.2: D1 project Schema and correct Root are selected
+ok 198 - OpenSpec v1.13.2: D1 project Schema and correct Root are selected
+  ---
+  duration_ms: 26910.1103
+  type: 'test'
+  ...
+# Subtest: OpenSpec v1.13.2: status uses the process cwd; another Root must be rejected by caller
+ok 199 - OpenSpec v1.13.2: status uses the process cwd; another Root must be rejected by caller
+  ---
+  duration_ms: 4698.0605
+  type: 'test'
+  ...
+# Subtest: OpenSpec v1.13.2: one Glob spec can appear done while another declared Capability is missing
+ok 200 - OpenSpec v1.13.2: one Glob spec can appear done while another declared Capability is missing
+  ---
+  duration_ms: 3883.9477
+  type: 'test'
+  ...
+# Subtest: OpenSpec v1.13.2: metadata skip_specs is reflected in native status
+ok 201 - OpenSpec v1.13.2: metadata skip_specs is reflected in native status
+  ---
+  duration_ms: 5949.3313
+  type: 'test'
+  ...
+# Subtest: OpenSpec v1.13.2: Conditional Design is separate from Tasks apply.requires
+ok 202 - OpenSpec v1.13.2: Conditional Design is separate from Tasks apply.requires
+  ---
+  duration_ms: 3442.7674
+  type: 'test'
+  ...
+# Subtest: D3-B: engineering task without a TFS estimate is valid input
+ok 203 - D3-B: engineering task without a TFS estimate is valid input
+  ---
+  duration_ms: 2.1087
+  type: 'test'
+  ...
+# Subtest: D3-B: legacy estimate remains optional and strips cleanly
+ok 204 - D3-B: legacy estimate remains optional and strips cleanly
+  ---
+  duration_ms: 0.4967
+  type: 'test'
+  ...
+# Subtest: D3-B: engineering Task is not forced to split by historical six-hour limit
+ok 205 - D3-B: engineering Task is not forced to split by historical six-hour limit
+  ---
+  duration_ms: 0.2688
+  type: 'test'
+  ...
+# Subtest: D3-B: malformed explicitly supplied estimate is rejected, not fabricated
+ok 206 - D3-B: malformed explicitly supplied estimate is rejected, not fabricated
+  ---
+  duration_ms: 0.465
+  type: 'test'
+  ...
+# Subtest: D3-B: TFS title remains bounded independent of optional estimates
+ok 207 - D3-B: TFS title remains bounded independent of optional estimates
+  ---
+  duration_ms: 0.4719
+  type: 'test'
+  ...
+# Subtest: PASS 合并写入保留他仓条目并搭架描述文件
+ok 208 - PASS 合并写入保留他仓条目并搭架描述文件
+  ---
+  duration_ms: 8052.3142
+  type: 'test'
+  ...
+# Subtest: HEAD 不一致 FAIL 且不写 metadata
+ok 209 - HEAD 不一致 FAIL 且不写 metadata
+  ---
+  duration_ms: 4645.7698
+  type: 'test'
+  ...
+# Subtest: 远端分支不存在 FAIL
+ok 210 - 远端分支不存在 FAIL
+  ---
+  duration_ms: 3685.7722
+  type: 'test'
+  ...
+# Subtest: candidate_commit 非 40 位 SHA FAIL
+ok 211 - candidate_commit 非 40 位 SHA FAIL
+  ---
+  duration_ms: 3312.7009
+  type: 'test'
+  ...
+# Subtest: 重跑幂等：本仓条目替换不重复，既有描述文件不改写
+ok 212 - 重跑幂等：本仓条目替换不重复，既有描述文件不改写
+  ---
+  duration_ms: 5004.0441
+  type: 'test'
+  ...
+# Subtest: Sub-Issue 落账/启动前核对来源：ASSIGN
+ok 213 - Sub-Issue 落账/启动前核对来源：ASSIGN
+  ---
+  duration_ms: 5517.6972
+  type: 'test'
+  ...
+# Subtest: Sub-Issue 落账/启动前核对来源：DISPATCH
+ok 214 - Sub-Issue 落账/启动前核对来源：DISPATCH
+  ---
+  duration_ms: 6508.763
+  type: 'test'
+  ...
+# Subtest: Sub-Issue 落账/启动前核对来源：NONE
+ok 215 - Sub-Issue 落账/启动前核对来源：NONE
+  ---
+  duration_ms: 3852.2964
+  type: 'test'
+  ...
+# Subtest: Analyst required, Human not_required: project false before dispatch; retry is NOOP
+ok 216 - Analyst required, Human not_required: project false before dispatch; retry is NOOP
+  ---
+  duration_ms: 3488.8148
+  type: 'test'
+  ...
+# Subtest: Analyst not_required, Human required: project true rather than default false
+ok 217 - Analyst not_required, Human required: project true rather than default false
+  ---
+  duration_ms: 2186.3444
+  type: 'test'
+  ...
+# Subtest: missing Human Verify Decision stops before final projection or dispatch
+ok 218 - missing Human Verify Decision stops before final projection or dispatch
+  ---
+  duration_ms: 1155.4473
+  type: 'test'
+  ...
+# Subtest: failed Verify projection never writes dev.dispatch; can retry safely
+ok 219 - failed Verify projection never writes dev.dispatch; can retry safely
+  ---
+  duration_ms: 3459.3934
+  type: 'test'
+  ...
+# Subtest: conflicting final decision is never overwritten
+ok 220 - conflicting final decision is never overwritten
+  ---
+  duration_ms: 1649.2133
+  type: 'test'
+  ...
+# Subtest: post-dispatch Human override changes only final Verify Decision, preserving dev.dispatch
+ok 221 - post-dispatch Human override changes only final Verify Decision, preserving dev.dispatch
+  ---
+  duration_ms: 4571.8195
+  type: 'test'
+  ...
+# Subtest: post-dispatch Human override from required to not_required is supported
+ok 222 - post-dispatch Human override from required to not_required is supported
+  ---
+  duration_ms: 3320.3606
+  type: 'test'
+  ...
+# Subtest: changing the decision with the same old approval comment must fail closed
+ok 223 - changing the decision with the same old approval comment must fail closed
+  ---
+  duration_ms: 3069.8203
+  type: 'test'
+  ...
+# Subtest: no new dispatch or NOOP permitted without a valid Analysis Gate PASS
+ok 224 - no new dispatch or NOOP permitted without a valid Analysis Gate PASS
+  ---
+  duration_ms: 7096.6676
+  type: 'test'
+  ...
+# Subtest: approval projection rejects missing or malformed human identity and timestamp
+ok 225 - approval projection rejects missing or malformed human identity and timestamp
+  ---
+  duration_ms: 1846.7868
+  type: 'test'
+  ...
+# Subtest: 派发只读远端已批准任务，本地 tasks.md 修改或删除不改变分工依据
+ok 226 - 派发只读远端已批准任务，本地 tasks.md 修改或删除不改变分工依据
+  ---
+  duration_ms: 3222.5025
+  type: 'test'
+  ...
+# Subtest: 新分析不能复用旧批准；同 key 新版本不能 NOOP 或激活旧派发
+ok 227 - 新分析不能复用旧批准；同 key 新版本不能 NOOP 或激活旧派发
+  ---
+  duration_ms: 3159.5809
+  type: 'test'
+  ...
+# Subtest: 缺失来源或重复任务编号时零派发写入
+ok 228 - 缺失来源或重复任务编号时零派发写入
+  ---
+  duration_ms: 1656.7011
+  type: 'test'
+  ...
+# Subtest: 读取后来源并发变化，写入前回读阻止派发
+ok 229 - 读取后来源并发变化，写入前回读阻止派发
+  ---
+  duration_ms: 1224.3301
+  type: 'test'
+  ...
+# Subtest: Check PASS precedes Patch; missing/duplicate/invalid Task identities fail
+ok 230 - Check PASS precedes Patch; missing/duplicate/invalid Task identities fail
+  ---
+  duration_ms: 6055.7227
+  type: 'test'
+  ...
+# Subtest: Review blocks unresolved blocking Findings, permits documented non-blocking risk
+ok 231 - Review blocks unresolved blocking Findings, permits documented non-blocking risk
+  ---
+  duration_ms: 3259.8102
+  type: 'test'
+  ...
+# Subtest: Dispatch matches Change and Engineer and rejects overlapping conflicting owners
+ok 232 - Dispatch matches Change and Engineer and rejects overlapping conflicting owners
+  ---
+  duration_ms: 3936.2258
+  type: 'test'
+  ...
+# Subtest: network_baseline 命中本地服务 → tfs 目标 direct 腿成功
+ok 233 - network_baseline 命中本地服务 → tfs 目标 direct 腿成功
+  ---
+  duration_ms: 3174.8036
+  type: 'test'
+  ...
+# Subtest: 默认 doctor 输出不含 network_baseline（opt-in 守卫）
+ok 234 - 默认 doctor 输出不含 network_baseline（opt-in 守卫）
+  ---
+  duration_ms: 4829.3957
+  type: 'test'
+  ...
+# Subtest: --network-sample 不带 --require network_baseline → 用法错误 64
+ok 235 - --network-sample 不带 --require network_baseline → 用法错误 64
+  ---
+  duration_ms: 868.8996
+  type: 'test'
+  ...
+# Subtest: --network-sample 非法值 → 用法错误 64
+ok 236 - --network-sample 非法值 → 用法错误 64
+  ---
+  duration_ms: 846.1522
+  type: 'test'
+  ...
+# Subtest: T1 happy finalize：PASS + steps 键序 golden + archive<writeback<summary 顺序 + push 到达
+ok 237 - T1 happy finalize：PASS + steps 键序 golden + archive<writeback<summary 顺序 + push 到达
+  ---
+  duration_ms: 21975.0179
+  type: 'test'
+  ...
+# Subtest: T2 gate 三态：旧 hash → exit 2；缺 contract_files → exit 3；无适用 Evidence → exit 3
+ok 238 - T2 gate 三态：旧 hash → exit 2；缺 contract_files → exit 3；无适用 Evidence → exit 3
+  ---
+  duration_ms: 17915.3586
+  type: 'test'
+  ...
+# Subtest: T3 M2.3：未提交 Change 工件先 finalize: 提交再归档；foreign 预暂存 → exit 3 不提交
+ok 239 - T3 M2.3：未提交 Change 工件先 finalize: 提交再归档；foreign 预暂存 → exit 3 不提交
+  ---
+  duration_ms: 18658.1502
+  type: 'test'
+  ...
+# Subtest: T4 M2.5：未涉及 capability 的 specs 脏文件 → exit 3；涉及的 → 随归档提交
+ok 240 - T4 M2.5：未涉及 capability 的 specs 脏文件 → exit 3；涉及的 → 随归档提交
+  ---
+  duration_ms: 15200.3607
+  type: 'test'
+  ...
+# Subtest: T5 续走：完成后重跑 → done-shortcut；预置已归档+writeback 完成 → summary 恰一次
+ok 241 - T5 续走：完成后重跑 → done-shortcut；预置已归档+writeback 完成 → summary 恰一次
+  ---
+  duration_ms: 18490.0575
+  type: 'test'
+  ...
+# Subtest: 归档移动后提交前中断：重跑提交本次归档，不再次 archive
+ok 242 - 归档移动后提交前中断：重跑提交本次归档，不再次 archive
+  ---
+  duration_ms: 9084.2959
+  type: 'test'
+  ...
+# Subtest: 归档恢复仍拒绝夹带其他 Change，保留未提交现场
+ok 243 - 归档恢复仍拒绝夹带其他 Change，保留未提交现场
+  ---
+  duration_ms: 4048.0849
+  type: 'test'
+  ...
+# Subtest: 归档允许 openspec 外未暂存改动：运行时指令与未跟踪文件保留且不进入提交
+ok 244 - 归档允许 openspec 外未暂存改动：运行时指令与未跟踪文件保留且不进入提交
+  ---
+  duration_ms: 11329.1933
+  type: 'test'
+  ...
+# Subtest: 归档前拒绝外来暂存内容，即使当前 Change 无待保存工件
+ok 245 - 归档前拒绝外来暂存内容，即使当前 Change 无待保存工件
+  ---
+  duration_ms: 4647.893
+  type: 'test'
+  ...
+# Subtest: 归档后再次检查暂存区，拒绝夹带执行期间新增的外来暂存内容
+ok 246 - 归档后再次检查暂存区，拒绝夹带执行期间新增的外来暂存内容
+  ---
+  duration_ms: 5291.6377
+  type: 'test'
+  ...
+# Subtest: 根仓落后时先快进再保存工件，保留 AGENTS.md 未暂存改动
+ok 247 - 根仓落后时先快进再保存工件，保留 AGENTS.md 未暂存改动
+  ---
+  duration_ms: 11726.877
+  type: 'test'
+  ...
+# Subtest: 快进会覆盖运行时指令时停止，不改写 AGENTS.md 或本地 HEAD
+ok 248 - 快进会覆盖运行时指令时停止，不改写 AGENTS.md 或本地 HEAD
+  ---
+  duration_ms: 5064.9089
+  type: 'test'
+  ...
+# Subtest: 已有分叉时停止：不创建保存或归档提交，不移动 Change，不改暂存区
+ok 249 - 已有分叉时停止：不创建保存或归档提交，不移动 Change，不改暂存区
+  ---
+  duration_ms: 5111.5937
+  type: 'test'
+  ...
+# Subtest: 本地领先但包含范围外提交时停止，不能借归档一起推送
+ok 250 - 本地领先但包含范围外提交时停止，不能借归档一起推送
+  ---
+  duration_ms: 4436.8388
+  type: 'test'
+  ...
+# Subtest: 归档期间远端推进：保留本地归档提交与 pending，重跑也不 rebase 或重复归档
+ok 251 - 归档期间远端推进：保留本地归档提交与 pending，重跑也不 rebase 或重复归档
+  ---
+  duration_ms: 7924.222
+  type: 'test'
+  ...
+# Subtest: 快进改变当前契约时停止，不使用旧 Gate 继续归档
+ok 252 - 快进改变当前契约时停止，不使用旧 Gate 继续归档
+  ---
+  duration_ms: 4656.6618
+  type: 'test'
+  ...
+# Subtest: 已归档恢复允许运行时改动，并只推送本次归档提交
+ok 253 - 已归档恢复允许运行时改动，并只推送本次归档提交
+  ---
+  duration_ms: 10252.4063
+  type: 'test'
+  ...
+# Subtest: 需要快进但当前 Change 有暂存内容时停止，保留索引与工作区
+ok 254 - 需要快进但当前 Change 有暂存内容时停止，保留索引与工作区
+  ---
+  duration_ms: 7396.3176
+  type: 'test'
+  ...
+# Subtest: 领先的当前 Change 提交允许续走，不要求根仓完全无本地提交
+ok 255 - 领先的当前 Change 提交允许续走，不要求根仓完全无本地提交
+  ---
+  duration_ms: 13303.1556
+  type: 'test'
+  ...
+# Subtest: 范围外提交先改后还原也拒绝推送，不能只检查净差异
+ok 256 - 范围外提交先改后还原也拒绝推送，不能只检查净差异
+  ---
+  duration_ms: 5505.9827
+  type: 'test'
+  ...
+# Subtest: 前导空格的范围外路径不能伪装成 openspec 路径
+ok 257 - 前导空格的范围外路径不能伪装成 openspec 路径
+  ---
+  duration_ms: 4523.1019
+  type: 'test'
+  ...
+# Subtest: 远端未前进的临时推送失败可重试，AGENTS.md 保持原样且不 rebase
+ok 258 - 远端未前进的临时推送失败可重试，AGENTS.md 保持原样且不 rebase
+  ---
+  duration_ms: 12361.3999
+  type: 'test'
+  ...
+# Subtest: 推送时远端才前进：拒绝后回核分叉，不自动 rebase 或再次推送
+ok 259 - 推送时远端才前进：拒绝后回核分叉，不自动 rebase 或再次推送
+  ---
+  duration_ms: 8061.0739
+  type: 'test'
+  ...
+# Subtest: D3-B: TFS writeback cannot run before prepared archive, even with valid work item
+ok 260 - D3-B: TFS writeback cannot run before prepared archive, even with valid work item
+  ---
+  duration_ms: 3434.7694
+  type: 'test'
+  ...
+# Subtest: D3-B: prepared Delivery cannot become done before TFS writeback succeeds
+ok 261 - D3-B: prepared Delivery cannot become done before TFS writeback succeeds
+  ---
+  duration_ms: 12548.8794
+  type: 'test'
+  ...
+# Subtest: D3-B: missing TFS parent blocks Issue done; recovery reuses archived Change
+ok 262 - D3-B: missing TFS parent blocks Issue done; recovery reuses archived Change
+  ---
+  duration_ms: 15961.1478
+  type: 'test'
+  ...
+# Subtest: D3-B: pending and local archive without confirmed Prepare must not permit TFS writeback
+ok 263 - D3-B: pending and local archive without confirmed Prepare must not permit TFS writeback
+  ---
+  duration_ms: 7729.9054
+  type: 'test'
+  ...
+# Subtest: D3-B: stale TFS done marker cannot bypass actual parent status
+ok 264 - D3-B: stale TFS done marker cannot bypass actual parent status
+  ---
+  duration_ms: 7351.1808
+  type: 'test'
+  ...
+# Subtest: D3-B: TFS state write failure leaves pending, can resume without archive replay
+ok 265 - D3-B: TFS state write failure leaves pending, can resume without archive replay
+  ---
+  duration_ms: 11245.0201
+  type: 'test'
+  ...
+# Subtest: done replay validates minimum Analysis facts before clearing pending
+ok 266 - done replay validates minimum Analysis facts before clearing pending
+  ---
+  duration_ms: 5384.6086
+  type: 'test'
+  ...
+# Subtest: done replay with valid classification clears only pending without requiring root repo
+ok 267 - done replay with valid classification clears only pending without requiring root repo
+  ---
+  duration_ms: 1523.7618
+  type: 'test'
+  ...
+# Subtest: done replay with valid facts and no pending remains a no-op
+ok 268 - done replay with valid facts and no pending remains a no-op
+  ---
+  duration_ms: 1207.563
+  type: 'test'
+  ...
+# Subtest: completed facts checker rejects missing classification and invalid Change ID
+ok 269 - completed facts checker rejects missing classification and invalid Change ID
+  ---
+  duration_ms: 2.7612
+  type: 'test'
+  ...
+# Subtest: done replay refuses missing or contradictory final Verify Decision before clearing pending
+ok 270 - done replay refuses missing or contradictory final Verify Decision before clearing pending
+  ---
+  duration_ms: 3804.7888
+  type: 'test'
+  ...
+# Subtest: dev materialize --help → exit 0，stdout 出用法
+ok 271 - dev materialize --help → exit 0，stdout 出用法
+  ---
+  duration_ms: 938.857
+  type: 'test'
+  ...
+# Subtest: dev materialize 缺必填参数 → exit 64（行为守卫）
+ok 272 - dev materialize 缺必填参数 → exit 64（行为守卫）
+  ---
+  duration_ms: 883.4148
+  type: 'test'
+  ...
+# Subtest: dev pr-prep --help → exit 0，stdout 出用法
+ok 273 - dev pr-prep --help → exit 0，stdout 出用法
+  ---
+  duration_ms: 933.8519
+  type: 'test'
+  ...
+# Subtest: dev pr-prep 缺必填参数 → exit 64（行为守卫）
+ok 274 - dev pr-prep 缺必填参数 → exit 64（行为守卫）
+  ---
+  duration_ms: 1020.9198
+  type: 'test'
+  ...
+# Subtest: dev check-completion --help → exit 0，stdout 出用法
+ok 275 - dev check-completion --help → exit 0，stdout 出用法
+  ---
+  duration_ms: 925.8093
+  type: 'test'
+  ...
+# Subtest: dev check-completion 缺必填参数 → exit 64（行为守卫）
+ok 276 - dev check-completion 缺必填参数 → exit 64（行为守卫）
+  ---
+  duration_ms: 724.5584
+  type: 'test'
+  ...
+# Subtest: dev contract-hash --help → exit 0，stdout 出用法
+ok 277 - dev contract-hash --help → exit 0，stdout 出用法
+  ---
+  duration_ms: 433.4366
+  type: 'test'
+  ...
+# Subtest: dev contract-hash 缺必填参数 → exit 64（行为守卫）
+ok 278 - dev contract-hash 缺必填参数 → exit 64（行为守卫）
+  ---
+  duration_ms: 882.8746
+  type: 'test'
+  ...
+# Subtest: extractTaskText：LF 行正常提取
+ok 279 - extractTaskText：LF 行正常提取
+  ---
+  duration_ms: 2.419
+  type: 'test'
+  ...
+# Subtest: extractTaskText：CRLF 行正常提取（D1 同类回归）
+ok 280 - extractTaskText：CRLF 行正常提取（D1 同类回归）
+  ---
+  duration_ms: 0.6773
+  type: 'test'
+  ...
+# Subtest: extractTaskText：ref 不存在返回 null
+ok 281 - extractTaskText：ref 不存在返回 null
+  ---
+  duration_ms: 0.5463
+  type: 'test'
+  ...
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue metadata set issue-1 --key k1 --value v1 --type string --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue metadata list issue-1 --workspace-id ws-test --output json
+# [rondo] 写入 metadata(issue=issue-1, key=k1) 响应丢失但回读确认已生效（断连恢复，不重复写入）
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs --profile isolated-test --server-url https://isolated.invalid issue metadata set issue-1 --key env-key --value yes --type string --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs --profile isolated-test --server-url https://isolated.invalid issue metadata list issue-1 --workspace-id ws-test --output json
+# [rondo] 写入 metadata(issue=issue-1, key=env-key) 响应丢失但回读确认已生效（断连恢复，不重复写入）
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs --profile isolated-test --server-url https://isolated.invalid issue metadata delete issue-1 --key env-key --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs --profile isolated-test --server-url https://isolated.invalid issue metadata list issue-1 --workspace-id ws-test --output json
+# [rondo] 删除 metadata(issue=issue-1, key=env-key) 响应丢失但回读确认已生效（断连恢复，不重复写入）
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs --profile isolated-test --server-url https://isolated.invalid issue status issue-1 blocked --no-start --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs --profile isolated-test --server-url https://isolated.invalid issue get issue-1 --workspace-id ws-test --output json
+# [rondo] Issue issue-1 → blocked 响应丢失但回读确认已生效（断连恢复，不重复写入）
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs --profile isolated-test --server-url https://isolated.invalid issue status issue-1 in_progress --no-start --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs --profile isolated-test --server-url https://isolated.invalid issue get issue-1 --workspace-id ws-test --output json
+# [rondo] Issue issue-1 → in_progress（--no-start） 响应丢失但回读确认已生效（断连恢复，不重复写入）
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs --profile isolated-test --server-url https://isolated.invalid issue status issue-1 done --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs --profile isolated-test --server-url https://isolated.invalid issue assign issue-1 --to-id engineer-1 --no-start --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs --profile isolated-test --server-url https://isolated.invalid issue get issue-1 --workspace-id ws-test --output json
+# [rondo] Sub-Issue issue-1 assignee（--no-start） 响应丢失但回读确认已生效（断连恢复，不重复写入）
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs --profile isolated-test --server-url https://isolated.invalid issue comment list issue-1 --full --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs --profile isolated-test --server-url https://isolated.invalid issue comment add issue-1 --content-stdin --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs --profile isolated-test --server-url https://isolated.invalid issue comment list issue-1 --full --workspace-id ws-test --output json
+# [rondo] 写入 Issue 评论(issue=issue-1) 响应丢失但回读认领新评论 comment-1（断连恢复，不重复评论）
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs --profile isolated-test --server-url https://isolated.invalid issue comment list issue-1 --full --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs --profile isolated-test --server-url https://isolated.invalid issue comment add issue-1 --content-file C:\\Users\\lilei\\AppData\\Local\\Temp\\multica-env-comment-TuhA0m\\comment.md --allow-external-file --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs --profile isolated-test --server-url https://isolated.invalid issue comment list issue-1 --full --workspace-id ws-test --output json
+# [rondo] 写入 Issue 评论(issue=issue-1) 响应丢失但回读认领新评论 comment-2（断连恢复，不重复评论）
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs --profile isolated-test --server-url https://isolated.invalid issue metadata list issue-1 --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue status issue-1 done --no-start --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue get issue-1 --workspace-id ws-test --output json
+# [rondo] Issue issue-1 → done 响应丢失但回读确认已生效（断连恢复，不重复写入）
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue comment list issue-1 --full --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue comment add issue-1 --content-stdin --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue comment list issue-1 --full --workspace-id ws-test --output json
+# [rondo] 写入 Issue 评论(issue=issue-1) 响应丢失但回读认领新评论 comment-1（断连恢复，不重复评论）
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue comment list issue-1 --full --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue comment add issue-1 --content-file C:\\Users\\lilei\\AppData\\Local\\Temp\\multica-write-confirm-file-8yeuI3\\summary.md --allow-external-file --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue comment list issue-1 --full --workspace-id ws-test --output json
+# [rondo] 写入 Issue 评论(issue=issue-1) 响应丢失但回读认领新评论 comment-1（断连恢复，不重复评论）
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue metadata set issue-1 --key k1 --value v1 --type string --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue metadata list issue-1 --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue metadata set issue-1 --key k1 --value v1 --type string --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue metadata list issue-1 --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue metadata set issue-1 --key k-del --value x --type string --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue metadata delete issue-1 --key k-del --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue metadata list issue-1 --workspace-id ws-test --output json
+# [rondo] 删除 metadata(issue=issue-1, key=k-del) 响应丢失但回读确认已生效（断连恢复，不重复写入）
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue status issue-1 todo --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue comment list issue-1 --full --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue comment add issue-1 --content-stdin --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue comment list issue-1 --full --workspace-id ws-test --output json
+# $ D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo\\test\\mock-multica.cjs issue metadata set issue-1 --key denied --value v --type string --workspace-id ws-test --output json
+# Subtest: flaky_write：setMetadata 响应丢失 → 回读已生效，值恰好一次，不抛错
+ok 282 - flaky_write：setMetadata 响应丢失 → 回读已生效，值恰好一次，不抛错
+  ---
+  duration_ms: 683.5903
+  type: 'test'
+  ...
+# Subtest: 多环境写入与响应丢失后的每次回读都保留 profile/server 绑定
+ok 283 - 多环境写入与响应丢失后的每次回读都保留 profile/server 绑定
+  ---
+  duration_ms: 6476.2974
+  type: 'test'
+  ...
+# Subtest: flaky_write：setStatus 响应丢失 → 回读已生效，状态恰好为目标值
+ok 284 - flaky_write：setStatus 响应丢失 → 回读已生效，状态恰好为目标值
+  ---
+  duration_ms: 488.7809
+  type: 'test'
+  ...
+# Subtest: flaky_write：addCommentContent 响应丢失 → 内容认领，评论恰好一条
+ok 285 - flaky_write：addCommentContent 响应丢失 → 内容认领，评论恰好一条
+  ---
+  duration_ms: 698.8199
+  type: 'test'
+  ...
+# Subtest: flaky_write：addComment（--content-file，finalize 摘要路径）响应丢失 → 恰好一条评论
+ok 286 - flaky_write：addComment（--content-file，finalize 摘要路径）响应丢失 → 恰好一条评论
+  ---
+  duration_ms: 683.322
+  type: 'test'
+  ...
+# Subtest: write_fail（真失败，状态不变、读正常）：重试一次仍无 → [write-unconfirmed] UNKNOWN
+ok 287 - write_fail（真失败，状态不变、读正常）：重试一次仍无 → [write-unconfirmed] UNKNOWN
+  ---
+  duration_ms: 885.6905
+  type: 'test'
+  ...
+# Subtest: deleteMetadata：flaky_write 响应丢失 → 回读 key 已消失即生效
+ok 288 - deleteMetadata：flaky_write 响应丢失 → 回读 key 已消失即生效
+  ---
+  duration_ms: 622.8238
+  type: 'test'
+  ...
+# Subtest: F4: uncertain status transition must not claim Run started or retry the start signal
+ok 289 - F4: uncertain status transition must not claim Run started or retry the start signal
+  ---
+  duration_ms: 198.508
+  type: 'test'
+  ...
+# Subtest: F6: failed comment write must not claim an older identical comment
+ok 290 - F6: failed comment write must not claim an older identical comment
+  ---
+  duration_ms: 610.0526
+  type: 'test'
+  ...
+# Subtest: F6: deterministic business write failure propagates without recovery retries
+ok 291 - F6: deterministic business write failure propagates without recovery retries
+  ---
+  duration_ms: 226.1824
+  type: 'test'
+  ...
+# Subtest: PR provider status classification only accepts known statuses
+ok 292 - PR provider status classification only accepts known statuses
+  ---
+  duration_ms: 2.0498
+  type: 'test'
+  ...
+# Subtest: array-form issue list continues past a full 100-item page
+ok 293 - array-form issue list continues past a full 100-item page
+  ---
+  duration_ms: 1.9373
+  type: 'test'
+  ...
+# Subtest: object-form issue list honors has_more and stops on the last page
+ok 294 - object-form issue list honors has_more and stops on the last page
+  ---
+  duration_ms: 0.3918
+  type: 'test'
+  ...
+# Subtest: done without pending is skipped without PR lookup or writes
+ok 295 - done without pending is skipped without PR lookup or writes
+  ---
+  duration_ms: 1.3436
+  type: 'test'
+  ...
+# Subtest: done with pending only requests finalize recovery and never reopens issue
+ok 296 - done with pending only requests finalize recovery and never reopens issue
+  ---
+  duration_ms: 0.6212
+  type: 'test'
+  ...
+# Subtest: unknown PR status does not write completion facts
+ok 297 - unknown PR status does not write completion facts
+  ---
+  duration_ms: 0.7753
+  type: 'test'
+  ...
+# Subtest: completed PR marks pending, and active PR is a no-op
+ok 298 - completed PR marks pending, and active PR is a no-op
+  ---
+  duration_ms: 2.7645
+  type: 'test'
+  ...
+# Subtest: repeated abandoned event preserves human-updated status and assignment
+ok 299 - repeated abandoned event preserves human-updated status and assignment
+  ---
+  duration_ms: 0.9776
+  type: 'test'
+  ...
+# Subtest: recovery scan and one-issue mode cannot be combined
+ok 300 - recovery scan and one-issue mode cannot be combined
+  ---
+  duration_ms: 988.9534
+  type: 'test'
+  ...
+# Subtest: 远端归档固定最新 SHA 读取，批准契约允许 checkbox 进度，缓存无 Git 仓
+ok 301 - 远端归档固定最新 SHA 读取，批准契约允许 checkbox 进度，缓存无 Git 仓
+  ---
+  duration_ms: 47.9384
+  type: 'test'
+  ...
+# Subtest: 归档正文/文件集合偏离批准基线即关闭，不能跟随已更新 Evidence 放行
+ok 302 - 归档正文/文件集合偏离批准基线即关闭，不能跟随已更新 Evidence 放行
+  ---
+  duration_ms: 82.9546
+  type: 'test'
+  ...
+# Subtest: 当前/归档或多个归档身份冲突即拒绝
+ok 303 - 当前/归档或多个归档身份冲突即拒绝
+  ---
+  duration_ms: 2.2159
+  type: 'test'
+  ...
+# Subtest: 跨服务 URL、响应错版本与不安全相对路径不能物化或泄露凭据
+ok 304 - 跨服务 URL、响应错版本与不安全相对路径不能物化或泄露凭据
+  ---
+  duration_ms: 2.9674
+  type: 'test'
+  ...
+# Subtest: 稳定 Evidence 身份使用配置 repo_url 和完整 SHA，不读旧机器路径
+ok 305 - 稳定 Evidence 身份使用配置 repo_url 和完整 SHA，不读旧机器路径
+  ---
+  duration_ms: 1.2956
+  type: 'test'
+  ...
+# Subtest: 远端 Completion Evidence 拒绝旧路径或错仓候选，旧本地模式继续兼容
+ok 306 - 远端 Completion Evidence 拒绝旧路径或错仓候选，旧本地模式继续兼容
+  ---
+  duration_ms: 27.4806
+  type: 'test'
+  ...
+# Subtest: consistent change_ref + tfs.id resolves existing change
+ok 307 - consistent change_ref + tfs.id resolves existing change
+  ---
+  duration_ms: 959.3483
+  type: 'test'
+  ...
+# Subtest: primary lookup rejects an existing change_ref whose TFS suffix conflicts
+ok 308 - primary lookup rejects an existing change_ref whose TFS suffix conflicts
+  ---
+  duration_ms: 919.8641
+  type: 'test'
+  ...
+# Subtest: a stale missing change_ref can recover by the known tfs.id
+ok 309 - a stale missing change_ref can recover by the known tfs.id
+  ---
+  duration_ms: 735.9032
+  type: 'test'
+  ...
+# Subtest: archive fallback also rejects an existing mismatched change_ref
+ok 310 - archive fallback also rejects an existing mismatched change_ref
+  ---
+  duration_ms: 1328.1598
+  type: 'test'
+  ...
+# Subtest: a single identity is still sufficient for the documented lookup paths
+ok 311 - a single identity is still sufficient for the documented lookup paths
+  ---
+  duration_ms: 1693.1822
+  type: 'test'
+  ...
+# Subtest: no candidate does not become a false conflict
+ok 312 - no candidate does not become a false conflict
+  ---
+  duration_ms: 759.5088
+  type: 'test'
+  ...
+# Subtest: 仅批准保留来源时，也不能按历史无来源返工放行
+ok 313 - 仅批准保留来源时，也不能按历史无来源返工放行
+  ---
+  duration_ms: 1638.6336
+  type: 'test'
+  ...
+# Subtest: 返工来源 首跑：changed
+ok 314 - 返工来源 首跑：changed
+  ---
+  duration_ms: 1914.1039
+  type: 'test'
+  ...
+# Subtest: 返工来源 首跑：missing
+ok 315 - 返工来源 首跑：missing
+  ---
+  duration_ms: 1449.8391
+  type: 'test'
+  ...
+# Subtest: 返工来源 首跑：none
+ok 316 - 返工来源 首跑：none
+  ---
+  duration_ms: 2239.951
+  type: 'test'
+  ...
+# Subtest: 返工来源 恢复：changed
+ok 317 - 返工来源 恢复：changed
+  ---
+  duration_ms: 2413.1431
+  type: 'test'
+  ...
+# Subtest: 返工来源 恢复：missing
+ok 318 - 返工来源 恢复：missing
+  ---
+  duration_ms: 2466.2291
+  type: 'test'
+  ...
+# Subtest: 返工来源 恢复：none
+ok 319 - 返工来源 恢复：none
+  ---
+  duration_ms: 2675.2516
+  type: 'test'
+  ...
+# Subtest: 恢复缺口：parent Decision 已写而 dispatch 更新失败后可续走
+ok 320 - 恢复缺口：parent Decision 已写而 dispatch 更新失败后可续走
+  ---
+  duration_ms: 3443.4694
+  type: 'test'
+  ...
+# Subtest: 恢复缺口：sub_issue Decision 已写而 dispatch 更新失败后可续走
+ok 321 - 恢复缺口：sub_issue Decision 已写而 dispatch 更新失败后可续走
+  ---
+  duration_ms: 4148.5874
+  type: 'test'
+  ...
+# Subtest: 完成返工后同评论重跑不得再次启动已完成 Sub-Issue
+ok 322 - 完成返工后同评论重跑不得再次启动已完成 Sub-Issue
+  ---
+  duration_ms: 2767.5159
+  type: 'test'
+  ...
+# Subtest: Decision 恢复边界：replaced 不误派发旧轮次
+ok 323 - Decision 恢复边界：replaced 不误派发旧轮次
+  ---
+  duration_ms: 785.0574
+  type: 'test'
+  ...
+# Subtest: Decision 恢复边界：ambiguous 不误派发旧轮次
+ok 324 - Decision 恢复边界：ambiguous 不误派发旧轮次
+  ---
+  duration_ms: 928.0218
+  type: 'test'
+  ...
+# Subtest: Decision 恢复边界：legacy 不误派发旧轮次
+ok 325 - Decision 恢复边界：legacy 不误派发旧轮次
+  ---
+  duration_ms: 1237.3584
+  type: 'test'
+  ...
+# Subtest: Decision 恢复边界：superseded 不误派发旧轮次
+ok 326 - Decision 恢复边界：superseded 不误派发旧轮次
+  ---
+  duration_ms: 763.8191
+  type: 'test'
+  ...
+# Subtest: ① parent 返工：失效+同 key 新 active 一笔写完，rework_comment_ref 记录
+ok 327 - ① parent 返工：失效+同 key 新 active 一笔写完，rework_comment_ref 记录
+  ---
+  duration_ms: 1710.0718
+  type: 'test'
+  ...
+# Subtest: ② 同 comment_id 重跑 → NOOP 逐字节一致且仍恰 1 条 active
+ok 328 - ② 同 comment_id 重跑 → NOOP 逐字节一致且仍恰 1 条 active
+  ---
+  duration_ms: 2456.8592
+  type: 'test'
+  ...
+# Subtest: ③ 修复路径：decision 已写、dispatch 已失效未恢复、status 仍 blocked → repairs
+ok 329 - ③ 修复路径：decision 已写、dispatch 已失效未恢复、status 仍 blocked → repairs
+  ---
+  duration_ms: 1356.1992
+  type: 'test'
+  ...
+# Subtest: ④ sub_issue 返工：失效+新 active、返工评论、Sub-Issue 重开
+ok 330 - ④ sub_issue 返工：失效+新 active、返工评论、Sub-Issue 重开
+  ---
+  duration_ms: 2297.669
+  type: 'test'
+  ...
+# Subtest: ⑤ sub_issue 修复路径：全部后置条件缺失 → repairs [dispatch, comment, reopen]
+ok 331 - ⑤ sub_issue 修复路径：全部后置条件缺失 → repairs [dispatch, comment, reopen]
+  ---
+  duration_ms: 1681.3273
+  type: 'test'
+  ...
+# Subtest: ⑥ golden：ANALYSIS / RECREATE_PR(UNKNOWN) / CANCEL_DELIVERY 输出形状不变
+ok 332 - ⑥ golden：ANALYSIS / RECREATE_PR(UNKNOWN) / CANCEL_DELIVERY 输出形状不变
+  ---
+  duration_ms: 2305.354
+  type: 'test'
+  ...
+# Subtest: ⑦ legacy 状态（无 issues/comments 键）零副作用路由重跑 → NOOP 不变
+ok 333 - ⑦ legacy 状态（无 issues/comments 键）零副作用路由重跑 → NOOP 不变
+  ---
+  duration_ms: 713.879
+  type: 'test'
+  ...
+# Subtest: F5: stale ANALYSIS decision cannot silently unblock a new blocker
+ok 334 - F5: stale ANALYSIS decision cannot silently unblock a new blocker
+  ---
+  duration_ms: 609.8349
+  type: 'test'
+  ...
+# $ git rev-parse --show-toplevel
+# $ git rev-parse --show-prefix
+# $ git rev-parse --show-toplevel
+# $ git rev-parse --show-prefix
+# $ git rev-parse --show-toplevel
+# $ git rev-parse --show-toplevel
+# $ git rev-parse --show-toplevel
+# $ git rev-parse --show-prefix
+# $ git rev-parse --show-toplevel
+# $ git rev-parse --show-prefix
+# Subtest: Git 根仓支持中文和空格路径，返回规范根路径且不改变主进程 cwd
+ok 335 - Git 根仓支持中文和空格路径，返回规范根路径且不改变主进程 cwd
+  ---
+  duration_ms: 917.8013
+  type: 'test'
+  ...
+# Subtest: 仓内普通子目录不能冒充根仓
+ok 336 - 仓内普通子目录不能冒充根仓
+  ---
+  duration_ms: 528.1917
+  type: 'test'
+  ...
+# Subtest: 非 Git 目录、文件和不存在的目录均拒绝
+ok 337 - 非 Git 目录、文件和不存在的目录均拒绝
+  ---
+  duration_ms: 1353.1134
+  type: 'test'
+  ...
+# Subtest: linked worktree 的 .git 文件仍被识别为合法根仓
+ok 338 - linked worktree 的 .git 文件仍被识别为合法根仓
+  ---
+  duration_ms: 1220.5366
+  type: 'test'
+  ...
+# Subtest: 目录链接返回 Git 规范根路径
+ok 339 - 目录链接返回 Git 规范根路径
+  ---
+  duration_ms: 627.0524
+  type: 'test'
+  ...
+# Subtest: 现场只读根仓在沙箱中可通过进程 cwd 校验
+ok 340 - 现场只读根仓在沙箱中可通过进程 cwd 校验 # SKIP
+  ---
+  duration_ms: 4.7453
+  type: 'test'
+  ...
+# Subtest: 现场只读业务仓可通过子进程 cwd 读取分支且不改变 Lead 目录
+ok 341 - 现场只读业务仓可通过子进程 cwd 读取分支且不改变 Lead 目录 # SKIP
+  ---
+  duration_ms: 0.2267
+  type: 'test'
+  ...
+# Subtest: 未配置集合时默认访问 WN_Data_Platform，PAT 可从文件读取
+ok 342 - 未配置集合时默认访问 WN_Data_Platform，PAT 可从文件读取
+  ---
+  duration_ms: 1105.6764
+  type: 'test'
+  ...
+# Subtest: 配置文件 collection 覆盖默认值，仍可显式选择旧集合
+ok 343 - 配置文件 collection 覆盖默认值，仍可显式选择旧集合
+  ---
+  duration_ms: 203.4694
+  type: 'test'
+  ...
+# Subtest: 环境变量 collection 和 base URL 优先于文件配置
+ok 344 - 环境变量 collection 和 base URL 优先于文件配置
+  ---
+  duration_ms: 167.694
+  type: 'test'
+  ...
+# Subtest: 仅配置完整 TFS_SERVER_URL 时无需集合变量，完整地址优先于 base URL
+ok 345 - 仅配置完整 TFS_SERVER_URL 时无需集合变量，完整地址优先于 base URL
+  ---
+  duration_ms: 174.7616
+  type: 'test'
+  ...
+# Subtest: 仅有环境变量 PAT 时仍使用新默认集合
+ok 346 - 仅有环境变量 PAT 时仍使用新默认集合
+  ---
+  duration_ms: 195.7112
+  type: 'test'
+  ...
+# Subtest: PAT 缺失仍报告配置错误
+ok 347 - PAT 缺失仍报告配置错误
+  ---
+  duration_ms: 179.7572
+  type: 'test'
+  ...
+# Subtest: doctor 和 CLI 帮助均展示新的默认集合
+ok 348 - doctor 和 CLI 帮助均展示新的默认集合
+  ---
+  duration_ms: 0.5205
+  type: 'test'
+  ...
+# Subtest: Bug：主字段为 ReproSteps/Symptom，Description 为空不渲染
+ok 349 - Bug：主字段为 ReproSteps/Symptom，Description 为空不渲染
+  ---
+  duration_ms: 3696.0638
+  type: 'test'
+  ...
+# Subtest: 需求：保持 Description + 需求分析两小节（回归）
+ok 350 - 需求：保持 Description + 需求分析两小节（回归）
+  ---
+  duration_ms: 3084.273
+  type: 'test'
+  ...
+# Subtest: Bug：主字段之外 Description 非空时兜底追加小节
+ok 351 - Bug：主字段之外 Description 非空时兜底追加小节
+  ---
+  duration_ms: 2933.1543
+  type: 'test'
+  ...
+# Subtest: 乱码统计覆盖 Bug 主字段（ReproSteps 含 U+FFFD）
+ok 352 - 乱码统计覆盖 Bug 主字段（ReproSteps 含 U+FFFD）
+  ---
+  duration_ms: 2580.5211
+  type: 'test'
+  ...
+# Subtest: 正文内嵌 TFS 图片并入附件物化（与 AttachedFile 去重），外链图片仅占位
+ok 353 - 正文内嵌 TFS 图片并入附件物化（与 AttachedFile 去重），外链图片仅占位
+  ---
+  duration_ms: 3124.7309
+  type: 'test'
+  ...
+# Subtest: 供给前拒绝 old workflow，平台和 overlay 零写入
+ok 354 - 供给前拒绝 old workflow，平台和 overlay 零写入
+  ---
+  duration_ms: 1410.1532
+  type: 'test'
+  ...
+# Subtest: 供给前拒绝 bad workflow，平台和 overlay 零写入
+ok 355 - 供给前拒绝 bad workflow，平台和 overlay 零写入
+  ---
+  duration_ms: 1463.6465
+  type: 'test'
+  ...
+# Subtest: 供给前拒绝 unsupported workflow，平台和 overlay 零写入
+ok 356 - 供给前拒绝 unsupported workflow，平台和 overlay 零写入
+  ---
+  duration_ms: 1353.758
+  type: 'test'
+  ...
+# Subtest: 显式跳过 old workflow 后完成其他对象供给
+ok 357 - 显式跳过 old workflow 后完成其他对象供给
+  ---
+  duration_ms: 2202.2006
+  type: 'test'
+  ...
+# Subtest: 显式跳过 unsupported workflow 后完成其他对象供给
+ok 358 - 显式跳过 unsupported workflow 后完成其他对象供给
+  ---
+  duration_ms: 2220.3782
+  type: 'test'
+  ...
+# Subtest: 跳过 workflow 的 dry-run 不写 overlay
+ok 359 - 跳过 workflow 的 dry-run 不写 overlay
+  ---
+  duration_ms: 1911.6431
+  type: 'test'
+  ...
+# Subtest: 跳过 workflow 后其他对象失败仍保留同步门禁
+ok 360 - 跳过 workflow 后其他对象失败仍保留同步门禁
+  ---
+  duration_ms: 1296.4497
+  type: 'test'
+  ...
+# Subtest: provision 保存环境；重复执行继承环境且拒绝跨 profile 覆盖
+ok 361 - provision 保存环境；重复执行继承环境且拒绝跨 profile 覆盖
+  ---
+  duration_ms: 5601.957
+  type: 'test'
+  ...
+# Subtest: 旧 Analyst overlay 同步必须先完成供给，不能静默跳过新 Skills
+ok 362 - 旧 Analyst overlay 同步必须先完成供给，不能静默跳过新 Skills
+  ---
+  duration_ms: 556.7618
+  type: 'test'
+  ...
+# Subtest: sync dry-run 报告缺失引用且不上传；正式同步在上传前阻断
+ok 363 - sync dry-run 报告缺失引用且不上传；正式同步在上传前阻断
+  ---
+  duration_ms: 1219.5257
+  type: 'test'
+  ...
+# Subtest: 对象供给中断后保留恢复标志，sync 不得发布半成品绑定
+ok 364 - 对象供给中断后保留恢复标志，sync 不得发布半成品绑定
+  ---
+  duration_ms: 2098.7168
+  type: 'test'
+  ...
+# Subtest: 新建工作区在 no-runtime 中断时保留环境与恢复 ID
+ok 365 - 新建工作区在 no-runtime 中断时保留环境与恢复 ID
+  ---
+  duration_ms: 2095.2066
+  type: 'test'
+  ...
+# Subtest: 新建工作区在 new-bad 中断时保留环境与恢复 ID
+ok 366 - 新建工作区在 new-bad 中断时保留环境与恢复 ID
+  ---
+  duration_ms: 1903.6735
+  type: 'test'
+  ...
+# Subtest: 已绑定工作区不因错误 slug 创建额外对象
+ok 367 - 已绑定工作区不因错误 slug 创建额外对象
+  ---
+  duration_ms: 1188.9503
+  type: 'test'
+  ...
+# Subtest: 新建工作区 dry-run 输出计划且不使用空工作区 ID
+ok 368 - 新建工作区 dry-run 输出计划且不使用空工作区 ID
+  ---
+  duration_ms: 1100.9325
+  type: 'test'
+  ...
+1..368
+# tests 368
+# suites 0
+# pass 365
+# fail 0
+# cancelled 0
+# skipped 3
+# todo 0
+# duration_ms 286992.7581

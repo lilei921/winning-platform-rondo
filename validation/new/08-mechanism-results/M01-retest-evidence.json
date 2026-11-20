@@ -1,0 +1,1156 @@
+{
+  "schema_version": 1,
+  "issue_id": "01a1d2d3-4c41-78de-9926-f0555e951ad9",
+  "issue_identifier": "TEST-3",
+  "created_at": "2026-11-13T10:56:15.395+08:00",
+  "target_url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+  "target_ref": "rondo",
+  "reported_control_rondo_sha": "21e3c1688846d8fe6c9918c824a992416393874d",
+  "reported_control_master_sha": "bb13f482ff7a3c01936f596942dd7d36cc6ece86",
+  "control_sha_source": "Issue description; conclusions compare against refs observed inside this Task.",
+  "comment_history": {
+    "roots_scan_result": [],
+    "thread_expansion": "NOT_NEEDED: no threads"
+  },
+  "before": {
+    "captured_at": "2026-11-13T10:56:15.366+08:00",
+    "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+    "environment": {
+      "MULTICA_TASK_ID": "01a1d2d3-4c67-729c-bcf3-0fa1f4f4c34a",
+      "MULTICA_AGENT_ID": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+      "MULTICA_WORKSPACE_ID": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+      "MULTICA_DAEMON_PORT": "[PRESENT]",
+      "MULTICA_REPO_CHECKOUT_MODE": "isolated",
+      "MULTICA_CLI_PATH": "C:\\Users\\lilei\\.multica\\bin\\multica.exe"
+    },
+    "credential_presence": {
+      "MULTICA_TOKEN": true,
+      "repository_credential_contents": "NOT_INSPECTED"
+    },
+    "task": {
+      "id": "01a1d2d3-4c67-729c-bcf3-0fa1f4f4c34a",
+      "issue_id": "01a1d2d3-4c41-78de-9926-f0555e951ad9",
+      "agent_id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+      "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+      "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+      "status": "running",
+      "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+      "relative_work_dir": "rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir",
+      "started_at": "2026-11-13T10:53:45+08:00",
+      "attempt": 1
+    },
+    "runtime": {
+      "id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+      "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+      "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+      "provider": "codex",
+      "runtime_mode": "local",
+      "status": "online",
+      "last_seen_at": "2026-11-13T10:56:17+08:00",
+      "metadata": {
+        "capabilities": [
+          "skill-bundles-v1",
+          "coalesced-comments-v1",
+          "local-worktree-v1",
+          "source_context_quick_create_v1",
+          "rpc-v1",
+          "platform-skill-v1",
+          "checkout-keeps-work-v1",
+          "joined-wakeups-v1",
+          "workflow-status-rules-v1",
+          "cli-comment-steer-v1"
+        ],
+        "cli_version": "0.8.1",
+        "launched_by": "",
+        "version": "codex-cli 0.166.0"
+      }
+    },
+    "daemon": {
+      "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+      "pid": 32136,
+      "status": "running",
+      "cli_commit": "b1ea927def6490c43bedff537b6f4ed9a47fa828",
+      "cli_version": "0.8.1",
+      "active_task_count": 1,
+      "running_task_count": 1,
+      "workspace": {
+        "id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+        "runtimes": [
+          "ff1ff20b-e112-4011-a8b3-f65a9472f5fa",
+          "c55feddd-7910-480a-8f9f-9d6180b1f061"
+        ]
+      }
+    },
+    "resource_manifest": {
+      "project_id": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97",
+      "project_title": "winning-platform-monorepo",
+      "resources": [
+        {
+          "id": "eee149cc-9c37-415c-a1d8-b0c3b3b56585",
+          "resource_type": "github_repo",
+          "resource_ref": {
+            "ref": "rondo",
+            "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo"
+          },
+          "label": "M01 TFS root checkout validation"
+        }
+      ]
+    },
+    "identity_commands": {
+      "issue_runs": {
+        "command": "& \"$env:MULTICA_CLI_PATH\" 'issue' 'runs' '01a1d2d3-4c41-78de-9926-f0555e951ad9' '--output' 'json'",
+        "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+        "started_at": "2026-11-13T10:56:14.741+08:00",
+        "ended_at": "2026-11-13T10:56:14.960+08:00",
+        "elapsed_seconds": 0.218972,
+        "exit_code": 0,
+        "stdout": "{\n  \"id\": \"01a1d2d3-4c67-729c-bcf3-0fa1f4f4c34a\",\n  \"issue_id\": \"01a1d2d3-4c41-78de-9926-f0555e951ad9\",\n  \"agent_id\": \"9915af88-b5ce-42c2-9c3b-227d768c5bc0\",\n  \"runtime_id\": \"c55feddd-7910-480a-8f9f-9d6180b1f061\",\n  \"workspace_id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\",\n  \"status\": \"running\",\n  \"work_dir\": \"C:\\\\Users\\\\lilei\\\\multica_workspaces\\\\rondo-test-8ef6a0bcf15d\\\\test-3-0fa1f4f4c34a\\\\workdir\",\n  \"relative_work_dir\": \"rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir\",\n  \"started_at\": \"2026-11-13T10:53:45+08:00\",\n  \"attempt\": 1\n}\n",
+        "stderr": "",
+        "output_filter": "Only current Task/workspace and relevant identity fields retained."
+      },
+      "runtime_list": {
+        "command": "& \"$env:MULTICA_CLI_PATH\" 'runtime' 'list' '--output' 'json'",
+        "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+        "started_at": "2026-11-13T10:56:14.961+08:00",
+        "ended_at": "2026-11-13T10:56:15.176+08:00",
+        "elapsed_seconds": 0.215399,
+        "exit_code": 0,
+        "stdout": "{\n  \"id\": \"c55feddd-7910-480a-8f9f-9d6180b1f061\",\n  \"daemon_id\": \"01a01965-2f6a-72fe-899f-3e7556c5d51d\",\n  \"workspace_id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\",\n  \"provider\": \"codex\",\n  \"runtime_mode\": \"local\",\n  \"status\": \"online\",\n  \"last_seen_at\": \"2026-11-13T10:56:17+08:00\",\n  \"metadata\": {\n    \"capabilities\": [\n      \"skill-bundles-v1\",\n      \"coalesced-comments-v1\",\n      \"local-worktree-v1\",\n      \"source_context_quick_create_v1\",\n      \"rpc-v1\",\n      \"platform-skill-v1\",\n      \"checkout-keeps-work-v1\",\n      \"joined-wakeups-v1\",\n      \"workflow-status-rules-v1\",\n      \"cli-comment-steer-v1\"\n    ],\n    \"cli_version\": \"0.8.1\",\n    \"launched_by\": \"\",\n    \"version\": \"codex-cli 0.166.0\"\n  }\n}\n",
+        "stderr": "",
+        "output_filter": "Only current Task/workspace and relevant identity fields retained."
+      },
+      "daemon_status": {
+        "command": "& \"$env:MULTICA_CLI_PATH\" 'daemon' 'status' '--output' 'json'",
+        "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+        "started_at": "2026-11-13T10:56:15.177+08:00",
+        "ended_at": "2026-11-13T10:56:15.365+08:00",
+        "elapsed_seconds": 0.188595,
+        "exit_code": 0,
+        "stdout": "{\n  \"daemon_id\": \"01a01965-2f6a-72fe-899f-3e7556c5d51d\",\n  \"pid\": 32136,\n  \"status\": \"running\",\n  \"cli_commit\": \"b1ea927def6490c43bedff537b6f4ed9a47fa828\",\n  \"cli_version\": \"0.8.1\",\n  \"active_task_count\": 1,\n  \"running_task_count\": 1,\n  \"workspace\": {\n    \"id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\",\n    \"runtimes\": [\n      \"ff1ff20b-e112-4011-a8b3-f65a9472f5fa\",\n      \"c55feddd-7910-480a-8f9f-9d6180b1f061\"\n    ]\n  }\n}\n",
+        "stderr": "",
+        "output_filter": "Only current Task/workspace and relevant identity fields retained."
+      }
+    }
+  },
+  "precondition_checks": {
+    "task_is_running": true,
+    "task_issue_agent_workspace_runtime_match": true,
+    "task_workdir_matches": true,
+    "runtime_daemon_match": true,
+    "daemon_matches_and_running": true,
+    "task_token_and_daemon_port_present": true,
+    "environment_identity_matches": true,
+    "resource_matches": true
+  },
+  "before_git": {
+    "root_probe": {
+      "command": "git rev-parse --show-toplevel",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+      "started_at": "2026-11-13T10:56:15.366+08:00",
+      "ended_at": "2026-11-13T10:56:15.394+08:00",
+      "elapsed_seconds": 0.027747,
+      "exit_code": 128,
+      "stdout": "",
+      "stderr": "fatal: not a git repository (or any of the parent directories): .git\n"
+    },
+    "git_metadata_paths": [],
+    "root_repository_present": false
+  },
+  "checkout_calls": [
+    {
+      "index": 1,
+      "identity_before": {
+        "captured_at": "2026-11-13T10:56:21.270+08:00",
+        "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+        "environment": {
+          "MULTICA_TASK_ID": "01a1d2d3-4c67-729c-bcf3-0fa1f4f4c34a",
+          "MULTICA_AGENT_ID": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+          "MULTICA_WORKSPACE_ID": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+          "MULTICA_DAEMON_PORT": "[PRESENT]",
+          "MULTICA_REPO_CHECKOUT_MODE": "isolated",
+          "MULTICA_CLI_PATH": "C:\\Users\\lilei\\.multica\\bin\\multica.exe"
+        },
+        "credential_presence": {
+          "MULTICA_TOKEN": true,
+          "repository_credential_contents": "NOT_INSPECTED"
+        },
+        "task": {
+          "id": "01a1d2d3-4c67-729c-bcf3-0fa1f4f4c34a",
+          "issue_id": "01a1d2d3-4c41-78de-9926-f0555e951ad9",
+          "agent_id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+          "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+          "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+          "status": "running",
+          "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+          "relative_work_dir": "rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir",
+          "started_at": "2026-11-13T10:53:45+08:00",
+          "attempt": 1
+        },
+        "runtime": {
+          "id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+          "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+          "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+          "provider": "codex",
+          "runtime_mode": "local",
+          "status": "online",
+          "last_seen_at": "2026-11-13T10:56:17+08:00",
+          "metadata": {
+            "capabilities": [
+              "skill-bundles-v1",
+              "coalesced-comments-v1",
+              "local-worktree-v1",
+              "source_context_quick_create_v1",
+              "rpc-v1",
+              "platform-skill-v1",
+              "checkout-keeps-work-v1",
+              "joined-wakeups-v1",
+              "workflow-status-rules-v1",
+              "cli-comment-steer-v1"
+            ],
+            "cli_version": "0.8.1",
+            "launched_by": "",
+            "version": "codex-cli 0.166.0"
+          }
+        },
+        "daemon": {
+          "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+          "pid": 32136,
+          "status": "running",
+          "cli_commit": "b1ea927def6490c43bedff537b6f4ed9a47fa828",
+          "cli_version": "0.8.1",
+          "active_task_count": 1,
+          "running_task_count": 1,
+          "workspace": {
+            "id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+            "runtimes": [
+              "ff1ff20b-e112-4011-a8b3-f65a9472f5fa",
+              "c55feddd-7910-480a-8f9f-9d6180b1f061"
+            ]
+          }
+        },
+        "resource_manifest": {
+          "project_id": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97",
+          "project_title": "winning-platform-monorepo",
+          "resources": [
+            {
+              "id": "eee149cc-9c37-415c-a1d8-b0c3b3b56585",
+              "resource_type": "github_repo",
+              "resource_ref": {
+                "ref": "rondo",
+                "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo"
+              },
+              "label": "M01 TFS root checkout validation"
+            }
+          ]
+        },
+        "identity_commands": {
+          "issue_runs": {
+            "command": "& \"$env:MULTICA_CLI_PATH\" 'issue' 'runs' '01a1d2d3-4c41-78de-9926-f0555e951ad9' '--output' 'json'",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+            "started_at": "2026-11-13T10:56:20.692+08:00",
+            "ended_at": "2026-11-13T10:56:20.900+08:00",
+            "elapsed_seconds": 0.209066,
+            "exit_code": 0,
+            "stdout": "{\n  \"id\": \"01a1d2d3-4c67-729c-bcf3-0fa1f4f4c34a\",\n  \"issue_id\": \"01a1d2d3-4c41-78de-9926-f0555e951ad9\",\n  \"agent_id\": \"9915af88-b5ce-42c2-9c3b-227d768c5bc0\",\n  \"runtime_id\": \"c55feddd-7910-480a-8f9f-9d6180b1f061\",\n  \"workspace_id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\",\n  \"status\": \"running\",\n  \"work_dir\": \"C:\\\\Users\\\\lilei\\\\multica_workspaces\\\\rondo-test-8ef6a0bcf15d\\\\test-3-0fa1f4f4c34a\\\\workdir\",\n  \"relative_work_dir\": \"rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir\",\n  \"started_at\": \"2026-11-13T10:53:45+08:00\",\n  \"attempt\": 1\n}\n",
+            "stderr": "",
+            "output_filter": "Only current Task/workspace and relevant identity fields retained."
+          },
+          "runtime_list": {
+            "command": "& \"$env:MULTICA_CLI_PATH\" 'runtime' 'list' '--output' 'json'",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+            "started_at": "2026-11-13T10:56:20.902+08:00",
+            "ended_at": "2026-11-13T10:56:21.101+08:00",
+            "elapsed_seconds": 0.200229,
+            "exit_code": 0,
+            "stdout": "{\n  \"id\": \"c55feddd-7910-480a-8f9f-9d6180b1f061\",\n  \"daemon_id\": \"01a01965-2f6a-72fe-899f-3e7556c5d51d\",\n  \"workspace_id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\",\n  \"provider\": \"codex\",\n  \"runtime_mode\": \"local\",\n  \"status\": \"online\",\n  \"last_seen_at\": \"2026-11-13T10:56:17+08:00\",\n  \"metadata\": {\n    \"capabilities\": [\n      \"skill-bundles-v1\",\n      \"coalesced-comments-v1\",\n      \"local-worktree-v1\",\n      \"source_context_quick_create_v1\",\n      \"rpc-v1\",\n      \"platform-skill-v1\",\n      \"checkout-keeps-work-v1\",\n      \"joined-wakeups-v1\",\n      \"workflow-status-rules-v1\",\n      \"cli-comment-steer-v1\"\n    ],\n    \"cli_version\": \"0.8.1\",\n    \"launched_by\": \"\",\n    \"version\": \"codex-cli 0.166.0\"\n  }\n}\n",
+            "stderr": "",
+            "output_filter": "Only current Task/workspace and relevant identity fields retained."
+          },
+          "daemon_status": {
+            "command": "& \"$env:MULTICA_CLI_PATH\" 'daemon' 'status' '--output' 'json'",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+            "started_at": "2026-11-13T10:56:21.101+08:00",
+            "ended_at": "2026-11-13T10:56:21.269+08:00",
+            "elapsed_seconds": 0.167685,
+            "exit_code": 0,
+            "stdout": "{\n  \"daemon_id\": \"01a01965-2f6a-72fe-899f-3e7556c5d51d\",\n  \"pid\": 32136,\n  \"status\": \"running\",\n  \"cli_commit\": \"b1ea927def6490c43bedff537b6f4ed9a47fa828\",\n  \"cli_version\": \"0.8.1\",\n  \"active_task_count\": 1,\n  \"running_task_count\": 1,\n  \"workspace\": {\n    \"id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\",\n    \"runtimes\": [\n      \"ff1ff20b-e112-4011-a8b3-f65a9472f5fa\",\n      \"c55feddd-7910-480a-8f9f-9d6180b1f061\"\n    ]\n  }\n}\n",
+            "stderr": "",
+            "output_filter": "Only current Task/workspace and relevant identity fields retained."
+          }
+        }
+      },
+      "invocation": {
+        "command": "& \"$env:MULTICA_CLI_PATH\" 'repo' 'checkout' 'http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo' '--ref' 'rondo'",
+        "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+        "started_at": "2026-11-13T10:56:21.271+08:00",
+        "ended_at": "2026-11-13T10:56:38.574+08:00",
+        "elapsed_seconds": 17.303253,
+        "exit_code": 0,
+        "stdout": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo\n",
+        "stderr": "Checked out http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo → C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo (branch: agent/m01-checkout/0fa1f4f4c34a)\n"
+      },
+      "git_after": {
+        "captured_at": "2026-11-13T10:56:58.655+08:00",
+        "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+        "git_metadata_type": "directory",
+        "commands": {
+          "toplevel": {
+            "command": "git rev-parse --show-toplevel",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.188+08:00",
+            "ended_at": "2026-11-13T10:56:58.232+08:00",
+            "elapsed_seconds": 0.043019,
+            "exit_code": 0,
+            "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir/winning-platform-monorepo\n",
+            "stderr": ""
+          },
+          "head": {
+            "command": "git rev-parse HEAD",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.233+08:00",
+            "ended_at": "2026-11-13T10:56:58.269+08:00",
+            "elapsed_seconds": 0.036374,
+            "exit_code": 0,
+            "stdout": "9bc060aaa4916887e394883705d04365753f258b\n",
+            "stderr": ""
+          },
+          "branch": {
+            "command": "git branch --show-current",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.269+08:00",
+            "ended_at": "2026-11-13T10:56:58.302+08:00",
+            "elapsed_seconds": 0.032664,
+            "exit_code": 0,
+            "stdout": "agent/m01-checkout/0fa1f4f4c34a\n",
+            "stderr": ""
+          },
+          "status": {
+            "command": "git status --porcelain",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.302+08:00",
+            "ended_at": "2026-11-13T10:56:58.452+08:00",
+            "elapsed_seconds": 0.149436,
+            "exit_code": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "origin_rondo": {
+            "command": "git rev-parse refs/remotes/origin/rondo",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.452+08:00",
+            "ended_at": "2026-11-13T10:56:58.494+08:00",
+            "elapsed_seconds": 0.04134,
+            "exit_code": 0,
+            "stdout": "9bc060aaa4916887e394883705d04365753f258b\n",
+            "stderr": ""
+          },
+          "origin_url": {
+            "command": "git config --get remote.origin.url",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.494+08:00",
+            "ended_at": "2026-11-13T10:56:58.529+08:00",
+            "elapsed_seconds": 0.034525,
+            "exit_code": 0,
+            "stdout": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\n",
+            "stderr": ""
+          },
+          "origin_pushurl": {
+            "command": "git config --get remote.origin.pushurl",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.529+08:00",
+            "ended_at": "2026-11-13T10:56:58.566+08:00",
+            "elapsed_seconds": 0.037109,
+            "exit_code": 1,
+            "stdout": "",
+            "stderr": ""
+          },
+          "origin_fetch": {
+            "command": "git config --get-all remote.origin.fetch",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.566+08:00",
+            "ended_at": "2026-11-13T10:56:58.598+08:00",
+            "elapsed_seconds": 0.031584,
+            "exit_code": 0,
+            "stdout": "+refs/heads/*:refs/remotes/origin/*\n",
+            "stderr": ""
+          },
+          "git_dir": {
+            "command": "git rev-parse --absolute-git-dir",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.598+08:00",
+            "ended_at": "2026-11-13T10:56:58.627+08:00",
+            "elapsed_seconds": 0.028868,
+            "exit_code": 0,
+            "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir/winning-platform-monorepo/.git\n",
+            "stderr": ""
+          },
+          "git_common_dir": {
+            "command": "git rev-parse --git-common-dir",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.628+08:00",
+            "ended_at": "2026-11-13T10:56:58.654+08:00",
+            "elapsed_seconds": 0.027348,
+            "exit_code": 0,
+            "stdout": ".git\n",
+            "stderr": ""
+          }
+        },
+        "toplevel": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir/winning-platform-monorepo",
+        "head": "9bc060aaa4916887e394883705d04365753f258b",
+        "branch": "agent/m01-checkout/0fa1f4f4c34a",
+        "status": "",
+        "origin_rondo": "9bc060aaa4916887e394883705d04365753f258b",
+        "origin_url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+        "origin_pushurl": null,
+        "origin_fetch": "+refs/heads/*:refs/remotes/origin/*",
+        "git_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir/winning-platform-monorepo/.git",
+        "git_common_dir": ".git",
+        "object_alternates": null,
+        "head_matches_origin_rondo": true
+      },
+      "identity_after": {
+        "captured_at": "2026-11-13T10:56:59.288+08:00",
+        "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+        "environment": {
+          "MULTICA_TASK_ID": "01a1d2d3-4c67-729c-bcf3-0fa1f4f4c34a",
+          "MULTICA_AGENT_ID": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+          "MULTICA_WORKSPACE_ID": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+          "MULTICA_DAEMON_PORT": "[PRESENT]",
+          "MULTICA_REPO_CHECKOUT_MODE": "isolated",
+          "MULTICA_CLI_PATH": "C:\\Users\\lilei\\.multica\\bin\\multica.exe"
+        },
+        "credential_presence": {
+          "MULTICA_TOKEN": true,
+          "repository_credential_contents": "NOT_INSPECTED"
+        },
+        "task": {
+          "id": "01a1d2d3-4c67-729c-bcf3-0fa1f4f4c34a",
+          "issue_id": "01a1d2d3-4c41-78de-9926-f0555e951ad9",
+          "agent_id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+          "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+          "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+          "status": "running",
+          "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+          "relative_work_dir": "rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir",
+          "started_at": "2026-11-13T10:53:45+08:00",
+          "attempt": 1
+        },
+        "runtime": {
+          "id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+          "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+          "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+          "provider": "codex",
+          "runtime_mode": "local",
+          "status": "online",
+          "last_seen_at": "2026-11-13T10:56:47+08:00",
+          "metadata": {
+            "capabilities": [
+              "skill-bundles-v1",
+              "coalesced-comments-v1",
+              "local-worktree-v1",
+              "source_context_quick_create_v1",
+              "rpc-v1",
+              "platform-skill-v1",
+              "checkout-keeps-work-v1",
+              "joined-wakeups-v1",
+              "workflow-status-rules-v1",
+              "cli-comment-steer-v1"
+            ],
+            "cli_version": "0.8.1",
+            "launched_by": "",
+            "version": "codex-cli 0.166.0"
+          }
+        },
+        "daemon": {
+          "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+          "pid": 32136,
+          "status": "running",
+          "cli_commit": "b1ea927def6490c43bedff537b6f4ed9a47fa828",
+          "cli_version": "0.8.1",
+          "active_task_count": 1,
+          "running_task_count": 1,
+          "workspace": {
+            "id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+            "runtimes": [
+              "ff1ff20b-e112-4011-a8b3-f65a9472f5fa",
+              "c55feddd-7910-480a-8f9f-9d6180b1f061"
+            ]
+          }
+        },
+        "resource_manifest": {
+          "project_id": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97",
+          "project_title": "winning-platform-monorepo",
+          "resources": [
+            {
+              "id": "eee149cc-9c37-415c-a1d8-b0c3b3b56585",
+              "resource_type": "github_repo",
+              "resource_ref": {
+                "ref": "rondo",
+                "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo"
+              },
+              "label": "M01 TFS root checkout validation"
+            }
+          ]
+        },
+        "identity_commands": {
+          "issue_runs": {
+            "command": "& \"$env:MULTICA_CLI_PATH\" 'issue' 'runs' '01a1d2d3-4c41-78de-9926-f0555e951ad9' '--output' 'json'",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+            "started_at": "2026-11-13T10:56:58.655+08:00",
+            "ended_at": "2026-11-13T10:56:58.892+08:00",
+            "elapsed_seconds": 0.2373,
+            "exit_code": 0,
+            "stdout": "{\n  \"id\": \"01a1d2d3-4c67-729c-bcf3-0fa1f4f4c34a\",\n  \"issue_id\": \"01a1d2d3-4c41-78de-9926-f0555e951ad9\",\n  \"agent_id\": \"9915af88-b5ce-42c2-9c3b-227d768c5bc0\",\n  \"runtime_id\": \"c55feddd-7910-480a-8f9f-9d6180b1f061\",\n  \"workspace_id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\",\n  \"status\": \"running\",\n  \"work_dir\": \"C:\\\\Users\\\\lilei\\\\multica_workspaces\\\\rondo-test-8ef6a0bcf15d\\\\test-3-0fa1f4f4c34a\\\\workdir\",\n  \"relative_work_dir\": \"rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir\",\n  \"started_at\": \"2026-11-13T10:53:45+08:00\",\n  \"attempt\": 1\n}\n",
+            "stderr": "",
+            "output_filter": "Only current Task/workspace and relevant identity fields retained."
+          },
+          "runtime_list": {
+            "command": "& \"$env:MULTICA_CLI_PATH\" 'runtime' 'list' '--output' 'json'",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+            "started_at": "2026-11-13T10:56:58.892+08:00",
+            "ended_at": "2026-11-13T10:56:59.111+08:00",
+            "elapsed_seconds": 0.218669,
+            "exit_code": 0,
+            "stdout": "{\n  \"id\": \"c55feddd-7910-480a-8f9f-9d6180b1f061\",\n  \"daemon_id\": \"01a01965-2f6a-72fe-899f-3e7556c5d51d\",\n  \"workspace_id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\",\n  \"provider\": \"codex\",\n  \"runtime_mode\": \"local\",\n  \"status\": \"online\",\n  \"last_seen_at\": \"2026-11-13T10:56:47+08:00\",\n  \"metadata\": {\n    \"capabilities\": [\n      \"skill-bundles-v1\",\n      \"coalesced-comments-v1\",\n      \"local-worktree-v1\",\n      \"source_context_quick_create_v1\",\n      \"rpc-v1\",\n      \"platform-skill-v1\",\n      \"checkout-keeps-work-v1\",\n      \"joined-wakeups-v1\",\n      \"workflow-status-rules-v1\",\n      \"cli-comment-steer-v1\"\n    ],\n    \"cli_version\": \"0.8.1\",\n    \"launched_by\": \"\",\n    \"version\": \"codex-cli 0.166.0\"\n  }\n}\n",
+            "stderr": "",
+            "output_filter": "Only current Task/workspace and relevant identity fields retained."
+          },
+          "daemon_status": {
+            "command": "& \"$env:MULTICA_CLI_PATH\" 'daemon' 'status' '--output' 'json'",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+            "started_at": "2026-11-13T10:56:59.112+08:00",
+            "ended_at": "2026-11-13T10:56:59.287+08:00",
+            "elapsed_seconds": 0.174574,
+            "exit_code": 0,
+            "stdout": "{\n  \"daemon_id\": \"01a01965-2f6a-72fe-899f-3e7556c5d51d\",\n  \"pid\": 32136,\n  \"status\": \"running\",\n  \"cli_commit\": \"b1ea927def6490c43bedff537b6f4ed9a47fa828\",\n  \"cli_version\": \"0.8.1\",\n  \"active_task_count\": 1,\n  \"running_task_count\": 1,\n  \"workspace\": {\n    \"id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\",\n    \"runtimes\": [\n      \"ff1ff20b-e112-4011-a8b3-f65a9472f5fa\",\n      \"c55feddd-7910-480a-8f9f-9d6180b1f061\"\n    ]\n  }\n}\n",
+            "stderr": "",
+            "output_filter": "Only current Task/workspace and relevant identity fields retained."
+          }
+        }
+      },
+      "returned_path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+      "call_status": "PASS",
+      "error_category": null,
+      "git_before": {
+        "root_probe": {
+          "command": "git rev-parse --show-toplevel",
+          "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+          "started_at": "2026-11-13T10:56:15.366+08:00",
+          "ended_at": "2026-11-13T10:56:15.394+08:00",
+          "elapsed_seconds": 0.027747,
+          "exit_code": 128,
+          "stdout": "",
+          "stderr": "fatal: not a git repository (or any of the parent directories): .git\n"
+        },
+        "git_metadata_paths": [],
+        "root_repository_present": false
+      }
+    },
+    {
+      "index": 2,
+      "identity_before": {
+        "captured_at": "2026-11-13T10:57:59.512+08:00",
+        "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+        "environment": {
+          "MULTICA_TASK_ID": "01a1d2d3-4c67-729c-bcf3-0fa1f4f4c34a",
+          "MULTICA_AGENT_ID": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+          "MULTICA_WORKSPACE_ID": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+          "MULTICA_DAEMON_PORT": "[PRESENT]",
+          "MULTICA_REPO_CHECKOUT_MODE": "isolated",
+          "MULTICA_CLI_PATH": "C:\\Users\\lilei\\.multica\\bin\\multica.exe"
+        },
+        "credential_presence": {
+          "MULTICA_TOKEN": true,
+          "repository_credential_contents": "NOT_INSPECTED"
+        },
+        "task": {
+          "id": "01a1d2d3-4c67-729c-bcf3-0fa1f4f4c34a",
+          "issue_id": "01a1d2d3-4c41-78de-9926-f0555e951ad9",
+          "agent_id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+          "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+          "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+          "status": "running",
+          "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+          "relative_work_dir": "rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir",
+          "started_at": "2026-11-13T10:53:45+08:00",
+          "attempt": 1
+        },
+        "runtime": {
+          "id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+          "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+          "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+          "provider": "codex",
+          "runtime_mode": "local",
+          "status": "online",
+          "last_seen_at": "2026-11-13T10:57:47+08:00",
+          "metadata": {
+            "capabilities": [
+              "skill-bundles-v1",
+              "coalesced-comments-v1",
+              "local-worktree-v1",
+              "source_context_quick_create_v1",
+              "rpc-v1",
+              "platform-skill-v1",
+              "checkout-keeps-work-v1",
+              "joined-wakeups-v1",
+              "workflow-status-rules-v1",
+              "cli-comment-steer-v1"
+            ],
+            "cli_version": "0.8.1",
+            "launched_by": "",
+            "version": "codex-cli 0.166.0"
+          }
+        },
+        "daemon": {
+          "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+          "pid": 32136,
+          "status": "running",
+          "cli_commit": "b1ea927def6490c43bedff537b6f4ed9a47fa828",
+          "cli_version": "0.8.1",
+          "active_task_count": 1,
+          "running_task_count": 1,
+          "workspace": {
+            "id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+            "runtimes": [
+              "ff1ff20b-e112-4011-a8b3-f65a9472f5fa",
+              "c55feddd-7910-480a-8f9f-9d6180b1f061"
+            ]
+          }
+        },
+        "resource_manifest": {
+          "project_id": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97",
+          "project_title": "winning-platform-monorepo",
+          "resources": [
+            {
+              "id": "eee149cc-9c37-415c-a1d8-b0c3b3b56585",
+              "resource_type": "github_repo",
+              "resource_ref": {
+                "ref": "rondo",
+                "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo"
+              },
+              "label": "M01 TFS root checkout validation"
+            }
+          ]
+        },
+        "identity_commands": {
+          "issue_runs": {
+            "command": "& \"$env:MULTICA_CLI_PATH\" 'issue' 'runs' '01a1d2d3-4c41-78de-9926-f0555e951ad9' '--output' 'json'",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+            "started_at": "2026-11-13T10:57:58.861+08:00",
+            "ended_at": "2026-11-13T10:57:59.080+08:00",
+            "elapsed_seconds": 0.218396,
+            "exit_code": 0,
+            "stdout": "{\n  \"id\": \"01a1d2d3-4c67-729c-bcf3-0fa1f4f4c34a\",\n  \"issue_id\": \"01a1d2d3-4c41-78de-9926-f0555e951ad9\",\n  \"agent_id\": \"9915af88-b5ce-42c2-9c3b-227d768c5bc0\",\n  \"runtime_id\": \"c55feddd-7910-480a-8f9f-9d6180b1f061\",\n  \"workspace_id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\",\n  \"status\": \"running\",\n  \"work_dir\": \"C:\\\\Users\\\\lilei\\\\multica_workspaces\\\\rondo-test-8ef6a0bcf15d\\\\test-3-0fa1f4f4c34a\\\\workdir\",\n  \"relative_work_dir\": \"rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir\",\n  \"started_at\": \"2026-11-13T10:53:45+08:00\",\n  \"attempt\": 1\n}\n",
+            "stderr": "",
+            "output_filter": "Only current Task/workspace and relevant identity fields retained."
+          },
+          "runtime_list": {
+            "command": "& \"$env:MULTICA_CLI_PATH\" 'runtime' 'list' '--output' 'json'",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+            "started_at": "2026-11-13T10:57:59.080+08:00",
+            "ended_at": "2026-11-13T10:57:59.309+08:00",
+            "elapsed_seconds": 0.229019,
+            "exit_code": 0,
+            "stdout": "{\n  \"id\": \"c55feddd-7910-480a-8f9f-9d6180b1f061\",\n  \"daemon_id\": \"01a01965-2f6a-72fe-899f-3e7556c5d51d\",\n  \"workspace_id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\",\n  \"provider\": \"codex\",\n  \"runtime_mode\": \"local\",\n  \"status\": \"online\",\n  \"last_seen_at\": \"2026-11-13T10:57:47+08:00\",\n  \"metadata\": {\n    \"capabilities\": [\n      \"skill-bundles-v1\",\n      \"coalesced-comments-v1\",\n      \"local-worktree-v1\",\n      \"source_context_quick_create_v1\",\n      \"rpc-v1\",\n      \"platform-skill-v1\",\n      \"checkout-keeps-work-v1\",\n      \"joined-wakeups-v1\",\n      \"workflow-status-rules-v1\",\n      \"cli-comment-steer-v1\"\n    ],\n    \"cli_version\": \"0.8.1\",\n    \"launched_by\": \"\",\n    \"version\": \"codex-cli 0.166.0\"\n  }\n}\n",
+            "stderr": "",
+            "output_filter": "Only current Task/workspace and relevant identity fields retained."
+          },
+          "daemon_status": {
+            "command": "& \"$env:MULTICA_CLI_PATH\" 'daemon' 'status' '--output' 'json'",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+            "started_at": "2026-11-13T10:57:59.310+08:00",
+            "ended_at": "2026-11-13T10:57:59.511+08:00",
+            "elapsed_seconds": 0.20135,
+            "exit_code": 0,
+            "stdout": "{\n  \"daemon_id\": \"01a01965-2f6a-72fe-899f-3e7556c5d51d\",\n  \"pid\": 32136,\n  \"status\": \"running\",\n  \"cli_commit\": \"b1ea927def6490c43bedff537b6f4ed9a47fa828\",\n  \"cli_version\": \"0.8.1\",\n  \"active_task_count\": 1,\n  \"running_task_count\": 1,\n  \"workspace\": {\n    \"id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\",\n    \"runtimes\": [\n      \"ff1ff20b-e112-4011-a8b3-f65a9472f5fa\",\n      \"c55feddd-7910-480a-8f9f-9d6180b1f061\"\n    ]\n  }\n}\n",
+            "stderr": "",
+            "output_filter": "Only current Task/workspace and relevant identity fields retained."
+          }
+        }
+      },
+      "invocation": {
+        "command": "& \"$env:MULTICA_CLI_PATH\" 'repo' 'checkout' 'http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo' '--ref' 'rondo'",
+        "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+        "started_at": "2026-11-13T10:57:59.514+08:00",
+        "ended_at": "2026-11-13T10:58:04.784+08:00",
+        "elapsed_seconds": 5.269805,
+        "exit_code": 0,
+        "stdout": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo\n",
+        "stderr": "Kept the existing checkout of http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo at C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo (branch: agent/m01-checkout/0fa1f4f4c34a, this task's branch; 0 uncommitted files, 0 unpushed commits): nothing was reset, cleaned, or switched; only remote refs were fetched.\nTo discard its uncommitted changes and untracked files and start over on a new branch from the latest default branch (or --ref), re-run with --fresh; commits stay on the old branch, but push any you still need first.\n"
+      },
+      "git_after": {
+        "captured_at": "2026-11-13T10:58:09.436+08:00",
+        "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+        "git_metadata_type": "directory",
+        "commands": {
+          "toplevel": {
+            "command": "git rev-parse --show-toplevel",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:58:09.059+08:00",
+            "ended_at": "2026-11-13T10:58:09.086+08:00",
+            "elapsed_seconds": 0.027088,
+            "exit_code": 0,
+            "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir/winning-platform-monorepo\n",
+            "stderr": ""
+          },
+          "head": {
+            "command": "git rev-parse HEAD",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:58:09.087+08:00",
+            "ended_at": "2026-11-13T10:58:09.117+08:00",
+            "elapsed_seconds": 0.030966,
+            "exit_code": 0,
+            "stdout": "9bc060aaa4916887e394883705d04365753f258b\n",
+            "stderr": ""
+          },
+          "branch": {
+            "command": "git branch --show-current",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:58:09.118+08:00",
+            "ended_at": "2026-11-13T10:58:09.145+08:00",
+            "elapsed_seconds": 0.028248,
+            "exit_code": 0,
+            "stdout": "agent/m01-checkout/0fa1f4f4c34a\n",
+            "stderr": ""
+          },
+          "status": {
+            "command": "git status --porcelain",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:58:09.146+08:00",
+            "ended_at": "2026-11-13T10:58:09.232+08:00",
+            "elapsed_seconds": 0.086112,
+            "exit_code": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "origin_rondo": {
+            "command": "git rev-parse refs/remotes/origin/rondo",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:58:09.232+08:00",
+            "ended_at": "2026-11-13T10:58:09.262+08:00",
+            "elapsed_seconds": 0.029535,
+            "exit_code": 0,
+            "stdout": "9bc060aaa4916887e394883705d04365753f258b\n",
+            "stderr": ""
+          },
+          "origin_url": {
+            "command": "git config --get remote.origin.url",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:58:09.263+08:00",
+            "ended_at": "2026-11-13T10:58:09.308+08:00",
+            "elapsed_seconds": 0.045459,
+            "exit_code": 0,
+            "stdout": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\n",
+            "stderr": ""
+          },
+          "origin_pushurl": {
+            "command": "git config --get remote.origin.pushurl",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:58:09.308+08:00",
+            "ended_at": "2026-11-13T10:58:09.346+08:00",
+            "elapsed_seconds": 0.038075,
+            "exit_code": 1,
+            "stdout": "",
+            "stderr": ""
+          },
+          "origin_fetch": {
+            "command": "git config --get-all remote.origin.fetch",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:58:09.346+08:00",
+            "ended_at": "2026-11-13T10:58:09.374+08:00",
+            "elapsed_seconds": 0.026678,
+            "exit_code": 0,
+            "stdout": "+refs/heads/*:refs/remotes/origin/*\n",
+            "stderr": ""
+          },
+          "git_dir": {
+            "command": "git rev-parse --absolute-git-dir",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:58:09.374+08:00",
+            "ended_at": "2026-11-13T10:58:09.403+08:00",
+            "elapsed_seconds": 0.028928,
+            "exit_code": 0,
+            "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir/winning-platform-monorepo/.git\n",
+            "stderr": ""
+          },
+          "git_common_dir": {
+            "command": "git rev-parse --git-common-dir",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:58:09.403+08:00",
+            "ended_at": "2026-11-13T10:58:09.436+08:00",
+            "elapsed_seconds": 0.033252,
+            "exit_code": 0,
+            "stdout": ".git\n",
+            "stderr": ""
+          }
+        },
+        "toplevel": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir/winning-platform-monorepo",
+        "head": "9bc060aaa4916887e394883705d04365753f258b",
+        "branch": "agent/m01-checkout/0fa1f4f4c34a",
+        "status": "",
+        "origin_rondo": "9bc060aaa4916887e394883705d04365753f258b",
+        "origin_url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+        "origin_pushurl": null,
+        "origin_fetch": "+refs/heads/*:refs/remotes/origin/*",
+        "git_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir/winning-platform-monorepo/.git",
+        "git_common_dir": ".git",
+        "object_alternates": null,
+        "head_matches_origin_rondo": true
+      },
+      "identity_after": {
+        "captured_at": "2026-11-13T10:58:10.219+08:00",
+        "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+        "environment": {
+          "MULTICA_TASK_ID": "01a1d2d3-4c67-729c-bcf3-0fa1f4f4c34a",
+          "MULTICA_AGENT_ID": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+          "MULTICA_WORKSPACE_ID": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+          "MULTICA_DAEMON_PORT": "[PRESENT]",
+          "MULTICA_REPO_CHECKOUT_MODE": "isolated",
+          "MULTICA_CLI_PATH": "C:\\Users\\lilei\\.multica\\bin\\multica.exe"
+        },
+        "credential_presence": {
+          "MULTICA_TOKEN": true,
+          "repository_credential_contents": "NOT_INSPECTED"
+        },
+        "task": {
+          "id": "01a1d2d3-4c67-729c-bcf3-0fa1f4f4c34a",
+          "issue_id": "01a1d2d3-4c41-78de-9926-f0555e951ad9",
+          "agent_id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+          "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+          "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+          "status": "running",
+          "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+          "relative_work_dir": "rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir",
+          "started_at": "2026-11-13T10:53:45+08:00",
+          "attempt": 1
+        },
+        "runtime": {
+          "id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+          "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+          "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+          "provider": "codex",
+          "runtime_mode": "local",
+          "status": "online",
+          "last_seen_at": "2026-11-13T10:57:47+08:00",
+          "metadata": {
+            "capabilities": [
+              "skill-bundles-v1",
+              "coalesced-comments-v1",
+              "local-worktree-v1",
+              "source_context_quick_create_v1",
+              "rpc-v1",
+              "platform-skill-v1",
+              "checkout-keeps-work-v1",
+              "joined-wakeups-v1",
+              "workflow-status-rules-v1",
+              "cli-comment-steer-v1"
+            ],
+            "cli_version": "0.8.1",
+            "launched_by": "",
+            "version": "codex-cli 0.166.0"
+          }
+        },
+        "daemon": {
+          "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+          "pid": 32136,
+          "status": "running",
+          "cli_commit": "b1ea927def6490c43bedff537b6f4ed9a47fa828",
+          "cli_version": "0.8.1",
+          "active_task_count": 1,
+          "running_task_count": 1,
+          "workspace": {
+            "id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+            "runtimes": [
+              "ff1ff20b-e112-4011-a8b3-f65a9472f5fa",
+              "c55feddd-7910-480a-8f9f-9d6180b1f061"
+            ]
+          }
+        },
+        "resource_manifest": {
+          "project_id": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97",
+          "project_title": "winning-platform-monorepo",
+          "resources": [
+            {
+              "id": "eee149cc-9c37-415c-a1d8-b0c3b3b56585",
+              "resource_type": "github_repo",
+              "resource_ref": {
+                "ref": "rondo",
+                "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo"
+              },
+              "label": "M01 TFS root checkout validation"
+            }
+          ]
+        },
+        "identity_commands": {
+          "issue_runs": {
+            "command": "& \"$env:MULTICA_CLI_PATH\" 'issue' 'runs' '01a1d2d3-4c41-78de-9926-f0555e951ad9' '--output' 'json'",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+            "started_at": "2026-11-13T10:58:09.437+08:00",
+            "ended_at": "2026-11-13T10:58:09.730+08:00",
+            "elapsed_seconds": 0.293295,
+            "exit_code": 0,
+            "stdout": "{\n  \"id\": \"01a1d2d3-4c67-729c-bcf3-0fa1f4f4c34a\",\n  \"issue_id\": \"01a1d2d3-4c41-78de-9926-f0555e951ad9\",\n  \"agent_id\": \"9915af88-b5ce-42c2-9c3b-227d768c5bc0\",\n  \"runtime_id\": \"c55feddd-7910-480a-8f9f-9d6180b1f061\",\n  \"workspace_id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\",\n  \"status\": \"running\",\n  \"work_dir\": \"C:\\\\Users\\\\lilei\\\\multica_workspaces\\\\rondo-test-8ef6a0bcf15d\\\\test-3-0fa1f4f4c34a\\\\workdir\",\n  \"relative_work_dir\": \"rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir\",\n  \"started_at\": \"2026-11-13T10:53:45+08:00\",\n  \"attempt\": 1\n}\n",
+            "stderr": "",
+            "output_filter": "Only current Task/workspace and relevant identity fields retained."
+          },
+          "runtime_list": {
+            "command": "& \"$env:MULTICA_CLI_PATH\" 'runtime' 'list' '--output' 'json'",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+            "started_at": "2026-11-13T10:58:09.732+08:00",
+            "ended_at": "2026-11-13T10:58:10.042+08:00",
+            "elapsed_seconds": 0.31011,
+            "exit_code": 0,
+            "stdout": "{\n  \"id\": \"c55feddd-7910-480a-8f9f-9d6180b1f061\",\n  \"daemon_id\": \"01a01965-2f6a-72fe-899f-3e7556c5d51d\",\n  \"workspace_id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\",\n  \"provider\": \"codex\",\n  \"runtime_mode\": \"local\",\n  \"status\": \"online\",\n  \"last_seen_at\": \"2026-11-13T10:57:47+08:00\",\n  \"metadata\": {\n    \"capabilities\": [\n      \"skill-bundles-v1\",\n      \"coalesced-comments-v1\",\n      \"local-worktree-v1\",\n      \"source_context_quick_create_v1\",\n      \"rpc-v1\",\n      \"platform-skill-v1\",\n      \"checkout-keeps-work-v1\",\n      \"joined-wakeups-v1\",\n      \"workflow-status-rules-v1\",\n      \"cli-comment-steer-v1\"\n    ],\n    \"cli_version\": \"0.8.1\",\n    \"launched_by\": \"\",\n    \"version\": \"codex-cli 0.166.0\"\n  }\n}\n",
+            "stderr": "",
+            "output_filter": "Only current Task/workspace and relevant identity fields retained."
+          },
+          "daemon_status": {
+            "command": "& \"$env:MULTICA_CLI_PATH\" 'daemon' 'status' '--output' 'json'",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+            "started_at": "2026-11-13T10:58:10.042+08:00",
+            "ended_at": "2026-11-13T10:58:10.218+08:00",
+            "elapsed_seconds": 0.176616,
+            "exit_code": 0,
+            "stdout": "{\n  \"daemon_id\": \"01a01965-2f6a-72fe-899f-3e7556c5d51d\",\n  \"pid\": 32136,\n  \"status\": \"running\",\n  \"cli_commit\": \"b1ea927def6490c43bedff537b6f4ed9a47fa828\",\n  \"cli_version\": \"0.8.1\",\n  \"active_task_count\": 1,\n  \"running_task_count\": 1,\n  \"workspace\": {\n    \"id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\",\n    \"runtimes\": [\n      \"ff1ff20b-e112-4011-a8b3-f65a9472f5fa\",\n      \"c55feddd-7910-480a-8f9f-9d6180b1f061\"\n    ]\n  }\n}\n",
+            "stderr": "",
+            "output_filter": "Only current Task/workspace and relevant identity fields retained."
+          }
+        }
+      },
+      "returned_path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+      "call_status": "PASS",
+      "error_category": null,
+      "git_before": {
+        "captured_at": "2026-11-13T10:56:58.655+08:00",
+        "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+        "git_metadata_type": "directory",
+        "commands": {
+          "toplevel": {
+            "command": "git rev-parse --show-toplevel",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.188+08:00",
+            "ended_at": "2026-11-13T10:56:58.232+08:00",
+            "elapsed_seconds": 0.043019,
+            "exit_code": 0,
+            "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir/winning-platform-monorepo\n",
+            "stderr": ""
+          },
+          "head": {
+            "command": "git rev-parse HEAD",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.233+08:00",
+            "ended_at": "2026-11-13T10:56:58.269+08:00",
+            "elapsed_seconds": 0.036374,
+            "exit_code": 0,
+            "stdout": "9bc060aaa4916887e394883705d04365753f258b\n",
+            "stderr": ""
+          },
+          "branch": {
+            "command": "git branch --show-current",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.269+08:00",
+            "ended_at": "2026-11-13T10:56:58.302+08:00",
+            "elapsed_seconds": 0.032664,
+            "exit_code": 0,
+            "stdout": "agent/m01-checkout/0fa1f4f4c34a\n",
+            "stderr": ""
+          },
+          "status": {
+            "command": "git status --porcelain",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.302+08:00",
+            "ended_at": "2026-11-13T10:56:58.452+08:00",
+            "elapsed_seconds": 0.149436,
+            "exit_code": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "origin_rondo": {
+            "command": "git rev-parse refs/remotes/origin/rondo",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.452+08:00",
+            "ended_at": "2026-11-13T10:56:58.494+08:00",
+            "elapsed_seconds": 0.04134,
+            "exit_code": 0,
+            "stdout": "9bc060aaa4916887e394883705d04365753f258b\n",
+            "stderr": ""
+          },
+          "origin_url": {
+            "command": "git config --get remote.origin.url",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.494+08:00",
+            "ended_at": "2026-11-13T10:56:58.529+08:00",
+            "elapsed_seconds": 0.034525,
+            "exit_code": 0,
+            "stdout": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\n",
+            "stderr": ""
+          },
+          "origin_pushurl": {
+            "command": "git config --get remote.origin.pushurl",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.529+08:00",
+            "ended_at": "2026-11-13T10:56:58.566+08:00",
+            "elapsed_seconds": 0.037109,
+            "exit_code": 1,
+            "stdout": "",
+            "stderr": ""
+          },
+          "origin_fetch": {
+            "command": "git config --get-all remote.origin.fetch",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.566+08:00",
+            "ended_at": "2026-11-13T10:56:58.598+08:00",
+            "elapsed_seconds": 0.031584,
+            "exit_code": 0,
+            "stdout": "+refs/heads/*:refs/remotes/origin/*\n",
+            "stderr": ""
+          },
+          "git_dir": {
+            "command": "git rev-parse --absolute-git-dir",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.598+08:00",
+            "ended_at": "2026-11-13T10:56:58.627+08:00",
+            "elapsed_seconds": 0.028868,
+            "exit_code": 0,
+            "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir/winning-platform-monorepo/.git\n",
+            "stderr": ""
+          },
+          "git_common_dir": {
+            "command": "git rev-parse --git-common-dir",
+            "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+            "started_at": "2026-11-13T10:56:58.628+08:00",
+            "ended_at": "2026-11-13T10:56:58.654+08:00",
+            "elapsed_seconds": 0.027348,
+            "exit_code": 0,
+            "stdout": ".git\n",
+            "stderr": ""
+          }
+        },
+        "toplevel": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir/winning-platform-monorepo",
+        "head": "9bc060aaa4916887e394883705d04365753f258b",
+        "branch": "agent/m01-checkout/0fa1f4f4c34a",
+        "status": "",
+        "origin_rondo": "9bc060aaa4916887e394883705d04365753f258b",
+        "origin_url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+        "origin_pushurl": null,
+        "origin_fetch": "+refs/heads/*:refs/remotes/origin/*",
+        "git_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-3-0fa1f4f4c34a/workdir/winning-platform-monorepo/.git",
+        "git_common_dir": ".git",
+        "object_alternates": null,
+        "head_matches_origin_rondo": true
+      }
+    }
+  ],
+  "outcome": "PASS",
+  "not_covered": [
+    "Dirty tree and untracked-file preservation",
+    "Unpushed-commit preservation",
+    "Cold-cache preparation and timeout improvement",
+    "Coverage of four business-agent categories",
+    "Push, PR, and TFS work-item writes"
+  ],
+  "safety": {
+    "manual_clone": false,
+    "fresh_reset_clean": false,
+    "cache_manually_modified": false,
+    "credentials_modified": false,
+    "daemon_restarted": false,
+    "resource_modified": false,
+    "issue_status_modified": false,
+    "other_agents_triggered": false
+  },
+  "redaction": "Secret environment values, credential URL userinfo, and task-token strings removed; credential contents never emitted. Unrelated runtime/task records omitted. Actual Task checkout paths retained for reproducibility.",
+  "remote_ref_observations": [
+    {
+      "command": "git ls-remote --heads origin refs/heads/rondo refs/heads/master",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir\\winning-platform-monorepo",
+      "started_at": "2026-11-13T10:57:41.948+08:00",
+      "ended_at": "2026-11-13T10:57:47.064+08:00",
+      "elapsed_seconds": 5.116662,
+      "exit_code": 128,
+      "stdout": "",
+      "stderr": "fatal: unable to access 'http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo/': Empty reply from server\n"
+    }
+  ],
+  "comparison": {
+    "same_invocation_command": true,
+    "same_invocation_cwd": true,
+    "both_checkout_exit_zero": true,
+    "same_returned_path": true,
+    "returned_paths_match_git_toplevel": true,
+    "second_call_explicitly_kept": true,
+    "same_head": true,
+    "same_branch": true,
+    "same_status": true,
+    "both_worktrees_clean": true,
+    "both_head_match_task_origin_rondo": true,
+    "both_origins_match_resource_url": true,
+    "both_task_local_git_directories": true,
+    "same_task_runtime_daemon_before_and_after": true,
+    "resource_manifest_unchanged": true,
+    "required_git_commands_succeeded": true
+  },
+  "scope_of_pass": "Warm-cache native checkout with explicit --ref rondo and clean-tree reentry in the same real Task only.",
+  "remote_semantics": {
+    "mode": "Task-local independent .git directory; not a linked-worktree pointer file",
+    "origin_url_matches_requested_tfs_repository": true,
+    "origin_pushurl": "Unset (git config --get exits 1 without error output); Git uses origin URL by default. No push attempted.",
+    "object_alternates": "No objects/info/alternates file observed"
+  },
+  "ref_observation": {
+    "task_head_and_origin_rondo": "9bc060aaa4916887e394883705d04365753f258b",
+    "matches_issue_historical_rondo": false,
+    "interpretation": "Both native calls succeeded and Task-local HEAD equals origin/rondo. Historical control SHA differs; direct server ref could not be independently confirmed, so a live branch movement is not asserted as independently proven.",
+    "independent_live_ref_confirmation": "UNCONFIRMED: direct query failed with exit 128 and Empty reply from server"
+  },
+  "non_checkout_diagnostics": [
+    {
+      "command": "git rev-parse --show-toplevel before checkout",
+      "exit_code": 128,
+      "classification": "EXPECTED_ABSENT_REPOSITORY",
+      "preserved_state": "No root repository or .git existed under Task workdir"
+    },
+    {
+      "command": "git config --get remote.origin.pushurl",
+      "exit_code": 1,
+      "classification": "EXPECTED_UNSET_OPTIONAL_CONFIG",
+      "preserved_state": "No Git configuration modified"
+    },
+    {
+      "command": "git ls-remote --heads origin refs/heads/rondo refs/heads/master",
+      "exit_code": 128,
+      "classification": "DIRECT_GIT_TRANSPORT_EMPTY_REPLY",
+      "mechanism_conclusion": "No conclusion about native checkout failure; both native calls exit 0",
+      "preserved_state": "Read-only query; no retry, credentials/config changes, or remediation attempted"
+    }
+  ],
+  "final_issue_read": {
+    "command": "& \"$env:MULTICA_CLI_PATH\" 'issue' 'get' '01a1d2d3-4c41-78de-9926-f0555e951ad9' '--output' 'json'",
+    "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir",
+    "started_at": "2026-11-13T10:59:11.111+08:00",
+    "ended_at": "2026-11-13T10:59:11.402+08:00",
+    "elapsed_seconds": 0.291868,
+    "exit_code": 0,
+    "stdout": "{\n  \"id\": \"01a1d2d3-4c41-78de-9926-f0555e951ad9\",\n  \"identifier\": \"TEST-3\",\n  \"status\": \"todo\",\n  \"status_category\": \"todo\",\n  \"revision\": 1,\n  \"assignee_id\": \"9915af88-b5ce-42c2-9c3b-227d768c5bc0\",\n  \"workspace_id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\",\n  \"project_id\": \"d43bbc9d-4cc2-4cee-8f92-70c993ffbf97\"\n}\n",
+    "stderr": "",
+    "output_filter": "Only current Task/workspace and relevant identity fields retained."
+  },
+  "issue_status_policy": {
+    "observed_status": "todo",
+    "modified_by_this_run": false,
+    "reason": "Assigned verification scope allows only native checkout behavior and one evidence-delivery comment; issue status writes omitted."
+  },
+  "completed_at": "2026-11-13T10:59:11.403+08:00",
+  "artifact_validation": {
+    "valid_utf8_json": true,
+    "exactly_two_checkout_calls": true,
+    "no_unicode_replacement_characters": true,
+    "no_url_userinfo": true,
+    "no_injected_secret_values": true
+  },
+  "controller_copy": {
+    "source_sha256": "71128de0977dbcab7dbcea988739db0c19f72cd9b93d076ce88d0b941cfc5bb4",
+    "port_fields_replaced_with_presence": 5,
+    "other_evidence_unchanged": true
+  }
+}

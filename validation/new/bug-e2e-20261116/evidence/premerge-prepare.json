@@ -1,0 +1,4 @@
+{
+  "result": "FAIL",
+  "reason": "存在未完成 PR（等待合并，不属异常）: [{\"repo_key\":\"frame\",\"pr_id\":3795,\"status\":\"active\"}]"
+}

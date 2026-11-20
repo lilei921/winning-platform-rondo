@@ -1,0 +1,38 @@
+{
+  "name": "@winning/rondo",
+  "version": "1.2.28",
+  "description": "rondo —— Multica 交付流水线统一 CLI：OpenSpec Change 身份与分析门禁、研发与 Bug 交付、TFS 工作项与 Git PR 操作、Workspace 资产供给与同步、环境体检",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "rondo": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "build:exe": "node scripts/build-exe.mjs",
+    "prepack": "npm run build",
+    "pack": "npm pack",
+    "test": "node --test test/*.test.mjs \"dist/**/*.test.js\""
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.19"
+  },
+  "dependencies": {
+    "azure-devops-node-api": "^6.6.2",
+    "commander": "^14.0.1",
+    "execa": "^9.6.0",
+    "marked": "^17.0.5",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.2",
+    "esbuild": "^0.28.2",
+    "postject": "^1.0.0-alpha.6",
+    "typescript": "^5.4.0"
+  },
+  "files": [
+    "dist"
+  ]
+}

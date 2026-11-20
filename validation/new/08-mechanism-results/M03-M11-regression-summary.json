@@ -1,0 +1,30 @@
+{
+  "command": "node --test test/analysis-read.test.mjs dist/commands/analysis/source.test.js test/bug-finalize-facts.test.mjs",
+  "cwd": "D:\\UserProgram\\winning-platform-monorepo\\tools\\rondo",
+  "first_managed_sandbox_run": {
+    "exit": 1,
+    "tests": 18,
+    "pass": 15,
+    "fail": 3,
+    "failed_cases": [
+      "fixed SHA HTTP read",
+      "HTTP error responses",
+      "invalid response fields/JSON"
+    ],
+    "error": "spawnSync node.exe ETIMEDOUT (15s localhost fixture)",
+    "duration_ms": 51212.1644
+  },
+  "approved_controller_retry": {
+    "exit": 0,
+    "tests": 18,
+    "pass": 18,
+    "fail": 0,
+    "duration_ms": 10427.0374,
+    "log": "M03-M11-adapter-regression.log"
+  },
+  "installed_local_module_hashes_equal": {
+    "commands/analysis/source.js": "e7964d35182d7e664a90e39be87a4e4a92ae191c6cbc84268e39929225c03f18",
+    "tfs/client.js": "63c838ce2753235b6b2dee31f0cf02e4a82f67df3c2e6d834e0dea0b18ca2213"
+  },
+  "scope": "No claim that actual Multica Runtime localhost HTTP tests passed."
+}

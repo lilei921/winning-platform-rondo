@@ -1,0 +1,53 @@
+{
+  "actor": "controller, approved sandbox escalation; not executed inside Task sandbox",
+  "task_root": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir",
+  "seed_head": "828d42779530b781c4b65bc0e1a6ad7b811eb0a8",
+  "root_head": "dfdaf33fa58355332259524266045d1052ef9dea",
+  "root_status_before": [],
+  "steps": [
+    {
+      "argv": [
+        "git",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir",
+        "clone",
+        "--local",
+        "--no-hardlinks",
+        "--bare",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\validation-fixture\\seed",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\validation-fixture\\M02-local-fixture.git"
+      ],
+      "started_at": "2026-11-13T11:53:29.5762449+08:00",
+      "ended_at": "2026-11-13T11:53:29.6675385+08:00",
+      "exit_code": 0,
+      "output": [
+        "Cloning into bare repository 'C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\validation-fixture\\M02-local-fixture.git'...",
+        "done."
+      ]
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\winning-platform-monorepo",
+        "clone",
+        "--local",
+        "--no-hardlinks",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\validation-fixture\\M02-local-fixture.git",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\winning-platform-monorepo\\winning-dps-df-common"
+      ],
+      "started_at": "2026-11-13T11:53:29.6702236+08:00",
+      "ended_at": "2026-11-13T11:53:29.7727930+08:00",
+      "exit_code": 0,
+      "output": [
+        "Cloning into 'C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\winning-platform-monorepo\\winning-dps-df-common'...",
+        "done."
+      ]
+    }
+  ],
+  "root_status_after": [],
+  "child_head": "828d42779530b781c4b65bc0e1a6ad7b811eb0a8",
+  "child_top": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-5-f8f23e188c07/workdir/winning-platform-monorepo/winning-dps-df-common",
+  "child_origin": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\validation-fixture\\M02-local-fixture.git",
+  "child_status": []
+}

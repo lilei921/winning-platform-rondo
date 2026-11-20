@@ -1,0 +1,184 @@
+{
+  "at": "2026-11-13T05:45:19.007Z",
+  "pr": {
+    "status": 200,
+    "body": {
+      "repository": {
+        "id": "b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74",
+        "name": "winning-dps-df-frame",
+        "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74",
+        "project": {
+          "id": "d2983ec0-9b19-4137-839e-df27e4e43b12",
+          "name": "WiNEX DataFactory",
+          "description": "新一代数据处理低代码开发平台",
+          "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/projects/d2983ec0-9b19-4137-839e-df27e4e43b12",
+          "state": "wellFormed",
+          "revision": 1552,
+          "visibility": "private"
+        },
+        "remoteUrl": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame",
+        "sshUrl": "ssh://tfs2018-web.winning.com.cn:8089/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame"
+      },
+      "pullRequestId": 3773,
+      "codeReviewId": 3773,
+      "status": "active",
+      "createdBy": {
+        "displayName": "li_lei(李磊)",
+        "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/Identities/dc33f63e-4b76-4fd7-99cc-b19ccd0869e1",
+        "id": "dc33f63e-4b76-4fd7-99cc-b19ccd0869e1",
+        "uniqueName": "WINNING\\li_lei",
+        "imageUrl": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_api/_common/identityImage?id=dc33f63e-4b76-4fd7-99cc-b19ccd0869e1"
+      },
+      "creationDate": "2026-11-13T05:37:06.2535222Z",
+      "title": "[M10 TEST 260986] 跨 Runtime 收口与恢复验证",
+      "description": "用户授权的隔离机制验证。仅在测试分支合并一个测试标记文件；不代表生产需求交付。",
+      "sourceRefName": "refs/heads/codex/m10-260986-20261113-source",
+      "targetRefName": "refs/heads/codex/m10-260986-20261113-target",
+      "mergeStatus": "queued",
+      "mergeId": "8ddad50d-8b91-4949-837d-3507e371196d",
+      "lastMergeSourceCommit": {
+        "commitId": "5df24d44cc22bf2dfd2c4d45164c5bd8aad00479",
+        "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/commits/5df24d44cc22bf2dfd2c4d45164c5bd8aad00479"
+      },
+      "lastMergeTargetCommit": {
+        "commitId": "dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a",
+        "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/commits/dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a"
+      },
+      "reviewers": [],
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/pullRequests/3773",
+      "_links": {
+        "self": {
+          "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/pullRequests/3773"
+        },
+        "repository": {
+          "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74"
+        },
+        "workItems": {
+          "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/pullRequests/3773/workitems"
+        },
+        "sourceBranch": {
+          "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/refs"
+        },
+        "targetBranch": {
+          "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/refs"
+        },
+        "statuses": {
+          "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/pullRequests/3773/statuses"
+        },
+        "sourceCommit": {
+          "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/commits/5df24d44cc22bf2dfd2c4d45164c5bd8aad00479"
+        },
+        "targetCommit": {
+          "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/commits/dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a"
+        },
+        "createdBy": {
+          "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/Identities/dc33f63e-4b76-4fd7-99cc-b19ccd0869e1"
+        },
+        "iterations": {
+          "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/pullRequests/3773/iterations"
+        }
+      },
+      "completionOptions": {
+        "mergeCommitMessage": "AI-CHECK test: merge M10 isolated candidate"
+      },
+      "supportsIterations": true,
+      "completionQueueTime": "2026-11-13T05:44:31.9557303Z",
+      "closedBy": {
+        "displayName": "li_lei(李磊)",
+        "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/Identities/dc33f63e-4b76-4fd7-99cc-b19ccd0869e1",
+        "id": "dc33f63e-4b76-4fd7-99cc-b19ccd0869e1",
+        "uniqueName": "WINNING\\li_lei",
+        "imageUrl": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_api/_common/identityImage?id=dc33f63e-4b76-4fd7-99cc-b19ccd0869e1"
+      },
+      "artifactId": "vstfs:///Git/PullRequestId/d2983ec0-9b19-4137-839e-df27e4e43b12%2fb52a4fd8-ec61-4cb5-b2f3-c3b61e41da74%2f3773"
+    }
+  },
+  "threads": {
+    "status": 200,
+    "body": {
+      "value": [
+        {
+          "pullRequestThreadContext": null,
+          "id": 13307,
+          "publishedDate": "2026-11-13T05:37:07.64Z",
+          "lastUpdatedDate": "2026-11-13T05:37:07.64Z",
+          "comments": [
+            {
+              "id": 1,
+              "parentCommentId": 0,
+              "author": {
+                "displayName": "Microsoft.TeamFoundation.System",
+                "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/Identities/000007f5-0000-8888-8000-000000000000",
+                "_links": {
+                  "avatar": {
+                    "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_api/_common/identityImage?id=000007f5-0000-8888-8000-000000000000"
+                  }
+                },
+                "id": "000007f5-0000-8888-8000-000000000000",
+                "uniqueName": "",
+                "imageUrl": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_api/_common/identityImage?id=000007f5-0000-8888-8000-000000000000"
+              },
+              "content": "拉取请求是可合并的，且目标提交应为 85437f0a886c31bb858846d5d0dffcfc7a507e1c。",
+              "publishedDate": "2026-11-13T05:37:07.64Z",
+              "lastUpdatedDate": "2026-11-13T05:37:07.64Z",
+              "lastContentUpdatedDate": "2026-11-13T05:37:07.64Z",
+              "commentType": "system",
+              "usersLiked": [],
+              "_links": {
+                "self": {
+                  "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/pullRequests/3773/threads/13307/comments/1"
+                },
+                "repository": {
+                  "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74"
+                },
+                "threads": {
+                  "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/pullRequests/3773/threads/13307"
+                }
+              }
+            }
+          ],
+          "threadContext": null,
+          "properties": {
+            "CodeReviewMergeCommit": {
+              "$type": "System.String",
+              "$value": "85437f0a886c31bb858846d5d0dffcfc7a507e1c"
+            },
+            "CodeReviewMergeStatus": {
+              "$type": "System.String",
+              "$value": "Succeeded"
+            },
+            "CodeReviewSourceCommit": {
+              "$type": "System.String",
+              "$value": "5df24d44cc22bf2dfd2c4d45164c5bd8aad00479"
+            },
+            "CodeReviewTargetCommit": {
+              "$type": "System.String",
+              "$value": "dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a"
+            },
+            "CodeReviewThreadType": {
+              "$type": "System.String",
+              "$value": "MergeAttempt"
+            }
+          },
+          "isDeleted": false,
+          "_links": {
+            "self": {
+              "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/pullRequests/3773/threads/13307"
+            },
+            "repository": {
+              "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74"
+            }
+          }
+        }
+      ],
+      "count": 1
+    }
+  },
+  "policies": {
+    "status": 200,
+    "body": {
+      "value": [],
+      "count": 0
+    }
+  }
+}

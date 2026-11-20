@@ -1,0 +1,10 @@
+12:11:16.658319 exec-cmd.c:266          trace: resolved executable dir: D:/UserApp/Git/mingw64/bin
+12:11:16.667323 git.c:502               trace: built-in: git clone --local --no-hardlinks 'D:\UserProgram\winning-platform-monorepo\.tmp\m02-msys-probe-20261113\seed' 'D:\UserProgram\winning-platform-monorepo\.tmp\m02-msys-probe-20261113\clone'
+Cloning into 'D:\UserProgram\winning-platform-monorepo\.tmp\m02-msys-probe-20261113\clone'...
+12:11:16.749903 run-command.c:673       trace: run_command: unset GIT_DIR; GIT_PROTOCOL=version=2 'git-upload-pack '\''D:\UserProgram\winning-platform-monorepo\.tmp\m02-msys-probe-20261113\seed/.git'\'''
+12:11:16.750903 run-command.c:934       trace: start_command: D:/UserApp/Git/usr/bin/sh.exe -c 'git-upload-pack '\''D:\UserProgram\winning-platform-monorepo\.tmp\m02-msys-probe-20261113\seed/.git'\''' 'git-upload-pack '\''D:\UserProgram\winning-platform-monorepo\.tmp\m02-msys-probe-20261113\seed/.git'\'''
+      0 [main] sh (43396) D:\UserApp\Git\usr\bin\sh.exe: *** fatal error - NtCreateDirectoryObject(\BaseNamedObjects\msys-2.0S5-3b42950b65a27490): 0xC0000022
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.

@@ -1,0 +1,55 @@
+{
+  "agent_id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+  "attempt": 1,
+  "attribution": {
+    "evidence": {
+      "kind": "issue_assignment",
+      "ref_id": "01a1d2f7-1170-7db0-88a9-cf4af76d8a6f"
+    },
+    "initiator": {
+      "email": "lilei@winning.com.cn",
+      "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+      "name": "lilei"
+    },
+    "originator": {
+      "email": "lilei@winning.com.cn",
+      "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+      "name": "lilei"
+    },
+    "precise": true,
+    "source": "direct_human"
+  },
+  "completed_at": "2026-11-13T11:38:17+08:00",
+  "created_at": "2026-11-13T11:32:49+08:00",
+  "delivered_comment_ids": [],
+  "dispatched_at": "2026-11-13T11:32:49+08:00",
+  "error": null,
+  "id": "01a1d2f7-1194-711e-8a65-d94092ff9604",
+  "issue_id": "01a1d2f7-1170-7db0-88a9-cf4af76d8a6f",
+  "kind": "direct",
+  "max_attempts": 2,
+  "priority": 0,
+  "relative_work_dir": "rondo-test-8ef6a0bcf15d/test-4-d94092ff9604/workdir",
+  "result": {
+    "output": "已提交唯一最终评论及证据附件，Issue 为 `in_review`。\n\n- **M01 FAIL**：原生 checkout 退出码 `1`，错误 `repo is configured but not synced`。\n- **M02 NOT_RUN**：按要求停止，未创建 fixture。\n- 未重试，未修改 cache、凭据或生产仓库。",
+    "pr_url": "",
+    "session_id": "01a1d2f7-03f6-7fe2-a208-27f2a33f373e",
+    "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir"
+  },
+  "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+  "started_at": "2026-11-13T11:32:49+08:00",
+  "status": "completed",
+  "supplement_capability": "task-supplement-v1",
+  "usage": [
+    {
+      "cache_read_tokens": 440064,
+      "cache_write_tokens": 0,
+      "input_tokens": 27887,
+      "model": "gpt-6-astra",
+      "output_tokens": 10891,
+      "provider": "codex"
+    }
+  ],
+  "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir",
+  "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+}

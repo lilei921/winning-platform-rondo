@@ -1,0 +1,60 @@
+{
+  "agent_id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+  "attempt": 1,
+  "attribution": {
+    "evidence": {
+      "kind": "issue_assignment",
+      "ref_id": "01a1d2fc-da1d-7d67-8a0f-2edfc29c0259"
+    },
+    "initiator": {
+      "email": "lilei@winning.com.cn",
+      "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+      "name": "lilei"
+    },
+    "originator": {
+      "email": "lilei@winning.com.cn",
+      "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+      "name": "lilei"
+    },
+    "precise": true,
+    "source": "direct_human"
+  },
+  "completed_at": "2026-11-13T11:57:15+08:00",
+  "created_at": "2026-11-13T11:39:08+08:00",
+  "delivered_comment_ids": [],
+  "dispatched_at": "2026-11-13T11:39:08+08:00",
+  "error": null,
+  "id": "01a1d2fc-da3a-796b-9584-f8f23e188c07",
+  "issue_id": "01a1d2fc-da1d-7d67-8a0f-2edfc29c0259",
+  "kind": "direct",
+  "max_attempts": 2,
+  "priority": 0,
+  "relative_work_dir": "rondo-test-8ef6a0bcf15d/test-5-f8f23e188c07/workdir",
+  "result": {
+    "output": "已向 TEST-5 发布最终评论及 7 个证据附件，状态为 `in_review`。\n\n- M01：PASS。\n- M02 同 Task 机制验证：PASS，依赖控制端外部 fixture。\n- 沙箱自主 clone：两次失败，不能判全链路 PASS。\n- 跨 Run：NOT_RUN，现场已保留，待 Run B 核验。",
+    "pr_url": "",
+    "session_id": "01a1d2fc-cc96-7be3-8149-859d4e8c0362",
+    "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir"
+  },
+  "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+  "started_at": "2026-11-13T11:39:08+08:00",
+  "status": "completed",
+  "supplement_capability": "task-supplement-v1",
+  "supplement_comment_ids": [
+    "01a1d306-9b72-7531-9686-a3244d49314e",
+    "01a1d308-7565-7a26-94ae-b52d7f3b45ea",
+    "01a1d30a-5748-7475-a60f-2322d4ae37b1"
+  ],
+  "usage": [
+    {
+      "cache_read_tokens": 1943808,
+      "cache_write_tokens": 0,
+      "input_tokens": 94467,
+      "model": "gpt-6-astra",
+      "output_tokens": 42394,
+      "provider": "codex"
+    }
+  ],
+  "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir",
+  "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+}

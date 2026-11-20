@@ -1,0 +1,785 @@
+{
+  "schema_version": "single-provider-pr-validation/v2",
+  "executed_at": "2026-09-24T02:20:50.600Z",
+  "provider": "winning-tfs-2018-mcp.tfs_get_pull_request",
+  "sample_pr_ids": [
+    2640,
+    2946,
+    2928
+  ],
+  "execution": "在本轮 functions.exec JavaScript 中实际执行的离线候选规则断言；不是生产同步器测试",
+  "policy": "active 且 reviewer 列表结构可信、所有票值已知，任一当前 vote=-10 则 REWORK；终态优先",
+  "live_coverage": [
+    "active_empty_reviewers",
+    "completed",
+    "abandoned_with_reject_vote",
+    "active_with_successful_merge_metadata"
+  ],
+  "live_coverage_missing": [
+    "active_with_reject_vote",
+    "active_approved",
+    "reviewer_vote_transition"
+  ],
+  "counts": {
+    "total": 32,
+    "passed": 32,
+    "failed": 0,
+    "live_snapshot": 3,
+    "synthetic_single_pr": 16,
+    "synthetic_aggregation": 7,
+    "synthetic_gate": 6
+  },
+  "cases": [
+    {
+      "id": "live-2640",
+      "kind": "live_snapshot",
+      "input": {
+        "file": "pr-2640.json",
+        "expected_identity": {
+          "project": "DP-03-数据采集管理软件",
+          "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+          "pullRequestId": 2640
+        }
+      },
+      "expected": "NO_OP",
+      "actual": "NO_OP",
+      "passed": true,
+      "retrieved_at": "2026-09-24T02:19:15.192Z"
+    },
+    {
+      "id": "live-2946",
+      "kind": "live_snapshot",
+      "input": {
+        "file": "pr-2946.json",
+        "expected_identity": {
+          "project": "DP-03-数据采集管理软件",
+          "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+          "pullRequestId": 2946
+        }
+      },
+      "expected": "SUCCESS",
+      "actual": "SUCCESS",
+      "passed": true,
+      "retrieved_at": "2026-09-24T02:19:15.235Z"
+    },
+    {
+      "id": "live-2928",
+      "kind": "live_snapshot",
+      "input": {
+        "file": "pr-2928.json",
+        "expected_identity": {
+          "project": "DP-03-数据采集管理软件",
+          "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+          "pullRequestId": 2928
+        }
+      },
+      "expected": "EXCEPTIONAL_STOP",
+      "actual": "EXCEPTIONAL_STOP",
+      "passed": true,
+      "retrieved_at": "2026-09-24T02:19:15.276Z"
+    },
+    {
+      "id": "active-reject",
+      "kind": "synthetic_single_pr",
+      "input": {
+        "pr": {
+          "pullRequestId": 2640,
+          "status": "active",
+          "sourceBranch": "feature/236557",
+          "targetBranch": "dev",
+          "reviewers": [
+            {
+              "id": "synthetic-reviewer",
+              "vote": -10
+            }
+          ],
+          "mergeStatus": "succeeded",
+          "mergeCommitId": "972a7f73e928122c6bb39b89be7abe2d463c6cf0",
+          "repository": {
+            "id": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+            "name": "winning-dps-df-dataintegration"
+          },
+          "project": {
+            "id": "29dfa130-8e3b-40c3-bc8b-5eaa3f5be88d",
+            "name": "DP-03-数据采集管理软件"
+          }
+        },
+        "expected_identity": {
+          "project": "DP-03-数据采集管理软件",
+          "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+          "pullRequestId": 2640
+        }
+      },
+      "expected": "REWORK",
+      "actual": "REWORK",
+      "passed": true
+    },
+    {
+      "id": "completed-history-reject",
+      "kind": "synthetic_single_pr",
+      "input": {
+        "pr": {
+          "pullRequestId": 2640,
+          "status": "completed",
+          "sourceBranch": "feature/236557",
+          "targetBranch": "dev",
+          "reviewers": [
+            {
+              "id": "synthetic-reviewer",
+              "vote": -10
+            }
+          ],
+          "mergeStatus": "succeeded",
+          "mergeCommitId": "972a7f73e928122c6bb39b89be7abe2d463c6cf0",
+          "repository": {
+            "id": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+            "name": "winning-dps-df-dataintegration"
+          },
+          "project": {
+            "id": "29dfa130-8e3b-40c3-bc8b-5eaa3f5be88d",
+            "name": "DP-03-数据采集管理软件"
+          }
+        },
+        "expected_identity": {
+          "project": "DP-03-数据采集管理软件",
+          "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+          "pullRequestId": 2640
+        }
+      },
+      "expected": "SUCCESS",
+      "actual": "SUCCESS",
+      "passed": true
+    },
+    {
+      "id": "abandoned-history-reject",
+      "kind": "synthetic_single_pr",
+      "input": {
+        "pr": {
+          "pullRequestId": 2640,
+          "status": "abandoned",
+          "sourceBranch": "feature/236557",
+          "targetBranch": "dev",
+          "reviewers": [
+            {
+              "id": "synthetic-reviewer",
+              "vote": -10
+            }
+          ],
+          "mergeStatus": "succeeded",
+          "mergeCommitId": "972a7f73e928122c6bb39b89be7abe2d463c6cf0",
+          "repository": {
+            "id": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+            "name": "winning-dps-df-dataintegration"
+          },
+          "project": {
+            "id": "29dfa130-8e3b-40c3-bc8b-5eaa3f5be88d",
+            "name": "DP-03-数据采集管理软件"
+          }
+        },
+        "expected_identity": {
+          "project": "DP-03-数据采集管理软件",
+          "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+          "pullRequestId": 2640
+        }
+      },
+      "expected": "EXCEPTIONAL_STOP",
+      "actual": "EXCEPTIONAL_STOP",
+      "passed": true
+    },
+    {
+      "id": "active-approved",
+      "kind": "synthetic_single_pr",
+      "input": {
+        "pr": {
+          "pullRequestId": 2640,
+          "status": "active",
+          "sourceBranch": "feature/236557",
+          "targetBranch": "dev",
+          "reviewers": [
+            {
+              "id": "synthetic-reviewer",
+              "vote": 10
+            }
+          ],
+          "mergeStatus": "succeeded",
+          "mergeCommitId": "972a7f73e928122c6bb39b89be7abe2d463c6cf0",
+          "repository": {
+            "id": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+            "name": "winning-dps-df-dataintegration"
+          },
+          "project": {
+            "id": "29dfa130-8e3b-40c3-bc8b-5eaa3f5be88d",
+            "name": "DP-03-数据采集管理软件"
+          }
+        },
+        "expected_identity": {
+          "project": "DP-03-数据采集管理软件",
+          "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+          "pullRequestId": 2640
+        }
+      },
+      "expected": "NO_OP",
+      "actual": "NO_OP",
+      "passed": true
+    },
+    {
+      "id": "active-suggestions",
+      "kind": "synthetic_single_pr",
+      "input": {
+        "pr": {
+          "pullRequestId": 2640,
+          "status": "active",
+          "sourceBranch": "feature/236557",
+          "targetBranch": "dev",
+          "reviewers": [
+            {
+              "id": "synthetic-reviewer",
+              "vote": 5
+            }
+          ],
+          "mergeStatus": "succeeded",
+          "mergeCommitId": "972a7f73e928122c6bb39b89be7abe2d463c6cf0",
+          "repository": {
+            "id": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+            "name": "winning-dps-df-dataintegration"
+          },
+          "project": {
+            "id": "29dfa130-8e3b-40c3-bc8b-5eaa3f5be88d",
+            "name": "DP-03-数据采集管理软件"
+          }
+        },
+        "expected_identity": {
+          "project": "DP-03-数据采集管理软件",
+          "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+          "pullRequestId": 2640
+        }
+      },
+      "expected": "NO_OP",
+      "actual": "NO_OP",
+      "passed": true
+    },
+    {
+      "id": "active-waiting-author",
+      "kind": "synthetic_single_pr",
+      "input": {
+        "pr": {
+          "pullRequestId": 2640,
+          "status": "active",
+          "sourceBranch": "feature/236557",
+          "targetBranch": "dev",
+          "reviewers": [
+            {
+              "id": "synthetic-reviewer",
+              "vote": -5
+            }
+          ],
+          "mergeStatus": "succeeded",
+          "mergeCommitId": "972a7f73e928122c6bb39b89be7abe2d463c6cf0",
+          "repository": {
+            "id": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+            "name": "winning-dps-df-dataintegration"
+          },
+          "project": {
+            "id": "29dfa130-8e3b-40c3-bc8b-5eaa3f5be88d",
+            "name": "DP-03-数据采集管理软件"
+          }
+        },
+        "expected_identity": {
+          "project": "DP-03-数据采集管理软件",
+          "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+          "pullRequestId": 2640
+        }
+      },
+      "expected": "NO_OP",
+      "actual": "NO_OP",
+      "passed": true
+    },
+    {
+      "id": "active-no-vote",
+      "kind": "synthetic_single_pr",
+      "input": {
+        "pr": {
+          "pullRequestId": 2640,
+          "status": "active",
+          "sourceBranch": "feature/236557",
+          "targetBranch": "dev",
+          "reviewers": [
+            {
+              "id": "synthetic-reviewer",
+              "vote": 0
+            }
+          ],
+          "mergeStatus": "succeeded",
+          "mergeCommitId": "972a7f73e928122c6bb39b89be7abe2d463c6cf0",
+          "repository": {
+            "id": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+            "name": "winning-dps-df-dataintegration"
+          },
+          "project": {
+            "id": "29dfa130-8e3b-40c3-bc8b-5eaa3f5be88d",
+            "name": "DP-03-数据采集管理软件"
+          }
+        },
+        "expected_identity": {
+          "project": "DP-03-数据采集管理软件",
+          "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+          "pullRequestId": 2640
+        }
+      },
+      "expected": "NO_OP",
+      "actual": "NO_OP",
+      "passed": true
+    },
+    {
+      "id": "active-missing-reviewers",
+      "kind": "synthetic_single_pr",
+      "input": {
+        "pr": {
+          "pullRequestId": 2640,
+          "status": "active",
+          "sourceBranch": "feature/236557",
+          "targetBranch": "dev",
+          "mergeStatus": "succeeded",
+          "mergeCommitId": "972a7f73e928122c6bb39b89be7abe2d463c6cf0",
+          "repository": {
+            "id": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+            "name": "winning-dps-df-dataintegration"
+          },
+          "project": {
+            "id": "29dfa130-8e3b-40c3-bc8b-5eaa3f5be88d",
+            "name": "DP-03-数据采集管理软件"
+          }
+        },
+        "expected_identity": {
+          "project": "DP-03-数据采集管理软件",
+          "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+          "pullRequestId": 2640
+        }
+      },
+      "expected": "UNKNOWN",
+      "actual": "UNKNOWN",
+      "passed": true
+    },
+    {
+      "id": "active-null-reviewers",
+      "kind": "synthetic_single_pr",
+      "input": {
+        "pr": {
+          "pullRequestId": 2640,
+          "status": "active",
+          "sourceBranch": "feature/236557",
+          "targetBranch": "dev",
+          "reviewers": null,
+          "mergeStatus": "succeeded",
+          "mergeCommitId": "972a7f73e928122c6bb39b89be7abe2d463c6cf0",
+          "repository": {
+            "id": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+            "name": "winning-dps-df-dataintegration"
+          },
+          "project": {
+            "id": "29dfa130-8e3b-40c3-bc8b-5eaa3f5be88d",
+            "name": "DP-03-数据采集管理软件"
+          }
+        },
+        "expected_identity": {
+          "project": "DP-03-数据采集管理软件",
+          "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+          "pullRequestId": 2640
+        }
+      },
+      "expected": "UNKNOWN",
+      "actual": "UNKNOWN",
+      "passed": true
+    },
+    {
+      "id": "active-string-vote",
+      "kind": "synthetic_single_pr",
+      "input": {
+        "pr": {
+          "pullRequestId": 2640,
+          "status": "active",
+          "sourceBranch": "feature/236557",
+          "targetBranch": "dev",
+          "reviewers": [
+            {
+              "id": "synthetic-reviewer",
+              "vote": "-10"
+            }
+          ],
+          "mergeStatus": "succeeded",
+          "mergeCommitId": "972a7f73e928122c6bb39b89be7abe2d463c6cf0",
+          "repository": {
+            "id": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+            "name": "winning-dps-df-dataintegration"
+          },
+          "project": {
+            "id": "29dfa130-8e3b-40c3-bc8b-5eaa3f5be88d",
+            "name": "DP-03-数据采集管理软件"
+          }
+        },
+        "expected_identity": {
+          "project": "DP-03-数据采集管理软件",
+          "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+          "pullRequestId": 2640
+        }
+      },
+      "expected": "UNKNOWN",
+      "actual": "UNKNOWN",
+      "passed": true
+    },
+    {
+      "id": "active-unknown-vote",
+      "kind": "synthetic_single_pr",
+      "input": {
+        "pr": {
+          "pullRequestId": 2640,
+          "status": "active",
+          "sourceBranch": "feature/236557",
+          "targetBranch": "dev",
+          "reviewers": [
+            {
+              "id": "synthetic-reviewer",
+              "vote": 99
+            }
+          ],
+          "mergeStatus": "succeeded",
+          "mergeCommitId": "972a7f73e928122c6bb39b89be7abe2d463c6cf0",
+          "repository": {
+            "id": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+            "name": "winning-dps-df-dataintegration"
+          },
+          "project": {
+            "id": "29dfa130-8e3b-40c3-bc8b-5eaa3f5be88d",
+            "name": "DP-03-数据采集管理软件"
+          }
+        },
+        "expected_identity": {
+          "project": "DP-03-数据采集管理软件",
+          "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+          "pullRequestId": 2640
+        }
+      },
+      "expected": "UNKNOWN",
+      "actual": "UNKNOWN",
+      "passed": true
+    },
+    {
+      "id": "unknown-status",
+      "kind": "synthetic_single_pr",
+      "input": {
+        "pr": {
+          "pullRequestId": 2640,
+          "status": "closed",
+          "sourceBranch": "feature/236557",
+          "targetBranch": "dev",
+          "reviewers": [],
+          "mergeStatus": "succeeded",
+          "mergeCommitId": "972a7f73e928122c6bb39b89be7abe2d463c6cf0",
+          "repository": {
+            "id": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+            "name": "winning-dps-df-dataintegration"
+          },
+          "project": {
+            "id": "29dfa130-8e3b-40c3-bc8b-5eaa3f5be88d",
+            "name": "DP-03-数据采集管理软件"
+          }
+        },
+        "expected_identity": {
+          "project": "DP-03-数据采集管理软件",
+          "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+          "pullRequestId": 2640
+        }
+      },
+      "expected": "UNKNOWN",
+      "actual": "UNKNOWN",
+      "passed": true
+    },
+    {
+      "id": "numeric-status",
+      "kind": "synthetic_single_pr",
+      "input": {
+        "pr": {
+          "pullRequestId": 2640,
+          "status": 1,
+          "sourceBranch": "feature/236557",
+          "targetBranch": "dev",
+          "reviewers": [],
+          "mergeStatus": "succeeded",
+          "mergeCommitId": "972a7f73e928122c6bb39b89be7abe2d463c6cf0",
+          "repository": {
+            "id": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+            "name": "winning-dps-df-dataintegration"
+          },
+          "project": {
+            "id": "29dfa130-8e3b-40c3-bc8b-5eaa3f5be88d",
+            "name": "DP-03-数据采集管理软件"
+          }
+        },
+        "expected_identity": {
+          "project": "DP-03-数据采集管理软件",
+          "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+          "pullRequestId": 2640
+        }
+      },
+      "expected": "UNKNOWN",
+      "actual": "UNKNOWN",
+      "passed": true
+    },
+    {
+      "id": "wrong-pr-id",
+      "kind": "synthetic_single_pr",
+      "input": {
+        "pr": {
+          "pullRequestId": 0,
+          "status": "active",
+          "sourceBranch": "feature/236557",
+          "targetBranch": "dev",
+          "reviewers": [],
+          "mergeStatus": "succeeded",
+          "mergeCommitId": "972a7f73e928122c6bb39b89be7abe2d463c6cf0",
+          "repository": {
+            "id": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+            "name": "winning-dps-df-dataintegration"
+          },
+          "project": {
+            "id": "29dfa130-8e3b-40c3-bc8b-5eaa3f5be88d",
+            "name": "DP-03-数据采集管理软件"
+          }
+        },
+        "expected_identity": {
+          "project": "DP-03-数据采集管理软件",
+          "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+          "pullRequestId": 2640
+        }
+      },
+      "expected": "UNKNOWN",
+      "actual": "UNKNOWN",
+      "passed": true
+    },
+    {
+      "id": "wrong-repository",
+      "kind": "synthetic_single_pr",
+      "input": {
+        "pr": {
+          "pullRequestId": 2640,
+          "status": "active",
+          "sourceBranch": "feature/236557",
+          "targetBranch": "dev",
+          "reviewers": [],
+          "mergeStatus": "succeeded",
+          "mergeCommitId": "972a7f73e928122c6bb39b89be7abe2d463c6cf0",
+          "repository": {
+            "id": "different-repo"
+          },
+          "project": {
+            "id": "29dfa130-8e3b-40c3-bc8b-5eaa3f5be88d",
+            "name": "DP-03-数据采集管理软件"
+          }
+        },
+        "expected_identity": {
+          "project": "DP-03-数据采集管理软件",
+          "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+          "pullRequestId": 2640
+        }
+      },
+      "expected": "UNKNOWN",
+      "actual": "UNKNOWN",
+      "passed": true
+    },
+    {
+      "id": "missing-target-branch",
+      "kind": "synthetic_single_pr",
+      "input": {
+        "pr": {
+          "pullRequestId": 2640,
+          "status": "active",
+          "sourceBranch": "feature/236557",
+          "targetBranch": null,
+          "reviewers": [],
+          "mergeStatus": "succeeded",
+          "mergeCommitId": "972a7f73e928122c6bb39b89be7abe2d463c6cf0",
+          "repository": {
+            "id": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+            "name": "winning-dps-df-dataintegration"
+          },
+          "project": {
+            "id": "29dfa130-8e3b-40c3-bc8b-5eaa3f5be88d",
+            "name": "DP-03-数据采集管理软件"
+          }
+        },
+        "expected_identity": {
+          "project": "DP-03-数据采集管理软件",
+          "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+          "pullRequestId": 2640
+        }
+      },
+      "expected": "UNKNOWN",
+      "actual": "UNKNOWN",
+      "passed": true
+    },
+    {
+      "id": "hypothetical-three-pr-group",
+      "kind": "synthetic_aggregation",
+      "input": [
+        "NO_OP",
+        "SUCCESS",
+        "EXCEPTIONAL_STOP"
+      ],
+      "expected": "EXCEPTIONAL_STOP",
+      "actual": "EXCEPTIONAL_STOP",
+      "passed": true
+    },
+    {
+      "id": "all-success",
+      "kind": "synthetic_aggregation",
+      "input": [
+        "SUCCESS",
+        "SUCCESS"
+      ],
+      "expected": "SUCCESS",
+      "actual": "SUCCESS",
+      "passed": true
+    },
+    {
+      "id": "pending-and-success",
+      "kind": "synthetic_aggregation",
+      "input": [
+        "NO_OP",
+        "SUCCESS"
+      ],
+      "expected": "NO_OP",
+      "actual": "NO_OP",
+      "passed": true
+    },
+    {
+      "id": "reject-and-success",
+      "kind": "synthetic_aggregation",
+      "input": [
+        "REWORK",
+        "SUCCESS"
+      ],
+      "expected": "REWORK",
+      "actual": "REWORK",
+      "passed": true
+    },
+    {
+      "id": "abandon-over-reject",
+      "kind": "synthetic_aggregation",
+      "input": [
+        "REWORK",
+        "EXCEPTIONAL_STOP"
+      ],
+      "expected": "EXCEPTIONAL_STOP",
+      "actual": "EXCEPTIONAL_STOP",
+      "passed": true
+    },
+    {
+      "id": "missing-and-success",
+      "kind": "synthetic_aggregation",
+      "input": [
+        "UNKNOWN",
+        "SUCCESS"
+      ],
+      "expected": "UNKNOWN",
+      "actual": "UNKNOWN",
+      "passed": true
+    },
+    {
+      "id": "empty-required-set",
+      "kind": "synthetic_aggregation",
+      "input": [],
+      "expected": "UNKNOWN",
+      "actual": "UNKNOWN",
+      "passed": true
+    },
+    {
+      "id": "gate-success",
+      "kind": "synthetic_gate",
+      "input": {
+        "events": [
+          "SUCCESS"
+        ],
+        "verify_pass": true,
+        "blockers": 0
+      },
+      "expected": "PASS",
+      "actual": "PASS",
+      "passed": true
+    },
+    {
+      "id": "gate-verify-failed",
+      "kind": "synthetic_gate",
+      "input": {
+        "events": [
+          "SUCCESS"
+        ],
+        "verify_pass": false,
+        "blockers": 0
+      },
+      "expected": "FAIL",
+      "actual": "FAIL",
+      "passed": true
+    },
+    {
+      "id": "gate-blocker",
+      "kind": "synthetic_gate",
+      "input": {
+        "events": [
+          "SUCCESS"
+        ],
+        "verify_pass": true,
+        "blockers": 1
+      },
+      "expected": "FAIL",
+      "actual": "FAIL",
+      "passed": true
+    },
+    {
+      "id": "gate-empty-set",
+      "kind": "synthetic_gate",
+      "input": {
+        "events": [],
+        "verify_pass": true,
+        "blockers": 0
+      },
+      "expected": "UNKNOWN",
+      "actual": "UNKNOWN",
+      "passed": true
+    },
+    {
+      "id": "gate-unknown-pr",
+      "kind": "synthetic_gate",
+      "input": {
+        "events": [
+          "UNKNOWN"
+        ],
+        "verify_pass": true,
+        "blockers": 0
+      },
+      "expected": "UNKNOWN",
+      "actual": "UNKNOWN",
+      "passed": true
+    },
+    {
+      "id": "gate-missing-verify",
+      "kind": "synthetic_gate",
+      "input": {
+        "events": [
+          "SUCCESS"
+        ],
+        "blockers": 0
+      },
+      "expected": "UNKNOWN",
+      "actual": "UNKNOWN",
+      "passed": true
+    }
+  ],
+  "not_verified": [
+    "Comment 通知幂等、并发与故障恢复",
+    "Human Gate / Squad 唤醒 / Issue 状态更新",
+    "真实 required PR 集合及跨仓交付",
+    "投票历史与最新提交有效性",
+    "真实 Verify 证据与 Blocker 状态",
+    "Post-Merge Git 对齐、TFS 更新与归档"
+  ]
+}

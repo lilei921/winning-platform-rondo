@@ -1,0 +1,4 @@
+# Preserve snapshot bytes for manifest SHA-256 verification.
+pr-2928.json -text
+pr-2946.json -text
+pr-2640.json -text

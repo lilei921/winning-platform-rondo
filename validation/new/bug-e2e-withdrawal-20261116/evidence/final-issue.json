@@ -1,0 +1,18 @@
+{
+  "id": "01a1e2d0-bf8e-7acf-9632-a2675d221f0c",
+  "key": "TT-19",
+  "status": "done",
+  "updated_at": "2026-11-16T05:46:31Z",
+  "tfs_written": "true",
+  "pending_present": false,
+  "summary_comment": "01a1e2e4-7abc-7c5b-8fc5-c5b73916cf7b",
+  "current_pr": [
+    {
+      "repo_key": "frame",
+      "pr_id": 3797,
+      "pr_url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame/pullrequest/3797?_a=overview",
+      "source_branch": "feat/265199",
+      "target_branch": "codex/bug-e2e-withdrawal-20261116"
+    }
+  ]
+}

@@ -1,0 +1,666 @@
+{
+  "schema_version": 1,
+  "run": "A",
+  "task_cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir",
+  "expected": {
+    "issue_id": "01a1d2f7-1170-7db0-88a9-cf4af76d8a6f",
+    "agent_id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+    "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+    "project_id": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97",
+    "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+    "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+    "resource_id": "eee149cc-9c37-415c-a1d8-b0c3b3b56585"
+  },
+  "commands": [
+    {
+      "label": "version.multica",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "& \"$env:MULTICA_CLI_PATH\" 'version'; exit $LASTEXITCODE"
+      ],
+      "started_at": "2026-11-13T03:34:56.590309+00:00",
+      "ended_at": "2026-11-13T03:34:56.759775+00:00",
+      "exit_code": 0,
+      "stdout": "multica 0.8.1 (commit: b1ea927de, built: 2026-11-06T10:12:35Z)\ngo: go1.27.3, os/arch: windows/amd64\n",
+      "stderr": ""
+    },
+    {
+      "label": "version.git",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir",
+      "argv": [
+        "git",
+        "--version"
+      ],
+      "started_at": "2026-11-13T03:34:56.760775+00:00",
+      "ended_at": "2026-11-13T03:34:56.784582+00:00",
+      "exit_code": 0,
+      "stdout": "git version 2.54.0.windows.1\n",
+      "stderr": ""
+    },
+    {
+      "label": "version.rondo",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir",
+      "argv": [
+        "cmd.exe",
+        "/d",
+        "/c",
+        "D:\\UserApp\\nvm\\node_global\\rondo.cmd",
+        "--version"
+      ],
+      "started_at": "2026-11-13T03:34:56.788935+00:00",
+      "ended_at": "2026-11-13T03:34:57.264176+00:00",
+      "exit_code": 0,
+      "stdout": "{\n  \"name\": \"@winning/rondo\",\n  \"version\": \"1.2.20\",\n  \"node\": \"v22.22.2\",\n  \"sea\": false\n}",
+      "stderr": ""
+    },
+    {
+      "label": "help.daemon_status",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "& \"$env:MULTICA_CLI_PATH\" 'daemon' 'status' '--help'; exit $LASTEXITCODE"
+      ],
+      "started_at": "2026-11-13T03:34:57.266202+00:00",
+      "ended_at": "2026-11-13T03:34:57.430794+00:00",
+      "exit_code": 0,
+      "stdout": "Show daemon status\n\nUSAGE\n  multica daemon status [flags]\n\nFLAGS\n  -h, --help            help for status\n      --output string   Output format: table or json (default \"table\")\n\nINHERITED FLAGS\n  --help   Show help for command\n\nLEARN MORE\n  Use `multica <command> <subcommand> --help` for more information about a command.\n",
+      "stderr": ""
+    },
+    {
+      "label": "help.issue_runs",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "& \"$env:MULTICA_CLI_PATH\" 'issue' 'runs' '--help'; exit $LASTEXITCODE"
+      ],
+      "started_at": "2026-11-13T03:34:57.431777+00:00",
+      "ended_at": "2026-11-13T03:34:57.590982+00:00",
+      "exit_code": 0,
+      "stdout": "List agent runs for an issue.\n\nDefaults to this issue's full execution history, newest first. Narrow it to work in flight with --active, or widen it across the sub-issue family with --siblings when you need to know whether another agent is already working next to you.\n\nUSAGE\n  multica issue runs <issue-id> [flags]\n\nFLAGS\n      --active          Only in-flight runs (queued, dispatched, running, waiting_local_directory) instead of the full execution history. Answers \"is an agent working on this right now\" without pulling every past run.\n      --full-id         Show full run UUIDs in table output\n  -h, --help            help for runs\n      --output string   Output format: table or json (default \"table\")\n      --siblings        Widen to this issue's sub-issue family — its parent (or itself, when it has no parent) plus every child of that parent — so you can see whether another run is already working alongside you before starting overlapping code or PR work. Implies --active. Returns a compact per-run row (run, issue, agent, status, started) rather than the full execution-log record. Ordered running-first, newest-first within a status, and capped at 20 rows; when the cap truncates the answer the CLI says so on stderr, so a short list is never mistaken for a complete one. Advisory only: it reports work in flight, it does not reserve or serialise anything.\n\nINHERITED FLAGS\n  --help   Show help for command\n\nLEARN MORE\n  Use `multica <command> <subcommand> --help` for more information about a command.\n",
+      "stderr": ""
+    },
+    {
+      "label": "help.repo_checkout",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "& \"$env:MULTICA_CLI_PATH\" 'repo' 'checkout' '--help'; exit $LASTEXITCODE"
+      ],
+      "started_at": "2026-11-13T03:34:57.592984+00:00",
+      "ended_at": "2026-11-13T03:34:57.759198+00:00",
+      "exit_code": 0,
+      "stdout": "Creates a git worktree from the daemon's bare clone cache. Used by agents to check out repos on demand.\n\nRunning it again where the repository is already checked out never silently discards work: a checkout that has uncommitted changes, untracked files, or unpushed commits, or is already on this task's branch, is kept as it is and only its remote refs are fetched. Pass --fresh to discard its uncommitted changes and untracked files and start over on a new branch; commits stay on the old branch, but push any you still need first.\n\nUSAGE\n  multica repo checkout <url> [flags]\n\nFLAGS\n      --fresh        discard an existing checkout's uncommitted changes and untracked files and start over on a new branch from the latest default branch (or --ref); commits stay on the old branch\n  -h, --help         help for checkout\n      --ref string   branch, tag, or commit to check out instead of the remote default branch\n\nINHERITED FLAGS\n  --help   Show help for command\n\nLEARN MORE\n  Use `multica <command> <subcommand> --help` for more information about a command.\n",
+      "stderr": ""
+    },
+    {
+      "label": "identity.daemon",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "& \"$env:MULTICA_CLI_PATH\" 'daemon' 'status' '--output' 'json'; exit $LASTEXITCODE"
+      ],
+      "started_at": "2026-11-13T03:34:57.760199+00:00",
+      "ended_at": "2026-11-13T03:34:57.920251+00:00",
+      "exit_code": 0,
+      "stdout": "{\n  \"active_task_count\": 1,\n  \"agents\": [\n    \"dsh\",\n    \"claude\",\n    \"codex\",\n    \"copilot\"\n  ],\n  \"cli_commit\": \"b1ea927def6490c43bedff537b6f4ed9a47fa828\",\n  \"cli_version\": \"0.8.1\",\n  \"daemon_id\": \"01a01965-2f6a-72fe-899f-3e7556c5d51d\",\n  \"device_name\": \"lileipc\",\n  \"failed_terminal_report_bytes\": 0,\n  \"failed_terminal_report_count\": 0,\n  \"os\": \"windows\",\n  \"pending_terminal_report_bytes\": 0,\n  \"pending_terminal_report_count\": 0,\n  \"pid\": 32136,\n  \"profile\": \"\",\n  \"resource_wait_task_count\": 0,\n  \"running_task_count\": 1,\n  \"server_url\": \"http://172.17.1.97:8080\",\n  \"skipped_agents\": {\n    \"copilot\": \"version detection failed: detect version for D:\\\\Program Files\\\\VSCode-win32-x64\\\\bin\\\\copilot-shim\\\\copilot.exe: exit status 127\",\n    \"dsh\": \"the Multica runtime profile is not installed; add the Multica DSH runtime bundle to the `multica` profile with `dsh plugin`, or set MULTICA_DSH_PROFILE_BUNDLE so the daemon installs it\"\n  },\n  \"status\": \"running\",\n  \"uptime\": \"1h33m13s\",\n  \"workspaces\": [\n    {\n      \"id\": \"a9469044-700c-4206-80d2-b39bad65de56\",\n      \"runtimes\": [\n        \"a35e3e28-0fd8-44d3-b39c-af9eb326e4bf\",\n        \"c0ae7474-866b-4bd1-b869-a361ab6d8be3\"\n      ]\n    },\n    {\n      \"id\": \"3c542bd3-4749-453c-9b77-7dc32b466538\",\n      \"runtimes\": [\n        \"97664dcf-bed1-46b0-8a3f-714d9c81cc42\",\n        \"9a110f41-1faa-42e8-9bfe-b85615b5287f\"\n      ]\n    },\n    {\n      \"id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\",\n      \"runtimes\": [\n        \"ff1ff20b-e112-4011-a8b3-f65a9472f5fa\",\n        \"c55feddd-7910-480a-8f9f-9d6180b1f061\"\n      ]\n    }\n  ]\n}",
+      "stderr": ""
+    },
+    {
+      "label": "identity.active_runs",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "& \"$env:MULTICA_CLI_PATH\" 'issue' 'runs' '01a1d2f7-1170-7db0-88a9-cf4af76d8a6f' '--active' '--output' 'json'; exit $LASTEXITCODE"
+      ],
+      "started_at": "2026-11-13T03:35:09.087395+00:00",
+      "ended_at": "2026-11-13T03:35:09.294657+00:00",
+      "exit_code": 0,
+      "stdout": "[\n  {\n    \"agent_id\": \"9915af88-b5ce-42c2-9c3b-227d768c5bc0\",\n    \"attempt\": 1,\n    \"attribution\": {\n      \"evidence\": {\n        \"kind\": \"issue_assignment\",\n        \"ref_id\": \"01a1d2f7-1170-7db0-88a9-cf4af76d8a6f\"\n      },\n      \"initiator\": {\n        \"email\": \"lilei@winning.com.cn\",\n        \"id\": \"17e47b21-3ade-446a-bfa6-cd8229c0977a\",\n        \"name\": \"lilei\"\n      },\n      \"originator\": {\n        \"email\": \"lilei@winning.com.cn\",\n        \"id\": \"17e47b21-3ade-446a-bfa6-cd8229c0977a\",\n        \"name\": \"lilei\"\n      },\n      \"precise\": true,\n      \"source\": \"direct_human\"\n    },\n    \"can_supplement\": true,\n    \"completed_at\": null,\n    \"created_at\": \"2026-11-13T11:32:49+08:00\",\n    \"delivered_comment_ids\": [],\n    \"dispatched_at\": \"2026-11-13T11:32:49+08:00\",\n    \"error\": null,\n    \"id\": \"01a1d2f7-1194-711e-8a65-d94092ff9604\",\n    \"issue_id\": \"01a1d2f7-1170-7db0-88a9-cf4af76d8a6f\",\n    \"kind\": \"direct\",\n    \"max_attempts\": 2,\n    \"priority\": 0,\n    \"relative_work_dir\": \"rondo-test-8ef6a0bcf15d/test-4-d94092ff9604/workdir\",\n    \"result\": null,\n    \"runtime_id\": \"c55feddd-7910-480a-8f9f-9d6180b1f061\",\n    \"started_at\": \"2026-11-13T11:32:49+08:00\",\n    \"status\": \"running\",\n    \"supplement_capability\": \"task-supplement-v1\",\n    \"work_dir\": \"C:\\\\Users\\\\lilei\\\\multica_workspaces\\\\rondo-test-8ef6a0bcf15d\\\\test-4-d94092ff9604\\\\workdir\",\n    \"workspace_id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\"\n  }\n]",
+      "stderr": ""
+    },
+    {
+      "label": "issue.in_progress",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "& \"$env:MULTICA_CLI_PATH\" 'issue' 'status' '01a1d2f7-1170-7db0-88a9-cf4af76d8a6f' 'in_progress'; exit $LASTEXITCODE"
+      ],
+      "started_at": "2026-11-13T03:35:22.492156+00:00",
+      "ended_at": "2026-11-13T03:35:22.792428+00:00",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "Issue TEST-4 status changed to in_progress.\n"
+    },
+    {
+      "label": "M01.checkout.first",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "& \"$env:MULTICA_CLI_PATH\" 'repo' 'checkout' 'http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo' '--ref' 'main'; exit $LASTEXITCODE"
+      ],
+      "started_at": "2026-11-13T03:35:22.796417+00:00",
+      "ended_at": "2026-11-13T03:35:23.055105+00:00",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "checkout failed: repo is configured but not synced\n",
+      "error_category": "checkout_repository_sync_state"
+    },
+    {
+      "label": "failure.retained_workdir",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir",
+      "argv": [
+        "C:\\UserApp\\Python3\\python.exe",
+        "-c",
+        "import json,os,stat; from pathlib import Path; p=Path.cwd(); print(json.dumps({'cwd':str(p),'entries':[{'name':q.name,'is_dir':q.is_dir(),'attributes':q.lstat().st_file_attributes} for q in p.iterdir()],'expected_root_exists':(p/'winning-platform-monorepo').exists(),'cwd_git_exists':(p/'.git').exists()},ensure_ascii=False,indent=2))"
+      ],
+      "started_at": "2026-11-13T03:36:22.942691+00:00",
+      "ended_at": "2026-11-13T03:36:22.999758+00:00",
+      "exit_code": 0,
+      "stdout": "{\n  \"cwd\": \"C:\\\\Users\\\\lilei\\\\multica_workspaces\\\\rondo-test-8ef6a0bcf15d\\\\test-4-d94092ff9604\\\\workdir\",\n  \"entries\": [\n    {\n      \"name\": \".agent_context\",\n      \"is_dir\": true,\n      \"attributes\": 16\n    },\n    {\n      \"name\": \".multica\",\n      \"is_dir\": true,\n      \"attributes\": 16\n    },\n    {\n      \"name\": \"AGENTS.md\",\n      \"is_dir\": false,\n      \"attributes\": 32\n    },\n    {\n      \"name\": \"validation-evidence\",\n      \"is_dir\": true,\n      \"attributes\": 16\n    }\n  ],\n  \"expected_root_exists\": false,\n  \"cwd_git_exists\": false\n}",
+      "stderr": ""
+    },
+    {
+      "label": "issue.in_review",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "& \"$env:MULTICA_CLI_PATH\" 'issue' 'status' '01a1d2f7-1170-7db0-88a9-cf4af76d8a6f' 'in_review'; exit $LASTEXITCODE"
+      ],
+      "started_at": "2026-11-13T03:36:23.026065+00:00",
+      "ended_at": "2026-11-13T03:36:23.284682+00:00",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "Issue TEST-4 status changed to in_review.\n"
+    },
+    {
+      "label": "issue.final_read",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "& \"$env:MULTICA_CLI_PATH\" 'issue' 'get' '01a1d2f7-1170-7db0-88a9-cf4af76d8a6f' '--output' 'json'; exit $LASTEXITCODE"
+      ],
+      "started_at": "2026-11-13T03:36:23.287390+00:00",
+      "ended_at": "2026-11-13T03:36:23.520173+00:00",
+      "exit_code": 0,
+      "stdout": "{\n  \"assignee_id\": \"9915af88-b5ce-42c2-9c3b-227d768c5bc0\",\n  \"assignee_type\": \"agent\",\n  \"created_at\": \"2026-11-13T11:32:49+08:00\",\n  \"creator_id\": \"17e47b21-3ade-446a-bfa6-cd8229c0977a\",\n  \"creator_type\": \"member\",\n  \"description\": \"# M01 / M02 全量重新验证：Run A\\n\\n2026-11-13 用户要求：旧结果不可靠，M01 也全部重验；无问题时连续推进 M01、M02，不逐项停顿。此 Issue 是该授权测试的一部分。只在当前真实 Multica Task 的隔离 workdir 执行，不使用或改动 D:\\\\UserProgram\\\\winning-platform-monorepo 的工作树。\\n\\n## 身份和范围\\n\\n- Workspace：rondo-test / 60eb8cf4-31be-4a34-b744-8ef6a0bcf15d。\\n- Project：winning-platform-monorepo / d43bbc9d-4cc2-4cee-8f92-70c993ffbf97。\\n- Runtime：Codex (lileipc) / c55feddd-7910-480a-8f9f-9d6180b1f061；Daemon：01a01965-2f6a-72fe-899f-3e7556c5d51d。\\n- Git Resource：eee149cc-9c37-415c-a1d8-b0c3b3b56585，github_repo，当前 ref=main。不得沿用旧报告的 rondo。\\n- 根仓 URL：http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo。\\n- 控制端刚回读 main=dfdaf33fa58355332259524266045d1052ef9dea；浮动分支可能变化，必须以本次实际返回和 origin/main 核对。\\n- M02 只使用本 Task 内新建的本地一次性 Git fixture。业务测试路径使用本 Task 根仓 registry 的 common.repo_path，预计 winning-dps-df-common；真实 common.repo_url 仅只读记录，不访问、不 Push。fixture origin 明确标为本地测试身份，不能冒称真实业务仓认证通过。\\n\\n## 执行与证据\\n\\n证据放在 Task workdir 下的 validation-evidence/，不要放在根仓。逐步保存 M01-M02-run-A-evidence.json 和简洁报告；每条命令记录 cwd、argv（脱敏）、开始/结束时间、exit code、stdout/stderr，文件证据使用 SHA-256。凭据只保存是否存在，不保存 Token、端口值、原始 env、credentials 或含用户信息 URL。不要加载旧 M01 结果作为证据。\\n\\n1. 核对 Task marker、当前 cwd、Task/Issue/Agent/Runtime/Daemon 身份与 Resource manifest。仅记录 MULTICA_TOKEN、MULTICA_DAEMON_PORT 是否存在。确认目录无 reparse point，原生根仓调用前是否已存在；记录 CLI、Git、Rondo 版本。当前若非真实 Task 或身份不符，停止 NOT_RUN。\\n2. 在 Task cwd 执行 multica repo checkout <根仓URL> --ref main；不使用 --fresh，不手工 clone 根仓，不改变 cache。记录实际返回路径以及 git -C <root> rev-parse --show-toplevel、HEAD、branch --show-current、status --porcelain=v1 --untracked-files=all、脱敏 origin、origin/main、.git 类型和 common-dir。成功且身份吻合才继续。\\n3. 在相同 cwd 再执行普通 checkout，比较路径、HEAD、分支、status；保留完整原生命令结果。若存在 cached/fetch warning，单列记录，不隐去。\\n4. M01 脏树重入：在此可废弃 root 中选择一个已有跟踪文本文件（优先 README.md），将原始字节备份到 validation-evidence；追加唯一测试标记，并新增一个根仓未跟踪测试文件，记录各自 Hash、git diff 和 status。再执行同一普通 checkout，验证跟踪改动和未跟踪文件的内容、HEAD、分支、路径均保留。然后仅恢复自己备份的原始字节、删除自己创建的单个标记文件（路径必须验证位于本 Task root），不用 reset/checkout/clean。确认根仓 status 恢复原基线。不得创建根仓 Commit。M01 任一必需项不满足则保存结果并停止，不进行 M02。\\n5. M02 开始前读取当前 root 的 .gitignore 和 docs/config/repo-context.yaml，记录 common 的 repo_id/repo_path/repo_url。校验业务目标是 root 的直接子目录且不存在，git check-ignore -v <repo_path>/probe.txt 证明被既有规则忽略；不得修改 .gitignore 或 registry。规则不满足时停止并报告。\\n6. 仅在 Task workdir 的 validation-fixture/ 建立一个 seed Git 仓和一个本地 bare remote，内容只含标记 README.txt，允许此本地 fixture 的初始 Commit（命令级 user.name/user.email，不写全局配置）。将该本地 bare remote clone 到 root/<common.repo_path>，不使用真实 TFS origin，不注册第二个 Project Resource。该 clone 用于二级业务仓实验，不是绕过根仓原生 checkout。\\n7. 分别记录 root 和 child 的 Git top-level、.git 类型、common-dir、脱敏 origin、完整 HEAD、status。child 新建唯一未跟踪标记文件，并修改 fixture 的 README.txt，记录 Hash。确认 root status 与创建 child 前完全一致、root git ls-files 不含 child 内容，记录 git check-ignore 输出。\\n8. 再从相同 Task cwd 执行根仓普通 checkout，验证 root、child 的路径、HEAD、分支、origin、tracked/untracked 修改和 Hash 都保留，root status 不出现 child 源码。此步骤完成后保留 child 修改和 fixture，供下一独立 Run 的只读隔离核对；不得清理或改动平台 cache。\\n9. 输出机器可读 assertions、M01 和 M02 的独立状态。M02 同 Task 已覆盖，跨 Run 部分明确 NOT_RUN / pending controller Run B，不能提前总判 PASS。M01 未推送 Commit、冷 cache 从零准备、四类业务 Agent 未覆盖时逐条说明。最终回复证据绝对路径和 Hash，以及 root/child 路径、HEAD、标记 Hash，控制端会独立回读并启动 Run B。\\n\\n禁止远程 Git 写入、Push、PR、TFS Work Item 修改、生产 Issue/Metadata/Assignment 修改、配置/Skill/Agent 指令变更、重启 Daemon、fresh/reset/clean、修改已有 Task 或其他人的目录。除本测试 Issue 的一次最终结果交付外不发布评论，不触发其他 Agent，不自行创建新 Run。命令失败保留现场，区分认证、网络、URL 校验、Daemon 超时；不要凭猜测修复或无限重试。\",\n  \"due_date\": null,\n  \"duplicate_of\": null,\n  \"id\": \"01a1d2f7-1170-7db0-88a9-cf4af76d8a6f\",\n  \"identifier\": \"TEST-4\",\n  \"labels\": [],\n  \"last_activity_at\": \"2026-11-13T11:36:27.53296+08:00\",\n  \"metadata\": {},\n  \"number\": 4,\n  \"parent_issue_id\": null,\n  \"position\": -1,\n  \"priority\": \"none\",\n  \"project_id\": \"d43bbc9d-4cc2-4cee-8f92-70c993ffbf97\",\n  \"properties\": {},\n  \"revision\": 3,\n  \"stage\": null,\n  \"start_date\": null,\n  \"status\": \"in_review\",\n  \"status_category\": \"in_review\",\n  \"status_name\": \"\",\n  \"title\": \"[M01 M02 全量重验 A] main 原生 checkout 与二级仓\",\n  \"updated_at\": \"2026-11-13T11:36:27+08:00\",\n  \"workspace_id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\"\n}",
+      "stderr": ""
+    },
+    {
+      "label": "issue.final_read_utf8",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); & \"$env:MULTICA_CLI_PATH\" 'issue' 'get' '01a1d2f7-1170-7db0-88a9-cf4af76d8a6f' '--output' 'json'; exit $LASTEXITCODE"
+      ],
+      "started_at": "2026-11-13T03:37:14.970709+00:00",
+      "ended_at": "2026-11-13T03:37:15.182716+00:00",
+      "exit_code": 0,
+      "stdout": "{\n  \"assignee_id\": \"9915af88-b5ce-42c2-9c3b-227d768c5bc0\",\n  \"assignee_type\": \"agent\",\n  \"created_at\": \"2026-11-13T11:32:49+08:00\",\n  \"creator_id\": \"17e47b21-3ade-446a-bfa6-cd8229c0977a\",\n  \"creator_type\": \"member\",\n  \"description\": \"# M01 / M02 全量重新验证：Run A\\n\\n2026-11-13 用户要求：旧结果不可靠，M01 也全部重验；无问题时连续推进 M01、M02，不逐项停顿。此 Issue 是该授权测试的一部分。只在当前真实 Multica Task 的隔离 workdir 执行，不使用或改动 D:\\\\UserProgram\\\\winning-platform-monorepo 的工作树。\\n\\n## 身份和范围\\n\\n- Workspace：rondo-test / 60eb8cf4-31be-4a34-b744-8ef6a0bcf15d。\\n- Project：winning-platform-monorepo / d43bbc9d-4cc2-4cee-8f92-70c993ffbf97。\\n- Runtime：Codex (lileipc) / c55feddd-7910-480a-8f9f-9d6180b1f061；Daemon：01a01965-2f6a-72fe-899f-3e7556c5d51d。\\n- Git Resource：eee149cc-9c37-415c-a1d8-b0c3b3b56585，github_repo，当前 ref=main。不得沿用旧报告的 rondo。\\n- 根仓 URL：http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo。\\n- 控制端刚回读 main=dfdaf33fa58355332259524266045d1052ef9dea；浮动分支可能变化，必须以本次实际返回和 origin/main 核对。\\n- M02 只使用本 Task 内新建的本地一次性 Git fixture。业务测试路径使用本 Task 根仓 registry 的 common.repo_path，预计 winning-dps-df-common；真实 common.repo_url 仅只读记录，不访问、不 Push。fixture origin 明确标为本地测试身份，不能冒称真实业务仓认证通过。\\n\\n## 执行与证据\\n\\n证据放在 Task workdir 下的 validation-evidence/，不要放在根仓。逐步保存 M01-M02-run-A-evidence.json 和简洁报告；每条命令记录 cwd、argv（脱敏）、开始/结束时间、exit code、stdout/stderr，文件证据使用 SHA-256。凭据只保存是否存在，不保存 Token、端口值、原始 env、credentials 或含用户信息 URL。不要加载旧 M01 结果作为证据。\\n\\n1. 核对 Task marker、当前 cwd、Task/Issue/Agent/Runtime/Daemon 身份与 Resource manifest。仅记录 MULTICA_TOKEN、MULTICA_DAEMON_PORT 是否存在。确认目录无 reparse point，原生根仓调用前是否已存在；记录 CLI、Git、Rondo 版本。当前若非真实 Task 或身份不符，停止 NOT_RUN。\\n2. 在 Task cwd 执行 multica repo checkout <根仓URL> --ref main；不使用 --fresh，不手工 clone 根仓，不改变 cache。记录实际返回路径以及 git -C <root> rev-parse --show-toplevel、HEAD、branch --show-current、status --porcelain=v1 --untracked-files=all、脱敏 origin、origin/main、.git 类型和 common-dir。成功且身份吻合才继续。\\n3. 在相同 cwd 再执行普通 checkout，比较路径、HEAD、分支、status；保留完整原生命令结果。若存在 cached/fetch warning，单列记录，不隐去。\\n4. M01 脏树重入：在此可废弃 root 中选择一个已有跟踪文本文件（优先 README.md），将原始字节备份到 validation-evidence；追加唯一测试标记，并新增一个根仓未跟踪测试文件，记录各自 Hash、git diff 和 status。再执行同一普通 checkout，验证跟踪改动和未跟踪文件的内容、HEAD、分支、路径均保留。然后仅恢复自己备份的原始字节、删除自己创建的单个标记文件（路径必须验证位于本 Task root），不用 reset/checkout/clean。确认根仓 status 恢复原基线。不得创建根仓 Commit。M01 任一必需项不满足则保存结果并停止，不进行 M02。\\n5. M02 开始前读取当前 root 的 .gitignore 和 docs/config/repo-context.yaml，记录 common 的 repo_id/repo_path/repo_url。校验业务目标是 root 的直接子目录且不存在，git check-ignore -v <repo_path>/probe.txt 证明被既有规则忽略；不得修改 .gitignore 或 registry。规则不满足时停止并报告。\\n6. 仅在 Task workdir 的 validation-fixture/ 建立一个 seed Git 仓和一个本地 bare remote，内容只含标记 README.txt，允许此本地 fixture 的初始 Commit（命令级 user.name/user.email，不写全局配置）。将该本地 bare remote clone 到 root/<common.repo_path>，不使用真实 TFS origin，不注册第二个 Project Resource。该 clone 用于二级业务仓实验，不是绕过根仓原生 checkout。\\n7. 分别记录 root 和 child 的 Git top-level、.git 类型、common-dir、脱敏 origin、完整 HEAD、status。child 新建唯一未跟踪标记文件，并修改 fixture 的 README.txt，记录 Hash。确认 root status 与创建 child 前完全一致、root git ls-files 不含 child 内容，记录 git check-ignore 输出。\\n8. 再从相同 Task cwd 执行根仓普通 checkout，验证 root、child 的路径、HEAD、分支、origin、tracked/untracked 修改和 Hash 都保留，root status 不出现 child 源码。此步骤完成后保留 child 修改和 fixture，供下一独立 Run 的只读隔离核对；不得清理或改动平台 cache。\\n9. 输出机器可读 assertions、M01 和 M02 的独立状态。M02 同 Task 已覆盖，跨 Run 部分明确 NOT_RUN / pending controller Run B，不能提前总判 PASS。M01 未推送 Commit、冷 cache 从零准备、四类业务 Agent 未覆盖时逐条说明。最终回复证据绝对路径和 Hash，以及 root/child 路径、HEAD、标记 Hash，控制端会独立回读并启动 Run B。\\n\\n禁止远程 Git 写入、Push、PR、TFS Work Item 修改、生产 Issue/Metadata/Assignment 修改、配置/Skill/Agent 指令变更、重启 Daemon、fresh/reset/clean、修改已有 Task 或其他人的目录。除本测试 Issue 的一次最终结果交付外不发布评论，不触发其他 Agent，不自行创建新 Run。命令失败保留现场，区分认证、网络、URL 校验、Daemon 超时；不要凭猜测修复或无限重试。\",\n  \"due_date\": null,\n  \"duplicate_of\": null,\n  \"id\": \"01a1d2f7-1170-7db0-88a9-cf4af76d8a6f\",\n  \"identifier\": \"TEST-4\",\n  \"labels\": [],\n  \"last_activity_at\": \"2026-11-13T11:36:27.53296+08:00\",\n  \"metadata\": {},\n  \"number\": 4,\n  \"parent_issue_id\": null,\n  \"position\": -1,\n  \"priority\": \"none\",\n  \"project_id\": \"d43bbc9d-4cc2-4cee-8f92-70c993ffbf97\",\n  \"properties\": {},\n  \"revision\": 3,\n  \"stage\": null,\n  \"start_date\": null,\n  \"status\": \"in_review\",\n  \"status_category\": \"in_review\",\n  \"status_name\": \"\",\n  \"title\": \"[M01 M02 全量重验 A] main 原生 checkout 与二级仓\",\n  \"updated_at\": \"2026-11-13T11:36:27+08:00\",\n  \"workspace_id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\"\n}",
+      "stderr": ""
+    }
+  ],
+  "assertions": [
+    {
+      "name": "task.cwd",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:34:56.586699+00:00"
+    },
+    {
+      "name": "task.marker",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:34:56.587330+00:00"
+    },
+    {
+      "name": "task.env_identity",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:34:56.587929+00:00"
+    },
+    {
+      "name": "task.credentials_present",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:34:56.588569+00:00"
+    },
+    {
+      "name": "task.no_reparse_ancestors",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:34:56.589212+00:00"
+    },
+    {
+      "name": "task.project",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:34:56.589796+00:00"
+    },
+    {
+      "name": "task.resource",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:35:09.082378+00:00"
+    },
+    {
+      "name": "task.daemon",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:35:09.084377+00:00"
+    },
+    {
+      "name": "task.daemon_runtime",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:35:09.086392+00:00"
+    },
+    {
+      "name": "task.active_run_match",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:35:22.481329+00:00"
+    },
+    {
+      "name": "task.active_run_identity",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:35:22.485329+00:00"
+    },
+    {
+      "name": "task.managed_marker",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:35:22.487592+00:00"
+    },
+    {
+      "name": "task.initial_no_reparse_entries",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:35:22.490150+00:00"
+    },
+    {
+      "name": "M01.first_checkout_success",
+      "passed": false,
+      "details": "exit=1; configured but not synced",
+      "at": "2026-11-13T03:36:23.002758+00:00"
+    },
+    {
+      "name": "failure.no_root_created",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:36:23.005675+00:00"
+    },
+    {
+      "name": "failure.no_fixture_created",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:36:23.008161+00:00"
+    },
+    {
+      "name": "failure.no_native_retry",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:36:23.010639+00:00"
+    },
+    {
+      "name": "failure.task_marker_unchanged",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:36:23.013073+00:00"
+    },
+    {
+      "name": "failure.resource_manifest_unchanged",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:36:23.015654+00:00"
+    },
+    {
+      "name": "issue.result_awaits_acceptance",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:36:23.523173+00:00"
+    },
+    {
+      "name": "delivery.issue_status",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:37:15.187717+00:00"
+    },
+    {
+      "name": "delivery.native_attempts",
+      "passed": true,
+      "details": null,
+      "at": "2026-11-13T03:37:15.192705+00:00"
+    }
+  ],
+  "files": [
+    {
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir\\.multica\\daemon_task_context.json",
+      "role": "task marker",
+      "size": 149,
+      "sha256": "83fea44dc40c672af6d6c8384dec87ec58a81b99dd32cefb92a8e3d11b337b74"
+    },
+    {
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir\\.multica\\project\\resources.json",
+      "role": "resource manifest",
+      "size": 487,
+      "sha256": "76ae690782c2677fed172a4f54c31c4add596d1dc60dc108569284021463f0a1"
+    },
+    {
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir\\validation-evidence\\M01-M02-run-A-report.md",
+      "role": "concise report",
+      "size": 2572,
+      "sha256": "c0d04dd6ba1463b51a02b714048b38da313ff6b7c9b5996a9205f6d198cd00e2"
+    },
+    {
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir\\validation-evidence\\validate.py",
+      "role": "validation harness",
+      "size": 18273,
+      "sha256": "4094aecce61d1817acaf38ec29c8492a84a288bda8d4f2797b2eddfe5242cd92"
+    }
+  ],
+  "states": {},
+  "M01": "FAIL",
+  "M02_same_task": "NOT_RUN",
+  "M02_cross_run": "NOT_RUN / pending controller Run B",
+  "M02_overall": "NOT_RUN",
+  "coverage_limits": [
+    "M01 unpushed commits: NOT_RUN",
+    "Cold cache preparation from zero: NOT_RUN",
+    "Four business agent types: NOT_RUN",
+    "Real business repository authentication: NOT_RUN; local fixture only"
+  ],
+  "bootstrap_note": "Issue and empty root-thread summary read before harness creation. Initial login PowerShell emitted profile AuthorizationManager failure but CLI issue get exited 0; validation uses -NoProfile, without changing execution policy.",
+  "started_at": "2026-11-13T03:34:56.582818+00:00",
+  "identity": {
+    "marker": {
+      "managed_by": "multica-daemon-task",
+      "agent_id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+      "issue_id": "01a1d2f7-1170-7db0-88a9-cf4af76d8a6f"
+    },
+    "manifest": {
+      "project_id": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97",
+      "project_title": "winning-platform-monorepo",
+      "resources": [
+        {
+          "id": "eee149cc-9c37-415c-a1d8-b0c3b3b56585",
+          "resource_type": "github_repo",
+          "resource_ref": {
+            "ref": "main",
+            "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo"
+          },
+          "label": "M01 TFS root checkout validation"
+        }
+      ]
+    },
+    "env_ids": {
+      "MULTICA_TASK_ID": "01a1d2f7-1194-711e-8a65-d94092ff9604",
+      "MULTICA_AGENT_ID": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+      "MULTICA_WORKSPACE_ID": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+    },
+    "MULTICA_TOKEN_present": true,
+    "MULTICA_DAEMON_PORT_present": true,
+    "no_reparse_ancestors": true,
+    "initial_entries": [
+      {
+        "name": ".agent_context",
+        "attributes": 16
+      },
+      {
+        "name": ".multica",
+        "attributes": 16
+      },
+      {
+        "name": "AGENTS.md",
+        "attributes": 32
+      },
+      {
+        "name": "validation-evidence",
+        "attributes": 16
+      }
+    ],
+    "native_root_existed": false,
+    "daemon_status": {
+      "active_task_count": 1,
+      "agents": [
+        "dsh",
+        "claude",
+        "codex",
+        "copilot"
+      ],
+      "cli_commit": "b1ea927def6490c43bedff537b6f4ed9a47fa828",
+      "cli_version": "0.8.1",
+      "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+      "device_name": "lileipc",
+      "failed_terminal_report_bytes": 0,
+      "failed_terminal_report_count": 0,
+      "os": "windows",
+      "pending_terminal_report_bytes": 0,
+      "pending_terminal_report_count": 0,
+      "pid": 32136,
+      "profile": "",
+      "resource_wait_task_count": 0,
+      "running_task_count": 1,
+      "server_url": "http://172.17.1.97:8080",
+      "skipped_agents": {
+        "copilot": "version detection failed: detect version for D:\\Program Files\\VSCode-win32-x64\\bin\\copilot-shim\\copilot.exe: exit status 127",
+        "dsh": "the Multica runtime profile is not installed; add the Multica DSH runtime bundle to the `multica` profile with `dsh plugin`, or set MULTICA_DSH_PROFILE_BUNDLE so the daemon installs it"
+      },
+      "status": "running",
+      "uptime": "1h33m13s",
+      "workspaces": [
+        {
+          "id": "a9469044-700c-4206-80d2-b39bad65de56",
+          "runtimes": [
+            "a35e3e28-0fd8-44d3-b39c-af9eb326e4bf",
+            "c0ae7474-866b-4bd1-b869-a361ab6d8be3"
+          ]
+        },
+        {
+          "id": "3c542bd3-4749-453c-9b77-7dc32b466538",
+          "runtimes": [
+            "97664dcf-bed1-46b0-8a3f-714d9c81cc42",
+            "9a110f41-1faa-42e8-9bfe-b85615b5287f"
+          ]
+        },
+        {
+          "id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+          "runtimes": [
+            "ff1ff20b-e112-4011-a8b3-f65a9472f5fa",
+            "c55feddd-7910-480a-8f9f-9d6180b1f061"
+          ]
+        }
+      ]
+    },
+    "active_runs": [
+      {
+        "agent_id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+        "attempt": 1,
+        "attribution": {
+          "evidence": {
+            "kind": "issue_assignment",
+            "ref_id": "01a1d2f7-1170-7db0-88a9-cf4af76d8a6f"
+          },
+          "initiator": {
+            "email": "lilei@winning.com.cn",
+            "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+            "name": "lilei"
+          },
+          "originator": {
+            "email": "lilei@winning.com.cn",
+            "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+            "name": "lilei"
+          },
+          "precise": true,
+          "source": "direct_human"
+        },
+        "can_supplement": true,
+        "completed_at": null,
+        "created_at": "2026-11-13T11:32:49+08:00",
+        "delivered_comment_ids": [],
+        "dispatched_at": "2026-11-13T11:32:49+08:00",
+        "error": null,
+        "id": "01a1d2f7-1194-711e-8a65-d94092ff9604",
+        "issue_id": "01a1d2f7-1170-7db0-88a9-cf4af76d8a6f",
+        "kind": "direct",
+        "max_attempts": 2,
+        "priority": 0,
+        "relative_work_dir": "rondo-test-8ef6a0bcf15d/test-4-d94092ff9604/workdir",
+        "result": null,
+        "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+        "started_at": "2026-11-13T11:32:49+08:00",
+        "status": "running",
+        "supplement_capability": "task-supplement-v1",
+        "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir",
+        "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+      }
+    ]
+  },
+  "versions": {
+    "cli": "multica 0.8.1 (commit: b1ea927de, built: 2026-11-06T10:12:35Z)\ngo: go1.27.3, os/arch: windows/amd64",
+    "git": "git version 2.54.0.windows.1",
+    "rondo_executable": "D:\\UserApp\\nvm\\node_global\\rondo.cmd",
+    "rondo": "{\n  \"name\": \"@winning/rondo\",\n  \"version\": \"1.2.20\",\n  \"node\": \"v22.22.2\",\n  \"sea\": false\n}"
+  },
+  "stopped": {
+    "stage": "checkout_first",
+    "reason": "M01.checkout.first: exit 1",
+    "at": "2026-11-13T03:35:23.057370+00:00"
+  },
+  "failure": {
+    "command_label": "M01.checkout.first",
+    "exit_code": 1,
+    "error_category": "checkout_repository_sync_state",
+    "error": "checkout failed: repo is configured but not synced",
+    "interpretation": "Configured repository was not synced according to the native daemon checkout result. No evidence establishes an authentication, network, URL-validation, or daemon-timeout cause.",
+    "retained_state": {
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir",
+      "entries": [
+        {
+          "name": ".agent_context",
+          "is_dir": true,
+          "attributes": 16
+        },
+        {
+          "name": ".multica",
+          "is_dir": true,
+          "attributes": 16
+        },
+        {
+          "name": "AGENTS.md",
+          "is_dir": false,
+          "attributes": 32
+        },
+        {
+          "name": "validation-evidence",
+          "is_dir": true,
+          "attributes": 16
+        }
+      ],
+      "expected_root_exists": false,
+      "cwd_git_exists": false
+    },
+    "actual_checkout_path": null,
+    "expected_path_only": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-4-d94092ff9604\\workdir\\winning-platform-monorepo",
+    "root_HEAD": null,
+    "child_path": null,
+    "child_HEAD": null,
+    "marker_hashes": null,
+    "retry_count": 0
+  },
+  "steps": [
+    {
+      "step": 1,
+      "status": "PASS",
+      "summary": "Task/cwd/Issue/Agent/Runtime/Daemon/Resource match; token/port presence only; no pre-existing root; no reparse path; versions recorded"
+    },
+    {
+      "step": 2,
+      "status": "FAIL",
+      "summary": "Native checkout exited 1: configured but not synced; no path returned and no root directory present"
+    },
+    {
+      "step": 3,
+      "status": "NOT_RUN",
+      "reason": "Mandatory stop after first native checkout failure"
+    },
+    {
+      "step": 4,
+      "status": "NOT_RUN",
+      "reason": "Mandatory stop after first native checkout failure"
+    },
+    {
+      "step": 5,
+      "status": "NOT_RUN",
+      "reason": "Mandatory stop after first native checkout failure"
+    },
+    {
+      "step": 6,
+      "status": "NOT_RUN",
+      "reason": "Mandatory stop after first native checkout failure"
+    },
+    {
+      "step": 7,
+      "status": "NOT_RUN",
+      "reason": "Mandatory stop after first native checkout failure"
+    },
+    {
+      "step": 8,
+      "status": "NOT_RUN",
+      "reason": "Mandatory stop after first native checkout failure"
+    },
+    {
+      "step": 9,
+      "status": "PASS",
+      "summary": "Failure evidence and independent M01/M02 statuses delivered; successful-checkout measurements are unavailable"
+    }
+  ],
+  "final_issue_status": "in_review",
+  "ended_at": "2026-11-13T03:37:15.201142+00:00",
+  "encoding_note": "UTF-8 JSON command captures were checked: no Unicode replacement characters. Earlier Python console rendering did not affect evidence files. The additional Issue read did not retry checkout."
+}

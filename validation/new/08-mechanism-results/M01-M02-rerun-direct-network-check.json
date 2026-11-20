@@ -1,0 +1,9 @@
+{
+  "started_at": "2026-11-13T11:38:22.4006213+08:00",
+  "ended_at": "2026-11-13T11:38:23.4061420+08:00",
+  "mode": "one-process direct connection, proxy disabled, no global changes",
+  "exit_code": 0,
+  "output": [
+    "dfdaf33fa58355332259524266045d1052ef9dea\trefs/heads/main"
+  ]
+}

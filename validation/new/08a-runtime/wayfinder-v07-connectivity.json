@@ -1,0 +1,17 @@
+[
+  {
+    "server": "remote-codegraph",
+    "initialize_http": 502,
+    "content_type": null
+  },
+  {
+    "server": "remote-filesystem",
+    "initialize_http": 502,
+    "content_type": null
+  },
+  {
+    "server": "remote-ripgrep",
+    "initialize_http": 502,
+    "content_type": null
+  }
+]

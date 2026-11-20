@@ -1,0 +1,24 @@
+{
+  "checked_at": "2026-11-13T12:02:30.9410634+08:00",
+  "a2_before_after_equal": true,
+  "b": {
+    "top": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-6-b569fc44cf1b/workdir/winning-platform-monorepo",
+    "head": "dfdaf33fa58355332259524266045d1052ef9dea",
+    "branch": "agent/m01-checkout/b569fc44cf1b",
+    "common_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-6-b569fc44cf1b/workdir/winning-platform-monorepo/.git",
+    "status": [],
+    "child_exists": false
+  },
+  "independent_root": true,
+  "independent_common_dir": true,
+  "remote_refs_exit_code": 0,
+  "remote_refs": [
+    "ref: refs/heads/master\tHEAD",
+    "f77b9d050426f54d136424591697a018e56f1494\tHEAD",
+    "dfdaf33fa58355332259524266045d1052ef9dea\trefs/heads/main",
+    "f77b9d050426f54d136424591697a018e56f1494\trefs/heads/master",
+    "e21292336401e74eb0e58d29776e9b9815a46d59\trefs/heads/rondo"
+  ],
+  "controller_head": "e21292336401e74eb0e58d29776e9b9815a46d59",
+  "controller_branch": "rondo"
+}

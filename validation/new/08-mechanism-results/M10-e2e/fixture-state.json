@@ -1,0 +1,629 @@
+{
+  "created_at": "2026-11-13T05:36:18.628Z",
+  "root_url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+  "business_url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame",
+  "branch": {
+    "root": "codex/m10-260986-20261113-root",
+    "target": "codex/m10-260986-20261113-target",
+    "source": "codex/m10-260986-20261113-source"
+  },
+  "change": "m10-260986-runtime-recovery",
+  "requests": [
+    {
+      "timestamp": "2026-11-13T05:36:21.723Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workitems/260986?$expand=relations&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:36:21.817Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_apis/git/repositories/winning-platform-monorepo/refs?filter=heads%2Frondo&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:36:21.859Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/refs?filter=heads%2Fdev&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:36:42.999Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_apis/git/repositories/winning-platform-monorepo/refs?filter=heads%2Fcodex%2Fm10-260986-20261113-root&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:36:43.043Z",
+      "method": "POST",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_apis/git/repositories/winning-platform-monorepo/refs?api-version=4.1",
+      "status": 400
+    },
+    {
+      "timestamp": "2026-11-13T05:37:00.367Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_apis/git/repositories/winning-platform-monorepo/refs?filter=heads%2Fcodex%2Fm10-260986-20261113-root&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:00.505Z",
+      "method": "POST",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_apis/git/repositories/winning-platform-monorepo/refs?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:00.547Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/refs?filter=heads%2Fcodex%2Fm10-260986-20261113-target&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:00.770Z",
+      "method": "POST",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/refs?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:00.841Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/refs?filter=heads%2Fcodex%2Fm10-260986-20261113-source&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:01.012Z",
+      "method": "POST",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/refs?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:01.047Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/refs?filter=heads%2Fcodex%2Fm10-260986-20261113-source&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:01.519Z",
+      "method": "POST",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pushes?api-version=4.1",
+      "status": 201
+    },
+    {
+      "timestamp": "2026-11-13T05:37:01.652Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/refs?filter=heads%2Fcodex%2Fm10-260986-20261113-source&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:01.762Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/items?path=%2Fmultica-validation%2Fm10-260986-20261113.txt&includeContent=true&versionDescriptor.versionType=commit&versionDescriptor.version=5df24d44cc22bf2dfd2c4d45164c5bd8aad00479&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:02.332Z",
+      "method": "POST",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests?api-version=4.1",
+      "status": 201
+    },
+    {
+      "timestamp": "2026-11-13T05:37:02.394Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:02.451Z",
+      "method": "PATCH",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:02.492Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:03.963Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:05.062Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:06.236Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:07.318Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:08.440Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:09.557Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:10.739Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:11.786Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:12.852Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:13.917Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:15.042Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:16.484Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:17.555Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:18.603Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:19.660Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:20.730Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:21.773Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:22.932Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:37:24.307Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:23.956Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/items?path=%2Fmultica-validation%2Fm10-260986-20261113.txt&includeContent=true&versionDescriptor.versionType=commit&versionDescriptor.version=5df24d44cc22bf2dfd2c4d45164c5bd8aad00479&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:24.107Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:34.153Z",
+      "method": "PATCH",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:35.834Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:36.897Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:37.958Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:39.020Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:40.066Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:41.136Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:42.208Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:43.342Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:45.173Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:46.240Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:47.357Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:48.528Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:49.577Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:50.806Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:52.415Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:53.472Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:54.956Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:56.054Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:57.095Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:44:58.142Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:46:28.889Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/items?path=%2Fmultica-validation%2Fm10-260986-20261113.txt&includeContent=true&versionDescriptor.versionType=commit&versionDescriptor.version=5df24d44cc22bf2dfd2c4d45164c5bd8aad00479&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:46:28.930Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:46:28.970Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_apis/git/repositories/winning-platform-monorepo/refs?filter=heads%2Fcodex%2Fm10-260986-20261113-root&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:46:29.403Z",
+      "method": "POST",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_apis/git/repositories/winning-platform-monorepo/pushes?api-version=4.1",
+      "status": 201
+    },
+    {
+      "timestamp": "2026-11-13T05:46:29.467Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_apis/git/repositories/winning-platform-monorepo/refs?filter=heads%2Fcodex%2Fm10-260986-20261113-root&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:46:29.519Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_apis/git/repositories/winning-platform-monorepo/refs?filter=heads%2Fcodex%2Fm10-260986-20261113-root&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:46:30.052Z",
+      "method": "POST",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_apis/git/repositories/winning-platform-monorepo/pushes?api-version=4.1",
+      "status": 201
+    },
+    {
+      "timestamp": "2026-11-13T05:46:30.081Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_apis/git/repositories/winning-platform-monorepo/refs?filter=heads%2Fcodex%2Fm10-260986-20261113-root&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:47:20.114Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/items?path=%2Fmultica-validation%2Fm10-260986-20261113.txt&includeContent=true&versionDescriptor.versionType=commit&versionDescriptor.version=5df24d44cc22bf2dfd2c4d45164c5bd8aad00479&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:47:20.154Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:48:43.793Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/items?path=%2Fmultica-validation%2Fm10-260986-20261113.txt&includeContent=true&versionDescriptor.versionType=commit&versionDescriptor.version=5df24d44cc22bf2dfd2c4d45164c5bd8aad00479&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:48:44.219Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:50:04.772Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/items?path=%2Fmultica-validation%2Fm10-260986-20261113.txt&includeContent=true&versionDescriptor.versionType=commit&versionDescriptor.version=5df24d44cc22bf2dfd2c4d45164c5bd8aad00479&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:50:04.840Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:52:30.202Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/items?path=%2Fmultica-validation%2Fm10-260986-20261113.txt&includeContent=true&versionDescriptor.versionType=commit&versionDescriptor.version=5df24d44cc22bf2dfd2c4d45164c5bd8aad00479&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:52:30.251Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:52:46.948Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/items?path=%2Fmultica-validation%2Fm10-260986-20261113.txt&includeContent=true&versionDescriptor.versionType=commit&versionDescriptor.version=5df24d44cc22bf2dfd2c4d45164c5bd8aad00479&api-version=4.1",
+      "status": 200
+    },
+    {
+      "timestamp": "2026-11-13T05:52:47.003Z",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3773?api-version=4.1",
+      "status": 200
+    }
+  ],
+  "baseline": {
+    "root": "9d422182723c48bfb1514ac558e294c640e51cda",
+    "business": "dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a",
+    "workitem": {
+      "id": 260986,
+      "rev": 2,
+      "state": "已建议",
+      "title": "公版研发_DF框架_对接统一权限时，获取菜单接口去除language参数",
+      "relations": []
+    }
+  },
+  "created_root": true,
+  "created_target": true,
+  "created_source": true,
+  "candidate": "5df24d44cc22bf2dfd2c4d45164c5bd8aad00479",
+  "candidate_validation": {
+    "result": "PASS",
+    "path": "/multica-validation/m10-260986-20261113.txt",
+    "commit": "5df24d44cc22bf2dfd2c4d45164c5bd8aad00479",
+    "object_id": "a6bfb0a1fa1e170bfc1b7e019bc07c8e4c7e291d",
+    "sha256": "f1330bb869613e89e4fa81936cb3ec282d5af23843f5b056921a589c464b4791"
+  },
+  "pr": {
+    "id": 3773,
+    "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame/pullrequest/3773",
+    "source": "codex/m10-260986-20261113-source",
+    "target": "codex/m10-260986-20261113-target",
+    "status": "completed",
+    "source_commit": "5df24d44cc22bf2dfd2c4d45164c5bd8aad00479",
+    "merge_commit": "0a9c0f716695f9bd23005edd8006b6bc2bc72bd3"
+  },
+  "pr_patch_response": {
+    "repository": {
+      "id": "b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74",
+      "name": "winning-dps-df-frame",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74",
+      "project": {
+        "id": "d2983ec0-9b19-4137-839e-df27e4e43b12",
+        "name": "WiNEX DataFactory",
+        "description": "新一代数据处理低代码开发平台",
+        "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/projects/d2983ec0-9b19-4137-839e-df27e4e43b12",
+        "state": "wellFormed",
+        "revision": 1552,
+        "visibility": "private"
+      },
+      "remoteUrl": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame",
+      "sshUrl": "ssh://tfs2018-web.winning.com.cn:8089/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame"
+    },
+    "pullRequestId": 3773,
+    "codeReviewId": 3773,
+    "status": "active",
+    "createdBy": {
+      "displayName": "li_lei(李磊)",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/Identities/dc33f63e-4b76-4fd7-99cc-b19ccd0869e1",
+      "id": "dc33f63e-4b76-4fd7-99cc-b19ccd0869e1",
+      "uniqueName": "WINNING\\li_lei",
+      "imageUrl": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_api/_common/identityImage?id=dc33f63e-4b76-4fd7-99cc-b19ccd0869e1"
+    },
+    "creationDate": "2026-11-13T05:37:06.2535222Z",
+    "title": "[M10 TEST 260986] 跨 Runtime 收口与恢复验证",
+    "description": "用户授权的隔离机制验证。仅在测试分支合并一个测试标记文件；不代表生产需求交付。",
+    "sourceRefName": "refs/heads/codex/m10-260986-20261113-source",
+    "targetRefName": "refs/heads/codex/m10-260986-20261113-target",
+    "mergeStatus": "queued",
+    "mergeId": "8ddad50d-8b91-4949-837d-3507e371196d",
+    "lastMergeSourceCommit": {
+      "commitId": "5df24d44cc22bf2dfd2c4d45164c5bd8aad00479",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/commits/5df24d44cc22bf2dfd2c4d45164c5bd8aad00479"
+    },
+    "lastMergeTargetCommit": {
+      "commitId": "dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/commits/dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a"
+    },
+    "reviewers": [],
+    "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/pullRequests/3773",
+    "_links": {
+      "self": {
+        "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/pullRequests/3773"
+      },
+      "repository": {
+        "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74"
+      },
+      "workItems": {
+        "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/pullRequests/3773/workitems"
+      },
+      "sourceBranch": {
+        "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/refs"
+      },
+      "targetBranch": {
+        "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/refs"
+      },
+      "statuses": {
+        "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/pullRequests/3773/statuses"
+      },
+      "sourceCommit": {
+        "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/commits/5df24d44cc22bf2dfd2c4d45164c5bd8aad00479"
+      },
+      "targetCommit": {
+        "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/commits/dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a"
+      },
+      "createdBy": {
+        "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/Identities/dc33f63e-4b76-4fd7-99cc-b19ccd0869e1"
+      },
+      "iterations": {
+        "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/pullRequests/3773/iterations"
+      }
+    },
+    "completionOptions": {
+      "mergeCommitMessage": "AI-CHECK test: merge M10 isolated candidate"
+    },
+    "supportsIterations": true,
+    "completionQueueTime": "2026-11-13T05:44:31.9557303Z",
+    "closedBy": {
+      "displayName": "li_lei(李磊)",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/Identities/dc33f63e-4b76-4fd7-99cc-b19ccd0869e1",
+      "id": "dc33f63e-4b76-4fd7-99cc-b19ccd0869e1",
+      "uniqueName": "WINNING\\li_lei",
+      "imageUrl": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_api/_common/identityImage?id=dc33f63e-4b76-4fd7-99cc-b19ccd0869e1"
+    },
+    "artifactId": "vstfs:///Git/PullRequestId/d2983ec0-9b19-4137-839e-df27e4e43b12%2fb52a4fd8-ec61-4cb5-b2f3-c3b61e41da74%2f3773"
+  },
+  "pr_latest": {
+    "at": "2026-11-13T05:52:47.004Z",
+    "status": "completed",
+    "mergeStatus": "succeeded"
+  },
+  "approved_commit": "d3837be33c721e9b33bacb1d075cf2f4904e65e5",
+  "published_commit": "a2b70f9dad7fcbf4fc413b6cb3c677f701ed88d8",
+  "analysis_source": {
+    "repo_url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+    "branch": "codex/m10-260986-20261113-root",
+    "commit": "d3837be33c721e9b33bacb1d075cf2f4904e65e5",
+    "change_ref": "m10-260986-runtime-recovery"
+  },
+  "registry": {
+    "frame": {
+      "repo_path": "winning-dps-df-frame",
+      "repo_url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame",
+      "tfs_repo": "winning-dps-df-frame",
+      "tfs_project": "WiNEX DataFactory"
+    }
+  }
+}

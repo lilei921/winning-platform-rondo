@@ -1,0 +1,25 @@
+{
+  "timestamp": "2026-11-13T04:34:23.685Z",
+  "mirror_path": "/root/winning-platform-monorepo/winning-dps-df-frame",
+  "mirror_head": "dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a",
+  "mirror_branch": "dev",
+  "codegraph_version_from_last_log": "1.6.2",
+  "index_commit": null,
+  "http_status": 200,
+  "requested_commit": "dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a",
+  "returned_commit": "dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a",
+  "object_id": "49c3884b01a3c4fb2e0f45559dec15cd6d8871e7",
+  "path": "/winning-dps-df-frame-service/src/main/java/com/winning/dps/df/frame/service/uniauth/platform/PermissionPlatService.java",
+  "full_api_file_sha256": "a9e2f5d2652761c10ef277c848c5a040fe581994e21cc1dfd10c18084165ecc5",
+  "compared_lines": [
+    111,
+    124
+  ],
+  "codegraph_fragment_sha256": "5bebc3536f602f2aed5d539ef67fe34423aecac8fe14947d6385d1956293bfcd",
+  "api_fragment_sha256": "5bebc3536f602f2aed5d539ef67fe34423aecac8fe14947d6385d1956293bfcd",
+  "source_fragment_match": "PASS",
+  "independent_api_read_without_mcp_dependency": "PASS",
+  "index_commit_provenance": "NOT_RUN: tool does not expose a committed index identity; timestamps are not commit proof",
+  "runtime_automatic_degradation": "NOT_RUN: direct API read is proven, no production runtime outage injected",
+  "overall": "NOT_RUN / PARTIAL_EVIDENCE"
+}

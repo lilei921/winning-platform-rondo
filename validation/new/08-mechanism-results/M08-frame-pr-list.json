@@ -1,0 +1,41 @@
+[
+  {
+    "id": 3532,
+    "title": "DF-7 / TFS 260987：统一权限菜单查询停止透传语言",
+    "status": "completed",
+    "mergeStatus": "succeeded",
+    "mergeCommitId": "dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a",
+    "sourceCommitId": "5e7968ae04dacda18901042a431544ec8e59db67",
+    "sourceBranch": "feat/260987",
+    "targetBranch": "dev",
+    "createdBy": "li_lei(李磊)",
+    "creationDate": "2026-10-29T08:29:49.856Z",
+    "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame/pullrequest/3532?_a=overview"
+  },
+  {
+    "id": 3508,
+    "title": "feat/NA: 操作日志按请求语言保存标题",
+    "status": "completed",
+    "mergeStatus": "succeeded",
+    "mergeCommitId": "8b0ebf31969df36d659e6e7fb0cf7c3ccfcd009c",
+    "sourceCommitId": "778be89e3e4889c8664878d8736f18d768c13c1e",
+    "sourceBranch": "codex/operation-log-accept-language",
+    "targetBranch": "rc",
+    "createdBy": "lbs(李保森)",
+    "creationDate": "2026-10-27T10:08:23.947Z",
+    "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame/pullrequest/3508?_a=overview"
+  },
+  {
+    "id": 3275,
+    "title": "feat/多语言: 菜单接口增加language字段，支持x-locale多语言标识",
+    "status": "completed",
+    "mergeStatus": "succeeded",
+    "mergeCommitId": "c08039363aef530bbfab37c78e142850b62543c3",
+    "sourceCommitId": "d0758c1fc397a5add702d67d0f76b1a07359d8e0",
+    "sourceBranch": "feat/menu-multilanguage",
+    "targetBranch": "dev",
+    "createdBy": "lbs(李保森)",
+    "creationDate": "2026-10-08T08:17:57.398Z",
+    "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame/pullrequest/3275?_a=overview"
+  }
+]

@@ -1,0 +1,15 @@
+{
+  "runtime": {
+    "multica_cli": "C:/Users/lilei/.multica/bin/multica.exe",
+    "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+    "root_branch": "codex/m10-260986-20261113-root"
+  },
+  "registry": {
+    "frame": {
+      "repo_path": "winning-dps-df-frame",
+      "repo_url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame",
+      "tfs_repo": "winning-dps-df-frame",
+      "tfs_project": "WiNEX DataFactory"
+    }
+  }
+}

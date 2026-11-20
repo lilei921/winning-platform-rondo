@@ -1,0 +1,517 @@
+{
+  "checked_at": "2026-11-16T05:18:01.942Z",
+  "workspace": "rondo-tt",
+  "workspace_id": "3158546f-5b79-4042-baec-20cdac7d9d31",
+  "server": "https://api.multica.ai",
+  "profile": "desktop-api.multica.ai",
+  "skills": [
+    {
+      "name": "analysis-completion",
+      "id": "c25e279c-1ef1-47b7-952f-dfb2b9df4485",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "local_sha256": "910117085980ffaf6a018a1b2e090e891b5abccf78bd7cca018c4bda5bf3b9d8",
+          "remote_sha256": "910117085980ffaf6a018a1b2e090e891b5abccf78bd7cca018c4bda5bf3b9d8",
+          "equal": true
+        },
+        {
+          "path": "config/repo-registry.json",
+          "local_sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06",
+          "remote_sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06",
+          "equal": true
+        },
+        {
+          "path": "references/analysis-source-contract.md",
+          "local_sha256": "7a0a03697da7b192e6aedfe4790dce110070ff6f1daf2c77c4a42dd3cf0c3315",
+          "remote_sha256": "7a0a03697da7b192e6aedfe4790dce110070ff6f1daf2c77c4a42dd3cf0c3315",
+          "equal": true
+        }
+      ],
+      "extra": []
+    },
+    {
+      "name": "backend-engineering",
+      "id": "ffda0bfc-79b0-45f8-8965-a79b72cf51e6",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "local_sha256": "bab50f19e32379659dd50b0d295f28d493372ecaaf2b347fcc5499c3847f8b9a",
+          "remote_sha256": "bab50f19e32379659dd50b0d295f28d493372ecaaf2b347fcc5499c3847f8b9a",
+          "equal": true
+        },
+        {
+          "path": "references/feedback-signals.md",
+          "local_sha256": "d5ed4075b17434b76cc50cfa6486d5f6aa3fd3be24b6e01475ba3754b17f4d4b",
+          "remote_sha256": "d5ed4075b17434b76cc50cfa6486d5f6aa3fd3be24b6e01475ba3754b17f4d4b",
+          "equal": true
+        },
+        {
+          "path": "references/local-validation.md",
+          "local_sha256": "d42cb28dde97bc1761fab93c6c049688ae8e2ec0abdd3cea653e109d7c079ae0",
+          "remote_sha256": "d42cb28dde97bc1761fab93c6c049688ae8e2ec0abdd3cea653e109d7c079ae0",
+          "equal": true
+        },
+        {
+          "path": "references/repo-write-isolation-contract.md",
+          "local_sha256": "fabbe6e1b4d516d5184f4b3e61edb10155e2f9489680d4c9f6b8d4c1e40a5e7e",
+          "remote_sha256": "fabbe6e1b4d516d5184f4b3e61edb10155e2f9489680d4c9f6b8d4c1e40a5e7e",
+          "equal": true
+        },
+        {
+          "path": "references/review-standards.md",
+          "local_sha256": "34c0d71525d64921fc5c1eb0d151fd22a34521802753b9020b25ec122a206409",
+          "remote_sha256": "34c0d71525d64921fc5c1eb0d151fd22a34521802753b9020b25ec122a206409",
+          "equal": true
+        }
+      ],
+      "extra": []
+    },
+    {
+      "name": "bug-analysis",
+      "id": "d0d22fa4-fe83-4273-b923-22c265eba61d",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "local_sha256": "5436f1550bb566affb5725fc5e648bb6fd62511d0044fab591322fd0991f5385",
+          "remote_sha256": "5436f1550bb566affb5725fc5e648bb6fd62511d0044fab591322fd0991f5385",
+          "equal": true
+        }
+      ],
+      "extra": []
+    },
+    {
+      "name": "bug-delivery",
+      "id": "4909190c-75e7-44c5-bc73-66f84395d43f",
+      "files": [
+        {
+          "path": "SKILL-v1.md",
+          "local_sha256": "dffdf5e3a48531e3a48a39cd5f67cf1c3df34b68a30f61f6095c69977d582d8d",
+          "remote_sha256": "dffdf5e3a48531e3a48a39cd5f67cf1c3df34b68a30f61f6095c69977d582d8d",
+          "equal": true
+        },
+        {
+          "path": "SKILL.md",
+          "local_sha256": "577aa7993a3024d0bc4a7a1286bd15596f5a0e6182c3d964f338649522757319",
+          "remote_sha256": "577aa7993a3024d0bc4a7a1286bd15596f5a0e6182c3d964f338649522757319",
+          "equal": true
+        },
+        {
+          "path": "config/repo-registry.json",
+          "local_sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06",
+          "remote_sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06",
+          "equal": true
+        },
+        {
+          "path": "references/bug-evidence-contract-v1.md",
+          "local_sha256": "3a0b3f13d521c56f5d892e4cc47b785ee2d66ee3efb3986d93a5b037eb259136",
+          "remote_sha256": "3a0b3f13d521c56f5d892e4cc47b785ee2d66ee3efb3986d93a5b037eb259136",
+          "equal": true
+        },
+        {
+          "path": "references/bug-evidence-contract.md",
+          "local_sha256": "ad44e04a6b78cd6afdb1fcf40de8a7f5395428ed91244ce7189a6f85692a408f",
+          "remote_sha256": "ad44e04a6b78cd6afdb1fcf40de8a7f5395428ed91244ce7189a6f85692a408f",
+          "equal": true
+        }
+      ],
+      "extra": []
+    },
+    {
+      "name": "codebase-explorer",
+      "id": "69186aea-44b2-4080-9735-79ebc0ea51da",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "local_sha256": "37d41dbf8553e1bdc5a50a872f6115a55cd51dd0c64963934a4d7f3fbcc3978a",
+          "remote_sha256": "37d41dbf8553e1bdc5a50a872f6115a55cd51dd0c64963934a4d7f3fbcc3978a",
+          "equal": true
+        },
+        {
+          "path": "references/repo-write-isolation-contract.md",
+          "local_sha256": "fabbe6e1b4d516d5184f4b3e61edb10155e2f9489680d4c9f6b8d4c1e40a5e7e",
+          "remote_sha256": "fabbe6e1b4d516d5184f4b3e61edb10155e2f9489680d4c9f6b8d4c1e40a5e7e",
+          "equal": true
+        }
+      ],
+      "extra": []
+    },
+    {
+      "name": "delivery-flow",
+      "id": "8f69c817-bff1-4fee-8c70-5ef6e757fee3",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "local_sha256": "5a95528f745da595c069a21735dbd3abcade72dd7d4ed474804dcea9a4a5490c",
+          "remote_sha256": "5a95528f745da595c069a21735dbd3abcade72dd7d4ed474804dcea9a4a5490c",
+          "equal": true
+        },
+        {
+          "path": "config/repo-registry.json",
+          "local_sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06",
+          "remote_sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06",
+          "equal": true
+        },
+        {
+          "path": "references/analysis-source-contract.md",
+          "local_sha256": "e87218a0f63568d03d306b9a9e2abf410f20539519db998098967d8cf1eee3cb",
+          "remote_sha256": "e87218a0f63568d03d306b9a9e2abf410f20539519db998098967d8cf1eee3cb",
+          "equal": true
+        },
+        {
+          "path": "references/dispatch-facts-contract.md",
+          "local_sha256": "f8dfd34ee8102197ea7ce37feca569ebdce215fb76eeee4058aa4d79ce9c931d",
+          "remote_sha256": "f8dfd34ee8102197ea7ce37feca569ebdce215fb76eeee4058aa4d79ce9c931d",
+          "equal": true
+        },
+        {
+          "path": "references/finalize-facts-contract.md",
+          "local_sha256": "c8cac54c208c4b9878f35a27c576a61f4e5c6fc43e28b65f9db5fed9d2ecd55f",
+          "remote_sha256": "c8cac54c208c4b9878f35a27c576a61f4e5c6fc43e28b65f9db5fed9d2ecd55f",
+          "equal": true
+        },
+        {
+          "path": "references/repo-write-isolation-contract.md",
+          "local_sha256": "fabbe6e1b4d516d5184f4b3e61edb10155e2f9489680d4c9f6b8d4c1e40a5e7e",
+          "remote_sha256": "fabbe6e1b4d516d5184f4b3e61edb10155e2f9489680d4c9f6b8d4c1e40a5e7e",
+          "equal": true
+        }
+      ],
+      "extra": []
+    },
+    {
+      "name": "delivery-gate",
+      "id": "6c8288a5-92a2-49a2-b9d9-ed9e95eb8deb",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "local_sha256": "8dea18aa9075c590b61c3b573bb82b412c14b4a522171a2d5c85a41fb5783094",
+          "remote_sha256": "8dea18aa9075c590b61c3b573bb82b412c14b4a522171a2d5c85a41fb5783094",
+          "equal": true
+        }
+      ],
+      "extra": []
+    },
+    {
+      "name": "development-execution",
+      "id": "5c884254-8a1c-4f92-8718-7e64afefba88",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "local_sha256": "5dd2a737e1d835f6127af0d2cb5a6fb72b7dda7a3b109d3c33c4aff90621fb2e",
+          "remote_sha256": "5dd2a737e1d835f6127af0d2cb5a6fb72b7dda7a3b109d3c33c4aff90621fb2e",
+          "equal": true
+        },
+        {
+          "path": "config/repo-registry.json",
+          "local_sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06",
+          "remote_sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06",
+          "equal": true
+        },
+        {
+          "path": "methods/bounded-diagnosis.md",
+          "local_sha256": "bf70616defb218fd3afe6d81e16cf1f713ef0cdfa9c12b90c76e62a348759e8b",
+          "remote_sha256": "bf70616defb218fd3afe6d81e16cf1f713ef0cdfa9c12b90c76e62a348759e8b",
+          "equal": true
+        },
+        {
+          "path": "methods/code-review.md",
+          "local_sha256": "a682cc40235045457c1d423cbaa7a70639a6a4e4f45955d6cd77fd46fc503d98",
+          "remote_sha256": "a682cc40235045457c1d423cbaa7a70639a6a4e4f45955d6cd77fd46fc503d98",
+          "equal": true
+        },
+        {
+          "path": "methods/codebase-design.md",
+          "local_sha256": "b82a571fbc865bc075106839fcd4302c41b9f44ef7dfdda0b74f5003cd4af8fc",
+          "remote_sha256": "b82a571fbc865bc075106839fcd4302c41b9f44ef7dfdda0b74f5003cd4af8fc",
+          "equal": true
+        },
+        {
+          "path": "methods/tdd.md",
+          "local_sha256": "405f24e60ab28cf791e1db2f48602d4878c60cc19d5e9972e747ebe86cddfbe9",
+          "remote_sha256": "405f24e60ab28cf791e1db2f48602d4878c60cc19d5e9972e747ebe86cddfbe9",
+          "equal": true
+        },
+        {
+          "path": "methods/verification-before-completion.md",
+          "local_sha256": "8b2a96a8d3d440839524bab6e182fe048b1a2a8d4b4810d62394613a18064afe",
+          "remote_sha256": "8b2a96a8d3d440839524bab6e182fe048b1a2a8d4b4810d62394613a18064afe",
+          "equal": true
+        },
+        {
+          "path": "references/change-progress-script-contract.md",
+          "local_sha256": "1a7f560e7d03d0625e6ad4b82520b05a62fca18348df9394fadf7e06e18684fc",
+          "remote_sha256": "1a7f560e7d03d0625e6ad4b82520b05a62fca18348df9394fadf7e06e18684fc",
+          "equal": true
+        },
+        {
+          "path": "references/development-evidence-contract.md",
+          "local_sha256": "5ff628d855f8662770171e1eae5ba3a85197ed231844a3a8007c55ca7c834385",
+          "remote_sha256": "5ff628d855f8662770171e1eae5ba3a85197ed231844a3a8007c55ca7c834385",
+          "equal": true
+        },
+        {
+          "path": "references/repo-write-isolation-contract.md",
+          "local_sha256": "fabbe6e1b4d516d5184f4b3e61edb10155e2f9489680d4c9f6b8d4c1e40a5e7e",
+          "remote_sha256": "fabbe6e1b4d516d5184f4b3e61edb10155e2f9489680d4c9f6b8d4c1e40a5e7e",
+          "equal": true
+        }
+      ],
+      "extra": []
+    },
+    {
+      "name": "diagnosing-bugs",
+      "id": "fd2e89a2-5799-4420-80c0-f3a7501569a3",
+      "files": [
+        {
+          "path": "LICENSE.md",
+          "local_sha256": "57f4361fcde8c8ea3ea8246705dd50af50f89d972b85c1c73b3162ad3c88e969",
+          "remote_sha256": "57f4361fcde8c8ea3ea8246705dd50af50f89d972b85c1c73b3162ad3c88e969",
+          "equal": true
+        },
+        {
+          "path": "SKILL.md",
+          "local_sha256": "be86f31be9d593619bdc081d9110cdb8c4d2c41a00216d1375d4be20128267f6",
+          "remote_sha256": "be86f31be9d593619bdc081d9110cdb8c4d2c41a00216d1375d4be20128267f6",
+          "equal": true
+        }
+      ],
+      "extra": []
+    },
+    {
+      "name": "finalize-delivery",
+      "id": "2d3dab81-b72d-4942-aacd-1607600928cd",
+      "files": [
+        {
+          "path": "SKILL-v1.md",
+          "local_sha256": "aee80b7cc281d619fd1a0a830d5c3ca11474ea1fa4731456d5450f83c1690284",
+          "remote_sha256": "aee80b7cc281d619fd1a0a830d5c3ca11474ea1fa4731456d5450f83c1690284",
+          "equal": true
+        },
+        {
+          "path": "SKILL.md",
+          "local_sha256": "a2ffebb88b66216f1db6a45fcbd9e0aa8ed34a1d1767ed6e7698fbc7424c7c2e",
+          "remote_sha256": "a2ffebb88b66216f1db6a45fcbd9e0aa8ed34a1d1767ed6e7698fbc7424c7c2e",
+          "equal": true
+        },
+        {
+          "path": "config/repo-registry.json",
+          "local_sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06",
+          "remote_sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06",
+          "equal": true
+        },
+        {
+          "path": "references/finalize-facts-contract.md",
+          "local_sha256": "90bf4aab02bd41656c62cb5c9b5cf49b35cb2c819ffe61b6a8ab695e8b18da34",
+          "remote_sha256": "90bf4aab02bd41656c62cb5c9b5cf49b35cb2c819ffe61b6a8ab695e8b18da34",
+          "equal": true
+        },
+        {
+          "path": "references/remote-artifacts.md",
+          "local_sha256": "9ddf6d4a26dab496a1644575e17edce3c883631f2589dc55de63f52b7870857b",
+          "remote_sha256": "9ddf6d4a26dab496a1644575e17edce3c883631f2589dc55de63f52b7870857b",
+          "equal": true
+        }
+      ],
+      "extra": []
+    },
+    {
+      "name": "frontend-engineering",
+      "id": "101b3df2-08e2-4922-8050-9b943d898e5f",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "local_sha256": "4d0d8347849778dc1cc1ff1cc6988d87f8223480ebd350c7ef6be9ea450899a8",
+          "remote_sha256": "4d0d8347849778dc1cc1ff1cc6988d87f8223480ebd350c7ef6be9ea450899a8",
+          "equal": true
+        },
+        {
+          "path": "references/feedback-signals.md",
+          "local_sha256": "9fa5cae4f72b04a80ba19874dd51a9818c7acf35a3db218009b6c29bbd786a11",
+          "remote_sha256": "9fa5cae4f72b04a80ba19874dd51a9818c7acf35a3db218009b6c29bbd786a11",
+          "equal": true
+        },
+        {
+          "path": "references/local-validation.md",
+          "local_sha256": "450e6d17083ac6481c30d6b6121e89dd2fc734d30db06fb06a8bc101ede08319",
+          "remote_sha256": "450e6d17083ac6481c30d6b6121e89dd2fc734d30db06fb06a8bc101ede08319",
+          "equal": true
+        },
+        {
+          "path": "references/repo-write-isolation-contract.md",
+          "local_sha256": "fabbe6e1b4d516d5184f4b3e61edb10155e2f9489680d4c9f6b8d4c1e40a5e7e",
+          "remote_sha256": "fabbe6e1b4d516d5184f4b3e61edb10155e2f9489680d4c9f6b8d4c1e40a5e7e",
+          "equal": true
+        },
+        {
+          "path": "references/review-standards.md",
+          "local_sha256": "25940960d4263c45e6eac58618b21fc07f1e4ba8db2adf7d8620099ca44fefc8",
+          "remote_sha256": "25940960d4263c45e6eac58618b21fc07f1e4ba8db2adf7d8620099ca44fefc8",
+          "equal": true
+        }
+      ],
+      "extra": []
+    },
+    {
+      "name": "pr-status-sync",
+      "id": "53eac37f-bd25-4a15-99fe-53582182c501",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "local_sha256": "86eb26028875ec774f8d71098015ad06fa3c3ea224c332fd1fa32f71224ffecb",
+          "remote_sha256": "86eb26028875ec774f8d71098015ad06fa3c3ea224c332fd1fa32f71224ffecb",
+          "equal": true
+        },
+        {
+          "path": "config/repo-registry.json",
+          "local_sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06",
+          "remote_sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06",
+          "equal": true
+        }
+      ],
+      "extra": []
+    },
+    {
+      "name": "pull-request",
+      "id": "22114139-e4ab-4d87-b022-2249529976e9",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "local_sha256": "68131e6cea25703b51c929e54eba77d3592e2f133611a7589120e7fc57e11fac",
+          "remote_sha256": "68131e6cea25703b51c929e54eba77d3592e2f133611a7589120e7fc57e11fac",
+          "equal": true
+        },
+        {
+          "path": "config/repo-registry.json",
+          "local_sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06",
+          "remote_sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06",
+          "equal": true
+        },
+        {
+          "path": "references/pr-facts-contract.md",
+          "local_sha256": "a162d1f640929ce7548f6a496a6652b58b8e760a84791281c1179c946e2f8e6a",
+          "remote_sha256": "a162d1f640929ce7548f6a496a6652b58b8e760a84791281c1179c946e2f8e6a",
+          "equal": true
+        },
+        {
+          "path": "references/repo-write-isolation-contract.md",
+          "local_sha256": "cf00815185584c128b8a192aed81b7e5fede656b8407322f9f0e26625a2f44fe",
+          "remote_sha256": "cf00815185584c128b8a192aed81b7e5fede656b8407322f9f0e26625a2f44fe",
+          "equal": true
+        }
+      ],
+      "extra": []
+    },
+    {
+      "name": "requirement-analysis",
+      "id": "3e7065bf-bbd6-44d5-b203-6c67ab919283",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "local_sha256": "0ce169c84a545a7d6350eab9b3fe609282164148ce6655c450f3a9e716097009",
+          "remote_sha256": "0ce169c84a545a7d6350eab9b3fe609282164148ce6655c450f3a9e716097009",
+          "equal": true
+        }
+      ],
+      "extra": []
+    },
+    {
+      "name": "spec-preparation",
+      "id": "6b792023-7328-4eac-a835-983fb4c0abff",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "local_sha256": "b36d9e5165c614dc02ab5e7281789f5a8420a7f497594b85ec9771ce4a344227",
+          "remote_sha256": "b36d9e5165c614dc02ab5e7281789f5a8420a7f497594b85ec9771ce4a344227",
+          "equal": true
+        },
+        {
+          "path": "config/repo-registry.json",
+          "local_sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06",
+          "remote_sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06",
+          "equal": true
+        },
+        {
+          "path": "references/contract-consistency-review.md",
+          "local_sha256": "fc3499f5b1aefd38d0c0e4783023aaba266303a3f04013845ac62a5b8cebc69e",
+          "remote_sha256": "fc3499f5b1aefd38d0c0e4783023aaba266303a3f04013845ac62a5b8cebc69e",
+          "equal": true
+        },
+        {
+          "path": "references/tasks-md-authoring-contract.md",
+          "local_sha256": "685c137365633eb1825335c35615b9920df0f38ea587ed4ded25763775d235bc",
+          "remote_sha256": "685c137365633eb1825335c35615b9920df0f38ea587ed4ded25763775d235bc",
+          "equal": true
+        }
+      ],
+      "extra": []
+    },
+    {
+      "name": "tfs-sync",
+      "id": "cdb1d448-fa41-4a71-89d3-1d812966f59d",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "local_sha256": "74840f3a5b76eaa6db89bac5ce5936632a31728c97e3ec43983e5a4ed4810356",
+          "remote_sha256": "74840f3a5b76eaa6db89bac5ce5936632a31728c97e3ec43983e5a4ed4810356",
+          "equal": true
+        },
+        {
+          "path": "config/sync-config.json",
+          "local_sha256": "8e8018b1bb74aad4937f9227f4a63ea9ad70c9818f3cf1b1bf85a36f1d19b92b",
+          "remote_sha256": "8e8018b1bb74aad4937f9227f4a63ea9ad70c9818f3cf1b1bf85a36f1d19b92b",
+          "equal": true
+        },
+        {
+          "path": "references/metadata-contract.md",
+          "local_sha256": "4b149398915e0f9135319fc9fc832b2f59e16ae378a4b24f299a7e6ebf256a1b",
+          "remote_sha256": "4b149398915e0f9135319fc9fc832b2f59e16ae378a4b24f299a7e6ebf256a1b",
+          "equal": true
+        }
+      ],
+      "extra": []
+    },
+    {
+      "name": "workitem-triage",
+      "id": "18eaf637-efbe-4ebc-a70c-78e12400ae8f",
+      "files": [
+        {
+          "path": "SKILL-v1.md",
+          "local_sha256": "0bc3890ac72c8098267a70552ecabec3f51f60182aced49533724a21bef8e915",
+          "remote_sha256": "0bc3890ac72c8098267a70552ecabec3f51f60182aced49533724a21bef8e915",
+          "equal": true
+        },
+        {
+          "path": "SKILL.md",
+          "local_sha256": "dcf666141e494be84c93bd05a6f3dbdcad49edbc9d425152878849fbdec52f20",
+          "remote_sha256": "dcf666141e494be84c93bd05a6f3dbdcad49edbc9d425152878849fbdec52f20",
+          "equal": true
+        },
+        {
+          "path": "config/repo-registry.json",
+          "local_sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06",
+          "remote_sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06",
+          "equal": true
+        },
+        {
+          "path": "references/decision-contract.md",
+          "local_sha256": "e525a6f58661b8f956df92e563407b3308ea018d4b0c17b62ffef0b7c8da12a7",
+          "remote_sha256": "e525a6f58661b8f956df92e563407b3308ea018d4b0c17b62ffef0b7c8da12a7",
+          "equal": true
+        },
+        {
+          "path": "references/multica-handoff-contract.md",
+          "local_sha256": "2bb34dc8169b7884fcf08b0cc90778354fe62a34575d5eb7ad4ae29a1f090a1b",
+          "remote_sha256": "2bb34dc8169b7884fcf08b0cc90778354fe62a34575d5eb7ad4ae29a1f090a1b",
+          "equal": true
+        }
+      ],
+      "extra": []
+    }
+  ],
+  "drifts": [],
+  "result": "PASS",
+  "source_commit": "f8d8774d366fb59d9b4be79ddc7a51b010160bb5",
+  "committed_files_matched": 54,
+  "generated_files_matched": 10
+}

@@ -1,0 +1,21 @@
+/** Git 协议对照，Trace 仅记录 pkt-line/进程事件，不启用 HTTP Header Trace。 */
+import fs from 'node:fs';
+import path from 'node:path';
+import {spawnSync} from 'node:child_process';
+import {TfsClient} from '../../../../../../tools/rondo/dist/tfs/client.js';
+import {rootGitEnvironment} from '../../../../../../tools/rondo/dist/commands/delivery/remote-artifacts.js';
+const base=path.dirname(new URL(import.meta.url).pathname.replace(/^\/(\w:)/,'$1'));
+const f=JSON.parse(fs.readFileSync(path.join(base,'fixture-state.json'),'utf8'));
+const label=process.argv[2]??'mingit';
+const binary=label==='system'?'D:/UserApp/Git/cmd/git.exe':'C:/Users/lilei/.multica/tools/mingit-busybox-2.54.0/cmd/git.exe';
+const client=new TfsClient();const env=rootGitEnvironment(f.root_url,client);
+for(const k of Object.keys(env))if(k.toLowerCase()==='no_proxy')delete env[k];env.NO_PROXY=new URL(f.root_url).hostname;
+env.GIT_TRACE_PACKET=path.join(base,`${label}-packet.trace`).replaceAll('\\','/');
+env.GIT_TRACE2_EVENT=path.join(base,`${label}-event.trace`).replaceAll('\\','/');
+delete env.GIT_TRACE2_CONFIG_PARAMS;delete env.GIT_TRACE2_ENV_VARS;
+const root=fs.mkdtempSync(path.join(base,`${label}-protocol-clone-`));
+const args=['-c','protocol.version=0','-c','core.symlinks=false','clone','--depth','1','--no-tags','--single-branch','--branch',f.branch.root,'--',f.root_url,'.'];
+const started=new Date().toISOString();const p=spawnSync(binary,args,{cwd:root,env,encoding:'utf8',windowsHide:true,timeout:60000,maxBuffer:1024*1024});
+const redact=s=>String(s??'').split(client.config.pat).join('[REDACTED]').split(Buffer.from(`:${client.config.pat}`).toString('base64')).join('[REDACTED]');
+const r={label,started,finished:new Date().toISOString(),root,exit:p.status,error:p.error?.code,stderr:redact(p.stderr),stdout:redact(p.stdout)};
+fs.writeFileSync(path.join(base,`${label}-protocol-probe.json`),JSON.stringify(r,null,2));console.log(JSON.stringify(r,null,2));

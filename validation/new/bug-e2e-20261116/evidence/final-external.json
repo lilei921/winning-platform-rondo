@@ -1,0 +1,56 @@
+{
+  "observed_at": "2026-11-16T02:55:33.608Z",
+  "pr": {
+    "id": 3795,
+    "status": "completed",
+    "mergeStatus": "succeeded",
+    "source": "refs/heads/feat/265136",
+    "target": "refs/heads/codex/bug-e2e-20261116",
+    "candidate": "4e0592fa8391aeb4a6696dd50294cb918054baf4",
+    "merge": "67c18768955b5fca6db46a8d4e4ce4763206cc35"
+  },
+  "bug": {
+    "id": 265136,
+    "rev": 7,
+    "state": "已解决",
+    "reason": "已修复",
+    "project": "DP-01-数据仓库",
+    "relations": [
+      {
+        "rel": "ArtifactLink",
+        "url": "vstfs:///Git/Commit/d2983ec0-9b19-4137-839e-df27e4e43b12%2fb52a4fd8-ec61-4cb5-b2f3-c3b61e41da74%2f67c18768955b5fca6db46a8d4e4ce4763206cc35",
+        "name": "Fixed in Commit"
+      },
+      {
+        "rel": "ArtifactLink",
+        "url": "vstfs:///Git/PullRequestId/d2983ec0-9b19-4137-839e-df27e4e43b12%2Fb52a4fd8-ec61-4cb5-b2f3-c3b61e41da74%2F3795",
+        "name": "Pull Request"
+      },
+      {
+        "rel": "ArtifactLink",
+        "url": "vstfs:///Git/Commit/d2983ec0-9b19-4137-839e-df27e4e43b12%2fb52a4fd8-ec61-4cb5-b2f3-c3b61e41da74%2f4e0592fa8391aeb4a6696dd50294cb918054baf4",
+        "name": "Fixed in Commit"
+      }
+    ],
+    "history": [
+      {
+        "rev": 7,
+        "text": "<p>交付完成（Multica TT-12）：Bug 修复 PR 已合并，验证与代码审查证据见 Multica bug.delivery / PR。</p>\n<p>Rondo delivery: d0616d0689b55087562bed203bd4df8a21d4945ff7ba3729667ef98a2636f7f2</p>\n"
+      }
+    ]
+  },
+  "refs": [
+    {
+      "name": "refs/heads/codex/bug-e2e-20261116",
+      "commit": "67c18768955b5fca6db46a8d4e4ce4763206cc35"
+    },
+    {
+      "name": "refs/heads/dev",
+      "commit": "0a2857e17d2a146a6c0b5440a993a3acfc9b9473"
+    },
+    {
+      "name": "refs/heads/feat/265136",
+      "commit": "4e0592fa8391aeb4a6696dd50294cb918054baf4"
+    }
+  ]
+}

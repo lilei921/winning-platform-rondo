@@ -1,0 +1,25 @@
+{
+  "autopilot": {
+    "assignee_id": "9f2417ea-5029-49af-b97e-3ee6f826009e",
+    "assignee_type": "agent",
+    "can_manage_access": true,
+    "can_write": true,
+    "created_at": "2026-11-14T08:18:51Z",
+    "created_by_id": "8c5492b5-94ab-41f5-a3e3-00fbf85d1d2e",
+    "created_by_type": "member",
+    "description": "执行一次已登记 PR 的状态核实与同步，使用 `pr-status-sync`。\n对结果中明确标记为 `finalize` 或 `resume_finalize` 的事项，使用 `finalize-delivery` 依次执行 Prepare、独立 TFS Writeback 和 Complete，只有 TFS 全部成功后才允许 Issue `done`；失败或 `unknown` 事项不得推进，其他结果不追加收口动作。\n输出同步结果、已确认动作，以及失败或未知事项的原因。",
+    "execution_mode": "run_only",
+    "id": "3a779436-9931-478c-b7e3-527eba4f0db3",
+    "issue_title_template": null,
+    "last_run_at": null,
+    "pause_reason": null,
+    "project_id": null,
+    "status": "active",
+    "subscribers": [],
+    "title": "PR Status Sync",
+    "updated_at": "2026-11-14T08:18:51Z",
+    "workspace_id": "3158546f-5b79-4042-baec-20cdac7d9d31"
+  },
+  "collaborators": [],
+  "triggers": []
+}

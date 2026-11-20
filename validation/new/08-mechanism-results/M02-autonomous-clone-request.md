@@ -1,0 +1,25 @@
+# M02 修复后真实 Runtime 自主 clone 重验
+
+用户授权：解决 M02 的 MSYS 沙箱权限问题，在 Codex (lileipc) 真实 Runtime 内自主完成 clone，再继续后续验证。本 Issue 只负责 M02 新现场；不修改控制端工作树、其他 Task 或生产事实。
+
+固定身份：workspace rondo-test / 60eb8cf4-31be-4a34-b744-8ef6a0bcf15d；project winning-platform-monorepo / d43bbc9d-4cc2-4cee-8f92-70c993ffbf97；runtime c55feddd-7910-480a-8f9f-9d6180b1f061；daemon 01a01965-2f6a-72fe-899f-3e7556c5d51d；唯一 Git Resource eee149cc-9c37-415c-a1d8-b0c3b3b56585，ref=main。
+
+根仓 URL：http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo。
+
+## 已部署的最小工具兼容配置
+
+只给测试 Agent 设置了 PATH，优先使用 C:\Users\lilei\.multica\tools\mingit-busybox-2.54.0\cmd 和 mingw64\bin。Git 来自官方 MinGit-2.54.0-busybox-64-bit.zip，包 SHA256=1a90b2cc07f0d2c155d68dc9fe4193088f98a022ce37f93dec1212846b402692。mingw64\bin\sh.exe 是包内 busybox.exe 的逐字节副本，两个文件 SHA256 都必须是 ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32。没有改变 MXC/workspace-write/never。不要关闭沙箱，不请求提权，不让控制端代建 fixture。
+
+## 执行
+
+所有证据放在当前 Task workdir/validation-evidence，fixture 放 workdir/validation-fixture。每条实际命令记录时间、cwd、argv、exit、脱敏输出。凭据只记是否存在；不打印原始 env、Token、凭据内容。读取有效 CODEX_HOME/config.toml 时只提取 sandbox_mode、approval_policy、windows.sandbox 三项。
+
+1. 核对 Task/Runtime 身份、Token/Daemon port 存在性；记录 Get-Command git/sh 的 Source、版本、shell 两个文件 Hash 和有效沙箱配置。实际 git 必须为上述安装目录，实际 sh 必须为 BusyBox 副本；不符合则记录 FAIL 并停止，不自行覆盖 PATH 掩盖注入失效。
+2. 在 Task cwd 原生执行 multica repo checkout <根仓URL> --ref main。禁止 --fresh、手工 clone 根仓、修改 cache、reset/clean。记录原生输出、root 路径、HEAD、origin/main、分支、.git/common-dir、脱敏 origin、status；核对 main（控制端最近读取 dfdaf33fa58355332259524266045d1052ef9dea，但浮动 ref 以本次回读为准）。
+3. 读取 root/.gitignore 和 docs/config/repo-context.yaml 中 common 的 repo_id/repo_path/repo_url（真实 URL 只记录，不访问）。校验 root/<common.repo_path> 尚不存在，是直接子目录，无 reparse point；git check-ignore 必须使用既有规则命中，不修改配置。
+4. 当前 Runtime 自主在 validation-fixture/seed 创建 Git 仓（main），README.txt 用唯一测试标记；命令级 user.name/user.email 提交一次。开启仅记录本地路径的 GIT_TRACE 到 validation-evidence，普通 git clone --bare <seed> <local-bare>，再普通 git clone <local-bare> <root/common.repo_path>。所有 clone 由当前 Runtime 在既有沙箱内执行，不得借助外部 fixture。记录 trace 证明 sh.exe 路径，以及 seed/bare/child 完整 SHA。必须检测每个 exit code。
+5. 双仓分别核对 Git top-level、.git 目录、common-dir、origin、HEAD；root status 应与基线一致且 ls-files 不含 child 内容。child README.txt 追加跟踪改动、创建唯一未跟踪标记，记录 Hash、diff/status。
+6. 从相同 Task cwd 再执行普通原生 root checkout。比较 root/child 路径、HEAD、分支、origin、.git/common-dir、tracked/untracked Hash 和 status 均保持；root 不污染。保留现场供控制端和下一独立 Run 只读核对。
+7. 生成 M02-autonomous-evidence.json（命令记录、assertions、effective_sandbox、修复后工具身份、root/child 快照、marker 路径与 Hash）和简洁报告 M02-autonomous-report.md。只在核心证据都满足时标记同 Task 自主 clone 与 M02 同 Task PASS；跨 Run 明确 pending controller follow-up，不提前总判 PASS。Rondo dev prepare 未执行，命令验收 NOT_RUN；真实业务认证/Push 未覆盖。
+
+禁止生产 Git Push/PR/Work Item/Issue Metadata 修改，不创建新 Agent/Run，不重启 Daemon，不修改全局 PATH、Git 配置、Agent 配置、Skill。允许的 Git commit 仅限当前一次性本地 fixture。最终回复证据和 root/child 绝对路径、Hash、关键 SHA。不发布额外评论。

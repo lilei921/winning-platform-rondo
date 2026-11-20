@@ -1,0 +1,593 @@
+{
+  "schema_version": 1,
+  "issue_id": "01a1d321-125e-715f-b0c7-7f7794478398",
+  "started_at": "2026-11-13T04:21:26.017860+00:00",
+  "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+  "expected": {
+    "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+    "project_id": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97",
+    "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+    "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+    "agent_id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+    "resource_id": "eee149cc-9c37-415c-a1d8-b0c3b3b56585",
+    "git": "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+    "sh": "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin\\sh.exe",
+    "busybox": "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin\\busybox.exe",
+    "shell_sha256": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32",
+    "root_url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo"
+  },
+  "commands": [
+    {
+      "label": "read_issue",
+      "started_at": "2026-11-13T04:21:26.047252+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false); & \"$env:MULTICA_CLI_PATH\" 'issue' 'get' '01a1d321-125e-715f-b0c7-7f7794478398' '--output' 'json'; exit $LASTEXITCODE"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"assignee_id\": \"9915af88-b5ce-42c2-9c3b-227d768c5bc0\",\n  \"assignee_type\": \"agent\",\n  \"created_at\": \"2026-11-13T12:18:42+08:00\",\n  \"creator_id\": \"17e47b21-3ade-446a-bfa6-cd8229c0977a\",\n  \"creator_type\": \"member\",\n  \"description\": \"# M02 修复后真实 Runtime 自主 clone 重验\\n\\n用户授权：解决 M02 的 MSYS 沙箱权限问题，在 Codex (lileipc) 真实 Runtime 内自主完成 clone，再继续后续验证。本 Issue 只负责 M02 新现场；不修改控制端工作树、其他 Task 或生产事实。\\n\\n固定身份：workspace rondo-test / 60eb8cf4-31be-4a34-b744-8ef6a0bcf15d；project winning-platform-monorepo / d43bbc9d-4cc2-4cee-8f92-70c993ffbf97；runtime c55feddd-7910-480a-8f9f-9d6180b1f061；daemon 01a01965-2f6a-72fe-899f-3e7556c5d51d；唯一 Git Resource eee149cc-9c37-415c-a1d8-b0c3b3b56585，ref=main。\\n\\n根仓 URL：http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo。\\n\\n## 已部署的最小工具兼容配置\\n\\n只给测试 Agent 设置了 PATH，优先使用 C:\\\\Users\\\\lilei\\\\.multica\\\\tools\\\\mingit-busybox-2.54.0\\\\cmd 和 mingw64\\\\bin。Git 来自官方 MinGit-2.54.0-busybox-64-bit.zip，包 SHA256=1a90b2cc07f0d2c155d68dc9fe4193088f98a022ce37f93dec1212846b402692。mingw64\\\\bin\\\\sh.exe 是包内 busybox.exe 的逐字节副本，两个文件 SHA256 都必须是 ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32。没有改变 MXC/workspace-write/never。不要关闭沙箱，不请求提权，不让控制端代建 fixture。\\n\\n## 执行\\n\\n所有证据放在当前 Task workdir/validation-evidence，fixture 放 workdir/validation-fixture。每条实际命令记录时间、cwd、argv、exit、脱敏输出。凭据只记是否存在；不打印原始 env、Token、凭据内容。读取有效 CODEX_HOME/config.toml 时只提取 sandbox_mode、approval_policy、windows.sandbox 三项。\\n\\n1. 核对 Task/Runtime 身份、Token/Daemon port 存在性；记录 Get-Command git/sh 的 Source、版本、shell 两个文件 Hash 和有效沙箱配置。实际 git 必须为上述安装目录，实际 sh 必须为 BusyBox 副本；不符合则记录 FAIL 并停止，不自行覆盖 PATH 掩盖注入失效。\\n2. 在 Task cwd 原生执行 multica repo checkout \\u003c根仓URL\\u003e --ref main。禁止 --fresh、手工 clone 根仓、修改 cache、reset/clean。记录原生输出、root 路径、HEAD、origin/main、分支、.git/common-dir、脱敏 origin、status；核对 main（控制端最近读取 dfdaf33fa58355332259524266045d1052ef9dea，但浮动 ref 以本次回读为准）。\\n3. 读取 root/.gitignore 和 docs/config/repo-context.yaml 中 common 的 repo_id/repo_path/repo_url（真实 URL 只记录，不访问）。校验 root/\\u003ccommon.repo_path\\u003e 尚不存在，是直接子目录，无 reparse point；git check-ignore 必须使用既有规则命中，不修改配置。\\n4. 当前 Runtime 自主在 validation-fixture/seed 创建 Git 仓（main），README.txt 用唯一测试标记；命令级 user.name/user.email 提交一次。开启仅记录本地路径的 GIT_TRACE 到 validation-evidence，普通 git clone --bare \\u003cseed\\u003e \\u003clocal-bare\\u003e，再普通 git clone \\u003clocal-bare\\u003e \\u003croot/common.repo_path\\u003e。所有 clone 由当前 Runtime 在既有沙箱内执行，不得借助外部 fixture。记录 trace 证明 sh.exe 路径，以及 seed/bare/child 完整 SHA。必须检测每个 exit code。\\n5. 双仓分别核对 Git top-level、.git 目录、common-dir、origin、HEAD；root status 应与基线一致且 ls-files 不含 child 内容。child README.txt 追加跟踪改动、创建唯一未跟踪标记，记录 Hash、diff/status。\\n6. 从相同 Task cwd 再执行普通原生 root checkout。比较 root/child 路径、HEAD、分支、origin、.git/common-dir、tracked/untracked Hash 和 status 均保持；root 不污染。保留现场供控制端和下一独立 Run 只读核对。\\n7. 生成 M02-autonomous-evidence.json（命令记录、assertions、effective_sandbox、修复后工具身份、root/child 快照、marker 路径与 Hash）和简洁报告 M02-autonomous-report.md。只在核心证据都满足时标记同 Task 自主 clone 与 M02 同 Task PASS；跨 Run 明确 pending controller follow-up，不提前总判 PASS。Rondo dev prepare 未执行，命令验收 NOT_RUN；真实业务认证/Push 未覆盖。\\n\\n禁止生产 Git Push/PR/Work Item/Issue Metadata 修改，不创建新 Agent/Run，不重启 Daemon，不修改全局 PATH、Git 配置、Agent 配置、Skill。允许的 Git commit 仅限当前一次性本地 fixture。最终回复证据和 root/child 绝对路径、Hash、关键 SHA。不发布额外评论。\",\n  \"due_date\": null,\n  \"duplicate_of\": null,\n  \"id\": \"01a1d321-125e-715f-b0c7-7f7794478398\",\n  \"identifier\": \"TEST-7\",\n  \"labels\": [],\n  \"last_activity_at\": \"2026-11-13T12:18:42.394373+08:00\",\n  \"metadata\": {},\n  \"number\": 7,\n  \"parent_issue_id\": null,\n  \"position\": -3,\n  \"priority\": \"none\",\n  \"project_id\": \"d43bbc9d-4cc2-4cee-8f92-70c993ffbf97\",\n  \"properties\": {},\n  \"revision\": 1,\n  \"stage\": null,\n  \"start_date\": null,\n  \"status\": \"todo\",\n  \"status_category\": \"todo\",\n  \"status_name\": \"\",\n  \"title\": \"M02 自主 clone 修复重验 2026-11-13 BusyBox\",\n  \"updated_at\": \"2026-11-13T12:18:42+08:00\",\n  \"workspace_id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\"\n}\n",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:21:26.475160+00:00"
+    },
+    {
+      "label": "scan_comment_threads",
+      "started_at": "2026-11-13T04:21:26.495463+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false); & \"$env:MULTICA_CLI_PATH\" 'issue' 'comment' 'list' '01a1d321-125e-715f-b0c7-7f7794478398' '--roots-only' '--summary' '--compact' '--output' 'json'; exit $LASTEXITCODE"
+      ],
+      "exit": 0,
+      "stdout": "[]\n",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:21:26.887608+00:00"
+    },
+    {
+      "label": "task_auth_status",
+      "started_at": "2026-11-13T04:21:26.897119+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false); & \"$env:MULTICA_CLI_PATH\" 'auth' 'status'; exit $LASTEXITCODE"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Server:  http://172.17.1.97:8080\nUser:    lilei (lilei@winning.com.cn)\n",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:21:27.298754+00:00"
+    },
+    {
+      "label": "task_daemon_status",
+      "started_at": "2026-11-13T04:21:27.307628+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false); & \"$env:MULTICA_CLI_PATH\" 'daemon' 'status' '--output' 'json'; exit $LASTEXITCODE"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"active_task_count\": 1,\n  \"agents\": [\n    \"codex\",\n    \"copilot\",\n    \"dsh\",\n    \"claude\"\n  ],\n  \"cli_commit\": \"b1ea927def6490c43bedff537b6f4ed9a47fa828\",\n  \"cli_version\": \"0.8.1\",\n  \"daemon_id\": \"01a01965-2f6a-72fe-899f-3e7556c5d51d\",\n  \"device_name\": \"lileipc\",\n  \"failed_terminal_report_bytes\": 0,\n  \"failed_terminal_report_count\": 0,\n  \"os\": \"windows\",\n  \"pending_terminal_report_bytes\": 0,\n  \"pending_terminal_report_count\": 0,\n  \"pid\": 32136,\n  \"profile\": \"\",\n  \"resource_wait_task_count\": 0,\n  \"running_task_count\": 1,\n  \"server_url\": \"http://172.17.1.97:8080\",\n  \"skipped_agents\": {\n    \"copilot\": \"version detection failed: detect version for D:\\\\Program Files\\\\VSCode-win32-x64\\\\bin\\\\copilot-shim\\\\copilot.exe: exit status 127\",\n    \"dsh\": \"the Multica runtime profile is not installed; add the Multica DSH runtime bundle to the `multica` profile with `dsh plugin`, or set MULTICA_DSH_PROFILE_BUNDLE so the daemon installs it\"\n  },\n  \"status\": \"running\",\n  \"uptime\": \"2h19m43s\",\n  \"workspaces\": [\n    {\n      \"id\": \"a9469044-700c-4206-80d2-b39bad65de56\",\n      \"runtimes\": [\n        \"a35e3e28-0fd8-44d3-b39c-af9eb326e4bf\",\n        \"c0ae7474-866b-4bd1-b869-a361ab6d8be3\"\n      ]\n    },\n    {\n      \"id\": \"3c542bd3-4749-453c-9b77-7dc32b466538\",\n      \"runtimes\": [\n        \"97664dcf-bed1-46b0-8a3f-714d9c81cc42\",\n        \"9a110f41-1faa-42e8-9bfe-b85615b5287f\"\n      ]\n    },\n    {\n      \"id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\",\n      \"runtimes\": [\n        \"ff1ff20b-e112-4011-a8b3-f65a9472f5fa\",\n        \"c55feddd-7910-480a-8f9f-9d6180b1f061\"\n      ]\n    }\n  ]\n}\n",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:21:27.697379+00:00"
+    },
+    {
+      "label": "get_command_git_sh",
+      "started_at": "2026-11-13T04:21:27.801356+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false); $ErrorActionPreference = 'Stop'; Get-Command git,sh | Select-Object Name,Source | ConvertTo-Json"
+      ],
+      "exit": 0,
+      "stdout": "[\r\n    {\r\n        \"Name\":  \"git.exe\",\r\n        \"Source\":  \"D:\\\\UserApp\\\\Git\\\\bin\\\\git.exe\"\r\n    },\r\n    {\r\n        \"Name\":  \"sh.exe\",\r\n        \"Source\":  \"D:\\\\UserApp\\\\Git\\\\bin\\\\sh.exe\"\r\n    }\r\n]\r\n",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:21:28.187011+00:00"
+    },
+    {
+      "label": "git_version",
+      "started_at": "2026-11-13T04:21:28.229653+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "D:\\UserApp\\Git\\bin\\git.exe",
+        "--version"
+      ],
+      "exit": 0,
+      "stdout": "git version 2.54.0.windows.1\n",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:21:28.254159+00:00"
+    },
+    {
+      "label": "sh_version",
+      "started_at": "2026-11-13T04:21:28.318886+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "D:\\UserApp\\Git\\bin\\sh.exe",
+        "--version"
+      ],
+      "exit": 3221225794,
+      "stdout": "",
+      "stderr": "      0 [main] bash (49184) D:\\UserApp\\Git\\bin\\..\\usr\\bin\\bash.exe: *** fatal error - NtCreateDirectoryObject(\\BaseNamedObjects\\msys-2.0S5-3b42950b65a27490): 0xC0000022\n",
+      "error_category": "nonzero_exit",
+      "finished_at": "2026-11-13T04:21:28.552361+00:00"
+    }
+  ],
+  "observations": [
+    {
+      "label": "injected_identity_and_presence",
+      "started_at": "2026-11-13T04:21:26.017860+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "operation": "Read allowlisted identity environment variables; token and port existence only",
+      "result": {
+        "task_id": "01a1d321-1273-7c2f-a744-96ff82e8f4e9",
+        "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+        "agent_id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+        "token_present": true,
+        "daemon_port_present": true,
+        "cli_present": true
+      },
+      "exit": 0,
+      "finished_at": "2026-11-13T04:21:26.018868+00:00"
+    },
+    {
+      "label": "project_resources",
+      "started_at": "2026-11-13T04:21:27.708380+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "operation": "Read current Task .multica/project/resources.json",
+      "result": {
+        "project_id": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97",
+        "project_title": "winning-platform-monorepo",
+        "resources": [
+          {
+            "id": "eee149cc-9c37-415c-a1d8-b0c3b3b56585",
+            "resource_type": "github_repo",
+            "resource_ref": {
+              "ref": "main",
+              "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo"
+            },
+            "label": "M01 TFS root checkout validation"
+          }
+        ]
+      },
+      "exit": 0,
+      "finished_at": "2026-11-13T04:21:27.709800+00:00"
+    },
+    {
+      "label": "git_actual_hash",
+      "started_at": "2026-11-13T04:21:28.278533+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "operation": "SHA256 resolved executable",
+      "result": {
+        "path": "D:\\UserApp\\Git\\bin\\git.exe",
+        "exists": true,
+        "size": 46480,
+        "sha256": "81ef35ae005ca9318018d18e3327578ce939fb99feaad6b2d7c8ab15f3de8db5"
+      },
+      "exit": 0,
+      "finished_at": "2026-11-13T04:21:28.279294+00:00"
+    },
+    {
+      "label": "sh_actual_hash",
+      "started_at": "2026-11-13T04:21:28.577724+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "operation": "SHA256 resolved executable",
+      "result": {
+        "path": "D:\\UserApp\\Git\\bin\\sh.exe",
+        "exists": true,
+        "size": 47008,
+        "sha256": "9aa00217a92def5fed1b15c6e2b34a7f89e3781af822ecc00960fe5340df093e"
+      },
+      "exit": 0,
+      "finished_at": "2026-11-13T04:21:28.578725+00:00"
+    },
+    {
+      "label": "expected_sh_hash",
+      "started_at": "2026-11-13T04:21:28.600632+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "operation": "SHA256 configured BusyBox deployment file",
+      "result": {
+        "path": "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin\\sh.exe",
+        "exists": true,
+        "size": 1152156,
+        "sha256": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32"
+      },
+      "exit": 0,
+      "finished_at": "2026-11-13T04:21:28.602635+00:00"
+    },
+    {
+      "label": "expected_busybox_hash",
+      "started_at": "2026-11-13T04:21:28.652161+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "operation": "SHA256 configured BusyBox deployment file",
+      "result": {
+        "path": "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin\\busybox.exe",
+        "exists": true,
+        "size": 1152156,
+        "sha256": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32"
+      },
+      "exit": 0,
+      "finished_at": "2026-11-13T04:21:28.654161+00:00"
+    },
+    {
+      "label": "effective_sandbox",
+      "started_at": "2026-11-13T04:21:28.705541+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "operation": "Extract only sandbox_mode, approval_policy, windows.sandbox from effective CODEX_HOME/config.toml",
+      "result": {
+        "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\codex-home\\config.toml",
+        "present": true,
+        "selected_values": {
+          "sandbox_mode": "workspace-write",
+          "approval_policy": "never",
+          "windows.sandbox": "mxc"
+        },
+        "session_instructions": {
+          "sandbox_mode": "workspace-write",
+          "approval_policy": "never"
+        }
+      },
+      "exit": 0,
+      "finished_at": "2026-11-13T04:21:28.707556+00:00"
+    },
+    {
+      "label": "preserved_workdir_state",
+      "started_at": "2026-11-13T04:21:28.797886+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "operation": "List only current Task top-level names and attributes; no repository mutation",
+      "result": [
+        {
+          "name": ".agent_context",
+          "is_directory": true,
+          "is_reparse_point": false
+        },
+        {
+          "name": ".multica",
+          "is_directory": true,
+          "is_reparse_point": false
+        },
+        {
+          "name": "AGENTS.md",
+          "is_directory": false,
+          "is_reparse_point": false
+        },
+        {
+          "name": "validation-evidence",
+          "is_directory": true,
+          "is_reparse_point": false
+        }
+      ],
+      "exit": 0,
+      "finished_at": "2026-11-13T04:21:28.798888+00:00"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "workspace_id",
+      "result": "PASS",
+      "actual": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+      "expected": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+    },
+    {
+      "name": "agent_id",
+      "result": "PASS",
+      "actual": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+      "expected": "9915af88-b5ce-42c2-9c3b-227d768c5bc0"
+    },
+    {
+      "name": "token_present",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "daemon_port_present",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "cli_present",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "task_id_matches_current_workdir",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "issue_workspace",
+      "result": "PASS",
+      "actual": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+      "expected": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+    },
+    {
+      "name": "issue_project",
+      "result": "PASS",
+      "actual": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97",
+      "expected": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97"
+    },
+    {
+      "name": "project_resource_project",
+      "result": "PASS",
+      "actual": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97",
+      "expected": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97"
+    },
+    {
+      "name": "git_resource_count",
+      "result": "PASS",
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "name": "resource_id",
+      "result": "PASS",
+      "actual": "eee149cc-9c37-415c-a1d8-b0c3b3b56585",
+      "expected": "eee149cc-9c37-415c-a1d8-b0c3b3b56585"
+    },
+    {
+      "name": "resource_ref",
+      "result": "PASS",
+      "actual": "main",
+      "expected": "main"
+    },
+    {
+      "name": "root_url",
+      "result": "PASS",
+      "actual": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+      "expected": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo"
+    },
+    {
+      "name": "git_source",
+      "result": "FAIL",
+      "actual": "d:\\userapp\\git\\bin\\git.exe",
+      "expected": "c:\\users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe"
+    },
+    {
+      "name": "sh_source",
+      "result": "FAIL",
+      "actual": "d:\\userapp\\git\\bin\\sh.exe",
+      "expected": "c:\\users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin\\sh.exe"
+    },
+    {
+      "name": "sh_deployment_hash",
+      "result": "PASS",
+      "actual": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32",
+      "expected": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32"
+    },
+    {
+      "name": "busybox_deployment_hash",
+      "result": "PASS",
+      "actual": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32",
+      "expected": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32"
+    },
+    {
+      "name": "sandbox_mode",
+      "result": "PASS",
+      "actual": "workspace-write",
+      "expected": "workspace-write"
+    },
+    {
+      "name": "approval_policy",
+      "result": "PASS",
+      "actual": "never",
+      "expected": "never"
+    }
+  ],
+  "effective_sandbox": {
+    "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\codex-home\\config.toml",
+    "present": true,
+    "selected_values": {
+      "sandbox_mode": "workspace-write",
+      "approval_policy": "never",
+      "windows.sandbox": "mxc"
+    },
+    "session_instructions": {
+      "sandbox_mode": "workspace-write",
+      "approval_policy": "never"
+    }
+  },
+  "tool_identity": {
+    "get_command": [
+      {
+        "Name": "git.exe",
+        "Source": "D:\\UserApp\\Git\\bin\\git.exe"
+      },
+      {
+        "Name": "sh.exe",
+        "Source": "D:\\UserApp\\Git\\bin\\sh.exe"
+      }
+    ],
+    "git_version": {
+      "label": "git_version",
+      "started_at": "2026-11-13T04:21:28.229653+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "D:\\UserApp\\Git\\bin\\git.exe",
+        "--version"
+      ],
+      "exit": 0,
+      "stdout": "git version 2.54.0.windows.1\n",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:21:28.254159+00:00"
+    },
+    "git_actual_file": {
+      "path": "D:\\UserApp\\Git\\bin\\git.exe",
+      "exists": true,
+      "size": 46480,
+      "sha256": "81ef35ae005ca9318018d18e3327578ce939fb99feaad6b2d7c8ab15f3de8db5"
+    },
+    "sh_version": {
+      "label": "sh_version",
+      "started_at": "2026-11-13T04:21:28.318886+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "D:\\UserApp\\Git\\bin\\sh.exe",
+        "--version"
+      ],
+      "exit": 3221225794,
+      "stdout": "",
+      "stderr": "      0 [main] bash (49184) D:\\UserApp\\Git\\bin\\..\\usr\\bin\\bash.exe: *** fatal error - NtCreateDirectoryObject(\\BaseNamedObjects\\msys-2.0S5-3b42950b65a27490): 0xC0000022\n",
+      "error_category": "nonzero_exit",
+      "finished_at": "2026-11-13T04:21:28.552361+00:00"
+    },
+    "sh_actual_file": {
+      "path": "D:\\UserApp\\Git\\bin\\sh.exe",
+      "exists": true,
+      "size": 47008,
+      "sha256": "9aa00217a92def5fed1b15c6e2b34a7f89e3781af822ecc00960fe5340df093e"
+    },
+    "expected_sh_file": {
+      "path": "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin\\sh.exe",
+      "exists": true,
+      "size": 1152156,
+      "sha256": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32"
+    },
+    "expected_busybox_file": {
+      "path": "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin\\busybox.exe",
+      "exists": true,
+      "size": 1152156,
+      "sha256": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32"
+    }
+  },
+  "root_snapshot": null,
+  "child_snapshot": null,
+  "markers": [],
+  "notes": [
+    "Initial issue/help/discovery reads preceded this timestamped verification transcript; the issue, comment scan, and tool resolution are repeated below.",
+    "Initial login-shell reads emitted a PowerShell profile AuthorizationManager/UnauthorizedAccess error; subsequent commands use -NoProfile without changing policy.",
+    "Tool mismatch is a mandatory stop before checkout or fixture creation. Remaining reads only complete step 1 evidence."
+  ],
+  "identity": {
+    "task_id": "01a1d321-1273-7c2f-a744-96ff82e8f4e9",
+    "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+    "agent_id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+    "token_present": true,
+    "daemon_port_present": true,
+    "cli_present": true
+  },
+  "issue_status": "todo",
+  "comment_scan": [],
+  "daemon_status": {
+    "active_task_count": 1,
+    "agents": [
+      "codex",
+      "copilot",
+      "dsh",
+      "claude"
+    ],
+    "cli_commit": "b1ea927def6490c43bedff537b6f4ed9a47fa828",
+    "cli_version": "0.8.1",
+    "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+    "device_name": "lileipc",
+    "failed_terminal_report_bytes": 0,
+    "failed_terminal_report_count": 0,
+    "os": "windows",
+    "pending_terminal_report_bytes": 0,
+    "pending_terminal_report_count": 0,
+    "pid": 32136,
+    "profile": "",
+    "resource_wait_task_count": 0,
+    "running_task_count": 1,
+    "server_url": "http://172.17.1.97:8080",
+    "skipped_agents": {
+      "copilot": "version detection failed: detect version for D:\\Program Files\\VSCode-win32-x64\\bin\\copilot-shim\\copilot.exe: exit status 127",
+      "dsh": "the Multica runtime profile is not installed; add the Multica DSH runtime bundle to the `multica` profile with `dsh plugin`, or set MULTICA_DSH_PROFILE_BUNDLE so the daemon installs it"
+    },
+    "status": "running",
+    "uptime": "2h19m43s",
+    "workspaces": [
+      {
+        "id": "a9469044-700c-4206-80d2-b39bad65de56",
+        "runtimes": [
+          "a35e3e28-0fd8-44d3-b39c-af9eb326e4bf",
+          "c0ae7474-866b-4bd1-b869-a361ab6d8be3"
+        ]
+      },
+      {
+        "id": "3c542bd3-4749-453c-9b77-7dc32b466538",
+        "runtimes": [
+          "97664dcf-bed1-46b0-8a3f-714d9c81cc42",
+          "9a110f41-1faa-42e8-9bfe-b85615b5287f"
+        ]
+      },
+      {
+        "id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+        "runtimes": [
+          "ff1ff20b-e112-4011-a8b3-f65a9472f5fa",
+          "c55feddd-7910-480a-8f9f-9d6180b1f061"
+        ]
+      }
+    ]
+  },
+  "preserved_state": [
+    {
+      "name": ".agent_context",
+      "is_directory": true,
+      "is_reparse_point": false
+    },
+    {
+      "name": ".multica",
+      "is_directory": true,
+      "is_reparse_point": false
+    },
+    {
+      "name": "AGENTS.md",
+      "is_directory": false,
+      "is_reparse_point": false
+    },
+    {
+      "name": "validation-evidence",
+      "is_directory": true,
+      "is_reparse_point": false
+    }
+  ],
+  "result": {
+    "step_1_tool_identity": "FAIL",
+    "error_category": "tool_path_injection_mismatch",
+    "native_root_checkout": "NOT_RUN",
+    "common_repo_context_and_ignore_check": "NOT_RUN",
+    "autonomous_fixture_and_clone": "NOT_RUN",
+    "same_task_m02": "NOT_RUN",
+    "cross_run": "pending controller follow-up; same-Task prerequisites failed",
+    "rondo_dev_prepare": "NOT_RUN",
+    "command_acceptance": "NOT_RUN",
+    "real_business_authentication_and_push": "NOT_COVERED",
+    "overall": "FAIL at tool identity gate; no overall PASS"
+  },
+  "root_path": null,
+  "child_path": null,
+  "seed_sha": null,
+  "bare_sha": null,
+  "root_head": null,
+  "child_head": null,
+  "trace_path": null,
+  "finished_at": "2026-11-13T04:21:28.831491+00:00"
+}

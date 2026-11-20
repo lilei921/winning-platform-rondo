@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: direct Bug delivery has no OpenSpec dependency
+ok 1 - direct Bug delivery has no OpenSpec dependency
+  ---
+  duration_ms: 2.1817
+  type: 'test'
+  ...
+# Subtest: Bug delivery fails when a PR is not covered or candidate differs
+ok 2 - Bug delivery fails when a PR is not covered or candidate differs
+  ---
+  duration_ms: 0.6403
+  type: 'test'
+  ...
+# Subtest: blocking review findings, explicit verification and blocked issue fail closed
+ok 3 - blocking review findings, explicit verification and blocked issue fail closed
+  ---
+  duration_ms: 0.4382
+  type: 'test'
+  ...
+# Subtest: finalize blocks if required Bug repositories have changed after PR readiness
+ok 4 - finalize blocks if required Bug repositories have changed after PR readiness
+  ---
+  duration_ms: 0.3332
+  type: 'test'
+  ...
+# Subtest: prepare digest detects modification to committed Bug evidence
+ok 5 - prepare digest detects modification to committed Bug evidence
+  ---
+  duration_ms: 0.1982
+  type: 'test'
+  ...
+# Subtest: OpenSpec Bug remains on existing Change-based path
+ok 6 - OpenSpec Bug remains on existing Change-based path
+  ---
+  duration_ms: 0.1275
+  type: 'test'
+  ...
+# Subtest: merged PR must point to the exact candidate verified by Bug Agent
+ok 7 - merged PR must point to the exact candidate verified by Bug Agent
+  ---
+  duration_ms: 0.1994
+  type: 'test'
+  ...
+# Subtest: Git 认证只限精确仓库 URL 的子进程环境，禁重定向且不改变父进程
+ok 8 - Git 认证只限精确仓库 URL 的子进程环境，禁重定向且不改变父进程
+  ---
+  duration_ms: 3.1306
+  type: 'test'
+  ...
+# Subtest: 远端归档固定最新 SHA 读取，批准契约允许 checkbox 进度，缓存无 Git 仓
+ok 9 - 远端归档固定最新 SHA 读取，批准契约允许 checkbox 进度，缓存无 Git 仓
+  ---
+  duration_ms: 19.3082
+  type: 'test'
+  ...
+# Subtest: 归档正文/文件集合偏离批准基线即关闭，不能跟随已更新 Evidence 放行
+ok 10 - 归档正文/文件集合偏离批准基线即关闭，不能跟随已更新 Evidence 放行
+  ---
+  duration_ms: 18.8635
+  type: 'test'
+  ...
+# Subtest: 当前/归档或多个归档身份冲突即拒绝
+ok 11 - 当前/归档或多个归档身份冲突即拒绝
+  ---
+  duration_ms: 0.8318
+  type: 'test'
+  ...
+# Subtest: 跨服务 URL、响应错版本与不安全相对路径不能物化或泄露凭据
+ok 12 - 跨服务 URL、响应错版本与不安全相对路径不能物化或泄露凭据
+  ---
+  duration_ms: 2.0776
+  type: 'test'
+  ...
+# Subtest: 稳定 Evidence 身份使用配置 repo_url 和完整 SHA，不读旧机器路径
+ok 13 - 稳定 Evidence 身份使用配置 repo_url 和完整 SHA，不读旧机器路径
+  ---
+  duration_ms: 0.5938
+  type: 'test'
+  ...
+# Subtest: 远端 Completion Evidence 拒绝旧路径或错仓候选，旧本地模式继续兼容
+ok 14 - 远端 Completion Evidence 拒绝旧路径或错仓候选，旧本地模式继续兼容
+  ---
+  duration_ms: 8.7112
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 466.1338

@@ -1,0 +1,382 @@
+{
+  "timestamp": "2026-11-13T13:18:48.734550+08:00",
+  "scope": "M03/M10/M11/M12 supplement; earlier M02-M12 manifest is a historical snapshot, updated reports supersede its report hashes",
+  "statuses": {
+    "M03": "PASS: real Runtime CLI",
+    "M10": "NOT_RUN: end-to-end; prerequisite probe PASS",
+    "M11": "NOT_RUN: no low-privilege identity; HTTP approved for this validation",
+    "M12": "PASS: index audit and real Runtime isolated fallback PoC"
+  },
+  "checks": [
+    {
+      "name": "M03_7_behavior_checks",
+      "result": "PASS"
+    },
+    {
+      "name": "M03_11_context_checks",
+      "result": "PASS"
+    },
+    {
+      "name": "M03_recorded_evidence_hash",
+      "result": "PASS"
+    },
+    {
+      "name": "M10_11_boundary_checks",
+      "result": "PASS"
+    },
+    {
+      "name": "M10_first_attempt_preserved",
+      "result": "PASS"
+    },
+    {
+      "name": "M10_workitem_unmodified",
+      "result": "PASS"
+    },
+    {
+      "name": "M10_no_fabricated_prepared_facts",
+      "result": "PASS"
+    },
+    {
+      "name": "M12_476_index_files_match",
+      "result": "PASS"
+    },
+    {
+      "name": "M12_three_runtime_cases",
+      "result": "PASS"
+    },
+    {
+      "name": "M12_runtime_manifest_hashes",
+      "result": "PASS"
+    },
+    {
+      "name": "M11_anonymous_401",
+      "result": "PASS"
+    },
+    {
+      "name": "all_three_runs_completed",
+      "result": "PASS"
+    },
+    {
+      "name": "test_agents_idle_no_overrides",
+      "result": "PASS"
+    },
+    {
+      "name": "nine_runtime_copies_byte_identical",
+      "result": "PASS"
+    },
+    {
+      "name": "report_links_resolve",
+      "result": "PASS"
+    },
+    {
+      "name": "configured_mcp_credentials_not_in_artifacts",
+      "result": "PASS"
+    }
+  ],
+  "runtime_copies": [
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-10-ea8fe6a2905e\\workdir\\M03-runtime-evidence.json",
+      "copy": "M03-runtime-evidence.json",
+      "byte_identical": true,
+      "sha256": "93474b045045b4dc4c17cffc1bff5254e49ed341f0749a33de5171d5af100142"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-10-ea8fe6a2905e\\workdir\\M03-runtime-context.json",
+      "copy": "M03-runtime-context.json",
+      "byte_identical": true,
+      "sha256": "b0bdab51c8c0d4b2b01efdc243c90f0015957f33007462fe6a3cb5fa525d3c92"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-11-ba03548482d5\\workdir\\M12-runtime-fallback-evidence.json",
+      "copy": "M12-runtime-fallback-evidence.json",
+      "byte_identical": true,
+      "sha256": "a5bf60a7a1fc4ab9de962bbc0e10d785f9316ce74b14967878d8627d3d80d3e6"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-11-ba03548482d5\\workdir\\M12-runtime-execution-manifest.json",
+      "copy": "M12-runtime-execution-manifest.json",
+      "byte_identical": true,
+      "sha256": "80686d5f14c3621999d64ecb4d0e7a1f7b27ed245bfa6811237fd840999841b1"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-11-ba03548482d5\\workdir\\M12-command-stdout.log",
+      "copy": "M12-command-stdout.log",
+      "byte_identical": true,
+      "sha256": "a5bf60a7a1fc4ab9de962bbc0e10d785f9316ce74b14967878d8627d3d80d3e6"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-11-ba03548482d5\\workdir\\M12-command-stderr.log",
+      "copy": "M12-command-stderr.log",
+      "byte_identical": true,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-11-ba03548482d5\\workdir\\m12-capture-run.py",
+      "copy": "m12-capture-run.py",
+      "byte_identical": true,
+      "sha256": "6bb8fbbd2abb3827b58a41a1cccbdd9a9944dd3325173995c481df0e226ac544"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-12-cb23d3a1b0d8\\workdir\\M10-runtime-boundary-evidence.json",
+      "copy": "M10-runtime-boundary-evidence.json",
+      "byte_identical": true,
+      "sha256": "80e5dac6c7dfd71e8f25ec93fb65c8144b9765a935d121bbdc395b86b3f3ac0c"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-12-cb23d3a1b0d8\\workdir\\M10-runtime-boundary-first-attempt.json",
+      "copy": "M10-runtime-boundary-first-attempt.json",
+      "byte_identical": true,
+      "sha256": "d5a0385c2f082ee893715a112106fc37b3b2e06ea1d34fa09fd726580e074083"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M03-before-supplement.md",
+      "bytes": 1460,
+      "sha256": "6ebd5e0abf369f03c12b98a07c177e399b63a8c85fb33e82b8ce5260658680a2"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M03-issue-preconditions.json",
+      "bytes": 1360,
+      "sha256": "1fa25c8cc37d99ac2938a051d2557524b108a63c2ebd699a85337c66f696db54"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M03-M11-adapter-regression.log",
+      "bytes": 3809,
+      "sha256": "8e729dd6d401201408675c15bd7100e938c6798cbd746120a53f151521eb9737"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M03-M11-regression-summary.json",
+      "bytes": 1049,
+      "sha256": "b2a6677c32828e78730f217b1d9a6bc73b16a8d0258c2c160dcd37e0afe81255"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M03-M12-supplement-final-state.json",
+      "bytes": 3364,
+      "sha256": "02ac382053d3f929f882a1cfd33926a5cbc91e9a4b70e9eda366aed62d35b4a3"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M03-missing-source-cli.json",
+      "bytes": 437,
+      "sha256": "32aff9b24ab0fe8f9acb34d6f12b1074dc4ab57b801476dbef1076d388368906"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M03-runtime-context.json",
+      "bytes": 3908,
+      "sha256": "b0bdab51c8c0d4b2b01efdc243c90f0015957f33007462fe6a3cb5fa525d3c92"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M03-runtime-evidence.json",
+      "bytes": 4713,
+      "sha256": "93474b045045b4dc4c17cffc1bff5254e49ed341f0749a33de5171d5af100142"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M03-runtime-setup.json",
+      "bytes": 819,
+      "sha256": "a0f5da9f85f5be5299dcfbb4676a3d2789f0967a08f9d57a071637e673e8e368"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M03-runtime-task-ready.md",
+      "bytes": 1547,
+      "sha256": "d46f8b6ef00f2c8ffd4181ded858d19b043559e07171cfdb803342809269b1a9"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M03-runtime-task.md",
+      "bytes": 1477,
+      "sha256": "635c01d3989f1a7eed3aed39224607edde2ff435f76fb6d00e256655bb59526e"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\m03-runtime-validation.mjs",
+      "bytes": 4110,
+      "sha256": "68afd1e0f181460b9265e6baba8b9b2fec021dff21613771c6c5dd19bd757246"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M03.md",
+      "bytes": 1610,
+      "sha256": "57287ce9b4c53099edab6d358b19e855a9fd82ad8f20332510733d8ce98c6844"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M10-before-supplement.md",
+      "bytes": 1463,
+      "sha256": "4c401a1e750a814b5b8818789562a4aa186dc9b07547ea8fbc54bbb80c566dbf"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M10-M12-runtime-setup.json",
+      "bytes": 420,
+      "sha256": "d31cf9efe6637ba6ee6aec703e5d012b69fef451ff0683142993db4c3ffa3352"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M10-path-correction-steer.md",
+      "bytes": 669,
+      "sha256": "e2fa41d4021910d1be19316a7f41fd1a7eafd02873197154fd0a82c03635d9c6"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M10-runtime-boundary-evidence.json",
+      "bytes": 4116,
+      "sha256": "80e5dac6c7dfd71e8f25ec93fb65c8144b9765a935d121bbdc395b86b3f3ac0c"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M10-runtime-boundary-first-attempt.json",
+      "bytes": 4102,
+      "sha256": "d5a0385c2f082ee893715a112106fc37b3b2e06ea1d34fa09fd726580e074083"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\m10-runtime-boundary.mjs",
+      "bytes": 4434,
+      "sha256": "4c96d071b9663c4dd0d3a7b29e451c1a402f08c47ec735790b305a525b156185"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M10-runtime-task.md",
+      "bytes": 1219,
+      "sha256": "f6792ee0ec860d68529dbef24619a1f750b2e9cdf7a78001df116381e02ad11e"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M10-test-workitem-readonly.json",
+      "bytes": 738,
+      "sha256": "658f2779bcd40cabbb0730bcb8903b758e46db818e9c2e681dcd5f177687c9c5"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M10-test-workitem-unchanged.json",
+      "bytes": 115,
+      "sha256": "8fe1ea4b8d34f61b50e3b138dac0ff246c435220b2e0a8df6c437a304b6c9fbd"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M10.md",
+      "bytes": 2443,
+      "sha256": "85e91f3c603a9523aafac481575bb3ba8c93e73c1bced737f39d052721bbd1bd"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M11-adapter-evidence.json",
+      "bytes": 6942,
+      "sha256": "c097a22e7e9c2362f0fe535d3faece882d2b291941778ed21488c226683a2fa5"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\m11-adapter-validation.mjs",
+      "bytes": 3554,
+      "sha256": "f8ff2230ad087ef89d3821b7b37f6a95512b10ffa0b3c414a04937fcd1505928"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M11-anonymous-read-evidence.json",
+      "bytes": 412,
+      "sha256": "b70fb1083a80db3609fce7640dc672c66bad6ff90b15b3fe326d88b56f96845d"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\m11-anonymous-read.mjs",
+      "bytes": 1334,
+      "sha256": "17f972730a10ec52d3029b46e7e391c9b5808107b9341590bebbc929b0fbff94"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M11-before-supplement.md",
+      "bytes": 1542,
+      "sha256": "50171f2653d31c19c3fbbe01d4943f8e3ed75b97a9c799d869f7c7b93f5d8627"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M11.md",
+      "bytes": 2245,
+      "sha256": "ec311151da5bdd40e1bbe8a7fe7d6a78b3e12446c636e87bd6b2879e80977d1e"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M12-before-supplement.md",
+      "bytes": 1433,
+      "sha256": "9bbc2eb4050baa00f9e49a353eced3d77f1514916548c7a626609e1a09cd5846"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\m12-capture-run.py",
+      "bytes": 2531,
+      "sha256": "6bb8fbbd2abb3827b58a41a1cccbdd9a9944dd3325173995c481df0e226ac544"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M12-codegraph-response.txt",
+      "bytes": 12345,
+      "sha256": "58020e1ecd03d72b2ea3bf14cf510d910d7ed099980d94b143de4fe6e4334229"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M12-command-stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M12-command-stdout.log",
+      "bytes": 3003,
+      "sha256": "a5bf60a7a1fc4ab9de962bbc0e10d785f9316ce74b14967878d8627d3d80d3e6"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\m12-fixed-source.mjs",
+      "bytes": 1291,
+      "sha256": "1e65ba246a80120071718665f48ac6508bbb6a22d9774cc2b9acc1ca61aad84d"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M12-index-commit-audit.json",
+      "bytes": 228908,
+      "sha256": "a1d137b8934a0b04d5ed926f7d1bd617029c6c6fcb8737e4a6ee788bff9e2dad"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\m12-index-commit-audit.py",
+      "bytes": 2670,
+      "sha256": "380bb6477e37120cb790b2f814fdc80dbf13965fc58af1e47818ff6317341cce"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M12-index-snapshot.json",
+      "bytes": 4319,
+      "sha256": "24988caf08d36badbb8e64337b1ec810c51d0f46685098a81756b028711f0845"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\m12-index-snapshot.py",
+      "bytes": 3534,
+      "sha256": "71d237157d89f06e3380b67c0e5ee3a407bbb45ca4a26507e82161c78014e92f"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M12-mcp-metadata.json",
+      "bytes": 2429,
+      "sha256": "e9f87e53a573049f9f2774fcab380f7b5b0254fa397d3bfe3a39d0f3556a0017"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M12-runtime-execution-manifest.json",
+      "bytes": 3491,
+      "sha256": "80686d5f14c3621999d64ecb4d0e7a1f7b27ed245bfa6811237fd840999841b1"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M12-runtime-fallback-evidence.json",
+      "bytes": 3003,
+      "sha256": "a5bf60a7a1fc4ab9de962bbc0e10d785f9316ce74b14967878d8627d3d80d3e6"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\m12-runtime-fallback.py",
+      "bytes": 3428,
+      "sha256": "09cdee88ee7151281cece7a590298a2dd5dde4203c79aca9aa0aa8f445501451"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M12-runtime-task.md",
+      "bytes": 1188,
+      "sha256": "c74515f6d271b2585e503e127e2903f204fd419a9cc03d05c60e79176ba786b3"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M12-source-comparison.json",
+      "bytes": 1321,
+      "sha256": "720e1d8d8effb62e1ef9d05ad0cb16de7475dbe46217eea3f1314699e390a9da"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\m12-source-comparison.mjs",
+      "bytes": 2820,
+      "sha256": "67f94f0deaf921ef7ff84fbc4a4b547faccb0882631f8865b93d3ad821747175"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-mechanism-results\\M12.md",
+      "bytes": 2643,
+      "sha256": "baca1af43c93b08aa10aff07fefc90dfb4b3179ccb94e1d5ea4ff12d0272e2f6"
+    },
+    {
+      "path": "projects\\multica\\validation\\new\\08-multica-mechanism-validation-acceptance-plan-2026-11-13.md",
+      "bytes": 38346,
+      "sha256": "674a7fa7a826186fbac2f16f3749914686749f034d32cabd9f99240f160f8ab7"
+    }
+  ],
+  "broken_links": [],
+  "credential_scan_hits": 0,
+  "overall": "PASS",
+  "tfs_credential_scan": {
+    "credential_present": true,
+    "files_checked": 48,
+    "hit_count": 0
+  }
+}

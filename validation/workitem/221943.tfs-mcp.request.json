@@ -1,0 +1,8 @@
+{
+  "tool": "mcp__tfs_mcp__tfs_get_workitem",
+  "arguments": {
+    "id": 221943,
+    "collection": "WN_Data_Platform",
+    "embedImages": false
+  }
+}

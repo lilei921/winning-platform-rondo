@@ -1,0 +1,22 @@
+{
+  "negative_issue": {
+    "id": "01a1d34d-829a-7755-a5df-4501b0a78dce",
+    "identifier": "TEST-9",
+    "project_id": null
+  },
+  "source": {
+    "change_ref": "tfs-260987-unified-permission-menu-language",
+    "branch": "rondo",
+    "commit": "9a2d723a0b89615b6581a898567e4e4468bb3e0b",
+    "repo_url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo"
+  },
+  "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+  "agent_id": "d6120bc6-9f95-4df7-9582-dba83fdc856e",
+  "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+  "positive_issue": {
+    "id": "01a1d34d-8457-72e0-90b0-90d760296193",
+    "identifier": "TEST-10",
+    "project_id": null
+  },
+  "timestamp": "2026-11-13T13:07:11.1431030+08:00"
+}

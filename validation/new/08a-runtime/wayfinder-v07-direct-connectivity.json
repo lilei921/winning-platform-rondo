@@ -1,0 +1,14 @@
+[
+  {
+    "server": "remote-codegraph",
+    "error_type": "ConnectionError"
+  },
+  {
+    "server": "remote-filesystem",
+    "error_type": "ConnectionError"
+  },
+  {
+    "server": "remote-ripgrep",
+    "error_type": "ConnectionError"
+  }
+]

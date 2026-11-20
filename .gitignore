@@ -1,0 +1,125 @@
+.worktrees/
+root-file
+.gstack/
+.arena/
+.vscode/
+
+# 子服务目录（各自为独立 git 仓库，根仓库不管理业务代码）
+/winning-dps-df-*/
+/winning-dps-df-dataquality-web
+
+# Wiki 知识库模块和知识图谱不受子仓规则影响
+!wiki/modules/winning-dps-df-*/
+!graph/winning-dps-df-*/
+
+# 外部产品子仓符号链接（各自为独立 git 仓库，根仓库不管理业务代码）
+winning-platform-360/
+winning-web-platform-360/
+
+# ETL 工具箱（独立仓库）
+etl-box/
+
+# LLM Wiki 摄入运行过程，不属于正式知识（无论 Source 目录层级如何变化）
+**/llm_plan/
+/outputs/wiki-ingest-test/
+
+# df-frame 初始化临时克隆目录（独立仓库克隆，本地生成，不共享）
+.df-frame-init-clone/
+
+# macOS
+.DS_Store
+
+# IDE 配置
+.idea/
+
+# Claude Code 日志与会话数据（个人本地，不共享）
+.claude/*.log
+.claude/metrics/
+.claude/session-data/
+
+# 本地配置（不提交）
+settings.local.json
+CLAUDE.local.md
+.mcp.json
+
+# 本地配置符号链接目录（由 create-symlink 命令动态生成）
+.tmp/
+.cache/
+.playwright-mcp/
+
+# 本地运行日志（不共享）
+projects/replay/bash-commands.log
+projects/replay/cost-tracker.log
+projects/replay/codex-hook-events.jsonl
+
+# Python 缓存（本地生成，不共享）
+__pycache__/
+
+# Code graph 索引文件（本地生成，不共享）
+.codegraph/
+.code-review-graph/
+
+# Wiki 知识索引（SQLite，本地生成，可从 wiki/ 和 raw/ 重建）
+graph/**/*.db
+
+# Office 临时锁文件
+~$*
+
+# CodeGraph MCP 隐藏启动器日志（本地生成，不共享）
+.codegraph-mcp-logs/
+
+# Brainstorming visual companion 临时文件（本地生成，不共享）
+.superpowers/
+
+
+# Multica 运行数据与缓存（本地生成，不共享）
+.multica/
+
+# Multica 本地仓库注册配置（保留本地文件，不共享）
+/projects/multica/workspace-skills/bug-delivery/config/repo-registry.json
+/projects/multica/workspace-skills/workitem-triage/config/repo-registry.json
+
+# Multica Run 日志（本地运行证据，可由平台侧会话重新导出，不进版本控制）
+projects/multica/logs/
+
+# Multica 运行时物化的 Agent 绑定技能（in_place 模式下 daemon 写入 <根仓>/.claude/skills/，
+# 唯一事实源在平台侧 / projects/multica/workspace-skills/，每次 Run 幂等重写，不进版本控制；
+# 新绑定 Skill 落进根仓时在此补一行）
+.claude/skills/analysis-completion*/
+.claude/skills/backend-engineering*/
+.claude/skills/codebase-explorer*/
+.claude/skills/delivery-flow*/
+.claude/skills/delivery-gate*/
+.claude/skills/development-execution*/
+.claude/skills/change-development*/
+.claude/skills/finalize-delivery*/
+.claude/skills/frontend-engineering*/
+.claude/skills/multica-platform*/
+.claude/skills/multica-workspace-bootstrap*/
+.claude/skills/pr-status-sync*/
+.claude/skills/pull-request*/
+.claude/skills/tfs-sync*/
+.claude/skills/workitem-analysis*/
+.claude/skills/workitem-triage*/
+.branch-switch.log/
+
+# 会话临时文件（本地工作区，不共享）
+temp/
+
+# rondo-env本机工具链（跨机器只共享项目声明）
+.rondo-env/
+
+# Codex 隔离工作树（本地执行计划使用，不共享）
+.worktrees/
+
+# AI-Flow 本地凭据文件（含 PAT 令牌，不共享）
+.ai-flow/.env
+
+# Wiki dashboard 生成数据（中间产物，可由生成器重建）
+wiki/dashboard/data/
+
+# tfs凭证
+tools/archive/tfs-cli/config/tfs.config.json
+
+# cli tgz
+tools/**/*.tgz

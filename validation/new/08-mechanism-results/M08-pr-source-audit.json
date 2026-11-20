@@ -1,0 +1,110 @@
+{
+  "timestamp": "2026-11-13T04:32:28.555Z",
+  "requests": [
+    {
+      "label": "raw_completed_pr",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_apis/git/repositories/winning-dps-df-frame/pullrequests/3532?api-version=4.1",
+      "status": 200,
+      "json": true
+    },
+    {
+      "label": "published_evidence_api_4.0",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_apis/git/repositories/winning-platform-monorepo/items?path=%2Fopenspec%2Fchanges%2Farchive%2F2026-10-29-tfs-260987-unified-permission-menu-language%2Fevidence.json&includeContent=true&versionDescriptor.versionType=commit&versionDescriptor.version=e21292336401e74eb0e58d29776e9b9815a46d59&api-version=4.0",
+      "status": 200,
+      "json": true
+    },
+    {
+      "label": "published_evidence_api_4.1",
+      "method": "GET",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_apis/git/repositories/winning-platform-monorepo/items?path=%2Fopenspec%2Fchanges%2Farchive%2F2026-10-29-tfs-260987-unified-permission-menu-language%2Fevidence.json&includeContent=true&versionDescriptor.versionType=commit&versionDescriptor.version=e21292336401e74eb0e58d29776e9b9815a46d59&api-version=4.1",
+      "status": 200,
+      "json": true
+    }
+  ],
+  "assertions": [
+    {
+      "name": "fixed_commit_4.0",
+      "result": "PASS"
+    },
+    {
+      "name": "candidate_present_4.0",
+      "result": "PASS"
+    },
+    {
+      "name": "fixed_commit_4.1",
+      "result": "PASS"
+    },
+    {
+      "name": "candidate_present_4.1",
+      "result": "PASS"
+    },
+    {
+      "name": "api_4_0_4_1_same_bytes",
+      "result": "PASS"
+    },
+    {
+      "name": "completed_pr",
+      "result": "PASS"
+    },
+    {
+      "name": "rondo_exact_candidate_match",
+      "result": "PASS"
+    },
+    {
+      "name": "rondo_maps_lastMergeSourceCommit",
+      "result": "PASS"
+    },
+    {
+      "name": "merge_commit_not_used_as_candidate",
+      "result": "PASS"
+    }
+  ],
+  "pr": {
+    "id": 3532,
+    "repository_id": "b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74",
+    "status": "completed",
+    "mergeStatus": "succeeded",
+    "sourceRefName": "refs/heads/feat/260987",
+    "targetRefName": "refs/heads/dev",
+    "lastMergeSourceCommit": {
+      "commitId": "5e7968ae04dacda18901042a431544ec8e59db67",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/commits/5e7968ae04dacda18901042a431544ec8e59db67"
+    },
+    "lastMergeCommit": {
+      "commitId": "dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a",
+      "author": {
+        "name": "li_lei(李磊)",
+        "email": "li_lei@winning.com.cn",
+        "date": "2026-10-29T08:44:45Z"
+      },
+      "committer": {
+        "name": "li_lei(李磊)",
+        "email": "li_lei@winning.com.cn",
+        "date": "2026-10-29T08:44:45Z"
+      },
+      "comment": "已合并 PR 3532: DF-7 / TFS 260987：统一权限菜单查询停止透传语言\n\n两个统一权限菜单入口此前随客户端语言发送 language，导致上游菜单名称不再保持中文翻译源。本次在 f",
+      "commentTruncated": true,
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/commits/dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a"
+    },
+    "closedDate": "2026-10-29T08:49:13.7551863Z"
+  },
+  "evidence_4.0": {
+    "source_root_commit": "e21292336401e74eb0e58d29776e9b9815a46d59",
+    "path": "/openspec/changes/archive/2026-10-29-tfs-260987-unified-permission-menu-language/evidence.json",
+    "object_id": "c6527b8be546bd084898ff90355f4d60f40fe1fc",
+    "sha256": "d79b7130b6ceb8eb76c8425b047e93453a276c077ed97b9f6b0b15beb54b47ca",
+    "candidate_commit": "5e7968ae04dacda18901042a431544ec8e59db67",
+    "candidate_branch": "feat/260987"
+  },
+  "evidence_4.1": {
+    "source_root_commit": "e21292336401e74eb0e58d29776e9b9815a46d59",
+    "path": "/openspec/changes/archive/2026-10-29-tfs-260987-unified-permission-menu-language/evidence.json",
+    "object_id": "c6527b8be546bd084898ff90355f4d60f40fe1fc",
+    "sha256": "d79b7130b6ceb8eb76c8425b047e93453a276c077ed97b9f6b0b15beb54b47ca",
+    "candidate_commit": "5e7968ae04dacda18901042a431544ec8e59db67",
+    "candidate_branch": "feat/260987"
+  },
+  "result": "PASS"
+}

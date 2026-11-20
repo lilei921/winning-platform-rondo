@@ -1,0 +1,100 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+
+import { assertCompletedAnalysisFacts } from "../dist/commands/delivery/finalize.js";
+
+const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
+const MOCK = fileURLToPath(new URL("./mock-multica.cjs", import.meta.url));
+
+const good = {
+  "analysis.change_kind": "corrective",
+  "analysis.change_ref": "issue-change-123",
+  "analysis.gate.result": "PASS",
+  "delivery.tfs_written": "true",
+  "analysis.human_approval": JSON.stringify({
+    decision: "approved", by: "human", at: "2026-11-08T00:00:00Z",
+    comment_ref: "approval-1", verify_agent_required: false,
+  }),
+  "verify_agent.required": "false",
+};
+
+function runDone(t, metadata) {
+  const root = mkdtempSync(join(tmpdir(), "rondo-finalize-done-"));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const stateFile = join(root, "state.json");
+  const configFile = join(root, "config.json");
+  chmodSync(MOCK, 0o755);
+  writeFileSync(stateFile, JSON.stringify({ status: "done", metadata }));
+  writeFileSync(configFile, JSON.stringify({
+    runtime: { multica_cli: MOCK, workspace_id: "ws-test" },
+    registry: {},
+  }));
+  const out = spawnSync(process.execPath, [CLI, "delivery", "finalize", "--phase", "complete",
+    "--issue", "issue-1", "--config", configFile], {
+    encoding: "utf8",
+    env: { ...process.env, MOCK_STATE: stateFile },
+    timeout: 20_000,
+  });
+  assert.equal(out.error, undefined, out.error?.message);
+  let body;
+  try { body = JSON.parse(out.stdout); }
+  catch { assert.fail(`Non-JSON finalize response: ${out.stdout} ${out.stderr}`); }
+  return { code: out.status, body, state: JSON.parse(readFileSync(stateFile, "utf8")) };
+}
+
+test("done replay validates minimum Analysis facts before clearing pending", (t) => {
+  for (const bad of [
+    { "analysis.change_kind": "other" },
+    { "analysis.change_kind": "" },
+    { "analysis.change_ref": "../bad" },
+    { "analysis.gate.result": "FAIL" },
+  ]) {
+    const metadata = { ...good, ...bad, "finalize.pending": "pending" };
+    const r = runDone(t, metadata);
+    assert.equal(r.code, 2, JSON.stringify(r.body));
+    assert.equal(r.body.result, "FAIL");
+    assert.equal(r.state.metadata["finalize.pending"], "pending");
+  }
+});
+
+test("done replay with valid classification clears only pending without requiring root repo", (t) => {
+  const r = runDone(t, { ...good, "finalize.pending": "pending" });
+  assert.equal(r.code, 0, JSON.stringify(r.body));
+  assert.equal(r.body.result, "PASS");
+  assert.equal(r.state.status, "done");
+  assert.equal(r.state.metadata["finalize.pending"], undefined);
+  assert.equal(r.state.metadata["analysis.change_kind"], "corrective");
+});
+
+test("done replay with valid facts and no pending remains a no-op", (t) => {
+  const r = runDone(t, good);
+  assert.equal(r.code, 0, JSON.stringify(r.body));
+  assert.deepEqual(r.body.steps, {});
+});
+
+test("completed facts checker rejects missing classification and invalid Change ID", () => {
+  assert.doesNotThrow(() => assertCompletedAnalysisFacts(good));
+  assert.throws(() => assertCompletedAnalysisFacts({ ...good, "analysis.change_kind": "production-fix" }), /change_kind/);
+  assert.throws(() => assertCompletedAnalysisFacts({ ...good, "analysis.change_ref": "/etc/passwd" }), /change_ref/);
+});
+
+test("done replay refuses missing or contradictory final Verify Decision before clearing pending", (t) => {
+  for (const metadata of [
+    { ...good, "verify_agent.required": undefined, "finalize.pending": "pending" },
+    { ...good, "verify_agent.required": "true", "finalize.pending": "pending" },
+    { ...good, "analysis.human_approval": undefined, "finalize.pending": "pending" },
+    { ...good, "analysis.human_approval": JSON.stringify({
+      decision: "approved", comment_ref: "approval-1", verify_agent_required: true,
+    }), "verify_agent.required": "true", "finalize.pending": "pending" },
+  ]) {
+    const r = runDone(t, metadata);
+    assert.equal(r.code, 3, JSON.stringify(r.body));
+    assert.equal(r.body.result, "UNKNOWN");
+    assert.equal(r.state.metadata["finalize.pending"], "pending");
+  }
+});

@@ -1,0 +1,84 @@
+{
+  "services": {
+    "filesystem-remote": {
+      "name": "secure-filesystem-server",
+      "version": "2.3.0"
+    },
+    "codegraph-remote": {
+      "name": "codegraph",
+      "version": "1.6.2"
+    },
+    "ripgrep-remote": {
+      "name": "mcp-ripgrep",
+      "version": "1.2.0"
+    }
+  },
+  "method": "read_media_file",
+  "index_commit": null,
+  "snapshot": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\m12-index-snapshot.db",
+  "bytes": 28364800,
+  "sha256": "903811c7c07b2bdddc3d65047724182cddce9cc64ba81bf3b95b78e234784e2e",
+  "quick_check": "ok",
+  "schema": [
+    [
+      "schema_versions",
+      "CREATE TABLE schema_versions (\n    version INTEGER PRIMARY KEY,\n    applied_at INTEGER NOT NULL,\n    description TEXT\n)"
+    ],
+    [
+      "nodes",
+      "CREATE TABLE nodes (\n    id TEXT PRIMARY KEY,\n    kind TEXT NOT NULL,\n    name TEXT NOT NULL,\n    qualified_name TEXT NOT NULL,\n    file_path TEXT NOT NULL,\n    language TEXT NOT NULL,\n    start_line INTEGER NOT NULL,\n    end_line INTEGER NOT NULL,\n    start_column INTEGER NOT NULL,\n    end_column INTEGER NOT NULL,\n    docstring TEXT,\n    signature TEXT,\n    visibility TEXT,\n    is_exported INTEGER DEFAULT 0,\n    is_async INTEGER DEFAULT 0,\n    is_static INTEGER DEFAULT 0,\n    is_abstract INTEGER DEFAULT 0,\n    decorators TEXT, -- JSON array\n    type_parameters TEXT, -- JSON array\n    return_type TEXT, -- normalized return/result type name (e.g. C++ method return, for receiver-type inference)\n    updated_at INTEGER NOT NULL\n)"
+    ],
+    [
+      "edges",
+      "CREATE TABLE edges (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    source TEXT NOT NULL,\n    target TEXT NOT NULL,\n    kind TEXT NOT NULL,\n    metadata TEXT, -- JSON object\n    line INTEGER,\n    col INTEGER,\n    provenance TEXT DEFAULT NULL,\n    FOREIGN KEY (source) REFERENCES nodes(id) ON DELETE CASCADE,\n    FOREIGN KEY (target) REFERENCES nodes(id) ON DELETE CASCADE\n)"
+    ],
+    [
+      "sqlite_sequence",
+      "CREATE TABLE sqlite_sequence(name,seq)"
+    ],
+    [
+      "files",
+      "CREATE TABLE files (\n    path TEXT PRIMARY KEY,\n    content_hash TEXT NOT NULL,\n    language TEXT NOT NULL,\n    size INTEGER NOT NULL,\n    modified_at INTEGER NOT NULL,\n    indexed_at INTEGER NOT NULL,\n    node_count INTEGER DEFAULT 0,\n    errors TEXT, -- JSON array\n    generated INTEGER NOT NULL DEFAULT 0\n)"
+    ],
+    [
+      "unresolved_refs",
+      "CREATE TABLE unresolved_refs (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    from_node_id TEXT NOT NULL,\n    reference_name TEXT NOT NULL,\n    reference_kind TEXT NOT NULL,\n    line INTEGER NOT NULL,\n    col INTEGER NOT NULL,\n    candidates TEXT, -- JSON array\n    file_path TEXT NOT NULL DEFAULT '',\n    language TEXT NOT NULL DEFAULT 'unknown',\n    status TEXT NOT NULL DEFAULT 'pending',\n    name_tail TEXT NOT NULL DEFAULT '',\n    FOREIGN KEY (from_node_id) REFERENCES nodes(id) ON DELETE CASCADE\n)"
+    ],
+    [
+      "nodes_fts",
+      "CREATE VIRTUAL TABLE nodes_fts USING fts5(\n    id,\n    name,\n    qualified_name,\n    docstring,\n    signature,\n    content='nodes',\n    content_rowid='rowid'\n)"
+    ],
+    [
+      "nodes_fts_data",
+      "CREATE TABLE 'nodes_fts_data'(id INTEGER PRIMARY KEY, block BLOB)"
+    ],
+    [
+      "nodes_fts_idx",
+      "CREATE TABLE 'nodes_fts_idx'(segid, term, pgno, PRIMARY KEY(segid, term)) WITHOUT ROWID"
+    ],
+    [
+      "nodes_fts_docsize",
+      "CREATE TABLE 'nodes_fts_docsize'(id INTEGER PRIMARY KEY, sz BLOB)"
+    ],
+    [
+      "nodes_fts_config",
+      "CREATE TABLE 'nodes_fts_config'(k PRIMARY KEY, v) WITHOUT ROWID"
+    ],
+    [
+      "name_segment_vocab",
+      "CREATE TABLE name_segment_vocab (\n    segment TEXT NOT NULL,\n    name TEXT NOT NULL,\n    PRIMARY KEY (segment, name)\n) WITHOUT ROWID"
+    ],
+    [
+      "synthesis_inputs",
+      "CREATE TABLE synthesis_inputs (\n    file_path TEXT PRIMARY KEY REFERENCES files(path) ON DELETE CASCADE\n)"
+    ],
+    [
+      "project_metadata",
+      "CREATE TABLE project_metadata (\n    key TEXT PRIMARY KEY,\n    value TEXT NOT NULL,\n    updated_at INTEGER NOT NULL\n)"
+    ],
+    [
+      "sqlite_stat1",
+      "CREATE TABLE sqlite_stat1(tbl,idx,stat)"
+    ]
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "id": 12345,
+  "fields": {
+    "System.WorkItemType": "Requirement",
+    "System.Title": "测试需求",
+    "System.State": "Active",
+    "System.Description": "<p>需求描述</p>",
+    "System.ChangedDate": "2026-09-20T17:20:30+08:00",
+    "Microsoft.VSTS.Common.Priority": 2
+  },
+  "_links": {
+    "html": {
+      "href": "https://example.local/tfs/12345"
+    }
+  }
+}

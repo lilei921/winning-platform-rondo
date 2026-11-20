@@ -1,0 +1,29 @@
+{
+  "http": 200,
+  "id": 3773,
+  "status": "active",
+  "mergeStatus": "succeeded",
+  "lastMergeSourceCommit": {
+    "commitId": "5df24d44cc22bf2dfd2c4d45164c5bd8aad00479",
+    "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/commits/5df24d44cc22bf2dfd2c4d45164c5bd8aad00479"
+  },
+  "lastMergeTargetCommit": {
+    "commitId": "dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a",
+    "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/commits/dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a"
+  },
+  "lastMergeCommit": {
+    "commitId": "85437f0a886c31bb858846d5d0dffcfc7a507e1c",
+    "author": {
+      "name": "li_lei(李磊)",
+      "email": "li_lei@winning.com.cn",
+      "date": "2026-11-13T05:37:07Z"
+    },
+    "committer": {
+      "name": "li_lei(李磊)",
+      "email": "li_lei@winning.com.cn",
+      "date": "2026-11-13T05:37:07Z"
+    },
+    "comment": "将拉取请求 3773 从 codex/m10-260986-20261113-source 合并到 codex/m10-260986-20261113-target",
+    "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/b52a4fd8-ec61-4cb5-b2f3-c3b61e41da74/commits/85437f0a886c31bb858846d5d0dffcfc7a507e1c"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "timestamp": "2026-11-13T05:12:53.991Z",
+  "method": "GET",
+  "authorization_header_sent": false,
+  "status": 401,
+  "content_type": "text/html; charset=utf-8",
+  "anonymous_read_denied": true,
+  "low_privilege_identity_test": "NOT_RUN: user confirmed no low-privilege user",
+  "http_policy": "user explicitly approved current intranet HTTP for this validation; not general production deployment approval"
+}

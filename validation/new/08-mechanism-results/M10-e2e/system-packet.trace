@@ -1,0 +1,73 @@
+14:12:52.482380 pkt-line.c:85           packet:          git< # service=git-upload-pack
+14:12:52.482943 pkt-line.c:85           packet:          git< 0000
+14:12:52.482943 pkt-line.c:85           packet:          git< f77b9d050426f54d136424591697a018e56f1494 HEAD\0 multi_ack thin-pack side-band side-band-64k no-progress multi_ack_detailed no-done shallow allow-tip-sha1-in-want symref=HEAD:refs/heads/master
+14:12:52.482943 pkt-line.c:85           packet:          git< a2b70f9dad7fcbf4fc413b6cb3c677f701ed88d8 refs/heads/codex/m10-260986-20261113-root
+14:12:52.482943 pkt-line.c:85           packet:          git< 75448cb8f5295beccfba7bd2fdd941f03a12365c refs/heads/dev
+14:12:52.482943 pkt-line.c:85           packet:          git< b9527df31eab550339b109639538f9e991974d99 refs/heads/fire
+14:12:52.483571 pkt-line.c:85           packet:          git< b15f24b629240f6d40285ca0726956077f461aca refs/heads/fire-bk-1019
+14:12:52.483571 pkt-line.c:85           packet:          git< 7189ab6212e7e0551fce337d234ba78b680ab642 refs/heads/main
+14:12:52.483571 pkt-line.c:85           packet:          git< f77b9d050426f54d136424591697a018e56f1494 refs/heads/master
+14:12:52.483571 pkt-line.c:85           packet:          git< 5dae614b9e709216a91e76a798e8e4da3b882462 refs/heads/multica
+14:12:52.483571 pkt-line.c:85           packet:          git< 2598a391f67382f7e8ffdc1b8692e104e4eaebd1 refs/heads/multica_1026
+14:12:52.483571 pkt-line.c:85           packet:          git< 54b21addaef9931ce40539feadb0aaba983b73e2 refs/heads/multica_1107
+14:12:52.483571 pkt-line.c:85           packet:          git< df58517827136c7247db36ade1d736213326ba71 refs/heads/multica_bak
+14:12:52.483571 pkt-line.c:85           packet:          git< 892d9c407690e58ac3cbe2a45e47fee60a5a48f6 refs/heads/multica_openspec
+14:12:52.483571 pkt-line.c:85           packet:          git< 38d9613d57c2b1512a8c93607d4c6dadc086978f refs/heads/multica_rondo
+14:12:52.483571 pkt-line.c:85           packet:          git< 1439f0319c54bcf5341bc79bac46e4a5178674a5 refs/heads/multica_v1.0.0
+14:12:52.483571 pkt-line.c:85           packet:          git< 3fde4794d0e224dfe92734c037451b69d16633b2 refs/heads/multica_v1.0.1
+14:12:52.483571 pkt-line.c:85           packet:          git< d2a755c6754dfecd546cf0d360b65f1d304bdd0c refs/heads/multica_v1.0.2
+14:12:52.483571 pkt-line.c:85           packet:          git< 9e00bc6d2d09d1b29f93cd5a779e78b0673991d3 refs/heads/multica_v1.0.3
+14:12:52.483571 pkt-line.c:85           packet:          git< e9cee906f563b6caefb1d61bb738c84be81d188b refs/heads/multica_v1.0.4
+14:12:52.483571 pkt-line.c:85           packet:          git< 9d422182723c48bfb1514ac558e294c640e51cda refs/heads/rondo
+14:12:52.483571 pkt-line.c:85           packet:          git< a091ccfc3f6446a5742b677ec6ed8e44b2dd3260 refs/heads/rondo_v1.0.0
+14:12:52.483571 pkt-line.c:85           packet:          git< f9232ef128414ce237021194a5efcf0b49259357 refs/pull/2938/merge
+14:12:52.483571 pkt-line.c:85           packet:          git< 1e843fac59a2beef436b207c71dae26aec203260 refs/tags/pop-1
+14:12:52.483571 pkt-line.c:85           packet:          git< 88f6ec9b08f7312654c7d8bcf559c5a10030c3e0 refs/tags/pop-1^{}
+14:12:52.483571 pkt-line.c:85           packet:          git< 0000
+14:12:52.489941 pkt-line.c:85           packet:          git> a2b70f9dad7fcbf4fc413b6cb3c677f701ed88d8 refs/heads/codex/m10-260986-20261113-root
+14:12:52.489941 pkt-line.c:85           packet:          git> 0000
+14:12:52.607663 pkt-line.c:85           packet:   fetch-pack< a2b70f9dad7fcbf4fc413b6cb3c677f701ed88d8 refs/heads/codex/m10-260986-20261113-root
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< 0000
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< f77b9d050426f54d136424591697a018e56f1494 HEAD\0 multi_ack thin-pack side-band side-band-64k no-progress multi_ack_detailed no-done shallow allow-tip-sha1-in-want symref=HEAD:refs/heads/master
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< a2b70f9dad7fcbf4fc413b6cb3c677f701ed88d8 refs/heads/codex/m10-260986-20261113-root
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< 75448cb8f5295beccfba7bd2fdd941f03a12365c refs/heads/dev
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< b9527df31eab550339b109639538f9e991974d99 refs/heads/fire
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< b15f24b629240f6d40285ca0726956077f461aca refs/heads/fire-bk-1019
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< 7189ab6212e7e0551fce337d234ba78b680ab642 refs/heads/main
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< f77b9d050426f54d136424591697a018e56f1494 refs/heads/master
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< 5dae614b9e709216a91e76a798e8e4da3b882462 refs/heads/multica
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< 2598a391f67382f7e8ffdc1b8692e104e4eaebd1 refs/heads/multica_1026
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< 54b21addaef9931ce40539feadb0aaba983b73e2 refs/heads/multica_1107
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< df58517827136c7247db36ade1d736213326ba71 refs/heads/multica_bak
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< 892d9c407690e58ac3cbe2a45e47fee60a5a48f6 refs/heads/multica_openspec
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< 38d9613d57c2b1512a8c93607d4c6dadc086978f refs/heads/multica_rondo
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< 1439f0319c54bcf5341bc79bac46e4a5178674a5 refs/heads/multica_v1.0.0
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< 3fde4794d0e224dfe92734c037451b69d16633b2 refs/heads/multica_v1.0.1
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< d2a755c6754dfecd546cf0d360b65f1d304bdd0c refs/heads/multica_v1.0.2
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< 9e00bc6d2d09d1b29f93cd5a779e78b0673991d3 refs/heads/multica_v1.0.3
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< e9cee906f563b6caefb1d61bb738c84be81d188b refs/heads/multica_v1.0.4
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< 9d422182723c48bfb1514ac558e294c640e51cda refs/heads/rondo
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< a091ccfc3f6446a5742b677ec6ed8e44b2dd3260 refs/heads/rondo_v1.0.0
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< f9232ef128414ce237021194a5efcf0b49259357 refs/pull/2938/merge
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< 1e843fac59a2beef436b207c71dae26aec203260 refs/tags/pop-1
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< 88f6ec9b08f7312654c7d8bcf559c5a10030c3e0 refs/tags/pop-1^{}
+14:12:52.608200 pkt-line.c:85           packet:   fetch-pack< 0000
+14:12:52.609783 pkt-line.c:85           packet:   fetch-pack> want a2b70f9dad7fcbf4fc413b6cb3c677f701ed88d8 multi_ack_detailed no-done side-band-64k thin-pack no-progress
+14:12:52.609783 pkt-line.c:85           packet:   fetch-pack> deepen 1
+14:12:52.609783 pkt-line.c:85           packet:   fetch-pack> 0000
+14:12:52.609783 pkt-line.c:85           packet:   fetch-pack> 0000
+14:12:52.609783 pkt-line.c:85           packet:          git< 0071want a2b70f9dad7fcbf4fc413b6cb3c677f701ed88d8 multi_ack_detailed no-done side-band-64k thin-pack no-progress000cdeepen 10000
+14:12:52.609783 pkt-line.c:85           packet:          git< 0000
+14:12:52.662370 pkt-line.c:85           packet:   fetch-pack< shallow a2b70f9dad7fcbf4fc413b6cb3c677f701ed88d8
+14:12:52.662370 pkt-line.c:85           packet:   fetch-pack< 0000
+14:12:52.663001 pkt-line.c:85           packet:   fetch-pack> done
+14:12:52.663001 pkt-line.c:85           packet:   fetch-pack> 0000
+14:12:52.663001 pkt-line.c:85           packet:          git< 0071want a2b70f9dad7fcbf4fc413b6cb3c677f701ed88d8 multi_ack_detailed no-done side-band-64k thin-pack no-progress000cdeepen 100000009done
+14:12:52.663001 pkt-line.c:85           packet:          git< 0000
+14:12:52.705133 pkt-line.c:85           packet:   fetch-pack< shallow a2b70f9dad7fcbf4fc413b6cb3c677f701ed88d8
+14:12:52.705133 pkt-line.c:85           packet:   fetch-pack< 0000
+14:12:52.705133 pkt-line.c:85           packet:   fetch-pack< NAK
+14:12:52.705133 pkt-line.c:85           packet:   fetch-pack> 0000
+14:12:53.753377 pkt-line.c:85           packet:     sideband< PACK ...
+14:22:40.512513 pkt-line.c:85           packet:          git< 0000
+14:22:40.512513 pkt-line.c:85           packet:     sideband< 0000

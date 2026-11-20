@@ -1,0 +1,88 @@
+{
+  "id": 260986,
+  "rev": 6,
+  "fields": {
+    "System.AreaPath": "DP-01-数据仓库",
+    "System.TeamProject": "DP-01-数据仓库",
+    "System.IterationPath": "DP-01-数据仓库\\迭代 1",
+    "System.WorkItemType": "需求",
+    "System.State": "已解决",
+    "System.Reason": "代码完成且通过系统测试",
+    "System.AssignedTo": "li_lei(李磊) <WINNING\\li_lei>",
+    "System.CreatedDate": "2026-10-29T05:43:26.66Z",
+    "System.CreatedBy": "l_nn(李娜娜) <WINNING\\l_nn>",
+    "System.ChangedDate": "2026-11-13T06:31:40.24Z",
+    "System.ChangedBy": "li_lei(李磊) <WINNING\\li_lei>",
+    "System.Title": "公版研发_DF框架_对接统一权限时，获取菜单接口去除language参数",
+    "System.BoardColumn": "已解决",
+    "System.BoardColumnDone": false,
+    "Microsoft.VSTS.Common.StateChangeDate": "2026-11-13T06:31:40.003Z",
+    "Microsoft.VSTS.Common.ActivatedDate": "2026-11-13T06:31:39.383Z",
+    "Microsoft.VSTS.Common.ActivatedBy": "li_lei(李磊) <WINNING\\li_lei>",
+    "Microsoft.VSTS.Common.ResolvedDate": "2026-11-13T06:31:40.003Z",
+    "Microsoft.VSTS.Common.ResolvedBy": "li_lei(李磊) <WINNING\\li_lei>",
+    "Microsoft.VSTS.Common.ResolvedReason": "代码完成且通过系统测试",
+    "Microsoft.VSTS.Common.Priority": 2,
+    "Microsoft.VSTS.Common.ValueArea": "业务",
+    "Microsoft.VSTS.Scheduling.FinishDate": "2026-11-15T00:00:00Z",
+    "Microsoft.VSTS.Common.Triage": "挂起",
+    "Microsoft.VSTS.CMMI.Blocked": "否",
+    "Microsoft.VSTS.CMMI.RequiresTest": "不需要测试",
+    "Microsoft.VSTS.CMMI.RequirementType": "功能性的",
+    "Microsoft.VSTS.CMMI.Committed": "否",
+    "Microsoft.VSTS.CMMI.UserAcceptanceTest": "未就绪",
+    "Winning.Test.Action": "未安排",
+    "Winning.Test.Design": "未安排",
+    "Winning.AnalysisBy": "li_lei(李磊) <WINNING\\li_lei>",
+    "Winning.AnalysisDate": "2026-11-13T06:31:39.777Z",
+    "Demand.Refuse.Flag": 0,
+    "RaD.Center": "医院平台-数据平台",
+    "Winning.Product.Name": "03 数据采集管理软件",
+    "Winning.Prod.Branch": "主干",
+    "Winning.Demand.Classify": "功能性的",
+    "Winning.Dev.Arrange": "未安排",
+    "Winning.Prod.Instructions": "是",
+    "WEF_E3252AD83CE34556B321BF982983232D_Kanban.Column": "已解决",
+    "WEF_E3252AD83CE34556B321BF982983232D_Kanban.Column.Done": false,
+    "Microsoft.VSTS.Common.RequirementReview": "未评审",
+    "Microsoft.VSTS.Common.RequirementTest": "未自测",
+    "System.Description": "<b>【要求定位】</b><br>XX系统-&gt;XX模块<br><br><b>【系统运行情况】</b><br>df系统前端已经翻译了菜单，请求统一权限时不需要再传递language参数，不传统一权限平台默认返回中文菜单，df前端能正常翻译<br><br><b>【详细调研结果】</b><br><br><br><b>【分析者描述】</b><br><br><br><b>【开发者描述】</b><br><br><br><b>【测试者描述】</b>",
+    "System.History": "<p>交付完成（Multica TEST-13）：PR 已合并，OpenSpec Change <code>m10-260986-runtime-recovery</code> 已归档。详见 Delivery Issue 摘要评论。</p>\n",
+    "Microsoft.VSTS.CMMI.ImpactAssessmentHtml": "<b>※SQLSERVER脚本※</b><br><br><br><br><br><br><br><br><b>※ORACLE脚本※</b><br><br>",
+    "Winning.Demand.Analysis": "<b>一 需求描述</b><br>背景描述[概述背景及需要解决的问题或目的]：<br><br><b>二 需求分析</b><br>1修改版本：<br>2模块[DLL、函数]：<br>3功能分析<br>功能描述[按模块详细描述改造功能点]:<br>",
+    "Winning.Data.Design": "<b>※SQLSERVER脚本※</b><br><br><br><br><br><br><br><br><b>※ORACLE脚本※</b><br><br>"
+  },
+  "relations": [
+    {
+      "rel": "System.LinkTypes.Hierarchy-Forward",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/264845",
+      "attributes": {
+        "isLocked": false
+      }
+    }
+  ],
+  "_links": {
+    "self": {
+      "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/260986"
+    },
+    "workItemUpdates": {
+      "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/260986/updates"
+    },
+    "workItemRevisions": {
+      "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/260986/revisions"
+    },
+    "workItemHistory": {
+      "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/260986/history"
+    },
+    "html": {
+      "href": "http://tfs2018-web.winning.com.cn:8080/tfs/web/wi.aspx?pcguid=f7bf5021-f3a9-4a5f-b754-bc7a1f7d60e2&id=260986"
+    },
+    "workItemType": {
+      "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/b2018645-8ea9-415f-b6ef-1722ef1f7be4/_apis/wit/workItemTypes/%E9%9C%80%E6%B1%82"
+    },
+    "fields": {
+      "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/fields"
+    }
+  },
+  "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/260986"
+}

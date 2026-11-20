@@ -1,0 +1,21 @@
+{
+  "bug-fix-validation.md": "cc6cd2f4cd3398381ab8b6c52d9186c51bc4a7b9194889f689bde4990245684d",
+  "claude-recover-evidence.json": "b5ed228e1697d471b73b553555ed19c1e0dee3b6c2b1c06af5860411702e63ba",
+  "codex-interrupt-evidence.json": "993a105b542039cea6be371ee4cde943723502cbf67023f3bbe4512531126cbe",
+  "external-readback.json": "52313d5b2ddd024c0a401c8af0e785c2655bce919895fadd6c25f3639bac5b1a",
+  "final-issue.json": "9fa2580cb4d3ec1ed5f3ba2703f2af40dcb4e92c200575f71ff86ae50b811b77",
+  "fixture.json": "4cab9291bb02812c7e97ab6a0dba2b12705742bc95676a533a95a76a62b9c573",
+  "inject-failure.mjs": "6987752373c1836f50d664a7b2d886415f987bba4c2ac599a0391eaa0dcbf07d",
+  "isolated-registry.json": "5248e241ef916e92bbebd2619abe9c63af8ca355eb7cdb945d3c8223b1a87b2c",
+  "pr-sync-agent-restored.json": "824bb7d853811ccebba9b61a5fce570e858d0dcd8fcfa5f95c565c11ea32539b",
+  "production-drift-readback.json": "ef74c4d297a468dd2911e973248c00d6b9b63f70c4279b1ec05c25acc5012048",
+  "README.md": "bd3590a5f99bcfda1e6d263924304ebc57abf71447f8d46b34331cd890f582c0",
+  "remote-mcp-agent-acceptance.json": "dc9d60739661de214a0881c634a4e3e523c206a0394ad825868b8d629d38be0f",
+  "remote-mcp-agent-acceptance.md": "16fc3f8507d9aa67302edaa545e42417c15f1a0d15989188b35a2896516ffd06",
+  "remote-mcp-external-readback.json": "8369b0b21b0f3af85646e4aee22121c620e0e1341ce93d4d2c5f28136ab9c2b6",
+  "remote-mcp-followup.md": "2cda3da4551396c7cef39acfc432cfdbdda6be0a62d34f57f0c96567d6c5ee94",
+  "remote-mcp-platform-evidence.json": "8c1bb0c611e5ed5e89dc38dc732382201b514a414b72f5e0941ab33dfc4cf308",
+  "remote-mcp-run-readback.json": "de2fe570d71f6a0335fbd1217da5a7e41ac2eda0deeb694084ca0fdde167e00d",
+  "remote-mcp-runtime-events.json": "8d97f023ecac66aabcedb03b75002bf8b9d780d3acfffbae58a87d0c1e4f86bf",
+  "runtime-driver.mjs": "ce6b11416549a62df94b1b241057341161f3066abcd23304d3d4997e049a8747"
+}

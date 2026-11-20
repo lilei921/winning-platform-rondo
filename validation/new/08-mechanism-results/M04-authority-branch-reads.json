@@ -1,0 +1,35 @@
+[
+  {
+    "requested": "master",
+    "exit": 0,
+    "response": {
+      "found": true,
+      "branch": {
+        "name": "master",
+        "commit": "f77b9d050426f54d136424591697a018e56f1494"
+      }
+    }
+  },
+  {
+    "requested": "main",
+    "exit": 0,
+    "response": {
+      "found": true,
+      "branch": {
+        "name": "main",
+        "commit": "dfdaf33fa58355332259524266045d1052ef9dea"
+      }
+    }
+  },
+  {
+    "requested": "rondo",
+    "exit": 0,
+    "response": {
+      "found": true,
+      "branch": {
+        "name": "rondo",
+        "commit": "e21292336401e74eb0e58d29776e9b9815a46d59"
+      }
+    }
+  }
+]

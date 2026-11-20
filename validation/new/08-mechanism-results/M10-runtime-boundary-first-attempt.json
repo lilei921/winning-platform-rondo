@@ -1,0 +1,148 @@
+{
+  "timestamp": "2026-11-13T05:12:42.688Z",
+  "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-12-cb23d3a1b0d8\\workdir",
+  "task_id": "01a1d352-1e2d-71c7-9a8a-cb23d3a1b0d8",
+  "issue": "TEST-12",
+  "commands": [
+    {
+      "kind": "git_show",
+      "file": "tasks.md",
+      "commit": "df47bb6fd0fdc9b19ec6fe136818548b1403f847",
+      "exit": 0,
+      "sha256": "4c936046f12f2edaab40ed38e3479bd851deaebb69f014125c8b1a834ed72ce2"
+    },
+    {
+      "kind": "git_show",
+      "file": "evidence.json",
+      "commit": "df47bb6fd0fdc9b19ec6fe136818548b1403f847",
+      "exit": 128,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "kind": "rondo",
+      "argv": [
+        "D:/UserApp/nvm/node_global/node_modules/@winning/rondo/dist/index.js",
+        "delivery",
+        "finalize",
+        "--phase",
+        "prepare",
+        "--config",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-12-cb23d3a1b0d8\\workdir\\m10-runtime-config.json",
+        "--issue",
+        "TEST-12"
+      ],
+      "exit": 3,
+      "response": {
+        "result": "UNKNOWN",
+        "reason": "Issue 缺少 project_id——不从父 Issue / 标题 / 默认项目猜测（§4.3 规则 2）"
+      }
+    },
+    {
+      "kind": "rondo",
+      "argv": [
+        "D:/UserApp/nvm/node_global/node_modules/@winning/rondo/dist/index.js",
+        "tfs",
+        "writeback",
+        "--config",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-12-cb23d3a1b0d8\\workdir\\m10-runtime-config.json",
+        "--issue",
+        "TEST-12"
+      ],
+      "exit": 3,
+      "response": {
+        "result": "UNKNOWN",
+        "reason": "Issue 缺少 project_id——不从父 Issue / 标题 / 默认项目猜测（§4.3 规则 2）"
+      }
+    },
+    {
+      "kind": "rondo",
+      "argv": [
+        "D:/UserApp/nvm/node_global/node_modules/@winning/rondo/dist/index.js",
+        "delivery",
+        "finalize",
+        "--phase",
+        "complete",
+        "--config",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-12-cb23d3a1b0d8\\workdir\\m10-runtime-config.json",
+        "--issue",
+        "TEST-12"
+      ],
+      "exit": 3,
+      "response": {
+        "result": "UNKNOWN",
+        "reason": "Issue 缺少 project_id——不从父 Issue / 标题 / 默认项目猜测（§4.3 规则 2）"
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "no_project",
+      "result": "PASS"
+    },
+    {
+      "name": "no_local_git",
+      "result": "PASS"
+    },
+    {
+      "name": "original_temporary_clone_absent",
+      "result": "PASS"
+    },
+    {
+      "name": "read_archived_tasks.md",
+      "result": "PASS"
+    },
+    {
+      "name": "read_archived_evidence.json",
+      "result": "FAIL"
+    },
+    {
+      "name": "delivery_finalize_--phase_prepare_requires_local_root",
+      "result": "PASS"
+    },
+    {
+      "name": "tfs_writeback_requires_local_root",
+      "result": "PASS"
+    },
+    {
+      "name": "delivery_finalize_--phase_complete_requires_local_root",
+      "result": "PASS"
+    },
+    {
+      "name": "metadata_unchanged",
+      "result": "PASS"
+    },
+    {
+      "name": "issue_not_done",
+      "result": "PASS"
+    },
+    {
+      "name": "workitem_unchanged",
+      "result": "PASS"
+    }
+  ],
+  "workitem_before": {
+    "id": 260986,
+    "rev": 2,
+    "state": "已建议",
+    "relations": []
+  },
+  "workitem_after": {
+    "id": 260986,
+    "rev": 2,
+    "state": "已建议",
+    "relations": []
+  },
+  "metadata_before": {
+    "analysis.change_ref": "validation-archive",
+    "tfs.id": "260986",
+    "tfs.type": "需求"
+  },
+  "metadata_after": {
+    "analysis.change_ref": "validation-archive",
+    "tfs.id": "260986",
+    "tfs.type": "需求"
+  },
+  "prerequisite_probe": "FAIL",
+  "end_to_end": "NOT_RUN: current Requirement commands stop at local Project root resolution before Prepare, Writeback or Complete",
+  "interruption_recovery": "NOT_RUN: remote artifact adaptation is not implemented; no prepared/pr/delivery facts fabricated"
+}

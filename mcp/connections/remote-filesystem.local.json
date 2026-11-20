@@ -1,0 +1,6 @@
+{
+  "url": "http://172.17.1.97:8012/mcp",
+  "headers": {
+    "Authorization": "Bearer 7b9d9dfe248e3f15a56506311ffa983545d03c3a177e90f6ef62f59fb6d2f675"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-11-13T02:43:36.4566095Z",
+  "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+  "project_id": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97",
+  "run_count": 1,
+  "runs": [
+    {
+      "id": "01a1d2bd-578c-713c-ba66-457a3869580e",
+      "issue_id": "01a1d2bd-5780-7a2e-a75a-d5bc7b6d8134",
+      "status": "completed",
+      "attempt": 1,
+      "started_at": "2026-11-13T10:29:46+08:00",
+      "completed_at": "2026-11-13T10:39:32+08:00",
+      "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+      "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-2-457a3869580e\\workdir",
+      "error": null
+    }
+  ],
+  "daemon": {
+    "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+    "status": "running",
+    "cli_version": "0.8.1",
+    "active_task_count": 0,
+    "running_task_count": 0
+  },
+  "remote_refs_before": {
+    "rondo": "4765e6d807d6de52ca5b0f7c70060ffcccc0c446",
+    "master": "bb13f482ff7a3c01936f596942dd7d36cc6ece86"
+  },
+  "remote_refs_after_observed": {
+    "rondo": "21e3c1688846d8fe6c9918c824a992416393874d",
+    "master": "bb13f482ff7a3c01936f596942dd7d36cc6ece86"
+  },
+  "concurrent_commit_read": {
+    "date_utc": "2026-11-13T02:30:53Z",
+    "parent": "4765e6d807d6de52ca5b0f7c70060ffcccc0c446",
+    "http_status": 200,
+    "comment": "提交会话分析记录",
+    "sha": "21e3c1688846d8fe6c9918c824a992416393874d"
+  },
+  "task_evidence_sha256": "e35bfd354932689adaa5c305a84ce4012e0f47920525b302fd5bd670c3de43d1",
+  "daemon_log_excerpts": [
+    "10:29:42.374 DBG task context component=daemon task=01a1d2bd-578c-713c-ba66-457a3869580e workspace_id=60eb8cf4-31be-4a34-b744-8ef6a0bcf15d runtime_id=c55feddd-7910-480a-8f9f-9d6180b1f061 agent_id=9915af88-b5ce-42c2-9c3b-227d768c5bc0 repos=1 project_id=d43bbc9d-4cc2-4cee-8f92-70c993ffbf97 autopilot_run_id=\"\" trigger_comment_id=\"\" resume_session=false reuse_workdir=false",
+    "10:29:42.380 INF repo cache: cloning component=daemon url=http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo path=C:\\Users\\lilei\\multica_workspaces\\.repos\\60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\\tfs2018-web.winning.com.cn%3A8080+tfs+WN_Data_Platform+DP-01-数据仓库+_git+winning-platform-monorepo.git",
+    "10:29:42.560 INF starting agent component=daemon task=01a1d2bd-578c-713c-ba66-457a3869580e provider=codex workdir=C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-2-457a3869580e\\workdir model=\"\" resume_reachable=false",
+    "10:39:28.279 INF codex lifecycle component=daemon phase=cleanup task_id=01a1d2bd-578c-713c-ba66-457a3869580e runtime_id=c55feddd-7910-480a-8f9f-9d6180b1f061 pid=29844 process_group=29844 attempt=1 latency=9m45.55s reaped=true exit_status=\"exit status 0\" wait_error=<nil> stderr_bytes=314 stderr_truncated=false",
+    "10:39:28.329 INF task completed component=daemon task=01a1d2bd-578c-713c-ba66-457a3869580e status=completed",
+    "10:39:28.373 INF task phase recorded component=daemon task=01a1d2bd-578c-713c-ba66-457a3869580e task_id=01a1d2bd-578c-713c-ba66-457a3869580e runtime_id=c55feddd-7910-480a-8f9f-9d6180b1f061 task_phase=finished phase_elapsed_ms=75 total_elapsed_ms=585999"
+  ]
+}

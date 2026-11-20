@@ -1,0 +1,769 @@
+{
+  "at": "2026-11-13T06:34:38.500Z",
+  "scope": "M10 real Runtime E2E; isolated test Work Item 260986",
+  "copies": [
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir\\M10-clone-preflight-before-auth-fix.json",
+      "file": "prepare-M10-clone-preflight-before-auth-fix.json",
+      "sha256": "747d3bdfcb900996412aa36331f4d3b7bd0cee3fd8a0cdc804660f089fed3c2c"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir\\M10-clone-preflight-before-proxy-fix.json",
+      "file": "prepare-M10-clone-preflight-before-proxy-fix.json",
+      "sha256": "1dc067fcab430a7a6aaf5fe371137edc3b230e3a2c204d645532ece656c4c278"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir\\M10-clone-preflight-direct-before-timeout-fix.json",
+      "file": "prepare-M10-clone-preflight-direct-before-timeout-fix.json",
+      "sha256": "2a7470f5293f6a4e7efee7c3fa5cd8b8e5bff5cbb055f1e40cae4e9d80f068ad"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir\\M10-clone-preflight-full-before-shallow.json",
+      "file": "prepare-M10-clone-preflight-full-before-shallow.json",
+      "sha256": "3e97d8a8e14b21f46175d63785d43baee6ef453e434302afa5b4e92c091e26b2"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir\\M10-clone-preflight.json",
+      "file": "prepare-M10-clone-preflight.json",
+      "sha256": "2a7470f5293f6a4e7efee7c3fa5cd8b8e5bff5cbb055f1e40cae4e9d80f068ad"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir\\M10-injected-failures.jsonl",
+      "file": "prepare-M10-injected-failures.jsonl",
+      "sha256": "499f5a7251f299d519a21c0d2eb453440b8086405956550dc39ac55689d022b0"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir\\M10-prepare-before-import-fix.json",
+      "file": "prepare-M10-prepare-before-import-fix.json",
+      "sha256": "79b911f0694911310628aca21504ed733d49651216b730c6f3db7c5d2a7e6a36"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir\\M10-prepare-runtime-evidence.json",
+      "file": "prepare-M10-prepare-runtime-evidence.json",
+      "sha256": "82f21eef0256e15eb14c046ac30aeedd668ee89d77d60199020da17ffa09ffac"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir\\M10-runtime-registry.json",
+      "file": "prepare-M10-runtime-registry.json",
+      "sha256": "2a98d66877cf115040d1ff656b490896ef89d8e49bd21fcbae1fcdb84ddc8ab0"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir\\prepare-before-import-fix.stderr.log",
+      "file": "prepare-prepare-before-import-fix.stderr.log",
+      "sha256": "8f6e0264bb65f53d67149b59d99071f54f8998780aa578649e3dbae768d2912c"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir\\prepare-push-before-metadata.stderr.log",
+      "file": "prepare-prepare-push-before-metadata.stderr.log",
+      "sha256": "ae397fd20c41ae7df822d6967af781d77ea6085d3a90702e2e18a0c698ffca40"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir\\prepare-push-before-metadata.stdout.json",
+      "file": "prepare-prepare-push-before-metadata.stdout.json",
+      "sha256": "730ec7d4bf82d56bb151aa427dde46b4cbfc653f21508e77231362f56205184a"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir\\prepare-recovered.stderr.log",
+      "file": "prepare-prepare-recovered.stderr.log",
+      "sha256": "d0e8554152e97bec1bbb21946a1d4aeaceb876f0a3ffd09986adf30b8474b237"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir\\prepare-recovered.stdout.json",
+      "file": "prepare-prepare-recovered.stdout.json",
+      "sha256": "0fda114737ded21e6c4b3378ce4a7c0c8c50f5b6ddbe9d81ec95103df1d4331d"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir\\complete-idempotent.stderr.log",
+      "file": "finish-complete-idempotent.stderr.log",
+      "sha256": "cf30c3c012998d36b214f87ebc399be09ced70d60d6d36ca56c875304eda87bd"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir\\complete-idempotent.stdout.json",
+      "file": "finish-complete-idempotent.stdout.json",
+      "sha256": "c99db31aa367d2f54ba3c617f1181aca06a34669e80021f5152f5bd6eb30cd57"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir\\complete-interrupted.stderr.log",
+      "file": "finish-complete-interrupted.stderr.log",
+      "sha256": "829725304d17454ea1995e1e392596b407d5d67d2bcf2f0ab7352216a9142d97"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir\\complete-interrupted.stdout.json",
+      "file": "finish-complete-interrupted.stdout.json",
+      "sha256": "5b3e7ce7a34f133c5b3ec0512e369230d7d1c24b529304dba72df8de33110622"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir\\complete-recovered.stderr.log",
+      "file": "finish-complete-recovered.stderr.log",
+      "sha256": "794a6251ede796ebbb415f0a4e6b3efaa0e64d8e6a6cf46f7e3081baf5448d13"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir\\complete-recovered.stdout.json",
+      "file": "finish-complete-recovered.stdout.json",
+      "sha256": "bb5cee1a7ff09e1c3f792e0916bcd87dfa181143f961f353d6224ec1e5d040b3"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir\\M10-finish-before-estimate.json",
+      "file": "finish-M10-finish-before-estimate.json",
+      "sha256": "3385cd44957f08c681d699b51eebfe79268fc3ce92135644c4c96861ed4c966a"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir\\M10-finish-runtime-evidence.json",
+      "file": "finish-M10-finish-runtime-evidence.json",
+      "sha256": "92c27fe60b20edc0fb6667f748176bc2fbc7e8f3bac343342816091d4eed0dcd"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir\\M10-injected-failures.jsonl",
+      "file": "finish-M10-injected-failures.jsonl",
+      "sha256": "d5dd79e5ee8c3238a3da4be4b1b6e62a0747ea35d516c3a298f3653eba0d9735"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir\\M10-runtime-registry.json",
+      "file": "finish-M10-runtime-registry.json",
+      "sha256": "2a98d66877cf115040d1ff656b490896ef89d8e49bd21fcbae1fcdb84ddc8ab0"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir\\M10-test-estimate-precondition.json",
+      "file": "finish-M10-test-estimate-precondition.json",
+      "sha256": "f2c31689bd277587bcedfb17b6b1cd262e900f08774a1c40d81e4ab2c6b21b30"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir\\writeback-before-estimate.stderr.log",
+      "file": "finish-writeback-before-estimate.stderr.log",
+      "sha256": "6fc038eec5cf499ce3bc8a7819c347865e01427baaef7e161957f127f5c0836a"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir\\writeback-before-estimate.stdout.json",
+      "file": "finish-writeback-before-estimate.stdout.json",
+      "sha256": "0275a31df524820f751bea036c8b16e52bb2e22f303700eb61684fafd0d62634"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir\\writeback-idempotent.stderr.log",
+      "file": "finish-writeback-idempotent.stderr.log",
+      "sha256": "624d94288515433c7181cca10e8916c305b972384703ab229485274da2636f63"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir\\writeback-idempotent.stdout.json",
+      "file": "finish-writeback-idempotent.stdout.json",
+      "sha256": "7af8c031ca5060e7452e7c8cd594c35fa636322fe1b42590d181fdc68f2e7601"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir\\writeback-interrupted.stderr.log",
+      "file": "finish-writeback-interrupted.stderr.log",
+      "sha256": "eec71edc6dd1ad74b0fa9c4dc06abdd2f6f78ea9f6dd5875e3c522c483789a9c"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir\\writeback-interrupted.stdout.json",
+      "file": "finish-writeback-interrupted.stdout.json",
+      "sha256": "aed341794bd3eabeecd7a7d6cd0c0f9439fbeeff8a5d5f39b31f61dbf10d3334"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir\\writeback-recovered.stderr.log",
+      "file": "finish-writeback-recovered.stderr.log",
+      "sha256": "b801706b61373f9b0a490b3d1ad4157c0199b5ff58ee062806e36ee103bac964"
+    },
+    {
+      "source": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir\\writeback-recovered.stdout.json",
+      "file": "finish-writeback-recovered.stdout.json",
+      "sha256": "89883d64cfb69694eabc14a493da8a14dda1ea8ba794cf03ca5984953d6f3c01"
+    }
+  ],
+  "runs": {
+    "prepare": [
+      {
+        "id": "01a1d38d-3b24-79b2-ac68-eedd41779655",
+        "status": "completed",
+        "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+        "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir"
+      },
+      {
+        "id": "01a1d386-1ac2-7ea1-88ac-869b408509eb",
+        "status": "completed",
+        "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+        "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir"
+      },
+      {
+        "id": "01a1d37b-5117-7426-b380-ec79b716a4b4",
+        "status": "completed",
+        "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+        "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir"
+      },
+      {
+        "id": "01a1d376-a69b-714d-9bad-46d52c60f3a2",
+        "status": "completed",
+        "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+        "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir"
+      }
+    ],
+    "finish": [
+      {
+        "id": "01a1d39a-3257-7223-9682-ee63b4d09f44",
+        "status": "completed",
+        "runtime_id": "ff1ff20b-e112-4011-a8b3-f65a9472f5fa",
+        "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir"
+      },
+      {
+        "id": "01a1d397-65d8-7c3d-8d6f-1852c0df3078",
+        "status": "completed",
+        "runtime_id": "ff1ff20b-e112-4011-a8b3-f65a9472f5fa",
+        "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir"
+      }
+    ]
+  },
+  "checks": [
+    {
+      "name": "copy_prepare_M10-clone-preflight-before-auth-fix.json",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_prepare_M10-clone-preflight-before-proxy-fix.json",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_prepare_M10-clone-preflight-direct-before-timeout-fix.json",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_prepare_M10-clone-preflight-full-before-shallow.json",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_prepare_M10-clone-preflight.json",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_prepare_M10-injected-failures.jsonl",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_prepare_M10-prepare-before-import-fix.json",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_prepare_M10-prepare-runtime-evidence.json",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_prepare_M10-runtime-registry.json",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_prepare_prepare-before-import-fix.stderr.log",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_prepare_prepare-push-before-metadata.stderr.log",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_prepare_prepare-push-before-metadata.stdout.json",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_prepare_prepare-recovered.stderr.log",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_prepare_prepare-recovered.stdout.json",
+      "result": "PASS"
+    },
+    {
+      "name": "prepare_all_assertions",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_finish_complete-idempotent.stderr.log",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_finish_complete-idempotent.stdout.json",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_finish_complete-interrupted.stderr.log",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_finish_complete-interrupted.stdout.json",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_finish_complete-recovered.stderr.log",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_finish_complete-recovered.stdout.json",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_finish_M10-finish-before-estimate.json",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_finish_M10-finish-runtime-evidence.json",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_finish_M10-injected-failures.jsonl",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_finish_M10-runtime-registry.json",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_finish_M10-test-estimate-precondition.json",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_finish_writeback-before-estimate.stderr.log",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_finish_writeback-before-estimate.stdout.json",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_finish_writeback-idempotent.stderr.log",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_finish_writeback-idempotent.stdout.json",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_finish_writeback-interrupted.stderr.log",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_finish_writeback-interrupted.stdout.json",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_finish_writeback-recovered.stderr.log",
+      "result": "PASS"
+    },
+    {
+      "name": "copy_finish_writeback-recovered.stdout.json",
+      "result": "PASS"
+    },
+    {
+      "name": "finish_all_assertions",
+      "result": "PASS"
+    },
+    {
+      "name": "different_runtime",
+      "result": "PASS"
+    },
+    {
+      "name": "different_task_directory",
+      "result": "PASS"
+    },
+    {
+      "name": "delivery_done",
+      "result": "PASS"
+    },
+    {
+      "name": "pending_cleared",
+      "result": "PASS"
+    },
+    {
+      "name": "one_real_child",
+      "result": "PASS"
+    },
+    {
+      "name": "tfs_parent_child_resolved",
+      "result": "PASS"
+    },
+    {
+      "name": "one_parent_writeback_comment",
+      "result": "PASS"
+    },
+    {
+      "name": "archive_confirmed_after_runtime_cleanup",
+      "result": "PASS"
+    }
+  ],
+  "prepare": {
+    "task": "01a1d38d-3b24-79b2-ac68-eedd41779655",
+    "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir",
+    "assertions": 11
+  },
+  "finish": {
+    "task": "01a1d39a-3257-7223-9682-ee63b4d09f44",
+    "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir",
+    "assertions": 23
+  },
+  "tfs": {
+    "parent": 260986,
+    "parent_rev": 6,
+    "child": 264845,
+    "child_rev": 5
+  },
+  "archive": {
+    "commit": "d553258433671727d8aa09cbcfb5d6450b6d65e4",
+    "branch": "codex/m10-260986-20261113-root",
+    "files": [
+      {
+        "file": ".openspec.yaml",
+        "sha256": "773b8924915be82d6f32922729db3989c126040c71158ef2ed7effc931887d83"
+      },
+      {
+        "file": "evidence.json",
+        "sha256": "f8939719396fc95ea948c2a7da019bfccacb6d1f850556ab744244231e0b589e"
+      },
+      {
+        "file": "proposal.md",
+        "sha256": "91142125094d5b339b8c642c48e731feed942b7ba673385a8e5cd910791bc0e1"
+      },
+      {
+        "file": "tasks.md",
+        "sha256": "5880d2c4605cbbd9f14330e4404c127d7de9dcaf4db1550b44a281c6bbd3b003"
+      }
+    ]
+  },
+  "secret_scan": {
+    "actual_tfs_credential_matches": 0,
+    "files": 74
+  },
+  "artifacts": [
+    {
+      "file": "collect-final.mjs",
+      "sha256": "c44486987e9ae5a5850ec5310cf8bed86f244d27ddd57ab5567c6833ca15806e"
+    },
+    {
+      "file": "configure-test-estimate.mjs",
+      "sha256": "cfc51799cf2b82a69df1f73883e17c4d2bd58edf7ae2b583a0f7620c507a2ff7"
+    },
+    {
+      "file": "controller-clone-probe.json",
+      "sha256": "9f120f51c81776e7e19c514a94f9e765f666ae6e6190718a73295179134f8400"
+    },
+    {
+      "file": "controller-clone-probe.mjs",
+      "sha256": "00e94ceb972bcd872705a8366a1f3f1e0777b68f2bf9cab35efcce19912e2b0a"
+    },
+    {
+      "file": "controller-diagnostic-clone-cleanup.json",
+      "sha256": "f013c625b0bd9a2ecad315d23ba3b466f6061cbc90d656922afb74157e60177f"
+    },
+    {
+      "file": "delivery-final.json",
+      "sha256": "e10fb50a6269f229076f5c611a0a2da9f78cdad0508025b886ced2f6128a8d2e"
+    },
+    {
+      "file": "finish-complete-idempotent.stderr.log",
+      "sha256": "cf30c3c012998d36b214f87ebc399be09ced70d60d6d36ca56c875304eda87bd"
+    },
+    {
+      "file": "finish-complete-idempotent.stdout.json",
+      "sha256": "c99db31aa367d2f54ba3c617f1181aca06a34669e80021f5152f5bd6eb30cd57"
+    },
+    {
+      "file": "finish-complete-interrupted.stderr.log",
+      "sha256": "829725304d17454ea1995e1e392596b407d5d67d2bcf2f0ab7352216a9142d97"
+    },
+    {
+      "file": "finish-complete-interrupted.stdout.json",
+      "sha256": "5b3e7ce7a34f133c5b3ec0512e369230d7d1c24b529304dba72df8de33110622"
+    },
+    {
+      "file": "finish-complete-recovered.stderr.log",
+      "sha256": "794a6251ede796ebbb415f0a4e6b3efaa0e64d8e6a6cf46f7e3081baf5448d13"
+    },
+    {
+      "file": "finish-complete-recovered.stdout.json",
+      "sha256": "bb5cee1a7ff09e1c3f792e0916bcd87dfa181143f961f353d6224ec1e5d040b3"
+    },
+    {
+      "file": "finish-estimate-resume.md",
+      "sha256": "222b6215a06d62760004cfd78b7be1b0656a82916e9dde892275da045a1af441"
+    },
+    {
+      "file": "finish-M10-finish-before-estimate.json",
+      "sha256": "3385cd44957f08c681d699b51eebfe79268fc3ce92135644c4c96861ed4c966a"
+    },
+    {
+      "file": "finish-M10-finish-runtime-evidence.json",
+      "sha256": "92c27fe60b20edc0fb6667f748176bc2fbc7e8f3bac343342816091d4eed0dcd"
+    },
+    {
+      "file": "finish-M10-injected-failures.jsonl",
+      "sha256": "d5dd79e5ee8c3238a3da4be4b1b6e62a0747ea35d516c3a298f3653eba0d9735"
+    },
+    {
+      "file": "finish-M10-runtime-registry.json",
+      "sha256": "2a98d66877cf115040d1ff656b490896ef89d8e49bd21fcbae1fcdb84ddc8ab0"
+    },
+    {
+      "file": "finish-M10-test-estimate-precondition.json",
+      "sha256": "f2c31689bd277587bcedfb17b6b1cd262e900f08774a1c40d81e4ab2c6b21b30"
+    },
+    {
+      "file": "finish-runs.json",
+      "sha256": "7135a5105394415256f8f2a57e4721384dbea1e1b48d29aedf601c32a4ff4234"
+    },
+    {
+      "file": "finish-task.md",
+      "sha256": "2754b5628aeb7a18258842cc17b42932db48dd7f3be051499bb8585b3c4af7a0"
+    },
+    {
+      "file": "finish-writeback-before-estimate.stderr.log",
+      "sha256": "6fc038eec5cf499ce3bc8a7819c347865e01427baaef7e161957f127f5c0836a"
+    },
+    {
+      "file": "finish-writeback-before-estimate.stdout.json",
+      "sha256": "0275a31df524820f751bea036c8b16e52bb2e22f303700eb61684fafd0d62634"
+    },
+    {
+      "file": "finish-writeback-idempotent.stderr.log",
+      "sha256": "624d94288515433c7181cca10e8916c305b972384703ab229485274da2636f63"
+    },
+    {
+      "file": "finish-writeback-idempotent.stdout.json",
+      "sha256": "7af8c031ca5060e7452e7c8cd594c35fa636322fe1b42590d181fdc68f2e7601"
+    },
+    {
+      "file": "finish-writeback-interrupted.stderr.log",
+      "sha256": "eec71edc6dd1ad74b0fa9c4dc06abdd2f6f78ea9f6dd5875e3c522c483789a9c"
+    },
+    {
+      "file": "finish-writeback-interrupted.stdout.json",
+      "sha256": "aed341794bd3eabeecd7a7d6cd0c0f9439fbeeff8a5d5f39b31f61dbf10d3334"
+    },
+    {
+      "file": "finish-writeback-recovered.stderr.log",
+      "sha256": "b801706b61373f9b0a490b3d1ad4157c0199b5ff58ee062806e36ee103bac964"
+    },
+    {
+      "file": "finish-writeback-recovered.stdout.json",
+      "sha256": "89883d64cfb69694eabc14a493da8a14dda1ea8ba794cf03ca5984953d6f3c01"
+    },
+    {
+      "file": "fixture-state.json",
+      "sha256": "8707208a0a87332a0cf5d68fd8d6e1aa92b1e1f2026f475489cad121c9e6dc18"
+    },
+    {
+      "file": "fixture.mjs",
+      "sha256": "260fdd57f02cc7ad4fdac9804fe8cefb6eb701e873edb9987a974324e779c20d"
+    },
+    {
+      "file": "git-protocol-probe.mjs",
+      "sha256": "d2ce57415098f389fe489dacc3eea7256d3e2c3b0386d8c7f0e8cac34a805315"
+    },
+    {
+      "file": "implementation-review.md",
+      "sha256": "f57d275751c9b00f496d8a832a239a4589bf1c7f342beee92140716fa0d369dc"
+    },
+    {
+      "file": "inject-failure.mjs",
+      "sha256": "1e0592348e53aa39f27a6b4aaabd3f53ba5445b4685dff5fe2d11f6481c79af2"
+    },
+    {
+      "file": "inspect-pr.mjs",
+      "sha256": "c86718322cff1428803e370dbc7c6c53f54219564b971786d4cf3cc168ef08b6"
+    },
+    {
+      "file": "mingit-event.trace",
+      "sha256": "ea27c75fa7cb6e5e4a122ce895b9df88308c319d2e8372bdcea430c73f7b0105"
+    },
+    {
+      "file": "mingit-packet.trace",
+      "sha256": "def28c30508fdd92ac10e31f3037b6a075327e81b1051e89887601bfb095cbeb"
+    },
+    {
+      "file": "mingit-protocol-probe.json",
+      "sha256": "b5ec533db152c3f9c627d641165bcabbf87d35c957db4c24830426fc26c83928"
+    },
+    {
+      "file": "pr-completion-observation.json",
+      "sha256": "590fd1dba5cfe2dcbbb58124bc31a0361e484594b19bec42bb9af7af3c3267ba"
+    },
+    {
+      "file": "pr-diagnostic.json",
+      "sha256": "10806933694a347a8ca01ed77fc0ea1ef10c692e5881c8b4c96ebac766261fda"
+    },
+    {
+      "file": "prepare-import-resume.md",
+      "sha256": "1944606c4247c0a04ae0f84aae8cee91e40a6ad88c77dfa77cb3aa678e79fc65"
+    },
+    {
+      "file": "prepare-large-root-resume.md",
+      "sha256": "607ff4a8b3ff4836770494ca643dc057bc22bbee02eb21f28b03a7c33c894e83"
+    },
+    {
+      "file": "prepare-M10-clone-preflight-before-auth-fix.json",
+      "sha256": "747d3bdfcb900996412aa36331f4d3b7bd0cee3fd8a0cdc804660f089fed3c2c"
+    },
+    {
+      "file": "prepare-M10-clone-preflight-before-proxy-fix.json",
+      "sha256": "1dc067fcab430a7a6aaf5fe371137edc3b230e3a2c204d645532ece656c4c278"
+    },
+    {
+      "file": "prepare-M10-clone-preflight-direct-before-timeout-fix.json",
+      "sha256": "2a7470f5293f6a4e7efee7c3fa5cd8b8e5bff5cbb055f1e40cae4e9d80f068ad"
+    },
+    {
+      "file": "prepare-M10-clone-preflight-full-before-shallow.json",
+      "sha256": "3e97d8a8e14b21f46175d63785d43baee6ef453e434302afa5b4e92c091e26b2"
+    },
+    {
+      "file": "prepare-M10-clone-preflight.json",
+      "sha256": "2a7470f5293f6a4e7efee7c3fa5cd8b8e5bff5cbb055f1e40cae4e9d80f068ad"
+    },
+    {
+      "file": "prepare-M10-injected-failures.jsonl",
+      "sha256": "499f5a7251f299d519a21c0d2eb453440b8086405956550dc39ac55689d022b0"
+    },
+    {
+      "file": "prepare-M10-prepare-before-import-fix.json",
+      "sha256": "79b911f0694911310628aca21504ed733d49651216b730c6f3db7c5d2a7e6a36"
+    },
+    {
+      "file": "prepare-M10-prepare-runtime-evidence.json",
+      "sha256": "82f21eef0256e15eb14c046ac30aeedd668ee89d77d60199020da17ffa09ffac"
+    },
+    {
+      "file": "prepare-M10-runtime-registry.json",
+      "sha256": "2a98d66877cf115040d1ff656b490896ef89d8e49bd21fcbae1fcdb84ddc8ab0"
+    },
+    {
+      "file": "prepare-prepare-before-import-fix.stderr.log",
+      "sha256": "8f6e0264bb65f53d67149b59d99071f54f8998780aa578649e3dbae768d2912c"
+    },
+    {
+      "file": "prepare-prepare-push-before-metadata.stderr.log",
+      "sha256": "ae397fd20c41ae7df822d6967af781d77ea6085d3a90702e2e18a0c698ffca40"
+    },
+    {
+      "file": "prepare-prepare-push-before-metadata.stdout.json",
+      "sha256": "730ec7d4bf82d56bb151aa427dde46b4cbfc653f21508e77231362f56205184a"
+    },
+    {
+      "file": "prepare-prepare-recovered.stderr.log",
+      "sha256": "d0e8554152e97bec1bbb21946a1d4aeaceb876f0a3ffd09986adf30b8474b237"
+    },
+    {
+      "file": "prepare-prepare-recovered.stdout.json",
+      "sha256": "0fda114737ded21e6c4b3378ce4a7c0c8c50f5b6ddbe9d81ec95103df1d4331d"
+    },
+    {
+      "file": "prepare-proxy-resume.md",
+      "sha256": "38c6231535445c739d1f9a21be78238a9a1a75c0e75eb836db5e037f97abafc7"
+    },
+    {
+      "file": "prepare-resume.md",
+      "sha256": "7d0ed10028ffb824a10567f7fb72bfd8dda9d526ddb1ffa6261b472f02384003"
+    },
+    {
+      "file": "prepare-runs.json",
+      "sha256": "beb30339b0f4a5f6f44a1c94599d84fb02d709721d7727c77e44121f4bab137b"
+    },
+    {
+      "file": "prepare-shallow-resume.md",
+      "sha256": "996a611d30df68925e64c76baf6793f65dc0372f3f70ba9e659d4391ffbfa748"
+    },
+    {
+      "file": "prepare-task.md",
+      "sha256": "a0ce5de66080e6c8b6e4d7306b598177e22f25bb7848dd62d33d441ef4aa866c"
+    },
+    {
+      "file": "rondo-auth-fix-regression.log",
+      "sha256": "0bd816692c732e46a81d04b970e9b08a7343d140cfc8ee6a2086ef4308ffdce4"
+    },
+    {
+      "file": "rondo-final-build-check.log",
+      "sha256": "9ffc06c8c4ab595fdcf89c9b46832b704c23894a265a79154e857d53420de07b"
+    },
+    {
+      "file": "rondo-final-full-regression.log",
+      "sha256": "07aabcc59aa5f0691d039621143adc237670e026086d845d9319c15d175b968b"
+    },
+    {
+      "file": "rondo-full-regression.log",
+      "sha256": "6a9668cdf892e290da3a035f44c26bd70ea4f9008c39d0687061640e0367c4f8"
+    },
+    {
+      "file": "runtime-clone-preflight.mjs",
+      "sha256": "7c3cf53e437a80157c3e03e9bc74520857670caf001dd3e009b5b253e90593c7"
+    },
+    {
+      "file": "runtime-driver.mjs",
+      "sha256": "74c39d9b3450db272a476aeb3a719758e9e3b044ce25f2b3b112ae67ca7b897b"
+    },
+    {
+      "file": "runtime-setup.json",
+      "sha256": "8e203a145fd639a6b6584f49155ccd6bc283679a4c44f5b39d48c483b918a6ca"
+    },
+    {
+      "file": "setup-runtime.mjs",
+      "sha256": "272877c35081250a391dce76f7186e125f0473c567c7a2aaa425281f528040ef"
+    },
+    {
+      "file": "system-event.trace",
+      "sha256": "9a079be1b80751459a0e3a8717dfdb72c3284794b480aa57fd60e743764db390"
+    },
+    {
+      "file": "system-packet.trace",
+      "sha256": "9bceeccfd80d80aefdedbc74a69234577ffb88a270659e1da22fe2cff5488c02"
+    },
+    {
+      "file": "system-protocol-probe.json",
+      "sha256": "5da6f1f13c4ccb3fcd6866f9d72fa98d2b48451f872b405c219a851d4e4d5af7"
+    },
+    {
+      "file": "tfs-child-final.json",
+      "sha256": "5bcf76cad15b5d0d0a6142460da0c7c5e1770bbfb742cf470dede2815abf5414"
+    },
+    {
+      "file": "tfs-parent-final.json",
+      "sha256": "3ab88ccda56994dcd65b035df638d74c5ae684199d621d0392c357caae50c494"
+    },
+    {
+      "file": "tfs-parent-updates.json",
+      "sha256": "c248a0f5f70f7bb234540b5666ccdb0dbbdd3c08fdd88beeb700612eb03b7d9d"
+    }
+  ],
+  "build": {
+    "package_version": "1.2.20 + unreleased workspace M10 adaptation",
+    "files": [
+      {
+        "file": "tools/rondo/src/clients/config.ts",
+        "sha256": "c5e4d543a8fd2c5c9c94215de6ba6249fe3c0c4022020a89448857fc9452d2cf"
+      },
+      {
+        "file": "tools/rondo/src/clients/runtime-paths.ts",
+        "sha256": "f7e4f95db3c4aadedee70bf386e88ae3a8eb543cd70716a950bd71e7343bd05a"
+      },
+      {
+        "file": "tools/rondo/src/clients/spawn.ts",
+        "sha256": "037bcf86987e55204e65eb5d8e81eb182cfab08c0f672e1c8b42dad4dc5c8808"
+      },
+      {
+        "file": "tools/rondo/src/commands/delivery/current-evidence.ts",
+        "sha256": "96367b415c133696562be0ff58ea188479985a7c5f30ffecb88c4ccd345955ee"
+      },
+      {
+        "file": "tools/rondo/src/commands/delivery/evidence-repository.ts",
+        "sha256": "ca731a42a3cc163e75f36ffda69660ecdb385c109aa3342a390b8bbd23c33319"
+      },
+      {
+        "file": "tools/rondo/src/commands/delivery/remote-artifacts.ts",
+        "sha256": "41dad8fee7532dc7c24463719846c2e59054a063f021cd8406cda8735873b704"
+      },
+      {
+        "file": "tools/rondo/src/commands/delivery/finalize.ts",
+        "sha256": "88acbac2cdbbafc3853c419874e0a03290540718d6336e023909d6a41a2ef1d3"
+      },
+      {
+        "file": "tools/rondo/src/commands/tfs/writeback.ts",
+        "sha256": "1d20430f24af278f28c340adc9367d7ed190bac556a2b6be7c015a76f143a694"
+      },
+      {
+        "file": "tools/rondo/test/remote-delivery-artifacts.test.mjs",
+        "sha256": "b894ababe6927814eaf3df0cb978bec6708925065ab225d4ffb4585078d3eb32"
+      }
+    ]
+  },
+  "overall": "PASS"
+}

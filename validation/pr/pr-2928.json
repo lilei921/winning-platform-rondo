@@ -1,0 +1,33 @@
+{
+  "pullRequestId": 2928,
+  "title": "[AI-FLOW 244504] T2 后端 DF 迁移 SQL 支持来源 schema 限定",
+  "description": "DfJobMigration 查询 datatransfer_job 时按 MigrateDto.sourceSchema 拼 schema 前缀，对齐 ODR。\n\nAI-FLOW-TASK: 8a8c3803be9f16677538af6358baf7c94b4e0bc6cc432280d779af2a2298e873:T2",
+  "status": "abandoned",
+  "sourceBranch": "codex/ai-flow-244504-T2",
+  "targetBranch": "master",
+  "author": {
+    "id": "820598f9-5595-4ba6-acdb-c80e5e52b752",
+    "displayName": "lbs(李保森)",
+    "uniqueName": "WINNING\\lbs"
+  },
+  "reviewers": [
+    {
+      "id": "820598f9-5595-4ba6-acdb-c80e5e52b752",
+      "displayName": "lbs(李保森)",
+      "vote": -10,
+      "voteDescription": "未投票"
+    }
+  ],
+  "createdDate": "2026-09-01T06:21:08.4769393Z",
+  "completedDate": "2026-09-01T07:07:37.4083073Z",
+  "repository": {
+    "id": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+    "name": "winning-dps-df-dataintegration"
+  },
+  "project": {
+    "id": "29dfa130-8e3b-40c3-bc8b-5eaa3f5be88d",
+    "name": "DP-03-数据采集管理软件"
+  },
+  "workItems": [],
+  "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_git/winning-dps-df-dataintegration/pullrequest/2928"
+}

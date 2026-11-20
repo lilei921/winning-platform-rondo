@@ -1,0 +1,50 @@
+{
+  "timestamp": "2026-11-13T12:19:29.3537671+08:00",
+  "workspace": "rondo-test",
+  "total": 6,
+  "has_more": false,
+  "issues": [
+    {
+      "id": "01a1d321-125e-715f-b0c7-7f7794478398",
+      "identifier": "TEST-7",
+      "status": "todo",
+      "analysis_source_present": false,
+      "analysis_change_ref": null
+    },
+    {
+      "id": "01a1d30c-a93a-7662-8d4e-ab81d77aaae2",
+      "identifier": "TEST-6",
+      "status": "in_review",
+      "analysis_source_present": false,
+      "analysis_change_ref": null
+    },
+    {
+      "id": "01a1d2fc-da1d-7d67-8a0f-2edfc29c0259",
+      "identifier": "TEST-5",
+      "status": "in_review",
+      "analysis_source_present": false,
+      "analysis_change_ref": null
+    },
+    {
+      "id": "01a1d2d3-4c41-78de-9926-f0555e951ad9",
+      "identifier": "TEST-3",
+      "status": "todo",
+      "analysis_source_present": false,
+      "analysis_change_ref": null
+    },
+    {
+      "id": "01a1d2f7-1170-7db0-88a9-cf4af76d8a6f",
+      "identifier": "TEST-4",
+      "status": "in_review",
+      "analysis_source_present": false,
+      "analysis_change_ref": null
+    },
+    {
+      "id": "01a1d2bd-5780-7a2e-a75a-d5bc7b6d8134",
+      "identifier": "TEST-2",
+      "status": "todo",
+      "analysis_source_present": false,
+      "analysis_change_ref": null
+    }
+  ]
+}

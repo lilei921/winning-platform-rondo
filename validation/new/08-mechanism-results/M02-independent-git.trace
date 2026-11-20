@@ -1,0 +1,20 @@
+## local_clone_bare_trace
+12:35:54.815055 exec-cmd.c:266          trace: resolved executable dir: C:/Users/lilei/.multica/tools/mingit-busybox-2.54.0/mingw64/bin
+12:35:54.818052 git.c:502               trace: built-in: git clone --bare 'C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-8-909e55251162\workdir\validation-fixture\seed' 'C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-8-909e55251162\workdir\validation-fixture\common-fixture.git'
+Cloning into bare repository 'C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-8-909e55251162\workdir\validation-fixture\common-fixture.git'...
+12:35:54.848722 run-command.c:673       trace: run_command: unset GIT_DIR; GIT_PROTOCOL=version=2 'git-upload-pack '\''C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-8-909e55251162\workdir\validation-fixture\seed/.git'\'''
+12:35:54.848722 run-command.c:934       trace: start_command: C:/Users/lilei/.multica/tools/mingit-busybox-2.54.0/mingw64/bin/sh.exe -c 'git-upload-pack '\''C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-8-909e55251162\workdir\validation-fixture\seed/.git'\''' 'git-upload-pack '\''C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-8-909e55251162\workdir\validation-fixture\seed/.git'\'''
+12:35:54.885570 exec-cmd.c:266          trace: resolved executable dir: C:/Users/lilei/.multica/tools/mingit-busybox-2.54.0/mingw64/bin
+12:35:54.889179 git.c:502               trace: built-in: git upload-pack 'C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-8-909e55251162\\workdir\\validation-fixture\\seed/.git'
+done.
+
+
+## local_clone_child_trace
+12:35:54.953140 exec-cmd.c:266          trace: resolved executable dir: C:/Users/lilei/.multica/tools/mingit-busybox-2.54.0/mingw64/bin
+12:35:54.956694 git.c:502               trace: built-in: git clone 'C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-8-909e55251162\workdir\validation-fixture\common-fixture.git' 'C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-8-909e55251162\workdir\winning-platform-monorepo\winning-dps-df-common'
+Cloning into 'C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-8-909e55251162\workdir\winning-platform-monorepo\winning-dps-df-common'...
+12:35:54.988710 run-command.c:673       trace: run_command: unset GIT_DIR; GIT_PROTOCOL=version=2 'git-upload-pack '\''C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-8-909e55251162\workdir\validation-fixture\common-fixture.git'\'''
+12:35:54.988710 run-command.c:934       trace: start_command: C:/Users/lilei/.multica/tools/mingit-busybox-2.54.0/mingw64/bin/sh.exe -c 'git-upload-pack '\''C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-8-909e55251162\workdir\validation-fixture\common-fixture.git'\''' 'git-upload-pack '\''C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-8-909e55251162\workdir\validation-fixture\common-fixture.git'\'''
+12:35:55.026610 exec-cmd.c:266          trace: resolved executable dir: C:/Users/lilei/.multica/tools/mingit-busybox-2.54.0/mingw64/bin
+12:35:55.029611 git.c:502               trace: built-in: git upload-pack 'C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-8-909e55251162\\workdir\\validation-fixture\\common-fixture.git'
+done.

@@ -1,0 +1,264 @@
+{
+  "started_at": "2026-11-13T06:18:56.161Z",
+  "mode": "prepare",
+  "issue": "TEST-13",
+  "task_id": "01a1d38d-3b24-79b2-ac68-eedd41779655",
+  "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir",
+  "checks": [
+    {
+      "name": "only_authorized_workitem",
+      "result": "PASS"
+    },
+    {
+      "name": "no_local_git_checkout",
+      "result": "PASS"
+    },
+    {
+      "name": "no_original_engineer_path",
+      "result": "PASS"
+    },
+    {
+      "name": "injected_after_real_archive_push",
+      "result": "PASS"
+    },
+    {
+      "name": "archive_is_remote_without_prepared_marker",
+      "result": "PASS"
+    },
+    {
+      "name": "published_temporary_root_deleted",
+      "result": "PASS"
+    },
+    {
+      "name": "prepare_did_not_write_tfs",
+      "result": "PASS"
+    },
+    {
+      "name": "prepare_recovered_pass",
+      "result": "PASS"
+    },
+    {
+      "name": "prepare_recovery_did_not_republish",
+      "result": "PASS"
+    },
+    {
+      "name": "prepared_marker_confirmed",
+      "result": "PASS"
+    },
+    {
+      "name": "no_remaining_temp_roots",
+      "result": "PASS"
+    }
+  ],
+  "commands": [
+    {
+      "label": "prepare-push-before-metadata",
+      "started_at": "2026-11-13T06:18:58.106Z",
+      "finished_at": "2026-11-13T06:27:15.088Z",
+      "argv": [
+        "--import",
+        "file:///D:/UserProgram/winning-platform-monorepo/projects/multica/validation/new/08-mechanism-results/M10-e2e/inject-failure.mjs",
+        "D:/UserProgram/winning-platform-monorepo/tools/rondo/dist/index.js",
+        "delivery",
+        "finalize",
+        "--phase",
+        "prepare",
+        "--config",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir\\M10-runtime-registry.json",
+        "--issue",
+        "TEST-13"
+      ],
+      "fault": "after_archive_push",
+      "exit": 3,
+      "response": {
+        "result": "UNKNOWN",
+        "reason": "M10_INJECTED_after_archive_push: Git archive published; before prepared_change_ref metadata write"
+      }
+    },
+    {
+      "label": "prepare-recovered",
+      "started_at": "2026-11-13T06:27:19.618Z",
+      "finished_at": "2026-11-13T06:27:22.584Z",
+      "argv": [
+        "D:/UserProgram/winning-platform-monorepo/tools/rondo/dist/index.js",
+        "delivery",
+        "finalize",
+        "--phase",
+        "prepare",
+        "--config",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir\\M10-runtime-registry.json",
+        "--issue",
+        "TEST-13"
+      ],
+      "fault": null,
+      "exit": 0,
+      "response": {
+        "result": "PASS",
+        "issue": "TEST-13",
+        "status": "prepared",
+        "steps": {
+          "remote_artifacts": {
+            "status": "done",
+            "detail": {
+              "repo_url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+              "branch": "codex/m10-260986-20261113-root",
+              "commit": "d553258433671727d8aa09cbcfb5d6450b6d65e4",
+              "archived": true
+            }
+          },
+          "pr_transition_gate": {
+            "status": "done"
+          },
+          "pending_written": {
+            "status": "skipped",
+            "detail": "已存在（恢复模式，按当前事实补齐）"
+          },
+          "workspace_reconciliation": {
+            "status": "skipped",
+            "detail": "业务交付已由远端 PR / 精确候选证明，不依赖原 Runtime 工作区"
+          },
+          "completion_gate": {
+            "status": "done"
+          },
+          "route_archive": {
+            "status": "done",
+            "detail": {
+              "archive": "skipped_already_archived",
+              "pushed": true,
+              "commit": "d553258433671727d8aa09cbcfb5d6450b6d65e4"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "snapshots": [
+    {
+      "label": "before",
+      "at": "2026-11-13T06:18:57.867Z",
+      "issue_id": "01a1d372-e8b3-7ebc-abe0-fe6d3aff8601",
+      "status": "todo",
+      "metadata": {
+        "analysis.change_kind": "corrective",
+        "analysis.change_ref": "m10-260986-runtime-recovery",
+        "analysis.gate.result": "PASS",
+        "analysis.human_approval": "{\"decision\":\"approved\",\"by\":\"用户授权的 M10 测试 fixture\",\"at\":\"2026-11-13T05:48:01.275Z\",\"comment_ref\":\"01a1d372-e977-7996-a11c-0c1cf764ca32\",\"verify_agent_required\":false,\"source\":{\"repo_url\":\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\",\"branch\":\"codex/m10-260986-20261113-root\",\"commit\":\"d3837be33c721e9b33bacb1d075cf2f4904e65e5\",\"change_ref\":\"m10-260986-runtime-recovery\"}}",
+        "analysis.source": "{\"repo_url\":\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\",\"branch\":\"codex/m10-260986-20261113-root\",\"commit\":\"d3837be33c721e9b33bacb1d075cf2f4904e65e5\",\"change_ref\":\"m10-260986-runtime-recovery\"}",
+        "current_pr": "[{\"repo_key\":\"frame\",\"pr_id\":3773,\"pr_url\":\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame/pullrequest/3773\",\"source_branch\":\"codex/m10-260986-20261113-source\",\"target_branch\":\"codex/m10-260986-20261113-target\"}]",
+        "dev.dispatch": "[{\"dispatch_key\":\"m10-runtime-260986\",\"change_ref\":\"m10-260986-runtime-recovery\",\"task_refs\":[\"1.1\"],\"active\":true,\"analysis_source\":{\"repo_url\":\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\",\"branch\":\"codex/m10-260986-20261113-root\",\"commit\":\"d3837be33c721e9b33bacb1d075cf2f4904e65e5\",\"change_ref\":\"m10-260986-runtime-recovery\"}}]",
+        "pr_prep": "[{\"repo_key\":\"frame\",\"candidate_commit\":\"5df24d44cc22bf2dfd2c4d45164c5bd8aad00479\"}]",
+        "tfs.id": "260986",
+        "tfs.type": "需求",
+        "tfs.url": "http://tfs2018-web.winning.com.cn:8080/tfs/wn_data_platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_workitems?id=260986&_a=edit",
+        "verify_agent.required": "false"
+      },
+      "pending": null,
+      "root_commit": "a2b70f9dad7fcbf4fc413b6cb3c677f701ed88d8",
+      "archived_files": [],
+      "task_ids": [],
+      "workitem": {
+        "id": 260986,
+        "rev": 2,
+        "state": "已建议",
+        "title": "公版研发_DF框架_对接统一权限时，获取菜单接口去除language参数",
+        "relations": []
+      },
+      "children": [],
+      "summary_comments": [],
+      "temporary_roots": []
+    },
+    {
+      "label": "archive_published_metadata_failed",
+      "at": "2026-11-13T06:27:19.253Z",
+      "issue_id": "01a1d372-e8b3-7ebc-abe0-fe6d3aff8601",
+      "status": "todo",
+      "metadata": {
+        "analysis.change_kind": "corrective",
+        "analysis.change_ref": "m10-260986-runtime-recovery",
+        "analysis.gate.result": "PASS",
+        "analysis.human_approval": "{\"decision\":\"approved\",\"by\":\"用户授权的 M10 测试 fixture\",\"at\":\"2026-11-13T05:48:01.275Z\",\"comment_ref\":\"01a1d372-e977-7996-a11c-0c1cf764ca32\",\"verify_agent_required\":false,\"source\":{\"repo_url\":\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\",\"branch\":\"codex/m10-260986-20261113-root\",\"commit\":\"d3837be33c721e9b33bacb1d075cf2f4904e65e5\",\"change_ref\":\"m10-260986-runtime-recovery\"}}",
+        "analysis.source": "{\"repo_url\":\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\",\"branch\":\"codex/m10-260986-20261113-root\",\"commit\":\"d3837be33c721e9b33bacb1d075cf2f4904e65e5\",\"change_ref\":\"m10-260986-runtime-recovery\"}",
+        "current_pr": "[{\"repo_key\":\"frame\",\"pr_id\":3773,\"pr_url\":\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame/pullrequest/3773\",\"source_branch\":\"codex/m10-260986-20261113-source\",\"target_branch\":\"codex/m10-260986-20261113-target\"}]",
+        "dev.dispatch": "[{\"dispatch_key\":\"m10-runtime-260986\",\"change_ref\":\"m10-260986-runtime-recovery\",\"task_refs\":[\"1.1\"],\"active\":true,\"analysis_source\":{\"repo_url\":\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\",\"branch\":\"codex/m10-260986-20261113-root\",\"commit\":\"d3837be33c721e9b33bacb1d075cf2f4904e65e5\",\"change_ref\":\"m10-260986-runtime-recovery\"}}]",
+        "finalize.pending": "{\"event_keys\":[\"TEST-13#frame#3773#completed\"],\"recorded_at\":\"2026-11-13T06:20:03.539Z\"}",
+        "pr_prep": "[{\"repo_key\":\"frame\",\"candidate_commit\":\"5df24d44cc22bf2dfd2c4d45164c5bd8aad00479\"}]",
+        "tfs.id": "260986",
+        "tfs.type": "需求",
+        "tfs.url": "http://tfs2018-web.winning.com.cn:8080/tfs/wn_data_platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_workitems?id=260986&_a=edit",
+        "verify_agent.required": "false"
+      },
+      "pending": {
+        "event_keys": [
+          "TEST-13#frame#3773#completed"
+        ],
+        "recorded_at": "2026-11-13T06:20:03.539Z"
+      },
+      "root_commit": "d553258433671727d8aa09cbcfb5d6450b6d65e4",
+      "archived_files": [
+        "/openspec/changes/archive/2026-11-13-m10-260986-runtime-recovery/.openspec.yaml",
+        "/openspec/changes/archive/2026-11-13-m10-260986-runtime-recovery/evidence.json",
+        "/openspec/changes/archive/2026-11-13-m10-260986-runtime-recovery/proposal.md",
+        "/openspec/changes/archive/2026-11-13-m10-260986-runtime-recovery/tasks.md"
+      ],
+      "task_ids": [],
+      "workitem": {
+        "id": 260986,
+        "rev": 2,
+        "state": "已建议",
+        "title": "公版研发_DF框架_对接统一权限时，获取菜单接口去除language参数",
+        "relations": []
+      },
+      "children": [],
+      "summary_comments": [],
+      "temporary_roots": []
+    },
+    {
+      "label": "prepared",
+      "at": "2026-11-13T06:27:23.160Z",
+      "issue_id": "01a1d372-e8b3-7ebc-abe0-fe6d3aff8601",
+      "status": "todo",
+      "metadata": {
+        "analysis.change_kind": "corrective",
+        "analysis.change_ref": "m10-260986-runtime-recovery",
+        "analysis.gate.result": "PASS",
+        "analysis.human_approval": "{\"decision\":\"approved\",\"by\":\"用户授权的 M10 测试 fixture\",\"at\":\"2026-11-13T05:48:01.275Z\",\"comment_ref\":\"01a1d372-e977-7996-a11c-0c1cf764ca32\",\"verify_agent_required\":false,\"source\":{\"repo_url\":\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\",\"branch\":\"codex/m10-260986-20261113-root\",\"commit\":\"d3837be33c721e9b33bacb1d075cf2f4904e65e5\",\"change_ref\":\"m10-260986-runtime-recovery\"}}",
+        "analysis.source": "{\"repo_url\":\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\",\"branch\":\"codex/m10-260986-20261113-root\",\"commit\":\"d3837be33c721e9b33bacb1d075cf2f4904e65e5\",\"change_ref\":\"m10-260986-runtime-recovery\"}",
+        "current_pr": "[{\"repo_key\":\"frame\",\"pr_id\":3773,\"pr_url\":\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame/pullrequest/3773\",\"source_branch\":\"codex/m10-260986-20261113-source\",\"target_branch\":\"codex/m10-260986-20261113-target\"}]",
+        "dev.dispatch": "[{\"dispatch_key\":\"m10-runtime-260986\",\"change_ref\":\"m10-260986-runtime-recovery\",\"task_refs\":[\"1.1\"],\"active\":true,\"analysis_source\":{\"repo_url\":\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\",\"branch\":\"codex/m10-260986-20261113-root\",\"commit\":\"d3837be33c721e9b33bacb1d075cf2f4904e65e5\",\"change_ref\":\"m10-260986-runtime-recovery\"}}]",
+        "finalize.pending": "{\"event_keys\":[\"TEST-13#frame#3773#completed\"],\"recorded_at\":\"2026-11-13T06:20:03.539Z\",\"prepared_change_ref\":\"m10-260986-runtime-recovery\"}",
+        "pr_prep": "[{\"repo_key\":\"frame\",\"candidate_commit\":\"5df24d44cc22bf2dfd2c4d45164c5bd8aad00479\"}]",
+        "tfs.id": "260986",
+        "tfs.type": "需求",
+        "tfs.url": "http://tfs2018-web.winning.com.cn:8080/tfs/wn_data_platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_workitems?id=260986&_a=edit",
+        "verify_agent.required": "false"
+      },
+      "pending": {
+        "event_keys": [
+          "TEST-13#frame#3773#completed"
+        ],
+        "recorded_at": "2026-11-13T06:20:03.539Z",
+        "prepared_change_ref": "m10-260986-runtime-recovery"
+      },
+      "root_commit": "d553258433671727d8aa09cbcfb5d6450b6d65e4",
+      "archived_files": [
+        "/openspec/changes/archive/2026-11-13-m10-260986-runtime-recovery/.openspec.yaml",
+        "/openspec/changes/archive/2026-11-13-m10-260986-runtime-recovery/evidence.json",
+        "/openspec/changes/archive/2026-11-13-m10-260986-runtime-recovery/proposal.md",
+        "/openspec/changes/archive/2026-11-13-m10-260986-runtime-recovery/tasks.md"
+      ],
+      "task_ids": [],
+      "workitem": {
+        "id": 260986,
+        "rev": 2,
+        "state": "已建议",
+        "title": "公版研发_DF框架_对接统一权限时，获取菜单接口去除language参数",
+        "relations": []
+      },
+      "children": [],
+      "summary_comments": [],
+      "temporary_roots": []
+    }
+  ],
+  "overall": "PASS",
+  "finished_at": "2026-11-13T06:27:23.205Z"
+}

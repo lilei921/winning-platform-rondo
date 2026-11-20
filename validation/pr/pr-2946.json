@@ -1,0 +1,29 @@
+{
+  "pullRequestId": 2946,
+  "title": "#243422 项目支持_厦门弘爱医院_批量导入作业时报错，变量报重复键值，无法导入",
+  "description": "## Requirement\n#243422 项目支持_厦门弘爱医院_批量导入作业时报错，变量报重复键值，无法导入\n\n根因：etl_parameter 表中 is_del=1 幽灵记录对 saveUpgradeJob 参数保存段不可见，ADD 参数以导入包原始 id 直接 insert，撞 etl_parameter_pkey(id, org_id) 唯一约束。\n\n修复：参数保存段感知幽灵记录——ADD 按 id 命中幽灵转恢复（is_del 置 0 + updateTime 刷新），UPDATE-by-key 按业务键命中幽灵同样恢复；业务键同时命中活记录时保持原路径更新活记录，不复活幽灵（守卫防双活记录）。\n\n## Tasks\n- #244994 修复批量导入变量幽灵记录(is_del=1)撞唯一约束问题\n\n## Validation\n- 新增 IntegrationUpgradeServiceImplGhostRecoverTest 6 个用例全绿（ADD 命中/未命中/null id、UPDATE-by-key 命中/未命中/活键守卫）\n- 相关测试 14/14 通过（GhostRecover 6、KeepDataSource 4、UpgradeController 4），spotless check 通过\n- 注：IntegrationUpgradeServiceImplTest 存在 8 个基线失败（buildParameterBusinessKey 加入 orgId 后既有测试未同步），与本次修改无关\n\n## Risk\n- 幽灵查询按 org 全量拉取 is_del=1 记录构建索引，与现有 is_del=0 全量查询同量级\n- 恢复动作对前端 existInDb 判定透明，不改 API 契约\n\n## Rollback\n- revert feature/243422 分支即可，无数据迁移、无表结构变更",
+  "status": "completed",
+  "sourceBranch": "feature/243422",
+  "targetBranch": "dev",
+  "author": {
+    "id": "dc33f63e-4b76-4fd7-99cc-b19ccd0869e1",
+    "displayName": "li_lei(李磊)",
+    "uniqueName": "WINNING\\li_lei"
+  },
+  "reviewers": [],
+  "createdDate": "2026-09-02T05:13:01.0271806Z",
+  "completedDate": "2026-09-02T05:25:01.5956547Z",
+  "mergeStatus": "succeeded",
+  "mergeCommitId": "27ada54979d46eb93c96cad753d2d94dcf17d6f1",
+  "mergeCommitMessage": "已合并 PR 2946: #243422 项目支持_厦门弘爱医院_批量导入作业时报错，变量报重复键值，无法导入\n\n## Requirement\n#243422 项目支持_厦门弘爱医院_批量导入作业时报",
+  "repository": {
+    "id": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+    "name": "winning-dps-df-dataintegration"
+  },
+  "project": {
+    "id": "29dfa130-8e3b-40c3-bc8b-5eaa3f5be88d",
+    "name": "DP-03-数据采集管理软件"
+  },
+  "workItems": [],
+  "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_git/winning-dps-df-dataintegration/pullrequest/2946"
+}

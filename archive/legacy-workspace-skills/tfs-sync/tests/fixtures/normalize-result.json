@@ -1,0 +1,19 @@
+{
+  "result": "NORMALIZED",
+  "workitem": {
+    "id": "12345",
+    "type": "Requirement",
+    "title": "测试需求",
+    "changed_at": "2026-09-20T09:20:30Z",
+    "state": "Active",
+    "description": "需求描述",
+    "acceptance_criteria": null,
+    "repro_steps": null,
+    "priority": 2,
+    "tags": null,
+    "area_path": null,
+    "iteration_path": null,
+    "assigned_to": null,
+    "url": "https://example.local/tfs/12345"
+  }
+}

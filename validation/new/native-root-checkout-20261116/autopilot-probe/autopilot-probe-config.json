@@ -1,0 +1,19 @@
+{
+  "assignee_id": "9f2417ea-5029-49af-b97e-3ee6f826009e",
+  "assignee_type": "agent",
+  "created_at": "2026-11-14T08:18:51Z",
+  "created_by_id": "8c5492b5-94ab-41f5-a3e3-00fbf85d1d2e",
+  "created_by_type": "member",
+  "description": "本次仅验证 Multica 原生按需 checkout，工作区 rondo-tt。不要执行日常 PR 同步或交付收口。\n目标：在本次无 Project 的 Autopilot Run 中，调用 multica repo checkout 检出工作区登记的 winning-platform-monorepo，返回并只读核验实际路径。\n1. 记录当前 cwd、MULTICA_WORKSPACE_ID、MULTICA_TASK_ID、MULTICA_AGENT_ID，以及 MULTICA_DAEMON_PORT 是否存在；不得输出 token、PAT、完整环境或认证配置。\n2. 运行 multica repo list --workspace-id 3158546f-5b79-4042-baec-20cdac7d9d31 --output json，核对根仓登记。\n3. 在当前 Run 工作目录运行 multica repo checkout \"http://tfs2018-web.winning.com.cn:8080/tfs/wn_data_platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\" --ref main。使用平台已经提供的 Task 环境，不伪造 Task 身份、不指定其他 profile，不使用 --fresh，不手动 git clone 或创建 worktree 替代原生命令。\n4. 保存原生命令退出码和脱敏输出。成功后从原生输出确定实际绝对路径，并只读运行 git rev-parse --show-toplevel、git remote get-url origin、git rev-parse HEAD、git branch --show-current、git rev-parse --git-common-dir、git status --porcelain；记录 .git 是文件还是目录，以及 AGENTS.md 和 openspec/ 是否存在。不修改检出的文件。\n5. 返回结构化结果：result、workspace_id、task_id、cwd、checkout_exit_code、checkout_output、root_repo、git_toplevel、origin、head、branch、git_common_dir、dot_git_type、agents_exists、openspec_exists、git_status、失败原因。若原生 checkout 不支持、认证或权限失败，保留准确错误并停止，不改认证、安装工具或降低安全设置。\n范围限制：只允许本次原生 checkout 与只读验证；禁止 pr reconcile-status、delivery finalize、tfs writeback、OpenSpec archive、git commit/push、修改 TFS、Issue、PR 或 Autopilot 配置。不要调用 pr-status-sync/finalize-delivery 技能；不要创建 Issue、评论或通知。最终结果只返回当前 Run。",
+  "execution_mode": "run_only",
+  "id": "3a779436-9931-478c-b7e3-527eba4f0db3",
+  "issue_title_template": null,
+  "last_run_at": null,
+  "pause_reason": null,
+  "project_id": null,
+  "status": "active",
+  "subscribers": [],
+  "title": "PR Status Sync",
+  "updated_at": "2026-11-16T06:01:27Z",
+  "workspace_id": "3158546f-5b79-4042-baec-20cdac7d9d31"
+}

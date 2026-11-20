@@ -1,0 +1,92 @@
+[
+  {
+    "time": "2026-11-16T03:39:00.86Z",
+    "type": "custom_tool_call",
+    "name": "exec",
+    "call_id": "call_e1c2c63c343b4aeb93187de89dccee68",
+    "input": "// @exec: {\"yield_time_ms\": 1000, \"max_output_tokens\": 2000}\nconst workdir = 'D:\\\\Multica\\\\desktop-api.multica.ai\\\\rondo-tt-20cdac7d9d31\\\\tt-16-c3be1df0d151\\\\workdir';\nlet r = await tools.exec_command({\n  cmd: 'node -e \"setTimeout(()=>console.log(\\'LONG_COMMAND_PASS\\'),35000)\"',\n  workdir, shell: 'powershell', login: false, yield_time_ms: 1000, max_output_tokens: 2000\n});\ntext('INITIAL ' + JSON.stringify(r));\nwhile (r.session_id) {\n  r = await tools.write_stdin({session_id: r.session_id, yield_time_ms: 30000, max_output_tokens: 2000});\n  text('CONTINUED ' + JSON.stringify(r));\n}\n",
+    "arguments": null,
+    "output": null
+  },
+  {
+    "time": "2026-11-16T03:39:01.923Z",
+    "type": "custom_tool_call_output",
+    "name": null,
+    "call_id": "call_e1c2c63c343b4aeb93187de89dccee68",
+    "input": null,
+    "arguments": null,
+    "output": "Script running with cell ID 4\nWall time 1.0 seconds\nOutput:\n"
+  },
+  {
+    "time": "2026-11-16T03:39:04.427Z",
+    "type": "function_call",
+    "name": "wait",
+    "call_id": "call_72a4107576d547de997dd586dffd0a5c",
+    "input": null,
+    "arguments": "{\"cell_id\":\"4\",\"yield_time_ms\":10000,\"max_tokens\":2000}",
+    "output": null
+  },
+  {
+    "time": "2026-11-16T03:39:15.457Z",
+    "type": "function_call_output",
+    "name": null,
+    "call_id": "call_72a4107576d547de997dd586dffd0a5c",
+    "input": null,
+    "arguments": null,
+    "output": [
+      {
+        "type": "input_text",
+        "text": "Script running with cell ID 4\nWall time 11.0 seconds\nOutput:\n"
+      },
+      {
+        "type": "input_text",
+        "text": "INITIAL {\"chunk_id\":\"6b25f9\",\"wall_time_seconds\":10.0059152,\"session_id\":53554,\"original_token_count\":0,\"output\":\"\"}"
+      }
+    ]
+  },
+  {
+    "time": "2026-11-16T03:39:18.158Z",
+    "type": "function_call",
+    "name": "wait",
+    "call_id": "call_20b04427b8e1456da91d8aa0bedc0dea",
+    "input": null,
+    "arguments": "{\"cell_id\":\"4\",\"yield_time_ms\":10000,\"max_tokens\":2000}",
+    "output": null
+  },
+  {
+    "time": "2026-11-16T03:39:29.194Z",
+    "type": "function_call_output",
+    "name": null,
+    "call_id": "call_20b04427b8e1456da91d8aa0bedc0dea",
+    "input": null,
+    "arguments": null,
+    "output": "Script running with cell ID 4\nWall time 11.0 seconds\nOutput:\n"
+  },
+  {
+    "time": "2026-11-16T03:39:32.459Z",
+    "type": "function_call",
+    "name": "wait",
+    "call_id": "call_746556d5ee844c28ad2a42bf6207bd29",
+    "input": null,
+    "arguments": "{\"cell_id\":\"4\",\"yield_time_ms\":10000,\"max_tokens\":2000}",
+    "output": null
+  },
+  {
+    "time": "2026-11-16T03:39:36.576Z",
+    "type": "function_call_output",
+    "name": null,
+    "call_id": "call_746556d5ee844c28ad2a42bf6207bd29",
+    "input": null,
+    "arguments": null,
+    "output": [
+      {
+        "type": "input_text",
+        "text": "Script completed\nWall time 4.1 seconds\nOutput:\n"
+      },
+      {
+        "type": "input_text",
+        "text": "CONTINUED {\"chunk_id\":\"37d8c8\",\"wall_time_seconds\":25.4113205,\"exit_code\":0,\"original_token_count\":5,\"output\":\"LONG_COMMAND_PASS\\n\"}"
+      }
+    ]
+  }
+]

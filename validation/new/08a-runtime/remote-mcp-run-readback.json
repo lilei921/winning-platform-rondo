@@ -1,0 +1,53 @@
+{
+  "runs": [
+    {
+      "id": "01a1d96f-6a40-7709-b4ee-7455a7a2ea95",
+      "status": "completed",
+      "agent_id": "48590a02-c97d-410e-99e4-b5b58d2df66d",
+      "runtime_id": "a1001c7d-0d5a-463e-8c5e-96b924ef6269",
+      "work_dir": "D:\\Multica\\desktop-api.multica.ai\\rondo-tt-20cdac7d9d31\\tt-9-7455a7a2ea95\\workdir",
+      "started_at": "2026-11-14T09:42:00Z",
+      "completed_at": "2026-11-14T09:47:29Z",
+      "error": null
+    },
+    {
+      "id": "01a1d96a-c606-7511-ab03-4a5f6a128759",
+      "status": "completed",
+      "agent_id": "48590a02-c97d-410e-99e4-b5b58d2df66d",
+      "runtime_id": "a1001c7d-0d5a-463e-8c5e-96b924ef6269",
+      "work_dir": "D:\\Multica\\desktop-api.multica.ai\\rondo-tt-20cdac7d9d31\\tt-9-4a5f6a128759\\workdir",
+      "started_at": "2026-11-14T09:36:57Z",
+      "completed_at": "2026-11-14T09:41:13Z",
+      "error": null
+    }
+  ],
+  "issues": [
+    {
+      "id": "01a1d96a-c5eb-741b-a725-e6fe15615fdc",
+      "identifier": "TT-9",
+      "status": "in_review",
+      "assignee_id": "48590a02-c97d-410e-99e4-b5b58d2df66d",
+      "metadata": {}
+    },
+    {
+      "id": "01a1d943-7e6e-7cb1-bd26-7957ae333b5e",
+      "identifier": "TT-6",
+      "status": "done",
+      "assignee_id": "48590a02-c97d-410e-99e4-b5b58d2df66d",
+      "metadata": {
+        "analysis.change_kind": "corrective",
+        "bug.delivery": "[{\"repo_key\":\"frame\",\"source_branch\":\"feat/265022\",\"target_branch\":\"codex/08a-acceptance-20261114\",\"candidate_commit\":\"977f1d853947e32c5fa7aba43838b0574c06c54c\",\"tfs_id\":265022,\"root_cause\":{\"confidence\":\"confirmed\",\"summary\":\"quoteIdentifier 未转义内部双引号；原始回归已重现，新补充的 12 项用例在修复前 7 PASS / 5 FAIL，失败均为含双引号输入。\",\"evidence_refs\":[\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame?path=/.08a-validation/quote-identifier.mjs&version=GC7e01dea45a4c7ed28a3c27653321780b2e4186d6\",\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame?path=/.08a-validation/regression.mjs&version=GC7e01dea45a4c7ed28a3c27653321780b2e4186d6\"]},\"expected_behavior\":\"将标识符内所有双引号加倍后添加外层双引号；a\\\"b 输出 \\\"a\\\"\\\"b\\\"，order 输出 \\\"order\\\"。\",\"actual_behavior\":\"基线 7e01dea45a4c7ed28a3c27653321780b2e4186d6 的 quoteIdentifier 仅添加外层引号，a\\\"b 输出 \\\"a\\\"b\\\"，原始 regression.mjs 第 4 行断言失败，exit 1。\",\"fix_summary\":\"仅修改隔离 fixture：保留模板字符串转换，使用全局替换将内部双引号加倍；新增同目录 quote-identifier.test.mjs，覆盖 12 项故障、边界和既有行为。\",\"regression\":{\"result\":\"PASS\",\"summary\":\"Node v22.22.2 执行 node .08a-validation/regression.mjs 输出 08-A regression PASS；node --test .08a-validation/quote-identifier.test.mjs 为 12 PASS / 0 FAIL，均 exit 0。\",\"evidence_refs\":[\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame?path=/.08a-validation/regression.mjs&version=GC977f1d853947e32c5fa7aba43838b0574c06c54c\",\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame?path=/.08a-validation/quote-identifier.test.mjs&version=GC977f1d853947e32c5fa7aba43838b0574c06c54c\"]},\"local_validation\":{\"result\":\"PASS\",\"summary\":\"原始回归与 12 项测试通过；node --check .08a-validation/quote-identifier.mjs、git diff --cached --check 均 exit 0。目标基线未移动，业务仓提交后干净。按授权仅验证 Node fixture，不执行 Maven 或生产集成测试。\",\"evidence_refs\":[\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame/commit/977f1d853947e32c5fa7aba43838b0574c06c54c\",\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame?path=/.08a-validation/quote-identifier.test.mjs&version=GC977f1d853947e32c5fa7aba43838b0574c06c54c\"]},\"code_review\":{\"result\":\"PASS\",\"summary\":\"Bug Fix Agent 已审阅完整暂存 diff：仅 .08a-validation 两个文件；全局替换覆盖全部内部引号，模板字符串转换保持既有语义；测试预期值为独立字面量，修复前识别 5 项故障，修复后全通过。无阻塞发现；此为开发侧自查，Human PR Review 待进行。\",\"evidence_refs\":[\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame/commit/977f1d853947e32c5fa7aba43838b0574c06c54c\"],\"findings\":[]}}]",
+        "bug.required_repos": "[\"frame\"]",
+        "current_pr": "[{\"repo_key\":\"frame\",\"pr_id\":3786,\"pr_url\":\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame/pullrequest/3786?_a=overview\",\"source_branch\":\"feat/265022\",\"target_branch\":\"codex/08a-acceptance-20261114\"}]",
+        "delivery.tfs_written": "true",
+        "pr_prep": "[{\"repo_key\":\"frame\",\"source_branch\":\"feat/265022\",\"target_branch\":\"codex/08a-acceptance-20261114\",\"candidate_commit\":\"977f1d853947e32c5fa7aba43838b0574c06c54c\",\"title\":\"TT-6 / TFS 265022: 修复隔离 fixture 标识符双引号转义\"}]",
+        "source": "tfs",
+        "tfs.body_at": "2026-11-14T08:53:17.653Z",
+        "tfs.changed_at": "2026-11-14T08:53:17.653Z",
+        "tfs.id": "265022",
+        "tfs.type": "Bug",
+        "tfs.url": "http://tfs2018-web.winning.com.cn:8080/tfs/web/wi.aspx?pcguid=f7bf5021-f3a9-4a5f-b754-bc7a1f7d60e2&id=265022"
+      }
+    }
+  ]
+}

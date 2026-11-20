@@ -1,0 +1,118 @@
+{
+  "timestamp": "2026-11-13T04:34:22.135Z",
+  "credentials_present": true,
+  "real_reads": [
+    {
+      "id": "chinese",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/1a978869-c496-4b14-af65-3c253c01b26f/items?path=%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2F%E4%B8%AD%E6%96%87%E7%9B%AE%E5%BD%95%2F%E4%B8%AD%E6%96%87%E6%96%87%E4%BB%B6.md&includeContent=true&versionDescriptor.versionType=commit&versionDescriptor.version=43cde17b8e8d8944c73ec964a2543991196b9921&api-version=4.1",
+      "method": "GET",
+      "status": 200,
+      "requested_commit": "43cde17b8e8d8944c73ec964a2543991196b9921",
+      "actual_commit": "43cde17b8e8d8944c73ec964a2543991196b9921",
+      "path": "/.multica-validation/t11-20261112T115850Z-115ab2b7/中文目录/中文文件.md",
+      "object_id": "47dbe1c93934d9208a06e360603f4bef170b5a5e",
+      "expected_sha256": "eb2070408f0fc29a631c6222be66225c8ab486abe325f78579c4a22cbf8b893a",
+      "actual_sha256": "eb2070408f0fc29a631c6222be66225c8ab486abe325f78579c4a22cbf8b893a",
+      "result": "PASS"
+    },
+    {
+      "id": "space",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/1a978869-c496-4b14-af65-3c253c01b26f/items?path=%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fspace+dir%2Ffile+name.md&includeContent=true&versionDescriptor.versionType=commit&versionDescriptor.version=43cde17b8e8d8944c73ec964a2543991196b9921&api-version=4.1",
+      "method": "GET",
+      "status": 200,
+      "requested_commit": "43cde17b8e8d8944c73ec964a2543991196b9921",
+      "actual_commit": "43cde17b8e8d8944c73ec964a2543991196b9921",
+      "path": "/.multica-validation/t11-20261112T115850Z-115ab2b7/space dir/file name.md",
+      "object_id": "7131432f8ea08cf15b516320421b7174ba83360e",
+      "expected_sha256": "ed99188f62d613ddfb21e7157e062d0faf09b1bee9426564522a779ffa732886",
+      "actual_sha256": "ed99188f62d613ddfb21e7157e062d0faf09b1bee9426564522a779ffa732886",
+      "result": "PASS"
+    },
+    {
+      "id": "hash",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/1a978869-c496-4b14-af65-3c253c01b26f/items?path=%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fhash%23dir%2Ffile%23name.md&includeContent=true&versionDescriptor.versionType=commit&versionDescriptor.version=43cde17b8e8d8944c73ec964a2543991196b9921&api-version=4.1",
+      "method": "GET",
+      "status": 200,
+      "requested_commit": "43cde17b8e8d8944c73ec964a2543991196b9921",
+      "actual_commit": "43cde17b8e8d8944c73ec964a2543991196b9921",
+      "path": "/.multica-validation/t11-20261112T115850Z-115ab2b7/hash#dir/file#name.md",
+      "object_id": "8d09c171f5bc3c0df0be3dfb5c5e964f82ddbeed",
+      "expected_sha256": "23efb3d1bdf2eb1a8eef2144f2ed4d7fea1604340e6b47253444391daae9a52b",
+      "actual_sha256": "23efb3d1bdf2eb1a8eef2144f2ed4d7fea1604340e6b47253444391daae9a52b",
+      "result": "PASS"
+    },
+    {
+      "id": "percent",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/1a978869-c496-4b14-af65-3c253c01b26f/items?path=%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fpercent%25dir%2Ffile%25name.md&includeContent=true&versionDescriptor.versionType=commit&versionDescriptor.version=43cde17b8e8d8944c73ec964a2543991196b9921&api-version=4.1",
+      "method": "GET",
+      "status": 200,
+      "requested_commit": "43cde17b8e8d8944c73ec964a2543991196b9921",
+      "actual_commit": "43cde17b8e8d8944c73ec964a2543991196b9921",
+      "path": "/.multica-validation/t11-20261112T115850Z-115ab2b7/percent%dir/file%name.md",
+      "object_id": "5b56bbc7ce7c66e5a6a7a574fa7b087a2ad634f6",
+      "expected_sha256": "3186d8c19d41ca11dab387ebb054879df02012086881dd52ffdb626840450f5e",
+      "actual_sha256": "3186d8c19d41ca11dab387ebb054879df02012086881dd52ffdb626840450f5e",
+      "result": "PASS"
+    },
+    {
+      "id": "combined",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/1a978869-c496-4b14-af65-3c253c01b26f/items?path=%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2F%E7%BB%84%E5%90%88+%E4%B8%AD%E6%96%87+%23+%25%2F%E6%8A%A5%E5%91%8A+%E7%A9%BA%E6%A0%BC%23%E7%99%BE%E5%88%86%25.md&includeContent=true&versionDescriptor.versionType=commit&versionDescriptor.version=43cde17b8e8d8944c73ec964a2543991196b9921&api-version=4.1",
+      "method": "GET",
+      "status": 200,
+      "requested_commit": "43cde17b8e8d8944c73ec964a2543991196b9921",
+      "actual_commit": "43cde17b8e8d8944c73ec964a2543991196b9921",
+      "path": "/.multica-validation/t11-20261112T115850Z-115ab2b7/组合 中文 # %/报告 空格#百分%.md",
+      "object_id": "0b59bdbe415a1ec4e1503966ce9f9410cad18940",
+      "expected_sha256": "7295161ee7d25ece7000b97e9215ba17fe967ce7b3097803d616f5d885930ef3",
+      "actual_sha256": "7295161ee7d25ece7000b97e9215ba17fe967ce7b3097803d616f5d885930ef3",
+      "result": "PASS"
+    },
+    {
+      "id": "literal-percent-escape",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/git/repositories/1a978869-c496-4b14-af65-3c253c01b26f/items?path=%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fpercent-escape%2523%2525%2Fliteral%2523%2525.md&includeContent=true&versionDescriptor.versionType=commit&versionDescriptor.version=43cde17b8e8d8944c73ec964a2543991196b9921&api-version=4.1",
+      "method": "GET",
+      "status": 200,
+      "requested_commit": "43cde17b8e8d8944c73ec964a2543991196b9921",
+      "actual_commit": "43cde17b8e8d8944c73ec964a2543991196b9921",
+      "path": "/.multica-validation/t11-20261112T115850Z-115ab2b7/percent-escape%23%25/literal%23%25.md",
+      "object_id": "97c9f5479cf5cdc2aad7c5ee95e8968a84d6399d",
+      "expected_sha256": "524c26374ddfa5d459bb17dc33dcb5d7f298ccb0b1a054d290d719bd02963be8",
+      "actual_sha256": "524c26374ddfa5d459bb17dc33dcb5d7f298ccb0b1a054d290d719bd02963be8",
+      "result": "PASS"
+    }
+  ],
+  "simulated_errors": [
+    {
+      "status": 404,
+      "calls": 1,
+      "error_type": "FailError",
+      "reason": "指定 commit 下的规范文件不存在或不可见",
+      "result": "PASS"
+    },
+    {
+      "status": 401,
+      "calls": 1,
+      "error_type": "UnknownError",
+      "reason": "TFS 规范读取 HTTP 401，未回退其他版本",
+      "result": "PASS"
+    },
+    {
+      "status": 403,
+      "calls": 1,
+      "error_type": "UnknownError",
+      "reason": "TFS 规范读取 HTTP 403，未回退其他版本",
+      "result": "PASS"
+    },
+    {
+      "status": 200,
+      "calls": 1,
+      "error_type": "UnknownError",
+      "reason": "TFS 规范响应不是合法 JSON",
+      "result": "PASS"
+    }
+  ],
+  "low_privilege_identity": "NOT_RUN",
+  "http_policy_approval": "NOT_RUN",
+  "adapter_status": "PASS",
+  "overall_M11": "NOT_RUN: permission and transport policy gates lack approved identity/policy"
+}

@@ -1,0 +1,444 @@
+{
+  "schemaVersion": 1,
+  "test": "T11",
+  "date": "2026-11-12",
+  "apiVersion": "4.0",
+  "repositoryId": "1a978869-c496-4b14-af65-3c253c01b26f",
+  "runId": "20261112T115850Z-115ab2b7",
+  "startedUtc": "2026-11-12T11:58:50.839574+00:00",
+  "finishedUtc": "2026-11-12T12:00:02.973664+00:00",
+  "branch": "codex/tfs-api-t11-paths-20261112T115850Z-115ab2b7",
+  "baseBranch": "rondo",
+  "baseCommit": "f42bb4578e553d8a397b5579f6403159fcea9545",
+  "addedCommit": "722b8995eec7bc61eb4caf0644a863bc5b43939c",
+  "addedPushId": 120146,
+  "editedCommit": "43cde17b8e8d8944c73ec964a2543991196b9921",
+  "editedPushId": 120147,
+  "pathRoot": "/.multica-validation/t11-20261112T115850Z-115ab2b7",
+  "cases": [
+    {
+      "id": "chinese",
+      "path": "/.multica-validation/t11-20261112T115850Z-115ab2b7/中文目录/中文文件.md",
+      "addedSha256": "2c6d175166f4aa5ec8f73d48da99a90967a92382a6b44637f100134393055e4c",
+      "addedReadback": "PASS",
+      "editedSha256": "eb2070408f0fc29a631c6222be66225c8ab486abe325f78579c4a22cbf8b893a",
+      "editedReadback": "PASS",
+      "branchReadback": "PASS",
+      "oldCommitUnchanged": "PASS"
+    },
+    {
+      "id": "space",
+      "path": "/.multica-validation/t11-20261112T115850Z-115ab2b7/space dir/file name.md",
+      "addedSha256": "91256d93df25bfaed4b1005ea3a1a2cacdbf8b58d23ac23a8e11c94c061c390f",
+      "addedReadback": "PASS",
+      "editedSha256": "ed99188f62d613ddfb21e7157e062d0faf09b1bee9426564522a779ffa732886",
+      "editedReadback": "PASS",
+      "branchReadback": "PASS",
+      "oldCommitUnchanged": "PASS"
+    },
+    {
+      "id": "hash",
+      "path": "/.multica-validation/t11-20261112T115850Z-115ab2b7/hash#dir/file#name.md",
+      "addedSha256": "d32f1a8a99fc38977fbf8d944e353feacdb481d78a0b9eedb8d352e09bd01462",
+      "addedReadback": "PASS",
+      "editedSha256": "23efb3d1bdf2eb1a8eef2144f2ed4d7fea1604340e6b47253444391daae9a52b",
+      "editedReadback": "PASS",
+      "branchReadback": "PASS",
+      "oldCommitUnchanged": "PASS"
+    },
+    {
+      "id": "percent",
+      "path": "/.multica-validation/t11-20261112T115850Z-115ab2b7/percent%dir/file%name.md",
+      "addedSha256": "3a9998a703796141a37f7c60214b84ee488673df31be160e37f13e3d6619ff23",
+      "addedReadback": "PASS",
+      "editedSha256": "3186d8c19d41ca11dab387ebb054879df02012086881dd52ffdb626840450f5e",
+      "editedReadback": "PASS",
+      "branchReadback": "PASS",
+      "oldCommitUnchanged": "PASS"
+    },
+    {
+      "id": "combined",
+      "path": "/.multica-validation/t11-20261112T115850Z-115ab2b7/组合 中文 # %/报告 空格#百分%.md",
+      "addedSha256": "3a1fd142d29cc814d3488b563ff658e59784f303b51c24ebfddd76e8c7ef8c06",
+      "addedReadback": "PASS",
+      "editedSha256": "7295161ee7d25ece7000b97e9215ba17fe967ce7b3097803d616f5d885930ef3",
+      "editedReadback": "PASS",
+      "branchReadback": "PASS",
+      "oldCommitUnchanged": "PASS"
+    },
+    {
+      "id": "literal-percent-escape",
+      "path": "/.multica-validation/t11-20261112T115850Z-115ab2b7/percent-escape%23%25/literal%23%25.md",
+      "addedSha256": "967884c81324923f21de73eb00be507887a3c83f04bf4d8b994c1a7e771a101c",
+      "addedReadback": "PASS",
+      "editedSha256": "524c26374ddfa5d459bb17dc33dcb5d7f298ccb0b1a054d290d719bd02963be8",
+      "editedReadback": "PASS",
+      "branchReadback": "PASS",
+      "oldCommitUnchanged": "PASS"
+    }
+  ],
+  "result": "PASS",
+  "cleanup": {
+    "branchDeleted": true,
+    "deleteOldObjectId": "43cde17b8e8d8944c73ec964a2543991196b9921",
+    "deleteUpdateStatus": "succeeded",
+    "allOriginalRefsUnchanged": true,
+    "originalRefCount": 29,
+    "baseValidationDirectoryAbsent": true,
+    "protectedHeads": {
+      "refs/heads/codex/tfs-api-rw-verify-20261112": "722c5ea1e96f941f6990c3cb709ae7eb93527649",
+      "refs/heads/codex/tfs-rw-verify-20261112": "ff6810b787ec1b1fce3778731d2fdcd1ab556f73",
+      "refs/heads/master": "bb13f482ff7a3c01936f596942dd7d36cc6ece86",
+      "refs/heads/rondo": "f42bb4578e553d8a397b5579f6403159fcea9545"
+    }
+  },
+  "metrics": {
+    "requests": 41,
+    "seconds": 7.017399999999998,
+    "methods": {
+      "GET": 37,
+      "POST": 4
+    },
+    "status": {
+      "200": 39,
+      "201": 2
+    }
+  },
+  "requests": [
+    {
+      "sequence": 1,
+      "method": "GET",
+      "path": "",
+      "status": 200,
+      "seconds": 0.0922
+    },
+    {
+      "sequence": 2,
+      "method": "GET",
+      "path": "/refs",
+      "status": 200,
+      "seconds": 0.0633
+    },
+    {
+      "sequence": 3,
+      "method": "GET",
+      "path": "/refs",
+      "status": 200,
+      "seconds": 0.1308
+    },
+    {
+      "sequence": 4,
+      "method": "POST",
+      "path": "/refs",
+      "status": 200,
+      "seconds": 0.1472
+    },
+    {
+      "sequence": 5,
+      "method": "GET",
+      "path": "/refs",
+      "status": 200,
+      "seconds": 0.0749
+    },
+    {
+      "sequence": 6,
+      "method": "POST",
+      "path": "/pushes",
+      "status": 201,
+      "seconds": 0.2678
+    },
+    {
+      "sequence": 7,
+      "method": "GET",
+      "path": "/refs",
+      "status": 200,
+      "seconds": 0.0609
+    },
+    {
+      "sequence": 8,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0701,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/中文目录/中文文件.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2F%E4%B8%AD%E6%96%87%E7%9B%AE%E5%BD%95%2F%E4%B8%AD%E6%96%87%E6%96%87%E4%BB%B6.md"
+    },
+    {
+      "sequence": 9,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0568,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/space dir/file name.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fspace+dir%2Ffile+name.md"
+    },
+    {
+      "sequence": 10,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0607,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/hash#dir/file#name.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fhash%23dir%2Ffile%23name.md"
+    },
+    {
+      "sequence": 11,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0677,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/percent%dir/file%name.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fpercent%25dir%2Ffile%25name.md"
+    },
+    {
+      "sequence": 12,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0694,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/组合 中文 # %/报告 空格#百分%.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2F%E7%BB%84%E5%90%88+%E4%B8%AD%E6%96%87+%23+%25%2F%E6%8A%A5%E5%91%8A+%E7%A9%BA%E6%A0%BC%23%E7%99%BE%E5%88%86%25.md"
+    },
+    {
+      "sequence": 13,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0646,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/percent-escape%23%25/literal%23%25.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fpercent-escape%2523%2525%2Fliteral%2523%2525.md"
+    },
+    {
+      "sequence": 14,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0579
+    },
+    {
+      "sequence": 15,
+      "method": "GET",
+      "path": "/refs",
+      "status": 200,
+      "seconds": 0.1112
+    },
+    {
+      "sequence": 16,
+      "method": "POST",
+      "path": "/pushes",
+      "status": 201,
+      "seconds": 2.1767
+    },
+    {
+      "sequence": 17,
+      "method": "GET",
+      "path": "/refs",
+      "status": 200,
+      "seconds": 0.0616
+    },
+    {
+      "sequence": 18,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0785,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/中文目录/中文文件.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2F%E4%B8%AD%E6%96%87%E7%9B%AE%E5%BD%95%2F%E4%B8%AD%E6%96%87%E6%96%87%E4%BB%B6.md"
+    },
+    {
+      "sequence": 19,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.094,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/中文目录/中文文件.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2F%E4%B8%AD%E6%96%87%E7%9B%AE%E5%BD%95%2F%E4%B8%AD%E6%96%87%E6%96%87%E4%BB%B6.md"
+    },
+    {
+      "sequence": 20,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0803,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/中文目录/中文文件.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2F%E4%B8%AD%E6%96%87%E7%9B%AE%E5%BD%95%2F%E4%B8%AD%E6%96%87%E6%96%87%E4%BB%B6.md"
+    },
+    {
+      "sequence": 21,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0757,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/space dir/file name.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fspace+dir%2Ffile+name.md"
+    },
+    {
+      "sequence": 22,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0633,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/space dir/file name.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fspace+dir%2Ffile+name.md"
+    },
+    {
+      "sequence": 23,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0577,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/space dir/file name.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fspace+dir%2Ffile+name.md"
+    },
+    {
+      "sequence": 24,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0656,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/hash#dir/file#name.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fhash%23dir%2Ffile%23name.md"
+    },
+    {
+      "sequence": 25,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0684,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/hash#dir/file#name.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fhash%23dir%2Ffile%23name.md"
+    },
+    {
+      "sequence": 26,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.067,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/hash#dir/file#name.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fhash%23dir%2Ffile%23name.md"
+    },
+    {
+      "sequence": 27,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0628,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/percent%dir/file%name.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fpercent%25dir%2Ffile%25name.md"
+    },
+    {
+      "sequence": 28,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0632,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/percent%dir/file%name.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fpercent%25dir%2Ffile%25name.md"
+    },
+    {
+      "sequence": 29,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0613,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/percent%dir/file%name.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fpercent%25dir%2Ffile%25name.md"
+    },
+    {
+      "sequence": 30,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0606,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/组合 中文 # %/报告 空格#百分%.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2F%E7%BB%84%E5%90%88+%E4%B8%AD%E6%96%87+%23+%25%2F%E6%8A%A5%E5%91%8A+%E7%A9%BA%E6%A0%BC%23%E7%99%BE%E5%88%86%25.md"
+    },
+    {
+      "sequence": 31,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0672,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/组合 中文 # %/报告 空格#百分%.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2F%E7%BB%84%E5%90%88+%E4%B8%AD%E6%96%87+%23+%25%2F%E6%8A%A5%E5%91%8A+%E7%A9%BA%E6%A0%BC%23%E7%99%BE%E5%88%86%25.md"
+    },
+    {
+      "sequence": 32,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.071,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/组合 中文 # %/报告 空格#百分%.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2F%E7%BB%84%E5%90%88+%E4%B8%AD%E6%96%87+%23+%25%2F%E6%8A%A5%E5%91%8A+%E7%A9%BA%E6%A0%BC%23%E7%99%BE%E5%88%86%25.md"
+    },
+    {
+      "sequence": 33,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0659,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/percent-escape%23%25/literal%23%25.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fpercent-escape%2523%2525%2Fliteral%2523%2525.md"
+    },
+    {
+      "sequence": 34,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0699,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/percent-escape%23%25/literal%23%25.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fpercent-escape%2523%2525%2Fliteral%2523%2525.md"
+    },
+    {
+      "sequence": 35,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0651,
+      "itemPath": "/.multica-validation/t11-20261112T115850Z-115ab2b7/percent-escape%23%25/literal%23%25.md",
+      "encodedPath": "%2F.multica-validation%2Ft11-20261112T115850Z-115ab2b7%2Fpercent-escape%2523%2525%2Fliteral%2523%2525.md"
+    },
+    {
+      "sequence": 36,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.0626
+    },
+    {
+      "sequence": 37,
+      "method": "GET",
+      "path": "/refs",
+      "status": 200,
+      "seconds": 0.2415
+    },
+    {
+      "sequence": 38,
+      "method": "POST",
+      "path": "/refs",
+      "status": 200,
+      "seconds": 1.4132
+    },
+    {
+      "sequence": 39,
+      "method": "GET",
+      "path": "/refs",
+      "status": 200,
+      "seconds": 0.092
+    },
+    {
+      "sequence": 40,
+      "method": "GET",
+      "path": "/refs",
+      "status": 200,
+      "seconds": 0.1597
+    },
+    {
+      "sequence": 41,
+      "method": "GET",
+      "path": "/items",
+      "status": 200,
+      "seconds": 0.1771
+    }
+  ]
+}

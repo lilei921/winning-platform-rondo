@@ -1,0 +1,43 @@
+name: corrective-change
+version: 1
+description: 定义恢复既定行为的修复方案与验证范围
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: 故障、根因、修复与回归范围
+    template: proposal.md
+    instruction: |
+      对照触发条件下的预期与实际行为，给出判断依据。
+      根因按 confirmed、probable 或 unknown 标明可信度，引用诊断证据。仍有疑点时说明证据缺口。
+      写清如何恢复既定行为，以及验证原始故障和受影响路径的方法。
+      需要补录或澄清规格时，列出本次有 Delta 的全部 capability 路径。
+    requires: []
+
+  - id: specs
+    generates: "specs/**/*.md"
+    description: 需长期保留的既定行为澄清
+    template: spec.md
+    instruction: |
+      仅在需要补录或澄清既定行为时编写 Delta；仅修复实现时，在 .openspec.yaml 声明 skip_specs: true。
+      对应文件为 specs/<capability-path>/spec.md，复用现行 capability 的准确路径，新路径段用 kebab-case。
+      新增 capability 时，在首个 Delta 章节前加 ## Purpose，用至少 50 个字符说明其实际用途。
+      修改既有需求用 ## MODIFIED Requirements，沿用原 Requirement 标题，从完整原文及全部场景上修改，保留未受影响的场景。
+      ADDED / MODIFIED 的正文使用 SHALL 或 MUST，每个需求至少给出一个可验证场景。
+      删除或改名前，对照现行规格核实 capability 路径和原 Requirement 标题。
+      删除用 ## REMOVED Requirements，说明 Reason 和 Migration。移除最后一条需求时，先核实所有待退役的 capability 均已明确获批，再在 .openspec.yaml 设置 retire_capabilities: true。
+      仅改名用 ## RENAMED Requirements，以 - FROM: 和 - TO: 列出原、新的完整 Requirement 标题。确认新标题未被其他需求占用。
+    requires: [proposal]
+
+  - id: tasks
+    generates: tasks.md
+    description: 修复和回归验证任务
+    template: tasks.md
+    instruction: |
+      根据修复范围和适用的规格拆分任务。每项使用唯一的数字编号，写明预期结果和验证方法。
+      任务合起来应能证明原始故障已修复，并覆盖受影响的正常行为。
+    requires: [specs]
+
+apply:
+  requires: [proposal, tasks]
+  tracks: tasks.md
+  instruction: 按任务修复并验证，通过研发工作流记录已完成的任务。

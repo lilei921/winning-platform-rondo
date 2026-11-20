@@ -1,0 +1,18 @@
+{
+  "at": "2026-11-13T06:31:13.610Z",
+  "task_id": "01a1d39a-3257-7223-9682-ee63b4d09f44",
+  "id": 264845,
+  "parent": 260986,
+  "fixture_estimate_hours": 1,
+  "patched": true,
+  "before": {
+    "rev": 3,
+    "state": "活动"
+  },
+  "after": {
+    "rev": 4,
+    "state": "活动",
+    "estimate": 1,
+    "remaining": 1
+  }
+}

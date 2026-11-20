@@ -1,0 +1,235 @@
+TAP version 13
+# $ git check-ref-format refs/heads/feat/12
+# $ git check-ref-format refs/heads/main
+# $ git ls-files -- biz
+# $ git check-ignore --no-index -q -- biz/
+# $ git checkout -b feat/12
+# $ git rev-parse --show-toplevel
+# $ git rev-parse --path-format=absolute --git-common-dir
+# $ git remote get-url --all origin
+# $ git remote get-url --push --all origin
+# $ git symbolic-ref --short HEAD
+# $ git rev-parse HEAD
+# $ git check-ref-format refs/heads/feat/12
+# $ git check-ref-format refs/heads/main
+# $ git ls-files -- biz
+# $ git check-ignore --no-index -q -- biz/
+# $ git rev-parse --show-toplevel
+# $ git rev-parse --path-format=absolute --git-common-dir
+# $ git remote get-url --all origin
+# $ git remote get-url --push --all origin
+# $ git symbolic-ref --short HEAD
+# $ git rev-parse HEAD
+# $ git check-ref-format refs/heads/feat/13
+# $ git check-ref-format refs/heads/main
+# $ git ls-files -- biz
+# $ git check-ignore --no-index -q -- biz/
+# $ git rev-parse --show-toplevel
+# $ git rev-parse --path-format=absolute --git-common-dir
+# $ git remote get-url --all origin
+# $ git remote get-url --push --all origin
+# $ git symbolic-ref --short HEAD
+# $ git check-ref-format refs/heads/feat/12
+# $ git check-ref-format refs/heads/main
+# $ git ls-files -- biz
+# $ git check-ignore --no-index -q -- biz/
+# $ git rev-parse --show-toplevel
+# $ git rev-parse --path-format=absolute --git-common-dir
+# $ git remote get-url --all origin
+# $ git remote get-url --push --all origin
+# $ git check-ref-format refs/heads/feat/12
+# $ git check-ref-format refs/heads/main
+# $ git ls-files -- biz
+# $ git check-ignore --no-index -q -- biz/
+# $ git rev-parse --show-toplevel
+# $ git rev-parse --path-format=absolute --git-common-dir
+# $ git remote get-url --all origin
+# $ git remote get-url --push --all origin
+# $ git symbolic-ref --short HEAD
+# $ git rev-parse HEAD
+# $ git check-ref-format refs/heads/feat/12
+# $ git check-ref-format refs/heads/main
+# $ git check-ref-format refs/heads/feat/12
+# $ git check-ref-format refs/heads/main
+# $ git ls-files -- other
+# $ git check-ignore --no-index -q -- other/
+# $ git check-ref-format refs/heads/feat/12
+# $ git check-ref-format refs/heads/main
+# $ git check-ref-format refs/heads/feat/12
+# $ git check-ref-format refs/heads/main
+# $ git ls-files -- biz
+# $ git check-ignore --no-index -q -- biz/
+# $ git check-ref-format refs/heads/feat/12
+# $ git check-ref-format refs/heads/main
+# $ git ls-files -- biz
+# $ git check-ignore --no-index -q -- biz/
+# $ git check-ref-format refs/heads/feat/12
+# $ git check-ref-format refs/heads/main
+# $ git ls-files -- biz
+# $ git check-ignore --no-index -q -- biz/
+# $ git rev-parse --show-toplevel
+# $ git remote get-url origin
+# $ git check-ref-format refs/heads/feat/12
+# $ git check-ref-format refs/heads/main
+# $ git ls-files -- biz
+# $ git check-ignore --no-index -q -- biz/
+# $ git checkout -b feat/12
+# $ git rev-parse --show-toplevel
+# $ git rev-parse --path-format=absolute --git-common-dir
+# $ git remote get-url --all origin
+# $ git remote get-url --push --all origin
+# $ git symbolic-ref --short HEAD
+# $ git rev-parse HEAD
+# Subtest: 首次 clone；dirty 与未 push Commit 重入逐字保留
+ok 1 - 首次 clone；dirty 与未 push Commit 重入逐字保留
+  ---
+  duration_ms: 5034.9467
+  type: 'test'
+  ...
+# Subtest: 跨 Task 从远端同 Bug 候选续接，不从目标分支重新开始
+ok 2 - 跨 Task 从远端同 Bug 候选续接，不从目标分支重新开始
+  ---
+  duration_ms: 2484.9087
+  type: 'test'
+  ...
+# Subtest: 越界、junction、未忽略目录和不完整 clone 保留现场且拒绝
+ok 3 - 越界、junction、未忽略目录和不完整 clone 保留现场且拒绝
+  ---
+  duration_ms: 2078.1034
+  type: 'test'
+  ...
+# Subtest: clone 中断重试不删除现场或重复 clone
+ok 4 - clone 中断重试不删除现场或重复 clone
+  ---
+  duration_ms: 1794.7977
+  type: 'test'
+  ...
+# Subtest: Registry 必须匹配 Collection、Project、Repository，拒绝凭据 URL
+ok 5 - Registry 必须匹配 Collection、Project、Repository，拒绝凭据 URL
+  ---
+  duration_ms: 2.0751
+  type: 'test'
+  ...
+# Subtest: 平台 Run/Actor/Task 路径/Resource/origin 交叉绑定；只读校验保留根仓 dirty
+ok 6 - 平台 Run/Actor/Task 路径/Resource/origin 交叉绑定；只读校验保留根仓 dirty
+  ---
+  duration_ms: 994.129
+  type: 'test'
+  ...
+# Subtest: Bug 开工不要求 Evidence；已固定 Scope 和错误 Actor 不放行
+ok 7 - Bug 开工不要求 Evidence；已固定 Scope 和错误 Actor 不放行
+  ---
+  duration_ms: 1.4197
+  type: 'test'
+  ...
+# Subtest: Bug 来源 URL 必须绑定工作项与 Collection
+ok 8 - Bug 来源 URL 必须绑定工作项与 Collection
+  ---
+  duration_ms: 1.262
+  type: 'test'
+  ...
+# Subtest: TFS 2018 旧版来源只从配置 Collection 回读，拒绝错 pcguid 与不可读事实
+ok 9 - TFS 2018 旧版来源只从配置 Collection 回读，拒绝错 pcguid 与不可读事实
+  ---
+  duration_ms: 1.7053
+  type: 'test'
+  ...
+# Subtest: 真实 prepare CLI 使用平台 fixture 与独立 Git 仓，拒绝缺 Task / 错 Actor，零事实写入
+ok 10 - 真实 prepare CLI 使用平台 fixture 与独立 Git 仓，拒绝缺 Task / 错 Actor，零事实写入
+  ---
+  duration_ms: 4775.172
+  type: 'test'
+  ...
+# Subtest: 摘要发布后 ID 保存失败：重入直接复用，不补 ID；查询失败不发布
+ok 11 - 摘要发布后 ID 保存失败：重入直接复用，不补 ID；查询失败不发布
+  ---
+  duration_ms: 0.5759
+  type: 'test'
+  ...
+# Subtest: 旧交付摘要不能冒充本次；ID 缺失的当前摘要直接复用
+ok 12 - 旧交付摘要不能冒充本次；ID 缺失的当前摘要直接复用
+  ---
+  duration_ms: 0.2204
+  type: 'test'
+  ...
+# Subtest: Bug 评论成功但完成标记失败，换客户端恢复只补标记
+ok 13 - Bug 评论成功但完成标记失败，换客户端恢复只补标记
+  ---
+  duration_ms: 1.9361
+  type: 'test'
+  ...
+# Subtest: 需求 评论成功但完成标记失败，换客户端恢复只补标记
+ok 14 - 需求 评论成功但完成标记失败，换客户端恢复只补标记
+  ---
+  duration_ms: 0.8475
+  type: 'test'
+  ...
+# Subtest: TFS History 读取全部分页，拒绝截断、查询失败与 revision 漂移
+ok 15 - TFS History 读取全部分页，拒绝截断、查询失败与 revision 漂移
+  ---
+  duration_ms: 1.3143
+  type: 'test'
+  ...
+# Subtest: Bug evidence allows a bounded, verified repair without OpenSpec fields
+ok 16 - Bug evidence allows a bounded, verified repair without OpenSpec fields
+  ---
+  duration_ms: 1.7454
+  type: 'test'
+  ...
+# Subtest: Bug evidence rejects identity mismatch and missing regression
+ok 17 - Bug evidence rejects identity mismatch and missing regression
+  ---
+  duration_ms: 0.264
+  type: 'test'
+  ...
+# Subtest: probable Root Cause must describe remaining risk
+ok 18 - probable Root Cause must describe remaining risk
+  ---
+  duration_ms: 0.1816
+  type: 'test'
+  ...
+# Subtest: blocking review findings and unresolved blockers reject readiness
+ok 19 - blocking review findings and unresolved blockers reject readiness
+  ---
+  duration_ms: 0.3273
+  type: 'test'
+  ...
+# Subtest: D1 identity: stale change_ref + tfs.id reuses the existing active Change
+ok 20 - D1 identity: stale change_ref + tfs.id reuses the existing active Change
+  ---
+  duration_ms: 857.0382
+  type: 'test'
+  ...
+# Subtest: D1 identity: duplicate, archived, wrong Schema and unknown remain safe
+ok 21 - D1 identity: duplicate, archived, wrong Schema and unknown remain safe
+  ---
+  duration_ms: 1826.1901
+  type: 'test'
+  ...
+# Subtest: D1 workspace sync renders spec-preparation config in dry-run and local-only modes
+ok 22 - D1 workspace sync renders spec-preparation config in dry-run and local-only modes
+  ---
+  duration_ms: 1176.6807
+  type: 'test'
+  ...
+# Subtest: D1 workspace sync refuses missing squad identity rather than writing fallback registry
+ok 23 - D1 workspace sync refuses missing squad identity rather than writing fallback registry
+  ---
+  duration_ms: 437.3454
+  type: 'test'
+  ...
+# Subtest: D2 skill contracts: retire legacy without deletion and bind composable Analyst methods
+ok 24 - D2 skill contracts: retire legacy without deletion and bind composable Analyst methods
+  ---
+  duration_ms: 3.7758
+  type: 'test'
+  ...
+1..24
+# tests 24
+# suites 0
+# pass 24
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 17554.5037

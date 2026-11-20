@@ -1,0 +1,145 @@
+=== rg docs/ ===
+agents\workitem-analyst\README.md:3:Delivery Squad 分析成员。设计依据：`docs/02-multica-delivery-lifecycle-design-v1.6.6.md` §5（Analysis）、§5.4（Analysis Gate）、§6（Human Analysis Review）、§10.3（Verify Recommendation）；详细分析方法将以 `03-workitem-analysis-design` 为基线（文档待补，本资产只覆盖角色契约，不内嵌方法步骤）。
+agents\workitem-analyst\README.md:14:> **2026-10-21 起**：注册与漂移纠正由 `skill-flow workspace provision --workspace <name>` 自动完成（manifest：`workspace-skills/_shared/provisioning.json`，方案：`docs/workspace-provisioning-plan.md`）。本节下列步骤是该命令的字段来源说明，不再手工执行。
+agents\workitem-analyst\README.md:33:| `workitem-analysis` | `4dfbc5ea-33a7-4363-8718-d8ddf0103763` | 方法契约（2026-10-20 起含 tasks.md 写法契约：`[预估: Nh]` 尾注必填 + 首分句 ≤30 字短标题，docs/tfs-state-writeback-plan.md §4.7/§4.8） |
+agents\pr-status-sync-agent\README.md:3:Delivery Squad 之外的 Autopilot 薄适配器：定时检测 TFS PR 终态并驱动交付收口。设计依据：`docs/02-multica-delivery-lifecycle-design-v1.6.6.md` §11 / §11.1 / §11.2 / §11.4；方案：`docs/pr-status-sync-plan.md`。
+agents\pr-status-sync-agent\README.md:17:> **2026-10-21 起**：注册与漂移纠正由 `skill-flow workspace provision --workspace <name>` 自动完成（manifest：`workspace-skills/_shared/provisioning.json`，方案：`docs/workspace-provisioning-plan.md`）。本节下列步骤是该命令的字段来源说明，不再手工执行。
+agents\pr-status-sync-agent\README.md:31:| 验收 | S1–S7 全过（2026-10-15，FOMA-28 / TFS 256462） | 详见 `docs/pr-status-sync-plan.md` §6；S7 run `01a13d78`（manual trigger，物化目录执行 PASS） |
+agents\pr-status-sync-agent\README.md:34:`skill-flow workspace sync --workspace beiluoshimen --skill pr-status-sync`（渲染 + upsert + reconcile + 回读校验一体，见 `docs/workspace-skill-portability-plan.md`）。
+workspace-skills\codebase-explorer\SKILL.md:17:2. 查根仓 `AGENTS.md`、相关 Repository Instructions、`docs/config/repo-context.yaml`、`docs/router/overview.md` 与 `docs/router/*-mapping.md`，按 `repo_id / repo_type / repo_path / responsibility / keywords / not_responsible_for` 发现候选业务系统和 Repository；按需读取现有 `openspec/specs/`。
+workspace-skills\delivery-gate\SKILL.md:41:| `task_estimates` | 逐 task 声明行强制 `[预估: Nh]` 行末尾注（必填，0<N≤6h；缺注/越界/不在行末 → FAIL 并列明 ref——6h 上限是拆分纪律，docs/tfs-state-writeback-plan.md §4.7） |
+workspace-skills\multica-workspace-bootstrap\SKILL.md:15:- 由 Wayfinder、Analyst 或已批准交接按根仓 `docs/config/repo-context.yaml` 确定的业务仓 `repo_path`（根仓直接子目录名，也是 Project Resource 的仓库 basename；不是 `repo_id` 或 `tfs_repo`）；尚未确定时不传名称，仅获取根仓。
+agents\tfs-sync-agent\README.md:3:Delivery Squad 之外的 Autopilot 薄适配器。设计依据：`docs/02-multica-delivery-lifecycle-design-v1.6.6.md` §4.1 / §2.9，`docs/01-multica-openspec-design-guideline-v1.16.3.md` §6 / §7 / §8。
+agents\tfs-sync-agent\README.md:16:> **2026-10-21 起**：注册与漂移纠正由 `skill-flow workspace provision --workspace <name>` 自动完成（manifest：`workspace-skills/_shared/provisioning.json`，方案：`docs/workspace-provisioning-plan.md`）。本节下列步骤是该命令的字段来源说明，不再手工执行。
+agents\tfs-sync-agent\README.md:34:`skill-flow workspace sync --workspace beiluoshimen --skill tfs-sync`（渲染 + upsert + reconcile + 回读校验一体，见 `docs/workspace-skill-portability-plan.md`）。
+workspace-skills\development-execution\SKILL.md:28:5. **Commit / Push**：业务仓每个 Commit Message 必须含 `Refs:` 尾注行——独立一行，`Refs:` + 空格分隔的 `#<任务id>` 列表（ID 来自 Ground 读到的 `tfs_task_ids`，写本 commit 实际实现的 task_ref 对应的任务；不写父需求 ID，不写 Issue KEY）；**禁用状态变迁关键字**（fix/fixes/fixed/close/closes/closed/resolve/resolves/resolved `#id` 一律禁止）。OpenSpec 根仓 commit 豁免。规范全文：`docs/tfs-task-commit-linkage-plan.md` §4.2。
+workspace-skills\development-execution\SKILL.md:40:`--issue` 与 `--registry-config` 同时提供时启用 `commit_task_links` 检查：核验业务仓 commit 的 `Refs:` 尾注行属于本 Issue 合法任务集合且覆盖全部 task_refs（docs/tfs-task-commit-linkage-plan.md §4.4）；缺 `tfs_task_ids` 时该检查 UNKNOWN（交 Lead 补齐任务物化后重跑，不自行绕过）。
+workspace-skills\delivery-flow\SKILL.md:39:**TFS 任务解决（Lead 汇总点，02 §9；docs/tfs-state-writeback-plan.md §4.3）**：
+agents\backend-engineer\README.md:19:| `development-execution` | `28da55b0-1a23-48cc-a5d9-54b670e38c39` | 三 Engineer 共用研发方法（X5），含 Development Completion Check 脚本、Evidence 契约与 methods/（tdd / codebase-design / code-review / verification-before-completion / bounded-diagnosis，2026-10-15 补齐）；2026-10-19 Completion Check 新增 commit_task_links 检查（Commit Message Refs: #任务ID 核验，docs/tfs-task-commit-linkage-plan.md）；2026-10-13 绑定 |
+agents\backend-engineer\README.md:20:| `backend-engineering` | `bd5c50a5-c0b5-4fc2-96aa-fb8617ad4ceb` | 后端领域方法（references：feedback-signals / local-validation / review-standards，DF 仓实测命令映射）；2026-10-15 注册并绑定（`docs/domain-engineering-skills-plan.md`，E1–E6） |
+workspace-skills\development-execution\references\development-evidence-contract.md:48:| `commits[]` 与任务关联 | Commit ↔ TFS 任务的关联事实**不复制**进 evidence（Reference-not-Replication）：规范位置是 Commit Message 的 `Refs:` 尾注行，核验脚本现场从 git 提取。业务仓（`root_repo/<已登记 repo_path>` 及 `root_repo/.worktrees/<直接子目录>`）的 commit 必须有 `Refs:` 行；仅 `root_repo` 本身的 commit 豁免，根仓下其他目录不豁免。规范全文：`docs/tfs-task-commit-linkage-plan.md` §4.2 |
+workspace-skills\development-execution\references\change-progress-script-contract.md:78:按 `projects/multica/docs/skill-flow-cli-plan.md`（机器安装模式），两脚本实现迁入 npm 包
+agents\frontend-engineer\README.md:19:| `development-execution` | `28da55b0-1a23-48cc-a5d9-54b670e38c39` | 三 Engineer 共用研发方法（X5），含 Development Completion Check 脚本、Evidence 契约与 methods/（tdd / codebase-design / code-review / verification-before-completion / bounded-diagnosis，2026-10-15 补齐）；2026-10-19 Completion Check 新增 commit_task_links 检查（Commit Message Refs: #任务ID 核验，docs/tfs-task-commit-linkage-plan.md）；2026-10-13 绑定 |
+agents\frontend-engineer\README.md:20:| `frontend-engineering` | `27b3c58e-9364-47d7-a687-01a0a6fa95e2` | 前端领域方法（references：feedback-signals / local-validation / review-standards，DF 仓实测命令映射）；2026-10-15 注册并绑定（`docs/domain-engineering-skills-plan.md`，E1–E6） |
+workspace-skills\analysis-completion\SKILL.md:42:   脚本动作：写 `analysis.*` metadata → 写 `status=analysis_review`（`--no-start`）→ 回读确认 → TFS 段：需求置"已分析"（`--registry-config` 提供 `runtime.tfs_cli`；docs/tfs-state-writeback-plan.md §4.1）。
+agents\delivery-lead\README.md:3:Multica 中 Delivery Lead 的完整配置集。设计依据：`docs/01-multica-openspec-design-guideline-v1.16.3.md` §4–§6、`docs/02-multica-delivery-lifecycle-design-v1.6.6.md` §3.3 / §13.2.3 / 附录 A。
+agents\delivery-lead\README.md:15:> **2026-10-21 起**：注册与漂移纠正由 `skill-flow workspace provision --workspace <name>` 自动完成（manifest：`workspace-skills/_shared/provisioning.json`，方案：`docs/workspace-provisioning-plan.md`）。本节下列步骤是该命令的字段来源说明，不再手工执行。
+agents\delivery-lead\README.md:30:修改本目录任何文件前，先过 `docs/agent-skill-review-checklist.md` 的 D / I / X 组检查。
+agents\delivery-lead\README.md:40:| Skill `pull-request` | `1ec34033-3522-47fb-8c08-bf1330ae9afe` | 已注册并绑定到 Lead（2026-10-14）；同时绑定 Backend `59a97d2d-…` / Frontend `51440aa8-…`（development-execution Ground 环节用 `skill-flow pr worktree`）；仓内资产 `workspace-skills/pull-request/`（SKILL.md = content；config / references = skill files，脚本已收编 skill-flow；改动后跑 `skill-flow workspace sync --workspace beiluoshimen`（渲染+同步一体，docs/workspace-skill-portability-plan.md）） |
+agents\delivery-lead\README.md:41:| Skill `finalize-delivery` | `ffff9bd5-bcdb-4f0f-b18d-7bf667636c99` | 已注册并绑定到 Lead（2026-10-15）；仓内资产 `workspace-skills/finalize-delivery/`（SKILL.md = content；config / references = skill files，脚本已收编 skill-flow，同步纪律同上）；验收记录见 `docs/finalize-delivery-plan.md` §7 |
+agents\delivery-lead\README.md:42:| Skill `delivery-flow` | `8f2861fd-74c0-412b-9e07-994006701d29` | 已注册并绑定到 Lead（2026-10-15）；仓内资产 `workspace-skills/delivery-flow/`（SKILL.md = content；config / references = skill files，scripts×4（2026-10-20 起含 materialize-tfs-tasks 与 resolve-tfs-tasks；resolve 自 2026-10-20 裁定起置"已解决"同时确定性落库 CompletedWork=OriginalEstimate、RemainingWork=0）已收编为 `skill-flow dev/tfs/delivery` 子命令，同步纪律同上）；验收记录见 `docs/delivery-flow-plan.md` §6、`docs/tfs-task-materialization-plan.md` §6 与 `docs/tfs-state-writeback-plan.md` §6 |
+workspace-skills\delivery-flow\references\dispatch-facts-contract.md:37:| `tfs_task_ids` | 可选，`skill-flow tfs materialize-tasks` 唯一写入者。`{ "<task_ref>": <TFS 任务 id> }`——本派发各 task_ref 在 tfs.id 需求下物化的 TFS 任务子项。缺省 = 尚未物化；ENGINEERING 失效时**不动**本字段（已建 TFS 任务保留），新 dispatch 覆盖同 task_ref 时复用既有 id 不新建（docs/tfs-task-materialization-plan.md §3） |
+workspace-skills\workitem-analysis\SKILL.md:15:- 根仓路径运行时解析：先执行 `skill-flow runtime resolve-root-repo --config config/repo-registry.json --issue <KEY>`（事实源 = 平台项目 local_directory 资源，multi-daemon-root-repo-resolution-plan §4）；解析 UNKNOWN（未挂载/多 daemon 缺 `MULTICA_DAEMON_ID`/路径无效/`docs/config/repo-context.yaml` 缺失）即停止，不猜测、不回退静态路径。
+workspace-skills\workitem-analysis\SKILL.md:19:1. **Context Analysis**：读取 Issue 正文 / metadata / 相关仓库现状，澄清目标、业务场景、行为规则、范围与验收要求；歧义无法可靠澄清时停止并列出缺口。**定位候选业务仓前必读根仓 `docs/config/repo-context.yaml`**（需求→仓库语义映射，`repo_id` 主键；路径由上一步 `skill-flow runtime resolve-root-repo` 输出的 `repo_context` 给出）；按 `repo_id / repo_type / repo_path / responsibility / keywords / not_responsible_for` 选仓，后续 Facts 的 `repo_key` 值使用 `repo_id`；映射未命中不得硬猜，列入缺口；
+workspace-skills\workitem-analysis\SKILL.md:47:   - **tasks.md 写法契约**（docs/tfs-state-writeback-plan.md §4.7/§4.8，Gate 强制 + 物化消费）：
+
+=== rg ops guide / section refs ===
+workspace-skills\backend-engineering\SKILL.md:17:- 目标业务仓 worktree（ops guide §3.5，研发一律在 worktree 内进行）。
+workspace-skills\delivery-gate\SKILL.md:14:| `skill-flow analysis validate` | Analysis Gate（02 §5.4） | ✅ 已实现 |
+workspace-skills\delivery-gate\SKILL.md:17:| `skill-flow pr evaluate-transition` | PR Transition Gate（02 §12.1） | ⏳ 待实现 |
+workspace-skills\delivery-gate\SKILL.md:33:检查项（对应 02 §5.4 公共契约）：
+workspace-skills\analysis-completion\SKILL.md:8:Analysis 的唯一收口入口（02 §5.4）。顺序固定：**Gate 先行，Gate PASS 才允许写状态**。
+workspace-skills\finalize-delivery\SKILL.md:3:description: PR 收口、对账与最终完成（02 §11.3/§12 落地）。当 required PR 全部 completed 时，由 PR Status Sync Run same-run 调用，或由 Delivery Lead 观察终态后手动触发；完成工作区对账、OpenSpec Archive、根仓 Commit、TFS 回写与 Issue 关闭。
+workspace-skills\finalize-delivery\SKILL.md:8:薄适配器方法：确定性逻辑全部收编为 `skill-flow` 子命令，本文件只定义调用契约（02 §11.3 / §11.4 / §12.1–12.4、ops guide §3.5 的落地）。
+workspace-skills\finalize-delivery\SKILL.md:40:- 中间失败：pending 保留，下次调用按 02 §12.4.3 逐动作核对补齐，不从"上次第几步"盲目继续；
+workspace-skills\finalize-delivery\SKILL.md:41:- 本 Skill 不处理 abandoned 路径（02 §11.2，由 pr-status-sync 停止 + Human Decision）。
+agents\delivery-lead\README.md:23:- **轻量协调者**：正常承担成员选择与分工，不是纯异常处理器，也不是工作流引擎（02 §3.3）。
+workspace-skills\development-execution\SKILL.md:22:按 02 §8.1 的统一执行模型完成当前 Task Set（各环节的 What 以 02 §8.1 为权威，此处不重复定义）：
+workspace-skills\development-execution\SKILL.md:24:1. **Ground**：读 `tasks.md` 中 assigned `task_refs` 的上下文与所属契约段（Corrective 读 Expected/Actual、Root Cause、Fix Strategy、Regression Scope；Intentional 读 Requirement / Scenario / Design）；只消费已批准内容。涉及业务仓研发时，先用 pull-request Skill 的 worktree 脚本建工作树（ops guide §3.5）：`skill-flow pr worktree create --issue <KEY> --repo <repo_key> --branch feat/<tfs-id> --config <repo-registry.json>`；工作树位于 `<root_repo>/.worktrees/<issue>-<repo_id>/`，枢纽克隆 `<root_repo>/<repo_path>/`（`repo_key = repo_id`，`repo_path` 来自 registry，root_repo 由脚本按平台 local_directory 资源运行时解析）只做 fetch/push，不在其中开发。**同时读取任务 ID 事实**：`multica issue get <KEY> --output json` 取 `dev.dispatch` 中 `active:true` 且 `task_refs` 覆盖本次派发范围的条目，得 `{task_ref: tfs任务id}` 映射（`tfs_task_ids`）——Commit Message 关联的事实源，不记忆不转述，每次 Ground 现查；缺失时不停工，在 Completion Check 阶段按 UNKNOWN 回流 Lead 补跑 materialize-tfs-tasks。
+workspace-skills\development-execution\SKILL.md:25:2. **Implementation**：在批准边界内实现；任务完成事实随手记录为证据（Evidence 优先）；**checkbox 不直接编辑** `tasks.md`，统一在步骤 9 经 `skill-flow change update-progress` 受控写入（05 §11 single-writer，02 §1293 shared Artifact 并发约束）。
+workspace-skills\development-execution\SKILL.md:27:4. **Code Review**：按 02 §8.1 关注面 Review 并处理全部 Findings；可用 read-only reviewer，不形成新的隐藏 Owner。
+workspace-skills\development-execution\SKILL.md:44:9. **Task Progress Patch**：Completion Check PASS 之后、发布 READY 之前执行（05 §11.5：Patch 未确认不得发布 READY）：
+workspace-skills\development-execution\SKILL.md:52:- `UPDATED` → 继续；`ALREADY_COMPLETE` → 继续，Evidence 标注 `skipped_already`（可能存在重复 Runtime，05 §11.2）；
+workspace-skills\development-execution\SKILL.md:59:方法派发由本 Skill 决定（04 §13.3），方法之间不互调、不调 Agent / Workflow：
+workspace-skills\backend-engineering\references\feedback-signals.md:3:> 内容权威：04 §5.3（本表为其操作化）；总原则引自 04 §5.2。
+workspace-skills\backend-engineering\references\feedback-signals.md:5:## 总原则（04 §5.2 引述）
+workspace-skills\backend-engineering\references\feedback-signals.md:27:2. **行为优先于构建**：只有 Build PASS 不构成 Behavior Evidence（04 §7.2）；
+workspace-skills\backend-engineering\references\feedback-signals.md:29:4. **Corrective 回归**：可稳定复现的缺陷须留修复前 FAIL / 修复后 PASS 的对应证据；不可复现时用可靠替代证据并写明局限（04 §5.6）。
+workspace-skills\backend-engineering\references\local-validation.md:3:> 内容权威：04 §7.2（必做检查类型）与 §7.4（Evidence 五问）。本表提供**命令映射**；填不出的项标 UNKNOWN，不虚构。
+workspace-skills\backend-engineering\references\local-validation.md:14:| 04 §7.2 检查类型 | 命令（在 worktree 根执行） | 说明 |
+workspace-skills\backend-engineering\references\local-validation.md:18:| Relevant Regression | `./mvnw -pl <module> -am test` | 按变更风险扩大范围（04 §7.2 允许先窄后宽） |
+workspace-skills\backend-engineering\references\local-validation.md:22:## Evidence 五问（04 §7.4，每项 Required Verification 必须可回答）
+workspace-skills\backend-engineering\references\local-validation.md:32:- 存在无法执行的 required check 时，**不得隐式视为 PASS**：按已批准 Contract 判 BLOCKED / UNKNOWN 并升级（04 §7.2）；
+workspace-skills\backend-engineering\references\review-standards.md:3:> 内容权威：04 §8.3（工程标准轴的通用维度）。本文件是后端领域细化；规格/修复一致性轴见 `development-execution/methods/code-review.md`，不在此重复。
+workspace-skills\backend-engineering\references\review-standards.md:5:## 通用维度（04 §8.3，照录）
+workspace-skills\backend-engineering\references\review-standards.md:24:- 上表未覆盖的后端问题照常可提 Finding（04 §8.3 通用维度兜底），本表是细化不是白名单；
+agents\tfs-sync-agent\README.md:46:- **不启动研发**：创建即 `backlog` 停放 + 请求级暂不启动；启动是人工动作（02 §4.1）。
+workspace-skills\finalize-delivery\references\finalize-facts-contract.md:3:Delivery Issue 上与收口相关的 metadata key（均为 string 类型存储；JSON 值见各表）。上游语义权威：02 §11.3 / §11.4 / §12，本文只做投影。
+workspace-skills\finalize-delivery\references\finalize-facts-contract.md:33:- 02 §11.4 pending_event 的平铺投影；`repo_key` 段使用 repo-context 的 `repo_id`；**存在即表示尚需对账**，即使 Issue 已离开 `in_review`；
+workspace-skills\finalize-delivery\references\finalize-facts-contract.md:39:Final Summary 评论 ID。重试时凭它跳过重复评论（02 §12.4.3：不重复追加相同评论）。存在即跳过 Summary 步骤。
+workspace-skills\delivery-flow\SKILL.md:8:薄适配器方法：确定性逻辑全部收编为 `skill-flow` 子命令（机器安装，见 multica-delivery-operations-guide），本文件只定义调用契约（02 §7、§11.2 的落地）。
+workspace-skills\delivery-flow\SKILL.md:9:语义/确定性分界（02 §6.3–§6.4）：Lead 负责语义决策（选 Owner、定 task_refs、理解 Human 评论得出 NEXT）；脚本只校验、落实、路由，**不解析自然语言、不发明派发策略**。
+workspace-skills\delivery-flow\SKILL.md:29:脚本行为（由脚本保证）：校验（批准评论存在 / task_refs 在 tasks.md 可定位 / change_ref 与 metadata 一致 / engineer 是已注册 Agent）→ 幂等检查（同 dispatch_key 且 active → NOOP）→ 写 `dev.dispatch` → parent 输出 mention payload / sub_issue 创建 backlog Sub-Issue + 依赖门控激活。change 目录不可解析时先经 `skill-flow change resolve-identity` 恢复（05 §5.5，契约见 `development-execution/references/change-progress-script-contract.md` §1）：`ACTIVE_FOUND` 唯一候选 → 以 resolver 结果为准继续、输出 `change_ref_recovery` 记录恢复路径（metadata 修复归 analysis-completion / Lead）；`ARCHIVED_FOUND` / `CONFLICT` / `INVALID` / `NOT_FOUND` → FAIL 含枚举，不创建、不派发。
+workspace-skills\delivery-flow\SKILL.md:31:**TFS 任务物化（派发成功后同 Run 紧接调用，02 §7"按 TFS Type 补齐必要 TFS Task"）**：
+workspace-skills\delivery-flow\SKILL.md:39:**TFS 任务解决（Lead 汇总点，02 §9；docs/tfs-state-writeback-plan.md §4.3）**：
+workspace-skills\delivery-flow\SKILL.md:60:脚本行为（由脚本保证）：前置校验（blocked + pr.abandoned + 评论存在 + comment_id 幂等）→ 按 02 §11.2 路由表执行确定性状态写入 → 输出路由指令。
+workspace-skills\delivery-flow\SKILL.md:74:| `directive=hold_for_human` | 保持安全停止，交 Human（CANCEL 专项契约未定义，02 §11.2） |
+workspace-skills\delivery-flow\SKILL.md:97:- Sub-Issue 创建结果未知：先查 Issue 列表核实，不盲目重建（02 §7.3）；
+workspace-skills\pr-status-sync\SKILL.md:3:description: PR 终态检测与收口触发（02 §11 落地）。当 Autopilot 定时触发或需要手动补齐 PR 状态复核时使用；全部 completed 时写 finalize.pending 并按固定路由同 Run 调 finalize-delivery，任一 abandoned 时确定性停止。
+workspace-skills\pr-status-sync\SKILL.md:8:薄适配器方法：确定性终态检测与事实写入全部收编为 `skill-flow pr reconcile-status`，本文件只定义调用契约与固定路由表（02 §11 / §11.1 / §11.2 / §11.4 的落地）。
+workspace-skills\pr-status-sync\SKILL.md:28:2. 脚本行为（由脚本保证，不由 Agent 判断）：扫描 `in_review` + `blocked` → 逐 Issue 回读（无 `current_pr` 且无 `finalize.pending` 不纳入）→ 逐 PR 经 tfs-cli 回核身份与状态 → 按 02 §11 聚合写事实 → 输出路由指令。
+workspace-skills\pr-status-sync\SKILL.md:55:- active PR 一律 NO-OP：不读 Review 意见/投票/mergeStatus，不写评论，不唤醒任何人（02 §11.1）；
+workspace-skills\pr-status-sync\SKILL.md:56:- abandoned 的业务原因不由本 Skill 解释（02 §11.2）；停止后的路由属 Human Decision / delivery-flow（缺口⑤）。
+workspace-skills\frontend-engineering\SKILL.md:17:- 目标业务仓 worktree（ops guide §3.5，研发一律在 worktree 内进行）。
+workspace-skills\frontend-engineering\SKILL.md:31:- 所选反馈信号与 `task_refs` 的改动类型对应，且实际执行；构建 PASS 不替代已要求的交互验收（04 §5.4）；
+workspace-skills\frontend-engineering\SKILL.md:44:- 无法自动测试时不得伪造 RED/GREEN；改用浏览器可复现观察 + 截图/操作记录（04 §5.4）；
+workspace-skills\pull-request\SKILL.md:8:薄适配器方法：确定性逻辑全部收编为 `skill-flow` 子命令，本文件只定义调用契约（02 §10.1/§10.2、ops guide §3.5 的落地）。
+workspace-skills\pull-request\SKILL.md:51:- `result=UNKNOWN`（exit 3）：交 Delivery Lead 语义判断——仅"需改代码 / rebase / HEAD 不一致原因查明"才重新 @Engineer（02 §10.2 清单），TFS 临时失败与幂等恢复不需要 Engineer；
+workspace-skills\development-execution\references\change-progress-script-contract.md:4:> 本契约是 `resolve-change-identity.ts` 与 `update-task-progress.ts` 对全部 Skill 的唯一调用约定：workitem-analysis、development-execution、delivery-flow 及后续 Verify 路线（缺口④）共同引用本文件，不各自另定。修改本契约须同步核对两个脚本的实际 `--help` 输出与 05 §5/§11。
+workspace-skills\development-execution\references\change-progress-script-contract.md:14:- **只读**：不创建/不修改任何 Change 与 Multica 事实（05 §5.2/§5.6）。
+workspace-skills\development-execution\references\change-progress-script-contract.md:20:| `ACTIVE_FOUND` | 唯一活跃候选（含主查找命中、恢复唯一候选） | 0 | 采用其 `change_ref`；Multica 引用缺失/不一致时回写修复（05 §5.5 Case A），**禁止重建** |
+workspace-skills\development-execution\references\change-progress-script-contract.md:21:| `ARCHIVED_FOUND` | 仅 archive 存在（逻辑 ID 匹配） | 0 | STOP：不重新应用 Delta、不新建同 ID Change（05 §5.5 Case B），交 Delivery Lead 判定 |
+workspace-skills\development-execution\references\change-progress-script-contract.md:22:| `NOT_FOUND` | 无任何候选 | 0 | 仅此时允许创建新 Change（且须满足 05 §5.4 创建契约全部前置） |
+workspace-skills\development-execution\references\change-progress-script-contract.md:28:### 创建闭环（仅 NOT_FOUND 后，05 §5.4）
+workspace-skills\development-execution\references\change-progress-script-contract.md:36:Route→Schema 映射（02 §5.3）：`bug-fix`/`production-fix`→`corrective-change`；`sdd-fast`→`intentional-change`；不按 TFS Type 机械二分。创建禁令（05 §5.4）：Human Reject 不新建、Development Rework 不新建、change_ref 暂时缺失不直接新建、不用 title 相似度猜测。
+workspace-skills\development-execution\references\change-progress-script-contract.md:52:| `ALREADY_COMPLETE` | 目标已勾，幂等跳过 | 0 | 继续；Evidence 标注 `skipped_already`（可能存在重复 Runtime，05 §11.2），不重复改写制造"第二次完成" |
+workspace-skills\development-execution\references\change-progress-script-contract.md:53:| `BUSY` | 30s 有界重试后锁仍不可获得 | 2 | Skill 级有界重试（≤3 次，间隔 ≥30s）；仍 BUSY → UNKNOWN：**暂停发布 READY / Gate 不得 PASS**，已形成的验证证据保留可复用（05 §11.5） |
+workspace-skills\development-execution\references\change-progress-script-contract.md:54:| `CONFLICT` | 目标行锁内重读时已变化/消失/编号重复（05 §11.4） | 2 | STOP 交 Delivery Lead：**不假勾、不覆盖** |
+workspace-skills\development-execution\references\change-progress-script-contract.md:61:| 角色 | 前置条件（05 §11.1/§11.5） | task_refs 来源 |
+workspace-skills\development-execution\references\change-progress-script-contract.md:88:- **位置约定变更**：05 §11 裁决 D3 的"脚本位置 projects/multica/scripts/"由包收编 supersede；
+workspace-skills\development-execution\references\development-evidence-contract.md:30:    "reason_if_not_required": "OpenSpec 根仓产物不建独立 PR（02 §963-964）"
+workspace-skills\delivery-flow\references\dispatch-facts-contract.md:58:| `comment_id` | 触发评论 id，**即幂等身份**：已存在于本数组 → 同 Decision 重跑 NO-OP（02 §11.2 单次触发） |
+workspace-skills\delivery-flow\references\dispatch-facts-contract.md:64:例外：`CANCEL_DELIVERY` **不写任何事实**（02 §11.2：取消的专项契约未定义，脚本零写入，只输出 `hold_for_human` 指令）。
+workspace-skills\delivery-flow\references\dispatch-facts-contract.md:66:## 失效语义（02 §11.2 "Completion Fact 失效"的落地）
+workspace-skills\development-execution\methods\bounded-diagnosis.md:3:> 内容权威：04 §12.2（进入条件与边界）、§6.4（Diagnostic Method 调用契约）。本文件是 `development-execution` 的内部 Method，只产生当前 Finding / Evidence，不拥有 Run / Issue / 交付状态。
+workspace-skills\development-execution\methods\bounded-diagnosis.md:5:## Use When（进入条件，04 §12.2）
+workspace-skills\development-execution\methods\bounded-diagnosis.md:13:**不进入**：`root_cause.status=probable` 本身不构成重分析理由（04 §12.2）——只有新事实影响已批准 Fix Strategy / Scope / Verification 正确性时才实质升级。
+workspace-skills\development-execution\methods\bounded-diagnosis.md:31:诊断方法步骤受控复用 `bug-analysis/methods/diagnosing-bugs.md`（按 04 §6.4 的调用契约：由父 Skill 显式加载；Method Source 不可读时停止该诊断路径并报告缺失，不自行注册新 Skill）。
+workspace-skills\development-execution\methods\bounded-diagnosis.md:42:## Forbidden Effects（04 §6.4）
+workspace-skills\development-execution\methods\bounded-diagnosis.md:46:- 不无界重试：同类 Finding / Blocker 多轮不收敛即停止（04 §12.3）。
+workspace-skills\tfs-sync\references\metadata-contract.md:3:Delivery Issue 上由 `tfs-sync` 写入的 metadata（02 §4.1 推荐集合）：
+workspace-skills\development-execution\methods\code-review.md:3:> 内容权威：04 §8 全节。本文件是 `development-execution` 的内部 Method（骨架 Step 4 的方法本体），不注册为顶层 Skill。
+workspace-skills\development-execution\methods\code-review.md:7:候选实现已固定（Candidate Commit 前），需要对当前 Diff 做 implementation-oriented 审查。所有 Route 的代码实现都必须审查（04 §8.1）；纯验证无代码修改的 Task Set 复用仍有效的审查事实，不重复审查（04 §7.1）。
+workspace-skills\development-execution\methods\code-review.md:17:**轴 1 · Specification / Fix Alignment（04 §8.2）**：当前 Diff 与 `task_refs` / Approved Scope 对应；每项 Implementation Task 有有效验证；无未解释的 Scope Drift / Stale Evidence；checkbox 不与事实冲突。注意：**任务尚未勾选是 Review 阶段的正常情况，不判 FAIL；已勾选却无有效 Evidence 才是阻断异常。**
+workspace-skills\development-execution\methods\code-review.md:19:**轴 2 · Engineering Standards（04 §8.3 + 领域 review-standards）**：按当前 Diff 适用维度检查（Conventions / Complexity / Duplication / Contract Risk / Error Handling / Test Quality / Regression Risk / Maintainability / Security）。
+workspace-skills\development-execution\methods\code-review.md:38:## Finding 处理纪律（04 §8.4）
+workspace-skills\development-execution\methods\code-review.md:45:- Finding 实质否定已批准 Expected Behavior / Root Cause / Requirement / Approved Scope → 不是代码修复，按 04 §12 升级；
+workspace-skills\development-execution\methods\code-review.md:54:- 不因调用 Reviewer 产生隐藏的持久化 Owner / Sub-Issue / Run / 额外 Workflow（04 §8.3）；
+workspace-skills\pull-request\references\pr-facts-contract.md:5:## `pr_prep`（Engineer 写入，02 §10.1 最小输入契约的投影）
+workspace-skills\development-execution\methods\codebase-design.md:3:> 内容权威：04 §6.3。本文件是 `development-execution` 的内部 Method，不注册为顶层 Skill，不启动独立架构评审 Runtime。
+workspace-skills\development-execution\methods\codebase-design.md:20:5. 局部设计自洽即可定稿，写入实现；需要沉淀的决策记入 `design.md` 的批准边界内细化（04 §3.4 权限表）。
+workspace-skills\development-execution\methods\codebase-design.md:32:- 不改变跨 Repository Contract、数据库重大迁移、安全模型、已批准外部接口——出现此类需要必须停止协调（04 §6.3）；
+agents\pr-status-sync-agent\README.md:13:| 绑定 Skill | `workspace-skills/finalize-delivery/` | same-run finalize 的物化前提（02 §11.3） |
+agents\pr-status-sync-agent\README.md:45:- **先持久化后动作**（02 §11.4）：`pr.abandoned` 写在 blocked 之前；`finalize.pending` 写在任何收口副作用之前。
+agents\pr-status-sync-agent\README.md:46:- **active = NO-OP**（02 §11.1）：不读 Review 意见/投票/mergeStatus，不写评论，不唤醒任何人。
+workspace-skills\development-execution\methods\verification-before-completion.md:3:> 内容权威：04 §6.5。本文件是 `development-execution` 的内部 Method，**不是** Independent Verify Agent，不能自行决定 `verify_agent.required`。
+workspace-skills\development-execution\methods\verification-before-completion.md:36:- 不以"此前某次 Run 通过""Review 很可能没问题"替代当前可复核证据（04 §10.3）；
+agents\pr-status-sync-agent\instructions.md:16:- 不得解释 PR 的业务含义、Review 意见、投票或 mergeStatus——active PR 一律 NO-OP（02 §11.1）；
+agents\pr-status-sync-agent\instructions.md:17:- 不得解释或推断 abandoned 的业务原因，不得决定 abandoned 后的去向（02 §11.2，属 Human Decision）；
+workspace-skills\frontend-engineering\references\review-standards.md:3:> 内容权威：04 §8.3（工程标准轴的通用维度）。本文件是前端领域细化；规格/修复一致性轴见 `development-execution/methods/code-review.md`，不在此重复。
+workspace-skills\frontend-engineering\references\review-standards.md:5:## 通用维度（04 §8.3，照录）
+workspace-skills\frontend-engineering\references\review-standards.md:24:- 上表未覆盖的前端问题照常可提 Finding（04 §8.3 通用维度兜底），本表是细化不是白名单；
+workspace-skills\development-execution\methods\tdd.md:3:> 内容权威：04 §6.2。本文件是 `development-execution` 的内部 Method，不注册为顶层 Skill，不拥有独立 Run / Issue / Side Effect。
+workspace-skills\development-execution\methods\tdd.md:8:**不适用**：复杂 Layout / CSS、环境配置、Migration / SQL、Generated Code、外部系统或人工交互为主、无法构造有价值 Test Seam 的场景——返回父 Skill 选择其他 Feedback（04 §6.2），不为形式测试内部实现细节。
+workspace-skills\frontend-engineering\references\local-validation.md:3:> 内容权威：04 §7.2（必做检查类型）与 §7.4（Evidence 五问）。本表提供**命令映射**；填不出的项标 UNKNOWN，不虚构。
+workspace-skills\frontend-engineering\references\local-validation.md:14:| 04 §7.2 检查类型 | 命令 | 说明 |
+workspace-skills\frontend-engineering\references\local-validation.md:22:## Evidence 五问（04 §7.4，每项 Required Verification 必须可回答）
+workspace-skills\frontend-engineering\references\local-validation.md:32:- 存在无法执行的 required check 时，**不得隐式视为 PASS**：按已批准 Contract 判 BLOCKED / UNKNOWN 并升级（04 §7.2）；
+workspace-skills\frontend-engineering\references\feedback-signals.md:3:> 内容权威：04 §5.4（本表为其操作化）；总原则引自 04 §5.2。
+workspace-skills\frontend-engineering\references\feedback-signals.md:5:## 总原则（04 §5.2 引述）
+workspace-skills\frontend-engineering\references\feedback-signals.md:28:- 构建 PASS（`npm run build`）+ Lint PASS 只是静态质量底线，不构成行为证据（04 §5.4）。
+workspace-skills\frontend-engineering\references\feedback-signals.md:34:3. **Corrective 回归**：可稳定复现的缺陷须留修复前 FAIL / 修复后 PASS 的对应证据（修复前截图/报错记录 vs 修复后）；不可复现时用可靠替代证据并写明局限（04 §5.6）；
+workspace-skills\workitem-analysis\SKILL.md:14:- OpenSpec 根仓可访问；Change 身份解析与创建走 `development-execution/references/change-progress-script-contract.md` §1 的冻结契约（`skill-flow change resolve-identity`，05 §5），不保留任何自建查找或约定路径；
+workspace-skills\workitem-analysis\SKILL.md:29:3. **Change 身份解析与创建**（schema 按 02 §5.3 映射：`bug-fix`/`production-fix`→`corrective-change`，`sdd-fast`→`intentional-change`；调用契约见 `development-execution/references/change-progress-script-contract.md` §1）：
+workspace-skills\workitem-analysis\SKILL.md:35:   - `ACTIVE_FOUND` → 采用其 `change_ref`；metadata 缺失/不一致 → 由 analysis-completion 回写修复（05 §5.5 Case A，禁止重建）；
+workspace-skills\workitem-analysis\SKILL.md:38:   - `NOT_FOUND` → 仅此时创建（05 §5.4 全部前置已满足：change_kind/schema/TFS 身份明确）：

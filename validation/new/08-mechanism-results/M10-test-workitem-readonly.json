@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-11-13T04:42:10.744Z",
+  "methods": [
+    "GET"
+  ],
+  "credentials_present": true,
+  "records": [
+    {
+      "label": "user_test_workitem",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workitems/260986?$expand=relations&api-version=4.1",
+      "status": 200,
+      "json": true
+    }
+  ],
+  "workitem": {
+    "id": 260986,
+    "rev": 2,
+    "fields": {
+      "System.TeamProject": "DP-01-数据仓库",
+      "System.WorkItemType": "需求",
+      "System.State": "已建议",
+      "System.ChangedDate": "2026-10-29T05:48:49.627Z",
+      "System.Title": "公版研发_DF框架_对接统一权限时，获取菜单接口去除language参数"
+    },
+    "relations": []
+  }
+}

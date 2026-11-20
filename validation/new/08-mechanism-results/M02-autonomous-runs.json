@@ -1,0 +1,60 @@
+[
+  {
+    "agent_id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+    "attempt": 1,
+    "attribution": {
+      "evidence": {
+        "kind": "issue_assignment",
+        "ref_id": "01a1d321-125e-715f-b0c7-7f7794478398"
+      },
+      "initiator": {
+        "email": "lilei@winning.com.cn",
+        "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+        "name": "lilei"
+      },
+      "originator": {
+        "email": "lilei@winning.com.cn",
+        "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+        "name": "lilei"
+      },
+      "precise": true,
+      "source": "direct_human"
+    },
+    "completed_at": "2026-11-13T12:29:13+08:00",
+    "created_at": "2026-11-13T12:18:42+08:00",
+    "delivered_comment_ids": [],
+    "dispatched_at": "2026-11-13T12:18:42+08:00",
+    "error": null,
+    "id": "01a1d321-1273-7c2f-a744-96ff82e8f4e9",
+    "issue_id": "01a1d321-125e-715f-b0c7-7f7794478398",
+    "kind": "direct",
+    "max_attempts": 2,
+    "priority": 0,
+    "relative_work_dir": "rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir",
+    "result": {
+      "output": "已向 TEST-7 发布结果评论及完整证据附件。\n\n显式兼容 Git 子进程调用下，自主 clone 与 M02 同 Task 均 **PASS**；重入后 child 修改及 Hash 保持，root 干净。初次 FAIL 已保留，默认 PATH 和沙箱未改。\n\n跨 Run 验证仍 pending；Rondo dev prepare 为 **NOT_RUN**。",
+      "pr_url": "",
+      "session_id": "01a1d321-0487-7790-ad22-b75f859cc2b7",
+      "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir"
+    },
+    "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+    "started_at": "2026-11-13T12:18:42+08:00",
+    "status": "completed",
+    "supplement_capability": "task-supplement-v1",
+    "supplement_comment_ids": [
+      "01a1d324-59d9-7af8-a95a-48182756cf4d"
+    ],
+    "usage": [
+      {
+        "cache_read_tokens": 1115392,
+        "cache_write_tokens": 0,
+        "input_tokens": 56130,
+        "model": "gpt-6-astra",
+        "output_tokens": 23169,
+        "provider": "codex"
+      }
+    ],
+    "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+    "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+  }
+]

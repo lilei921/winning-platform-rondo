@@ -1,0 +1,4 @@
+$ C:/Users/lilei/.multica/bin/multica.exe issue get TEST-13 --workspace-id 60eb8cf4-31be-4a34-b744-8ef6a0bcf15d --output json
+$ C:/Users/lilei/.multica/bin/multica.exe issue status 01a1d372-e8b3-7ebc-abe0-fe6d3aff8601 done --no-start --workspace-id 60eb8cf4-31be-4a34-b744-8ef6a0bcf15d --output json
+$ C:/Users/lilei/.multica/bin/multica.exe issue get TEST-13 --workspace-id 60eb8cf4-31be-4a34-b744-8ef6a0bcf15d --output json
+$ C:/Users/lilei/.multica/bin/multica.exe issue metadata delete 01a1d372-e8b3-7ebc-abe0-fe6d3aff8601 --key finalize.pending --workspace-id 60eb8cf4-31be-4a34-b744-8ef6a0bcf15d --output json

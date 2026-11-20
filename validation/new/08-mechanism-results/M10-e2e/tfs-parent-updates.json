@@ -1,0 +1,505 @@
+{
+  "count": 7,
+  "value": [
+    {
+      "id": 1,
+      "workItemId": 260986,
+      "rev": 1,
+      "revisedBy": {
+        "id": "8e43bdbb-5bd7-4a2a-a6ea-176975e3017c",
+        "name": "l_nn(李娜娜) <WINNING\\l_nn>",
+        "displayName": "l_nn(李娜娜)",
+        "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/Identities/8e43bdbb-5bd7-4a2a-a6ea-176975e3017c",
+        "uniqueName": "WINNING\\l_nn",
+        "imageUrl": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_api/_common/identityImage?id=8e43bdbb-5bd7-4a2a-a6ea-176975e3017c"
+      },
+      "revisedDate": "2026-10-29T05:48:49.627Z",
+      "fields": {
+        "System.Id": {
+          "newValue": 260986
+        },
+        "System.AreaId": {
+          "newValue": 194
+        },
+        "System.NodeName": {
+          "newValue": "DP-01-数据仓库"
+        },
+        "System.AreaLevel1": {
+          "newValue": "DP-01-数据仓库"
+        },
+        "System.Rev": {
+          "newValue": 1
+        },
+        "System.AuthorizedDate": {
+          "newValue": "2026-10-29T05:43:26.66Z"
+        },
+        "System.RevisedDate": {
+          "newValue": "2026-10-29T05:48:49.627Z"
+        },
+        "System.IterationId": {
+          "newValue": 196
+        },
+        "System.IterationLevel1": {
+          "newValue": "DP-01-数据仓库"
+        },
+        "System.IterationLevel2": {
+          "newValue": "迭代 1"
+        },
+        "System.WorkItemType": {
+          "newValue": "需求"
+        },
+        "System.State": {
+          "newValue": "已建议"
+        },
+        "System.Reason": {
+          "newValue": "新建"
+        },
+        "System.AssignedTo": {
+          "newValue": "li_lei(李磊) <WINNING\\li_lei>"
+        },
+        "System.CreatedDate": {
+          "newValue": "2026-10-29T05:43:26.66Z"
+        },
+        "System.CreatedBy": {
+          "newValue": "l_nn(李娜娜) <WINNING\\l_nn>"
+        },
+        "System.ChangedDate": {
+          "newValue": "2026-10-29T05:43:26.66Z"
+        },
+        "System.ChangedBy": {
+          "newValue": "l_nn(李娜娜) <WINNING\\l_nn>"
+        },
+        "System.AuthorizedAs": {
+          "newValue": "l_nn(李娜娜) <WINNING\\l_nn>"
+        },
+        "System.PersonId": {
+          "newValue": 1280
+        },
+        "System.Watermark": {
+          "newValue": 1544039
+        },
+        "System.IsDeleted": {
+          "newValue": false
+        },
+        "System.TeamProject": {
+          "newValue": "DP-01-数据仓库"
+        },
+        "System.AreaPath": {
+          "newValue": "DP-01-数据仓库"
+        },
+        "System.IterationPath": {
+          "newValue": "DP-01-数据仓库\\迭代 1"
+        },
+        "System.Title": {
+          "newValue": "公版研发_DF框架_对接统一权限时，获取菜单接口去除language参数"
+        },
+        "System.BoardColumnDone": {
+          "newValue": false
+        },
+        "Microsoft.VSTS.Common.Priority": {
+          "newValue": 2
+        },
+        "Microsoft.VSTS.Common.ValueArea": {
+          "newValue": "业务"
+        },
+        "Microsoft.VSTS.Common.Triage": {
+          "newValue": "挂起"
+        },
+        "Microsoft.VSTS.CMMI.Blocked": {
+          "newValue": "否"
+        },
+        "Microsoft.VSTS.CMMI.RequirementType": {
+          "newValue": "功能性的"
+        },
+        "Microsoft.VSTS.CMMI.Committed": {
+          "newValue": "否"
+        },
+        "Microsoft.VSTS.CMMI.UserAcceptanceTest": {
+          "newValue": "未就绪"
+        },
+        "Winning.Test.Action": {
+          "newValue": "未安排"
+        },
+        "Winning.Test.Design": {
+          "newValue": "未安排"
+        },
+        "Demand.Refuse.Flag": {
+          "newValue": 0
+        },
+        "RaD.Center": {
+          "newValue": "医院平台-数据平台"
+        },
+        "Winning.Product.Name": {
+          "newValue": "03 数据采集管理软件"
+        },
+        "Winning.Prod.Branch": {
+          "newValue": "主干"
+        },
+        "Winning.Dev.Arrange": {
+          "newValue": "未安排"
+        },
+        "Winning.Prod.Instructions": {
+          "newValue": "是"
+        },
+        "WEF_E3252AD83CE34556B321BF982983232D_System.ExtensionMarker": {
+          "newValue": true
+        },
+        "WEF_E3252AD83CE34556B321BF982983232D_Kanban.Column.Done": {
+          "newValue": false
+        },
+        "Microsoft.VSTS.Common.RequirementReview": {
+          "newValue": "未评审"
+        },
+        "Microsoft.VSTS.Common.RequirementTest": {
+          "newValue": "未自测"
+        },
+        "System.Description": {
+          "newValue": "<b>【要求定位】</b><br>XX系统-&gt;XX模块<br><br><b>【系统运行情况】</b><br>df系统前端已经翻译了菜单，请求统一权限时不需要再传递language参数，不传统一权限平台默认返回中文菜单，df前端能正常翻译<br><br><b>【详细调研结果】</b><br><br><br><b>【分析者描述】</b><br><br><br><b>【开发者描述】</b><br><br><br><b>【测试者描述】</b>"
+        },
+        "Microsoft.VSTS.CMMI.ImpactAssessmentHtml": {
+          "newValue": "<b>※SQLSERVER脚本※</b><br><br><br><br><br><br><br><br><b>※ORACLE脚本※</b><br><br>"
+        },
+        "Winning.Demand.Analysis": {
+          "newValue": "<b>一 需求描述</b><br>背景描述[概述背景及需要解决的问题或目的]：<br><br><b>二 需求分析</b><br>1修改版本：<br>2模块[DLL、函数]：<br>3功能分析<br>功能描述[按模块详细描述改造功能点]:<br>"
+        },
+        "Winning.Data.Design": {
+          "newValue": "<b>※SQLSERVER脚本※</b><br><br><br><br><br><br><br><br><b>※ORACLE脚本※</b><br><br>"
+        },
+        "System.BoardColumn": {
+          "newValue": "已建议"
+        },
+        "Microsoft.VSTS.Common.StateChangeDate": {
+          "newValue": "2026-10-29T05:43:26.66Z"
+        },
+        "WEF_E3252AD83CE34556B321BF982983232D_Kanban.Column": {
+          "newValue": "已建议"
+        },
+        "Microsoft.VSTS.CMMI.RequiresTest": {
+          "newValue": "必须测试"
+        }
+      },
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/260986/updates/1"
+    },
+    {
+      "id": 2,
+      "workItemId": 260986,
+      "rev": 2,
+      "revisedBy": {
+        "id": "8e43bdbb-5bd7-4a2a-a6ea-176975e3017c",
+        "name": "l_nn(李娜娜) <WINNING\\l_nn>",
+        "displayName": "l_nn(李娜娜)",
+        "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/Identities/8e43bdbb-5bd7-4a2a-a6ea-176975e3017c",
+        "uniqueName": "WINNING\\l_nn",
+        "imageUrl": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_api/_common/identityImage?id=8e43bdbb-5bd7-4a2a-a6ea-176975e3017c"
+      },
+      "revisedDate": "2026-11-13T06:31:39.383Z",
+      "fields": {
+        "System.Rev": {
+          "oldValue": 1,
+          "newValue": 2
+        },
+        "System.AuthorizedDate": {
+          "oldValue": "2026-10-29T05:43:26.66Z",
+          "newValue": "2026-10-29T05:48:49.627Z"
+        },
+        "System.RevisedDate": {
+          "oldValue": "2026-10-29T05:48:49.627Z",
+          "newValue": "2026-11-13T06:31:39.383Z"
+        },
+        "System.ChangedDate": {
+          "oldValue": "2026-10-29T05:43:26.66Z",
+          "newValue": "2026-10-29T05:48:49.627Z"
+        },
+        "System.Watermark": {
+          "oldValue": 1544039,
+          "newValue": 1544044
+        },
+        "Microsoft.VSTS.CMMI.RequiresTest": {
+          "oldValue": "必须测试",
+          "newValue": "不需要测试"
+        },
+        "Winning.Demand.Classify": {
+          "newValue": "功能性的"
+        }
+      },
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/260986/updates/2"
+    },
+    {
+      "id": 3,
+      "workItemId": 260986,
+      "rev": 2,
+      "revisedBy": {
+        "id": "dc33f63e-4b76-4fd7-99cc-b19ccd0869e1",
+        "name": "li_lei(李磊) <WINNING\\li_lei>",
+        "displayName": "li_lei(李磊)",
+        "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/Identities/dc33f63e-4b76-4fd7-99cc-b19ccd0869e1",
+        "uniqueName": "WINNING\\li_lei",
+        "imageUrl": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_api/_common/identityImage?id=dc33f63e-4b76-4fd7-99cc-b19ccd0869e1"
+      },
+      "revisedDate": "2026-11-13T06:28:36.18Z",
+      "relations": {
+        "added": [
+          {
+            "rel": "System.LinkTypes.Hierarchy-Forward",
+            "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/264845",
+            "attributes": {
+              "isLocked": false
+            }
+          }
+        ]
+      },
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/260986/updates/3"
+    },
+    {
+      "id": 4,
+      "workItemId": 260986,
+      "rev": 3,
+      "revisedBy": {
+        "id": "dc33f63e-4b76-4fd7-99cc-b19ccd0869e1",
+        "name": "li_lei(李磊) <WINNING\\li_lei>",
+        "displayName": "li_lei(李磊)",
+        "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/Identities/dc33f63e-4b76-4fd7-99cc-b19ccd0869e1",
+        "uniqueName": "WINNING\\li_lei",
+        "imageUrl": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_api/_common/identityImage?id=dc33f63e-4b76-4fd7-99cc-b19ccd0869e1"
+      },
+      "revisedDate": "2026-11-13T06:31:39.787Z",
+      "fields": {
+        "System.Rev": {
+          "oldValue": 2,
+          "newValue": 3
+        },
+        "System.AuthorizedDate": {
+          "oldValue": "2026-10-29T05:48:49.627Z",
+          "newValue": "2026-11-13T06:31:39.383Z"
+        },
+        "System.RevisedDate": {
+          "oldValue": "2026-11-13T06:31:39.383Z",
+          "newValue": "2026-11-13T06:31:39.787Z"
+        },
+        "System.State": {
+          "oldValue": "已建议",
+          "newValue": "活动"
+        },
+        "System.Reason": {
+          "oldValue": "新建",
+          "newValue": "已受理"
+        },
+        "System.ChangedDate": {
+          "oldValue": "2026-10-29T05:48:49.627Z",
+          "newValue": "2026-11-13T06:31:39.383Z"
+        },
+        "System.ChangedBy": {
+          "oldValue": "l_nn(李娜娜) <WINNING\\l_nn>",
+          "newValue": "li_lei(李磊) <WINNING\\li_lei>"
+        },
+        "System.AuthorizedAs": {
+          "oldValue": "l_nn(李娜娜) <WINNING\\l_nn>",
+          "newValue": "li_lei(李磊) <WINNING\\li_lei>"
+        },
+        "System.PersonId": {
+          "oldValue": 1280,
+          "newValue": 1421
+        },
+        "System.Watermark": {
+          "oldValue": 1544044,
+          "newValue": 1572854
+        },
+        "Microsoft.VSTS.Common.ActivatedDate": {
+          "newValue": "2026-11-13T06:31:39.383Z"
+        },
+        "Microsoft.VSTS.Common.ActivatedBy": {
+          "newValue": "li_lei(李磊) <WINNING\\li_lei>"
+        },
+        "Microsoft.VSTS.Scheduling.FinishDate": {
+          "newValue": "2026-11-15T00:00:00Z"
+        },
+        "System.BoardColumn": {
+          "oldValue": "已建议",
+          "newValue": "活动"
+        },
+        "Microsoft.VSTS.Common.StateChangeDate": {
+          "oldValue": "2026-10-29T05:43:26.66Z",
+          "newValue": "2026-11-13T06:31:39.383Z"
+        },
+        "WEF_E3252AD83CE34556B321BF982983232D_Kanban.Column": {
+          "oldValue": "已建议",
+          "newValue": "活动"
+        }
+      },
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/260986/updates/4"
+    },
+    {
+      "id": 5,
+      "workItemId": 260986,
+      "rev": 4,
+      "revisedBy": {
+        "id": "dc33f63e-4b76-4fd7-99cc-b19ccd0869e1",
+        "name": "li_lei(李磊) <WINNING\\li_lei>",
+        "displayName": "li_lei(李磊)",
+        "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/Identities/dc33f63e-4b76-4fd7-99cc-b19ccd0869e1",
+        "uniqueName": "WINNING\\li_lei",
+        "imageUrl": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_api/_common/identityImage?id=dc33f63e-4b76-4fd7-99cc-b19ccd0869e1"
+      },
+      "revisedDate": "2026-11-13T06:31:40.003Z",
+      "fields": {
+        "System.Rev": {
+          "oldValue": 3,
+          "newValue": 4
+        },
+        "System.AuthorizedDate": {
+          "oldValue": "2026-11-13T06:31:39.383Z",
+          "newValue": "2026-11-13T06:31:39.787Z"
+        },
+        "System.RevisedDate": {
+          "oldValue": "2026-11-13T06:31:39.787Z",
+          "newValue": "2026-11-13T06:31:40.003Z"
+        },
+        "System.State": {
+          "oldValue": "活动",
+          "newValue": "已分析"
+        },
+        "System.Reason": {
+          "oldValue": "已受理",
+          "newValue": "分析完成"
+        },
+        "System.ChangedDate": {
+          "oldValue": "2026-11-13T06:31:39.383Z",
+          "newValue": "2026-11-13T06:31:39.787Z"
+        },
+        "System.Watermark": {
+          "oldValue": 1572854,
+          "newValue": 1572855
+        },
+        "Winning.AnalysisBy": {
+          "newValue": "li_lei(李磊) <WINNING\\li_lei>"
+        },
+        "Winning.AnalysisDate": {
+          "newValue": "2026-11-13T06:31:39.777Z"
+        },
+        "System.BoardColumn": {
+          "oldValue": "活动",
+          "newValue": "已分析"
+        },
+        "Microsoft.VSTS.Common.StateChangeDate": {
+          "oldValue": "2026-11-13T06:31:39.383Z",
+          "newValue": "2026-11-13T06:31:39.787Z"
+        },
+        "WEF_E3252AD83CE34556B321BF982983232D_Kanban.Column": {
+          "oldValue": "活动",
+          "newValue": "已分析"
+        }
+      },
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/260986/updates/5"
+    },
+    {
+      "id": 6,
+      "workItemId": 260986,
+      "rev": 5,
+      "revisedBy": {
+        "id": "dc33f63e-4b76-4fd7-99cc-b19ccd0869e1",
+        "name": "li_lei(李磊) <WINNING\\li_lei>",
+        "displayName": "li_lei(李磊)",
+        "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/Identities/dc33f63e-4b76-4fd7-99cc-b19ccd0869e1",
+        "uniqueName": "WINNING\\li_lei",
+        "imageUrl": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_api/_common/identityImage?id=dc33f63e-4b76-4fd7-99cc-b19ccd0869e1"
+      },
+      "revisedDate": "2026-11-13T06:31:40.24Z",
+      "fields": {
+        "System.Rev": {
+          "oldValue": 4,
+          "newValue": 5
+        },
+        "System.AuthorizedDate": {
+          "oldValue": "2026-11-13T06:31:39.787Z",
+          "newValue": "2026-11-13T06:31:40.003Z"
+        },
+        "System.RevisedDate": {
+          "oldValue": "2026-11-13T06:31:40.003Z",
+          "newValue": "2026-11-13T06:31:40.24Z"
+        },
+        "System.State": {
+          "oldValue": "已分析",
+          "newValue": "已解决"
+        },
+        "System.Reason": {
+          "oldValue": "分析完成",
+          "newValue": "代码完成且通过系统测试"
+        },
+        "System.ChangedDate": {
+          "oldValue": "2026-11-13T06:31:39.787Z",
+          "newValue": "2026-11-13T06:31:40.003Z"
+        },
+        "System.Watermark": {
+          "oldValue": 1572855,
+          "newValue": 1572856
+        },
+        "System.BoardColumn": {
+          "oldValue": "已分析",
+          "newValue": "已解决"
+        },
+        "Microsoft.VSTS.Common.StateChangeDate": {
+          "oldValue": "2026-11-13T06:31:39.787Z",
+          "newValue": "2026-11-13T06:31:40.003Z"
+        },
+        "Microsoft.VSTS.Common.ResolvedDate": {
+          "newValue": "2026-11-13T06:31:40.003Z"
+        },
+        "Microsoft.VSTS.Common.ResolvedBy": {
+          "newValue": "li_lei(李磊) <WINNING\\li_lei>"
+        },
+        "WEF_E3252AD83CE34556B321BF982983232D_Kanban.Column": {
+          "oldValue": "已分析",
+          "newValue": "已解决"
+        },
+        "Microsoft.VSTS.Common.ResolvedReason": {
+          "newValue": "分析完成"
+        }
+      },
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/260986/updates/6"
+    },
+    {
+      "id": 7,
+      "workItemId": 260986,
+      "rev": 6,
+      "revisedBy": {
+        "id": "dc33f63e-4b76-4fd7-99cc-b19ccd0869e1",
+        "name": "li_lei(李磊) <WINNING\\li_lei>",
+        "displayName": "li_lei(李磊)",
+        "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/Identities/dc33f63e-4b76-4fd7-99cc-b19ccd0869e1",
+        "uniqueName": "WINNING\\li_lei",
+        "imageUrl": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_api/_common/identityImage?id=dc33f63e-4b76-4fd7-99cc-b19ccd0869e1"
+      },
+      "revisedDate": "9999-01-01T00:00:00Z",
+      "fields": {
+        "System.Rev": {
+          "oldValue": 5,
+          "newValue": 6
+        },
+        "System.AuthorizedDate": {
+          "oldValue": "2026-11-13T06:31:40.003Z",
+          "newValue": "2026-11-13T06:31:40.24Z"
+        },
+        "System.RevisedDate": {
+          "oldValue": "2026-11-13T06:31:40.24Z",
+          "newValue": "9999-01-01T00:00:00Z"
+        },
+        "System.ChangedDate": {
+          "oldValue": "2026-11-13T06:31:40.003Z",
+          "newValue": "2026-11-13T06:31:40.24Z"
+        },
+        "System.Watermark": {
+          "oldValue": 1572856,
+          "newValue": 1572857
+        },
+        "Microsoft.VSTS.Common.ResolvedReason": {
+          "oldValue": "分析完成",
+          "newValue": "代码完成且通过系统测试"
+        },
+        "System.History": {
+          "newValue": "<p>交付完成（Multica TEST-13）：PR 已合并，OpenSpec Change <code>m10-260986-runtime-recovery</code> 已归档。详见 Delivery Issue 摘要评论。</p>\n"
+        }
+      },
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/260986/updates/7"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "Updated": true,
+  "Agent": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+  "ChangedKeys": [
+    "PATH"
+  ],
+  "SandboxChanged": false,
+  "Timestamp": "2026-11-13T12:18:23.0570861+08:00",
+  "PathOverrideEffective": false,
+  "CustomEnvRestored": true,
+  "FinalInvocation": "explicit portable git executable with subprocess-local PATH; default Task PATH unchanged"
+}

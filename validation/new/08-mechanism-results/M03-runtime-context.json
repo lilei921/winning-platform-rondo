@@ -1,0 +1,58 @@
+{
+    "recorded_at":  "2026-11-13T05:09:07.2497036Z",
+    "acceptance_scope":  "M03 real-runtime fixed-commit read command acceptance; not production end-to-end acceptance",
+    "cwd":  "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-10-ea8fe6a2905e\\workdir",
+    "issue":  {
+                  "id":  "01a1d34d-8457-72e0-90b0-90d760296193",
+                  "identifier":  "TEST-10",
+                  "project_id":  null,
+                  "workspace_id":  "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+                  "approved_source":  {
+                                          "change_ref":  "tfs-260987-unified-permission-menu-language",
+                                          "branch":  "rondo",
+                                          "commit":  "9a2d723a0b89615b6581a898567e4e4468bb3e0b",
+                                          "repo_url":  "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo"
+                                      }
+              },
+    "run":  {
+                "id":  "01a1d34d-867b-7639-9508-ea8fe6a2905e",
+                "task_id_env":  "01a1d34d-867b-7639-9508-ea8fe6a2905e",
+                "runtime_id":  "c55feddd-7910-480a-8f9f-9d6180b1f061",
+                "agent_id":  "d6120bc6-9f95-4df7-9582-dba83fdc856e",
+                "status_at_observation":  "running",
+                "started_at":  "2026-11-13T13:07:15+08:00",
+                "source":  "multica issue runs --active"
+            },
+    "negative_fixture":  {
+                             "id":  "01a1d34d-829a-7755-a5df-4501b0a78dce",
+                             "identifier":  "TEST-9",
+                             "commit":  "0000000000000000000000000000000000000000"
+                         },
+    "invocation":  "node D:/UserProgram/winning-platform-monorepo/projects/multica/validation/new/08-mechanism-results/m03-runtime-validation.mjs TEST-10 TEST-9 M03-runtime-evidence.json",
+    "script_exit_code":  0,
+    "script_sha256":  "68afd1e0f181460b9265e6baba8b9b2fec021dff21613771c6c5dd19bd757246",
+    "evidence_file":  "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-10-ea8fe6a2905e\\workdir\\M03-runtime-evidence.json",
+    "evidence_sha256":  "93474b045045b4dc4c17cffc1bff5254e49ed341f0749a33de5171d5af100142",
+    "generated_runtime_config":  {
+                                     "runtime":  {
+                                                     "multica_cli":  "C:/Users/lilei/.multica/bin/multica.exe",
+                                                     "workspace_id":  "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+                                                 }
+                                 },
+    "audit":  {
+                  "issue_has_no_project":  true,
+                  "no_local_git_after_validation":  true,
+                  "cwd_matches_script_evidence":  true,
+                  "run_matches_task_and_issue":  true,
+                  "approved_source_matches_issue_and_response":  true,
+                  "cli_hash_matches_captured_content_hash":  true,
+                  "both_independent_reads_match_approved_source":  true,
+                  "generated_cli_path_matches_daemon_env":  true,
+                  "generated_workspace_matches_issue":  true,
+                  "generated_config_has_only_cli_and_workspace":  true,
+                  "reviewed_script_checks_pass":  true
+              },
+    "all_audit_checks_pass":  true,
+    "privacy":  "Evidence contains hashes, identifiers and paths; tasks.md content omitted; no credential values recorded.",
+    "execution_note":  "Initial login-shell profile reported AuthorizationManager failure; CLI reads returned exit 0. All subsequent commands, including validation, used login:false; no permission or sandbox changes."
+}

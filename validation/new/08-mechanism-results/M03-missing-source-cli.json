@@ -1,0 +1,19 @@
+{
+  "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\m03-readonly-context",
+  "argv": [
+    "rondo",
+    "analysis",
+    "read",
+    "--config",
+    "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\m03-readonly-context\\repo-registry.json",
+    "--issue",
+    "TEST-7",
+    "--file",
+    "tasks.md"
+  ],
+  "exit": 3,
+  "response": {
+    "result": "UNKNOWN",
+    "reason": "缺少 analysis.change_ref"
+  }
+}

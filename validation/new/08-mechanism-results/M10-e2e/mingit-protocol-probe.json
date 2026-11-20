@@ -1,0 +1,10 @@
+{
+  "label": "mingit",
+  "started": "2026-11-13T06:12:09.541Z",
+  "finished": "2026-11-13T06:13:09.552Z",
+  "root": "D:\\UserProgram\\winning-platform-monorepo\\projects\\multica\\validation\\new\\08-mechanism-results\\M10-e2e\\mingit-protocol-clone-359lKf",
+  "exit": null,
+  "error": "ETIMEDOUT",
+  "stderr": "Cloning into '.'...\n",
+  "stdout": ""
+}

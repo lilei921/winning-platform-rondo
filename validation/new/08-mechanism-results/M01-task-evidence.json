@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "result": "FAIL",
+  "observed_at_utc": "2026-11-13T02:37:22Z",
+  "issue": {
+    "id": "01a1d2bd-5780-7a2e-a75a-d5bc7b6d8134",
+    "identifier": "TEST-2",
+    "status_observed": "todo",
+    "revision_observed": 1,
+    "status_modified_by_validator": false,
+    "comment_history_scan": "[]; no thread required expansion"
+  },
+  "environment": {
+    "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+    "project_id": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97",
+    "agent_id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+    "run_id": "01a1d2bd-578c-713c-ba66-457a3869580e",
+    "task_id": "01a1d2bd-578c-713c-ba66-457a3869580e",
+    "run_id_source": "multica issue runs: row.id equals MULTICA_TASK_ID",
+    "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+    "runtime_name": "Codex (lileipc)",
+    "runtime_status": "online",
+    "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+    "daemon_pid": 32136,
+    "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-2-457a3869580e\\workdir",
+    "checkout_mode": "isolated",
+    "MULTICA_TOKEN_present": true,
+    "MULTICA_DAEMON_PORT_present": true,
+    "cli_version": "0.8.1",
+    "cli_commit": "b1ea927de",
+    "cli_built": "2026-11-06T10:12:35Z",
+    "cli_platform": "windows/amd64",
+    "git_version": "2.54.0.windows.1",
+    "task_scope_verification": {
+      "result": "PASS",
+      "managed_by": "multica-daemon-task",
+      "marker_issue_and_agent_match": true,
+      "workspace_and_task_path_suffixes_match": true,
+      "cwd_and_parent_are_reparse_points": false,
+      "cwd_or_parent_has_dot_git": false,
+      "assessment": "Dedicated disposable test Task directory; no existing user working tree observed."
+    },
+    "initial_shell_note": "The first issue-get invocation emitted a PowerShell profile AuthorizationManager/PSSecurityException warning, but issue-get exited 0 with valid JSON. Subsequent commands used login:false; no profile or execution-policy settings were modified."
+  },
+  "resource_manifest": {
+    "result": "PASS",
+    "project_id": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97",
+    "resources": [
+      {
+        "resource_type": "github_repo",
+        "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+        "ref": "rondo"
+      }
+    ],
+    "exactly_one_resource_matching_authorized_values": true
+  },
+  "before_checkout": {
+    "cwd_entries": [".agent_context", ".multica", "AGENTS.md"],
+    "cwd_dot_git_exists": false,
+    "winning_platform_monorepo_exists": false,
+    "automatic_checkout_observed": false
+  },
+  "first_checkout": {
+    "result": "FAIL",
+    "command_powershell": "& \"$env:MULTICA_CLI_PATH\" repo checkout \"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\" --ref rondo",
+    "invocation_directory": "same as environment.cwd",
+    "started_at_utc": "2026-11-13T02:31:49.3003885Z",
+    "finished_at_utc": "2026-11-13T02:36:49.6100123Z",
+    "elapsed_seconds_approximate": 300.31,
+    "exit_code": 1,
+    "sanitized_output": "connect to daemon: context deadline exceeded",
+    "returned_repository_path": null,
+    "classification": "CLI-to-Daemon checkout request deadline exceeded; underlying cause unconfirmed.",
+    "error_categories": {
+      "url_validation": "No URL validation error returned; acceptance not established.",
+      "git_authentication": "No Git authentication error returned; authentication success not established.",
+      "daemon_network": "Request timed out, but separate daemon status probes succeeded before and after. A Daemon outage or specific network failure is not proven.",
+      "task_path_permissions": "No permission-denied error returned; successful repository creation not established."
+    }
+  },
+  "after_failure": {
+    "observed_at_utc": "2026-11-13T02:37:22.6829784Z",
+    "cwd_entries_before_evidence_files": [".agent_context", ".multica", "AGENTS.md"],
+    "cwd_dot_git_exists": false,
+    "winning_platform_monorepo_exists": false,
+    "manifest_resource_values_still_match": true,
+    "daemon_status_exit_code": 0,
+    "daemon_status": "running",
+    "daemon_id_and_pid_unchanged": true,
+    "active_task_count": 1,
+    "running_task_count": 1,
+    "daemon_cache_state": "Not inspected; no cache cleanup or manual modification performed. Partial cache artifacts or backend work cannot be excluded from these observations.",
+    "run_count_observed": 1,
+    "current_attempt": 1,
+    "run_status_at_observation": "running",
+    "platform_retry_observed": false,
+    "retry_observation_limit": "Snapshot before this turn completed; no claim about later platform behavior."
+  },
+  "dependent_checks": {
+    "git_repository_identity": "NOT_RUN: checkout returned no repository path and no repository exists in the Task cwd.",
+    "git_commands_not_run": [
+      "git rev-parse --show-toplevel",
+      "git rev-parse HEAD",
+      "git branch --show-current",
+      "git status --porcelain",
+      "git remote get-url origin"
+    ],
+    "expected_rondo_head_from_issue_only": "4765e6d807d6de52ca5b0f7c70060ffcccc0c446",
+    "expected_head_verified_in_task": false,
+    "same_task_reentry": "NOT_RUN: first checkout failed and produced no baseline for a preservation comparison. No second checkout was invoked.",
+    "path_head_branch_status_comparison": "NOT_RUN"
+  },
+  "verification_commands": [
+    "& \"$env:MULTICA_CLI_PATH\" issue get 01a1d2bd-5780-7a2e-a75a-d5bc7b6d8134 --output json",
+    "& \"$env:MULTICA_CLI_PATH\" issue comment list 01a1d2bd-5780-7a2e-a75a-d5bc7b6d8134 --roots-only --summary --compact --output json",
+    "& \"$env:MULTICA_CLI_PATH\" --version",
+    "git --version",
+    "& \"$env:MULTICA_CLI_PATH\" issue runs 01a1d2bd-5780-7a2e-a75a-d5bc7b6d8134 --output json",
+    "& \"$env:MULTICA_CLI_PATH\" runtime list --output json",
+    "& \"$env:MULTICA_CLI_PATH\" daemon status --output json",
+    "Get-Content .multica/daemon_task_context.json and .multica/project/resources.json with selected non-secret fields",
+    "Get-Location; Get-Item ., ..; Get-ChildItem -Force .; Test-Path .git, ../.git, winning-platform-monorepo"
+  ],
+  "limitations": [
+    "Dual-Run isolation NOT_RUN.",
+    "Dirty working tree and unpushed commit preservation NOT_RUN.",
+    "Four business-agent types NOT_RUN.",
+    "Resource default-ref behavior without an explicit --ref NOT_RUN.",
+    "Remote default branch and release-branch authority were not changed or established.",
+    "No successful root checkout, Git identity, rondo baseline, or reentry acceptance can be claimed."
+  ],
+  "scope_preserved": [
+    "One native checkout invocation from the actual Task cwd.",
+    "No reset, clean, --fresh, manual clone, retry run, push, commit or PR.",
+    "No tracked-file edits or fabricated dirty-tree state.",
+    "No credentials, Git helpers, Daemon lifecycle, Project Resource, production records or other agents modified.",
+    "No process terminated and no cache or worktree deleted.",
+    "Evidence delivered as one final comment on this test Issue; Issue status left unchanged under the narrow validation scope."
+  ],
+  "minimal_recommendation": "Preserve this failed Run and existing directories. Have the Daemon owner correlate existing logs around 2026-11-13 10:31:49 to 10:36:49 Asia/Shanghai to locate the checkout timeout, then arrange a separately authorized retest. Do not infer success from ordinary-terminal TFS access."
+}

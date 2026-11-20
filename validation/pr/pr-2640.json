@@ -1,0 +1,28 @@
+{
+  "pullRequestId": 2640,
+  "title": "#236557 执行一次界面查询变量功能 - 后端",
+  "description": "## Summary\n- 扩展 EtlParameterService 支持 GLOBAL/TASK 级变量查询\n- 实现三级变量合并算法（TASK > JOB > ORG > GLOBAL > SYSTEM）\n- 新增 EtlParameterForExecute / CommandParamCandidate DTO\n- 调整 ScheduleController 接口并补充单元测试\n\n关联工作项：236557",
+  "status": "active",
+  "sourceBranch": "feature/236557",
+  "targetBranch": "dev",
+  "author": {
+    "id": "842235a8-00e3-49c0-aaf9-9a26014539bc",
+    "displayName": "lintao(林涛)",
+    "uniqueName": "WINNING\\lintao"
+  },
+  "reviewers": [],
+  "createdDate": "2026-07-29T08:06:29.7648075Z",
+  "mergeStatus": "succeeded",
+  "mergeCommitId": "972a7f73e928122c6bb39b89be7abe2d463c6cf0",
+  "mergeCommitMessage": "将拉取请求 2640 从 feature/236557 合并到 dev",
+  "repository": {
+    "id": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+    "name": "winning-dps-df-dataintegration"
+  },
+  "project": {
+    "id": "29dfa130-8e3b-40c3-bc8b-5eaa3f5be88d",
+    "name": "DP-03-数据采集管理软件"
+  },
+  "workItems": [],
+  "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_git/winning-dps-df-dataintegration/pullrequest/2640"
+}

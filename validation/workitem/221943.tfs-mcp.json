@@ -1,0 +1,74 @@
+{
+  "id": 221943,
+  "title": "公版研发_DF6.0_数据集成调度最小量部署及最小量质控",
+  "type": "需求",
+  "state": "活动",
+  "reason": "已受理",
+  "priority": 2,
+  "severity": "",
+  "requirementType": "功能性的",
+  "discipline": "",
+  "moduleName": "",
+  "devLeader": "lfw（李凤伟） <WINNING\\lfw>",
+  "testLeader": "lyy（李银银) <WINNING\\lyy>",
+  "prodLeader": "lxh(李小虎) <WINNING\\lxh>",
+  "assignedTo": "li_lei(李磊) <WINNING\\li_lei>",
+  "createdDate": "2026-06-03T09:35:32.353Z",
+  "changedDate": "2026-09-21T01:54:18.203Z",
+  "project": "DP-01-数据仓库",
+  "areaPath": "DP-01-数据仓库",
+  "description": "<p><b>【要求定位】</b><br>XX系统-&gt;XX模块<br><br><b>【系统运行情况】</b><br>描述系统运行情况及问题<br><br><b>【详细调研结果】</b><br></p>\n<p>目前DF提供作业导入功能，由现场交付人员导入公版作业包到现场DF环境。存在主要问题：</p>\n<p>交付人员不确定应该选择导入哪些作业，需要经常与产研沟通确认。</p>\n<p>&nbsp;</p>\n<p><font face=\"微软雅黑\">希望提供自动化功能，可以根据现场的环境信息，自动加载<font color=\"#000000\">必要的作业、调度、及质控知识，以实现快速交付。</font></font><br><br><b>【分析者描述】</b><br><font size=2><span style=\"FONT-SIZE:10.5pt;FONT-FAMILY:宋体;\"><font color=\"#000000\" face=\"微软雅黑\">在DF调度融合版本中，增加“初始化向导”功能，打开向导界面，分6步引导交付人员完成作业初始化：</font></span>&nbsp;</font></p>\n<p><strong>1、环境信息登记</strong></p>\n<p class=MsoNormal style=\"MARGIN:0pt;\"><span style=\"FONT-SIZE:10.5pt;FONT-FAMILY:宋体;\"><font color=\"#000000\" size=2 face=\"微软雅黑\">（1）通过调研文档导入：导入已经填写好的调研文档，自动为界面上数据赋值。文档模板见附件excel。支持手工登记</font></span></p>\n<p class=MsoNormal style=\"MARGIN:0pt;\"><font face=\"微软雅黑\"><font size=2><font color=\"#000000\"><span style=\"FONT-SIZE:10.5pt;FONT-FAMILY:Calibri;\">（2）平台应用清单与数据模型模块的应用清单保持一致,</span></font><font color=\"#000000\"><span style=\"FONT-SIZE:10.5pt;FONT-FAMILY:Calibri;\">评审场景的与数据模型的对应关系，从数据模型模块进行获取，可联系邓凯获取对应表名与字段</span></font></font></font></p>\n<p class=MsoNormal style=\"MARGIN:0pt;\"><font face=\"微软雅黑\"><font size=2><font color=\"#000000\"><span style=\"FONT-SIZE:10.5pt;FONT-FAMILY:Calibri;\"></span></font></font></font><br><strong>2、加载作业包</strong></p>\n<p><span style=\"FONT-SIZE:10.5pt;FONT-FAMILY:宋体;\"><font color=\"#000000\" size=2 face=\"微软雅黑\">根据上一步所选择的业务系统信息，自动加载所需要的作业包。主要逻辑：根据平台应用及评审场景确定数据仓库模型，根据来源业务系统+厂商+版本，确定对应的作业包，从而形成最小范围的作业包</font></span></p><span style=\"FONT-SIZE:10.5pt;FONT-FAMILY:宋体;\"><font color=\"#000000\"></font></span>\n<p>流程可重复执行，第二次执行时，如果已经存在的作业包，提示表已存在</p>\n<p><br><strong>3、数据源参数配置</strong></p>\n<p>按照上一步的作业包范围，加载出涉及到相关变量，包括数据源、院区变量、集群信息，按照医院实际值进行配置，主要确保作业能够成功运行</p>\n<p><br><strong>4、作业自检</strong></p>\n<p>针对所有作业包，连通数据源进行检测。测试内容包括<br>（1）源与目标数据源正常连通<br>（2）所需变量维护完整<br>（3）作业涉及源与目标表模型正确<br>（4）可正常抽取数据<br>检测完成后，在最后一列标识检测结果：正常/异常</p>\n<p><br><strong>5 、质控规则配置</strong></p>\n<p><span style=\"FONT-SIZE:10.5pt;FONT-FAMILY:宋体;\"><font color=\"#000000\" face=\"宋体\">根据应用范围、作业模型清单，加载出质控清单（数据量、内涵、指标）分类展示，对应质控产品需求 222180</font></span></p><span style=\"FONT-SIZE:10.5pt;FONT-FAMILY:宋体;\"><font color=\"#000000\"></font></span>\n<p><br><strong>6、调度任务配置</strong><br><span style=\"FONT-SIZE:10.5pt;FONT-FAMILY:宋体;\"><font color=\"#000000\" face=\"宋体\">按公版推荐方案初始化调度周期，交付人员可以<span style=\"FONT-SIZE:10.5pt;FONT-FAMILY:宋体;\"><font face=\"宋体\">点击修改，更改调度频率</font></span></font></span></p>\n<p><span style=\"FONT-SIZE:10.5pt;FONT-FAMILY:宋体;\"><font color=\"#000000\" face=\"宋体\"><span style=\"FONT-SIZE:10.5pt;FONT-FAMILY:宋体;\"></span></font></span>&nbsp;</p>\n<p><span style=\"FONT-SIZE:10.5pt;FONT-FAMILY:宋体;\"><font color=\"#000000\" face=\"宋体\"><span style=\"FONT-SIZE:10.5pt;FONT-FAMILY:宋体;\"></span></font></span></p>\n<p>最后初始化完成，完成作业包及调度任务的加载上线。</p>\n<p>&nbsp;</p>\n<p>涉及数据模型及质控部分的需求号：<strong>222180</strong></p>\n<p>&nbsp;</p>\n<p>UED参考图及详细说明见附件</p>\n<p><br><br><b>【开发者描述】</b><br><br><br><b>【测试者描述】</b></p>",
+  "demandAnalysis": "<b>一 需求描述</b><br>背景描述[概述背景及需要解决的问题或目的]：<br><br><b>二 需求分析</b><br>1修改版本：<br>2模块[DLL、函数]：<br>3功能分析<br>功能描述[按模块详细描述改造功能点]:<br>",
+  "tags": "",
+  "iterationPath": "DP-01-数据仓库\\迭代 1",
+  "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/221943",
+  "relations": [
+    {
+      "rel": "Winning.RelatedRequirements-Forward",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/229900",
+      "attributes": {
+        "isLocked": false
+      }
+    },
+    {
+      "rel": "AttachedFile",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/attachments/952bac46-c197-47c9-a875-cd37c2a71093",
+      "attributes": {
+        "authorizedDate": "2026-06-04T05:49:03.603Z",
+        "id": 132147,
+        "resourceCreatedDate": "2026-06-04T05:47:43.133Z",
+        "resourceModifiedDate": "2026-06-04T05:47:43.307Z",
+        "revisedDate": "9999-01-01T00:00:00Z",
+        "resourceSize": 1983625,
+        "name": "最小量部署初始化向导-UED图.zip"
+      }
+    },
+    {
+      "rel": "AttachedFile",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/attachments/02924779-fcc4-4bf3-af5b-02590160dc9b",
+      "attributes": {
+        "authorizedDate": "2026-06-04T05:42:13.233Z",
+        "id": 132146,
+        "resourceCreatedDate": "2025-09-03T07:08:24.76Z",
+        "resourceModifiedDate": "2025-09-11T07:08:34.33Z",
+        "revisedDate": "9999-01-01T00:00:00Z",
+        "resourceSize": 105377,
+        "name": "《HDW医院数据仓库》调研表-导入模板.xlsx"
+      }
+    },
+    {
+      "rel": "AttachedFile",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/attachments/71af92b8-1ad5-4610-979c-fffe673ca822",
+      "attributes": {
+        "authorizedDate": "2026-06-04T05:57:10.393Z",
+        "id": 132154,
+        "resourceCreatedDate": "2026-06-04T05:43:08.947Z",
+        "resourceModifiedDate": "2026-06-04T05:46:30.907Z",
+        "revisedDate": "9999-01-01T00:00:00Z",
+        "resourceSize": 1722714,
+        "name": "数据集成调度最小量部署方案说明 - 26.06.docx"
+      }
+    }
+  ],
+  "collection": "WN_Data_Platform"
+}

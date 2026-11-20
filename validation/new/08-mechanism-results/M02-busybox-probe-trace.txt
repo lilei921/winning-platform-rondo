@@ -1,0 +1,6 @@
+12:17:06.160914 exec-cmd.c:266          trace: resolved executable dir: D:/UserProgram/winning-platform-monorepo/.tmp/m02-msys-probe-20261113/mingit-busybox/mingw64/bin
+12:17:06.164882 git.c:502               trace: built-in: git clone 'D:\UserProgram\winning-platform-monorepo\.tmp\m02-msys-probe-20261113\seed' 'D:\UserProgram\winning-platform-monorepo\.tmp\m02-msys-probe-20261113\clone-busybox-sh'
+12:17:06.209385 run-command.c:673       trace: run_command: unset GIT_DIR; GIT_PROTOCOL=version=2 'git-upload-pack '\''D:\UserProgram\winning-platform-monorepo\.tmp\m02-msys-probe-20261113\seed/.git'\'''
+12:17:06.209385 run-command.c:934       trace: start_command: D:/UserProgram/winning-platform-monorepo/.tmp/m02-msys-probe-20261113/mingit-busybox/mingw64/bin/sh.exe -c 'git-upload-pack '\''D:\UserProgram\winning-platform-monorepo\.tmp\m02-msys-probe-20261113\seed/.git'\''' 'git-upload-pack '\''D:\UserProgram\winning-platform-monorepo\.tmp\m02-msys-probe-20261113\seed/.git'\'''
+12:17:06.536802 exec-cmd.c:266          trace: resolved executable dir: D:/UserProgram/winning-platform-monorepo/.tmp/m02-msys-probe-20261113/mingit-busybox/mingw64/bin
+12:17:06.539800 git.c:502               trace: built-in: git upload-pack 'D:\\UserProgram\\winning-platform-monorepo\\.tmp\\m02-msys-probe-20261113\\seed/.git'

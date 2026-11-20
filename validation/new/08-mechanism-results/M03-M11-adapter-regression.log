@@ -1,0 +1,118 @@
+TAP version 13
+# Subtest: 来源必须完整且与 Issue Change 一致，禁止凭据和非 TFS 地址
+ok 1 - 来源必须完整且与 Issue Change 一致，禁止凭据和非 TFS 地址
+  ---
+  duration_ms: 2.0158
+  type: 'test'
+  ...
+# Subtest: 分支仅作追溯，来源身份由仓库、commit 和 Change 决定
+ok 2 - 分支仅作追溯，来源身份由仓库、commit 和 Change 决定
+  ---
+  duration_ms: 0.1905
+  type: 'test'
+  ...
+# Subtest: 读取路径仅限当前 Change，阻止穿越及编码路径
+ok 3 - 读取路径仅限当前 Change，阻止穿越及编码路径
+  ---
+  duration_ms: 0.3308
+  type: 'test'
+  ...
+# Subtest: 任务编号精确匹配，重复编号不得派发
+ok 4 - 任务编号精确匹配，重复编号不得派发
+  ---
+  duration_ms: 0.6006
+  type: 'test'
+  ...
+# Subtest: 保持既有可读任务编号兼容，不强制纯数字格式
+ok 5 - 保持既有可读任务编号兼容，不强制纯数字格式
+  ---
+  duration_ms: 0.2462
+  type: 'test'
+  ...
+# Subtest: analysis read 无需根仓挂载，按固定 commit 完整返回中文多行正文
+ok 6 - analysis read 无需根仓挂载，按固定 commit 完整返回中文多行正文
+  ---
+  duration_ms: 922.2526
+  type: 'test'
+  ...
+# Subtest: 缺失来源、穿越路径、凭据 URL、跨 TFS 服务在发请求前失败
+ok 7 - 缺失来源、穿越路径、凭据 URL、跨 TFS 服务在发请求前失败
+  ---
+  duration_ms: 1864.2673
+  type: 'test'
+  ...
+# Subtest: 404 与权限/服务错误均不会回退本地或其他版本
+ok 8 - 404 与权限/服务错误均不会回退本地或其他版本
+  ---
+  duration_ms: 2364.3298
+  type: 'test'
+  ...
+# Subtest: 错误 commit、路径、正文或无效 JSON 不能伪装成功
+ok 9 - 错误 commit、路径、正文或无效 JSON 不能伪装成功
+  ---
+  duration_ms: 3952.3407
+  type: 'test'
+  ...
+# Subtest: 缺少显式 Workspace 时不能落入默认工作区
+ok 10 - 缺少显式 Workspace 时不能落入默认工作区
+  ---
+  duration_ms: 482.6514
+  type: 'test'
+  ...
+# Subtest: 缺少 TFS 凭据返回 UNKNOWN JSON，不产生请求
+ok 11 - 缺少 TFS 凭据返回 UNKNOWN JSON，不产生请求
+  ---
+  duration_ms: 728.0632
+  type: 'test'
+  ...
+# Subtest: direct Bug delivery has no OpenSpec dependency
+ok 12 - direct Bug delivery has no OpenSpec dependency
+  ---
+  duration_ms: 2.159
+  type: 'test'
+  ...
+# Subtest: Bug delivery fails when a PR is not covered or candidate differs
+ok 13 - Bug delivery fails when a PR is not covered or candidate differs
+  ---
+  duration_ms: 0.6311
+  type: 'test'
+  ...
+# Subtest: blocking review findings, explicit verification and blocked issue fail closed
+ok 14 - blocking review findings, explicit verification and blocked issue fail closed
+  ---
+  duration_ms: 0.4318
+  type: 'test'
+  ...
+# Subtest: finalize blocks if required Bug repositories have changed after PR readiness
+ok 15 - finalize blocks if required Bug repositories have changed after PR readiness
+  ---
+  duration_ms: 0.3038
+  type: 'test'
+  ...
+# Subtest: prepare digest detects modification to committed Bug evidence
+ok 16 - prepare digest detects modification to committed Bug evidence
+  ---
+  duration_ms: 0.2034
+  type: 'test'
+  ...
+# Subtest: OpenSpec Bug remains on existing Change-based path
+ok 17 - OpenSpec Bug remains on existing Change-based path
+  ---
+  duration_ms: 0.1347
+  type: 'test'
+  ...
+# Subtest: merged PR must point to the exact candidate verified by Bug Agent
+ok 18 - merged PR must point to the exact candidate verified by Bug Agent
+  ---
+  duration_ms: 0.1912
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10427.0374

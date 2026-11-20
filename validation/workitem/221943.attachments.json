@@ -1,0 +1,25 @@
+{
+  "workItemId": 221943,
+  "source": "winning-tfs-2018-mcp.tfs_list_attachments",
+  "attachmentCount": 3,
+  "attachments": [
+    {
+      "id": 0,
+      "name": "attachment-0",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/attachments/952bac46-c197-47c9-a875-cd37c2a71093",
+      "comment": ""
+    },
+    {
+      "id": 1,
+      "name": "attachment-1",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/attachments/02924779-fcc4-4bf3-af5b-02590160dc9b",
+      "comment": ""
+    },
+    {
+      "id": 2,
+      "name": "attachment-2",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/attachments/71af92b8-1ad5-4610-979c-fffe673ca822",
+      "comment": ""
+    }
+  ]
+}

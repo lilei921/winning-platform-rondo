@@ -1,0 +1,89 @@
+{
+  "task": {
+    "identifier": "TT-18",
+    "id": "01a1e2cd-bdd9-75e8-b7a8-5e76a5665d77"
+  },
+  "sync_scope": {
+    "tfs_id": "265199",
+    "type": "Bug",
+    "state": "已建议",
+    "title": "[Bug E2E Withdrawal 20261116 隔离验收 20261116] 标识符引用函数未转义内嵌双引号",
+    "url": "http://tfs2018-web.winning.com.cn:8080/tfs/web/wi.aspx?pcguid=f7bf5021-f3a9-4a5f-b754-bc7a1f7d60e2&id=265199",
+    "changed_at": "2026-11-16T05:20:42.333Z"
+  },
+  "target": {
+    "server_url": "https://api.multica.ai",
+    "profile": "desktop-api.multica.ai",
+    "cli_version": "multica 0.9.0 (commit 8cd8a2db9; built 2026-11-13T09:43:27Z)",
+    "workspace": {
+      "id": "3158546f-5b79-4042-baec-20cdac7d9d31",
+      "name": "rondo-tt"
+    },
+    "project": {
+      "id": "4433fe6b-2c50-4972-a7c8-74e395b96e03",
+      "title": "winning-platform-monorepo"
+    }
+  },
+  "runs": [
+    {
+      "sequence": 1,
+      "exit_code": 0,
+      "created": [
+        {
+          "tfs_id": "265199",
+          "issue_id": "01a1e2d0-bf8e-7acf-9632-a2675d221f0c",
+          "identifier": "TT-19",
+          "attachments": 0,
+          "intake_status": "backlog"
+        }
+      ],
+      "updated": [],
+      "skipped": [],
+      "failed": []
+    },
+    {
+      "sequence": 2,
+      "exit_code": 0,
+      "created": [],
+      "updated": [],
+      "skipped": [
+        {
+          "tfs_id": "265199",
+          "issue_id": "01a1e2d0-bf8e-7acf-9632-a2675d221f0c",
+          "reason": "管理字段、正文与附件均无变化"
+        }
+      ],
+      "failed": []
+    }
+  ],
+  "readback": {
+    "matching_issue_count": 1,
+    "issue": {
+      "id": "01a1e2d0-bf8e-7acf-9632-a2675d221f0c",
+      "identifier": "TT-19",
+      "title": "[TFS 265199] [Bug E2E Withdrawal 20261116 隔离验收 20261116] 标识符引用函数未转义内嵌双引号",
+      "workspace_id": "3158546f-5b79-4042-baec-20cdac7d9d31",
+      "workspace_name": "rondo-tt",
+      "project_id": "4433fe6b-2c50-4972-a7c8-74e395b96e03",
+      "project_title": "winning-platform-monorepo",
+      "status": "backlog",
+      "assignee": {
+        "id": "89637854-8144-4a46-8908-1ed43e44f931",
+        "type": "agent",
+        "name": "Wayfinder Agent"
+      },
+      "metadata": {
+        "source": "tfs",
+        "tfs.body_at": "2026-11-16T05:20:42.333Z",
+        "tfs.changed_at": "2026-11-16T05:20:42.333Z",
+        "tfs.id": "265199",
+        "tfs.type": "Bug",
+        "tfs.url": "http://tfs2018-web.winning.com.cn:8080/tfs/web/wi.aspx?pcguid=f7bf5021-f3a9-4a5f-b754-bc7a1f7d60e2&id=265199"
+      },
+      "revision": 9,
+      "description": "## Source Requirement（TFS 原始事实）\n\n- TFS Work Item: 265199\n- Type: Bug\n- State: 已建议\n- URL: http://tfs2018-web.winning.com.cn:8080/tfs/web/wi.aspx?pcguid=f7bf5021-f3a9-4a5f-b754-bc7a1f7d60e2&id=265199\n- Changed: 2026-11-16T05:20:42.333Z\n\n## Title\n\n[Bug E2E Withdrawal 20261116 隔离验收 20261116] 标识符引用函数未转义内嵌双引号\n\n## 重现步骤（Microsoft.VSTS.TCM.ReproSteps）\n\n仅 Bug E2E Withdrawal 20261116 隔离测试，无生产业务影响。仓库 frame，目标分支 codex/bug-e2e-withdrawal-20261116，基线 6a57a4c41d1bee7aa34fdef1da17a69cfa9dc962。\n执行 node .bug-e2e-withdrawal-20261116/regression.mjs。输入 a\"b，期望 SQL 双引号转义为 \"a\"\"b\"，实际未转义，断言失败。修复仅允许 .bug-e2e-withdrawal-20261116/quote-identifier.mjs，并保留回归测试。用于真实 Runtime、Bug Evidence、PR、独立 Run Writeback 幂等验收。不得合并到 dev/main。\n\n## 症状（Microsoft.VSTS.CMMI.Symptom）\n\n【期望结果】\n\n【实际效果】\n\n## 附件\n\n（无附件）\n"
+    },
+    "intake_pending_present": false,
+    "created_attachment_count": 0
+  }
+}

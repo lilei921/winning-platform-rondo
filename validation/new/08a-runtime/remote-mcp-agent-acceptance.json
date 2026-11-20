@@ -1,0 +1,356 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-14T09:46:03.164Z",
+  "issue": {
+    "id": "01a1d96a-c5eb-741b-a725-e6fe15615fdc",
+    "identifier": "TT-9",
+    "project_id": null
+  },
+  "purpose": "08-A isolated Bug Fix remote MCP runtime supplemental acceptance; read-only tool evidence and pre-existing TT-6 Node fixture regression only",
+  "outcome": {
+    "three_remote_mcp_services": "PASS",
+    "ripgrep_search_approval_repair_actual_code_and_path": "PASS",
+    "bounded_source_cross_check": "PASS",
+    "original_fixture_regression": "PASS",
+    "full_08A": "NOT_ASSESSED",
+    "V07": "NOT_ASSESSED"
+  },
+  "identity": {
+    "agent_name": "Bug Fix Agent",
+    "actor_agent_id": "48590a02-c97d-410e-99e4-b5b58d2df66d",
+    "runtime_id": "a1001c7d-0d5a-463e-8c5e-96b924ef6269",
+    "task_id": "01a1d96f-6a40-7709-b4ee-7455a7a2ea95",
+    "run_record_id": "01a1d96f-6a40-7709-b4ee-7455a7a2ea95",
+    "separate_run_id_field": null,
+    "run_status_at_read": "running",
+    "run_started_at": "2026-11-14T09:42:00Z",
+    "workspace_id": "3158546f-5b79-4042-baec-20cdac7d9d31",
+    "project_id": null,
+    "task_workdir": "D:\\Multica\\desktop-api.multica.ai\\rondo-tt-20cdac7d9d31\\tt-9-7455a7a2ea95\\workdir",
+    "task_authentication_value_present": true,
+    "credential_values_read_or_saved": false,
+    "source": "Explicit allowlist of identity environment names plus multica issue runs <issue> --active --output json; id identifies returned run record and equals injected task ID. No distinct run_id value returned.",
+    "auth_status": "CLI auth status verified on-behalf-of account llei921; no authentication values returned or recorded."
+  },
+  "prior_run": {
+    "comment_id": "01a1d96e-8b3f-770a-bc8a-63464307e26a",
+    "result": "remote-ripgrep.search required approval and returned no code",
+    "original_error": "MCP tool call requires approval, but approval policy is never",
+    "current_result": "Both real remote-ripgrep.search calls succeeded without approval bypass; first returned 3 code matches and a concrete source path."
+  },
+  "scope": {
+    "remote_allowed_root": "/root/workspace/winning-platform-monorepo",
+    "remote_project": "/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration",
+    "fixture_directory": "D:/Multica/desktop-api.multica.ai/rondo-tt-20cdac7d9d31/tt-6-87fd10f2637f/workdir/winning-platform-monorepo/winning-dps-df-frame/.08a-validation",
+    "root_readiness": {
+      "cwd": "D:\\Multica\\desktop-api.multica.ai\\rondo-tt-20cdac7d9d31\\tt-9-7455a7a2ea95\\workdir",
+      "git_at_cwd": false,
+      "root_repo_present": false,
+      "rondo_on_path": true
+    },
+    "root_check_status": "NOT_ESTABLISHED: standalone Runner has no provisioned root checkout or project. No root specification read, checkout, bootstrap, dev prepare, handoff, or Git write was performed.",
+    "writes": "Current TT-9 workdir report files and this Runner's status/final comment/attachments only",
+    "excluded": "No edits to TT-6 fixture, shared root, business sources, TFS Bug 265022, TT-6 status, PR 3786, or delivery metadata; no Commit/Push/PR creation; no HTTP replacement for MCP calls."
+  },
+  "mcp_calls": [
+    {
+      "sequence": 1,
+      "tool": "remote-filesystem.list_allowed_directories",
+      "runtime_tool": "mcp__remote_filesystem__list_allowed_directories",
+      "parameters": {},
+      "started_at": "2026-11-14T09:42:42.512Z",
+      "status": "SUCCESS",
+      "response_characters": 62,
+      "result_excerpt": "Allowed directories:\n/root/workspace/winning-platform-monorepo"
+    },
+    {
+      "sequence": 2,
+      "tool": "remote-codegraph.codegraph_explore",
+      "runtime_tool": "mcp__remote_codegraph__codegraph_explore",
+      "parameters": {
+        "projectPath": "/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration",
+        "query": "TableOutput quoteField SQL 标识符引用与双引号转义的实现和调用方",
+        "maxFiles": 3
+      },
+      "started_at": "2026-11-14T09:42:54.681Z",
+      "status": "SUCCESS",
+      "response_characters": 24794,
+      "source_files": [
+        "winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelper.java",
+        "winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/model/TaskStepDto.java",
+        "winning-dps-df-dataintegration-task/winning-dps-df-dataintegration-task-api/src/main/java/com/winning/dps/df/dataintegration/plugin/task/api/utils/DataQualityConstants.java"
+      ],
+      "result_excerpt": "**Exploration: TableOutput quoteField SQL 标识符引用与双引号转义的实现和调用方**\n\nFound 28 symbols across 3 files.\n\n**Blast radius — what depends on these (update/verify before editing)**\n\n- `TableOutput` (winning-dps-df-dataintegration-task/winning-dps-df-dataintegration-task-df/src/main/java/com/winning/dps/df/dataintegration/plugin/task/df/model/TableOutput.java:18) — 5 callers in `winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfConverter.java`, `winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelper.java`, `winning-dps-df-dataintegration-task/winning-dps-df-dataintegration-task-df/src/main/java/com/winning/dps/df/dataintegration/plugin/task/df/model/TableOutput.java`; tested via callers: `winning-dps-df-dataintegration-hybrid/src/test/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelperKafkaTest.java`, `winning-dps-df-dataintegration-hybrid/src/test/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelperExecuteScriptTest.java` +1\n- `SingleTableCustomSqlRuleParser` (winning-dps-df-dataintegration-task/winning-dps-df-dataintegration-task-dataquality/src/main/java/com/winning/dps/df/dataintegration/plugin/task/dq/rule/parser/SingleTableCustomSqlRuleParser.java:35) — 2 callers in `winning-dps-df-dataintegration-task/winning-dps-df-dataintegration-task-dataquality/src/main/java/com/winning/dps/df/dataintegration/plugin/task/dq/rule/RuleManager.java`; tested via callers: `winning-dps-df-dataintegration-task/winning-dps-df-dataintegration-task-dataquality/src/test/java/com/winning/dps/df/dataintegration/plugin/task/dq/DataQualityTaskTest.java`\n- `Table` (winning-dps-df-dataintegration-task/winning-dps-df-dataintegration-task-df/src/main/java/com/winning/dps/df/dataintegration/plugin/task/df/model/Table.java:12) — 4 callers in `winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfConverter.java`; no tests found within 3 caller hops\n- `quote` (winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/common/xml/JSONObject.java:436) — 10 callers in `winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/common/xml/JSONObject.java`, `winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/common/xml/JSONWriter.java`, `winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/common/xml/JSONArray.java`; tested via callers: `winning-dps-df-dataintegration-hybrid/src/test/java/com/winning/dps/df/dataintegration/knowledge/client/support/QualityResponseDecoderTest.java`, `winning-dps-df-dataintegration-hybrid/src/test/java/com/winning/dps/df/dataintegration/knowledge/service/support/InitTargetTableResolverTest.java` +2\n\n**Relationships**\n\n**implements:**\n- TableOutput → StepData\n- SingleTableCustomSqlRuleParser → IRuleParser\n- Table → Checkable\n- Column → Checkable\n\n**extends:**\n- StepData → Checkable\n\n**imports:**\n- com.winning.dps.df.dataintegration.adapter.param → TableOutput\n- com.winning.dps.df.dataintegration.adapter.param → TableOutput\n- com.winning.dps.df.dataintegration.plugin.task.dq.rule → SingleTableCustomSqlRuleParser\n- com.winning.dps.df.dataintegration.plugin.task.dq.rule.parser → JSONUtils\n- com.winning.dps.df.dataintegration.plugin.task.dq.rule.parser → RuleParserUtils\n- com.winning.dps.df.dataintegration.plugin.task.dq.rule.parser → DataQualityConfiguration\n- com.winning.dps.df.dataintegration.plugin.task.dq.rule.parser → BaseConfig\n- com.winning.dps.df.dataintegration.plugin.task.dq.rule.parser → RuleManager\n- com.winning.dps.df.dataintegration.plugin.task.dq.rule.parser → DataQualityTaskExecutionContext\n- com.winning.dps.df.dataintegration.plugin.task.dq.rule.parser → DqRuleExecuteSql\n- ... and 2 more\n\n**references:**\n- addMapping → TableOutput\n- parse → DataQualityConfiguration\n- parse → RuleManager\n- parse → DataQualityTaskExecutionContext\n- table2TableInput → Table\n- table2SqlInput → Table\n- table2TableOutput → Table\n- addColumn → Column\n- put → JSONObject\n- put → JSONObject\n- ... and 36 more\n\n**instantiates:**\n- generateDataQualityParameter → SingleTableCustomSqlRuleParser\n- parse → DataQualityConfiguration\n- valueToString → JSONObject\n- writeValue → JSONObject\n- analyze → SqlScriptStatement\n- insertSyntheticTemp → Adaptation\n\n**calls:**\n- parse → isCompareWithFixedValue\n- parse → getRuleName\n- parse → getEnvConfig\n- parse → getReaderConfigList\n- parse → getAllWriterConfigList\n- parse → replaceExecuteSqlPlaceholder\n- parse → toList\n- parse → addStatisticsValueTableReaderConfig\n- parse → getSingleTableCustomSqlTransformerConfigList\n- parse → getExecuteSqlList\n- ... and 75 more\n\n",
+      "relevant_source_blocks": [
+        {
+          "file": "winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelper.java",
+          "source": "1\tpackage com.winning.dps.df.dataintegration.adapter.param;\n2\t\n3\timport static com.winning.dps.df.dataintegration.common.utils.Const.CONDITION_TYPE_DEF;\n4\timport static com.winning.dps.df.dataintegration.common.utils.Const.CONDITION_TYPE_SQL;\n5\timport static com.winning.dps.df.dataintegration.plugin.task.df.enums.JoinType.CROSS_JOIN;\n6\timport static java.lang.Boolean.FALSE;\n7\timport static java.lang.Boolean.TRUE;\n8\t\n9\timport com.winning.common.WinI18nUtils;\n10\timport com.winning.dps.df.dataintegration.adapter.AdapterUtil;\n11\timport com.winning.dps.df.dataintegration.common.constants.Constants;\n12\timport com.winning.dps.df.dataintegration.common.df.DfJobRun;\n13\timport com.winning.dps.df.dataintegration.common.enums.OperateType;\n14\timport com.winning.dps.df.dataintegration.common.metadata.utils.BaseExecute;\n15\timport com.winning.dps.df.dataintegration.common.metadata.vo.CheckColumnVo;\n16\timport com.winning.dps.df.dataintegration.common.utils.Const;\n17\timport com.winning.dps.df.dataintegration.dao.base.entity.DatatransferClusterManager;\n18\timport com.winning.dps.df.dataintegration.dao.base.entity.DatatransferDatasource;\n19\timport com.winning.dps.df.dataintegration.dao.base.entity.EtlMsgSource;\n20\timport com.winning.dps.df.dataintegration.dao.base.mapper.DatatransferDatasourceMapper;\n21\timport com.winning.dps.df.dataintegration.dao.base.mapper.MsgSourceMapper;\n22\timport com.winning.dps.df.dataintegration.dao.integration.entity.EtlJob;\n23\timport com.winning.dps.df.dataintegration.dao.integration.entity.EtlTask;\n24\timport com.winning.dps.df.dataintegration.dao.integration.entity.EtlTaskColumn;\n25\timport com.winning.dps.df.dataintegration.dao.integration.entity.EtlTaskStepHop;\n26\timport com.winning.dps.df.dataintegration.dao.integration.entity.EtlTaskStepJoin;\n27\timport com.winning.dps.df.dataintegration.dao.integration.mapper.EtlTaskColumnMapper;\n28\timport com.winning.dps.df.dataintegration.dao.schedule.entity.EtlScheduleJob;\n29\timport com.winning.dps.df.dataintegration.dao.schedule.entity.EtlScheduleTask;\n30\timport com.winning.dps.df.dataintegration.frame.service.FrameService;\n31\timport com.winning.dps.df.dataintegration.knowledge.support.IntegrationReadContext;\n32\timport com.winning.dps.df.dataintegration.knowledge.support.IntegrationReadSupport;\n33\timport com.winning.dps.df.dataintegration.model.DfTaskConverter;\n34\timport com.winning.dps.df.dataintegration.model.JobDetail;\n35\timport com.winning.dps.df.dataintegration.model.TaskDetail;\n36\timport com.winning.dps.df.dataintegration.model.TaskDfDto;\n37\timport com.winning.dps.df.dataintegration.model.TaskMappingDto;\n\n... (gap) ...\n\n747\t     * @param stepDto\n748\t     * @return\n749\t     */\n750\t    private TableOutput toTableOutput(TaskDfDto taskDfDto, TaskStepDto stepDto) {\n751\t\n752\t        if (!stepDto.isTableOutput()) {\n753\t            return null;\n754\t        }\n755\t\n756\t        String tableName = stepDto.getTableName();\n757\t        String tableAlias = stepDto.getTableAlias();\n758\t\n759\t        // 处理基础信息\n760\t        TableOutput tableOutput = new TableOutput();\n761\t        tableOutput.setId(String.valueOf(stepDto.getId()));\n762\t        tableOutput.setName(stepDto.getStepName());\n763\t        tableOutput.setTableCode(tableName);\n764\t        tableOutput.setSchema(stepDto.getSchemaName());\n765\t        tableOutput.setTableName(tableName);\n766\t        tableOutput.setDbId(String.valueOf(stepDto.getDatasourceId()));\n767\t        tableOutput.setTableAsName(tableAlias);\n768\t        tableOutput.setAsName(tableAlias);\n769\t        tableOutput.setEventTimeColumn(stepDto.getEventTime());\n770\t        tableOutput.setDictColumn(stepDto.getDictColumn());\n771\t        // 增加操作类型\n772\t        if (Objects.nonNull(stepDto.getOperateType())) {\n773\t            tableOutput.setOperateType(stepDto.getOperateType().name());\n774\t        }\n775\t        // 处理目标表的列信息\n776\t        List<Column> columnList = dfConverter.taskColumn2Column(sortColumnsByPosition(stepDto.getColumns()));\n777\t        for (Column column : columnList) {\n778\t            column.setTableAsName(StringUtils.isBlank(tableAlias) ? tableName : tableAlias);\n779\t        }\n780\t\n781\t        // 处理所有节点的列别名信息（Kafka 等组件列在 relatedTables，不在 step.columns）\n782\t        Set<EtlTaskColumn> columns = collectUpstreamColumnsForMapping(taskDfDto);\n783\t\n784\t        // 转换数据 处理mapping信息\n785\t        Function<EtlTaskColumn, String> sourceFunc = column -> column.getTableAlias() + \".\" + column.getColumnName();\n786\t        Function<EtlTaskColumn, String> targetFunc = EtlTaskColumn::getColumnName;\n787\t        Map<String, EtlTaskColumn> tableAliasColumnMap = columns.stream().collect(\n788\t                Collectors.toMap(column -> sourceFunc.apply(column), Function.identity()));\n789\t        Map<String, EtlTaskColumn> targetColumns = stepDto.getColumns().stream().collect(\n790\t                Collectors.toMap(column -> targetFunc.apply(column), Function.identity()));\n791\t\n792\t        Map<Long, TaskStepDto> stepMap = taskDfDto.getStepList().stream().collect(\n793\t                Collectors.toMap(TaskStepDto::getId, Function.identity()));\n794\t        List<TaskMappingDto> mappings = stepDto.getMappings();\n795\t        if (CollectionUtils.isEmpty(mappings)) {\n796\t            throw new WinningRuntimeException(WinI18nUtils.loadString(\"库表输出节点映射信息不能为空\", \"库表输出节点映射信息不能为空\"));\n797\t        }\n798\t        for (TaskMappingDto mapping : mappings) {\n799\t\n800\t            ColPair colPair = new ColPair();\n801\t            ColFunc source = new ColFunc();\n802\t            Column target = new Column();\n803\t            colPair.setSource(source);\n804\t            colPair.setTarget(target);\n805\t\n806\t            String targetColumnName = mapping.getTargetColumnName();\n807\t            Integer isPrimarykey = mapping.getIsPrimarykey();\n808\t            String sourceColumnName = mapping.getSourceColumnName();\n809\t            String sourceColumnAlias = mapping.getSourceColumnAlias();\n810\t            String sourceColumnType = mapping.getSourceColumnType();\n811\t            Long sourceStepId = mapping.getSourceStepId();\n812\t            Integer lockType = mapping.getLockType();\n813\t            Integer isCheck = mapping.getIsCheck();\n814\t\n815\t            // 移除映射中未选中的column; 如果mapping字段和column 没有对应上，引擎会报错\n816\t            if (null != isCheck && isCheck == 0) {\n817\t                columnList.removeIf(p -> p.getColumnName().equals(targetColumnName));\n818\t                continue;\n819\t            }\n820\t\n821\t            // 处理源端\n822\t            ColFuncType sourceType = mapping.getSourceType();\n823\t            source.setType(sourceType);\n824\t            source.setAsName(sourceColumnAlias);\n825\t            source.setColumnName(sourceColumnName);\n826\t            source.setColumnType(sourceColumnType);\n827\t            // 是否锁定类型的标志\n828\t            source.setLockType(this.toBoolean(lockType));\n829\t            if (ColFuncType.FIELD.equals(sourceType)) {\n830\t\n831\t                String tableAs = \"\";\n832\t                TaskStepDto sourceStep = stepMap.get(sourceStepId);\n833\t                if (null == sourceStep) {\n834\t                    continue;\n835\t                }\n836\t\n837\t                tableAs = resolveSourceStepTableAlias(sourceStep);\n838\t                // EtlTaskColumn sourceColumn = tableAliasColumnMap.get(tableAs + \".\" + sourceColumnName);\n839\t                EtlTaskColumn sourceColumn = this.searchColumn(tableAs + \".\" + sourceColumnName,\n840\t                        tableAliasColumnMap, sourceFunc);\n841\t\n842\t                if (null == sourceColumn) {\n843\t                    // todo\n844\t                    continue;\n845\t                }\n846\t                source.setPk(this.toBoolean(sourceColumn.getIsPrimarykey()));\n847\t                source.setNotNull(this.toBoolean(sourceColumn.getNotNull()));\n848\t                source.setTableAsName(sourceColumn.getTableAlias());\n849\t                // 锁定类型，从mapping 中获取\n850\t                if (Const.YES.equals(lockType)) {\n851\t                    source.setColumnType(mapping.getSourceColumnType());\n852\t                    source.setColumnSize(mapping.getSourceColumnPrecision());\n853\t                    source.setColumnAccuracy(mapping.getSourceColumnScale());\n854\t                } else {\n855\t                    source.setColumnType(sourceColumn.getColumnType());\n856\t                    source.setColumnSize(sourceColumn.getColumnPrecision());\n857\t                    source.setColumnAccuracy(sourceColumn.getColumnScale());\n858\t                }\n859\t                if (!sourceColumnName.contains(\".\")) {\n860\t                    source.setColumnName(tableAs + \".\" + sourceColumnName);\n861\t                }\n862\t            }\n863\t\n864\t            // 处理多机构场景下的valueMapping函数：拼装当前机构的org_id信息\n865\t            source.setColumnName(\n866\t                    this.processValueMappingOrgId(source.getColumnName(), taskDfDto.getOrgId()));\n867\t\n868\t            // 处理目标\n869\t            // EtlTaskColumn targetColumn = targetColumns.get(targetColumnName);\n870\t            EtlTaskColumn targetColumn = this.searchColumn(targetColumnName, targetColumns, targetFunc);\n871\t\n872\t            if (null == targetColumn) {\n873\t                // todo\n874\t                String msg = String.format(\n875\t                        WinI18nUtils.loadString(\"输出节点目标字段为空或关联失败\", \"%s的输出节点[%s]的目标字段[%s]为空或者关联失败!\"),\n876\t                        taskDfDto.getTaskName(), stepDto.getTableName(), targetColumnName);\n877\t                throw new WinningRuntimeException(msg);\n878\t            } else {\n879\t                target.setAsName(targetColumn.getColumnName());\n880\t                target.setColumnName(targetColumn.getColumnName());\n881\t                target.setColumnType(targetColumn.getColumnType());\n882\t                target.setPk(this.toBoolean(isPrimarykey));\n883\t                target.setColumnType(targetColumn.getColumnType());\n884\t                target.setAsName(targetColumn.getColumnAlias());\n885\t                target.setNotNull(this.toBoolean(targetColumn.getNotNull()));\n886\t                target.setColumnSize(targetColumn.getColumnPrecision());\n887\t                target.setColumnAccuracy(targetColumn.getColumnScale());\n888\t                target.setTableAsName(targetColumn.getTableAlias());\n889\t            }\n890\t\n891\t            tableOutput.addMapping(colPair);\n892\t        }\n893\t        tableOutput.setColumns(columnList);\n894\t        return tableOutput;\n895\t    }\n896\t\n897\t    /**\n898\t     * 收集上游步骤列，供 TableOutput mapping 解析源字段。"
+        }
+      ]
+    },
+    {
+      "sequence": 3,
+      "tool": "remote-codegraph.codegraph_explore",
+      "runtime_tool": "mcp__remote_codegraph__codegraph_explore",
+      "parameters": {
+        "projectPath": "/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration",
+        "query": "TableOutput.java quoteField",
+        "maxFiles": 2
+      },
+      "started_at": "2026-11-14T09:43:17.413Z",
+      "status": "SUCCESS",
+      "response_characters": 24992,
+      "source_files": [
+        "winning-dps-df-dataintegration-task/winning-dps-df-dataintegration-task-df/src/main/java/com/winning/dps/df/dataintegration/plugin/task/df/model/TableOutput.java",
+        "winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/common/xml/JSONObject.java"
+      ],
+      "result_excerpt": "**Exploration: TableOutput.java quoteField**\n\nFound 59 symbols across 2 files. 1 file pinned from the query.\n\n**Blast radius — what depends on these (update/verify before editing)**\n\n- `quote` (winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/common/xml/JSONObject.java:436) — 10 callers in `winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/common/xml/JSONObject.java`, `winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/common/xml/JSONWriter.java`, `winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/common/xml/JSONArray.java`; tested via callers: `winning-dps-df-dataintegration-hybrid/src/test/java/com/winning/dps/df/dataintegration/knowledge/client/support/QualityResponseDecoderTest.java`, `winning-dps-df-dataintegration-hybrid/src/test/java/com/winning/dps/df/dataintegration/knowledge/service/support/InitTargetTableResolverTest.java` +2\n- `quote` (winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/common/xml/JSONObject.java:450) — 2 callers in `winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/common/xml/JSONObject.java`; no tests found within 3 caller hops\n- `quotedIdentifier` (winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/service/integration/metadata/SqlIdentifierCaseRewriter.java:181) — 1 caller in `winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/service/integration/metadata/SqlIdentifierCaseRewriter.java`; tested via callers: `winning-dps-df-dataintegration-hybrid/src/test/java/com/winning/dps/df/dataintegration/service/integration/metadata/SqlIdentifierCaseRewriterTest.java`\n\n**Relationships**\n\n**calls:**\n- quote → quote\n- write → quote\n- getEnum → quote\n- key → quote\n- get → quote\n- getEnum → quote\n- recursivelyDefinedObjectException → quote\n- valueToString → quote\n- wrongValueFormatException → quote\n- writeValue → quote\n- ... and 81 more\n\n**instantiates:**\n- valueToString → JSONObject\n- writeValue → JSONObject\n- quotedIdentifier → IdentifierToken\n- Fixture → SqlIdentifierCaseRewriter\n- planner → SqlIdentifierCaseRewriter\n- unsupported → MetadataCaseAdaptException\n- lexIdentifiers → IdentifierToken\n- of → MetadataCaseFieldChange\n- of → MetadataCaseValueChange\n\n**references:**\n- put → JSONObject\n- put → JSONObject\n- increment → JSONObject\n- put → JSONObject\n- quotedIdentifier → IdentifierToken\n- MetadataCaseRelationPlanner → SqlIdentifierCaseRewriter\n- unsupported → MetadataCaseAdaptException\n- unsupported → MetadataCaseAdaptErrorCode\n- lexIdentifiers → IdentifierToken\n- lexIdentifiers → LexerState\n- ... and 49 more\n\n**imports:**\n- com.winning.dps.df.dataintegration.service.integration.impl → SqlIdentifierCaseRewriter\n- com.winning.dps.df.dataintegration.service.integration.metadata → MetadataCaseFieldChange\n- com.winning.dps.df.dataintegration.service.integration.metadata → MetadataCaseFieldChange\n- com.winning.dps.df.dataintegration.service.integration.metadata → MetadataCaseFieldChange\n- com.winning.dps.df.dataintegration.service.integration.metadata → MetadataCaseFieldChange\n- com.winning.dps.df.dataintegration.service.integration.metadata → MetadataCaseFieldChange\n- com.winning.dps.df.dataintegration.service.integration.metadata → MetadataCaseFieldChange\n- com.winning.dps.df.dataintegration.service.integration.metadata → MetadataCaseFieldChange\n\n",
+      "relevant_source_blocks": [
+        {
+          "file": "winning-dps-df-dataintegration-task/winning-dps-df-dataintegration-task-df/src/main/java/com/winning/dps/df/dataintegration/plugin/task/df/model/TableOutput.java",
+          "source": "1\tpackage com.winning.dps.df.dataintegration.plugin.task.df.model;\n2\t\n3\timport com.winning.dps.df.dataintegration.plugin.task.df.enums.StepType;\n4\timport com.winning.dps.df.dataintegration.plugin.task.df.utils.DfUtil;\n5\t\n6\timport java.util.ArrayList;\n7\timport java.util.List;\n8\timport java.util.Map;\n9\t\n10\timport lombok.Data;\n11\timport lombok.EqualsAndHashCode;\n12\timport lombok.experimental.Accessors;\n13\timport cn.hutool.core.lang.Assert;\n14\t\n15\t/**\n16\t * table output\n17\t */\n18\t@Data\n19\t@Accessors(chain = true)\n20\t@EqualsAndHashCode(callSuper = true)\n21\tpublic class TableOutput extends Table<TableOutput> implements StepData {\n22\t\n23\t    private final StepType type = StepType.TABLE_OUTPUT;\n24\t\n25\t    private String id;\n26\t\n27\t    private String label;\n28\t\n29\t    private String name;\n30\t\n31\t    // 事件时间 (字段名)\n32\t    private String eventTimeColumn;\n33\t\n34\t    // 字典标识 (字段名)\n35\t    private String dictColumn;\n36\t\n37\t    // 操作类型 (merge, update ?)\n38\t    private String operateType;\n39\t\n40\t    // 字段映射\n41\t    private List<ColPair> mapping = new ArrayList<>();\n42\t\n43\t    public TableOutput addMapping(ColPair pair) {\n44\t        Assert.notNull(pair, \"pair cannot be null\");\n45\t        Assert.notNull(pair.getSource(), \"pair.source cannot be empty\");\n46\t        Assert.notNull(pair.getTarget(), \"pair.target cannot be empty\");\n47\t        mapping.add(pair);\n48\t        return this;\n49\t    }\n50\t\n51\t    @Override\n52\t    public String toString() {\n53\t        return DfUtil.toJson(this);\n54\t    }\n55\t\n56\t    @Override\n57\t    public void check(Map<String, Object> variable) {\n58\t        super.check(variable);\n59\t        Assert.notEmpty(mapping, \"mapping cannot be empty\");\n60\t        for (ColPair pair : mapping) {\n61\t            pair.check(variable);\n62\t        }\n63\t    }\n64\t\n65\t}"
+        }
+      ]
+    },
+    {
+      "sequence": 4,
+      "tool": "remote-ripgrep.search",
+      "runtime_tool": "mcp__remote_ripgrep__search",
+      "parameters": {
+        "path": "/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration",
+        "pattern": "quoteField|toTableOutput\\(",
+        "fileType": "java",
+        "maxResults": 3,
+        "maxCharacters": 4000,
+        "contextLines": 1
+      },
+      "started_at": "2026-11-14T09:43:38.372Z",
+      "status": "SUCCESS",
+      "response_characters": 2288,
+      "result_excerpt": "[3 matches, 1 files contained matches, 3071 files searched]\n\n/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration/winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelper.java-184-                case TABLE_OUTPUT:\n/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration/winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelper.java:185:                    stepData = toTableOutput(taskDfDto, stepDto);\n/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration/winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelper.java-186-                    break;\n--\n/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration/winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelper.java-287-                case TABLE_OUTPUT:\n/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration/winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelper.java:288:                    stepData = toTableOutput(taskDfDto, stepDto);\n/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration/winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelper.java-289-                    break;\n--\n/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration/winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelper.java-749-     */\n/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration/winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelper.java:750:    private TableOutput toTableOutput(TaskDfDto taskDfDto, TaskStepDto stepDto) {\n/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration/winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelper.java-751-\n--",
+      "source_files": [
+        "/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration/winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelper.java"
+      ],
+      "actual_code_and_paths_returned": true,
+      "matches": 3,
+      "files_with_matches": 1,
+      "files_searched": 3071
+    },
+    {
+      "sequence": 5,
+      "tool": "remote-filesystem.read_text_file",
+      "runtime_tool": "mcp__remote_filesystem__read_text_file",
+      "parameters": {
+        "path": "/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration/winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelper.java",
+        "head": 895
+      },
+      "started_at": "2026-11-14T09:44:04.645Z",
+      "status": "SUCCESS",
+      "response_characters": 37745,
+      "source_files": [
+        "/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration/winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelper.java"
+      ],
+      "result_excerpt": [
+        {
+          "start_line": 148,
+          "end_line": 155,
+          "source": "148\t    public EngineTsf buildTransform(TaskDfDto taskDfDto) {\n149\t\n150\t        Long taskId = taskDfDto.getId();\n151\t        String transformId = String.valueOf(taskId);\n152\t\n153\t        // 处理转换节点\n154\t        EngineTsf transform = new EngineTsf();\n155\t        transform.setId(transformId);"
+        },
+        {
+          "start_line": 180,
+          "end_line": 188,
+          "source": "180\t                    break;\n181\t                case TABLE_JOIN:\n182\t                    stepData = toTableJoin(taskDfDto, stepDto);\n183\t                    break;\n184\t                case TABLE_OUTPUT:\n185\t                    stepData = toTableOutput(taskDfDto, stepDto);\n186\t                    break;\n187\t                case EXECUTE_SCRIPT:\n188\t                    stepData = toExecuteScript(taskDfDto, stepDto);"
+        },
+        {
+          "start_line": 225,
+          "end_line": 231,
+          "source": "225\t    public DfEngineParameters buildParameters(EtlScheduleJob scheduleJob, EtlScheduleTask scheduleTask,\n226\t                                              TaskDfDto taskDfDto, EtlJob etlJob) {\n227\t\n228\t        String jobId = String.valueOf(etlJob.getId());\n229\t        DfEngineParameters parameters = new DfEngineParameters();\n230\t        parameters.setJobId(jobId);\n231\t        parameters.setOrgId(scheduleJob.getOrgId());"
+        },
+        {
+          "start_line": 283,
+          "end_line": 291,
+          "source": "283\t                    break;\n284\t                case TABLE_JOIN:\n285\t                    stepData = toTableJoin(taskDfDto, stepDto);\n286\t                    break;\n287\t                case TABLE_OUTPUT:\n288\t                    stepData = toTableOutput(taskDfDto, stepDto);\n289\t                    break;\n290\t                case EXECUTE_SCRIPT:\n291\t                    stepData = toExecuteScript(taskDfDto, stepDto);"
+        },
+        {
+          "start_line": 747,
+          "end_line": 895,
+          "source": "747\t     * @param stepDto\n748\t     * @return\n749\t     */\n750\t    private TableOutput toTableOutput(TaskDfDto taskDfDto, TaskStepDto stepDto) {\n751\t\n752\t        if (!stepDto.isTableOutput()) {\n753\t            return null;\n754\t        }\n755\t\n756\t        String tableName = stepDto.getTableName();\n757\t        String tableAlias = stepDto.getTableAlias();\n758\t\n759\t        // 处理基础信息\n760\t        TableOutput tableOutput = new TableOutput();\n761\t        tableOutput.setId(String.valueOf(stepDto.getId()));\n762\t        tableOutput.setName(stepDto.getStepName());\n763\t        tableOutput.setTableCode(tableName);\n764\t        tableOutput.setSchema(stepDto.getSchemaName());\n765\t        tableOutput.setTableName(tableName);\n766\t        tableOutput.setDbId(String.valueOf(stepDto.getDatasourceId()));\n767\t        tableOutput.setTableAsName(tableAlias);\n768\t        tableOutput.setAsName(tableAlias);\n769\t        tableOutput.setEventTimeColumn(stepDto.getEventTime());\n770\t        tableOutput.setDictColumn(stepDto.getDictColumn());\n771\t        // 增加操作类型\n772\t        if (Objects.nonNull(stepDto.getOperateType())) {\n773\t            tableOutput.setOperateType(stepDto.getOperateType().name());\n774\t        }\n775\t        // 处理目标表的列信息\n776\t        List<Column> columnList = dfConverter.taskColumn2Column(sortColumnsByPosition(stepDto.getColumns()));\n777\t        for (Column column : columnList) {\n778\t            column.setTableAsName(StringUtils.isBlank(tableAlias) ? tableName : tableAlias);\n779\t        }\n780\t\n781\t        // 处理所有节点的列别名信息（Kafka 等组件列在 relatedTables，不在 step.columns）\n782\t        Set<EtlTaskColumn> columns = collectUpstreamColumnsForMapping(taskDfDto);\n783\t\n784\t        // 转换数据 处理mapping信息\n785\t        Function<EtlTaskColumn, String> sourceFunc = column -> column.getTableAlias() + \".\" + column.getColumnName();\n786\t        Function<EtlTaskColumn, String> targetFunc = EtlTaskColumn::getColumnName;\n787\t        Map<String, EtlTaskColumn> tableAliasColumnMap = columns.stream().collect(\n788\t                Collectors.toMap(column -> sourceFunc.apply(column), Function.identity()));\n789\t        Map<String, EtlTaskColumn> targetColumns = stepDto.getColumns().stream().collect(\n790\t                Collectors.toMap(column -> targetFunc.apply(column), Function.identity()));\n791\t\n792\t        Map<Long, TaskStepDto> stepMap = taskDfDto.getStepList().stream().collect(\n793\t                Collectors.toMap(TaskStepDto::getId, Function.identity()));\n794\t        List<TaskMappingDto> mappings = stepDto.getMappings();\n795\t        if (CollectionUtils.isEmpty(mappings)) {\n796\t            throw new WinningRuntimeException(WinI18nUtils.loadString(\"库表输出节点映射信息不能为空\", \"库表输出节点映射信息不能为空\"));\n797\t        }\n798\t        for (TaskMappingDto mapping : mappings) {\n799\t\n800\t            ColPair colPair = new ColPair();\n801\t            ColFunc source = new ColFunc();\n802\t            Column target = new Column();\n803\t            colPair.setSource(source);\n804\t            colPair.setTarget(target);\n805\t\n806\t            String targetColumnName = mapping.getTargetColumnName();\n807\t            Integer isPrimarykey = mapping.getIsPrimarykey();\n808\t            String sourceColumnName = mapping.getSourceColumnName();\n809\t            String sourceColumnAlias = mapping.getSourceColumnAlias();\n810\t            String sourceColumnType = mapping.getSourceColumnType();\n811\t            Long sourceStepId = mapping.getSourceStepId();\n812\t            Integer lockType = mapping.getLockType();\n813\t            Integer isCheck = mapping.getIsCheck();\n814\t\n815\t            // 移除映射中未选中的column; 如果mapping字段和column 没有对应上，引擎会报错\n816\t            if (null != isCheck && isCheck == 0) {\n817\t                columnList.removeIf(p -> p.getColumnName().equals(targetColumnName));\n818\t                continue;\n819\t            }\n820\t\n821\t            // 处理源端\n822\t            ColFuncType sourceType = mapping.getSourceType();\n823\t            source.setType(sourceType);\n824\t            source.setAsName(sourceColumnAlias);\n825\t            source.setColumnName(sourceColumnName);\n826\t            source.setColumnType(sourceColumnType);\n827\t            // 是否锁定类型的标志\n828\t            source.setLockType(this.toBoolean(lockType));\n829\t            if (ColFuncType.FIELD.equals(sourceType)) {\n830\t\n831\t                String tableAs = \"\";\n832\t                TaskStepDto sourceStep = stepMap.get(sourceStepId);\n833\t                if (null == sourceStep) {\n834\t                    continue;\n835\t                }\n836\t\n837\t                tableAs = resolveSourceStepTableAlias(sourceStep);\n838\t                // EtlTaskColumn sourceColumn = tableAliasColumnMap.get(tableAs + \".\" + sourceColumnName);\n839\t                EtlTaskColumn sourceColumn = this.searchColumn(tableAs + \".\" + sourceColumnName,\n840\t                        tableAliasColumnMap, sourceFunc);\n841\t\n842\t                if (null == sourceColumn) {\n843\t                    // todo\n844\t                    continue;\n845\t                }\n846\t                source.setPk(this.toBoolean(sourceColumn.getIsPrimarykey()));\n847\t                source.setNotNull(this.toBoolean(sourceColumn.getNotNull()));\n848\t                source.setTableAsName(sourceColumn.getTableAlias());\n849\t                // 锁定类型，从mapping 中获取\n850\t                if (Const.YES.equals(lockType)) {\n851\t                    source.setColumnType(mapping.getSourceColumnType());\n852\t                    source.setColumnSize(mapping.getSourceColumnPrecision());\n853\t                    source.setColumnAccuracy(mapping.getSourceColumnScale());\n854\t                } else {\n855\t                    source.setColumnType(sourceColumn.getColumnType());\n856\t                    source.setColumnSize(sourceColumn.getColumnPrecision());\n857\t                    source.setColumnAccuracy(sourceColumn.getColumnScale());\n858\t                }\n859\t                if (!sourceColumnName.contains(\".\")) {\n860\t                    source.setColumnName(tableAs + \".\" + sourceColumnName);\n861\t                }\n862\t            }\n863\t\n864\t            // 处理多机构场景下的valueMapping函数：拼装当前机构的org_id信息\n865\t            source.setColumnName(\n866\t                    this.processValueMappingOrgId(source.getColumnName(), taskDfDto.getOrgId()));\n867\t\n868\t            // 处理目标\n869\t            // EtlTaskColumn targetColumn = targetColumns.get(targetColumnName);\n870\t            EtlTaskColumn targetColumn = this.searchColumn(targetColumnName, targetColumns, targetFunc);\n871\t\n872\t            if (null == targetColumn) {\n873\t                // todo\n874\t                String msg = String.format(\n875\t                        WinI18nUtils.loadString(\"输出节点目标字段为空或关联失败\", \"%s的输出节点[%s]的目标字段[%s]为空或者关联失败!\"),\n876\t                        taskDfDto.getTaskName(), stepDto.getTableName(), targetColumnName);\n877\t                throw new WinningRuntimeException(msg);\n878\t            } else {\n879\t                target.setAsName(targetColumn.getColumnName());\n880\t                target.setColumnName(targetColumn.getColumnName());\n881\t                target.setColumnType(targetColumn.getColumnType());\n882\t                target.setPk(this.toBoolean(isPrimarykey));\n883\t                target.setColumnType(targetColumn.getColumnType());\n884\t                target.setAsName(targetColumn.getColumnAlias());\n885\t                target.setNotNull(this.toBoolean(targetColumn.getNotNull()));\n886\t                target.setColumnSize(targetColumn.getColumnPrecision());\n887\t                target.setColumnAccuracy(targetColumn.getColumnScale());\n888\t                target.setTableAsName(targetColumn.getTableAlias());\n889\t            }\n890\t\n891\t            tableOutput.addMapping(colPair);\n892\t        }\n893\t        tableOutput.setColumns(columnList);\n894\t        return tableOutput;\n895\t    }"
+        }
+      ],
+      "response_scope": "head=895; only relevant line-numbered excerpts retained in report"
+    },
+    {
+      "sequence": 6,
+      "tool": "remote-filesystem.read_text_file",
+      "runtime_tool": "mcp__remote_filesystem__read_text_file",
+      "parameters": {
+        "path": "/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration/winning-dps-df-dataintegration-task/winning-dps-df-dataintegration-task-df/src/main/java/com/winning/dps/df/dataintegration/plugin/task/df/model/TableOutput.java"
+      },
+      "started_at": "2026-11-14T09:44:04.645Z",
+      "status": "SUCCESS",
+      "response_characters": 1594,
+      "result_excerpt": "package com.winning.dps.df.dataintegration.plugin.task.df.model;\n\nimport com.winning.dps.df.dataintegration.plugin.task.df.enums.StepType;\nimport com.winning.dps.df.dataintegration.plugin.task.df.utils.DfUtil;\n\nimport java.util.ArrayList;\nimport java.util.List;\nimport java.util.Map;\n\nimport lombok.Data;\nimport lombok.EqualsAndHashCode;\nimport lombok.experimental.Accessors;\nimport cn.hutool.core.lang.Assert;\n\n/**\n * table output\n */\n@Data\n@Accessors(chain = true)\n@EqualsAndHashCode(callSuper = true)\npublic class TableOutput extends Table<TableOutput> implements StepData {\n\n    private final StepType type = StepType.TABLE_OUTPUT;\n\n    private String id;\n\n    private String label;\n\n    private String name;\n\n    // 事件时间 (字段名)\n    private String eventTimeColumn;\n\n    // 字典标识 (字段名)\n    private String dictColumn;\n\n    // 操作类型 (merge, update ?)\n    private String operateType;\n\n    // 字段映射\n    private List<ColPair> mapping = new ArrayList<>();\n\n    public TableOutput addMapping(ColPair pair) {\n        Assert.notNull(pair, \"pair cannot be null\");\n        Assert.notNull(pair.getSource(), \"pair.source cannot be empty\");\n        Assert.notNull(pair.getTarget(), \"pair.target cannot be empty\");\n        mapping.add(pair);\n        return this;\n    }\n\n    @Override\n    public String toString() {\n        return DfUtil.toJson(this);\n    }\n\n    @Override\n    public void check(Map<String, Object> variable) {\n        super.check(variable);\n        Assert.notEmpty(mapping, \"mapping cannot be empty\");\n        for (ColPair pair : mapping) {\n            pair.check(variable);\n        }\n    }\n\n}\n",
+      "source_files": [
+        "/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration/winning-dps-df-dataintegration-task/winning-dps-df-dataintegration-task-df/src/main/java/com/winning/dps/df/dataintegration/plugin/task/df/model/TableOutput.java"
+      ]
+    },
+    {
+      "sequence": 7,
+      "tool": "remote-ripgrep.search",
+      "runtime_tool": "mcp__remote_ripgrep__search",
+      "parameters": {
+        "path": "/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration",
+        "pattern": "quoteField",
+        "fixedStrings": true,
+        "fileType": "java",
+        "maxResults": 3,
+        "maxCharacters": 4000
+      },
+      "started_at": "2026-11-14T09:44:04.645Z",
+      "status": "SUCCESS",
+      "response_characters": 78,
+      "result_excerpt": "[0 matches, 0 files contained matches, 3071 files searched]\n\nNo matches found.",
+      "matches": 0,
+      "files_searched": 3071,
+      "absence_scope": "Java files visible to ripgrep under requested project, respecting default ignore rules"
+    }
+  ],
+  "cross_check": {
+    "codegraph_vs_filesystem": [
+      {
+        "file": "winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelper.java",
+        "compared_lines": 186,
+        "mismatch_lines": [],
+        "consistent": true
+      },
+      {
+        "file": "winning-dps-df-dataintegration-task/winning-dps-df-dataintegration-task-df/src/main/java/com/winning/dps/df/dataintegration/plugin/task/df/model/TableOutput.java",
+        "compared_lines": 65,
+        "mismatch_lines": [],
+        "consistent": true
+      }
+    ],
+    "ripgrep_vs_filesystem": [
+      {
+        "line": 185,
+        "source": "                    stepData = toTableOutput(taskDfDto, stepDto);",
+        "consistent": true
+      },
+      {
+        "line": 288,
+        "source": "                    stepData = toTableOutput(taskDfDto, stepDto);",
+        "consistent": true
+      },
+      {
+        "line": 750,
+        "source": "    private TableOutput toTableOutput(TaskDfDto taskDfDto, TaskStepDto stepDto) {",
+        "consistent": true
+      }
+    ]
+  },
+  "confirmed_call_chain": [
+    {
+      "file": "/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration/winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelper.java",
+      "symbol": "buildTransform",
+      "declaration_line": 148,
+      "call_line": 185,
+      "next": "toTableOutput(taskDfDto, stepDto)"
+    },
+    {
+      "file": "/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration/winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelper.java",
+      "symbol": "buildParameters",
+      "declaration_line": 225,
+      "call_line": 288,
+      "next": "toTableOutput(taskDfDto, stepDto)"
+    },
+    {
+      "file": "/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration/winning-dps-df-dataintegration-hybrid/src/main/java/com/winning/dps/df/dataintegration/adapter/param/DfEngineParametersHelper.java",
+      "symbol": "toTableOutput",
+      "declaration_line": 750,
+      "details": [
+        {
+          "line": 760,
+          "behavior": "Creates TableOutput"
+        },
+        {
+          "line": 859,
+          "behavior": "Checks whether source column name contains a dot; if absent, prefixes table alias and dot at line 860"
+        },
+        {
+          "line": 891,
+          "behavior": "Calls TableOutput.addMapping(colPair)"
+        },
+        {
+          "line": 893,
+          "behavior": "Sets column list"
+        }
+      ]
+    },
+    {
+      "file": "/root/workspace/winning-platform-monorepo/winning-dps-df-dataintegration/winning-dps-df-dataintegration-task/winning-dps-df-dataintegration-task-df/src/main/java/com/winning/dps/df/dataintegration/plugin/task/df/model/TableOutput.java",
+      "symbol": "addMapping",
+      "declaration_line": 43,
+      "details": "Checks pair, source, target for null and appends pair to mapping at line 47. No quoteField implementation or SQL double-quote escaping in the 65-line TableOutput model."
+    }
+  ],
+  "differences_and_limits": [
+    "Broad CodeGraph query also returns JSONObject.quote (JSON string escaping). This is not evidence for SQL identifier escaping and is not treated as quoteField.",
+    "Explicit Java quoteField search returned 0 matches across 3071 searched files. This does not establish absence in ignored files or non-Java languages.",
+    "Remote mirror branch and commit are UNKNOWN; no Git metadata, credentials, environment configuration or user directories were accessed for version discovery. No new isolated branch was created or inferred.",
+    "TT-6 frame test-branch provenance, Bug 265022 and PR 3786 association are from the current Issue. This run verified the exact authorized existing fixture files using content and SHA-256, not its Git branch/commit or merged PR state.",
+    "Remote dataintegration Java source and TT-6 frame Node fixture are separate repository/version contexts. Passing fixture tests does not demonstrate production Java behavior, full 08-A, V07 or full isolated E2E acceptance."
+  ],
+  "fixture_implementation": {
+    "file": "quote-identifier.mjs",
+    "symbol": "quoteIdentifier",
+    "source_excerpt": "export function quoteIdentifier(value) {\n  const identifier = `${value}`;\n  return `\"${identifier.replace(/\"/g, '\"\"')}\"`;\n}",
+    "behavior": "String coercion, all internal double quotes doubled, then outer double quotes added; existing tests cover ordinary/multiple/consecutive/boundary quotes, empty/whitespace/Unicode/punctuation/numeric/null inputs."
+  },
+  "local_regression": {
+    "node_version": "v22.22.2",
+    "cwd": "D:\\Multica\\desktop-api.multica.ai\\rondo-tt-20cdac7d9d31\\tt-9-7455a7a2ea95\\workdir",
+    "fixture_directory": "D:/Multica/desktop-api.multica.ai/rondo-tt-20cdac7d9d31/tt-6-87fd10f2637f/workdir/winning-platform-monorepo/winning-dps-df-frame/.08a-validation",
+    "before_sha256": [
+      {
+        "Path": "D:\\Multica\\desktop-api.multica.ai\\rondo-tt-20cdac7d9d31\\tt-6-87fd10f2637f\\workdir\\winning-platform-monorepo\\winning-dps-df-frame\\.08a-validation\\quote-identifier.mjs",
+        "Hash": "614C1E40D94FF3737D35A4F0A2711A69E3573F2D1E6903DFCDA3F27ED8681FA7"
+      },
+      {
+        "Path": "D:\\Multica\\desktop-api.multica.ai\\rondo-tt-20cdac7d9d31\\tt-6-87fd10f2637f\\workdir\\winning-platform-monorepo\\winning-dps-df-frame\\.08a-validation\\quote-identifier.test.mjs",
+        "Hash": "C2C83F2DBA23A14992693E763058B35E10C33B5FCB0097247E7927484C29865C"
+      },
+      {
+        "Path": "D:\\Multica\\desktop-api.multica.ai\\rondo-tt-20cdac7d9d31\\tt-6-87fd10f2637f\\workdir\\winning-platform-monorepo\\winning-dps-df-frame\\.08a-validation\\regression.mjs",
+        "Hash": "106C95D0CCCA16BEBFA0027AA2E5F34354DA625865C554F50D20F776E850E47F"
+      }
+    ],
+    "commands": [
+      {
+        "command": "node --test \"D:/Multica/desktop-api.multica.ai/rondo-tt-20cdac7d9d31/tt-6-87fd10f2637f/workdir/winning-platform-monorepo/winning-dps-df-frame/.08a-validation/quote-identifier.test.mjs\"",
+        "exit_code": 0,
+        "stdout": "TAP version 13\n# Subtest: ordinary identifier\nok 1 - ordinary identifier\n  ---\n  duration_ms: 1.8764\n  type: 'test'\n  ...\n# Subtest: embedded quote\nok 2 - embedded quote\n  ---\n  duration_ms: 0.1322\n  type: 'test'\n  ...\n# Subtest: multiple quotes\nok 3 - multiple quotes\n  ---\n  duration_ms: 0.0841\n  type: 'test'\n  ...\n# Subtest: consecutive quotes\nok 4 - consecutive quotes\n  ---\n  duration_ms: 0.0779\n  type: 'test'\n  ...\n# Subtest: leading and trailing quotes\nok 5 - leading and trailing quotes\n  ---\n  duration_ms: 0.1672\n  type: 'test'\n  ...\n# Subtest: single quote character\nok 6 - single quote character\n  ---\n  duration_ms: 0.0673\n  type: 'test'\n  ...\n# Subtest: empty identifier\nok 7 - empty identifier\n  ---\n  duration_ms: 0.1638\n  type: 'test'\n  ...\n# Subtest: whitespace\nok 8 - whitespace\n  ---\n  duration_ms: 0.0639\n  type: 'test'\n  ...\n# Subtest: unicode identifier\nok 9 - unicode identifier\n  ---\n  duration_ms: 0.3382\n  type: 'test'\n  ...\n# Subtest: other punctuation\nok 10 - other punctuation\n  ---\n  duration_ms: 0.3542\n  type: 'test'\n  ...\n# Subtest: existing numeric coercion\nok 11 - existing numeric coercion\n  ---\n  duration_ms: 0.1241\n  type: 'test'\n  ...\n# Subtest: existing null coercion\nok 12 - existing null coercion\n  ---\n  duration_ms: 0.0507\n  type: 'test'\n  ...\n1..12\n# tests 12\n# suites 0\n# pass 12\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 101.5359"
+      },
+      {
+        "command": "node \"D:/Multica/desktop-api.multica.ai/rondo-tt-20cdac7d9d31/tt-6-87fd10f2637f/workdir/winning-platform-monorepo/winning-dps-df-frame/.08a-validation/regression.mjs\"",
+        "exit_code": 0,
+        "stdout": "08-A regression PASS"
+      }
+    ],
+    "after_sha256": [
+      {
+        "Path": "D:\\Multica\\desktop-api.multica.ai\\rondo-tt-20cdac7d9d31\\tt-6-87fd10f2637f\\workdir\\winning-platform-monorepo\\winning-dps-df-frame\\.08a-validation\\quote-identifier.mjs",
+        "Hash": "614C1E40D94FF3737D35A4F0A2711A69E3573F2D1E6903DFCDA3F27ED8681FA7"
+      },
+      {
+        "Path": "D:\\Multica\\desktop-api.multica.ai\\rondo-tt-20cdac7d9d31\\tt-6-87fd10f2637f\\workdir\\winning-platform-monorepo\\winning-dps-df-frame\\.08a-validation\\quote-identifier.test.mjs",
+        "Hash": "C2C83F2DBA23A14992693E763058B35E10C33B5FCB0097247E7927484C29865C"
+      },
+      {
+        "Path": "D:\\Multica\\desktop-api.multica.ai\\rondo-tt-20cdac7d9d31\\tt-6-87fd10f2637f\\workdir\\winning-platform-monorepo\\winning-dps-df-frame\\.08a-validation\\regression.mjs",
+        "Hash": "106C95D0CCCA16BEBFA0027AA2E5F34354DA625865C554F50D20F776E850E47F"
+      }
+    ],
+    "hashes_unchanged": true
+  },
+  "cli_compatibility_note": "auth status --output json exited 1 (unknown flag: --output); documented auth status without flag succeeded, exit 0. No approval rejection occurred in current MCP calls."
+}

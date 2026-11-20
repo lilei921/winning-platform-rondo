@@ -1,0 +1,240 @@
+[
+  {
+    "agent_id": "d6120bc6-9f95-4df7-9582-dba83fdc856e",
+    "attempt": 1,
+    "attribution": {
+      "evidence": {
+        "kind": "comment",
+        "ref_id": "01a1d38d-3b14-70f2-be0a-dbd84ae963ad"
+      },
+      "initiator": {
+        "email": "lilei@winning.com.cn",
+        "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+        "name": "lilei"
+      },
+      "originator": {
+        "email": "lilei@winning.com.cn",
+        "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+        "name": "lilei"
+      },
+      "precise": true,
+      "source": "direct_human"
+    },
+    "completed_at": "2026-11-13T14:28:49+08:00",
+    "created_at": "2026-11-13T14:16:50+08:00",
+    "delivered_comment_ids": [
+      "01a1d38d-3b14-70f2-be0a-dbd84ae963ad"
+    ],
+    "dispatched_at": "2026-11-13T14:16:50+08:00",
+    "error": null,
+    "id": "01a1d38d-3b24-79b2-ac68-eedd41779655",
+    "issue_id": "01a1d376-a59a-733a-9b02-8f36d68c7f38",
+    "kind": "comment",
+    "max_attempts": 2,
+    "priority": 0,
+    "relative_work_dir": "multica_workspaces/rondo-test-8ef6a0bcf15d/test-14-46d52c60f3a2/workdir",
+    "result": {
+      "output": "Prepare 与中断恢复验证通过，11/11 检查 PASS。成功报告、故障注入日志、此前失败备份及 SHA256 已发布到原线程，TEST-14 已转 `in_review`。\n\n未重复发布归档，未写入 TFS。Writeback/Complete 尚未执行，完整 M10 端到端验收仍待后续验证。",
+      "pr_url": "",
+      "session_id": "01a1d376-c8df-7e91-8652-5881358ba7b9",
+      "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir"
+    },
+    "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+    "started_at": "2026-11-13T14:16:50+08:00",
+    "status": "completed",
+    "supplement_capability": "task-supplement-v1",
+    "supplement_comment_ids": [
+      "01a1d38e-cf85-7745-99d9-8a2357ed53f8"
+    ],
+    "trigger_comment_id": "01a1d38d-3b14-70f2-be0a-dbd84ae963ad",
+    "trigger_summary": "[@M03-M12 隔离机制验证器](mention://agent/d6120bc6-9f95-4df7-9582-dba83fdc856e) 继续 M10，补充更正诊断：NO_PROXY 已验证使 Git 直连 TFS，但不能把此前 0 字节快照当作停滞。进程关闭后旧 full/shallow pack 实际分别有 271363130 / 191303800 字节，当前根仓总正文约 695 M…",
+    "usage": [
+      {
+        "cache_read_tokens": 2698624,
+        "cache_write_tokens": 0,
+        "input_tokens": 32897,
+        "model": "gpt-6-astra",
+        "output_tokens": 7664,
+        "provider": "codex"
+      }
+    ],
+    "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir",
+    "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+  },
+  {
+    "agent_id": "d6120bc6-9f95-4df7-9582-dba83fdc856e",
+    "attempt": 1,
+    "attribution": {
+      "evidence": {
+        "kind": "comment",
+        "ref_id": "01a1d386-1aa5-7a66-abc3-c8cec9ecc65d"
+      },
+      "initiator": {
+        "email": "lilei@winning.com.cn",
+        "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+        "name": "lilei"
+      },
+      "originator": {
+        "email": "lilei@winning.com.cn",
+        "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+        "name": "lilei"
+      },
+      "precise": true,
+      "source": "direct_human"
+    },
+    "completed_at": "2026-11-13T14:15:11+08:00",
+    "created_at": "2026-11-13T14:09:03+08:00",
+    "delivered_comment_ids": [
+      "01a1d386-1aa5-7a66-abc3-c8cec9ecc65d"
+    ],
+    "dispatched_at": "2026-11-13T14:09:03+08:00",
+    "error": null,
+    "id": "01a1d386-1ac2-7ea1-88ac-869b408509eb",
+    "issue_id": "01a1d376-a59a-733a-9b02-8f36d68c7f38",
+    "kind": "comment",
+    "max_attempts": 2,
+    "priority": 0,
+    "relative_work_dir": "multica_workspaces/rondo-test-8ef6a0bcf15d/test-14-46d52c60f3a2/workdir",
+    "result": {
+      "output": "代理修复后 preflight 仍在 300 秒后超时失败，Prepare 未执行。\n\n已保留全部失败现场，在指定线程发布修复前后证据及 SHA256。TEST-14 已恢复 `blocked`；未修改 TEST-13 交付事实。",
+      "pr_url": "",
+      "session_id": "01a1d376-c8df-7e91-8652-5881358ba7b9",
+      "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir"
+    },
+    "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+    "started_at": "2026-11-13T14:09:03+08:00",
+    "status": "completed",
+    "supplement_capability": "task-supplement-v1",
+    "trigger_comment_id": "01a1d386-1aa5-7a66-abc3-c8cec9ecc65d",
+    "trigger_summary": "[@M03-M12 隔离机制验证器](mention://agent/d6120bc6-9f95-4df7-9582-dba83fdc856e) 已定位 Git 传输停滞：控制端相同 MinGit 浅克隆也停在 0 字节 pack；专属进程链的 git-remote-https 实际 TCP 连接为 127.0.0.1:7892 本机代理。真实 TFS API 读取正常。不是 PR status …",
+    "usage": [
+      {
+        "cache_read_tokens": 936320,
+        "cache_write_tokens": 0,
+        "input_tokens": 20206,
+        "model": "gpt-6-astra",
+        "output_tokens": 2876,
+        "provider": "codex"
+      }
+    ],
+    "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir",
+    "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+  },
+  {
+    "agent_id": "d6120bc6-9f95-4df7-9582-dba83fdc856e",
+    "attempt": 1,
+    "attribution": {
+      "evidence": {
+        "kind": "comment",
+        "ref_id": "01a1d37b-510a-7d55-b701-f6b152c0ff74"
+      },
+      "initiator": {
+        "email": "lilei@winning.com.cn",
+        "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+        "name": "lilei"
+      },
+      "originator": {
+        "email": "lilei@winning.com.cn",
+        "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+        "name": "lilei"
+      },
+      "precise": true,
+      "source": "direct_human"
+    },
+    "completed_at": "2026-11-13T14:08:54+08:00",
+    "created_at": "2026-11-13T13:57:16+08:00",
+    "delivered_comment_ids": [
+      "01a1d37b-510a-7d55-b701-f6b152c0ff74"
+    ],
+    "dispatched_at": "2026-11-13T13:57:16+08:00",
+    "error": null,
+    "id": "01a1d37b-5117-7426-b380-ec79b716a4b4",
+    "issue_id": "01a1d376-a59a-733a-9b02-8f36d68c7f38",
+    "kind": "comment",
+    "max_attempts": 2,
+    "priority": 0,
+    "relative_work_dir": "multica_workspaces/rondo-test-8ef6a0bcf15d/test-14-46d52c60f3a2/workdir",
+    "result": {
+      "output": "Full clone 和浅克隆均在 300 秒后超时失败，Prepare 未执行。\n\n已保留现场，并在指定线程发布三份证据附件及 SHA256。TEST-14 已恢复 `blocked`，等待控制端处理 clone 超时；未修改 TEST-13 交付事实。",
+      "pr_url": "",
+      "session_id": "01a1d376-c8df-7e91-8652-5881358ba7b9",
+      "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir"
+    },
+    "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+    "started_at": "2026-11-13T13:57:16+08:00",
+    "status": "completed",
+    "supplement_capability": "task-supplement-v1",
+    "supplement_comment_ids": [
+      "01a1d37f-fe1b-7ccf-ae16-643abb46b4eb"
+    ],
+    "trigger_comment_id": "01a1d37b-510a-7d55-b701-f6b152c0ff74",
+    "trigger_summary": "继续 M10 实际验证。控制端已按 status 字段回读 PR #3773=completed，Source Commit 精确为 5df24d44cc22bf2dfd2c4d45164c5bd8aad00479；fixture-state.json 已保存。无需用户再次授权。  Rondo 已修复本次 Git Credential Manager 拒绝访问：临时归档根仓仅通过 Git 子进程环…",
+    "usage": [
+      {
+        "cache_read_tokens": 1581440,
+        "cache_write_tokens": 0,
+        "input_tokens": 19808,
+        "model": "gpt-6-astra",
+        "output_tokens": 5298,
+        "provider": "codex"
+      }
+    ],
+    "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir",
+    "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+  },
+  {
+    "agent_id": "d6120bc6-9f95-4df7-9582-dba83fdc856e",
+    "attempt": 1,
+    "attribution": {
+      "evidence": {
+        "kind": "issue_assignment",
+        "ref_id": "01a1d376-a59a-733a-9b02-8f36d68c7f38"
+      },
+      "initiator": {
+        "email": "lilei@winning.com.cn",
+        "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+        "name": "lilei"
+      },
+      "originator": {
+        "email": "lilei@winning.com.cn",
+        "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+        "name": "lilei"
+      },
+      "precise": true,
+      "source": "direct_human"
+    },
+    "completed_at": "2026-11-13T13:54:01+08:00",
+    "created_at": "2026-11-13T13:52:10+08:00",
+    "delivered_comment_ids": [],
+    "dispatched_at": "2026-11-13T13:52:10+08:00",
+    "error": null,
+    "id": "01a1d376-a69b-714d-9bad-46d52c60f3a2",
+    "issue_id": "01a1d376-a59a-733a-9b02-8f36d68c7f38",
+    "kind": "direct",
+    "max_attempts": 2,
+    "priority": 0,
+    "relative_work_dir": "rondo-test-8ef6a0bcf15d/test-14-46d52c60f3a2/workdir",
+    "result": {
+      "output": "Clone preflight 失败：Git 凭据枚举被拒绝（`0x5`），无法完成 clone。\n\n已向 TEST-14 发布结果、证据附件及 SHA256，保留失败现场，并将 Runner 标为 `blocked`。完整 Prepare 未执行，等待控制端修复及 PR #3773 完成确认。",
+      "pr_url": "",
+      "session_id": "01a1d376-c8df-7e91-8652-5881358ba7b9",
+      "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir"
+    },
+    "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+    "started_at": "2026-11-13T13:52:23+08:00",
+    "status": "completed",
+    "supplement_capability": "task-supplement-v1",
+    "usage": [
+      {
+        "cache_read_tokens": 221312,
+        "cache_write_tokens": 0,
+        "input_tokens": 14209,
+        "model": "gpt-6-astra",
+        "output_tokens": 1342,
+        "provider": "codex"
+      }
+    ],
+    "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir",
+    "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+  }
+]

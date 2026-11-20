@@ -1,0 +1,38 @@
+$ C:/Users/lilei/.multica/bin/multica.exe issue get TEST-13 --workspace-id 60eb8cf4-31be-4a34-b744-8ef6a0bcf15d --output json
+[rondo] transient retry: 读取 Issue TEST-13（第 1 次尝试 stdout 为空，3023ms 后重试）
+$ C:/Users/lilei/.multica/bin/multica.exe issue get TEST-13 --workspace-id 60eb8cf4-31be-4a34-b744-8ef6a0bcf15d --output json
+$ C:/Users/lilei/.multica/bin/multica.exe issue metadata set 01a1d372-e8b3-7ebc-abe0-fe6d3aff8601 --key finalize.pending --value {"event_keys":["TEST-13#frame#3773#completed"],"recorded_at":"2026-11-13T06:20:03.539Z"} --type string --workspace-id 60eb8cf4-31be-4a34-b744-8ef6a0bcf15d --output json
+$ git -c core.symlinks=false clone --depth 1 --no-tags --single-branch --branch codex/m10-260986-20261113-root -- http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo .
+$ git rev-parse HEAD
+$ git symbolic-ref --short HEAD
+$ git status --porcelain=v1 -z --untracked-files=all
+$ git diff --cached --name-only --no-renames -z
+$ git symbolic-ref --short HEAD
+$ git fetch origin refs/heads/codex/m10-260986-20261113-root:refs/remotes/origin/codex/m10-260986-20261113-root
+$ git rev-parse refs/remotes/origin/codex/m10-260986-20261113-root
+$ git rev-parse HEAD
+$ git rev-list --left-right --count HEAD...refs/remotes/origin/codex/m10-260986-20261113-root
+$ git rev-list --parents refs/remotes/origin/codex/m10-260986-20261113-root..HEAD
+$ git diff --cached --name-only --no-renames -z
+$ git status --porcelain=v1 -z --untracked-files=all
+$ git diff --cached --name-only --no-renames -z
+$ openspec archive m10-260986-runtime-recovery --yes --json
+$ git status --porcelain=v1 -z --untracked-files=all
+$ git diff --cached --name-only --no-renames -z
+$ git add -A -- openspec/changes/m10-260986-runtime-recovery/.openspec.yaml openspec/changes/m10-260986-runtime-recovery/evidence.json openspec/changes/m10-260986-runtime-recovery/proposal.md openspec/changes/m10-260986-runtime-recovery/tasks.md openspec/changes/archive/2026-11-13-m10-260986-runtime-recovery/.openspec.yaml openspec/changes/archive/2026-11-13-m10-260986-runtime-recovery/evidence.json openspec/changes/archive/2026-11-13-m10-260986-runtime-recovery/proposal.md openspec/changes/archive/2026-11-13-m10-260986-runtime-recovery/tasks.md
+$ git diff --cached --name-only --no-renames -z
+$ git commit -m archive: m10-260986-runtime-recovery (TEST-13 / tfs 260986)
+$ git status --porcelain=v1 -z --untracked-files=all
+$ git diff --cached --name-only --no-renames -z
+$ git symbolic-ref --short HEAD
+$ git fetch origin refs/heads/codex/m10-260986-20261113-root:refs/remotes/origin/codex/m10-260986-20261113-root
+$ git rev-parse refs/remotes/origin/codex/m10-260986-20261113-root
+$ git rev-parse HEAD
+$ git rev-list --left-right --count HEAD...refs/remotes/origin/codex/m10-260986-20261113-root
+$ git rev-list --parents refs/remotes/origin/codex/m10-260986-20261113-root..HEAD
+$ git diff-tree --root --no-commit-id --name-only --no-renames -r -z d553258433671727d8aa09cbcfb5d6450b6d65e4
+$ git diff --cached --name-only --no-renames -z
+$ git rev-list origin/codex/m10-260986-20261113-root..HEAD --count
+$ git push origin codex/m10-260986-20261113-root
+[rondo] transient retry: GET /tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_apis/git/repositories/winning-platform-monorepo/refs（第 1 次尝试，3331ms 后重试）
+UNKNOWN: M10_INJECTED_after_archive_push: Git archive published; before prepared_change_ref metadata write

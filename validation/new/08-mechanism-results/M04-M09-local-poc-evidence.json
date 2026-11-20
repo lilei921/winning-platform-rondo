@@ -1,0 +1,3287 @@
+{
+  "started_at": "2026-11-13T12:29:08.672573+08:00",
+  "mode": "controller sandbox; local fixture only",
+  "workspace": "D:\\UserProgram\\winning-platform-monorepo",
+  "base": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+  "commands": [
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\seed",
+        "init",
+        "-b",
+        "master"
+      ],
+      "started_at": "2026-11-13T12:29:08.673567+08:00",
+      "completed_at": "2026-11-13T12:29:08.739771+08:00",
+      "exit": 0,
+      "stdout": "Initialized empty Git repository in D:/UserProgram/winning-platform-monorepo/.tmp/multica-08-local-mechanisms-20261113/M04/seed/.git/\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\seed",
+        "add",
+        "--",
+        "openspec/changes/allowed/proposal.md",
+        "openspec/changes/other/proposal.md",
+        "README.md"
+      ],
+      "started_at": "2026-11-13T12:29:08.740772+08:00",
+      "completed_at": "2026-11-13T12:29:08.852040+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\seed",
+        "-c",
+        "user.name=Multica validation fixture",
+        "-c",
+        "user.email=fixture@example.invalid",
+        "commit",
+        "-m",
+        "fixture baseline"
+      ],
+      "started_at": "2026-11-13T12:29:08.853043+08:00",
+      "completed_at": "2026-11-13T12:29:09.115208+08:00",
+      "exit": 0,
+      "stdout": "[master (root-commit) 697b9ad] fixture baseline\n 3 files changed, 3 insertions(+)\n create mode 100644 README.md\n create mode 100644 openspec/changes/allowed/proposal.md\n create mode 100644 openspec/changes/other/proposal.md\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\seed",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:09.115208+08:00",
+      "completed_at": "2026-11-13T12:29:09.151930+08:00",
+      "exit": 0,
+      "stdout": "697b9ad8a5f398c7a823e5df7525935d7817428a\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+        "clone",
+        "--bare",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\seed",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\remote.git"
+      ],
+      "started_at": "2026-11-13T12:29:09.152930+08:00",
+      "completed_at": "2026-11-13T12:29:09.379352+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into bare repository 'D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\remote.git'...\ndone.\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\seed",
+        "remote",
+        "add",
+        "origin",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\remote.git"
+      ],
+      "started_at": "2026-11-13T12:29:09.379352+08:00",
+      "completed_at": "2026-11-13T12:29:09.453736+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+        "clone",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\remote.git",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent"
+      ],
+      "started_at": "2026-11-13T12:29:09.454736+08:00",
+      "completed_at": "2026-11-13T12:29:09.700546+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into 'D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent'...\ndone.\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+        "switch",
+        "-c",
+        "agent/validation"
+      ],
+      "started_at": "2026-11-13T12:29:09.701073+08:00",
+      "completed_at": "2026-11-13T12:29:09.761966+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Switched to a new branch 'agent/validation'\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+        "add",
+        "--",
+        "openspec/changes/allowed/proposal.md",
+        "openspec/changes/other/proposal.md"
+      ],
+      "started_at": "2026-11-13T12:29:09.763066+08:00",
+      "completed_at": "2026-11-13T12:29:09.844237+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+        "-c",
+        "user.name=Multica validation fixture",
+        "-c",
+        "user.email=fixture@example.invalid",
+        "commit",
+        "-m",
+        "two independent changes"
+      ],
+      "started_at": "2026-11-13T12:29:09.844785+08:00",
+      "completed_at": "2026-11-13T12:29:10.084530+08:00",
+      "exit": 0,
+      "stdout": "[agent/validation 89f05f3] two independent changes\n 2 files changed, 2 insertions(+), 2 deletions(-)\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:10.084530+08:00",
+      "completed_at": "2026-11-13T12:29:10.124800+08:00",
+      "exit": 0,
+      "stdout": "89f05f34e792a680eacf2812d53ccb027aa2f982\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:10.127314+08:00",
+      "completed_at": "2026-11-13T12:29:10.172288+08:00",
+      "exit": 0,
+      "stdout": "89f05f34e792a680eacf2812d53ccb027aa2f982\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+        "branch",
+        "--show-current"
+      ],
+      "started_at": "2026-11-13T12:29:10.172288+08:00",
+      "completed_at": "2026-11-13T12:29:10.217422+08:00",
+      "exit": 0,
+      "stdout": "agent/validation\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "started_at": "2026-11-13T12:29:10.217963+08:00",
+      "completed_at": "2026-11-13T12:29:10.290879+08:00",
+      "exit": 0,
+      "stdout": " M README.md\n?? untracked.txt\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+        "diff",
+        "--binary"
+      ],
+      "started_at": "2026-11-13T12:29:10.292386+08:00",
+      "completed_at": "2026-11-13T12:29:10.358947+08:00",
+      "exit": 0,
+      "stdout": "diff --git a/README.md b/README.md\nindex df967b9..6564c26 100644\n--- a/README.md\n+++ b/README.md\n@@ -1 +1 @@\n-base\n+uncommitted agent content\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+        "diff",
+        "--binary",
+        "697b9ad8a5f398c7a823e5df7525935d7817428a",
+        "89f05f34e792a680eacf2812d53ccb027aa2f982",
+        "--",
+        "openspec/changes/allowed"
+      ],
+      "started_at": "2026-11-13T12:29:10.372811+08:00",
+      "completed_at": "2026-11-13T12:29:10.435947+08:00",
+      "exit": 0,
+      "stdout": "diff --git a/openspec/changes/allowed/proposal.md b/openspec/changes/allowed/proposal.md\nindex 2d10252..3e7df3e 100644\n--- a/openspec/changes/allowed/proposal.md\n+++ b/openspec/changes/allowed/proposal.md\n@@ -1 +1 @@\n-approved base\n+approved proposed\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+        "clone",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\remote.git",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\advance"
+      ],
+      "started_at": "2026-11-13T12:29:10.436951+08:00",
+      "completed_at": "2026-11-13T12:29:10.658216+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into 'D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\advance'...\ndone.\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\advance",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\advance",
+        "add",
+        "--",
+        "README.md"
+      ],
+      "started_at": "2026-11-13T12:29:10.660214+08:00",
+      "completed_at": "2026-11-13T12:29:10.739306+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\advance",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\advance",
+        "-c",
+        "user.name=Multica validation fixture",
+        "-c",
+        "user.email=fixture@example.invalid",
+        "commit",
+        "-m",
+        "target advances unrelated path"
+      ],
+      "started_at": "2026-11-13T12:29:10.740396+08:00",
+      "completed_at": "2026-11-13T12:29:10.896395+08:00",
+      "exit": 0,
+      "stdout": "[master d3eaf63] target advances unrelated path\n 1 file changed, 1 insertion(+), 1 deletion(-)\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\advance",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\advance",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:10.897413+08:00",
+      "completed_at": "2026-11-13T12:29:10.935074+08:00",
+      "exit": 0,
+      "stdout": "d3eaf63ed2d2c948b085007095c849aaaa2b941c\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\advance",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\advance",
+        "push",
+        "origin",
+        "HEAD:refs/heads/master"
+      ],
+      "started_at": "2026-11-13T12:29:10.935584+08:00",
+      "completed_at": "2026-11-13T12:29:11.443295+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "To D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\remote.git\n   697b9ad..d3eaf63  HEAD -> master\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+        "clone",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\remote.git",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\publisher"
+      ],
+      "started_at": "2026-11-13T12:29:11.444294+08:00",
+      "completed_at": "2026-11-13T12:29:11.705213+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into 'D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\publisher'...\ndone.\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\publisher",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\publisher",
+        "apply",
+        "--3way",
+        "--index",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\allowed.patch"
+      ],
+      "started_at": "2026-11-13T12:29:11.706299+08:00",
+      "completed_at": "2026-11-13T12:29:11.794548+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Applied patch to 'openspec/changes/allowed/proposal.md' cleanly.\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\publisher",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\publisher",
+        "add",
+        "--",
+        "openspec/changes/allowed/proposal.md"
+      ],
+      "started_at": "2026-11-13T12:29:11.795553+08:00",
+      "completed_at": "2026-11-13T12:29:11.863340+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\publisher",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\publisher",
+        "-c",
+        "user.name=Multica validation fixture",
+        "-c",
+        "user.email=fixture@example.invalid",
+        "commit",
+        "-m",
+        "publish whitelist only"
+      ],
+      "started_at": "2026-11-13T12:29:11.864502+08:00",
+      "completed_at": "2026-11-13T12:29:12.079429+08:00",
+      "exit": 0,
+      "stdout": "[master a1b110f] publish whitelist only\n 1 file changed, 1 insertion(+), 1 deletion(-)\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\publisher",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\publisher",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:12.080086+08:00",
+      "completed_at": "2026-11-13T12:29:12.122577+08:00",
+      "exit": 0,
+      "stdout": "a1b110f7be3a9c4830b98380f55e4943e4253adb\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\publisher",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\publisher",
+        "diff-tree",
+        "--no-commit-id",
+        "--name-only",
+        "-r",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:12.123577+08:00",
+      "completed_at": "2026-11-13T12:29:12.184310+08:00",
+      "exit": 0,
+      "stdout": "openspec/changes/allowed/proposal.md\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\publisher",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\publisher",
+        "push",
+        "origin",
+        "HEAD:refs/heads/master"
+      ],
+      "started_at": "2026-11-13T12:29:12.185405+08:00",
+      "completed_at": "2026-11-13T12:29:12.635772+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "To D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\remote.git\n   d3eaf63..a1b110f  HEAD -> master\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\remote.git",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\remote.git",
+        "rev-parse",
+        "refs/heads/master"
+      ],
+      "started_at": "2026-11-13T12:29:12.637484+08:00",
+      "completed_at": "2026-11-13T12:29:12.707358+08:00",
+      "exit": 0,
+      "stdout": "a1b110f7be3a9c4830b98380f55e4943e4253adb\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\remote.git",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\remote.git",
+        "show",
+        "master:openspec/changes/other/proposal.md"
+      ],
+      "started_at": "2026-11-13T12:29:12.708370+08:00",
+      "completed_at": "2026-11-13T12:29:12.782979+08:00",
+      "exit": 0,
+      "stdout": "other base\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\remote.git",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\remote.git",
+        "show",
+        "master:README.md"
+      ],
+      "started_at": "2026-11-13T12:29:12.784234+08:00",
+      "completed_at": "2026-11-13T12:29:12.853789+08:00",
+      "exit": 0,
+      "stdout": "remote advanced\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+        "clone",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\remote.git",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\conflict-publisher"
+      ],
+      "started_at": "2026-11-13T12:29:12.855789+08:00",
+      "completed_at": "2026-11-13T12:29:13.215339+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into 'D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\conflict-publisher'...\ndone.\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\conflict-publisher",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\conflict-publisher",
+        "add",
+        "--",
+        "openspec/changes/allowed/proposal.md"
+      ],
+      "started_at": "2026-11-13T12:29:13.218049+08:00",
+      "completed_at": "2026-11-13T12:29:13.346223+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\conflict-publisher",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\conflict-publisher",
+        "-c",
+        "user.name=Multica validation fixture",
+        "-c",
+        "user.email=fixture@example.invalid",
+        "commit",
+        "-m",
+        "competing same path"
+      ],
+      "started_at": "2026-11-13T12:29:13.347874+08:00",
+      "completed_at": "2026-11-13T12:29:13.674939+08:00",
+      "exit": 0,
+      "stdout": "[master 22d84d2] competing same path\n 1 file changed, 1 insertion(+), 1 deletion(-)\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\conflict-publisher",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\conflict-publisher",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:13.676008+08:00",
+      "completed_at": "2026-11-13T12:29:13.744667+08:00",
+      "exit": 0,
+      "stdout": "22d84d22d17c6f17ad2bf8ffc1e6fc009bf21ca3\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\conflict-publisher",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\conflict-publisher",
+        "push",
+        "origin",
+        "HEAD:refs/heads/master"
+      ],
+      "started_at": "2026-11-13T12:29:13.746403+08:00",
+      "completed_at": "2026-11-13T12:29:14.292839+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "To D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\remote.git\n   a1b110f..22d84d2  HEAD -> master\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\conflict-publisher",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\conflict-publisher",
+        "apply",
+        "--3way",
+        "--index",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\allowed.patch"
+      ],
+      "started_at": "2026-11-13T12:29:14.293837+08:00",
+      "completed_at": "2026-11-13T12:29:14.386272+08:00",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "Applied patch to 'openspec/changes/allowed/proposal.md' with conflicts.\nU openspec/changes/allowed/proposal.md\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\remote.git",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\remote.git",
+        "rev-parse",
+        "refs/heads/master"
+      ],
+      "started_at": "2026-11-13T12:29:14.387353+08:00",
+      "completed_at": "2026-11-13T12:29:14.443148+08:00",
+      "exit": 0,
+      "stdout": "22d84d22d17c6f17ad2bf8ffc1e6fc009bf21ca3\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:14.444221+08:00",
+      "completed_at": "2026-11-13T12:29:14.494349+08:00",
+      "exit": 0,
+      "stdout": "89f05f34e792a680eacf2812d53ccb027aa2f982\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+        "branch",
+        "--show-current"
+      ],
+      "started_at": "2026-11-13T12:29:14.495349+08:00",
+      "completed_at": "2026-11-13T12:29:14.549586+08:00",
+      "exit": 0,
+      "stdout": "agent/validation\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "started_at": "2026-11-13T12:29:14.550920+08:00",
+      "completed_at": "2026-11-13T12:29:14.616058+08:00",
+      "exit": 0,
+      "stdout": " M README.md\n?? untracked.txt\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M04\\agent",
+        "diff",
+        "--binary"
+      ],
+      "started_at": "2026-11-13T12:29:14.617058+08:00",
+      "completed_at": "2026-11-13T12:29:14.672389+08:00",
+      "exit": 0,
+      "stdout": "diff --git a/README.md b/README.md\nindex df967b9..6564c26 100644\n--- a/README.md\n+++ b/README.md\n@@ -1 +1 @@\n-base\n+uncommitted agent content\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\seed",
+        "init",
+        "-b",
+        "master"
+      ],
+      "started_at": "2026-11-13T12:29:14.676772+08:00",
+      "completed_at": "2026-11-13T12:29:14.791213+08:00",
+      "exit": 0,
+      "stdout": "Initialized empty Git repository in D:/UserProgram/winning-platform-monorepo/.tmp/multica-08-local-mechanisms-20261113/M05-M07/seed/.git/\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\seed",
+        "add",
+        "--",
+        "openspec/changes/validation-delivery"
+      ],
+      "started_at": "2026-11-13T12:29:14.795213+08:00",
+      "completed_at": "2026-11-13T12:29:14.895442+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\seed",
+        "-c",
+        "user.name=Multica validation fixture",
+        "-c",
+        "user.email=fixture@example.invalid",
+        "commit",
+        "-m",
+        "approval C1"
+      ],
+      "started_at": "2026-11-13T12:29:14.897450+08:00",
+      "completed_at": "2026-11-13T12:29:15.162260+08:00",
+      "exit": 0,
+      "stdout": "[master (root-commit) 8bf2f73] approval C1\n 2 files changed, 6 insertions(+)\n create mode 100644 openspec/changes/validation-delivery/proposal.md\n create mode 100644 openspec/changes/validation-delivery/tasks.md\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\seed",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:15.163260+08:00",
+      "completed_at": "2026-11-13T12:29:15.224263+08:00",
+      "exit": 0,
+      "stdout": "8bf2f7387023017f0a9ae6979aef9025d91f947b\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+        "clone",
+        "--bare",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\seed",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git"
+      ],
+      "started_at": "2026-11-13T12:29:15.225877+08:00",
+      "completed_at": "2026-11-13T12:29:15.557865+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into bare repository 'D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git'...\ndone.\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\seed",
+        "remote",
+        "add",
+        "origin",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git"
+      ],
+      "started_at": "2026-11-13T12:29:15.558897+08:00",
+      "completed_at": "2026-11-13T12:29:15.658008+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+        "clone",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-a"
+      ],
+      "started_at": "2026-11-13T12:29:15.659119+08:00",
+      "completed_at": "2026-11-13T12:29:16.042090+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into 'D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-a'...\ndone.\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+        "clone",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-stale"
+      ],
+      "started_at": "2026-11-13T12:29:16.043796+08:00",
+      "completed_at": "2026-11-13T12:29:16.354600+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into 'D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-stale'...\ndone.\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+        "clone",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\lead-at-c1"
+      ],
+      "started_at": "2026-11-13T12:29:16.355724+08:00",
+      "completed_at": "2026-11-13T12:29:17.377255+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into 'D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\lead-at-c1'...\ndone.\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-a",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-a",
+        "add",
+        "--",
+        "openspec/changes/validation-delivery/tasks.md",
+        "openspec/changes/validation-delivery/evidence/T1.json"
+      ],
+      "started_at": "2026-11-13T12:29:17.381105+08:00",
+      "completed_at": "2026-11-13T12:29:17.489572+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-a",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-a",
+        "-c",
+        "user.name=Multica validation fixture",
+        "-c",
+        "user.email=fixture@example.invalid",
+        "commit",
+        "-m",
+        "publish T1"
+      ],
+      "started_at": "2026-11-13T12:29:17.491076+08:00",
+      "completed_at": "2026-11-13T12:29:17.787720+08:00",
+      "exit": 0,
+      "stdout": "[master 599fc84] publish T1\n 2 files changed, 8 insertions(+), 1 deletion(-)\n create mode 100644 openspec/changes/validation-delivery/evidence/T1.json\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-a",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-a",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:17.788823+08:00",
+      "completed_at": "2026-11-13T12:29:17.844401+08:00",
+      "exit": 0,
+      "stdout": "599fc84f14edd61dda8c2b83193ee1f0000414bf\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-a",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-a",
+        "push",
+        "origin",
+        "HEAD:refs/heads/master"
+      ],
+      "started_at": "2026-11-13T12:29:17.845422+08:00",
+      "completed_at": "2026-11-13T12:29:18.283286+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "To D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git\n   8bf2f73..599fc84  HEAD -> master\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-stale",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-stale",
+        "add",
+        "--",
+        "openspec/changes/validation-delivery/tasks.md",
+        "openspec/changes/validation-delivery/evidence/T2.json"
+      ],
+      "started_at": "2026-11-13T12:29:18.287137+08:00",
+      "completed_at": "2026-11-13T12:29:18.392384+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-stale",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-stale",
+        "-c",
+        "user.name=Multica validation fixture",
+        "-c",
+        "user.email=fixture@example.invalid",
+        "commit",
+        "-m",
+        "publish T2"
+      ],
+      "started_at": "2026-11-13T12:29:18.393620+08:00",
+      "completed_at": "2026-11-13T12:29:18.689849+08:00",
+      "exit": 0,
+      "stdout": "[master 19d4104] publish T2\n 2 files changed, 8 insertions(+), 1 deletion(-)\n create mode 100644 openspec/changes/validation-delivery/evidence/T2.json\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-stale",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-stale",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:18.691404+08:00",
+      "completed_at": "2026-11-13T12:29:18.740691+08:00",
+      "exit": 0,
+      "stdout": "19d41047605dfcdce457cca77a6eb134a818cb82\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-stale",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-stale",
+        "push",
+        "origin",
+        "HEAD:refs/heads/master"
+      ],
+      "started_at": "2026-11-13T12:29:18.742697+08:00",
+      "completed_at": "2026-11-13T12:29:18.875989+08:00",
+      "exit": 1,
+      "stdout": "",
+      "stderr": "To D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git\n ! [rejected]        HEAD -> master (fetch first)\nerror: failed to push some refs to 'D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git'\nhint: Updates were rejected because the remote contains work that you do not\nhint: have locally. This is usually caused by another repository pushing to\nhint: the same ref. If you want to integrate the remote changes, use\nhint: 'git pull' before pushing again.\nhint: See the 'Note about fast-forwards' in 'git push --help' for details.\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git",
+        "rev-parse",
+        "refs/heads/master"
+      ],
+      "started_at": "2026-11-13T12:29:18.877617+08:00",
+      "completed_at": "2026-11-13T12:29:18.933436+08:00",
+      "exit": 0,
+      "stdout": "599fc84f14edd61dda8c2b83193ee1f0000414bf\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+        "clone",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-revalidated"
+      ],
+      "started_at": "2026-11-13T12:29:18.935067+08:00",
+      "completed_at": "2026-11-13T12:29:19.307961+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into 'D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-revalidated'...\ndone.\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-revalidated",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-revalidated",
+        "add",
+        "--",
+        "openspec/changes/validation-delivery/tasks.md",
+        "openspec/changes/validation-delivery/evidence/T2.json"
+      ],
+      "started_at": "2026-11-13T12:29:19.312891+08:00",
+      "completed_at": "2026-11-13T12:29:19.638963+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-revalidated",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-revalidated",
+        "-c",
+        "user.name=Multica validation fixture",
+        "-c",
+        "user.email=fixture@example.invalid",
+        "commit",
+        "-m",
+        "publish T2"
+      ],
+      "started_at": "2026-11-13T12:29:19.640479+08:00",
+      "completed_at": "2026-11-13T12:29:19.945142+08:00",
+      "exit": 0,
+      "stdout": "[master 7a01226] publish T2\n 2 files changed, 8 insertions(+), 1 deletion(-)\n create mode 100644 openspec/changes/validation-delivery/evidence/T2.json\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-revalidated",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-revalidated",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:19.947441+08:00",
+      "completed_at": "2026-11-13T12:29:20.002805+08:00",
+      "exit": 0,
+      "stdout": "7a012268902b37171bb48954935aa2b261272c22\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-revalidated",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\engineer-b-revalidated",
+        "push",
+        "origin",
+        "HEAD:refs/heads/master"
+      ],
+      "started_at": "2026-11-13T12:29:20.004805+08:00",
+      "completed_at": "2026-11-13T12:29:20.519265+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "To D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git\n   599fc84..7a01226  HEAD -> master\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git",
+        "show",
+        "master:openspec/changes/validation-delivery/tasks.md"
+      ],
+      "started_at": "2026-11-13T12:29:20.521271+08:00",
+      "completed_at": "2026-11-13T12:29:20.580009+08:00",
+      "exit": 0,
+      "stdout": "# Approved delivery\n\n- [x] T1 first independent delivery\n\n- [x] T2 second independent delivery\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git",
+        "show",
+        "8bf2f7387023017f0a9ae6979aef9025d91f947b:openspec/changes/validation-delivery/tasks.md"
+      ],
+      "started_at": "2026-11-13T12:29:20.582759+08:00",
+      "completed_at": "2026-11-13T12:29:20.645735+08:00",
+      "exit": 0,
+      "stdout": "# Approved delivery\n\n- [ ] T1 first independent delivery\n\n- [ ] T2 second independent delivery\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\lead-at-c1",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\lead-at-c1",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:20.647925+08:00",
+      "completed_at": "2026-11-13T12:29:20.702472+08:00",
+      "exit": 0,
+      "stdout": "8bf2f7387023017f0a9ae6979aef9025d91f947b\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git",
+        "rev-parse",
+        "master"
+      ],
+      "started_at": "2026-11-13T12:29:20.704084+08:00",
+      "completed_at": "2026-11-13T12:29:20.759299+08:00",
+      "exit": 0,
+      "stdout": "7a012268902b37171bb48954935aa2b261272c22\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git",
+        "show",
+        "master:openspec/changes/validation-delivery/evidence/T1.json"
+      ],
+      "started_at": "2026-11-13T12:29:20.761250+08:00",
+      "completed_at": "2026-11-13T12:29:20.821446+08:00",
+      "exit": 0,
+      "stdout": "{\n  \"task_refs\": [\n    \"T1\"\n  ],\n  \"candidate_commit\": \"8bf2f7387023017f0a9ae6979aef9025d91f947b\",\n  \"fixture_engineer\": \"A\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git",
+        "show",
+        "master:openspec/changes/validation-delivery/evidence/T2.json"
+      ],
+      "started_at": "2026-11-13T12:29:20.823589+08:00",
+      "completed_at": "2026-11-13T12:29:20.901324+08:00",
+      "exit": 0,
+      "stdout": "{\n  \"task_refs\": [\n    \"T2\"\n  ],\n  \"candidate_commit\": \"8bf2f7387023017f0a9ae6979aef9025d91f947b\",\n  \"fixture_engineer\": \"B\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M05-M07\\remote.git",
+        "rev-parse",
+        "refs/heads/master"
+      ],
+      "started_at": "2026-11-13T12:29:20.916252+08:00",
+      "completed_at": "2026-11-13T12:29:20.968890+08:00",
+      "exit": 0,
+      "stdout": "7a012268902b37171bb48954935aa2b261272c22\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root",
+        "init",
+        "-b",
+        "master"
+      ],
+      "started_at": "2026-11-13T12:29:20.973551+08:00",
+      "completed_at": "2026-11-13T12:29:21.075863+08:00",
+      "exit": 0,
+      "stdout": "Initialized empty Git repository in D:/UserProgram/winning-platform-monorepo/.tmp/multica-08-local-mechanisms-20261113/M06/root/.git/\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root",
+        "add",
+        "--",
+        ".gitignore"
+      ],
+      "started_at": "2026-11-13T12:29:21.079009+08:00",
+      "completed_at": "2026-11-13T12:29:21.165568+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root",
+        "-c",
+        "user.name=Multica validation fixture",
+        "-c",
+        "user.email=fixture@example.invalid",
+        "commit",
+        "-m",
+        "root ignores child"
+      ],
+      "started_at": "2026-11-13T12:29:21.167285+08:00",
+      "completed_at": "2026-11-13T12:29:21.408489+08:00",
+      "exit": 0,
+      "stdout": "[master (root-commit) 0a38b11] root ignores child\n 1 file changed, 1 insertion(+)\n create mode 100644 .gitignore\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:21.410841+08:00",
+      "completed_at": "2026-11-13T12:29:21.473521+08:00",
+      "exit": 0,
+      "stdout": "0a38b118665fbf49ab165950552fe64d407843c5\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\seed",
+        "init",
+        "-b",
+        "master"
+      ],
+      "started_at": "2026-11-13T12:29:21.477191+08:00",
+      "completed_at": "2026-11-13T12:29:21.595553+08:00",
+      "exit": 0,
+      "stdout": "Initialized empty Git repository in D:/UserProgram/winning-platform-monorepo/.tmp/multica-08-local-mechanisms-20261113/M06/seed/.git/\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\seed",
+        "add",
+        "--",
+        "README.txt"
+      ],
+      "started_at": "2026-11-13T12:29:21.598564+08:00",
+      "completed_at": "2026-11-13T12:29:21.733358+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\seed",
+        "-c",
+        "user.name=Multica validation fixture",
+        "-c",
+        "user.email=fixture@example.invalid",
+        "commit",
+        "-m",
+        "business baseline"
+      ],
+      "started_at": "2026-11-13T12:29:21.735359+08:00",
+      "completed_at": "2026-11-13T12:29:21.926957+08:00",
+      "exit": 0,
+      "stdout": "[master (root-commit) 0deb1ed] business baseline\n 1 file changed, 1 insertion(+)\n create mode 100644 README.txt\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\seed",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:21.928955+08:00",
+      "completed_at": "2026-11-13T12:29:21.979305+08:00",
+      "exit": 0,
+      "stdout": "0deb1ed981a33201bfc8b70dabf4cf54d2895eb6\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\seed",
+        "branch",
+        "candidate"
+      ],
+      "started_at": "2026-11-13T12:29:21.980964+08:00",
+      "completed_at": "2026-11-13T12:29:22.050570+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+        "clone",
+        "--bare",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\seed",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\business.git"
+      ],
+      "started_at": "2026-11-13T12:29:22.053035+08:00",
+      "completed_at": "2026-11-13T12:29:22.331822+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into bare repository 'D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\business.git'...\ndone.\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\seed",
+        "remote",
+        "add",
+        "origin",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\business.git"
+      ],
+      "started_at": "2026-11-13T12:29:22.334138+08:00",
+      "completed_at": "2026-11-13T12:29:22.407215+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+        "clone",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\business.git",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common"
+      ],
+      "started_at": "2026-11-13T12:29:22.409445+08:00",
+      "completed_at": "2026-11-13T12:29:22.754622+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into 'D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common'...\ndone.\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "switch",
+        "--track",
+        "origin/candidate"
+      ],
+      "started_at": "2026-11-13T12:29:22.756288+08:00",
+      "completed_at": "2026-11-13T12:29:22.931353+08:00",
+      "exit": 0,
+      "stdout": "branch 'candidate' set up to track 'origin/candidate'.\n",
+      "stderr": "Switched to a new branch 'candidate'\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:22.932882+08:00",
+      "completed_at": "2026-11-13T12:29:23.007509+08:00",
+      "exit": 0,
+      "stdout": "0deb1ed981a33201bfc8b70dabf4cf54d2895eb6\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "branch",
+        "--show-current"
+      ],
+      "started_at": "2026-11-13T12:29:23.010511+08:00",
+      "completed_at": "2026-11-13T12:29:23.075889+08:00",
+      "exit": 0,
+      "stdout": "candidate\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "started_at": "2026-11-13T12:29:23.079889+08:00",
+      "completed_at": "2026-11-13T12:29:23.152490+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "diff",
+        "--binary"
+      ],
+      "started_at": "2026-11-13T12:29:23.154678+08:00",
+      "completed_at": "2026-11-13T12:29:23.212814+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "remote",
+        "get-url",
+        "origin"
+      ],
+      "started_at": "2026-11-13T12:29:23.214922+08:00",
+      "completed_at": "2026-11-13T12:29:23.269872+08:00",
+      "exit": 0,
+      "stdout": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\business.git\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "status",
+        "--porcelain=v1"
+      ],
+      "started_at": "2026-11-13T12:29:23.271874+08:00",
+      "completed_at": "2026-11-13T12:29:23.329623+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "rev-list",
+        "--count",
+        "origin/candidate..HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:23.332626+08:00",
+      "completed_at": "2026-11-13T12:29:23.391084+08:00",
+      "exit": 0,
+      "stdout": "0\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "fetch",
+        "origin"
+      ],
+      "started_at": "2026-11-13T12:29:23.393084+08:00",
+      "completed_at": "2026-11-13T12:29:23.669115+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:23.672115+08:00",
+      "completed_at": "2026-11-13T12:29:23.741381+08:00",
+      "exit": 0,
+      "stdout": "0deb1ed981a33201bfc8b70dabf4cf54d2895eb6\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "branch",
+        "--show-current"
+      ],
+      "started_at": "2026-11-13T12:29:23.744384+08:00",
+      "completed_at": "2026-11-13T12:29:23.799236+08:00",
+      "exit": 0,
+      "stdout": "candidate\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "started_at": "2026-11-13T12:29:23.801235+08:00",
+      "completed_at": "2026-11-13T12:29:23.867253+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "diff",
+        "--binary"
+      ],
+      "started_at": "2026-11-13T12:29:23.870265+08:00",
+      "completed_at": "2026-11-13T12:29:23.925603+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+        "clone",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\business.git",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\advance"
+      ],
+      "started_at": "2026-11-13T12:29:23.928829+08:00",
+      "completed_at": "2026-11-13T12:29:24.267541+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into 'D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\advance'...\ndone.\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\advance",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\advance",
+        "switch",
+        "--track",
+        "origin/candidate"
+      ],
+      "started_at": "2026-11-13T12:29:24.270762+08:00",
+      "completed_at": "2026-11-13T12:29:24.381783+08:00",
+      "exit": 0,
+      "stdout": "branch 'candidate' set up to track 'origin/candidate'.\n",
+      "stderr": "Switched to a new branch 'candidate'\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\advance",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\advance",
+        "add",
+        "--",
+        "README.txt"
+      ],
+      "started_at": "2026-11-13T12:29:24.385586+08:00",
+      "completed_at": "2026-11-13T12:29:24.472496+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\advance",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\advance",
+        "-c",
+        "user.name=Multica validation fixture",
+        "-c",
+        "user.email=fixture@example.invalid",
+        "commit",
+        "-m",
+        "advance candidate"
+      ],
+      "started_at": "2026-11-13T12:29:24.476717+08:00",
+      "completed_at": "2026-11-13T12:29:24.679805+08:00",
+      "exit": 0,
+      "stdout": "[candidate 9674351] advance candidate\n 1 file changed, 1 insertion(+), 1 deletion(-)\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\advance",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\advance",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:24.681964+08:00",
+      "completed_at": "2026-11-13T12:29:24.736699+08:00",
+      "exit": 0,
+      "stdout": "9674351c29c30ad39b09297abd372795936a5dd0\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\advance",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\advance",
+        "push",
+        "origin",
+        "HEAD:refs/heads/candidate"
+      ],
+      "started_at": "2026-11-13T12:29:24.739056+08:00",
+      "completed_at": "2026-11-13T12:29:25.301358+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "To D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\business.git\n   0deb1ed..9674351  HEAD -> candidate\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "remote",
+        "get-url",
+        "origin"
+      ],
+      "started_at": "2026-11-13T12:29:25.305482+08:00",
+      "completed_at": "2026-11-13T12:29:25.363495+08:00",
+      "exit": 0,
+      "stdout": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\business.git\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "status",
+        "--porcelain=v1"
+      ],
+      "started_at": "2026-11-13T12:29:25.365723+08:00",
+      "completed_at": "2026-11-13T12:29:25.426998+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "rev-list",
+        "--count",
+        "origin/candidate..HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:25.428999+08:00",
+      "completed_at": "2026-11-13T12:29:25.486672+08:00",
+      "exit": 0,
+      "stdout": "0\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "fetch",
+        "origin"
+      ],
+      "started_at": "2026-11-13T12:29:25.490448+08:00",
+      "completed_at": "2026-11-13T12:29:25.872807+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "From D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\business\n   0deb1ed..9674351  candidate  -> origin/candidate\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "merge-base",
+        "--is-ancestor",
+        "HEAD",
+        "origin/candidate"
+      ],
+      "started_at": "2026-11-13T12:29:25.876817+08:00",
+      "completed_at": "2026-11-13T12:29:25.941739+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "merge",
+        "--ff-only",
+        "origin/candidate"
+      ],
+      "started_at": "2026-11-13T12:29:25.944058+08:00",
+      "completed_at": "2026-11-13T12:29:26.096449+08:00",
+      "exit": 0,
+      "stdout": "Updating 0deb1ed..9674351\nFast-forward\n README.txt | 2 +-\n 1 file changed, 1 insertion(+), 1 deletion(-)\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:26.098448+08:00",
+      "completed_at": "2026-11-13T12:29:26.156863+08:00",
+      "exit": 0,
+      "stdout": "9674351c29c30ad39b09297abd372795936a5dd0\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:26.159936+08:00",
+      "completed_at": "2026-11-13T12:29:26.210749+08:00",
+      "exit": 0,
+      "stdout": "9674351c29c30ad39b09297abd372795936a5dd0\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "branch",
+        "--show-current"
+      ],
+      "started_at": "2026-11-13T12:29:26.215830+08:00",
+      "completed_at": "2026-11-13T12:29:26.270378+08:00",
+      "exit": 0,
+      "stdout": "candidate\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "started_at": "2026-11-13T12:29:26.273610+08:00",
+      "completed_at": "2026-11-13T12:29:26.361189+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "diff",
+        "--binary"
+      ],
+      "started_at": "2026-11-13T12:29:26.363300+08:00",
+      "completed_at": "2026-11-13T12:29:26.421158+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:26.423156+08:00",
+      "completed_at": "2026-11-13T12:29:26.477278+08:00",
+      "exit": 0,
+      "stdout": "9674351c29c30ad39b09297abd372795936a5dd0\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "branch",
+        "--show-current"
+      ],
+      "started_at": "2026-11-13T12:29:26.480591+08:00",
+      "completed_at": "2026-11-13T12:29:26.529777+08:00",
+      "exit": 0,
+      "stdout": "candidate\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "started_at": "2026-11-13T12:29:26.531407+08:00",
+      "completed_at": "2026-11-13T12:29:26.590976+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "diff",
+        "--binary"
+      ],
+      "started_at": "2026-11-13T12:29:26.592871+08:00",
+      "completed_at": "2026-11-13T12:29:26.638103+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+        "clone",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\business.git",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin"
+      ],
+      "started_at": "2026-11-13T12:29:26.641111+08:00",
+      "completed_at": "2026-11-13T12:29:26.915437+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into 'D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin'...\ndone.\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+        "remote",
+        "set-url",
+        "origin",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong.git"
+      ],
+      "started_at": "2026-11-13T12:29:26.917828+08:00",
+      "completed_at": "2026-11-13T12:29:26.977210+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:26.979948+08:00",
+      "completed_at": "2026-11-13T12:29:27.047307+08:00",
+      "exit": 0,
+      "stdout": "0deb1ed981a33201bfc8b70dabf4cf54d2895eb6\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+        "branch",
+        "--show-current"
+      ],
+      "started_at": "2026-11-13T12:29:27.050538+08:00",
+      "completed_at": "2026-11-13T12:29:27.102192+08:00",
+      "exit": 0,
+      "stdout": "master\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "started_at": "2026-11-13T12:29:27.104425+08:00",
+      "completed_at": "2026-11-13T12:29:27.181018+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+        "diff",
+        "--binary"
+      ],
+      "started_at": "2026-11-13T12:29:27.184326+08:00",
+      "completed_at": "2026-11-13T12:29:27.245282+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+        "remote",
+        "get-url",
+        "origin"
+      ],
+      "started_at": "2026-11-13T12:29:27.248287+08:00",
+      "completed_at": "2026-11-13T12:29:27.303542+08:00",
+      "exit": 0,
+      "stdout": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong.git\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:27.305706+08:00",
+      "completed_at": "2026-11-13T12:29:27.351271+08:00",
+      "exit": 0,
+      "stdout": "0deb1ed981a33201bfc8b70dabf4cf54d2895eb6\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+        "branch",
+        "--show-current"
+      ],
+      "started_at": "2026-11-13T12:29:27.353425+08:00",
+      "completed_at": "2026-11-13T12:29:27.400645+08:00",
+      "exit": 0,
+      "stdout": "master\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "started_at": "2026-11-13T12:29:27.402645+08:00",
+      "completed_at": "2026-11-13T12:29:27.456351+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\wrong-origin",
+        "diff",
+        "--binary"
+      ],
+      "started_at": "2026-11-13T12:29:27.459100+08:00",
+      "completed_at": "2026-11-13T12:29:27.506119+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:27.509434+08:00",
+      "completed_at": "2026-11-13T12:29:27.558252+08:00",
+      "exit": 0,
+      "stdout": "9674351c29c30ad39b09297abd372795936a5dd0\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "branch",
+        "--show-current"
+      ],
+      "started_at": "2026-11-13T12:29:27.560944+08:00",
+      "completed_at": "2026-11-13T12:29:27.609069+08:00",
+      "exit": 0,
+      "stdout": "candidate\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "started_at": "2026-11-13T12:29:27.611075+08:00",
+      "completed_at": "2026-11-13T12:29:27.667413+08:00",
+      "exit": 0,
+      "stdout": "?? dirty.txt\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "diff",
+        "--binary"
+      ],
+      "started_at": "2026-11-13T12:29:27.669411+08:00",
+      "completed_at": "2026-11-13T12:29:27.716833+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "remote",
+        "get-url",
+        "origin"
+      ],
+      "started_at": "2026-11-13T12:29:27.719944+08:00",
+      "completed_at": "2026-11-13T12:29:27.766918+08:00",
+      "exit": 0,
+      "stdout": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\business.git\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "status",
+        "--porcelain=v1"
+      ],
+      "started_at": "2026-11-13T12:29:27.768924+08:00",
+      "completed_at": "2026-11-13T12:29:27.825802+08:00",
+      "exit": 0,
+      "stdout": "?? dirty.txt\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:27.828987+08:00",
+      "completed_at": "2026-11-13T12:29:27.876041+08:00",
+      "exit": 0,
+      "stdout": "9674351c29c30ad39b09297abd372795936a5dd0\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "branch",
+        "--show-current"
+      ],
+      "started_at": "2026-11-13T12:29:27.878501+08:00",
+      "completed_at": "2026-11-13T12:29:27.925714+08:00",
+      "exit": 0,
+      "stdout": "candidate\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "started_at": "2026-11-13T12:29:27.928227+08:00",
+      "completed_at": "2026-11-13T12:29:27.992509+08:00",
+      "exit": 0,
+      "stdout": "?? dirty.txt\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root\\winning-dps-df-common",
+        "diff",
+        "--binary"
+      ],
+      "started_at": "2026-11-13T12:29:27.996425+08:00",
+      "completed_at": "2026-11-13T12:29:28.050801+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+        "clone",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\business.git",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed"
+      ],
+      "started_at": "2026-11-13T12:29:28.053872+08:00",
+      "completed_at": "2026-11-13T12:29:28.359945+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into 'D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed'...\ndone.\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+        "switch",
+        "--track",
+        "origin/candidate"
+      ],
+      "started_at": "2026-11-13T12:29:28.363947+08:00",
+      "completed_at": "2026-11-13T12:29:28.537309+08:00",
+      "exit": 0,
+      "stdout": "branch 'candidate' set up to track 'origin/candidate'.\n",
+      "stderr": "Switched to a new branch 'candidate'\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+        "add",
+        "--",
+        "local.txt"
+      ],
+      "started_at": "2026-11-13T12:29:28.541272+08:00",
+      "completed_at": "2026-11-13T12:29:28.646650+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+        "-c",
+        "user.name=Multica validation fixture",
+        "-c",
+        "user.email=fixture@example.invalid",
+        "commit",
+        "-m",
+        "unpublished local commit"
+      ],
+      "started_at": "2026-11-13T12:29:28.649205+08:00",
+      "completed_at": "2026-11-13T12:29:28.878924+08:00",
+      "exit": 0,
+      "stdout": "[candidate 6972509] unpublished local commit\n 1 file changed, 1 insertion(+)\n create mode 100644 local.txt\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:28.881780+08:00",
+      "completed_at": "2026-11-13T12:29:28.928721+08:00",
+      "exit": 0,
+      "stdout": "69725097d30b3b0d34172917808bac4789576bd3\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:28.931230+08:00",
+      "completed_at": "2026-11-13T12:29:28.980954+08:00",
+      "exit": 0,
+      "stdout": "69725097d30b3b0d34172917808bac4789576bd3\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+        "branch",
+        "--show-current"
+      ],
+      "started_at": "2026-11-13T12:29:28.983951+08:00",
+      "completed_at": "2026-11-13T12:29:29.043851+08:00",
+      "exit": 0,
+      "stdout": "candidate\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "started_at": "2026-11-13T12:29:29.047402+08:00",
+      "completed_at": "2026-11-13T12:29:29.136605+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+        "diff",
+        "--binary"
+      ],
+      "started_at": "2026-11-13T12:29:29.141162+08:00",
+      "completed_at": "2026-11-13T12:29:29.210089+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+        "remote",
+        "get-url",
+        "origin"
+      ],
+      "started_at": "2026-11-13T12:29:29.212581+08:00",
+      "completed_at": "2026-11-13T12:29:29.270457+08:00",
+      "exit": 0,
+      "stdout": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\business.git\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+        "status",
+        "--porcelain=v1"
+      ],
+      "started_at": "2026-11-13T12:29:29.273444+08:00",
+      "completed_at": "2026-11-13T12:29:29.329775+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+        "rev-list",
+        "--count",
+        "origin/candidate..HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:29.332780+08:00",
+      "completed_at": "2026-11-13T12:29:29.387875+08:00",
+      "exit": 0,
+      "stdout": "1\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:29.390883+08:00",
+      "completed_at": "2026-11-13T12:29:29.438599+08:00",
+      "exit": 0,
+      "stdout": "69725097d30b3b0d34172917808bac4789576bd3\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+        "branch",
+        "--show-current"
+      ],
+      "started_at": "2026-11-13T12:29:29.440902+08:00",
+      "completed_at": "2026-11-13T12:29:29.490971+08:00",
+      "exit": 0,
+      "stdout": "candidate\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "started_at": "2026-11-13T12:29:29.494284+08:00",
+      "completed_at": "2026-11-13T12:29:29.551846+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\unpushed",
+        "diff",
+        "--binary"
+      ],
+      "started_at": "2026-11-13T12:29:29.554845+08:00",
+      "completed_at": "2026-11-13T12:29:29.607696+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\root",
+        "status",
+        "--porcelain=v1"
+      ],
+      "started_at": "2026-11-13T12:29:29.610357+08:00",
+      "completed_at": "2026-11-13T12:29:29.689395+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\business.git",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\business.git",
+        "rev-parse",
+        "refs/heads/candidate"
+      ],
+      "started_at": "2026-11-13T12:29:29.692390+08:00",
+      "completed_at": "2026-11-13T12:29:29.754882+08:00",
+      "exit": 0,
+      "stdout": "9674351c29c30ad39b09297abd372795936a5dd0\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\seed",
+        "init",
+        "-b",
+        "master"
+      ],
+      "started_at": "2026-11-13T12:29:29.762886+08:00",
+      "completed_at": "2026-11-13T12:29:29.882452+08:00",
+      "exit": 0,
+      "stdout": "Initialized empty Git repository in D:/UserProgram/winning-platform-monorepo/.tmp/multica-08-local-mechanisms-20261113/M09/seed/.git/\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\seed",
+        "add",
+        "--",
+        "openspec",
+        "protected.txt"
+      ],
+      "started_at": "2026-11-13T12:29:29.890743+08:00",
+      "completed_at": "2026-11-13T12:29:30.074359+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\seed",
+        "-c",
+        "user.name=Multica validation fixture",
+        "-c",
+        "user.email=fixture@example.invalid",
+        "commit",
+        "-m",
+        "archive fixture input"
+      ],
+      "started_at": "2026-11-13T12:29:30.078678+08:00",
+      "completed_at": "2026-11-13T12:29:30.413471+08:00",
+      "exit": 0,
+      "stdout": "[master (root-commit) 03e7b3d] archive fixture input\n 6 files changed, 23 insertions(+)\n create mode 100644 openspec/changes/validation-archive/evidence/fixture.json\n create mode 100644 openspec/changes/validation-archive/proposal.md\n create mode 100644 openspec/changes/validation-archive/specs/fixture/spec.md\n create mode 100644 openspec/changes/validation-archive/tasks.md\n create mode 100644 openspec/config.yaml\n create mode 100644 protected.txt\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\seed",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:30.416210+08:00",
+      "completed_at": "2026-11-13T12:29:30.467557+08:00",
+      "exit": 0,
+      "stdout": "03e7b3ded9c95b0e585a64e1dbe9bf1311fe0b75\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+        "clone",
+        "--bare",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\seed",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\remote.git"
+      ],
+      "started_at": "2026-11-13T12:29:30.470377+08:00",
+      "completed_at": "2026-11-13T12:29:30.792340+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into bare repository 'D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\remote.git'...\ndone.\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\seed",
+        "remote",
+        "add",
+        "origin",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\remote.git"
+      ],
+      "started_at": "2026-11-13T12:29:30.795339+08:00",
+      "completed_at": "2026-11-13T12:29:30.868186+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113",
+        "clone",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\remote.git",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\temporary-finalize"
+      ],
+      "started_at": "2026-11-13T12:29:30.873963+08:00",
+      "completed_at": "2026-11-13T12:29:31.274605+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into 'D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\temporary-finalize'...\ndone.\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\temporary-finalize",
+      "argv": [
+        "D:\\UserApp\\nvm\\node_global\\openspec.cmd",
+        "--version"
+      ],
+      "started_at": "2026-11-13T12:29:31.285605+08:00",
+      "completed_at": "2026-11-13T12:29:32.506826+08:00",
+      "exit": 0,
+      "stdout": "1.13.2\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\temporary-finalize",
+      "argv": [
+        "D:\\UserApp\\nvm\\node_global\\openspec.cmd",
+        "archive",
+        "validation-archive",
+        "--yes",
+        "--json"
+      ],
+      "started_at": "2026-11-13T12:29:32.510826+08:00",
+      "completed_at": "2026-11-13T12:29:33.780487+08:00",
+      "exit": 0,
+      "stdout": "{\n  \"archive\": {\n    \"change\": \"validation-archive\",\n    \"archivedAs\": \"2026-11-13-validation-archive\",\n    \"path\": \"D:\\\\UserProgram\\\\winning-platform-monorepo\\\\.tmp\\\\multica-08-local-mechanisms-20261113\\\\M09\\\\temporary-finalize\\\\openspec\\\\changes\\\\archive\\\\2026-11-13-validation-archive\",\n    \"specsUpdated\": true,\n    \"totals\": {\n      \"added\": 1,\n      \"modified\": 0,\n      \"removed\": 0,\n      \"renamed\": 0\n    }\n  },\n  \"root\": {\n    \"path\": \"D:\\\\UserProgram\\\\winning-platform-monorepo\\\\.tmp\\\\multica-08-local-mechanisms-20261113\\\\M09\\\\temporary-finalize\",\n    \"source\": \"nearest\"\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\temporary-finalize",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\temporary-finalize",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "started_at": "2026-11-13T12:29:33.786500+08:00",
+      "completed_at": "2026-11-13T12:29:33.868018+08:00",
+      "exit": 0,
+      "stdout": " D openspec/changes/validation-archive/evidence/fixture.json\n D openspec/changes/validation-archive/proposal.md\n D openspec/changes/validation-archive/specs/fixture/spec.md\n D openspec/changes/validation-archive/tasks.md\n?? openspec/changes/archive/2026-11-13-validation-archive/evidence/fixture.json\n?? openspec/changes/archive/2026-11-13-validation-archive/proposal.md\n?? openspec/changes/archive/2026-11-13-validation-archive/specs/fixture/spec.md\n?? openspec/changes/archive/2026-11-13-validation-archive/tasks.md\n?? openspec/specs/fixture/spec.md\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\temporary-finalize",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\temporary-finalize",
+        "add",
+        "--",
+        "openspec"
+      ],
+      "started_at": "2026-11-13T12:29:33.872119+08:00",
+      "completed_at": "2026-11-13T12:29:33.943676+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\temporary-finalize",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\temporary-finalize",
+        "-c",
+        "user.name=Multica validation fixture",
+        "-c",
+        "user.email=fixture@example.invalid",
+        "commit",
+        "-m",
+        "publish local archive"
+      ],
+      "started_at": "2026-11-13T12:29:33.945674+08:00",
+      "completed_at": "2026-11-13T12:29:34.270641+08:00",
+      "exit": 0,
+      "stdout": "[master df47bb6] publish local archive\n 5 files changed, 13 insertions(+)\n rename openspec/changes/{validation-archive => archive/2026-11-13-validation-archive}/evidence/fixture.json (100%)\n rename openspec/changes/{validation-archive => archive/2026-11-13-validation-archive}/proposal.md (100%)\n rename openspec/changes/{validation-archive => archive/2026-11-13-validation-archive}/specs/fixture/spec.md (100%)\n rename openspec/changes/{validation-archive => archive/2026-11-13-validation-archive}/tasks.md (100%)\n create mode 100644 openspec/specs/fixture/spec.md\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\temporary-finalize",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\temporary-finalize",
+        "rev-parse",
+        "HEAD"
+      ],
+      "started_at": "2026-11-13T12:29:34.274958+08:00",
+      "completed_at": "2026-11-13T12:29:34.326227+08:00",
+      "exit": 0,
+      "stdout": "df47bb6fd0fdc9b19ec6fe136818548b1403f847\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\temporary-finalize",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\temporary-finalize",
+        "push",
+        "origin",
+        "HEAD:refs/heads/master"
+      ],
+      "started_at": "2026-11-13T12:29:34.329129+08:00",
+      "completed_at": "2026-11-13T12:29:34.732884+08:00",
+      "exit": 0,
+      "stdout": "",
+      "stderr": "To D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\remote.git\n   03e7b3d..df47bb6  HEAD -> master\n"
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\remote.git",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\remote.git",
+        "rev-parse",
+        "refs/heads/master"
+      ],
+      "started_at": "2026-11-13T12:29:34.735551+08:00",
+      "completed_at": "2026-11-13T12:29:34.786409+08:00",
+      "exit": 0,
+      "stdout": "df47bb6fd0fdc9b19ec6fe136818548b1403f847\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\remote.git",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\remote.git",
+        "rev-parse",
+        "refs/heads/master"
+      ],
+      "started_at": "2026-11-13T12:30:33.385604+08:00",
+      "completed_at": "2026-11-13T12:30:33.427580+08:00",
+      "exit": 0,
+      "stdout": "df47bb6fd0fdc9b19ec6fe136818548b1403f847\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\remote.git",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\remote.git",
+        "show",
+        "master:openspec/changes/archive/2026-11-13-validation-archive/tasks.md"
+      ],
+      "started_at": "2026-11-13T12:30:33.464088+08:00",
+      "completed_at": "2026-11-13T12:30:33.517389+08:00",
+      "exit": 0,
+      "stdout": "- [x] 1.1 Verify local archive\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\remote.git",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\remote.git",
+        "show",
+        "master:openspec/changes/archive/2026-11-13-validation-archive/evidence/fixture.json"
+      ],
+      "started_at": "2026-11-13T12:30:33.521345+08:00",
+      "completed_at": "2026-11-13T12:30:33.575711+08:00",
+      "exit": 0,
+      "stdout": "{\"result\":\"PASS\",\"mode\":\"local fixture\"}\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\remote.git",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-c",
+        "core.autocrlf=false",
+        "-C",
+        "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\remote.git",
+        "show",
+        "master:openspec/specs/fixture/spec.md"
+      ],
+      "started_at": "2026-11-13T12:30:33.579917+08:00",
+      "completed_at": "2026-11-13T12:30:33.618962+08:00",
+      "exit": 0,
+      "stdout": "# fixture Specification\n\n## Purpose\nTBD - created by archiving change validation-archive. Update Purpose after archive.\n\n## Requirements\n\n### Requirement: Archive fixture evidence\nThe system SHALL preserve published fixture evidence.\n\n#### Scenario: Published evidence survives\n- **WHEN** a temporary working directory is removed\n- **THEN** the remote archive remains readable\n",
+      "stderr": ""
+    }
+  ],
+  "results": {
+    "M04": {
+      "status": "PASS",
+      "level": "local Git PoC",
+      "baseline": "697b9ad8a5f398c7a823e5df7525935d7817428a",
+      "agent_candidate": "89f05f34e792a680eacf2812d53ccb027aa2f982",
+      "ahead_target": "d3eaf63ed2d2c948b085007095c849aaaa2b941c",
+      "published_commit": "a1b110f7be3a9c4830b98380f55e4943e4253adb",
+      "published_paths": [
+        "openspec/changes/allowed/proposal.md"
+      ],
+      "lost_response_readback": "a1b110f7be3a9c4830b98380f55e4943e4253adb",
+      "conflict_exit": 1,
+      "conflict_remote_unchanged": "22d84d22d17c6f17ad2bf8ffc1e6fc009bf21ca3",
+      "agent_before": {
+        "head": "89f05f34e792a680eacf2812d53ccb027aa2f982",
+        "branch": "agent/validation",
+        "status": "M README.md\n?? untracked.txt",
+        "diff_sha256": "6ff586515a021d12257eb0eea675920c9c1ab642ec010f752563b3e237d8ea04",
+        "untracked_sha256": "4885ac8169b7ccc51fd3b6af4dfbf8c097330aa64d8b8789ad4903da6779d4fc"
+      },
+      "agent_after": {
+        "head": "89f05f34e792a680eacf2812d53ccb027aa2f982",
+        "branch": "agent/validation",
+        "status": "M README.md\n?? untracked.txt",
+        "diff_sha256": "6ff586515a021d12257eb0eea675920c9c1ab642ec010f752563b3e237d8ea04",
+        "untracked_sha256": "4885ac8169b7ccc51fd3b6af4dfbf8c097330aa64d8b8789ad4903da6779d4fc"
+      },
+      "rondo_adapter": "NOT_RUN",
+      "real_authority_push": "NOT_RUN"
+    },
+    "M05": {
+      "status": "PASS",
+      "level": "local Git PoC",
+      "approval_c1": "8bf2f7387023017f0a9ae6979aef9025d91f947b",
+      "progress_c2": "7a012268902b37171bb48954935aa2b261272c22",
+      "approval_tasks_sha256": "94784a25a9fd957db8780f4e60034756003cfd484c8d3a650e9fabafca1ccb15",
+      "progress_tasks_sha256": "1740198848d75b1cb045c92f49acfe90403d4a462e5faedba304a8ab3388b7c7",
+      "contract_sha256": "94784a25a9fd957db8780f4e60034756003cfd484c8d3a650e9fabafca1ccb15",
+      "local_lead_head": "8bf2f7387023017f0a9ae6979aef9025d91f947b",
+      "latest_remote_head": "7a012268902b37171bb48954935aa2b261272c22",
+      "approval_source_unchanged": true,
+      "rondo_adapter": "NOT_RUN"
+    },
+    "M07": {
+      "status": "PASS",
+      "level": "local Git PoC",
+      "a_commit": "599fc84f14edd61dda8c2b83193ee1f0000414bf",
+      "b_stale_commit": "19d41047605dfcdce457cca77a6eb134a818cb82",
+      "stale_push_exit": 1,
+      "b_revalidated_commit": "7a012268902b37171bb48954935aa2b261272c22",
+      "final_tasks": "# Approved delivery\n\n- [x] T1 first independent delivery\n\n- [x] T2 second independent delivery\n",
+      "final_evidence": {
+        "T1": {
+          "task_refs": [
+            "T1"
+          ],
+          "candidate_commit": "8bf2f7387023017f0a9ae6979aef9025d91f947b",
+          "fixture_engineer": "A"
+        },
+        "T2": {
+          "task_refs": [
+            "T2"
+          ],
+          "candidate_commit": "8bf2f7387023017f0a9ae6979aef9025d91f947b",
+          "fixture_engineer": "B"
+        }
+      },
+      "contract_conflict": "approved contract drift",
+      "remote_unchanged_after_conflict": "7a012268902b37171bb48954935aa2b261272c22",
+      "multica_facts_joint_acceptance": "NOT_RUN"
+    },
+    "M06": {
+      "status": "PASS",
+      "level": "local Git + explicit guard PoC",
+      "actual_registry_identity": {
+        "repo_key": "common",
+        "repo_path": "winning-dps-df-common",
+        "repo_url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-common"
+      },
+      "fixture_origin": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M06\\business.git",
+      "first_commit": "0deb1ed981a33201bfc8b70dabf4cf54d2895eb6",
+      "advanced_candidate": "9674351c29c30ad39b09297abd372795936a5dd0",
+      "unpublished_commit": "69725097d30b3b0d34172917808bac4789576bd3",
+      "negative_results": {
+        "unauthorized": "unauthorized_repo",
+        "wrong_origin": "wrong_origin",
+        "dirty": "dirty_tree",
+        "unpushed": "unpushed_commit"
+      },
+      "root_status": "",
+      "rondo_dev_prepare": "NOT_RUN",
+      "production_authentication": "NOT_RUN"
+    },
+    "M09": {
+      "status": "PASS",
+      "level": "local Git/OpenSpec PoC",
+      "version": "1.13.2",
+      "archive_exit": 0,
+      "published_commit": "df47bb6fd0fdc9b19ec6fe136818548b1403f847",
+      "archive_path": "openspec/changes/archive/2026-11-13-validation-archive",
+      "temporary_deleted": "D:\\UserProgram\\winning-platform-monorepo\\.tmp\\multica-08-local-mechanisms-20261113\\M09\\temporary-finalize",
+      "readback_after_delete": true,
+      "tasks_sha256": "4c936046f12f2edaab40ed38e3479bd851deaebb69f014125c8b1a834ed72ce2",
+      "evidence_sha256": "d2ae2c3a3748c56851aa0eaff3219eef4c784c4749af53c3cdf3faf2d2aa7e76",
+      "protected_file_unchanged": true,
+      "cleanup_recovery": "cleared readonly file attributes only within validated fixture; no ACL change",
+      "rondo_finalize": "NOT_RUN"
+    }
+  },
+  "recovered_errors": [
+    "[WinError 5] 拒绝访问。: 'D:\\\\UserProgram\\\\winning-platform-monorepo\\\\.tmp\\\\multica-08-local-mechanisms-20261113\\\\M09\\\\temporary-finalize\\\\.git\\\\objects\\\\03\\\\e573d9510edbda2e6e0ff2b4f7de81bd1b0340'"
+  ],
+  "completed_at": "2026-11-13T12:30:33.620960+08:00"
+}

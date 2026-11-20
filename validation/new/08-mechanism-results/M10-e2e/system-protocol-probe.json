@@ -1,0 +1,10 @@
+{
+  "label": "system",
+  "started": "2026-11-13T06:12:51.652Z",
+  "finished": "2026-11-13T06:13:51.657Z",
+  "root": "D:\\UserProgram\\winning-platform-monorepo\\projects\\multica\\validation\\new\\08-mechanism-results\\M10-e2e\\system-protocol-clone-0wWHsU",
+  "exit": null,
+  "error": "ETIMEDOUT",
+  "stderr": "Cloning into '.'...\n",
+  "stdout": ""
+}

@@ -1,0 +1,24 @@
+{
+  "root": {
+    "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+    "head": "dfdaf33fa58355332259524266045d1052ef9dea",
+    "branch": "agent/m01-checkout/96ff82e8f4e9",
+    "common_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git",
+    "origin": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+    "status": "",
+    "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "child": {
+    "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+    "head": "dcc7a6b6e92b05ed8850c8cc7464b9a5c5f3376d",
+    "branch": "main",
+    "common_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common/.git",
+    "origin": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare",
+    "status": "M README.txt\n?? M02-untracked-564054fbe18d4d15bf8be26e2ab3999e.txt",
+    "diff_sha256": "d644dfbb8b59722eb7947d4f2f99b55856ff8d1c8c5051b1df969f103f34ce89"
+  },
+  "child_files": {
+    "M02-untracked-564054fbe18d4d15bf8be26e2ab3999e.txt": "93a943eb30d6027571896280ca309febcd69c0a94279fcca98117e537ea86d78",
+    "README.txt": "1b56a8972c50621d5fbb93a7c73b4f8397af862ce694474ab86c75657057e04c"
+  }
+}

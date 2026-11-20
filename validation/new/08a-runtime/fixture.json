@@ -1,0 +1,13 @@
+{
+  "base": "0a2857e17d2a146a6c0b5440a993a3acfc9b9473",
+  "target": "codex/08a-acceptance-20261114",
+  "seed": "7e01dea45a4c7ed28a3c27653321780b2e4186d6",
+  "push_id": 120509,
+  "bug": {
+    "id": 265022,
+    "rev": 1,
+    "url": "http://tfs2018-web.winning.com.cn:8080/tfs/web/wi.aspx?pcguid=f7bf5021-f3a9-4a5f-b754-bc7a1f7d60e2&id=265022",
+    "title": "[08-A 隔离验收 TT-5] 标识符引用函数未转义内嵌双引号",
+    "changed_at": "2026-11-14T08:53:17.653Z"
+  }
+}

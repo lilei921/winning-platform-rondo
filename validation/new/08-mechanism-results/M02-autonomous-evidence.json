@@ -1,0 +1,3006 @@
+{
+  "schema_version": 2,
+  "issue_id": "01a1d321-125e-715f-b0c7-7f7794478398",
+  "guidance_thread_id": "01a1d324-59d9-7af8-a95a-48182756cf4d",
+  "started_at": "2026-11-13T04:24:11.694345+00:00",
+  "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+  "identity": {
+    "task_id": "01a1d321-1273-7c2f-a744-96ff82e8f4e9",
+    "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+    "agent_id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+    "token_present": true,
+    "daemon_port_present": true,
+    "cli_present": true
+  },
+  "expected": {
+    "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+    "project_id": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97",
+    "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+    "daemon_id": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+    "agent_id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+    "resource_id": "eee149cc-9c37-415c-a1d8-b0c3b3b56585",
+    "git": "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+    "sh": "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin\\sh.exe",
+    "busybox": "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin\\busybox.exe",
+    "shell_sha256": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32",
+    "root_url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo"
+  },
+  "effective_sandbox": {
+    "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\codex-home\\config.toml",
+    "present": true,
+    "selected_values": {
+      "sandbox_mode": "workspace-write",
+      "approval_policy": "never",
+      "windows.sandbox": "mxc"
+    },
+    "session_instructions": {
+      "sandbox_mode": "workspace-write",
+      "approval_policy": "never"
+    },
+    "final_selected_values": {
+      "sandbox_mode": "workspace-write",
+      "approval_policy": "never",
+      "windows.sandbox": "mxc"
+    }
+  },
+  "initial_preflight": {
+    "result": "FAIL",
+    "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-evidence\\M02-autonomous-preflight-evidence.json",
+    "sha256": "3d6d63441325b269a855825c4e49df80c461a18e94f9d0931a4ac06fb46827a9",
+    "report": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-evidence\\preflight-report.md"
+  },
+  "default_tool_identity": {
+    "get_command": [
+      {
+        "Name": "git.exe",
+        "Source": "D:\\UserApp\\Git\\bin\\git.exe"
+      },
+      {
+        "Name": "sh.exe",
+        "Source": "D:\\UserApp\\Git\\bin\\sh.exe"
+      }
+    ],
+    "git_version": {
+      "label": "git_version",
+      "started_at": "2026-11-13T04:21:28.229653+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "D:\\UserApp\\Git\\bin\\git.exe",
+        "--version"
+      ],
+      "exit": 0,
+      "stdout": "git version 2.54.0.windows.1\n",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:21:28.254159+00:00"
+    },
+    "git_actual_file": {
+      "path": "D:\\UserApp\\Git\\bin\\git.exe",
+      "exists": true,
+      "size": 46480,
+      "sha256": "81ef35ae005ca9318018d18e3327578ce939fb99feaad6b2d7c8ab15f3de8db5"
+    },
+    "sh_version": {
+      "label": "sh_version",
+      "started_at": "2026-11-13T04:21:28.318886+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "D:\\UserApp\\Git\\bin\\sh.exe",
+        "--version"
+      ],
+      "exit": 3221225794,
+      "stdout": "",
+      "stderr": "      0 [main] bash (49184) D:\\UserApp\\Git\\bin\\..\\usr\\bin\\bash.exe: *** fatal error - NtCreateDirectoryObject(\\BaseNamedObjects\\msys-2.0S5-3b42950b65a27490): 0xC0000022\n",
+      "error_category": "nonzero_exit",
+      "finished_at": "2026-11-13T04:21:28.552361+00:00"
+    },
+    "sh_actual_file": {
+      "path": "D:\\UserApp\\Git\\bin\\sh.exe",
+      "exists": true,
+      "size": 47008,
+      "sha256": "9aa00217a92def5fed1b15c6e2b34a7f89e3781af822ecc00960fe5340df093e"
+    },
+    "expected_sh_file": {
+      "path": "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin\\sh.exe",
+      "exists": true,
+      "size": 1152156,
+      "sha256": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32"
+    },
+    "expected_busybox_file": {
+      "path": "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin\\busybox.exe",
+      "exists": true,
+      "size": 1152156,
+      "sha256": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32"
+    }
+  },
+  "compatibility_method": "Explicit portable Git subprocess; PATH prefix applies only to that subprocess tree. Default Task PATH is unchanged. Native Multica checkout uses original environment.",
+  "controller_explanation": "Human reports daemon.go/isBlockedEnvKey ignores custom_env.PATH; not independently inspected in this Task.",
+  "commands": [
+    {
+      "label": "portable_git_version",
+      "started_at": "2026-11-13T04:24:11.725143+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "--version"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "git version 2.54.0.windows.1\n",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:24:12.230571+00:00"
+    },
+    {
+      "label": "portable_sh_smoke",
+      "started_at": "2026-11-13T04:24:12.245952+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin\\sh.exe",
+        "-c",
+        "exit 0"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:24:12.462632+00:00"
+    },
+    {
+      "label": "portable_subprocess_resolution",
+      "started_at": "2026-11-13T04:24:12.473137+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "Get-Command git,sh,git-upload-pack | Select-Object Name,Source | ConvertTo-Json"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "[\r\n    {\r\n        \"Name\":  \"git.exe\",\r\n        \"Source\":  \"C:\\\\Users\\\\lilei\\\\.multica\\\\tools\\\\mingit-busybox-2.54.0\\\\cmd\\\\git.exe\"\r\n    },\r\n    {\r\n        \"Name\":  \"sh.exe\",\r\n        \"Source\":  \"C:\\\\Users\\\\lilei\\\\.multica\\\\tools\\\\mingit-busybox-2.54.0\\\\mingw64\\\\bin\\\\sh.exe\"\r\n    },\r\n    {\r\n        \"Name\":  \"git-upload-pack.exe\",\r\n        \"Source\":  \"C:\\\\Users\\\\lilei\\\\.multica\\\\tools\\\\mingit-busybox-2.54.0\\\\cmd\\\\git-upload-pack.exe\"\r\n    }\r\n]\r\n",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:24:12.838384+00:00"
+    },
+    {
+      "label": "active_task_identity",
+      "started_at": "2026-11-13T04:24:12.865040+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false); & \"$env:MULTICA_CLI_PATH\" 'issue' 'runs' '01a1d321-125e-715f-b0c7-7f7794478398' '--active' '--output' 'json'; exit $LASTEXITCODE"
+      ],
+      "environment": {
+        "mode": "original_task",
+        "path_prefix": [],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "[\n  {\n    \"agent_id\": \"9915af88-b5ce-42c2-9c3b-227d768c5bc0\",\n    \"attempt\": 1,\n    \"attribution\": {\n      \"evidence\": {\n        \"kind\": \"issue_assignment\",\n        \"ref_id\": \"01a1d321-125e-715f-b0c7-7f7794478398\"\n      },\n      \"initiator\": {\n        \"email\": \"lilei@winning.com.cn\",\n        \"id\": \"17e47b21-3ade-446a-bfa6-cd8229c0977a\",\n        \"name\": \"lilei\"\n      },\n      \"originator\": {\n        \"email\": \"lilei@winning.com.cn\",\n        \"id\": \"17e47b21-3ade-446a-bfa6-cd8229c0977a\",\n        \"name\": \"lilei\"\n      },\n      \"precise\": true,\n      \"source\": \"direct_human\"\n    },\n    \"can_supplement\": true,\n    \"completed_at\": null,\n    \"created_at\": \"2026-11-13T12:18:42+08:00\",\n    \"delivered_comment_ids\": [],\n    \"dispatched_at\": \"2026-11-13T12:18:42+08:00\",\n    \"error\": null,\n    \"id\": \"01a1d321-1273-7c2f-a744-96ff82e8f4e9\",\n    \"issue_id\": \"01a1d321-125e-715f-b0c7-7f7794478398\",\n    \"kind\": \"direct\",\n    \"max_attempts\": 2,\n    \"priority\": 0,\n    \"relative_work_dir\": \"rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir\",\n    \"result\": null,\n    \"runtime_id\": \"c55feddd-7910-480a-8f9f-9d6180b1f061\",\n    \"started_at\": \"2026-11-13T12:18:42+08:00\",\n    \"status\": \"running\",\n    \"supplement_capability\": \"task-supplement-v1\",\n    \"supplement_comment_ids\": [\n      \"01a1d324-59d9-7af8-a95a-48182756cf4d\"\n    ],\n    \"work_dir\": \"C:\\\\Users\\\\lilei\\\\multica_workspaces\\\\rondo-test-8ef6a0bcf15d\\\\test-7-96ff82e8f4e9\\\\workdir\",\n    \"workspace_id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\"\n  }\n]\n",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:24:13.294042+00:00"
+    },
+    {
+      "label": "read_authorized_guidance",
+      "started_at": "2026-11-13T04:24:13.311751+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false); & \"$env:MULTICA_CLI_PATH\" 'issue' 'comment' 'list' '01a1d321-125e-715f-b0c7-7f7794478398' '--thread' '01a1d324-59d9-7af8-a95a-48182756cf4d' '--tail' '30' '--compact' '--output' 'json'; exit $LASTEXITCODE"
+      ],
+      "environment": {
+        "mode": "original_task",
+        "path_prefix": [],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "[\n  {\n    \"author_id\": \"17e47b21-3ade-446a-bfa6-cd8229c0977a\",\n    \"author_type\": \"member\",\n    \"content\": \"[@M01 checkout 验证器](mention://agent/9915af88-b5ce-42c2-9c3b-227d768c5bc0) # TEST-7 最小调用方式修正与继续验证\\n\\n控制端已定位真实原因：当前部署 Multica 的 daemon.go/isBlockedEnvKey 明确忽略 custom_env.PATH。控制端正在撤回无效 PATH 配置；该阻止不应被写成工具包安装失败。保留初次 preflight FAIL 的原始证据，另存为 M02-autonomous-preflight-evidence.json / preflight-report.md 后继续本次 Task。不要丢弃或覆盖历史失败。\\n\\n用户已授权修复 MSYS 并在真实 Runtime 内自主 clone。请将原 Issue 第 1 步“Get-Command 必须指向便携 Git，否则停止”替换为以下调用约定：\\n\\n- Task 的默认 Git 不变，记录其解析路径。对于本次验证的 Git 子进程，显式执行 C:\\\\Users\\\\lilei\\\\.multica\\\\tools\\\\mingit-busybox-2.54.0\\\\cmd\\\\git.exe；在 subprocess env 的 PATH 前置该工具的 cmd 和 mingw64\\\\bin，仅作用于该子进程及其子进程。\\n- 例如 Python subprocess.run([absolute_git, ...], env={**os.environ, 'PATH': portable_cmd + os.pathsep + portable_bin + os.pathsep + os.environ.get('PATH','')}, ...)。这只是选用特定 Git/shell 工具组合，不改系统 PATH、Task/Daemon 配置、沙箱或 ACL，不设置/伪造 MULTICA 变量。\\n- 必须先验证 sh.exe/busybox.exe Hash 都为 ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32，并在同样子进程环境调用 sh.exe -c 'exit 0' 实测 exit 0。保留 GIT_TRACE，证明 clone 使用便携目录 sh.exe 和 git-upload-pack。\\n- multica repo checkout 仍使用平台注入的真实 CLI 与原 Task 环境，不使用该 Git 调用方式手工替代原生根仓 checkout。\\n\\n按原 Issue 的步骤 2–7 自主完成 seed、bare、child 两次普通 clone、二级仓忽略/身份校验、child 脏修改、原生 root 重入与 Hash 核对。不得请求提权或让控制端代建 fixture。初次 preflight 失败和最终受控工具调用结果分别记录；effective sandbox 必须仍是 workspace-write + never + mxc。\\n\\n最终 M02-autonomous-evidence.json / M02-autonomous-report.md 写明这是“显式兼容 Git 子进程调用”的修复，不是默认 PATH 已修复，也不是 Rondo dev prepare 已实现。保留所有 fixture 给下一独立 Run 核对。\",\n    \"created_at\": \"2026-11-13T12:22:17+08:00\",\n    \"id\": \"01a1d324-59d9-7af8-a95a-48182756cf4d\",\n    \"revision\": 1,\n    \"type\": \"comment\"\n  }\n]\n",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:24:13.707502+00:00"
+    },
+    {
+      "label": "native_root_checkout_first",
+      "started_at": "2026-11-13T04:24:13.725515+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false); & \"$env:MULTICA_CLI_PATH\" 'repo' 'checkout' 'http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo' '--ref' 'main'; exit $LASTEXITCODE"
+      ],
+      "environment": {
+        "mode": "original_task",
+        "path_prefix": [],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\n",
+      "stderr": "Checked out http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo → C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo (branch: agent/m01-checkout/96ff82e8f4e9)\n",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:24:19.348001+00:00"
+    },
+    {
+      "label": "root_baseline_top_level",
+      "started_at": "2026-11-13T04:24:19.775078+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "rev-parse",
+        "--show-toplevel"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo\n",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:24:19.831528+00:00"
+    },
+    {
+      "label": "root_baseline_head",
+      "started_at": "2026-11-13T04:24:19.888684+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "rev-parse",
+        "HEAD"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "dfdaf33fa58355332259524266045d1052ef9dea\n",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:24:19.924867+00:00"
+    },
+    {
+      "label": "root_baseline_branch",
+      "started_at": "2026-11-13T04:24:19.999810+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "symbolic-ref",
+        "--short",
+        "HEAD"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "agent/m01-checkout/96ff82e8f4e9\n",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:24:20.044346+00:00"
+    },
+    {
+      "label": "root_baseline_git_dir",
+      "started_at": "2026-11-13T04:24:20.135588+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "rev-parse",
+        "--absolute-git-dir"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git\n",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:24:20.175654+00:00"
+    },
+    {
+      "label": "root_baseline_common_dir",
+      "started_at": "2026-11-13T04:24:20.292428+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "rev-parse",
+        "--path-format=absolute",
+        "--git-common-dir"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git\n",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:24:20.339410+00:00"
+    },
+    {
+      "label": "root_baseline_origin",
+      "started_at": "2026-11-13T04:24:20.445882+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "remote",
+        "get-url",
+        "origin"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\n",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:24:21.147790+00:00"
+    },
+    {
+      "label": "root_baseline_status",
+      "started_at": "2026-11-13T04:24:21.242735+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:24:21.817190+00:00"
+    },
+    {
+      "label": "root_origin_main",
+      "started_at": "2026-11-13T04:24:21.981525+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "rev-parse",
+        "origin/main"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "dfdaf33fa58355332259524266045d1052ef9dea\n",
+      "stderr": "",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:24:22.016632+00:00"
+    },
+    {
+      "label": "guidance_encoding_checked",
+      "started_at": "2026-11-13T04:25:53.158103+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false); & \"$env:MULTICA_CLI_PATH\" 'issue' 'comment' 'list' '01a1d321-125e-715f-b0c7-7f7794478398' '--thread' '01a1d324-59d9-7af8-a95a-48182756cf4d' '--tail' '30' '--compact' '--output' 'json'; exit $LASTEXITCODE"
+      ],
+      "environment": {
+        "mode": "original_task",
+        "path_prefix": [],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "[\n  {\n    \"author_id\": \"17e47b21-3ade-446a-bfa6-cd8229c0977a\",\n    \"author_type\": \"member\",\n    \"content\": \"[@M01 checkout 验证器](mention://agent/9915af88-b5ce-42c2-9c3b-227d768c5bc0) # TEST-7 最小调用方式修正与继续验证\\n\\n控制端已定位真实原因：当前部署 Multica 的 daemon.go/isBlockedEnvKey 明确忽略 custom_env.PATH。控制端正在撤回无效 PATH 配置；该阻止不应被写成工具包安装失败。保留初次 preflight FAIL 的原始证据，另存为 M02-autonomous-preflight-evidence.json / preflight-report.md 后继续本次 Task。不要丢弃或覆盖历史失败。\\n\\n用户已授权修复 MSYS 并在真实 Runtime 内自主 clone。请将原 Issue 第 1 步“Get-Command 必须指向便携 Git，否则停止”替换为以下调用约定：\\n\\n- Task 的默认 Git 不变，记录其解析路径。对于本次验证的 Git 子进程，显式执行 C:\\\\Users\\\\lilei\\\\.multica\\\\tools\\\\mingit-busybox-2.54.0\\\\cmd\\\\git.exe；在 subprocess env 的 PATH 前置该工具的 cmd 和 mingw64\\\\bin，仅作用于该子进程及其子进程。\\n- 例如 Python subprocess.run([absolute_git, ...], env={**os.environ, 'PATH': portable_cmd + os.pathsep + portable_bin + os.pathsep + os.environ.get('PATH','')}, ...)。这只是选用特定 Git/shell 工具组合，不改系统 PATH、Task/Daemon 配置、沙箱或 ACL，不设置/伪造 MULTICA 变量。\\n- 必须先验证 sh.exe/busybox.exe Hash 都为 ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32，并在同样子进程环境调用 sh.exe -c 'exit 0' 实测 exit 0。保留 GIT_TRACE，证明 clone 使用便携目录 sh.exe 和 git-upload-pack。\\n- multica repo checkout 仍使用平台注入的真实 CLI 与原 Task 环境，不使用该 Git 调用方式手工替代原生根仓 checkout。\\n\\n按原 Issue 的步骤 2–7 自主完成 seed、bare、child 两次普通 clone、二级仓忽略/身份校验、child 脏修改、原生 root 重入与 Hash 核对。不得请求提权或让控制端代建 fixture。初次 preflight 失败和最终受控工具调用结果分别记录；effective sandbox 必须仍是 workspace-write + never + mxc。\\n\\n最终 M02-autonomous-evidence.json / M02-autonomous-report.md 写明这是“显式兼容 Git 子进程调用”的修复，不是默认 PATH 已修复，也不是 Rondo dev prepare 已实现。保留所有 fixture 给下一独立 Run 核对。\",\n    \"created_at\": \"2026-11-13T12:22:17+08:00\",\n    \"id\": \"01a1d324-59d9-7af8-a95a-48182756cf4d\",\n    \"revision\": 1,\n    \"type\": \"comment\"\n  }\n]\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:53.544514+00:00"
+    },
+    {
+      "label": "existing_ignore_rule",
+      "started_at": "2026-11-13T04:25:53.885697+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "check-ignore",
+        "-v",
+        "--",
+        "winning-dps-df-common/"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": ".gitignore:8:/winning-dps-df-*/\twinning-dps-df-common/\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:53.918802+00:00"
+    },
+    {
+      "label": "seed_init",
+      "started_at": "2026-11-13T04:25:54.157413+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture",
+        "init",
+        "--initial-branch=main",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\seed"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "Initialized empty Git repository in C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/validation-fixture/seed/.git/\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:54.218454+00:00"
+    },
+    {
+      "label": "seed_add_readme",
+      "started_at": "2026-11-13T04:25:54.332135+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\seed",
+        "add",
+        "--",
+        "README.txt"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "",
+      "stderr": "warning: in the working copy of 'README.txt', CRLF will be replaced by LF the next time Git touches it\n",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:54.376181+00:00"
+    },
+    {
+      "label": "seed_single_commit",
+      "started_at": "2026-11-13T04:25:54.436754+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\seed",
+        "-c",
+        "user.name=M02 local validation",
+        "-c",
+        "user.email=m02-validation@example.invalid",
+        "commit",
+        "-m",
+        "M02 isolated local fixture M02-01a1d321-1273-7c2f-a744-96ff82e8f4e9-f4ae63b6f3c44f14851f54e484ba487e"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "[main (root-commit) dcc7a6b] M02 isolated local fixture M02-01a1d321-1273-7c2f-a744-96ff82e8f4e9-f4ae63b6f3c44f14851f54e484ba487e\n 1 file changed, 1 insertion(+)\n create mode 100644 README.txt\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:54.524179+00:00"
+    },
+    {
+      "label": "seed_head",
+      "started_at": "2026-11-13T04:25:54.585040+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\seed",
+        "rev-parse",
+        "HEAD"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "dcc7a6b6e92b05ed8850c8cc7464b9a5c5f3376d\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:54.618894+00:00"
+    },
+    {
+      "label": "seed_commit_count",
+      "started_at": "2026-11-13T04:25:54.683385+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\seed",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\seed",
+        "rev-list",
+        "--count",
+        "HEAD"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "1\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:54.716822+00:00"
+    },
+    {
+      "label": "clone_seed_to_local_bare",
+      "started_at": "2026-11-13T04:25:54.844450+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture",
+        "clone",
+        "--bare",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\seed",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false,
+        "trace": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-evidence\\portable-git.trace",
+        "trace2": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-evidence\\portable-git-trace2.jsonl"
+      },
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into bare repository 'C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare'...\ndone.\n",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:55.199608+00:00"
+    },
+    {
+      "label": "bare_head",
+      "started_at": "2026-11-13T04:25:55.290158+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare",
+        "rev-parse",
+        "HEAD"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "dcc7a6b6e92b05ed8850c8cc7464b9a5c5f3376d\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:55.340156+00:00"
+    },
+    {
+      "label": "clone_local_bare_to_child",
+      "started_at": "2026-11-13T04:25:55.510382+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "clone",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false,
+        "trace": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-evidence\\portable-git.trace",
+        "trace2": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-evidence\\portable-git-trace2.jsonl"
+      },
+      "exit": 0,
+      "stdout": "",
+      "stderr": "Cloning into 'C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common'...\ndone.\n",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:55.758053+00:00"
+    },
+    {
+      "label": "child_clean_top_level",
+      "started_at": "2026-11-13T04:25:55.852888+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "rev-parse",
+        "--show-toplevel"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:55.902885+00:00"
+    },
+    {
+      "label": "child_clean_head",
+      "started_at": "2026-11-13T04:25:56.067592+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "rev-parse",
+        "HEAD"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "dcc7a6b6e92b05ed8850c8cc7464b9a5c5f3376d\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:56.121522+00:00"
+    },
+    {
+      "label": "child_clean_branch",
+      "started_at": "2026-11-13T04:25:56.293176+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "symbolic-ref",
+        "--short",
+        "HEAD"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "main\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:56.340930+00:00"
+    },
+    {
+      "label": "child_clean_git_dir",
+      "started_at": "2026-11-13T04:25:56.508299+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "rev-parse",
+        "--absolute-git-dir"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common/.git\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:56.559363+00:00"
+    },
+    {
+      "label": "child_clean_common_dir",
+      "started_at": "2026-11-13T04:25:56.729718+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "rev-parse",
+        "--path-format=absolute",
+        "--git-common-dir"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common/.git\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:56.776607+00:00"
+    },
+    {
+      "label": "child_clean_origin",
+      "started_at": "2026-11-13T04:25:56.943411+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "remote",
+        "get-url",
+        "origin"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:57.004302+00:00"
+    },
+    {
+      "label": "child_clean_status",
+      "started_at": "2026-11-13T04:25:57.238983+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:57.292094+00:00"
+    },
+    {
+      "label": "root_after_clone_top_level",
+      "started_at": "2026-11-13T04:25:57.670591+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "rev-parse",
+        "--show-toplevel"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:57.720940+00:00"
+    },
+    {
+      "label": "root_after_clone_head",
+      "started_at": "2026-11-13T04:25:57.913392+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "rev-parse",
+        "HEAD"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "dfdaf33fa58355332259524266045d1052ef9dea\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:58.440789+00:00"
+    },
+    {
+      "label": "root_after_clone_branch",
+      "started_at": "2026-11-13T04:25:58.671023+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "symbolic-ref",
+        "--short",
+        "HEAD"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "agent/m01-checkout/96ff82e8f4e9\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:58.709031+00:00"
+    },
+    {
+      "label": "root_after_clone_git_dir",
+      "started_at": "2026-11-13T04:25:58.909169+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "rev-parse",
+        "--absolute-git-dir"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:58.943964+00:00"
+    },
+    {
+      "label": "root_after_clone_common_dir",
+      "started_at": "2026-11-13T04:25:59.146760+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "rev-parse",
+        "--path-format=absolute",
+        "--git-common-dir"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:59.188079+00:00"
+    },
+    {
+      "label": "root_after_clone_origin",
+      "started_at": "2026-11-13T04:25:59.404160+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "remote",
+        "get-url",
+        "origin"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:59.451781+00:00"
+    },
+    {
+      "label": "root_after_clone_status",
+      "started_at": "2026-11-13T04:25:59.676396+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:25:59.945268+00:00"
+    },
+    {
+      "label": "root_ls_files_child",
+      "started_at": "2026-11-13T04:26:03.248157+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "ls-files",
+        "--",
+        "winning-dps-df-common"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:03.295041+00:00"
+    },
+    {
+      "label": "child_tracked_diff",
+      "started_at": "2026-11-13T04:26:04.610186+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "diff",
+        "--",
+        "README.txt"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "diff --git a/README.txt b/README.txt\nindex e57c751..3735874 100644\n--- a/README.txt\n+++ b/README.txt\n@@ -1 +1,2 @@\n M02-01a1d321-1273-7c2f-a744-96ff82e8f4e9-f4ae63b6f3c44f14851f54e484ba487e\n+tracked-dirty M02-01a1d321-1273-7c2f-a744-96ff82e8f4e9-f4ae63b6f3c44f14851f54e484ba487e\n",
+      "stderr": "warning: in the working copy of 'README.txt', CRLF will be replaced by LF the next time Git touches it\n",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:04.655479+00:00"
+    },
+    {
+      "label": "child_dirty_before_reentry_top_level",
+      "started_at": "2026-11-13T04:26:04.925579+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "rev-parse",
+        "--show-toplevel"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:04.961774+00:00"
+    },
+    {
+      "label": "child_dirty_before_reentry_head",
+      "started_at": "2026-11-13T04:26:05.253169+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "rev-parse",
+        "HEAD"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "dcc7a6b6e92b05ed8850c8cc7464b9a5c5f3376d\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:05.303851+00:00"
+    },
+    {
+      "label": "child_dirty_before_reentry_branch",
+      "started_at": "2026-11-13T04:26:05.628298+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "symbolic-ref",
+        "--short",
+        "HEAD"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "main\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:05.677992+00:00"
+    },
+    {
+      "label": "child_dirty_before_reentry_git_dir",
+      "started_at": "2026-11-13T04:26:05.981816+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "rev-parse",
+        "--absolute-git-dir"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common/.git\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:06.019571+00:00"
+    },
+    {
+      "label": "child_dirty_before_reentry_common_dir",
+      "started_at": "2026-11-13T04:26:06.360739+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "rev-parse",
+        "--path-format=absolute",
+        "--git-common-dir"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common/.git\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:06.409875+00:00"
+    },
+    {
+      "label": "child_dirty_before_reentry_origin",
+      "started_at": "2026-11-13T04:26:06.704073+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "remote",
+        "get-url",
+        "origin"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:06.744187+00:00"
+    },
+    {
+      "label": "child_dirty_before_reentry_status",
+      "started_at": "2026-11-13T04:26:07.016805+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": " M README.txt\n?? M02-untracked-564054fbe18d4d15bf8be26e2ab3999e.txt\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:07.067367+00:00"
+    },
+    {
+      "label": "root_before_reentry_top_level",
+      "started_at": "2026-11-13T04:26:08.319953+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "rev-parse",
+        "--show-toplevel"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:08.373372+00:00"
+    },
+    {
+      "label": "root_before_reentry_head",
+      "started_at": "2026-11-13T04:26:08.696884+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "rev-parse",
+        "HEAD"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "dfdaf33fa58355332259524266045d1052ef9dea\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:08.746656+00:00"
+    },
+    {
+      "label": "root_before_reentry_branch",
+      "started_at": "2026-11-13T04:26:09.063689+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "symbolic-ref",
+        "--short",
+        "HEAD"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "agent/m01-checkout/96ff82e8f4e9\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:09.093156+00:00"
+    },
+    {
+      "label": "root_before_reentry_git_dir",
+      "started_at": "2026-11-13T04:26:09.411568+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "rev-parse",
+        "--absolute-git-dir"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:09.457773+00:00"
+    },
+    {
+      "label": "root_before_reentry_common_dir",
+      "started_at": "2026-11-13T04:26:09.773538+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "rev-parse",
+        "--path-format=absolute",
+        "--git-common-dir"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:09.812103+00:00"
+    },
+    {
+      "label": "root_before_reentry_origin",
+      "started_at": "2026-11-13T04:26:10.128500+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "remote",
+        "get-url",
+        "origin"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:10.161177+00:00"
+    },
+    {
+      "label": "root_before_reentry_status",
+      "started_at": "2026-11-13T04:26:10.507612+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:10.672713+00:00"
+    },
+    {
+      "label": "native_root_checkout_reentry",
+      "started_at": "2026-11-13T04:26:17.958963+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false); & \"$env:MULTICA_CLI_PATH\" 'repo' 'checkout' 'http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo'; exit $LASTEXITCODE"
+      ],
+      "environment": {
+        "mode": "original_task",
+        "path_prefix": [],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\n",
+      "stderr": "Kept the existing checkout of http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo at C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo (branch: agent/m01-checkout/96ff82e8f4e9, this task's branch; 0 uncommitted files, 0 unpushed commits): nothing was reset, cleaned, or switched; only remote refs were fetched.\nTo discard its uncommitted changes and untracked files and start over on a new branch from the latest default branch (or --ref), re-run with --fresh; commits stay on the old branch, but push any you still need first.\n",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:21.892154+00:00"
+    },
+    {
+      "label": "root_after_reentry_top_level",
+      "started_at": "2026-11-13T04:26:22.279707+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "rev-parse",
+        "--show-toplevel"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:22.347415+00:00"
+    },
+    {
+      "label": "root_after_reentry_head",
+      "started_at": "2026-11-13T04:26:22.746653+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "rev-parse",
+        "HEAD"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "dfdaf33fa58355332259524266045d1052ef9dea\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:22.783394+00:00"
+    },
+    {
+      "label": "root_after_reentry_branch",
+      "started_at": "2026-11-13T04:26:23.222828+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "symbolic-ref",
+        "--short",
+        "HEAD"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "agent/m01-checkout/96ff82e8f4e9\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:23.266852+00:00"
+    },
+    {
+      "label": "root_after_reentry_git_dir",
+      "started_at": "2026-11-13T04:26:23.599027+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "rev-parse",
+        "--absolute-git-dir"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:23.634204+00:00"
+    },
+    {
+      "label": "root_after_reentry_common_dir",
+      "started_at": "2026-11-13T04:26:24.003153+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "rev-parse",
+        "--path-format=absolute",
+        "--git-common-dir"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:24.044190+00:00"
+    },
+    {
+      "label": "root_after_reentry_origin",
+      "started_at": "2026-11-13T04:26:24.341321+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "remote",
+        "get-url",
+        "origin"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:24.378017+00:00"
+    },
+    {
+      "label": "root_after_reentry_status",
+      "started_at": "2026-11-13T04:26:24.794144+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:24.968025+00:00"
+    },
+    {
+      "label": "child_after_reentry_top_level",
+      "started_at": "2026-11-13T04:26:25.712576+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "rev-parse",
+        "--show-toplevel"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:25.752276+00:00"
+    },
+    {
+      "label": "child_after_reentry_head",
+      "started_at": "2026-11-13T04:26:26.163609+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "rev-parse",
+        "HEAD"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "dcc7a6b6e92b05ed8850c8cc7464b9a5c5f3376d\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:26.199086+00:00"
+    },
+    {
+      "label": "child_after_reentry_branch",
+      "started_at": "2026-11-13T04:26:26.715910+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "symbolic-ref",
+        "--short",
+        "HEAD"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "main\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:26.745111+00:00"
+    },
+    {
+      "label": "child_after_reentry_git_dir",
+      "started_at": "2026-11-13T04:26:27.167580+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "rev-parse",
+        "--absolute-git-dir"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common/.git\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:27.223319+00:00"
+    },
+    {
+      "label": "child_after_reentry_common_dir",
+      "started_at": "2026-11-13T04:26:27.581434+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "rev-parse",
+        "--path-format=absolute",
+        "--git-common-dir"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common/.git\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:27.628223+00:00"
+    },
+    {
+      "label": "child_after_reentry_origin",
+      "started_at": "2026-11-13T04:26:28.038755+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "remote",
+        "get-url",
+        "origin"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:28.085857+00:00"
+    },
+    {
+      "label": "child_after_reentry_status",
+      "started_at": "2026-11-13T04:26:28.545318+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": " M README.txt\n?? M02-untracked-564054fbe18d4d15bf8be26e2ab3999e.txt\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:28.602611+00:00"
+    },
+    {
+      "label": "child_diff_after_reentry",
+      "started_at": "2026-11-13T04:26:31.149786+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "diff",
+        "--",
+        "README.txt"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "diff --git a/README.txt b/README.txt\nindex e57c751..3735874 100644\n--- a/README.txt\n+++ b/README.txt\n@@ -1 +1,2 @@\n M02-01a1d321-1273-7c2f-a744-96ff82e8f4e9-f4ae63b6f3c44f14851f54e484ba487e\n+tracked-dirty M02-01a1d321-1273-7c2f-a744-96ff82e8f4e9-f4ae63b6f3c44f14851f54e484ba487e\n",
+      "stderr": "warning: in the working copy of 'README.txt', CRLF will be replaced by LF the next time Git touches it\n",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:31.199276+00:00"
+    },
+    {
+      "label": "root_ls_files_child_after_reentry",
+      "started_at": "2026-11-13T04:26:32.080242+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "ls-files",
+        "--",
+        "winning-dps-df-common"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:32.144598+00:00"
+    },
+    {
+      "label": "root_origin_main_after_reentry",
+      "started_at": "2026-11-13T04:26:34.021496+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "argv": [
+        "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe",
+        "-C",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "rev-parse",
+        "origin/main"
+      ],
+      "environment": {
+        "mode": "portable_git_subprocess_only",
+        "path_prefix": [
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd",
+          "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin"
+        ],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "dfdaf33fa58355332259524266045d1052ef9dea\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:34.074502+00:00"
+    },
+    {
+      "label": "default_resolution_after_reentry",
+      "started_at": "2026-11-13T04:26:35.030108+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "Get-Command git,sh | Select-Object Name,Source | ConvertTo-Json"
+      ],
+      "environment": {
+        "mode": "original_task",
+        "path_prefix": [],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "[\r\n    {\r\n        \"Name\":  \"git.exe\",\r\n        \"Source\":  \"D:\\\\UserApp\\\\Git\\\\bin\\\\git.exe\"\r\n    },\r\n    {\r\n        \"Name\":  \"sh.exe\",\r\n        \"Source\":  \"D:\\\\UserApp\\\\Git\\\\bin\\\\sh.exe\"\r\n    }\r\n]\r\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:26:35.451665+00:00"
+    },
+    {
+      "label": "final_issue_status_read_only",
+      "started_at": "2026-11-13T04:28:03.737951+00:00",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "argv": [
+        "powershell.exe",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false); & \"$env:MULTICA_CLI_PATH\" 'issue' 'get' '01a1d321-125e-715f-b0c7-7f7794478398' '--output' 'json'; exit $LASTEXITCODE"
+      ],
+      "environment": {
+        "mode": "original_task",
+        "path_prefix": [],
+        "multica_variables_changed": false
+      },
+      "exit": 0,
+      "stdout": "{\n  \"assignee_id\": \"9915af88-b5ce-42c2-9c3b-227d768c5bc0\",\n  \"assignee_type\": \"agent\",\n  \"created_at\": \"2026-11-13T12:18:42+08:00\",\n  \"creator_id\": \"17e47b21-3ade-446a-bfa6-cd8229c0977a\",\n  \"creator_type\": \"member\",\n  \"description\": \"# M02 修复后真实 Runtime 自主 clone 重验\\n\\n用户授权：解决 M02 的 MSYS 沙箱权限问题，在 Codex (lileipc) 真实 Runtime 内自主完成 clone，再继续后续验证。本 Issue 只负责 M02 新现场；不修改控制端工作树、其他 Task 或生产事实。\\n\\n固定身份：workspace rondo-test / 60eb8cf4-31be-4a34-b744-8ef6a0bcf15d；project winning-platform-monorepo / d43bbc9d-4cc2-4cee-8f92-70c993ffbf97；runtime c55feddd-7910-480a-8f9f-9d6180b1f061；daemon 01a01965-2f6a-72fe-899f-3e7556c5d51d；唯一 Git Resource eee149cc-9c37-415c-a1d8-b0c3b3b56585，ref=main。\\n\\n根仓 URL：http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo。\\n\\n## 已部署的最小工具兼容配置\\n\\n只给测试 Agent 设置了 PATH，优先使用 C:\\\\Users\\\\lilei\\\\.multica\\\\tools\\\\mingit-busybox-2.54.0\\\\cmd 和 mingw64\\\\bin。Git 来自官方 MinGit-2.54.0-busybox-64-bit.zip，包 SHA256=1a90b2cc07f0d2c155d68dc9fe4193088f98a022ce37f93dec1212846b402692。mingw64\\\\bin\\\\sh.exe 是包内 busybox.exe 的逐字节副本，两个文件 SHA256 都必须是 ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32。没有改变 MXC/workspace-write/never。不要关闭沙箱，不请求提权，不让控制端代建 fixture。\\n\\n## 执行\\n\\n所有证据放在当前 Task workdir/validation-evidence，fixture 放 workdir/validation-fixture。每条实际命令记录时间、cwd、argv、exit、脱敏输出。凭据只记是否存在；不打印原始 env、Token、凭据内容。读取有效 CODEX_HOME/config.toml 时只提取 sandbox_mode、approval_policy、windows.sandbox 三项。\\n\\n1. 核对 Task/Runtime 身份、Token/Daemon port 存在性；记录 Get-Command git/sh 的 Source、版本、shell 两个文件 Hash 和有效沙箱配置。实际 git 必须为上述安装目录，实际 sh 必须为 BusyBox 副本；不符合则记录 FAIL 并停止，不自行覆盖 PATH 掩盖注入失效。\\n2. 在 Task cwd 原生执行 multica repo checkout \\u003c根仓URL\\u003e --ref main。禁止 --fresh、手工 clone 根仓、修改 cache、reset/clean。记录原生输出、root 路径、HEAD、origin/main、分支、.git/common-dir、脱敏 origin、status；核对 main（控制端最近读取 dfdaf33fa58355332259524266045d1052ef9dea，但浮动 ref 以本次回读为准）。\\n3. 读取 root/.gitignore 和 docs/config/repo-context.yaml 中 common 的 repo_id/repo_path/repo_url（真实 URL 只记录，不访问）。校验 root/\\u003ccommon.repo_path\\u003e 尚不存在，是直接子目录，无 reparse point；git check-ignore 必须使用既有规则命中，不修改配置。\\n4. 当前 Runtime 自主在 validation-fixture/seed 创建 Git 仓（main），README.txt 用唯一测试标记；命令级 user.name/user.email 提交一次。开启仅记录本地路径的 GIT_TRACE 到 validation-evidence，普通 git clone --bare \\u003cseed\\u003e \\u003clocal-bare\\u003e，再普通 git clone \\u003clocal-bare\\u003e \\u003croot/common.repo_path\\u003e。所有 clone 由当前 Runtime 在既有沙箱内执行，不得借助外部 fixture。记录 trace 证明 sh.exe 路径，以及 seed/bare/child 完整 SHA。必须检测每个 exit code。\\n5. 双仓分别核对 Git top-level、.git 目录、common-dir、origin、HEAD；root status 应与基线一致且 ls-files 不含 child 内容。child README.txt 追加跟踪改动、创建唯一未跟踪标记，记录 Hash、diff/status。\\n6. 从相同 Task cwd 再执行普通原生 root checkout。比较 root/child 路径、HEAD、分支、origin、.git/common-dir、tracked/untracked Hash 和 status 均保持；root 不污染。保留现场供控制端和下一独立 Run 只读核对。\\n7. 生成 M02-autonomous-evidence.json（命令记录、assertions、effective_sandbox、修复后工具身份、root/child 快照、marker 路径与 Hash）和简洁报告 M02-autonomous-report.md。只在核心证据都满足时标记同 Task 自主 clone 与 M02 同 Task PASS；跨 Run 明确 pending controller follow-up，不提前总判 PASS。Rondo dev prepare 未执行，命令验收 NOT_RUN；真实业务认证/Push 未覆盖。\\n\\n禁止生产 Git Push/PR/Work Item/Issue Metadata 修改，不创建新 Agent/Run，不重启 Daemon，不修改全局 PATH、Git 配置、Agent 配置、Skill。允许的 Git commit 仅限当前一次性本地 fixture。最终回复证据和 root/child 绝对路径、Hash、关键 SHA。不发布额外评论。\",\n  \"due_date\": null,\n  \"duplicate_of\": null,\n  \"id\": \"01a1d321-125e-715f-b0c7-7f7794478398\",\n  \"identifier\": \"TEST-7\",\n  \"labels\": [],\n  \"last_activity_at\": \"2026-11-13T12:22:17.305758+08:00\",\n  \"metadata\": {},\n  \"number\": 7,\n  \"parent_issue_id\": null,\n  \"position\": -3,\n  \"priority\": \"none\",\n  \"project_id\": \"d43bbc9d-4cc2-4cee-8f92-70c993ffbf97\",\n  \"properties\": {},\n  \"revision\": 2,\n  \"stage\": null,\n  \"start_date\": null,\n  \"status\": \"todo\",\n  \"status_category\": \"todo\",\n  \"status_name\": \"\",\n  \"title\": \"M02 自主 clone 修复重验 2026-11-13 BusyBox\",\n  \"updated_at\": \"2026-11-13T12:22:17+08:00\",\n  \"workspace_id\": \"60eb8cf4-31be-4a34-b744-8ef6a0bcf15d\"\n}\n",
+      "stderr": "",
+      "stdout_encoding": "utf-8",
+      "stderr_encoding": "utf-8",
+      "error_category": null,
+      "finished_at": "2026-11-13T04:28:04.204283+00:00"
+    }
+  ],
+  "operations": [
+    {
+      "label": "portable_shell_hashes",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "started_at": "2026-11-13T04:24:11.694345+00:00",
+      "exit": 0,
+      "result": {
+        "sh": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32",
+        "busybox": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32",
+        "git": "81ef35ae005ca9318018d18e3327578ce939fb99feaad6b2d7c8ab15f3de8db5"
+      },
+      "finished_at": "2026-11-13T04:24:11.697366+00:00"
+    },
+    {
+      "label": "read_root_gitignore",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "started_at": "2026-11-13T04:24:22.265412+00:00",
+      "exit": 0,
+      "result": ".worktrees/\nroot-file\n.gstack/\n.arena/\n.vscode/\n\n# 子服务目录（各自为独立 git 仓库，根仓库不管理业务代码）\n/winning-dps-df-*/\n/winning-dps-df-dataquality-web\n\n# Wiki 知识库模块和知识图谱不受子仓规则影响\n!wiki/modules/winning-dps-df-*/\n!graph/winning-dps-df-*/\n\n# 外部产品子仓符号链接（各自为独立 git 仓库，根仓库不管理业务代码）\nwinning-platform-360/\nwinning-web-platform-360/\n\n# ETL 工具箱（独立仓库）\netl-box/\n\n# LLM Wiki 摄入运行过程，不属于正式知识（无论 Source 目录层级如何变化）\n**/llm_plan/\n/outputs/wiki-ingest-test/\n\n# df-frame 初始化临时克隆目录（独立仓库克隆，本地生成，不共享）\n.df-frame-init-clone/\n\n# macOS\n.DS_Store\n\n# IDE 配置\n.idea/\n\n# Claude Code 日志与会话数据（个人本地，不共享）\n.claude/*.log\n.claude/metrics/\n.claude/session-data/\n\n# 本地配置（不提交）\nsettings.local.json\nCLAUDE.local.md\n.mcp.json\n\n# 本地配置符号链接目录（由 create-symlink 命令动态生成）\n.tmp/\n.cache/\n.playwright-mcp/\n\n# 本地运行日志（不共享）\nprojects/replay/bash-commands.log\nprojects/replay/cost-tracker.log\nprojects/replay/codex-hook-events.jsonl\n\n# Python 缓存（本地生成，不共享）\n__pycache__/\n\n# Code graph 索引文件（本地生成，不共享）\n.codegraph/\n.code-review-graph/\n\n# Wiki 知识索引（SQLite，本地生成，可从 wiki/ 和 raw/ 重建）\ngraph/**/*.db\n\n# Office 临时锁文件\n~$*\n\n# CodeGraph MCP 隐藏启动器日志（本地生成，不共享）\n.codegraph-mcp-logs/\n\n# Brainstorming visual companion 临时文件（本地生成，不共享）\n.superpowers/\n\n\n# Multica 运行数据与缓存（本地生成，不共享）\n.multica/\n\n# Multica Run 日志（本地运行证据，可由平台侧会话重新导出，不进版本控制）\nprojects/multica/logs/\n\n# Multica 运行时物化的 Agent 绑定技能（in_place 模式下 daemon 写入 <根仓>/.claude/skills/，\n# 唯一事实源在平台侧 / projects/multica/workspace-skills/，每次 Run 幂等重写，不进版本控制；\n# 新绑定 Skill 落进根仓时在此补一行）\n.claude/skills/analysis-completion*/\n.claude/skills/backend-engineering*/\n.claude/skills/codebase-explorer*/\n.claude/skills/delivery-flow*/\n.claude/skills/delivery-gate*/\n.claude/skills/development-execution*/\n.claude/skills/finalize-delivery*/\n.claude/skills/frontend-engineering*/\n.claude/skills/multica-platform*/\n.claude/skills/multica-workspace-bootstrap*/\n.claude/skills/pr-status-sync*/\n.claude/skills/pull-request*/\n.claude/skills/tfs-sync*/\n.claude/skills/workitem-analysis*/\n.claude/skills/workitem-triage*/\n.branch-switch.log/\n\n# 会话临时文件（本地工作区，不共享）\ntemp/\n\n# Codex 隔离工作树（本地执行计划使用，不共享）\n.worktrees/\n\n# AI-Flow 本地凭据文件（含 PAT 令牌，不共享）\n.ai-flow/.env\n\n# Wiki dashboard 生成数据（中间产物，可由生成器重建）\nwiki/dashboard/data/\n\n# tfs凭证\ntools/archive/tfs-cli/config/tfs.config.json\n\n# cli tgz\ntools/**/*.tgz\n",
+      "finished_at": "2026-11-13T04:24:22.266410+00:00"
+    },
+    {
+      "label": "read_repo_context",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "started_at": "2026-11-13T04:24:22.356188+00:00",
+      "exit": 0,
+      "result": "# 当前工作区运行时注册表，主要登记本地已经存在的子仓，是 repo-context.yaml.example 的子集。\n# 修改条目后按 repo_id 同步到全量清单；维护规则见 README.md。\n# 检出状态由 tools/repo_registry.py 实时推导，不在配置中持久化。\n# 这里只保存身份、职责边界、关键词和可选 TFS 归属，不保存构建或 MCP 状态。\n# 路由与跨服务入口见 docs/router/overview.md；构建与技术栈到目标仓核实。\n# 旧风险与依赖仅供追溯：projects/analysis/repo-context-retired-metadata-2026-10-20.yaml。\nversion: 0.4.0\nschema:\n  required_fields: [repo_id, repo_type, repo_path, repo_url, responsibility, keywords, not_responsible_for]\n  optional_fields: [tfs_project, tfs_collection]\n  repo_type_values: [root-workspace, common, backend, frontend]\n\nrepos:\n  - repo_id: root\n    repo_type: root-workspace\n    repo_path: .\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\n    responsibility: AI coding、agent、docs、openspec、graph、wiki 与共享工具等资产。\n    keywords: [AI coding, Agent, docs, openspec, graph, wiki]\n    not_responsible_for: [具体业务实现]\n    tfs_project: DP-01-数据仓库\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: common\n    repo_type: common\n    repo_path: winning-dps-df-common\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-common\n    responsibility: 通用实体、常量、DTO、枚举、工具和共享基础代码。\n    keywords: [公共, 通用, 实体, 常量, 工具, 共享, 枚举, DTO]\n    not_responsible_for: [具体服务业务流程]\n    tfs_project: WiNEX DataFactory\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: frame\n    repo_type: backend\n    repo_path: winning-dps-df-frame\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame\n    responsibility: 基础框架后端与公共业务能力，负责租户、用户、认证、权限、菜单、角色和组织管理。\n    keywords: [基础框架, 框架, 基座, DF, 租户, 用户, 权限, 菜单, 角色, 组织, 登录, 认证]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX DataFactory\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: frame-web\n    repo_type: frontend\n    repo_path: winning-dps-df-frame-web\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame-web\n    responsibility: 基础框架前端，负责门户、布局、导航、首页、皮肤等页面与交互。\n    keywords: [基础框架, 框架, 基座, DF, 页面框架, 门户, 布局, 导航, 首页, 皮肤]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: WiNEX DataFactory\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: modular\n    repo_type: backend\n    repo_path: winning-dps-df-modular\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-03-%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-modular\n    responsibility: API 网关与 Nacos 注册/配置中心，负责路由、动态路由管理、限流和自定义 PostgreSQL 数据源插件。\n    keywords: [网关, 路由, 限流, nacos, 注册中心, 配置中心]\n    not_responsible_for: [具体业务子仓的业务逻辑]\n    tfs_project: DP-03-数据采集管理软件\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataintegration\n    repo_type: backend\n    repo_path: winning-dps-df-dataintegration\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-03-%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-dataintegration\n    responsibility: 数据集成调度后端，负责采集、ETL、作业流程、任务调度、数据源、集群管理和执行引擎接入。\n    keywords: [数据集成, 集成调度, 采集, ETL, 作业流程设计, 作业设计, 集成流程设计, 调度中心, 任务调度, 数据同步, 集群管理, 数据源, 执行引擎]\n    not_responsible_for: [前端页面实现]\n    tfs_project: DP-03-数据采集管理软件\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataintegration-web\n    repo_type: frontend\n    repo_path: winning-dps-df-dataintegration-web\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-03-%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-dataintegration-web\n    responsibility: 数据集成调度前端，负责流程设计、调度中心、任务配置、数据源及执行引擎相关页面交互。\n    keywords: [数据集成, 集成调度, 采集, ETL, 作业流程设计, 作业设计, 集成流程设计, 调度中心, 任务调度, 数据同步, 集群管理, 数据源, 执行引擎]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: DP-03-数据采集管理软件\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataengine\n    repo_type: backend\n    repo_path: winning-dps-df-dataengine\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-03-%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-dataengine\n    responsibility: 数据引擎后端，负责 Flink、实时/流/离线计算和算子相关能力。\n    keywords: [数据引擎, Flink, 计算, 实时计算, 流计算, 离线计算, 算子]\n    not_responsible_for: [前端页面实现]\n    tfs_project: DP-03-数据采集管理软件\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: datatransfer-core\n    repo_type: backend\n    repo_path: winning-dps-df-datatransfer-core\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20Data%20Integrated%20Platform/_git/winning-dps-df-datatransfer-core\n    responsibility: Flink 数据集成与数据交换内核，负责 DDL 注册、JDBC 方言与 Driver、CDC、UDF、Calcite SQL 扩展、Connector 和湖仓一体，提供作业 JSON 命令行与 Hessian RPC 入口。\n    keywords: [数据引擎, 引擎, 集成引擎, Flink, 数据集成, 数据交换, SQL Gateway, CDC, JDBC, 方言, UDF, Paimon, IRIS, HL7, 数据工厂]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX Data Integrated Platform\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: devops\n    repo_type: backend\n    repo_path: winning-dps-df-devops\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Operation/_git/winning-dps-df-devops\n    responsibility: 运维监控后端。\n    keywords: [运维, 监控, 告警]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX_Data_Operation\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: devops-web\n    repo_type: frontend\n    repo_path: winning-dps-df-devops-web\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Operation/_git/winning-dps-df-devops-web\n    responsibility: 运维监控前端。\n    keywords: [运维, 监控, 大屏, 告警, 运维中心, 运维大屏, 资源监控]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: WiNEX_Data_Operation\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataquality\n    repo_type: backend\n    repo_path: winning-dps-df-dataquality\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-dataquality\n    responsibility: 数据质控后端。\n    keywords: [数据质控, 质量, 质检, 质控规则, 稽核]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX_Data_Governance\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataquality-web\n    repo_type: frontend\n    repo_path: winning-dps-df-dataquality-web\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-dataquality-web\n    responsibility: 数据质控前端。\n    keywords: [数据质控, 质量, 质检, 质控规则, 稽核, 规则校验]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: WiNEX_Data_Governance\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataservice-api\n    repo_type: backend\n    repo_path: winning-dps-df-dataservice-api\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20Data%20service%20platform/_git/winning-dps-df-dataservice-api\n    responsibility: 数据服务后端，负责 API 生成、监控、发布、调试、主题和授权管理。\n    keywords: [数据服务, API服务, API生成, API监控, 服务发布, 服务调试, 主题, 授权]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX Data service platform\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataservice-web\n    repo_type: frontend\n    repo_path: winning-dps-df-dataservice-web\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20Data%20service%20platform/_git/winning-dps-df-dataservice-web\n    responsibility: 数据服务前端，负责 API 编排、生成、发布、调试、计量、日志及服务目录等页面交互。\n    keywords: [数据服务, API服务, 服务目录, 数据交换, 服务注册]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: WiNEX Data service platform\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataservice-gateway\n    repo_type: backend\n    repo_path: winning-dps-df-dataservice-gateway\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20Data%20service%20platform/_git/winning-dps-df-dataservice-gateway\n    responsibility: 数据服务网关，负责限流规则、转发路由、网关令牌、限流日志和告警。\n    keywords: [数据服务, 网关, 限流, 转发]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX Data service platform\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataasset\n    repo_type: backend\n    repo_path: winning-dps-df-dataasset\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-dataasset\n    responsibility: 数据资产后端。\n    keywords: [数据资产, 资产目录, 资产全景, 标签体系]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX_Data_Governance\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataasset-web\n    repo_type: frontend\n    repo_path: winning-dps-df-dataasset-web\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-dataasset-web\n    responsibility: 数据资产前端。\n    keywords: [数据资产, 资产目录, 资产全景, 标签体系, 资产盘点]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: WiNEX_Data_Governance\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: metadata\n    repo_type: backend\n    repo_path: winning-dps-df-metadata\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-metadata\n    responsibility: 元数据后端。\n    keywords: [元数据, 元模型, 数据标准, 数据字典, 血缘]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX_Data_Governance\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: metadata-web\n    repo_type: frontend\n    repo_path: winning-dps-df-metadata-web\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-06-%E5%85%83%E6%95%B0%E6%8D%AE%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-metadata-web\n    responsibility: 元数据前端。\n    keywords: [元数据, 元模型, 数据标准, 数据字典, 血缘, 元数据采集]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: DP-06-元数据管理软件\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: datasecurity\n    repo_type: backend\n    repo_path: winning-dps-df-datasecurity\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-datasecurity\n    responsibility: 数据安全后端，负责脱敏、水印、审计、黑白名单、分类分级、加密、规则管理和密评。\n    keywords: [数据安全, 脱敏, 水印, 审计, 黑白名单, 分类分级, 加密, 规则管理, 密评]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX_Data_Governance\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: datasecurity-web\n    repo_type: frontend\n    repo_path: winning-dps-df-datasecurity-web\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-datasecurity-web\n    responsibility: 数据安全前端，负责脱敏规则与算法、加密、水印、安全审计、黑白名单和分类分级等页面交互。\n    keywords: [数据安全, 脱敏, 加密, 安全策略, 合规]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: WiNEX_Data_Governance\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: datamodel\n    repo_type: backend\n    repo_path: winning-dps-df-datamodel\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-datamodel\n    responsibility: 数据模型后端。\n    keywords: [数据模型, 模型管理]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX_Data_Governance\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: datamodel-web\n    repo_type: frontend\n    repo_path: winning-dps-df-datamodel-web\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-datamodel-web\n    responsibility: 数据模型前端。\n    keywords: [数据模型, 模型管理, 模型设计]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: WiNEX_Data_Governance\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: basedata\n    repo_type: backend\n    repo_path: winning-dps-df-basedata\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/IP-08-%E5%9F%BA%E7%A1%80%E6%95%B0%E6%8D%AE%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-basedata\n    responsibility: 平台基础数据管理服务，负责主数据全生命周期、组织机构、术语编码、字典表、值域映射、系统/厂商基础数据同步和 MDM 接收。\n    keywords: [基础数据, 主数据, 组织机构, 术语编码, 值域映射, 概念域, 编码体系, 字典表, MDM接收]\n    not_responsible_for: [前端页面实现]\n    tfs_project: IP-08-基础数据管理软件\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: basedata-webui\n    repo_type: frontend\n    repo_path: winning-dps-df-basedata-webui\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/IP-08-%E5%9F%BA%E7%A1%80%E6%95%B0%E6%8D%AE%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-basedata-webui\n    responsibility: 基础数据管理前端。\n    keywords: [基础数据, 基础数据管理]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: IP-08-基础数据管理软件\n    tfs_collection: WN_Data_Platform\n",
+      "finished_at": "2026-11-13T04:24:22.357187+00:00"
+    },
+    {
+      "label": "root_context_hashes_before",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "started_at": "2026-11-13T04:25:54.013062+00:00",
+      "exit": 0,
+      "result": {
+        ".gitignore": "6322428c5a00d82dd59d9250e3fbb41c4733d8640195d389e1a50bff48416d1a",
+        "docs/config/repo-context.yaml": "03659b983297ad67bda435390d3b3e3b207dc33a7af6d8189dd0fb232afaa008"
+      },
+      "finished_at": "2026-11-13T04:25:54.014064+00:00"
+    },
+    {
+      "label": "create_fixture_directory",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "started_at": "2026-11-13T04:25:54.108861+00:00",
+      "exit": 0,
+      "result": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture",
+      "finished_at": "2026-11-13T04:25:54.110349+00:00"
+    },
+    {
+      "label": "write_unique_seed_readme",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "started_at": "2026-11-13T04:25:54.277593+00:00",
+      "exit": 0,
+      "result": 74,
+      "finished_at": "2026-11-13T04:25:54.277593+00:00"
+    },
+    {
+      "label": "append_child_tracked_change",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "started_at": "2026-11-13T04:26:04.100133+00:00",
+      "exit": 0,
+      "result": 162,
+      "finished_at": "2026-11-13T04:26:04.101135+00:00"
+    },
+    {
+      "label": "write_child_untracked_marker",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "started_at": "2026-11-13T04:26:04.337098+00:00",
+      "exit": 0,
+      "result": 84,
+      "finished_at": "2026-11-13T04:26:04.339957+00:00"
+    },
+    {
+      "label": "root_context_hashes_after",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "started_at": "2026-11-13T04:26:33.032789+00:00",
+      "exit": 0,
+      "result": {
+        ".gitignore": "6322428c5a00d82dd59d9250e3fbb41c4733d8640195d389e1a50bff48416d1a",
+        "docs/config/repo-context.yaml": "03659b983297ad67bda435390d3b3e3b207dc33a7af6d8189dd0fb232afaa008"
+      },
+      "finished_at": "2026-11-13T04:26:33.034789+00:00"
+    },
+    {
+      "label": "read_local_clone_trace",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "started_at": "2026-11-13T04:28:01.241112+00:00",
+      "exit": 0,
+      "result": "12:25:54.870365 exec-cmd.c:266          trace: resolved executable dir: C:/Users/lilei/.multica/tools/mingit-busybox-2.54.0/mingw64/bin\n12:25:54.882416 git.c:502               trace: built-in: git clone --bare 'C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\seed' 'C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare'\n12:25:54.926888 run-command.c:673       trace: run_command: unset GIT_DIR; GIT_PROTOCOL=version=2 'git-upload-pack '\\''C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\seed/.git'\\'''\n12:25:54.926888 run-command.c:934       trace: start_command: C:/Users/lilei/.multica/tools/mingit-busybox-2.54.0/mingw64/bin/sh.exe -c 'git-upload-pack '\\''C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\seed/.git'\\''' 'git-upload-pack '\\''C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\seed/.git'\\'''\n12:25:55.145599 exec-cmd.c:266          trace: resolved executable dir: C:/Users/lilei/.multica/tools/mingit-busybox-2.54.0/mingw64/bin\n12:25:55.157716 git.c:502               trace: built-in: git upload-pack 'C:\\\\Users\\\\lilei\\\\multica_workspaces\\\\rondo-test-8ef6a0bcf15d\\\\test-7-96ff82e8f4e9\\\\workdir\\\\validation-fixture\\\\seed/.git'\n12:25:55.544033 exec-cmd.c:266          trace: resolved executable dir: C:/Users/lilei/.multica/tools/mingit-busybox-2.54.0/mingw64/bin\n12:25:55.557034 git.c:502               trace: built-in: git clone 'C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare' 'C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common'\n12:25:55.609555 run-command.c:673       trace: run_command: unset GIT_DIR; GIT_PROTOCOL=version=2 'git-upload-pack '\\''C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare'\\'''\n12:25:55.610555 run-command.c:934       trace: start_command: C:/Users/lilei/.multica/tools/mingit-busybox-2.54.0/mingw64/bin/sh.exe -c 'git-upload-pack '\\''C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare'\\''' 'git-upload-pack '\\''C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare'\\'''\n12:25:55.667198 exec-cmd.c:266          trace: resolved executable dir: C:/Users/lilei/.multica/tools/mingit-busybox-2.54.0/mingw64/bin\n12:25:55.679266 git.c:502               trace: built-in: git upload-pack 'C:\\\\Users\\\\lilei\\\\multica_workspaces\\\\rondo-test-8ef6a0bcf15d\\\\test-7-96ff82e8f4e9\\\\workdir\\\\validation-fixture\\\\local-bare'\n",
+      "finished_at": "2026-11-13T04:28:01.241112+00:00"
+    },
+    {
+      "label": "effective_sandbox_final_allowlisted_read",
+      "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "started_at": "2026-11-13T04:28:03.390774+00:00",
+      "exit": 0,
+      "result": {
+        "sandbox_mode": "workspace-write",
+        "approval_policy": "never",
+        "windows.sandbox": "mxc"
+      },
+      "finished_at": "2026-11-13T04:28:03.391896+00:00"
+    }
+  ],
+  "assertions": [
+    {
+      "name": "portable_sh_hash",
+      "result": "PASS",
+      "actual": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32",
+      "expected": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32",
+      "time": "2026-11-13T04:24:11.706481+00:00"
+    },
+    {
+      "name": "portable_busybox_hash",
+      "result": "PASS",
+      "actual": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32",
+      "expected": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32",
+      "time": "2026-11-13T04:24:11.716125+00:00"
+    },
+    {
+      "name": "effective_sandbox_unchanged",
+      "result": "PASS",
+      "actual": {
+        "sandbox_mode": "workspace-write",
+        "approval_policy": "never",
+        "windows.sandbox": "mxc"
+      },
+      "expected": null,
+      "time": "2026-11-13T04:24:12.851304+00:00"
+    },
+    {
+      "name": "one_native_root_in_task",
+      "result": "PASS",
+      "actual": [
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo"
+      ],
+      "expected": "one root checkout",
+      "time": "2026-11-13T04:24:19.627273+00:00"
+    },
+    {
+      "name": "root_head_matches_observed_main",
+      "result": "PASS",
+      "actual": "dfdaf33fa58355332259524266045d1052ef9dea",
+      "expected": "dfdaf33fa58355332259524266045d1052ef9dea",
+      "time": "2026-11-13T04:24:22.111461+00:00"
+    },
+    {
+      "name": "root_origin",
+      "result": "PASS",
+      "actual": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+      "expected": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+      "time": "2026-11-13T04:24:22.182546+00:00"
+    },
+    {
+      "name": "current_task_identity",
+      "result": "PASS",
+      "actual": 1,
+      "expected": 1,
+      "time": "2026-11-13T04:25:52.921831+00:00"
+    },
+    {
+      "name": "task_runtime_id",
+      "result": "PASS",
+      "actual": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+      "expected": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+      "time": "2026-11-13T04:25:52.959831+00:00"
+    },
+    {
+      "name": "task_workspace_id",
+      "result": "PASS",
+      "actual": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+      "expected": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+      "time": "2026-11-13T04:25:52.998632+00:00"
+    },
+    {
+      "name": "task_agent_id",
+      "result": "PASS",
+      "actual": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+      "expected": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+      "time": "2026-11-13T04:25:53.037284+00:00"
+    },
+    {
+      "name": "task_workdir",
+      "result": "PASS",
+      "actual": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "expected": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "time": "2026-11-13T04:25:53.077024+00:00"
+    },
+    {
+      "name": "daemon_id",
+      "result": "PASS",
+      "actual": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+      "expected": "01a01965-2f6a-72fe-899f-3e7556c5d51d",
+      "time": "2026-11-13T04:25:53.115571+00:00"
+    },
+    {
+      "name": "common_context_found",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:25:53.583237+00:00"
+    },
+    {
+      "name": "common_repo_path_present",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:25:53.626125+00:00"
+    },
+    {
+      "name": "common_repo_url_present",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:25:53.672021+00:00"
+    },
+    {
+      "name": "common_is_direct_child",
+      "result": "PASS",
+      "actual": "winning-dps-df-common",
+      "expected": null,
+      "time": "2026-11-13T04:25:53.715804+00:00"
+    },
+    {
+      "name": "common_does_not_exist",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "time": "2026-11-13T04:25:53.756802+00:00"
+    },
+    {
+      "name": "root_has_no_reparse_point",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:25:53.799272+00:00"
+    },
+    {
+      "name": "common_resolves_under_root",
+      "result": "PASS",
+      "actual": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "expected": null,
+      "time": "2026-11-13T04:25:53.843273+00:00"
+    },
+    {
+      "name": "existing_gitignore_matches_common",
+      "result": "PASS",
+      "actual": ".gitignore:8:/winning-dps-df-*/\twinning-dps-df-common/",
+      "expected": null,
+      "time": "2026-11-13T04:25:53.966151+00:00"
+    },
+    {
+      "name": "fixture_absent_before_creation",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:25:54.060981+00:00"
+    },
+    {
+      "name": "seed_single_commit",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:25:54.782995+00:00"
+    },
+    {
+      "name": "bare_head_matches_seed",
+      "result": "PASS",
+      "actual": "dcc7a6b6e92b05ed8850c8cc7464b9a5c5f3376d",
+      "expected": "dcc7a6b6e92b05ed8850c8cc7464b9a5c5f3376d",
+      "time": "2026-11-13T04:25:55.431287+00:00"
+    },
+    {
+      "name": "child_head_matches_seed",
+      "result": "PASS",
+      "actual": "dcc7a6b6e92b05ed8850c8cc7464b9a5c5f3376d",
+      "expected": "dcc7a6b6e92b05ed8850c8cc7464b9a5c5f3376d",
+      "time": "2026-11-13T04:26:00.395546+00:00"
+    },
+    {
+      "name": "child_branch_main",
+      "result": "PASS",
+      "actual": "main",
+      "expected": "main",
+      "time": "2026-11-13T04:26:00.655003+00:00"
+    },
+    {
+      "name": "child_origin_is_local_bare",
+      "result": "PASS",
+      "actual": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare",
+      "expected": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare",
+      "time": "2026-11-13T04:26:00.903614+00:00"
+    },
+    {
+      "name": "root_unchanged_after_clone",
+      "result": "PASS",
+      "actual": {
+        "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "top_level": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo",
+        "head": "dfdaf33fa58355332259524266045d1052ef9dea",
+        "branch": "agent/m01-checkout/96ff82e8f4e9",
+        "git_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git",
+        "common_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git",
+        "origin": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+        "status": "",
+        "dot_git_is_directory": true,
+        "git_dir_is_directory": true
+      },
+      "expected": {
+        "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "top_level": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo",
+        "head": "dfdaf33fa58355332259524266045d1052ef9dea",
+        "branch": "agent/m01-checkout/96ff82e8f4e9",
+        "git_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git",
+        "common_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git",
+        "origin": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+        "status": "",
+        "dot_git_is_directory": true,
+        "git_dir_is_directory": true
+      },
+      "time": "2026-11-13T04:26:01.146653+00:00"
+    },
+    {
+      "name": "root_own_toplevel",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:26:01.429279+00:00"
+    },
+    {
+      "name": "root_own_dot_git_directory",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:26:01.700243+00:00"
+    },
+    {
+      "name": "root_own_common_dir",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:26:01.961184+00:00"
+    },
+    {
+      "name": "child_own_toplevel",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:26:02.234483+00:00"
+    },
+    {
+      "name": "child_own_dot_git_directory",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:26:02.461044+00:00"
+    },
+    {
+      "name": "child_own_common_dir",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:26:02.712918+00:00"
+    },
+    {
+      "name": "two_independent_git_metadata_dirs",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:26:02.961056+00:00"
+    },
+    {
+      "name": "root_does_not_track_child",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:26:03.568030+00:00"
+    },
+    {
+      "name": "child_not_reparse_point",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:26:03.844460+00:00"
+    },
+    {
+      "name": "child_has_tracked_dirty_change",
+      "result": "PASS",
+      "actual": " M README.txt\n?? M02-untracked-564054fbe18d4d15bf8be26e2ab3999e.txt",
+      "expected": null,
+      "time": "2026-11-13T04:26:07.660402+00:00"
+    },
+    {
+      "name": "child_has_untracked_marker",
+      "result": "PASS",
+      "actual": " M README.txt\n?? M02-untracked-564054fbe18d4d15bf8be26e2ab3999e.txt",
+      "expected": null,
+      "time": "2026-11-13T04:26:07.978885+00:00"
+    },
+    {
+      "name": "root_clean_after_child_dirty",
+      "result": "PASS",
+      "actual": "",
+      "expected": "",
+      "time": "2026-11-13T04:26:11.373447+00:00"
+    },
+    {
+      "name": "root_snapshot_preserved_on_reentry",
+      "result": "PASS",
+      "actual": {
+        "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "top_level": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo",
+        "head": "dfdaf33fa58355332259524266045d1052ef9dea",
+        "branch": "agent/m01-checkout/96ff82e8f4e9",
+        "git_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git",
+        "common_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git",
+        "origin": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+        "status": "",
+        "dot_git_is_directory": true,
+        "git_dir_is_directory": true
+      },
+      "expected": {
+        "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+        "top_level": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo",
+        "head": "dfdaf33fa58355332259524266045d1052ef9dea",
+        "branch": "agent/m01-checkout/96ff82e8f4e9",
+        "git_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git",
+        "common_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git",
+        "origin": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+        "status": "",
+        "dot_git_is_directory": true,
+        "git_dir_is_directory": true
+      },
+      "time": "2026-11-13T04:26:29.442582+00:00"
+    },
+    {
+      "name": "child_snapshot_preserved_on_reentry",
+      "result": "PASS",
+      "actual": {
+        "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "top_level": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common",
+        "head": "dcc7a6b6e92b05ed8850c8cc7464b9a5c5f3376d",
+        "branch": "main",
+        "git_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common/.git",
+        "common_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common/.git",
+        "origin": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare",
+        "status": " M README.txt\n?? M02-untracked-564054fbe18d4d15bf8be26e2ab3999e.txt",
+        "dot_git_is_directory": true,
+        "git_dir_is_directory": true
+      },
+      "expected": {
+        "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+        "top_level": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common",
+        "head": "dcc7a6b6e92b05ed8850c8cc7464b9a5c5f3376d",
+        "branch": "main",
+        "git_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common/.git",
+        "common_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common/.git",
+        "origin": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare",
+        "status": " M README.txt\n?? M02-untracked-564054fbe18d4d15bf8be26e2ab3999e.txt",
+        "dot_git_is_directory": true,
+        "git_dir_is_directory": true
+      },
+      "time": "2026-11-13T04:26:29.889108+00:00"
+    },
+    {
+      "name": "preserved_tracked_dirty_sha256",
+      "result": "PASS",
+      "actual": "1b56a8972c50621d5fbb93a7c73b4f8397af862ce694474ab86c75657057e04c",
+      "expected": "1b56a8972c50621d5fbb93a7c73b4f8397af862ce694474ab86c75657057e04c",
+      "time": "2026-11-13T04:26:30.291695+00:00"
+    },
+    {
+      "name": "preserved_untracked_sha256",
+      "result": "PASS",
+      "actual": "93a943eb30d6027571896280ca309febcd69c0a94279fcca98117e537ea86d78",
+      "expected": "93a943eb30d6027571896280ca309febcd69c0a94279fcca98117e537ea86d78",
+      "time": "2026-11-13T04:26:30.721145+00:00"
+    },
+    {
+      "name": "child_diff_preserved",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:26:31.646210+00:00"
+    },
+    {
+      "name": "root_still_does_not_track_child",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:26:32.608025+00:00"
+    },
+    {
+      "name": "root_ignore_and_context_unmodified",
+      "result": "PASS",
+      "actual": {
+        ".gitignore": "6322428c5a00d82dd59d9250e3fbb41c4733d8640195d389e1a50bff48416d1a",
+        "docs/config/repo-context.yaml": "03659b983297ad67bda435390d3b3e3b207dc33a7af6d8189dd0fb232afaa008"
+      },
+      "expected": {
+        ".gitignore": "6322428c5a00d82dd59d9250e3fbb41c4733d8640195d389e1a50bff48416d1a",
+        "docs/config/repo-context.yaml": "03659b983297ad67bda435390d3b3e3b207dc33a7af6d8189dd0fb232afaa008"
+      },
+      "time": "2026-11-13T04:26:33.529329+00:00"
+    },
+    {
+      "name": "process_path_unmodified",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:26:34.554082+00:00"
+    },
+    {
+      "name": "original_preflight_preserved",
+      "result": "PASS",
+      "actual": "3d6d63441325b269a855825c4e49df80c461a18e94f9d0931a4ac06fb46827a9",
+      "expected": "3d6d63441325b269a855825c4e49df80c461a18e94f9d0931a4ac06fb46827a9",
+      "time": "2026-11-13T04:28:01.048495+00:00"
+    },
+    {
+      "name": "trace_has_two_portable_sh_launches",
+      "result": "PASS",
+      "actual": 2,
+      "expected": 2,
+      "time": "2026-11-13T04:28:01.430596+00:00"
+    },
+    {
+      "name": "trace_has_two_upload_pack_executions",
+      "result": "PASS",
+      "actual": 2,
+      "expected": 2,
+      "time": "2026-11-13T04:28:01.620276+00:00"
+    },
+    {
+      "name": "trace_only_local_clone_paths",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:28:01.814754+00:00"
+    },
+    {
+      "name": "clone_seed_to_local_bare_exactly_once_exit_zero",
+      "result": "PASS",
+      "actual": [
+        0
+      ],
+      "expected": [
+        0
+      ],
+      "time": "2026-11-13T04:28:01.985240+00:00"
+    },
+    {
+      "name": "clone_local_bare_to_child_exactly_once_exit_zero",
+      "result": "PASS",
+      "actual": [
+        0
+      ],
+      "expected": [
+        0
+      ],
+      "time": "2026-11-13T04:28:02.156113+00:00"
+    },
+    {
+      "name": "portable_sh_smoke_exactly_once_exit_zero",
+      "result": "PASS",
+      "actual": [
+        0
+      ],
+      "expected": [
+        0
+      ],
+      "time": "2026-11-13T04:28:02.331475+00:00"
+    },
+    {
+      "name": "native_root_checkout_first_exactly_once_exit_zero",
+      "result": "PASS",
+      "actual": [
+        0
+      ],
+      "expected": [
+        0
+      ],
+      "time": "2026-11-13T04:28:02.506822+00:00"
+    },
+    {
+      "name": "native_root_checkout_reentry_exactly_once_exit_zero",
+      "result": "PASS",
+      "actual": [
+        0
+      ],
+      "expected": [
+        0
+      ],
+      "time": "2026-11-13T04:28:02.682373+00:00"
+    },
+    {
+      "name": "native_checkout_original_environment",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:28:02.845872+00:00"
+    },
+    {
+      "name": "native_reentry_reported_kept",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:28:03.036606+00:00"
+    },
+    {
+      "name": "default_tool_paths_unchanged",
+      "result": "PASS",
+      "actual": [
+        {
+          "Name": "git.exe",
+          "Source": "D:\\UserApp\\Git\\bin\\git.exe"
+        },
+        {
+          "Name": "sh.exe",
+          "Source": "D:\\UserApp\\Git\\bin\\sh.exe"
+        }
+      ],
+      "expected": [
+        {
+          "Name": "git.exe",
+          "Source": "D:\\UserApp\\Git\\bin\\git.exe"
+        },
+        {
+          "Name": "sh.exe",
+          "Source": "D:\\UserApp\\Git\\bin\\sh.exe"
+        }
+      ],
+      "time": "2026-11-13T04:28:03.212722+00:00"
+    },
+    {
+      "name": "sandbox_retained_workspace_write_never_mxc",
+      "result": "PASS",
+      "actual": {
+        "sandbox_mode": "workspace-write",
+        "approval_policy": "never",
+        "windows.sandbox": "mxc"
+      },
+      "expected": null,
+      "time": "2026-11-13T04:28:03.571915+00:00"
+    },
+    {
+      "name": "controlled_commands_all_exit_zero",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:28:04.685713+00:00"
+    },
+    {
+      "name": "controlled_assertions_all_pass",
+      "result": "PASS",
+      "actual": null,
+      "expected": null,
+      "time": "2026-11-13T04:28:05.190107+00:00"
+    }
+  ],
+  "snapshots": {
+    "root_baseline": {
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "top_level": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo",
+      "head": "dfdaf33fa58355332259524266045d1052ef9dea",
+      "branch": "agent/m01-checkout/96ff82e8f4e9",
+      "git_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git",
+      "common_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git",
+      "origin": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+      "status": "",
+      "dot_git_is_directory": true,
+      "git_dir_is_directory": true
+    },
+    "child_clean": {
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "top_level": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common",
+      "head": "dcc7a6b6e92b05ed8850c8cc7464b9a5c5f3376d",
+      "branch": "main",
+      "git_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common/.git",
+      "common_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common/.git",
+      "origin": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare",
+      "status": "",
+      "dot_git_is_directory": true,
+      "git_dir_is_directory": true
+    },
+    "root_after_clone": {
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "top_level": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo",
+      "head": "dfdaf33fa58355332259524266045d1052ef9dea",
+      "branch": "agent/m01-checkout/96ff82e8f4e9",
+      "git_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git",
+      "common_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git",
+      "origin": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+      "status": "",
+      "dot_git_is_directory": true,
+      "git_dir_is_directory": true
+    },
+    "child_dirty_before_reentry": {
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "top_level": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common",
+      "head": "dcc7a6b6e92b05ed8850c8cc7464b9a5c5f3376d",
+      "branch": "main",
+      "git_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common/.git",
+      "common_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common/.git",
+      "origin": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare",
+      "status": " M README.txt\n?? M02-untracked-564054fbe18d4d15bf8be26e2ab3999e.txt",
+      "dot_git_is_directory": true,
+      "git_dir_is_directory": true
+    },
+    "root_before_reentry": {
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "top_level": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo",
+      "head": "dfdaf33fa58355332259524266045d1052ef9dea",
+      "branch": "agent/m01-checkout/96ff82e8f4e9",
+      "git_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git",
+      "common_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git",
+      "origin": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+      "status": "",
+      "dot_git_is_directory": true,
+      "git_dir_is_directory": true
+    },
+    "root_after_reentry": {
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+      "top_level": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo",
+      "head": "dfdaf33fa58355332259524266045d1052ef9dea",
+      "branch": "agent/m01-checkout/96ff82e8f4e9",
+      "git_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git",
+      "common_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/.git",
+      "origin": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+      "status": "",
+      "dot_git_is_directory": true,
+      "git_dir_is_directory": true
+    },
+    "child_after_reentry": {
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "top_level": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common",
+      "head": "dcc7a6b6e92b05ed8850c8cc7464b9a5c5f3376d",
+      "branch": "main",
+      "git_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common/.git",
+      "common_dir": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir/winning-platform-monorepo/winning-dps-df-common/.git",
+      "origin": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare",
+      "status": " M README.txt\n?? M02-untracked-564054fbe18d4d15bf8be26e2ab3999e.txt",
+      "dot_git_is_directory": true,
+      "git_dir_is_directory": true
+    }
+  },
+  "markers": [
+    {
+      "kind": "tracked_dirty",
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common\\README.txt",
+      "sha256": "1b56a8972c50621d5fbb93a7c73b4f8397af862ce694474ab86c75657057e04c",
+      "after_reentry_sha256": "1b56a8972c50621d5fbb93a7c73b4f8397af862ce694474ab86c75657057e04c"
+    },
+    {
+      "kind": "untracked",
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common\\M02-untracked-564054fbe18d4d15bf8be26e2ab3999e.txt",
+      "sha256": "93a943eb30d6027571896280ca309febcd69c0a94279fcca98117e537ea86d78",
+      "after_reentry_sha256": "93a943eb30d6027571896280ca309febcd69c0a94279fcca98117e537ea86d78"
+    }
+  ],
+  "results": {
+    "same_task_autonomous_clone": "PASS",
+    "same_task_m02": "PASS",
+    "cross_run": "pending controller follow-up",
+    "rondo_dev_prepare": "NOT_RUN",
+    "command_acceptance": "NOT_RUN",
+    "real_business_authentication_and_push": "NOT_COVERED",
+    "native_root_checkout": "PASS",
+    "overall": "PARTIAL: same-Task PASS; cross-Run pending controller follow-up"
+  },
+  "portable_tool_hashes": {
+    "sh": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32",
+    "busybox": "ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32",
+    "git": "81ef35ae005ca9318018d18e3327578ce939fb99feaad6b2d7c8ab15f3de8db5"
+  },
+  "portable_git_version": "git version 2.54.0.windows.1",
+  "portable_resolution": "[\r\n    {\r\n        \"Name\":  \"git.exe\",\r\n        \"Source\":  \"C:\\\\Users\\\\lilei\\\\.multica\\\\tools\\\\mingit-busybox-2.54.0\\\\cmd\\\\git.exe\"\r\n    },\r\n    {\r\n        \"Name\":  \"sh.exe\",\r\n        \"Source\":  \"C:\\\\Users\\\\lilei\\\\.multica\\\\tools\\\\mingit-busybox-2.54.0\\\\mingw64\\\\bin\\\\sh.exe\"\r\n    },\r\n    {\r\n        \"Name\":  \"git-upload-pack.exe\",\r\n        \"Source\":  \"C:\\\\Users\\\\lilei\\\\.multica\\\\tools\\\\mingit-busybox-2.54.0\\\\cmd\\\\git-upload-pack.exe\"\r\n    }\r\n]",
+  "active_runs": [
+    {
+      "agent_id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+      "attempt": 1,
+      "attribution": {
+        "evidence": {
+          "kind": "issue_assignment",
+          "ref_id": "01a1d321-125e-715f-b0c7-7f7794478398"
+        },
+        "initiator": {
+          "email": "lilei@winning.com.cn",
+          "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+          "name": "lilei"
+        },
+        "originator": {
+          "email": "lilei@winning.com.cn",
+          "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+          "name": "lilei"
+        },
+        "precise": true,
+        "source": "direct_human"
+      },
+      "can_supplement": true,
+      "completed_at": null,
+      "created_at": "2026-11-13T12:18:42+08:00",
+      "delivered_comment_ids": [],
+      "dispatched_at": "2026-11-13T12:18:42+08:00",
+      "error": null,
+      "id": "01a1d321-1273-7c2f-a744-96ff82e8f4e9",
+      "issue_id": "01a1d321-125e-715f-b0c7-7f7794478398",
+      "kind": "direct",
+      "max_attempts": 2,
+      "priority": 0,
+      "relative_work_dir": "rondo-test-8ef6a0bcf15d/test-7-96ff82e8f4e9/workdir",
+      "result": null,
+      "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+      "started_at": "2026-11-13T12:18:42+08:00",
+      "status": "running",
+      "supplement_capability": "task-supplement-v1",
+      "supplement_comment_ids": [
+        "01a1d324-59d9-7af8-a95a-48182756cf4d"
+      ],
+      "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir",
+      "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+    }
+  ],
+  "guidance": [
+    {
+      "author_id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+      "author_type": "member",
+      "content": "[@M01 checkout 验证器](mention://agent/9915af88-b5ce-42c2-9c3b-227d768c5bc0) # TEST-7 最小调用方式修正与继续验证\n\n控制端已定位真实原因：当前部署 Multica 的 daemon.go/isBlockedEnvKey 明确忽略 custom_env.PATH。控制端正在撤回无效 PATH 配置；该阻止不应被写成工具包安装失败。保留初次 preflight FAIL 的原始证据，另存为 M02-autonomous-preflight-evidence.json / preflight-report.md 后继续本次 Task。不要丢弃或覆盖历史失败。\n\n用户已授权修复 MSYS 并在真实 Runtime 内自主 clone。请将原 Issue 第 1 步“Get-Command 必须指向便携 Git，否则停止”替换为以下调用约定：\n\n- Task 的默认 Git 不变，记录其解析路径。对于本次验证的 Git 子进程，显式执行 C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe；在 subprocess env 的 PATH 前置该工具的 cmd 和 mingw64\\bin，仅作用于该子进程及其子进程。\n- 例如 Python subprocess.run([absolute_git, ...], env={**os.environ, 'PATH': portable_cmd + os.pathsep + portable_bin + os.pathsep + os.environ.get('PATH','')}, ...)。这只是选用特定 Git/shell 工具组合，不改系统 PATH、Task/Daemon 配置、沙箱或 ACL，不设置/伪造 MULTICA 变量。\n- 必须先验证 sh.exe/busybox.exe Hash 都为 ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32，并在同样子进程环境调用 sh.exe -c 'exit 0' 实测 exit 0。保留 GIT_TRACE，证明 clone 使用便携目录 sh.exe 和 git-upload-pack。\n- multica repo checkout 仍使用平台注入的真实 CLI 与原 Task 环境，不使用该 Git 调用方式手工替代原生根仓 checkout。\n\n按原 Issue 的步骤 2–7 自主完成 seed、bare、child 两次普通 clone、二级仓忽略/身份校验、child 脏修改、原生 root 重入与 Hash 核对。不得请求提权或让控制端代建 fixture。初次 preflight 失败和最终受控工具调用结果分别记录；effective sandbox 必须仍是 workspace-write + never + mxc。\n\n最终 M02-autonomous-evidence.json / M02-autonomous-report.md 写明这是“显式兼容 Git 子进程调用”的修复，不是默认 PATH 已修复，也不是 Rondo dev prepare 已实现。保留所有 fixture 给下一独立 Run 核对。",
+      "created_at": "2026-11-13T12:22:17+08:00",
+      "id": "01a1d324-59d9-7af8-a95a-48182756cf4d",
+      "revision": 1,
+      "type": "comment"
+    }
+  ],
+  "native_checkout_output": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+  "root_path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo",
+  "root_origin_main": "dfdaf33fa58355332259524266045d1052ef9dea",
+  "gitignore": ".worktrees/\nroot-file\n.gstack/\n.arena/\n.vscode/\n\n# 子服务目录（各自为独立 git 仓库，根仓库不管理业务代码）\n/winning-dps-df-*/\n/winning-dps-df-dataquality-web\n\n# Wiki 知识库模块和知识图谱不受子仓规则影响\n!wiki/modules/winning-dps-df-*/\n!graph/winning-dps-df-*/\n\n# 外部产品子仓符号链接（各自为独立 git 仓库，根仓库不管理业务代码）\nwinning-platform-360/\nwinning-web-platform-360/\n\n# ETL 工具箱（独立仓库）\netl-box/\n\n# LLM Wiki 摄入运行过程，不属于正式知识（无论 Source 目录层级如何变化）\n**/llm_plan/\n/outputs/wiki-ingest-test/\n\n# df-frame 初始化临时克隆目录（独立仓库克隆，本地生成，不共享）\n.df-frame-init-clone/\n\n# macOS\n.DS_Store\n\n# IDE 配置\n.idea/\n\n# Claude Code 日志与会话数据（个人本地，不共享）\n.claude/*.log\n.claude/metrics/\n.claude/session-data/\n\n# 本地配置（不提交）\nsettings.local.json\nCLAUDE.local.md\n.mcp.json\n\n# 本地配置符号链接目录（由 create-symlink 命令动态生成）\n.tmp/\n.cache/\n.playwright-mcp/\n\n# 本地运行日志（不共享）\nprojects/replay/bash-commands.log\nprojects/replay/cost-tracker.log\nprojects/replay/codex-hook-events.jsonl\n\n# Python 缓存（本地生成，不共享）\n__pycache__/\n\n# Code graph 索引文件（本地生成，不共享）\n.codegraph/\n.code-review-graph/\n\n# Wiki 知识索引（SQLite，本地生成，可从 wiki/ 和 raw/ 重建）\ngraph/**/*.db\n\n# Office 临时锁文件\n~$*\n\n# CodeGraph MCP 隐藏启动器日志（本地生成，不共享）\n.codegraph-mcp-logs/\n\n# Brainstorming visual companion 临时文件（本地生成，不共享）\n.superpowers/\n\n\n# Multica 运行数据与缓存（本地生成，不共享）\n.multica/\n\n# Multica Run 日志（本地运行证据，可由平台侧会话重新导出，不进版本控制）\nprojects/multica/logs/\n\n# Multica 运行时物化的 Agent 绑定技能（in_place 模式下 daemon 写入 <根仓>/.claude/skills/，\n# 唯一事实源在平台侧 / projects/multica/workspace-skills/，每次 Run 幂等重写，不进版本控制；\n# 新绑定 Skill 落进根仓时在此补一行）\n.claude/skills/analysis-completion*/\n.claude/skills/backend-engineering*/\n.claude/skills/codebase-explorer*/\n.claude/skills/delivery-flow*/\n.claude/skills/delivery-gate*/\n.claude/skills/development-execution*/\n.claude/skills/finalize-delivery*/\n.claude/skills/frontend-engineering*/\n.claude/skills/multica-platform*/\n.claude/skills/multica-workspace-bootstrap*/\n.claude/skills/pr-status-sync*/\n.claude/skills/pull-request*/\n.claude/skills/tfs-sync*/\n.claude/skills/workitem-analysis*/\n.claude/skills/workitem-triage*/\n.branch-switch.log/\n\n# 会话临时文件（本地工作区，不共享）\ntemp/\n\n# Codex 隔离工作树（本地执行计划使用，不共享）\n.worktrees/\n\n# AI-Flow 本地凭据文件（含 PAT 令牌，不共享）\n.ai-flow/.env\n\n# Wiki dashboard 生成数据（中间产物，可由生成器重建）\nwiki/dashboard/data/\n\n# tfs凭证\ntools/archive/tfs-cli/config/tfs.config.json\n\n# cli tgz\ntools/**/*.tgz\n",
+  "repo_context_yaml": "# 当前工作区运行时注册表，主要登记本地已经存在的子仓，是 repo-context.yaml.example 的子集。\n# 修改条目后按 repo_id 同步到全量清单；维护规则见 README.md。\n# 检出状态由 tools/repo_registry.py 实时推导，不在配置中持久化。\n# 这里只保存身份、职责边界、关键词和可选 TFS 归属，不保存构建或 MCP 状态。\n# 路由与跨服务入口见 docs/router/overview.md；构建与技术栈到目标仓核实。\n# 旧风险与依赖仅供追溯：projects/analysis/repo-context-retired-metadata-2026-10-20.yaml。\nversion: 0.4.0\nschema:\n  required_fields: [repo_id, repo_type, repo_path, repo_url, responsibility, keywords, not_responsible_for]\n  optional_fields: [tfs_project, tfs_collection]\n  repo_type_values: [root-workspace, common, backend, frontend]\n\nrepos:\n  - repo_id: root\n    repo_type: root-workspace\n    repo_path: .\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo\n    responsibility: AI coding、agent、docs、openspec、graph、wiki 与共享工具等资产。\n    keywords: [AI coding, Agent, docs, openspec, graph, wiki]\n    not_responsible_for: [具体业务实现]\n    tfs_project: DP-01-数据仓库\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: common\n    repo_type: common\n    repo_path: winning-dps-df-common\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-common\n    responsibility: 通用实体、常量、DTO、枚举、工具和共享基础代码。\n    keywords: [公共, 通用, 实体, 常量, 工具, 共享, 枚举, DTO]\n    not_responsible_for: [具体服务业务流程]\n    tfs_project: WiNEX DataFactory\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: frame\n    repo_type: backend\n    repo_path: winning-dps-df-frame\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame\n    responsibility: 基础框架后端与公共业务能力，负责租户、用户、认证、权限、菜单、角色和组织管理。\n    keywords: [基础框架, 框架, 基座, DF, 租户, 用户, 权限, 菜单, 角色, 组织, 登录, 认证]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX DataFactory\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: frame-web\n    repo_type: frontend\n    repo_path: winning-dps-df-frame-web\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame-web\n    responsibility: 基础框架前端，负责门户、布局、导航、首页、皮肤等页面与交互。\n    keywords: [基础框架, 框架, 基座, DF, 页面框架, 门户, 布局, 导航, 首页, 皮肤]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: WiNEX DataFactory\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: modular\n    repo_type: backend\n    repo_path: winning-dps-df-modular\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-03-%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-modular\n    responsibility: API 网关与 Nacos 注册/配置中心，负责路由、动态路由管理、限流和自定义 PostgreSQL 数据源插件。\n    keywords: [网关, 路由, 限流, nacos, 注册中心, 配置中心]\n    not_responsible_for: [具体业务子仓的业务逻辑]\n    tfs_project: DP-03-数据采集管理软件\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataintegration\n    repo_type: backend\n    repo_path: winning-dps-df-dataintegration\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-03-%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-dataintegration\n    responsibility: 数据集成调度后端，负责采集、ETL、作业流程、任务调度、数据源、集群管理和执行引擎接入。\n    keywords: [数据集成, 集成调度, 采集, ETL, 作业流程设计, 作业设计, 集成流程设计, 调度中心, 任务调度, 数据同步, 集群管理, 数据源, 执行引擎]\n    not_responsible_for: [前端页面实现]\n    tfs_project: DP-03-数据采集管理软件\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataintegration-web\n    repo_type: frontend\n    repo_path: winning-dps-df-dataintegration-web\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-03-%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-dataintegration-web\n    responsibility: 数据集成调度前端，负责流程设计、调度中心、任务配置、数据源及执行引擎相关页面交互。\n    keywords: [数据集成, 集成调度, 采集, ETL, 作业流程设计, 作业设计, 集成流程设计, 调度中心, 任务调度, 数据同步, 集群管理, 数据源, 执行引擎]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: DP-03-数据采集管理软件\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataengine\n    repo_type: backend\n    repo_path: winning-dps-df-dataengine\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-03-%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-dataengine\n    responsibility: 数据引擎后端，负责 Flink、实时/流/离线计算和算子相关能力。\n    keywords: [数据引擎, Flink, 计算, 实时计算, 流计算, 离线计算, 算子]\n    not_responsible_for: [前端页面实现]\n    tfs_project: DP-03-数据采集管理软件\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: datatransfer-core\n    repo_type: backend\n    repo_path: winning-dps-df-datatransfer-core\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20Data%20Integrated%20Platform/_git/winning-dps-df-datatransfer-core\n    responsibility: Flink 数据集成与数据交换内核，负责 DDL 注册、JDBC 方言与 Driver、CDC、UDF、Calcite SQL 扩展、Connector 和湖仓一体，提供作业 JSON 命令行与 Hessian RPC 入口。\n    keywords: [数据引擎, 引擎, 集成引擎, Flink, 数据集成, 数据交换, SQL Gateway, CDC, JDBC, 方言, UDF, Paimon, IRIS, HL7, 数据工厂]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX Data Integrated Platform\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: devops\n    repo_type: backend\n    repo_path: winning-dps-df-devops\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Operation/_git/winning-dps-df-devops\n    responsibility: 运维监控后端。\n    keywords: [运维, 监控, 告警]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX_Data_Operation\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: devops-web\n    repo_type: frontend\n    repo_path: winning-dps-df-devops-web\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Operation/_git/winning-dps-df-devops-web\n    responsibility: 运维监控前端。\n    keywords: [运维, 监控, 大屏, 告警, 运维中心, 运维大屏, 资源监控]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: WiNEX_Data_Operation\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataquality\n    repo_type: backend\n    repo_path: winning-dps-df-dataquality\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-dataquality\n    responsibility: 数据质控后端。\n    keywords: [数据质控, 质量, 质检, 质控规则, 稽核]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX_Data_Governance\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataquality-web\n    repo_type: frontend\n    repo_path: winning-dps-df-dataquality-web\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-dataquality-web\n    responsibility: 数据质控前端。\n    keywords: [数据质控, 质量, 质检, 质控规则, 稽核, 规则校验]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: WiNEX_Data_Governance\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataservice-api\n    repo_type: backend\n    repo_path: winning-dps-df-dataservice-api\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20Data%20service%20platform/_git/winning-dps-df-dataservice-api\n    responsibility: 数据服务后端，负责 API 生成、监控、发布、调试、主题和授权管理。\n    keywords: [数据服务, API服务, API生成, API监控, 服务发布, 服务调试, 主题, 授权]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX Data service platform\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataservice-web\n    repo_type: frontend\n    repo_path: winning-dps-df-dataservice-web\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20Data%20service%20platform/_git/winning-dps-df-dataservice-web\n    responsibility: 数据服务前端，负责 API 编排、生成、发布、调试、计量、日志及服务目录等页面交互。\n    keywords: [数据服务, API服务, 服务目录, 数据交换, 服务注册]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: WiNEX Data service platform\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataservice-gateway\n    repo_type: backend\n    repo_path: winning-dps-df-dataservice-gateway\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20Data%20service%20platform/_git/winning-dps-df-dataservice-gateway\n    responsibility: 数据服务网关，负责限流规则、转发路由、网关令牌、限流日志和告警。\n    keywords: [数据服务, 网关, 限流, 转发]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX Data service platform\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataasset\n    repo_type: backend\n    repo_path: winning-dps-df-dataasset\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-dataasset\n    responsibility: 数据资产后端。\n    keywords: [数据资产, 资产目录, 资产全景, 标签体系]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX_Data_Governance\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: dataasset-web\n    repo_type: frontend\n    repo_path: winning-dps-df-dataasset-web\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-dataasset-web\n    responsibility: 数据资产前端。\n    keywords: [数据资产, 资产目录, 资产全景, 标签体系, 资产盘点]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: WiNEX_Data_Governance\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: metadata\n    repo_type: backend\n    repo_path: winning-dps-df-metadata\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-metadata\n    responsibility: 元数据后端。\n    keywords: [元数据, 元模型, 数据标准, 数据字典, 血缘]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX_Data_Governance\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: metadata-web\n    repo_type: frontend\n    repo_path: winning-dps-df-metadata-web\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-06-%E5%85%83%E6%95%B0%E6%8D%AE%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-metadata-web\n    responsibility: 元数据前端。\n    keywords: [元数据, 元模型, 数据标准, 数据字典, 血缘, 元数据采集]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: DP-06-元数据管理软件\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: datasecurity\n    repo_type: backend\n    repo_path: winning-dps-df-datasecurity\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-datasecurity\n    responsibility: 数据安全后端，负责脱敏、水印、审计、黑白名单、分类分级、加密、规则管理和密评。\n    keywords: [数据安全, 脱敏, 水印, 审计, 黑白名单, 分类分级, 加密, 规则管理, 密评]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX_Data_Governance\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: datasecurity-web\n    repo_type: frontend\n    repo_path: winning-dps-df-datasecurity-web\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-datasecurity-web\n    responsibility: 数据安全前端，负责脱敏规则与算法、加密、水印、安全审计、黑白名单和分类分级等页面交互。\n    keywords: [数据安全, 脱敏, 加密, 安全策略, 合规]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: WiNEX_Data_Governance\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: datamodel\n    repo_type: backend\n    repo_path: winning-dps-df-datamodel\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-datamodel\n    responsibility: 数据模型后端。\n    keywords: [数据模型, 模型管理]\n    not_responsible_for: [前端页面实现]\n    tfs_project: WiNEX_Data_Governance\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: datamodel-web\n    repo_type: frontend\n    repo_path: winning-dps-df-datamodel-web\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-datamodel-web\n    responsibility: 数据模型前端。\n    keywords: [数据模型, 模型管理, 模型设计]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: WiNEX_Data_Governance\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: basedata\n    repo_type: backend\n    repo_path: winning-dps-df-basedata\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/IP-08-%E5%9F%BA%E7%A1%80%E6%95%B0%E6%8D%AE%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-basedata\n    responsibility: 平台基础数据管理服务，负责主数据全生命周期、组织机构、术语编码、字典表、值域映射、系统/厂商基础数据同步和 MDM 接收。\n    keywords: [基础数据, 主数据, 组织机构, 术语编码, 值域映射, 概念域, 编码体系, 字典表, MDM接收]\n    not_responsible_for: [前端页面实现]\n    tfs_project: IP-08-基础数据管理软件\n    tfs_collection: WN_Data_Platform\n\n  - repo_id: basedata-webui\n    repo_type: frontend\n    repo_path: winning-dps-df-basedata-webui\n    repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/IP-08-%E5%9F%BA%E7%A1%80%E6%95%B0%E6%8D%AE%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-basedata-webui\n    responsibility: 基础数据管理前端。\n    keywords: [基础数据, 基础数据管理]\n    not_responsible_for: [后端服务逻辑]\n    tfs_project: IP-08-基础数据管理软件\n    tfs_collection: WN_Data_Platform\n",
+  "last_completed_phase": "verify",
+  "updated_at": "2026-11-13T04:28:06.190359+00:00",
+  "guidance_correctly_decoded": [
+    {
+      "author_id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+      "author_type": "member",
+      "content": "[@M01 checkout 验证器](mention://agent/9915af88-b5ce-42c2-9c3b-227d768c5bc0) # TEST-7 最小调用方式修正与继续验证\n\n控制端已定位真实原因：当前部署 Multica 的 daemon.go/isBlockedEnvKey 明确忽略 custom_env.PATH。控制端正在撤回无效 PATH 配置；该阻止不应被写成工具包安装失败。保留初次 preflight FAIL 的原始证据，另存为 M02-autonomous-preflight-evidence.json / preflight-report.md 后继续本次 Task。不要丢弃或覆盖历史失败。\n\n用户已授权修复 MSYS 并在真实 Runtime 内自主 clone。请将原 Issue 第 1 步“Get-Command 必须指向便携 Git，否则停止”替换为以下调用约定：\n\n- Task 的默认 Git 不变，记录其解析路径。对于本次验证的 Git 子进程，显式执行 C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\cmd\\git.exe；在 subprocess env 的 PATH 前置该工具的 cmd 和 mingw64\\bin，仅作用于该子进程及其子进程。\n- 例如 Python subprocess.run([absolute_git, ...], env={**os.environ, 'PATH': portable_cmd + os.pathsep + portable_bin + os.pathsep + os.environ.get('PATH','')}, ...)。这只是选用特定 Git/shell 工具组合，不改系统 PATH、Task/Daemon 配置、沙箱或 ACL，不设置/伪造 MULTICA 变量。\n- 必须先验证 sh.exe/busybox.exe Hash 都为 ab90c8f11cb814b8915f07d4ad2a0b910f5ba82a8aec9a575eb393c0ec29cc32，并在同样子进程环境调用 sh.exe -c 'exit 0' 实测 exit 0。保留 GIT_TRACE，证明 clone 使用便携目录 sh.exe 和 git-upload-pack。\n- multica repo checkout 仍使用平台注入的真实 CLI 与原 Task 环境，不使用该 Git 调用方式手工替代原生根仓 checkout。\n\n按原 Issue 的步骤 2–7 自主完成 seed、bare、child 两次普通 clone、二级仓忽略/身份校验、child 脏修改、原生 root 重入与 Hash 核对。不得请求提权或让控制端代建 fixture。初次 preflight 失败和最终受控工具调用结果分别记录；effective sandbox 必须仍是 workspace-write + never + mxc。\n\n最终 M02-autonomous-evidence.json / M02-autonomous-report.md 写明这是“显式兼容 Git 子进程调用”的修复，不是默认 PATH 已修复，也不是 Rondo dev prepare 已实现。保留所有 fixture 给下一独立 Run 核对。",
+      "created_at": "2026-11-13T12:22:17+08:00",
+      "id": "01a1d324-59d9-7af8-a95a-48182756cf4d",
+      "revision": 1,
+      "type": "comment"
+    }
+  ],
+  "common": {
+    "repo_id": "common",
+    "repo_path": "winning-dps-df-common",
+    "repo_url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-common"
+  },
+  "ignore_rule": ".gitignore:8:/winning-dps-df-*/\twinning-dps-df-common/",
+  "root_config_file_hashes_before": {
+    ".gitignore": "6322428c5a00d82dd59d9250e3fbb41c4733d8640195d389e1a50bff48416d1a",
+    "docs/config/repo-context.yaml": "03659b983297ad67bda435390d3b3e3b207dc33a7af6d8189dd0fb232afaa008"
+  },
+  "unique_marker": "M02-01a1d321-1273-7c2f-a744-96ff82e8f4e9-f4ae63b6f3c44f14851f54e484ba487e",
+  "seed_path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\seed",
+  "bare_path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare",
+  "child_path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+  "seed_head": "dcc7a6b6e92b05ed8850c8cc7464b9a5c5f3376d",
+  "bare_head": "dcc7a6b6e92b05ed8850c8cc7464b9a5c5f3376d",
+  "readme_before_dirty_sha256": "f362e1d1af3688f42c4c0dc8e5cbe4c471c0dee93aa4210e30ed6d841cc7fc2a",
+  "child_diff_before_reentry": "diff --git a/README.txt b/README.txt\nindex e57c751..3735874 100644\n--- a/README.txt\n+++ b/README.txt\n@@ -1 +1,2 @@\n M02-01a1d321-1273-7c2f-a744-96ff82e8f4e9-f4ae63b6f3c44f14851f54e484ba487e\n+tracked-dirty M02-01a1d321-1273-7c2f-a744-96ff82e8f4e9-f4ae63b6f3c44f14851f54e484ba487e",
+  "trace_files": [
+    {
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-evidence\\portable-git.trace",
+      "sha256": "e8129581ed76c93193a6a198d4a0e8215456c7d8b67ae66635bfa588bb7fb3f9"
+    },
+    {
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-evidence\\portable-git-trace2.jsonl",
+      "sha256": "8be3f0c70a610183a82d0cf2c38872d838fc6e2983afc051489df29b59431b89"
+    }
+  ],
+  "root_origin_main_after_reentry": "dfdaf33fa58355332259524266045d1052ef9dea",
+  "default_resolution_after": "[\r\n    {\r\n        \"Name\":  \"git.exe\",\r\n        \"Source\":  \"D:\\\\UserApp\\\\Git\\\\bin\\\\git.exe\"\r\n    },\r\n    {\r\n        \"Name\":  \"sh.exe\",\r\n        \"Source\":  \"D:\\\\UserApp\\\\Git\\\\bin\\\\sh.exe\"\r\n    }\r\n]",
+  "trace_proof": {
+    "portable_sh_lines": [
+      "12:25:54.926888 run-command.c:934       trace: start_command: C:/Users/lilei/.multica/tools/mingit-busybox-2.54.0/mingw64/bin/sh.exe -c 'git-upload-pack '\\''C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\seed/.git'\\''' 'git-upload-pack '\\''C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\seed/.git'\\'''",
+      "12:25:55.610555 run-command.c:934       trace: start_command: C:/Users/lilei/.multica/tools/mingit-busybox-2.54.0/mingw64/bin/sh.exe -c 'git-upload-pack '\\''C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare'\\''' 'git-upload-pack '\\''C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-7-96ff82e8f4e9\\workdir\\validation-fixture\\local-bare'\\'''"
+    ],
+    "upload_pack_lines": [
+      "12:25:55.157716 git.c:502               trace: built-in: git upload-pack 'C:\\\\Users\\\\lilei\\\\multica_workspaces\\\\rondo-test-8ef6a0bcf15d\\\\test-7-96ff82e8f4e9\\\\workdir\\\\validation-fixture\\\\seed/.git'",
+      "12:25:55.679266 git.c:502               trace: built-in: git upload-pack 'C:\\\\Users\\\\lilei\\\\multica_workspaces\\\\rondo-test-8ef6a0bcf15d\\\\test-7-96ff82e8f4e9\\\\workdir\\\\validation-fixture\\\\local-bare'"
+    ],
+    "upload_pack_executable_directory": "C:\\Users\\lilei\\.multica\\tools\\mingit-busybox-2.54.0\\mingw64\\bin",
+    "trace_sha256": "e8129581ed76c93193a6a198d4a0e8215456c7d8b67ae66635bfa588bb7fb3f9",
+    "trace2_sha256": "8be3f0c70a610183a82d0cf2c38872d838fc6e2983afc051489df29b59431b89"
+  },
+  "issue_status": {
+    "observed": "todo",
+    "mutated": false,
+    "reason": "Issue explicitly prohibits Issue Metadata modification"
+  },
+  "finished_at": "2026-11-13T04:28:05.697597+00:00"
+}

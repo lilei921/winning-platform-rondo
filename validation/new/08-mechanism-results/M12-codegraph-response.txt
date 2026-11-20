@@ -1,0 +1,190 @@
+**Exploration: PermissionPlatService getPermissions**
+
+Found 8 symbols across 1 file.
+
+**Blast radius — what depends on these (update/verify before editing)**
+
+- `getPermissions` (winning-dps-df-frame-service/src/main/java/com/winning/dps/df/frame/service/uniauth/platform/PermissionPlatService.java:111) — 1 caller in `winning-dps-df-frame-rest/src/main/java/com/winning/dps/df/frame/rest/sys/SysMenuEndPointImpl.java`; tested via callers: `winning-dps-df-frame-rest/src/test/java/com/winning/dps/df/frame/rest/sys/PermissionMenuRegressionTest.java`, `winning-dps-df-frame-rest/src/test/java/com/winning/dps/df/frame/rest/sys/PermissionMenuLanguageTest.java`
+- `getPermissionsList` (winning-dps-df-frame-common/src/main/java/com/winning/dps/df/frame/common/core/domain/entity/SysUser.java:154) — 1 caller in `winning-dps-df-frame-service/src/main/java/com/winning/dps/df/frame/security/JwtUserFactory.java`; no tests found within 3 caller hops
+- `PermissionPlatService` (winning-dps-df-frame-service/src/main/java/com/winning/dps/df/frame/service/uniauth/platform/PermissionPlatService.java:34) — 16 callers in `winning-dps-df-frame-service/src/main/java/com/winning/dps/df/frame/service/uniauth/LoginService.java`, `winning-dps-df-frame-rest/src/main/java/com/winning/dps/df/frame/rest/sys/SysUserEndPointImpl.java`, `winning-dps-df-frame-rest/src/main/java/com/winning/dps/df/frame/rest/sys/SysMenuEndPointImpl.java`, `winning-dps-df-frame-service/src/main/java/com/winning/dps/df/frame/service/sys/impl/SysUserServiceImpl.java` +2 more; tests: `winning-dps-df-frame-rest/src/test/java/com/winning/dps/df/frame/rest/sys/PermissionMenuLanguageTest.java`, `winning-dps-df-frame-rest/src/test/java/com/winning/dps/df/frame/rest/sys/PermissionMenuRegressionTest.java`
+
+**Source Code**
+
+> The code below is the **verbatim, current on-disk source** of these files — re-read from disk on this call and line-numbered, byte-for-byte identical to what the Read tool returns. It is NOT a summary, outline, or stale cache. Treat each block as a Read you have already performed: do not Read a file shown here.
+
+**`winning-dps-df-frame-service/src/main/java/com/winning/dps/df/frame/service/uniauth/platform/PermissionPlatService.java`** — calls(calls), I18nCodeEnum(references), imports(imports), getCode(calls), Constants(references), error(calls), +19 more
+
+```java
+1	package com.winning.dps.df.frame.service.uniauth.platform;
+2	
+3	import java.util.HashMap;
+4	import java.util.List;
+5	import java.util.Map;
+6	
+7	import com.winning.dps.df.frame.common.contants.Constants;
+8	import com.winning.dps.df.frame.common.enums.I18nCodeEnum;
+9	import com.winning.dps.df.frame.common.uniauth.config.PlatformConfig;
+10	import com.winning.dps.df.frame.common.uniauth.dto.PlatformLoginDto;
+11	import com.winning.dps.df.frame.common.uniauth.dto.PlatformLoginRespDto;
+12	import com.winning.dps.df.frame.common.uniauth.dto.PlatformOrgDto;
+13	import com.winning.dps.df.frame.common.uniauth.dto.PlatformPermissionDto;
+14	import com.winning.dps.df.frame.common.uniauth.dto.UserInfo;
+15	import com.winning.dps.df.frame.common.uniauth.enums.PlatformStatusCode;
+16	import com.winning.dps.df.frame.common.utils.RestUtils;
+17	import com.winning.dps.df.frame.common.utils.StringUtils;
+18	import com.winning.dps.df.frame.manager.AsyncManager;
+19	import com.winning.dps.df.frame.manager.factory.AsyncFactory;
+20	import com.winning.dps.df.utility.i18n.I18nException;
+21	import com.winning.dps.df.utility.i18n.I18nUtil;
+22	import com.winning.pts.exception.WinningRuntimeException;
+
+... (gap: PermissionPlatService (winning-dps-df-frame-service/src/main/java/com/winning/dps/df/frame/service/uniauth/platform/PermissionPlatService.java:34), log (winning-dps-df-frame-service/src/main/java/com/winning/dps/df/frame/service/uniauth/platform/PermissionPlatService.java:36), platformConfig (winning-dps-df-frame-service/src/main/java/com/winning/dps/df/frame/service/uniauth/platform/PermissionPlatService.java:39)) ...
+
+41	    /**
+42	     * 处理平台登录失败，返回 I18n 友好的错误消息
+43	     */
+44	    private String resolveLoginErrorMessage(String repMsg) {
+45	        if (StringUtils.isNotEmpty(repMsg) && repMsg.contains("账号或密码不正确")) {
+46	            return I18nUtil.getMessage(I18nCodeEnum.ACCOUNT_OR_PASSWORD_ERROR);
+47	        }
+48	        return repMsg;
+49	    }
+50	
+51	    /**
+52	     * 通过用户名获取医院信息
+53	     *
+54	     * @param username
+55	     * @return
+56	     */
+57	    public List<PlatformOrgDto> getHospitalInfo(String username) {
+58	
+59	        Map<String, String> paramMap = new HashMap<>();
+60	        paramMap.put("username", username);
+61	        String respObj = RestUtils.post(platformConfig.baseUrl + PLATFORM_URL_GET_SERVICEORGLIST,
+62	                JSON.toJSONString(paramMap));
+63	        JSONObject result = JSON.parseObject(respObj);
+64	        if (PlatformStatusCode.SUCCESS.getCode().equals(result.getString("statuscode"))) {
+65	
+66	            return result.getJSONArray("repData").toJavaList(PlatformOrgDto.class);
+67	        } else {
+68	
+69	            // 平台没有详细的错误码
+70	            log.error("权限平台返回错误：{}", result.getString("repMsg"));
+71	            String errorMsg = resolveLoginErrorMessage(result.getString("repMsg"));
+72	            AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, "账号密码错误"));
+73	            if (I18nUtil.getMessage(I18nCodeEnum.ACCOUNT_OR_PASSWORD_ERROR).equals(errorMsg)) {
+74	                throw I18nUtil.wrapException(I18nCodeEnum.ACCOUNT_OR_PASSWORD_ERROR);
+75	            }
+76	            throw new WinningRuntimeException(errorMsg);
+77	        }
+78	    }
+79	
+80	    /**
+81	     * 用户登录
+82	     *
+83	     * @param loginDto
+84	     * @return
+85	     */
+86	    public PlatformLoginRespDto login(PlatformLoginDto loginDto) {
+87	
+88	        String respObj = RestUtils.post(platformConfig.baseUrl + platformConfig.PLATFORM_URL_LOGIN, JSON.toJSONString(loginDto));
+89	        JSONObject result = JSON.parseObject(respObj);
+90	        if (PlatformStatusCode.SUCCESS.getCode().equals(result.getString("statuscode"))) {
+91	            return JSONObject.parseObject(JSON.toJSONString(result.getJSONObject("repData")), PlatformLoginRespDto.class);
+92	        } else {
+93	            // 平台没有详细的错误码
+94	            log.error("权限平台返回错误：{}", result.getString("repMsg"));
+95	            String errorMsg = resolveLoginErrorMessage(result.getString("repMsg"));
+96	            AsyncManager.me().execute(AsyncFactory.recordLogininfor(loginDto.getUsername(), Constants.LOGIN_FAIL, "账号密码错误"));
+97	            if (I18nUtil.getMessage(I18nCodeEnum.ACCOUNT_OR_PASSWORD_ERROR).equals(errorMsg)) {
+98	                throw new UsernameNotFoundException(errorMsg);
+99	            }
+100	            throw new UsernameNotFoundException(errorMsg);
+101	        }
+102	    }
+103	
+104	    /**
+105	     * 获取权限信息，主要是获取菜单信息、角色信息
+
+... (gap) ...
+
+108	     * @param token
+109	     * @return
+110	     */
+111	    public PlatformPermissionDto getPermissions(String appId, String token) {
+112	        Map<String, Object> headMap = new HashMap();
+113	        headMap.put("token", token);
+114	        log.info("调用权限平台获取权限接口,入参:{}", appId);
+115	        // 省略语言参数，保留默认中文源名称供前端翻译。
+116	        String respObj = RestUtils.get(platformConfig.baseUrl + platformConfig.PLATFORM_URL_GET_PERMISSIONS + appId, headMap);
+117	        log.info("调用权限平台获取权限接口,返回:{}", respObj);
+118	        JSONObject result = JSON.parseObject(respObj);
+119	        if (PlatformStatusCode.SUCCESS.getCode().equals(result.getString("statuscode"))) {
+120	            return JSONObject.parseObject(result.getString("repData"), PlatformPermissionDto.class);
+121	        } else {
+122	            throw I18nUtil.wrapException(I18nCodeEnum.PLATFORM_ERROR, result.getString("repMsg"));
+123	        }
+124	    }
+125	
+126	    /**
+127	     * 退出登录
+128	     *
+129	     * @param token
+130	     * @return
+131	     */
+132	    public Object logout(String token) {
+133	        String respObj = RestUtils.get(platformConfig.baseUrl + platformConfig.PLATFORM_URL_LOGOUT + token);
+134	        JSONObject result = JSON.parseObject(respObj);
+135	        if (PlatformStatusCode.SUCCESS.getCode().equals(result.getString("statuscode"))) {
+136	            return result.getString("repData");
+137	        } else {
+138	            throw I18nUtil.wrapException(I18nCodeEnum.PLATFORM_ERROR, result.getString("repMsg"));
+139	        }
+140	    }
+141	
+142	    /**
+143	     * 通过机构ID获取用户信息
+144	     *
+145	     * @param orgId
+146	     * @return
+147	     */
+148	    public List<UserInfo> getUserInfoByOrgId(String orgId) {
+149	
+150	        Map<String, String> paramMap = new HashMap<>();
+151	        paramMap.put("orgid", orgId);
+152	        String respObj = RestUtils.post(platformConfig.baseUrl + PLATFORM_URL_GET_USERINFOBYORGID,
+153	                JSON.toJSONString(paramMap));
+154	        JSONObject result = JSON.parseObject(respObj);
+155	        if (PlatformStatusCode.SUCCESS.getCode().equals(result.getString("statuscode"))) {
+156	
+157	            return result.getJSONArray("repData").toJavaList(UserInfo.class);
+158	        } else {
+159	            // throw new WinningRuntimeException(result.getString("repMsg"));
+160	            // 平台没有详细的错误码
+161	            log.error("权限平台返回错误：{}", result.getString("repMsg"));
+162	            String errorMsg = resolveLoginErrorMessage(result.getString("repMsg"));
+163	            AsyncManager.me().execute(AsyncFactory.recordLogininfor(orgId, Constants.LOGIN_FAIL, "账号密码错误"));
+164	            if (I18nUtil.getMessage(I18nCodeEnum.ACCOUNT_OR_PASSWORD_ERROR).equals(errorMsg)) {
+165	                throw I18nUtil.wrapException(I18nCodeEnum.ACCOUNT_OR_PASSWORD_ERROR);
+166	            }
+167	            throw new WinningRuntimeException(errorMsg);
+168	        }
+169	    }
+170	
+171	//    public Object getVerificationCode() {
+172	//        return RestUtils.get(platformConfig.baseUrl + platformConfig.PLATFORM_URL_GET_VERIFYCODE);
+```
+
+**Not shown above — explore these names for their source**
+
+- winning-dps-df-frame-common/src/main/java/com/winning/dps/df/frame/common/uniauth/dto/PlatformPermissionDto.java: PlatformPermissionDto:8
+- winning-dps-df-frame-common/src/main/java/com/winning/dps/df/frame/common/utils/RestUtils.java: get:115, get:144, RestUtils:31, resolveUrl:67, post:175, createSSLSocketFactory:356, +13 more
+- winning-dps-df-frame-common/src/main/java/com/winning/dps/df/frame/common/jwt/JwtUser.java: getPermissions:46, JwtUser:10, serialVersionUID:11, isEnabled:73, isAccountNonLocked:59, getAuthorities:25, +7 more
+- winning-dps-df-frame-common/src/main/java/com/winning/dps/df/frame/common/core/domain/model/LoginUser.java: getPermissions:203, LoginUser:15, serialVersionUID:17, getOs:183, getIpaddr:153, setOs:188, +19 more
+- winning-dps-df-frame-common/src/main/java/com/winning/dps/df/frame/common/core/domain/entity/SysUser.java: getPermissionsList:154, SysUser:24, setUserType:77, getUserId:41, getNickName:68, getReportTo:150, +18 more
+- winning-dps-df-frame-common/src/main/java/com/winning/dps/df/frame/common/utils/ECacheUtil.java: get:33, ECacheUtil:11, put:28, clear:43, addCache:15, remove:38, +3 more
+- winning-dps-df-frame-common/src/main/java/com/winning/dps/df/frame/common/jwt/JwtTokenUtil.java: validateToken:265, getUniAuthLoginUserFromToken:69, getUsernameFromToken:104, com.winning.dps.df.frame.common.jwt:1
+- winning-dps-df-frame-rest/src/main/java/com/winning/dps/df/frame/rest/auth/LoginEndPointImpl.java: com.winning.dps.df.frame.rest.auth:1, logout:160, getRouters:127, permissionPlatService:74
+- winning-dps-df-frame-service/src/main/java/com/winning/dps/df/frame/security/JwtAuthenticationTokenFilter.java: validatePortalToken:159, com.winning.dps.df.frame.security:1, validatePlatformToken:302
+- winning-dps-df-frame-rest/src/main/java/com/winning/dps/df/frame/rest/sys/SysMenuEndPointImpl.java: getPlatformAppMenus:288, com.winning.dps.df.frame.rest.sys:1, permissionPlatService:126
+- ... and 22 more files

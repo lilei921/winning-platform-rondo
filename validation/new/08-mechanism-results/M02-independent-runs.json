@@ -1,0 +1,57 @@
+[
+  {
+    "agent_id": "9915af88-b5ce-42c2-9c3b-227d768c5bc0",
+    "attempt": 1,
+    "attribution": {
+      "evidence": {
+        "kind": "issue_assignment",
+        "ref_id": "01a1d329-8ea9-79bd-acd2-9a8fd2693811"
+      },
+      "initiator": {
+        "email": "lilei@winning.com.cn",
+        "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+        "name": "lilei"
+      },
+      "originator": {
+        "email": "lilei@winning.com.cn",
+        "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+        "name": "lilei"
+      },
+      "precise": true,
+      "source": "direct_human"
+    },
+    "completed_at": "2026-11-13T12:38:00+08:00",
+    "created_at": "2026-11-13T12:27:58+08:00",
+    "delivered_comment_ids": [],
+    "dispatched_at": "2026-11-13T12:29:13+08:00",
+    "error": null,
+    "id": "01a1d329-8ec9-7ec7-9431-909e55251162",
+    "issue_id": "01a1d329-8ea9-79bd-acd2-9a8fd2693811",
+    "kind": "direct",
+    "max_attempts": 2,
+    "priority": 0,
+    "relative_work_dir": "rondo-test-8ef6a0bcf15d/test-8-909e55251162/workdir",
+    "result": {
+      "output": "TEST-8 验证完成：**PASS，28/28 断言通过**。已发布唯一结果评论，并附脱敏证据、报告和 clone trace。\n\n`Rondo dev prepare：NOT_RUN`；现场保留，Issue 状态按要求保持 `todo`。",
+      "pr_url": "",
+      "session_id": "01a1d32a-a6fd-7d23-a779-5d655213195b",
+      "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-8-909e55251162\\workdir"
+    },
+    "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+    "started_at": "2026-11-13T12:29:13+08:00",
+    "status": "completed",
+    "supplement_capability": "task-supplement-v1",
+    "usage": [
+      {
+        "cache_read_tokens": 977664,
+        "cache_write_tokens": 0,
+        "input_tokens": 45805,
+        "model": "gpt-6-astra",
+        "output_tokens": 19624,
+        "provider": "codex"
+      }
+    ],
+    "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-8-909e55251162\\workdir",
+    "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+  }
+]

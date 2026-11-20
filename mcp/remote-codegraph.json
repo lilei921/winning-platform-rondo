@@ -1,0 +1,6 @@
+{
+  "connection_file": "remote-codegraph.local.json",
+  "enabled_tools": [
+    "codegraph_explore"
+  ]
+}

@@ -1,0 +1,80 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readApprovedVerifyDecision, assertProjectedVerifyDecision } from "./verify-decision.js";
+
+const md = (recommended: string, approved: boolean, required = approved, comment = "comment-1"): Record<string, string> => ({
+  "analysis.verify_agent.recommendation": recommended,
+  "analysis.human_approval": JSON.stringify({
+    decision: "approved", by: "human", at: "2026-11-08T00:00:00Z",
+    comment_ref: comment, verify_agent_required: approved,
+  }),
+  "verify_agent.required": String(required),
+});
+
+test("Human overrides Analyst required to not_required without a Verify Run", () => {
+  assert.equal(assertProjectedVerifyDecision(md("required", false), "comment-1"), false);
+});
+
+test("Human overrides Analyst not_required to required; final fact must be true", () => {
+  assert.equal(assertProjectedVerifyDecision(md("not_required", true), "comment-1"), true);
+});
+
+test("matches recommendation when Human accepts it", () => {
+  assert.equal(assertProjectedVerifyDecision(md("not_required", false)), false);
+  assert.equal(assertProjectedVerifyDecision(md("required", true)), true);
+});
+
+test("missing final fact never falls back to Analyst Recommendation", () => {
+  const input = md("not_required", false);
+  delete input["verify_agent.required"];
+  assert.throws(() => assertProjectedVerifyDecision(input), /verify_agent.required/);
+});
+
+test("missing, malformed or non-Boolean Human decision is never defaulted", () => {
+  for (const approval of [undefined, "invalid", "{}", JSON.stringify({
+    decision: "approved", comment_ref: "comment-1", verify_agent_required: "false",
+  })]) {
+    const input = md("not_required", false);
+    if (approval === undefined) delete input["analysis.human_approval"];
+    else input["analysis.human_approval"] = approval;
+    assert.throws(() => readApprovedVerifyDecision(input));
+  }
+});
+
+test("approval decision and comment source are mandatory", () => {
+  assert.throws(() => assertProjectedVerifyDecision(md("required", true, true, "other"), "comment-1"), /评论/);
+  const input = md("not_required", false);
+  input["analysis.human_approval"] = JSON.stringify({ decision: "rejected", comment_ref: "comment-1", verify_agent_required: false });
+  assert.throws(() => assertProjectedVerifyDecision(input), /尚未批准/);
+});
+
+test("tampered or inconsistent projection is rejected", () => {
+  assert.throws(() => assertProjectedVerifyDecision(md("required", false, true)), /不一致/);
+  const input = md("not_required", false);
+  input["verify_agent.required"] = "0";
+  assert.throws(() => assertProjectedVerifyDecision(input), /字符串 true\/false/);
+});
+
+test("仅真正的旧数据允许无来源收口，新派发丢失来源不能退化成 legacy", () => {
+  const source = { repo_url: "https://tfs.example/tfs/C/P/_git/R", branch: "dev", commit: "a".repeat(40), change_ref: "fix-1" };
+  const old = md("not_required", false);
+  old["dev.dispatch"] = JSON.stringify([{ active: true, change_ref: "fix-1" }]);
+  assert.equal(assertProjectedVerifyDecision(old), false);
+  const damaged = { ...old, "analysis.change_ref": "fix-1", "dev.dispatch": JSON.stringify([{ active: true, analysis_source: source }]) };
+  assert.throws(() => assertProjectedVerifyDecision(damaged), /source|来源/);
+});
+
+test("收口拒绝混入旧版本 active 派发，但允许保留失效的历史来源", () => {
+  const source = { repo_url: "https://tfs.example/tfs/C/P/_git/R", branch: "dev", commit: "a".repeat(40), change_ref: "fix-1" };
+  const input = md("not_required", false);
+  input["analysis.change_ref"] = source.change_ref;
+  input["analysis.source"] = JSON.stringify(source);
+  input["analysis.human_approval"] = JSON.stringify({ ...JSON.parse(input["analysis.human_approval"]), source });
+  const older = { ...source, commit: "b".repeat(40) };
+  for (const record of [{ active: true }, { active: true, analysis_source: older }]) {
+    input["dev.dispatch"] = JSON.stringify([record]);
+    assert.throws(() => assertProjectedVerifyDecision(input));
+  }
+  input["dev.dispatch"] = JSON.stringify([{ active: false, analysis_source: older }, { active: true, analysis_source: source }]);
+  assert.equal(assertProjectedVerifyDecision(input), false);
+});

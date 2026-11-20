@@ -1,0 +1,79 @@
+{
+  "date": "2026-11-16",
+  "workspace": "rondo-tt",
+  "workspace_id": "3158546f-5b79-4042-baec-20cdac7d9d31",
+  "cli_profile": "desktop-api.multica.ai",
+  "multica_version": "0.9.0",
+  "rondo_version": "1.2.24",
+  "verdict": "NOT_INTEGRATED",
+  "scope": "线上只读配置、实际路径解析、原生 checkout 前置条件及本地既有回归；未执行真实归档、推送、TFS Writeback 或 Issue 收口",
+  "observations": [
+    {
+      "check": "工作区根仓登记",
+      "result": "PASS",
+      "evidence": "repo list 返回 winning-platform-monorepo，描述包含默认使用 main；描述本身不是结构化 ref 配置"
+    },
+    {
+      "check": "PR Status Sync Autopilot",
+      "result": "PASS",
+      "id": "3a779436-9931-478c-b7e3-527eba4f0db3",
+      "execution_mode": "run_only",
+      "project_id": null,
+      "run_count": 0,
+      "triggers": [],
+      "evidence": "线上描述要求 reconcile-status 后按 finalize/resume_finalize 执行 Prepare → Writeback → Complete；未包含 repo checkout"
+    },
+    {
+      "check": "线上 finalize-delivery",
+      "result": "GAP",
+      "skill_id": "2d3dab81-b72d-4942-aacd-1607600928cd",
+      "evidence": "主技能三个命令均未传 --root-repo，未调用 repo checkout；config/repo-registry.json 未配置 runtime.root_branch；remote-artifacts.md 仍规定 Rondo 自行临时 clone"
+    },
+    {
+      "check": "无 Project 的 Rondo 根仓解析",
+      "result": "BLOCKED",
+      "method": "直接调用 resolveRuntimePaths，只读",
+      "error": "Issue 缺少 project_id——不从父 Issue / 标题 / 默认项目猜测（§4.3 规则 2）"
+    },
+    {
+      "check": "当前业务 Project 的 Rondo 根仓解析",
+      "result": "BLOCKED",
+      "project_id": "4433fe6b-2c50-4972-a7c8-74e395b96e03",
+      "method": "通过 Desktop profile 查询实际 Project 资源后调用 resolveRuntimePaths，只读",
+      "error": "项目未挂载 local_directory(in_place) 资源（共 2 条资源）",
+      "evidence": "两条资源均为 github_repo；根仓 ref=main，另一个资源为 dataintegration-web ref=dev"
+    },
+    {
+      "check": "普通 CLI 的原生 checkout 探针",
+      "result": "REJECTED_AS_EXPECTED",
+      "arguments": "multica --profile desktop-api.multica.ai repo checkout <已登记根仓 URL> --ref main --workspace-id <rondo-tt UUID>",
+      "exit_code": 1,
+      "error": "MULTICA_DAEMON_PORT not set (this command is intended to be run by an agent inside a daemon task)",
+      "interpretation": "证明必须从 daemon Task 调用，不能证明 Task 内 checkout 成功或失败；本次未伪造 Task 环境"
+    }
+  ],
+  "implementation_findings": [
+    "finalize.ts:678 未传 --root-repo 时才按 runtime.root_branch 启用远端工件；否则调用旧 resolveRuntimePaths",
+    "finalize.ts:760 和 remote-artifacts.ts:156 在旧远端模式下由 Rondo 自行 clone，未委托 Multica checkout",
+    "显式 --root-repo 当前只校验 Git 根路径，不足以证明它属于当前 Autopilot checkout",
+    "native-checkout.ts 的验证要求 Issue 活跃 Run、Actor 指派一致、Project Resource、固定目录及 .git 目录；不能直接作为无 Project Autopilot 的按需 worktree 验证契约",
+    "routeArchive 按当前本地分支 fetch/push；接入原生 Task 分支后仍需明确权威归档发布目标"
+  ],
+  "required_follow_up": [
+    "在同一个无 Project Autopilot Task 内按需调用 multica repo checkout，收集实际路径",
+    "为 Autopilot 按需 checkout 定义并实现身份、仓库 URL、工作树及发布分支校验",
+    "将经核验路径接入 Prepare、Writeback、Complete，避免退回 Project local_directory 或 Rondo 自行 clone",
+    "用隔离 OpenSpec 交付验证归档发布、TFS 回读、Issue done 及中断恢复"
+  ],
+  "regression": {
+    "status": "PASS_EXISTING_CONTRACTS_ONLY",
+    "command": "node --test test/runtime-paths.test.mjs test/remote-delivery-artifacts.test.mjs test/finalize-contract.test.mjs",
+    "tests": 43,
+    "passed": 41,
+    "failed": 0,
+    "skipped": 2,
+    "skip_reason": "两个依赖外部只读现场仓路径环境变量的可选检查未启用",
+    "log": "rondo-contract-tests-unsandboxed.log",
+    "limitations": "沙箱首轮被 MSYS、临时路径和回环网络权限阻断，不能作为功能失败；正常 CLI 环境另行重跑。既有回归通过也不等于新原生链路端到端通过。"
+  }
+}

@@ -1,0 +1,50 @@
+name: intentional-change
+version: 1
+description: 定义需求变更的目标、行为与工程任务
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: 需求目标与变更范围
+    template: proposal.md
+    instruction: |
+      说明谁遇到什么问题、期望得到什么结果，以及本次改动的边界。
+      有行为变化时，在 What Changes 中列出涉及的 capability 路径；已有能力沿用 openspec/specs/ 下的准确路径。
+    requires: []
+
+  - id: specs
+    generates: "specs/**/*.md"
+    description: 变更后的可观察行为
+    template: spec.md
+    instruction: |
+      每个受影响的 capability 对应 specs/<capability-path>/spec.md；新路径段用 kebab-case。
+      无规格层面的行为变化时，在 .openspec.yaml 声明 skip_specs: true，跳过 Delta。
+      新增 capability 时，在首个 Delta 章节前加 ## Purpose，用至少 50 个字符说明其实际用途。
+      修改既有需求用 ## MODIFIED Requirements，沿用原 Requirement 标题，从完整原文及全部场景上修改，保留未受影响的场景。
+      ADDED / MODIFIED 的正文使用 SHALL 或 MUST，每个需求至少给出一个可验证场景。
+      删除或改名前，对照现行规格核实 capability 路径和原 Requirement 标题。
+      删除用 ## REMOVED Requirements，说明 Reason 和 Migration。移除最后一条需求时，先核实所有待退役的 capability 均已明确获批，再在 .openspec.yaml 设置 retire_capabilities: true。
+      仅改名用 ## RENAMED Requirements，以 - FROM: 和 - TO: 列出原、新的完整 Requirement 标题。确认新标题未被其他需求占用。
+    requires: [proposal]
+
+  - id: design
+    generates: design.md
+    description: 影响实现的技术决策
+    template: design.md
+    instruction: |
+      需要在实施前决定接口、数据模型、跨模块协作、迁移或其他关键取舍时编写。
+      写清所选方案及理由，按需说明它对实现和验证的影响。已有约定足以实施时可省略此文件。
+    requires: [proposal]
+
+  - id: tasks
+    generates: tasks.md
+    description: 可实施、可验证的工程任务
+    template: tasks.md
+    instruction: |
+      结合 Proposal、适用的规格及已有 Design，按实际依赖拆分工程任务。
+      每项使用唯一的数字编号，写明预期结果和验证方法。组合行为可单列验证任务。
+    requires: [specs]
+
+apply:
+  requires: [tasks]
+  tracks: tasks.md
+  instruction: 按任务实施并验证，通过研发工作流记录已完成的任务。

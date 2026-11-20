@@ -1,0 +1,100 @@
+{
+  "schema_version": "single-provider-pr-evidence/v2",
+  "provider": "winning-tfs-2018-mcp.tfs_get_pull_request",
+  "fresh_query_performed": true,
+  "sample_pr_ids": [
+    2640,
+    2946,
+    2928
+  ],
+  "collection": "WN_Data_Platform",
+  "payload_format": "MCP 返回 payload，仅解析和格式化；原字段和值未修正，不是原始 TFS HTTP 响应。",
+  "files": [
+    {
+      "file": "pr-2640.json",
+      "pull_request_id": 2640,
+      "tool": "winning-tfs-2018-mcp.tfs_get_pull_request",
+      "arguments": {
+        "project": "DP-03-数据采集管理软件",
+        "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+        "pullRequestId": 2640
+      },
+      "request_started_at": "2026-09-24T02:19:14.950Z",
+      "retrieved_at": "2026-09-24T02:19:15.192Z",
+      "sha256": "23d185e6290627e7d8ac28cd5212dedbd117e2c23065dbaab400dfefa6c46a78",
+      "bytes": 1256,
+      "payload_equal_to_fresh_response": true,
+      "comparison_with_previous_same_id": {
+        "available": false
+      }
+    },
+    {
+      "file": "pr-2946.json",
+      "pull_request_id": 2946,
+      "tool": "winning-tfs-2018-mcp.tfs_get_pull_request",
+      "arguments": {
+        "project": "DP-03-数据采集管理软件",
+        "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+        "pullRequestId": 2946
+      },
+      "request_started_at": "2026-09-24T02:19:14.950Z",
+      "retrieved_at": "2026-09-24T02:19:15.235Z",
+      "sha256": "0bc0cb617e2a3475d43b0abe383f76230e359356dd8dd3469ba0e8e2d5abae02",
+      "bytes": 2678,
+      "payload_equal_to_fresh_response": true,
+      "comparison_with_previous_same_id": {
+        "unchanged": true
+      }
+    },
+    {
+      "file": "pr-2928.json",
+      "pull_request_id": 2928,
+      "tool": "winning-tfs-2018-mcp.tfs_get_pull_request",
+      "arguments": {
+        "project": "DP-03-数据采集管理软件",
+        "repositoryId": "9ebb3230-ca29-4a0c-a456-447623a9ccf4",
+        "pullRequestId": 2928
+      },
+      "request_started_at": "2026-09-24T02:19:14.950Z",
+      "retrieved_at": "2026-09-24T02:19:15.276Z",
+      "sha256": "621711d0f8ffc3df1de39d4ef9fd420540e883232638b4c2b9edc6bf07fb89dc",
+      "bytes": 1247,
+      "payload_equal_to_fresh_response": true,
+      "comparison_with_previous_same_id": {
+        "unchanged": true
+      }
+    }
+  ],
+  "verification": {
+    "executed_at": "2026-09-24T02:20:50.600Z",
+    "results_file": "validation-results.json",
+    "sha256": "07b3186b9071fff2790e8024ef4f37940a99d0de234ee83d6aadc20692eca404",
+    "bytes": 22362,
+    "counts": {
+      "total": 32,
+      "passed": 32,
+      "failed": 0,
+      "live_snapshot": 3,
+      "synthetic_single_pr": 16,
+      "synthetic_aggregation": 7,
+      "synthetic_gate": 6
+    },
+    "scope": "本轮离线候选规则验证；无远端写操作；非生产端到端验收"
+  },
+  "analysis": {
+    "file": "README.md",
+    "sha256": "f5b45269760ae8f3242bbd82734bf1f7fbb510a7cabea33bca0594a17d21f4bc",
+    "bytes": 12903
+  },
+  "specification": {
+    "path": "../../archive/multica-squad-centric-delivery-v1.3.5.md",
+    "sha256": "1f7bc89a8d2deb24a69a1c7afa167606c24fc174afada32ba1d1bd0372db9be3",
+    "modified_by_this_task": false
+  },
+  "limitations": [
+    "独立查询不是跨 PR 原子快照",
+    "本轮没有 active 且 -10 的实时样本；Reject 路径使用合成用例",
+    "工具 voteDescription 与数值投票不一致",
+    "未验证 Multica 通知、并发恢复和完整交付闭环"
+  ]
+}

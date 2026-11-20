@@ -1,0 +1,44 @@
+FF........................                                               [100%]
+================================== FAILURES ===================================
+_ test_registry_files_have_complete_unambiguous_core_records[repo-context.yaml] _
+
+filename = 'repo-context.yaml'
+
+    @pytest.mark.parametrize("filename", ["repo-context.yaml", "repo-context.yaml.example"])
+    def test_registry_files_have_complete_unambiguous_core_records(filename):
+        """独立约束正式配置和参考清单，防止修改自声明 schema 后漏掉必需字段。"""
+        path = ROOT / "docs/config" / filename
+        if filename == "repo-context.yaml" and not path.exists():
+            pytest.skip("本地配置未创建")
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+>       assert set(data["schema"]["required_fields"]) == CORE_FIELDS
+E       AssertionError: assert {'keywords', ...epo_url', ...} == {'keywords', ...sponsibility'}
+E         
+E         Extra items in the left set:
+E         'repo_url'
+E         Use -v to get more diff
+
+tests\test_repo_registry.py:48: AssertionError
+_ test_registry_files_have_complete_unambiguous_core_records[repo-context.yaml.example] _
+
+filename = 'repo-context.yaml.example'
+
+    @pytest.mark.parametrize("filename", ["repo-context.yaml", "repo-context.yaml.example"])
+    def test_registry_files_have_complete_unambiguous_core_records(filename):
+        """独立约束正式配置和参考清单，防止修改自声明 schema 后漏掉必需字段。"""
+        path = ROOT / "docs/config" / filename
+        if filename == "repo-context.yaml" and not path.exists():
+            pytest.skip("本地配置未创建")
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+>       assert set(data["schema"]["required_fields"]) == CORE_FIELDS
+E       AssertionError: assert {'keywords', ...epo_url', ...} == {'keywords', ...sponsibility'}
+E         
+E         Extra items in the left set:
+E         'repo_url'
+E         Use -v to get more diff
+
+tests\test_repo_registry.py:48: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_repo_registry.py::test_registry_files_have_complete_unambiguous_core_records[repo-context.yaml]
+FAILED tests/test_repo_registry.py::test_registry_files_have_complete_unambiguous_core_records[repo-context.yaml.example]
+2 failed, 24 passed in 27.34s

@@ -1,0 +1,84 @@
+{
+  "id": 264845,
+  "rev": 5,
+  "fields": {
+    "System.AreaPath": "DP-01-数据仓库",
+    "System.TeamProject": "DP-01-数据仓库",
+    "System.IterationPath": "DP-01-数据仓库",
+    "System.WorkItemType": "任务",
+    "System.State": "已解决",
+    "System.Reason": "已完成并且需要评审/测试",
+    "System.AssignedTo": "li_lei(李磊) <WINNING\\li_lei>",
+    "System.CreatedDate": "2026-11-13T06:28:36.18Z",
+    "System.CreatedBy": "li_lei(李磊) <WINNING\\li_lei>",
+    "System.ChangedDate": "2026-11-13T06:31:37.75Z",
+    "System.ChangedBy": "li_lei(李磊) <WINNING\\li_lei>",
+    "System.Title": "[TEST-13 1.1] 发布并验证隔离业务候选标记，核对精确合并源 Commit",
+    "Microsoft.VSTS.Scheduling.RemainingWork": 0,
+    "Microsoft.VSTS.Scheduling.OriginalEstimate": 1,
+    "Microsoft.VSTS.Scheduling.CompletedWork": 1,
+    "Microsoft.VSTS.Common.StateChangeDate": "2026-11-13T06:31:37.75Z",
+    "Microsoft.VSTS.Common.ActivatedDate": "2026-11-13T06:28:44.17Z",
+    "Microsoft.VSTS.Common.ActivatedBy": "li_lei(李磊) <WINNING\\li_lei>",
+    "Microsoft.VSTS.Common.ResolvedDate": "2026-11-13T06:31:37.75Z",
+    "Microsoft.VSTS.Common.ResolvedBy": "li_lei(李磊) <WINNING\\li_lei>",
+    "Microsoft.VSTS.Common.ResolvedReason": "调查",
+    "Microsoft.VSTS.Common.Priority": 2,
+    "Microsoft.VSTS.Scheduling.FinishDate": "2026-11-15T00:00:00Z",
+    "Microsoft.VSTS.Common.Triage": "挂起",
+    "Microsoft.VSTS.Common.Discipline": "开发",
+    "Microsoft.VSTS.CMMI.Blocked": "否",
+    "Microsoft.VSTS.CMMI.TaskType": "已计划",
+    "Microsoft.VSTS.CMMI.RequiresReview": "否",
+    "Microsoft.VSTS.CMMI.RequiresTest": "否",
+    "Winning.Test.Environment": "未就绪",
+    "Winning.Test.Action": "未安排",
+    "Winning.Test.Design": "未设计",
+    "System.Description": "<p>Multica Delivery Issue: TEST-13\nOpenSpec Change: m10-260986-runtime-recovery\nTask ref: 1.1\n派发身份 dispatch_key: m10-runtime-260986\nTask: 发布并验证隔离业务候选标记，核对精确合并源 Commit</p>\n<p>工程真相以 OpenSpec Change 为准（Reference-not-Replication，本任务不复制需求/验收内容）。</p>\n"
+  },
+  "relations": [
+    {
+      "rel": "System.LinkTypes.Hierarchy-Reverse",
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/260986",
+      "attributes": {
+        "isLocked": false
+      }
+    },
+    {
+      "rel": "ArtifactLink",
+      "url": "vstfs:///Git/Commit/d2983ec0-9b19-4137-839e-df27e4e43b12%2Fb52a4fd8-ec61-4cb5-b2f3-c3b61e41da74%2F5df24d44cc22bf2dfd2c4d45164c5bd8aad00479",
+      "attributes": {
+        "authorizedDate": "2026-11-13T06:28:37.82Z",
+        "id": 168107,
+        "resourceCreatedDate": "2026-11-13T06:28:37.82Z",
+        "resourceModifiedDate": "2026-11-13T06:28:37.82Z",
+        "revisedDate": "9999-01-01T00:00:00Z",
+        "name": "Fixed in Commit"
+      }
+    }
+  ],
+  "_links": {
+    "self": {
+      "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/264845"
+    },
+    "workItemUpdates": {
+      "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/264845/updates"
+    },
+    "workItemRevisions": {
+      "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/264845/revisions"
+    },
+    "workItemHistory": {
+      "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/264845/history"
+    },
+    "html": {
+      "href": "http://tfs2018-web.winning.com.cn:8080/tfs/web/wi.aspx?pcguid=f7bf5021-f3a9-4a5f-b754-bc7a1f7d60e2&id=264845"
+    },
+    "workItemType": {
+      "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/b2018645-8ea9-415f-b6ef-1722ef1f7be4/_apis/wit/workItemTypes/%E4%BB%BB%E5%8A%A1"
+    },
+    "fields": {
+      "href": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/fields"
+    }
+  },
+  "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/_apis/wit/workItems/264845"
+}

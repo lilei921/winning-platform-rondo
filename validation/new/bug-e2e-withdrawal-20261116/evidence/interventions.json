@@ -1,0 +1,17 @@
+{
+  "fault_interventions": 0,
+  "steering_comments": 0,
+  "cancel_or_rerun": 0,
+  "controller_substituted_workflow_steps": 0,
+  "daemon_restarts": 0,
+  "normal_operations": [
+    "创建独立 fixture / Bug",
+    "启动 TFS Sync Runner",
+    "同步成功后向 Wayfinder 初始派单",
+    "独立 PR 审阅与回归测试",
+    "未合并门禁验证",
+    "合并已审阅的隔离 PR",
+    "启动 PR Status Sync / Finalize Runner"
+  ],
+  "dispatch_comment": "01a1e2d2-ff09-748f-94d7-fb368ee4349f"
+}

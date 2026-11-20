@@ -1,0 +1,13 @@
+{
+  "base": "0a2857e17d2a146a6c0b5440a993a3acfc9b9473",
+  "target": "codex/bug-e2e-withdrawal-20261116",
+  "seed": "6a57a4c41d1bee7aa34fdef1da17a69cfa9dc962",
+  "push_id": 120644,
+  "bug": {
+    "id": 265199,
+    "rev": 1,
+    "url": "http://tfs2018-web.winning.com.cn:8080/tfs/web/wi.aspx?pcguid=f7bf5021-f3a9-4a5f-b754-bc7a1f7d60e2&id=265199",
+    "title": "[Bug E2E Withdrawal 20261116 隔离验收 20261116] 标识符引用函数未转义内嵌双引号",
+    "changed_at": "2026-11-16T05:20:42.333Z"
+  }
+}

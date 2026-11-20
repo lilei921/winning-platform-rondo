@@ -1,0 +1,153 @@
+{
+  "timestamp": "2026-11-13T05:08:00.976Z",
+  "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-10-ea8fe6a2905e\\workdir",
+  "local_git_exists": false,
+  "credentials_present": true,
+  "commands": [
+    {
+      "issue": "TEST-10",
+      "file": "tasks.md",
+      "argv": [
+        "D:/UserApp/nvm/node_global/node_modules/@winning/rondo/dist/index.js",
+        "analysis",
+        "read",
+        "--config",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-10-ea8fe6a2905e\\workdir\\m03-runtime-config.json",
+        "--issue",
+        "TEST-10",
+        "--file",
+        "tasks.md"
+      ],
+      "exit": 0,
+      "signal": null,
+      "response": {
+        "result": "PASS",
+        "source": {
+          "repo_url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+          "branch": "rondo",
+          "commit": "9a2d723a0b89615b6581a898567e4e4468bb3e0b",
+          "change_ref": "tfs-260987-unified-permission-menu-language"
+        },
+        "path": "/openspec/changes/tfs-260987-unified-permission-menu-language/tasks.md",
+        "object_id": "c64649c180c1680b88052db8444eebc4031d617a",
+        "sha256": "695d7abf6e94b926b994334aa01cf43bd6257aef6e7eb7a21d5d24283eaa453e"
+      },
+      "content_sha256": "695d7abf6e94b926b994334aa01cf43bd6257aef6e7eb7a21d5d24283eaa453e",
+      "content_bytes": 2262
+    },
+    {
+      "issue": "TEST-10",
+      "file": "m03-deliberately-absent-20261113.md",
+      "argv": [
+        "D:/UserApp/nvm/node_global/node_modules/@winning/rondo/dist/index.js",
+        "analysis",
+        "read",
+        "--config",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-10-ea8fe6a2905e\\workdir\\m03-runtime-config.json",
+        "--issue",
+        "TEST-10",
+        "--file",
+        "m03-deliberately-absent-20261113.md"
+      ],
+      "exit": 2,
+      "signal": null,
+      "response": {
+        "result": "FAIL",
+        "reason": "指定 commit 下的规范文件不存在或不可见"
+      }
+    },
+    {
+      "issue": "TEST-9",
+      "file": "tasks.md",
+      "argv": [
+        "D:/UserApp/nvm/node_global/node_modules/@winning/rondo/dist/index.js",
+        "analysis",
+        "read",
+        "--config",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-10-ea8fe6a2905e\\workdir\\m03-runtime-config.json",
+        "--issue",
+        "TEST-9",
+        "--file",
+        "tasks.md"
+      ],
+      "exit": 2,
+      "signal": null,
+      "response": {
+        "result": "FAIL",
+        "reason": "指定 commit 下的规范文件不存在或不可见"
+      }
+    },
+    {
+      "issue": "TEST-10",
+      "file": "../tasks.md",
+      "argv": [
+        "D:/UserApp/nvm/node_global/node_modules/@winning/rondo/dist/index.js",
+        "analysis",
+        "read",
+        "--config",
+        "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-10-ea8fe6a2905e\\workdir\\m03-runtime-config.json",
+        "--issue",
+        "TEST-10",
+        "--file",
+        "../tasks.md"
+      ],
+      "exit": 2,
+      "signal": null,
+      "response": {
+        "result": "FAIL",
+        "reason": "--file 必须是当前 Change 内的相对文件路径，不得穿越目录"
+      }
+    }
+  ],
+  "independent_reads": [
+    {
+      "api_version": "4.0",
+      "status": 200,
+      "commit": "9a2d723a0b89615b6581a898567e4e4468bb3e0b",
+      "path": "/openspec/changes/tfs-260987-unified-permission-menu-language/tasks.md",
+      "object_id": "c64649c180c1680b88052db8444eebc4031d617a",
+      "content_sha256": "695d7abf6e94b926b994334aa01cf43bd6257aef6e7eb7a21d5d24283eaa453e",
+      "result": "PASS"
+    },
+    {
+      "api_version": "4.1",
+      "status": 200,
+      "commit": "9a2d723a0b89615b6581a898567e4e4468bb3e0b",
+      "path": "/openspec/changes/tfs-260987-unified-permission-menu-language/tasks.md",
+      "object_id": "c64649c180c1680b88052db8444eebc4031d617a",
+      "content_sha256": "695d7abf6e94b926b994334aa01cf43bd6257aef6e7eb7a21d5d24283eaa453e",
+      "result": "PASS"
+    }
+  ],
+  "checks": [
+    {
+      "name": "no_local_git_checkout",
+      "result": "PASS"
+    },
+    {
+      "name": "fixed_source_cli_pass",
+      "result": "PASS"
+    },
+    {
+      "name": "independent_api_4.0_matches",
+      "result": "PASS"
+    },
+    {
+      "name": "independent_api_4.1_matches",
+      "result": "PASS"
+    },
+    {
+      "name": "missing_file_closed",
+      "result": "PASS"
+    },
+    {
+      "name": "invalid_commit_closed",
+      "result": "PASS"
+    },
+    {
+      "name": "traversal_closed",
+      "result": "PASS"
+    }
+  ],
+  "overall": "PASS"
+}

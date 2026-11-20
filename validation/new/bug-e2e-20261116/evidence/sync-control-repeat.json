@@ -1,0 +1,12 @@
+{
+  "created": [],
+  "updated": [],
+  "skipped": [
+    {
+      "tfs_id": "265136",
+      "issue_id": "01a1e22f-ff1a-7189-8762-857e2787ab4f",
+      "reason": "管理字段、正文与附件均无变化"
+    }
+  ],
+  "failed": []
+}

@@ -1,0 +1,116 @@
+[
+  {
+    "agent_id": "3ca0a964-2db2-4f21-a816-1f21d05b27a9",
+    "attempt": 1,
+    "attribution": {
+      "evidence": {
+        "kind": "comment",
+        "ref_id": "01a1d39a-322c-7b6b-9562-69b8c1930525"
+      },
+      "initiator": {
+        "email": "lilei@winning.com.cn",
+        "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+        "name": "lilei"
+      },
+      "originator": {
+        "email": "lilei@winning.com.cn",
+        "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+        "name": "lilei"
+      },
+      "precise": true,
+      "source": "direct_human"
+    },
+    "completed_at": "2026-11-13T14:33:13+08:00",
+    "created_at": "2026-11-13T14:31:00+08:00",
+    "delivered_comment_ids": [
+      "01a1d39a-322c-7b6b-9562-69b8c1930525"
+    ],
+    "dispatched_at": "2026-11-13T14:31:00+08:00",
+    "error": null,
+    "id": "01a1d39a-3257-7223-9682-ee63b4d09f44",
+    "issue_id": "01a1d397-64f8-742d-9f5d-52f4363f6d54",
+    "kind": "comment",
+    "max_attempts": 2,
+    "priority": 0,
+    "relative_work_dir": "multica_workspaces/rondo-test-8ef6a0bcf15d/test-15-1852c0df3078/workdir",
+    "result": {
+      "output": "M10 finish 真实 Runtime 重跑：**PASS**（23/23 检查通过）。\n\n**1. 首次故障证据已备份保留**：`M10-finish-before-estimate.json`（`3385CD44…C966A`）、`writeback-before-estimate.stdout.json`（`0275A31D…62634`）、`writeback-before-estimate.stderr.log`（`6FC038EE…836A`）。\n\n**2. 测试估算前置**（`configure-test-estimate.mjs` 自校验 TEST-13 映射 / 标题 / 父项后 CAS 写入）：264845 `rev3→rev4`，OE=1、RW=1，**状态未变**（活动），History 注明为 fixture 管理数据、非生产工时。记录 `M10-test-estimate-precondition.json`（`F2C31689…1B30`）。\n\n**3. 重跑驱动**：overall=PASS，23 项全 PASS\n- writeback：注入失败(exit 3) → 恢复 PASS → 重放 PASS（父 rev6/子 rev5 未变）\n- complete：注入失败(exit 3，摘要已持久化、Done 未写) → 恢复 status=done → 重放 already=done no-op\n- 全程复用同一子任务 264845（无重复）；ArtifactLink 精确指向候选 `5df24d44…`，仅一次，commit_link_failed 为空；唯一摘要评论 `01a1d39b-0cf7-75b0-acd7-7681367b8606` 未重复；pending 在 Done 时清空；root commit 恒为 `d5532584…` 未重发；临时缓存全程为 0。\n\n**合规**：未改 Rondo 源码（工作区既有 src 改动属控制端本轮机制改造，`git diff` 未触及工时 Gate），未手写 pending/tfs_written/Done/摘要——全部由真实 Rondo 命令产生。\n\n结果已回复到触发线程（附 5 份证据文件），Runner Issue 转 `in_review`。",
+      "pr_url": "",
+      "session_id": "5ef691b5-5b98-4c17-9098-726c55c6f234",
+      "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir"
+    },
+    "runtime_id": "ff1ff20b-e112-4011-a8b3-f65a9472f5fa",
+    "started_at": "2026-11-13T14:31:00+08:00",
+    "status": "completed",
+    "supplement_capability": "task-supplement-v1",
+    "trigger_comment_id": "01a1d39a-322c-7b6b-9562-69b8c1930525",
+    "trigger_summary": "[@M10 跨 Runtime 验证器](mention://agent/3ca0a964-2db2-4f21-a816-1f21d05b27a9) 继续 M10，不需要用户补充资源。已确认首次 Writeback 的中断恢复复用了专用子任务 264845；真实 TFS 在解决 Task 时强制 OriginalEstimate，原 fixture 未提供此管理字段，UNKNOWN 是正确结果。不…",
+    "usage": [
+      {
+        "cache_read_tokens": 889477,
+        "cache_write_tokens": 0,
+        "input_tokens": 14493,
+        "model": "MiniMax-M3.1-Flash",
+        "output_tokens": 5452,
+        "provider": "claude"
+      }
+    ],
+    "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir",
+    "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+  },
+  {
+    "agent_id": "3ca0a964-2db2-4f21-a816-1f21d05b27a9",
+    "attempt": 1,
+    "attribution": {
+      "evidence": {
+        "kind": "issue_assignment",
+        "ref_id": "01a1d397-64f8-742d-9f5d-52f4363f6d54"
+      },
+      "initiator": {
+        "email": "lilei@winning.com.cn",
+        "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+        "name": "lilei"
+      },
+      "originator": {
+        "email": "lilei@winning.com.cn",
+        "id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+        "name": "lilei"
+      },
+      "precise": true,
+      "source": "direct_human"
+    },
+    "completed_at": "2026-11-13T14:29:55+08:00",
+    "created_at": "2026-11-13T14:27:57+08:00",
+    "delivered_comment_ids": [],
+    "dispatched_at": "2026-11-13T14:27:57+08:00",
+    "error": null,
+    "id": "01a1d397-65d8-7c3d-8d6f-1852c0df3078",
+    "issue_id": "01a1d397-64f8-742d-9f5d-52f4363f6d54",
+    "kind": "direct",
+    "max_attempts": 2,
+    "priority": 0,
+    "relative_work_dir": "rondo-test-8ef6a0bcf15d/test-15-1852c0df3078/workdir",
+    "result": {
+      "output": "M10 finish 执行完毕：**FAIL**，现场已保留，未做任何修复性改动。\n\n**执行**：`node .../M10-e2e/runtime-driver.mjs finish TEST-13`（Task workdir 内，真实 Rondo + Multica/TFS/OpenSpec/Git）\n**结果**：8 项检查 7 PASS，`writeback_recovered_pass` FAIL，`overall=FAIL`\n\n**失败证据**：注入中断按预期命中后，重跑恢复这一步被真实 TFS 规则拒绝——\n`HTTP 400 TF401320: 字段 初始估计发生规则错误。错误代码: Required, InvalidEmpty`（工项 264845，`Microsoft.VSTS.Scheduling.OriginalEstimate`）。\n\n**根因**（代码+现场双向确认）：\n1. OpenSpec task `1.1` 无估算 → 创建 TFS 子任务时不传 `--estimate`，`OriginalEstimate` 为空（`writeback.ts:223,237`）；\n2. 置态 `completeWithEstimate` 在 OE 缺失时只写 `RemainingWork=0`、不写 OE（`api/workitem.ts:170-180`）；\n3. TFS `任务` 类型 `活动→已解决` 要求初始估计非空 → PATCH 整体被拒，子任务停在 `活动`。属确定性失败，重跑必复现，故未做无意义重试。\n\n**现场**：子工项 264845（rev3 /活动，已挂候选 commit链接）保留；父项 260986（rev2 / 已建议）未动；TEST-13 仍 `todo`，pending 保留、无 `tfs_written`、无摘要评论；无遗留临时目录。未改脚本/源码、未改 TEST-13 状态。\n\n**交付**：结果评论已发到 TEST-15（附 `M10-finish-runtime-evidence.json`、恢复命令 stdout/stderr），含各证据文件 SHA256（主证据 `3385CD44…C966A`）。Runner Issue 状态转 `blocked`，等待控制端决定修复方向（建任务补默认 OE，或在 OE 缺失分支同批补写 OE）后重跑全链路。",
+      "pr_url": "",
+      "session_id": "5ef691b5-5b98-4c17-9098-726c55c6f234",
+      "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir"
+    },
+    "runtime_id": "ff1ff20b-e112-4011-a8b3-f65a9472f5fa",
+    "started_at": "2026-11-13T14:27:57+08:00",
+    "status": "completed",
+    "supplement_capability": "task-supplement-v1",
+    "usage": [
+      {
+        "cache_read_tokens": 642995,
+        "cache_write_tokens": 0,
+        "input_tokens": 117905,
+        "model": "MiniMax-M3.1-Flash",
+        "output_tokens": 7544,
+        "provider": "claude"
+      }
+    ],
+    "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-15-1852c0df3078\\workdir",
+    "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d"
+  }
+]

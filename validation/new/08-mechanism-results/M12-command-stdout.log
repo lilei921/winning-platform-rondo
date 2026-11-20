@@ -1,0 +1,76 @@
+{
+  "level": "isolated mechanism PoC in real Runtime; not production orchestration acceptance",
+  "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-11-ba03548482d5\\workdir",
+  "task_id": "01a1d352-18f1-7df7-b547-ba03548482d5",
+  "local_git_exists": false,
+  "cases": [
+    {
+      "mode": "normal",
+      "injection": "none",
+      "degraded": false,
+      "optional_error": null,
+      "graph_used_as_fact": false,
+      "graph_fragment_matches": true,
+      "context": {
+        "service": {
+          "name": "codegraph",
+          "version": "1.6.2"
+        },
+        "graph_response_sha256": "d290ec75e7f632929f2b566659ac71eeed5da44301a43be8177f1a24ccf1408a",
+        "index_snapshot_audit_commit": "dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a"
+      },
+      "authoritative_source": "TFS fixed-commit API",
+      "source": {
+        "status": 200,
+        "commit": "dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a",
+        "path": "/winning-dps-df-frame-service/src/main/java/com/winning/dps/df/frame/service/uniauth/platform/PermissionPlatService.java",
+        "object_id": "49c3884b01a3c4fb2e0f45559dec15cd6d8871e7",
+        "sha256": "a9e2f5d2652761c10ef277c848c5a040fe581994e21cc1dfd10c18084165ecc5"
+      },
+      "result": "PASS"
+    },
+    {
+      "mode": "mcp_unavailable",
+      "injection": "test-process-only",
+      "degraded": true,
+      "optional_error": {
+        "type": "ConnectionError",
+        "message": "injected optional MCP transport failure"
+      },
+      "graph_used_as_fact": false,
+      "graph_fragment_matches": null,
+      "context": {},
+      "authoritative_source": "TFS fixed-commit API",
+      "source": {
+        "status": 200,
+        "commit": "dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a",
+        "path": "/winning-dps-df-frame-service/src/main/java/com/winning/dps/df/frame/service/uniauth/platform/PermissionPlatService.java",
+        "object_id": "49c3884b01a3c4fb2e0f45559dec15cd6d8871e7",
+        "sha256": "a9e2f5d2652761c10ef277c848c5a040fe581994e21cc1dfd10c18084165ecc5"
+      },
+      "result": "PASS"
+    },
+    {
+      "mode": "stale_index",
+      "injection": "test-process-only",
+      "degraded": true,
+      "optional_error": {
+        "type": "ValueError",
+        "message": "injected index commit differs from requested commit"
+      },
+      "graph_used_as_fact": false,
+      "graph_fragment_matches": null,
+      "context": {},
+      "authoritative_source": "TFS fixed-commit API",
+      "source": {
+        "status": 200,
+        "commit": "dc6ff47ff2f4e8f24c0db4c3efe88dcf92c5bf7a",
+        "path": "/winning-dps-df-frame-service/src/main/java/com/winning/dps/df/frame/service/uniauth/platform/PermissionPlatService.java",
+        "object_id": "49c3884b01a3c4fb2e0f45559dec15cd6d8871e7",
+        "sha256": "a9e2f5d2652761c10ef277c848c5a040fe581994e21cc1dfd10c18084165ecc5"
+      },
+      "result": "PASS"
+    }
+  ],
+  "overall": "PASS"
+}

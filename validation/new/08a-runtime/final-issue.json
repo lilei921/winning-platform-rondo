@@ -1,0 +1,9 @@
+{
+  "id": "01a1d943-7e6e-7cb1-bd26-7957ae333b5e",
+  "identifier": "TT-6",
+  "status": "done",
+  "written": "true",
+  "pending": null,
+  "summary_id": null,
+  "prs": "[{\"repo_key\":\"frame\",\"pr_id\":3786,\"pr_url\":\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame/pullrequest/3786?_a=overview\",\"source_branch\":\"feat/265022\",\"target_branch\":\"codex/08a-acceptance-20261114\"}]"
+}

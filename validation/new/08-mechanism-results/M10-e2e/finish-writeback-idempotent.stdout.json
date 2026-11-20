@@ -1,0 +1,40 @@
+{
+  "result": "PASS",
+  "issue": "TEST-13",
+  "parent": 260986,
+  "tfs_type": "需求",
+  "tasks_materialized": {
+    "created": {},
+    "reused": {
+      "1.1": 264845
+    },
+    "adopted": {}
+  },
+  "commit_links": {
+    "linked": {},
+    "skipped": {
+      "1.1": [
+        "5df24d44cc22bf2dfd2c4d45164c5bd8aad00479"
+      ]
+    },
+    "commit_link_failed": [],
+    "evidence_missed": [],
+    "evidence_files": 1
+  },
+  "tasks_resolved": {
+    "resolved": {
+      "1.1": 264845
+    },
+    "estimate_missing": []
+  },
+  "parent_writeback": {
+    "status": "skipped",
+    "note": "delivery.tfs_written 已置位，父项实际状态已回读"
+  },
+  "remote_artifacts": {
+    "repo_url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+    "branch": "codex/m10-260986-20261113-root",
+    "commit": "d553258433671727d8aa09cbcfb5d6450b6d65e4",
+    "archived": true
+  }
+}

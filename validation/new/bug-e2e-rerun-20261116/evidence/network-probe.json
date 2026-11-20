@@ -1,0 +1,82 @@
+[
+  {
+    "bin": "cli082",
+    "compatibility": false,
+    "attempt": 1,
+    "code": 0,
+    "signal": null,
+    "ms": 1290,
+    "identity": true,
+    "error": null
+  },
+  {
+    "bin": "cli082",
+    "compatibility": false,
+    "attempt": 2,
+    "code": 0,
+    "signal": null,
+    "ms": 1383,
+    "identity": true,
+    "error": null
+  },
+  {
+    "bin": "cli082",
+    "compatibility": true,
+    "attempt": 1,
+    "code": 0,
+    "signal": null,
+    "ms": 1085,
+    "identity": true,
+    "error": null
+  },
+  {
+    "bin": "cli082",
+    "compatibility": true,
+    "attempt": 2,
+    "code": 0,
+    "signal": null,
+    "ms": 1063,
+    "identity": true,
+    "error": null
+  },
+  {
+    "bin": "desktop090",
+    "compatibility": false,
+    "attempt": 1,
+    "code": 0,
+    "signal": null,
+    "ms": 1296,
+    "identity": true,
+    "error": null
+  },
+  {
+    "bin": "desktop090",
+    "compatibility": false,
+    "attempt": 2,
+    "code": 0,
+    "signal": null,
+    "ms": 1092,
+    "identity": true,
+    "error": null
+  },
+  {
+    "bin": "desktop090",
+    "compatibility": true,
+    "attempt": 1,
+    "code": 0,
+    "signal": null,
+    "ms": 1712,
+    "identity": true,
+    "error": null
+  },
+  {
+    "bin": "desktop090",
+    "compatibility": true,
+    "attempt": 2,
+    "code": 0,
+    "signal": null,
+    "ms": 1527,
+    "identity": true,
+    "error": null
+  }
+]

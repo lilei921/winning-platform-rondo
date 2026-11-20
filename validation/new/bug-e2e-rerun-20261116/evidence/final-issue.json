@@ -1,0 +1,9 @@
+{
+  "id": "01a1e25f-8965-7830-a3af-e466f10c73de",
+  "identifier": "TT-15",
+  "status": "done",
+  "updated_at": "2026-11-16T03:41:35Z",
+  "tfs_written": "true",
+  "pending": null,
+  "pr": "[{\"repo_key\":\"frame\",\"pr_id\":3796,\"pr_url\":\"http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame/pullrequest/3796?_a=overview\",\"source_branch\":\"feat/265186\",\"target_branch\":\"codex/bug-e2e-rerun-20261116\"}]"
+}

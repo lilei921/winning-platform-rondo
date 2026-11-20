@@ -1,0 +1,91 @@
+{
+  "updated_at": "2026-11-16T05:08:48.505Z",
+  "workspace_id": "3158546f-5b79-4042-baec-20cdac7d9d31",
+  "updates": [
+    {
+      "skill": "analysis-completion",
+      "path": "config/repo-registry.json",
+      "sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06"
+    },
+    {
+      "skill": "bug-delivery",
+      "path": "SKILL-v1.md",
+      "sha256": "dffdf5e3a48531e3a48a39cd5f67cf1c3df34b68a30f61f6095c69977d582d8d"
+    },
+    {
+      "skill": "bug-delivery",
+      "path": "SKILL.md",
+      "sha256": "577aa7993a3024d0bc4a7a1286bd15596f5a0e6182c3d964f338649522757319"
+    },
+    {
+      "skill": "bug-delivery",
+      "path": "config/repo-registry.json",
+      "sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06"
+    },
+    {
+      "skill": "bug-delivery",
+      "path": "references/bug-evidence-contract-v1.md",
+      "sha256": "3a0b3f13d521c56f5d892e4cc47b785ee2d66ee3efb3986d93a5b037eb259136"
+    },
+    {
+      "skill": "bug-delivery",
+      "path": "references/bug-evidence-contract.md",
+      "sha256": "ad44e04a6b78cd6afdb1fcf40de8a7f5395428ed91244ce7189a6f85692a408f"
+    },
+    {
+      "skill": "delivery-flow",
+      "path": "config/repo-registry.json",
+      "sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06"
+    },
+    {
+      "skill": "development-execution",
+      "path": "config/repo-registry.json",
+      "sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06"
+    },
+    {
+      "skill": "finalize-delivery",
+      "path": "SKILL-v1.md",
+      "sha256": "aee80b7cc281d619fd1a0a830d5c3ca11474ea1fa4731456d5450f83c1690284"
+    },
+    {
+      "skill": "finalize-delivery",
+      "path": "config/repo-registry.json",
+      "sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06"
+    },
+    {
+      "skill": "pr-status-sync",
+      "path": "SKILL.md",
+      "sha256": "86eb26028875ec774f8d71098015ad06fa3c3ea224c332fd1fa32f71224ffecb"
+    },
+    {
+      "skill": "pr-status-sync",
+      "path": "config/repo-registry.json",
+      "sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06"
+    },
+    {
+      "skill": "pull-request",
+      "path": "config/repo-registry.json",
+      "sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06"
+    },
+    {
+      "skill": "spec-preparation",
+      "path": "config/repo-registry.json",
+      "sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06"
+    },
+    {
+      "skill": "workitem-triage",
+      "path": "SKILL-v1.md",
+      "sha256": "0bc3890ac72c8098267a70552ecabec3f51f60182aced49533724a21bef8e915"
+    },
+    {
+      "skill": "workitem-triage",
+      "path": "SKILL.md",
+      "sha256": "dcf666141e494be84c93bd05a6f3dbdcad49edbc9d425152878849fbdec52f20"
+    },
+    {
+      "skill": "workitem-triage",
+      "path": "config/repo-registry.json",
+      "sha256": "2126290284c1164fd44124ddcebda7052e30e4b92f3b991acc411140892d0f06"
+    }
+  ]
+}

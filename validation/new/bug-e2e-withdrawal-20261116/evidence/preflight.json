@@ -1,0 +1,102 @@
+{
+  "observed_at": "2026-11-16T05:21:17.366Z",
+  "skill": {
+    "id": "2d3dab81-b72d-4942-aacd-1607600928cd",
+    "updated_at": "2026-11-16T05:18:08Z",
+    "equals_source": true,
+    "wait_prompt_absent": true
+  },
+  "runtimes": [
+    {
+      "id": "a1001c7d-0d5a-463e-8c5e-96b924ef6269",
+      "name": "Codex (lileipc)",
+      "status": "online",
+      "metadata": {
+        "capabilities": [
+          "skill-bundles-v1",
+          "coalesced-comments-v1",
+          "local-worktree-v1",
+          "source_context_quick_create_v1",
+          "rpc-v1",
+          "platform-skill-v1",
+          "checkout-keeps-work-v1",
+          "joined-wakeups-v1",
+          "workflow-status-rules-v1",
+          "cli-comment-steer-v1"
+        ],
+        "cli_version": "0.9.0",
+        "launched_by": "desktop",
+        "version": "codex-cli 0.166.0"
+      }
+    },
+    {
+      "id": "6673b38f-6827-4401-aced-0ef1496154d5",
+      "name": "Claude (lileipc)",
+      "status": "online",
+      "metadata": {
+        "capabilities": [
+          "skill-bundles-v1",
+          "coalesced-comments-v1",
+          "local-worktree-v1",
+          "source_context_quick_create_v1",
+          "rpc-v1",
+          "platform-skill-v1",
+          "checkout-keeps-work-v1",
+          "joined-wakeups-v1",
+          "workflow-status-rules-v1",
+          "cli-comment-steer-v1"
+        ],
+        "cli_version": "0.9.0",
+        "launched_by": "desktop",
+        "version": "2.1.325 (Claude Code)"
+      }
+    }
+  ],
+  "agents": [
+    {
+      "id": "35959485-61db-4cb9-bf7b-548e7234c686",
+      "name": "Mika",
+      "runtime_id": "a1001c7d-0d5a-463e-8c5e-96b924ef6269"
+    },
+    {
+      "id": "e5ff1520-a282-43ef-b3f7-0a59431e9522",
+      "name": "Delivery Lead",
+      "runtime_id": "a1001c7d-0d5a-463e-8c5e-96b924ef6269"
+    },
+    {
+      "id": "89637854-8144-4a46-8908-1ed43e44f931",
+      "name": "Wayfinder Agent",
+      "runtime_id": "a1001c7d-0d5a-463e-8c5e-96b924ef6269"
+    },
+    {
+      "id": "48590a02-c97d-410e-99e4-b5b58d2df66d",
+      "name": "Bug Fix Agent",
+      "runtime_id": "a1001c7d-0d5a-463e-8c5e-96b924ef6269"
+    },
+    {
+      "id": "9a5e2412-c3b5-4dfd-9438-8587fd03ee0e",
+      "name": "Workitem Analyst",
+      "runtime_id": "a1001c7d-0d5a-463e-8c5e-96b924ef6269"
+    },
+    {
+      "id": "6701e9f0-125d-422f-bfe8-5866aa31028d",
+      "name": "Backend Engineer",
+      "runtime_id": "a1001c7d-0d5a-463e-8c5e-96b924ef6269"
+    },
+    {
+      "id": "deccc8e3-c9cb-445f-b0c6-22f82ec749d4",
+      "name": "Frontend Engineer",
+      "runtime_id": "a1001c7d-0d5a-463e-8c5e-96b924ef6269"
+    },
+    {
+      "id": "1fcdbde2-2b8f-4229-af05-52580aec45f3",
+      "name": "TFS Sync Agent",
+      "runtime_id": "a1001c7d-0d5a-463e-8c5e-96b924ef6269"
+    },
+    {
+      "id": "9f2417ea-5029-49af-b97e-3ee6f826009e",
+      "name": "PR Status Sync Agent",
+      "runtime_id": "a1001c7d-0d5a-463e-8c5e-96b924ef6269"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "result": "PASS",
+  "issue": "TEST-13",
+  "status": "done",
+  "steps": {
+    "remote_artifacts": {
+      "status": "done",
+      "detail": {
+        "repo_url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+        "branch": "codex/m10-260986-20261113-root",
+        "commit": "d553258433671727d8aa09cbcfb5d6450b6d65e4",
+        "archived": true
+      }
+    },
+    "pr_transition_gate": {
+      "status": "done"
+    },
+    "tfs_verification": {
+      "status": "done",
+      "detail": {
+        "parent": 260986,
+        "parent_state": "已解决",
+        "tasks": {
+          "1.1": 264845
+        }
+      }
+    },
+    "summary": {
+      "status": "skipped",
+      "detail": "已有评论 01a1d39b-0cf7-75b0-acd7-7681367b8606"
+    },
+    "route_archive": {
+      "status": "done",
+      "detail": {
+        "archived": true,
+        "commit": "d553258433671727d8aa09cbcfb5d6450b6d65e4",
+        "source": "fixed_commit_api"
+      }
+    },
+    "issue_done": {
+      "status": "done"
+    },
+    "pending_cleared": {
+      "status": "done"
+    }
+  }
+}

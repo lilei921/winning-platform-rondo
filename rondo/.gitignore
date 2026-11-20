@@ -1,0 +1,7 @@
+node_modules/
+dist/
+build/
+dist-exe/
+package-lock.json
+# 部署用 TFS 凭证文件（含 PAT），只随 npm pack 进 tgz，永不提交
+config/tfs.config.json

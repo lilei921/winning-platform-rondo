@@ -1,0 +1,5 @@
+$ C:/Users/lilei/.multica/bin/multica.exe issue get TEST-13 --workspace-id 60eb8cf4-31be-4a34-b744-8ef6a0bcf15d --output json
+$ C:/Users/lilei/.multica/bin/multica.exe issue comment list 01a1d372-e8b3-7ebc-abe0-fe6d3aff8601 --full --workspace-id 60eb8cf4-31be-4a34-b744-8ef6a0bcf15d --output json
+$ C:/Users/lilei/.multica/bin/multica.exe issue comment add 01a1d372-e8b3-7ebc-abe0-fe6d3aff8601 --content-file C:\Users\lilei\AppData\Local\Temp\multica-task-3018735146\finalize-summary-67808.md --allow-external-file --workspace-id 60eb8cf4-31be-4a34-b744-8ef6a0bcf15d --output json
+$ C:/Users/lilei/.multica/bin/multica.exe issue metadata set 01a1d372-e8b3-7ebc-abe0-fe6d3aff8601 --key delivery.summary_comment_id --value 01a1d39b-0cf7-75b0-acd7-7681367b8606 --type string --workspace-id 60eb8cf4-31be-4a34-b744-8ef6a0bcf15d --output json
+UNKNOWN: M10_INJECTED_during_complete: TFS writeback and summary persisted; before Issue done

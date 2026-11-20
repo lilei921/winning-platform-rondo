@@ -1,0 +1,128 @@
+{
+  "run": "A2",
+  "task_id": "01a1d2fc-da3a-796b-9584-f8f23e188c07",
+  "issue_id": "01a1d2fc-da1d-7d67-8a0f-2edfc29c0259",
+  "workdir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir",
+  "cross_run_status": "NOT_RUN / pending controller Run B",
+  "scope": "External-fixture-supported mechanism PoC; not autonomous dev prepare end-to-end PASS",
+  "root": {
+    "top_level": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-5-f8f23e188c07/workdir/winning-platform-monorepo",
+    "head": "dfdaf33fa58355332259524266045d1052ef9dea",
+    "branch": "agent/m01-checkout/f8f23e188c07",
+    "status": "",
+    "origin": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+    "common_dir": ".git",
+    "origin_main": "dfdaf33fa58355332259524266045d1052ef9dea",
+    "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\winning-platform-monorepo",
+    "path_metadata": {
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\winning-platform-monorepo",
+      "exists": true,
+      "is_dir": true,
+      "is_symlink": false,
+      "reparse_point": false
+    },
+    "dot_git": {
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\winning-platform-monorepo\\.git",
+      "exists": true,
+      "is_dir": true,
+      "is_symlink": false,
+      "reparse_point": false,
+      "type": "directory"
+    },
+    "common_dir_absolute": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\winning-platform-monorepo\\.git"
+  },
+  "child": {
+    "top_level": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-5-f8f23e188c07/workdir/winning-platform-monorepo/winning-dps-df-common",
+    "head": "828d42779530b781c4b65bc0e1a6ad7b811eb0a8",
+    "branch": "main",
+    "status": " M README.txt\n?? M02-A2-f8f23e188c07-untracked.txt\n",
+    "origin": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\validation-fixture\\M02-local-fixture.git",
+    "common_dir": ".git",
+    "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+    "path_metadata": {
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\winning-platform-monorepo\\winning-dps-df-common",
+      "exists": true,
+      "is_dir": true,
+      "is_symlink": false,
+      "reparse_point": false
+    },
+    "dot_git": {
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\winning-platform-monorepo\\winning-dps-df-common\\.git",
+      "exists": true,
+      "is_dir": true,
+      "is_symlink": false,
+      "reparse_point": false,
+      "type": "directory"
+    },
+    "common_dir_absolute": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\winning-platform-monorepo\\winning-dps-df-common\\.git"
+  },
+  "fixture": {
+    "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\validation-fixture",
+    "seed": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\validation-fixture\\seed",
+    "remote": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\validation-fixture\\M02-local-fixture.git",
+    "identity": "local disposable test fixture externally prepared by controller; mechanism PoC only"
+  },
+  "child_markers": {
+    "tracked_path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\winning-platform-monorepo\\winning-dps-df-common\\README.txt",
+    "untracked_path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\winning-platform-monorepo\\winning-dps-df-common\\M02-A2-f8f23e188c07-untracked.txt",
+    "tracked_sha256": "fed512d7a8fa17e04594fbcc4202b698050f1d33901b3243fc9a52e9919eb915",
+    "untracked_sha256": "d60e4bb10827e3b6457f5001892139f28d9990542f306a7474ea9d04eb03ef63",
+    "original_tracked_sha256": "fcb92e485b9b4736dcaefd68ca23e9254acd290433eefcea9f54926c1addef61"
+  },
+  "M01_markers_restored": {
+    "tracked_original_sha256": "c9849ef7bfcb6f95cddd83a6a7bc6527e063f137df0de84ef1ffb7c61b57b016",
+    "tracked_modified_sha256": "7d05717a625e7509f9a6157fd93ff1166e28c7d314f4254344dd8fc6ed9ba819",
+    "untracked_sha256": "cd7bc1f45f95fe9f8407f00b9b4c52525c730cebcb6715781a718656af8c7024",
+    "tracked_path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\winning-platform-monorepo\\README.md",
+    "untracked_path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\winning-platform-monorepo\\M01-A2-f8f23e188c07-untracked.txt",
+    "backup_path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\validation-evidence\\M01-README.md.original.bin"
+  },
+  "seed": {
+    "top_level": "C:/Users/lilei/multica_workspaces/rondo-test-8ef6a0bcf15d/test-5-f8f23e188c07/workdir/validation-fixture/seed\n",
+    "head": "828d42779530b781c4b65bc0e1a6ad7b811eb0a8\n",
+    "branch": "main\n",
+    "status": "",
+    "common_dir": ".git\n",
+    "remotes": "",
+    "tracked_files": "README.txt\n",
+    "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\validation-fixture\\seed",
+    "dot_git": {
+      "path": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\validation-fixture\\seed\\.git",
+      "exists": true,
+      "is_dir": true,
+      "is_symlink": false,
+      "reparse_point": false
+    },
+    "readme_sha256": "fcb92e485b9b4736dcaefd68ca23e9254acd290433eefcea9f54926c1addef61"
+  },
+  "external_fixture_support": {
+    "guidance_thread": "01a1d30a-5748-7475-a60f-2322d4ae37b1",
+    "controller_reported_prepared_at": "2026-11-13T11:53:29+08:00",
+    "controller_reported_clone_exit_codes": [
+      0,
+      0
+    ],
+    "controller_reported_outside_sandbox": true,
+    "independent_readback_verified": true,
+    "agent_clones_after_external_handoff": 0,
+    "seed_head": "828d42779530b781c4b65bc0e1a6ad7b811eb0a8",
+    "bare_head": "828d42779530b781c4b65bc0e1a6ad7b811eb0a8",
+    "bare_origin": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\validation-fixture\\seed",
+    "child_head": "828d42779530b781c4b65bc0e1a6ad7b811eb0a8",
+    "child_origin": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-5-f8f23e188c07\\workdir\\validation-fixture\\M02-local-fixture.git",
+    "interpretation": "Mechanism PoC with external fixture support, not autonomous dev prepare end-to-end PASS"
+  },
+  "clone_failures_preserved": [
+    {
+      "command_id": 75,
+      "exit_code": 128,
+      "category": "windows_msys_subprocess_access_denied"
+    },
+    {
+      "command_id": 107,
+      "exit_code": 128,
+      "category": "windows_msys_subprocess_access_denied"
+    }
+  ],
+  "handoff_instruction": "Preserve root, child dirty state and fixture; controller performs independent read-only Run B checks. No new run was created by this agent."
+}

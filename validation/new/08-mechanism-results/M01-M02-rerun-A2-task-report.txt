@@ -1,0 +1,61 @@
+TEST-5 / Run A2 最终验证报告
+
+M01：PASS（本轮必测的首次原生 checkout、干净重入、脏树保留与原字节恢复）。
+M02 同 Task 机制 PoC：PASS，依赖控制端外部 fixture 支持。
+M02 沙箱自主 fixture/dev prepare：FAIL，两次本地 bare clone 均 exit 128。
+M02 跨 Run：NOT_RUN / pending controller Run B。不得总判全链路 PASS。
+
+Task：01a1d2fc-da3a-796b-9584-f8f23e188c07
+workdir：C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-5-f8f23e188c07\workdir
+版本：Multica 0.8.1 b1ea927de；Git 2.54.0.windows.1；Rondo 1.2.20。
+
+原生准备：03:43:44 UTC 观察到仍在写入的 392762425 字节 tmp_pack，main 尚不存在；03:44:12 UTC 确认完整 412365291 字节 pack、main 引用和 commit 对象可读。未修改 cache，未把准备阶段 rev-parse exit 128 判为 checkout 失败，准备在 Task 启动后十分钟内完成。
+四次原生 checkout（命令 22、30、48、147）均 exit 0。首次显式 --ref main，之后均普通 checkout。三次重入均为 KEPT；无 cached/fetch warning。完整原生 stdout/stderr 保存在 JSON。
+
+root：C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-5-f8f23e188c07\workdir\winning-platform-monorepo
+root HEAD = origin/main：dfdaf33fa58355332259524266045d1052ef9dea
+root branch：agent/m01-checkout/f8f23e188c07
+root origin：http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo
+root .git：directory；common-dir：C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-5-f8f23e188c07\workdir\winning-platform-monorepo\.git
+root 最终 status：空，与初始基线一致。
+
+M01 README 原始字节备份并恢复；测试自建 untracked 文件在验证成功后删除。
+原始/恢复 SHA-256：c9849ef7bfcb6f95cddd83a6a7bc6527e063f137df0de84ef1ffb7c61b57b016
+修改时 tracked SHA-256：7d05717a625e7509f9a6157fd93ff1166e28c7d314f4254344dd8fc6ed9ba819
+M01 untracked 标记 SHA-256：cd7bc1f45f95fe9f8407f00b9b4c52525c730cebcb6715781a718656af8c7024
+收到恢复指导后没有重跑 M01；root 未创建 Commit。
+
+M02 registry：common / winning-dps-df-common。
+真实业务 URL（只读记录，从未访问）：http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-common
+既有忽略规则：.gitignore:8:/winning-dps-df-*/。
+两次沙箱自主本地 bare clone（命令 75、107，第二次显式 --local --no-hardlinks 和正斜杠绝对路径）均 exit 128，MSYS sh 的 NtCreateDirectoryObject 返回 0xC0000022。失败原记录、seed 原始 Commit 与状态均保留。此错误不证明二级 Git 目录规则或 TFS 认证失败。
+本运行 approval_policy=never，不允许 require_escalated；未发起提权请求、没有自动审批拒绝或权限绕过。控制端报告 11:53:29 在沙箱外两次本地 clone exit 0。本 Agent 独立回读并验证 seed/bare/child 的身份、HEAD、origin 和根仓状态后继续实验，没有再次 clone。
+本轮需要外部沙箱支持准备 fixture；不能据此宣称当前沙箱自主 dev prepare 全链路 PASS，也不外推为所有本地 clone 都必须提权。
+
+seed：C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-5-f8f23e188c07\workdir\validation-fixture\seed
+seed HEAD：828d42779530b781c4b65bc0e1a6ad7b811eb0a8
+fixture bare：C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-5-f8f23e188c07\workdir\validation-fixture\M02-local-fixture.git
+child：C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-5-f8f23e188c07\workdir\winning-platform-monorepo\winning-dps-df-common
+child HEAD：828d42779530b781c4b65bc0e1a6ad7b811eb0a8
+child branch：main
+child origin：C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-5-f8f23e188c07\workdir\validation-fixture\M02-local-fixture.git
+child .git：directory；common-dir：C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-5-f8f23e188c07\workdir\winning-platform-monorepo\winning-dps-df-common\.git
+
+child tracked 文件：C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-5-f8f23e188c07\workdir\winning-platform-monorepo\winning-dps-df-common\README.txt
+tracked SHA-256：fed512d7a8fa17e04594fbcc4202b698050f1d33901b3243fc9a52e9919eb915
+child untracked 文件：C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-5-f8f23e188c07\workdir\winning-platform-monorepo\winning-dps-df-common\M02-A2-f8f23e188c07-untracked.txt
+untracked SHA-256：d60e4bb10827e3b6457f5001892139f28d9990542f306a7474ea9d04eb03ef63
+child 最终 status：
+ M README.txt
+?? M02-A2-f8f23e188c07-untracked.txt
+
+原生 root checkout 重入后双仓路径、HEAD、branch、origin、status、独立 common-dir、child 两类修改与 Hash、diff 均保留。root status 为空，git ls-files 不含 child 内容；两个标记均匹配既有忽略规则。.gitignore 和 registry 的 SHA-256 未改变。child 修改、fixture 和证据完整保留供 Run B，只读交接数据见 handoff JSON。
+
+未覆盖：M01 未推送 Commit 保留；受控冷 cache 从零准备；四类业务 Agent；真实 common 仓认证；跨 Run 隔离。历史 bootstrap PowerShell/CIM 权限错误、上下文回读网络 exit 2、auth status 不支持 --output 等均在 evidence_notes/commands 中说明，没有计作 native checkout 失败。
+未执行远程 Git 写入、Push、PR、TFS 写入、生产配置变更、Daemon 重启、fresh/reset/clean、手工根仓 clone 或自主创建新 Run。
+
+Evidence：C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-5-f8f23e188c07\workdir\validation-evidence\M01-M02-run-A2-evidence.json
+Evidence SHA-256：df7f9c960ec4535834005e271b5d27e8a55a1fbfe293eb44aaf90da7a7fde02a
+Run B handoff：C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-5-f8f23e188c07\workdir\validation-evidence\M01-M02-run-A2-RunB-handoff.json
+Handoff SHA-256：5ee3541da167ee91297d7b4cb33d63352388fff3c27fd0e3fef591e66b4fbb09
+机器判定以 final_scope_assertions 和 statuses 为准；assertions 是保留中间 NOT_RUN/FAIL 的有序检查历史。记录器启动前的 bootstrap 命令只记录已知结果，不伪造时间戳。

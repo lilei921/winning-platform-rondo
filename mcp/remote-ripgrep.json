@@ -1,0 +1,7 @@
+{
+  "connection_file": "remote-ripgrep.local.json",
+  "enabled_tools": [
+    "search"
+  ],
+  "default_tools_approval_mode": "approve"
+}

@@ -1,0 +1,59 @@
+[
+  {
+    "label": "sync",
+    "issue": "TT-18",
+    "status": "in_review",
+    "runs": [
+      {
+        "id": "01a1e2cd-bdf6-7e2d-a511-f00be72fac51",
+        "status": "completed",
+        "created_at": "2026-11-16T05:21:36Z",
+        "dispatched_at": "2026-11-16T05:21:37Z",
+        "started_at": "2026-11-16T05:21:37Z",
+        "completed_at": "2026-11-16T05:30:07Z",
+        "error": null
+      }
+    ]
+  },
+  {
+    "label": "business",
+    "issue": "TT-19",
+    "status": "done",
+    "runs": [
+      {
+        "id": "01a1e2d9-30e3-7bb3-a986-ef4874117f44",
+        "status": "completed",
+        "created_at": "2026-11-16T05:34:07Z",
+        "dispatched_at": "2026-11-16T05:34:07Z",
+        "started_at": "2026-11-16T05:34:09Z",
+        "completed_at": "2026-11-16T05:43:28Z",
+        "error": null
+      },
+      {
+        "id": "01a1e2d2-ff12-7dc4-b529-dba9dab43bdb",
+        "status": "completed",
+        "created_at": "2026-11-16T05:27:21Z",
+        "dispatched_at": "2026-11-16T05:27:21Z",
+        "started_at": "2026-11-16T05:27:48Z",
+        "completed_at": "2026-11-16T05:36:58Z",
+        "error": null
+      }
+    ]
+  },
+  {
+    "label": "finalize",
+    "issue": "TT-20",
+    "status": "in_review",
+    "runs": [
+      {
+        "id": "01a1e2e2-84b5-7673-84a3-6c0a3e204c6d",
+        "status": "completed",
+        "created_at": "2026-11-16T05:44:18Z",
+        "dispatched_at": "2026-11-16T05:44:18Z",
+        "started_at": "2026-11-16T05:44:20Z",
+        "completed_at": "2026-11-16T05:47:40Z",
+        "error": null
+      }
+    ]
+  }
+]

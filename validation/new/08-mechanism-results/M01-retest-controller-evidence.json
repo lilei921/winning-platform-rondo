@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "observed_at_utc": "2026-11-13T03:03:51.5231842Z",
+  "mechanism_result": "PASS",
+  "scope": "Windows Codex / native cache ready / clean same-task reentry",
+  "runs": [
+    {
+      "id": "01a1d2d3-4c67-729c-bcf3-0fa1f4f4c34a",
+      "issue_id": "01a1d2d3-4c41-78de-9926-f0555e951ad9",
+      "status": "completed",
+      "attempt": 1,
+      "started_at": "2026-11-13T10:53:45+08:00",
+      "completed_at": "2026-11-13T11:00:06+08:00",
+      "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+      "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-3-0fa1f4f4c34a\\workdir"
+    },
+    {
+      "id": "01a1d2bd-578c-713c-ba66-457a3869580e",
+      "issue_id": "01a1d2bd-5780-7a2e-a75a-d5bc7b6d8134",
+      "status": "completed",
+      "attempt": 1,
+      "started_at": "2026-11-13T10:29:46+08:00",
+      "completed_at": "2026-11-13T10:39:32+08:00",
+      "runtime_id": "c55feddd-7910-480a-8f9f-9d6180b1f061",
+      "work_dir": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-2-457a3869580e\\workdir"
+    }
+  ],
+  "cache_preflight": {
+    "connectivity_fsck_exit": 0,
+    "is_bare_repository": true,
+    "fetch_refspec": "+refs/heads/*:refs/remotes/origin/*",
+    "origin_rondo": "21e3c1688846d8fe6c9918c824a992416393874d",
+    "in_pack": 32942,
+    "pack_count": 1,
+    "garbage": 0,
+    "stage": "Before creating TEST-3; no cache mutation by controller"
+  },
+  "cache_files": [
+    {
+      "Name": "config",
+      "Length": 308,
+      "LastWriteTime": "2026-11-13T10:37:13.8446323+08:00"
+    },
+    {
+      "Name": "packed-refs",
+      "Length": 4441,
+      "LastWriteTime": "2026-11-13T10:37:16.6199829+08:00"
+    }
+  ],
+  "cold_prepare_timeline": {
+    "daemon_clone_started": "2026-11-13T10:29:42.380+08:00",
+    "pack_last_write": "2026-11-13T10:37:13.6175867+08:00",
+    "completion_time_is_file_metadata_not_function_trace": true,
+    "initial_packed_refs_last_write": "2026-11-13T10:37:16.6199829+08:00",
+    "pack_bytes": 416364423,
+    "cli_started": "2026-11-13T10:31:49.3003885+08:00",
+    "cli_timed_out": "2026-11-13T10:36:49.6100123+08:00"
+  },
+  "ref_before_retest": {
+    "rondo": "21e3c1688846d8fe6c9918c824a992416393874d",
+    "master": "bb13f482ff7a3c01936f596942dd7d36cc6ece86"
+  },
+  "ref_after_retest": {
+    "rondo": "9bc060aaa4916887e394883705d04365753f258b",
+    "git_ls_remote_exit": 0,
+    "master": "d47f9c1d494c2de323416332c25e9bbcfa0cc321"
+  },
+  "installed_source": {
+    "cache_blob": "c391abe152d49fad728a594b05d79081d257ccbd",
+    "commit": "b1ea927def6490c43bedff537b6f4ed9a47fa828",
+    "daemon_blob": "a3f23cd1953b1040b9c30c15e6dccfb83db33287",
+    "cli_blob": "87364368468c147aec406501dd4e138251363a26",
+    "health_blob": "5ef71ab1919e15435328c6eb6903faa91fa4b5d5"
+  },
+  "remaining_limitations": [
+    "Cold-cache first-request deadline behavior not modified",
+    "Dirty/unpushed work preservation not exercised",
+    "Four business-agent categories not exercised",
+    "Task direct git ls-remote Empty reply remains a separate uninvestigated diagnostic"
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "id": "9f2417ea-5029-49af-b97e-3ee6f826009e",
+  "runtime_id": "a1001c7d-0d5a-463e-8c5e-96b924ef6269",
+  "model": "gpt-6-luna",
+  "max_concurrent_tasks": 1
+}

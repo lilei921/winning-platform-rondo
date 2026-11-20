@@ -1,0 +1,256 @@
+TAP version 13
+# Subtest: T1 happy finalize：PASS + steps 键序 golden + archive<writeback<summary 顺序 + push 到达
+ok 1 - T1 happy finalize：PASS + steps 键序 golden + archive<writeback<summary 顺序 + push 到达
+  ---
+  duration_ms: 10960.4797
+  type: 'test'
+  ...
+# Subtest: T2 gate 三态：旧 hash → exit 2；缺 contract_files → exit 3；无适用 Evidence → exit 3
+ok 2 - T2 gate 三态：旧 hash → exit 2；缺 contract_files → exit 3；无适用 Evidence → exit 3
+  ---
+  duration_ms: 10810.139
+  type: 'test'
+  ...
+# Subtest: T3 M2.3：未提交 Change 工件先 finalize: 提交再归档；foreign 预暂存 → exit 3 不提交
+ok 3 - T3 M2.3：未提交 Change 工件先 finalize: 提交再归档；foreign 预暂存 → exit 3 不提交
+  ---
+  duration_ms: 11965.132
+  type: 'test'
+  ...
+# Subtest: T4 M2.5：未涉及 capability 的 specs 脏文件 → exit 3；涉及的 → 随归档提交
+ok 4 - T4 M2.5：未涉及 capability 的 specs 脏文件 → exit 3；涉及的 → 随归档提交
+  ---
+  duration_ms: 14544.9704
+  type: 'test'
+  ...
+# Subtest: T5 续走：完成后重跑 → done-shortcut；预置已归档+writeback 完成 → summary 恰一次
+ok 5 - T5 续走：完成后重跑 → done-shortcut；预置已归档+writeback 完成 → summary 恰一次
+  ---
+  duration_ms: 18702.3378
+  type: 'test'
+  ...
+# Subtest: 归档移动后提交前中断：重跑提交本次归档，不再次 archive
+ok 6 - 归档移动后提交前中断：重跑提交本次归档，不再次 archive
+  ---
+  duration_ms: 11234.134
+  type: 'test'
+  ...
+# Subtest: 归档恢复仍拒绝夹带其他 Change，保留未提交现场
+ok 7 - 归档恢复仍拒绝夹带其他 Change，保留未提交现场
+  ---
+  duration_ms: 4797.2
+  type: 'test'
+  ...
+# Subtest: 归档允许 openspec 外未暂存改动：运行时指令与未跟踪文件保留且不进入提交
+ok 8 - 归档允许 openspec 外未暂存改动：运行时指令与未跟踪文件保留且不进入提交
+  ---
+  duration_ms: 13203.5848
+  type: 'test'
+  ...
+# Subtest: 归档前拒绝外来暂存内容，即使当前 Change 无待保存工件
+ok 9 - 归档前拒绝外来暂存内容，即使当前 Change 无待保存工件
+  ---
+  duration_ms: 5230.9922
+  type: 'test'
+  ...
+# Subtest: 归档后再次检查暂存区，拒绝夹带执行期间新增的外来暂存内容
+ok 10 - 归档后再次检查暂存区，拒绝夹带执行期间新增的外来暂存内容
+  ---
+  duration_ms: 6677.0932
+  type: 'test'
+  ...
+# Subtest: 根仓落后时先快进再保存工件，保留 AGENTS.md 未暂存改动
+ok 11 - 根仓落后时先快进再保存工件，保留 AGENTS.md 未暂存改动
+  ---
+  duration_ms: 15917.0374
+  type: 'test'
+  ...
+# Subtest: 快进会覆盖运行时指令时停止，不改写 AGENTS.md 或本地 HEAD
+ok 12 - 快进会覆盖运行时指令时停止，不改写 AGENTS.md 或本地 HEAD
+  ---
+  duration_ms: 5635.1038
+  type: 'test'
+  ...
+# Subtest: 已有分叉时停止：不创建保存或归档提交，不移动 Change，不改暂存区
+ok 13 - 已有分叉时停止：不创建保存或归档提交，不移动 Change，不改暂存区
+  ---
+  duration_ms: 6113.1327
+  type: 'test'
+  ...
+# Subtest: 本地领先但包含范围外提交时停止，不能借归档一起推送
+ok 14 - 本地领先但包含范围外提交时停止，不能借归档一起推送
+  ---
+  duration_ms: 5231.816
+  type: 'test'
+  ...
+# Subtest: 归档期间远端推进：保留本地归档提交与 pending，重跑也不 rebase 或重复归档
+ok 15 - 归档期间远端推进：保留本地归档提交与 pending，重跑也不 rebase 或重复归档
+  ---
+  duration_ms: 9589.5213
+  type: 'test'
+  ...
+# Subtest: 快进改变当前契约时停止，不使用旧 Gate 继续归档
+ok 16 - 快进改变当前契约时停止，不使用旧 Gate 继续归档
+  ---
+  duration_ms: 6017.9424
+  type: 'test'
+  ...
+# Subtest: 已归档恢复允许运行时改动，并只推送本次归档提交
+ok 17 - 已归档恢复允许运行时改动，并只推送本次归档提交
+  ---
+  duration_ms: 12258.3274
+  type: 'test'
+  ...
+# Subtest: 需要快进但当前 Change 有暂存内容时停止，保留索引与工作区
+ok 18 - 需要快进但当前 Change 有暂存内容时停止，保留索引与工作区
+  ---
+  duration_ms: 5334.038
+  type: 'test'
+  ...
+# Subtest: 领先的当前 Change 提交允许续走，不要求根仓完全无本地提交
+ok 19 - 领先的当前 Change 提交允许续走，不要求根仓完全无本地提交
+  ---
+  duration_ms: 9087.0441
+  type: 'test'
+  ...
+# Subtest: 范围外提交先改后还原也拒绝推送，不能只检查净差异
+ok 20 - 范围外提交先改后还原也拒绝推送，不能只检查净差异
+  ---
+  duration_ms: 4168.956
+  type: 'test'
+  ...
+# Subtest: 前导空格的范围外路径不能伪装成 openspec 路径
+ok 21 - 前导空格的范围外路径不能伪装成 openspec 路径
+  ---
+  duration_ms: 3470.1265
+  type: 'test'
+  ...
+# Subtest: 远端未前进的临时推送失败可重试，AGENTS.md 保持原样且不 rebase
+ok 22 - 远端未前进的临时推送失败可重试，AGENTS.md 保持原样且不 rebase
+  ---
+  duration_ms: 9728.0352
+  type: 'test'
+  ...
+# Subtest: 推送时远端才前进：拒绝后回核分叉，不自动 rebase 或再次推送
+ok 23 - 推送时远端才前进：拒绝后回核分叉，不自动 rebase 或再次推送
+  ---
+  duration_ms: 7281.421
+  type: 'test'
+  ...
+# Subtest: D3-B: TFS writeback cannot run before prepared archive, even with valid work item
+ok 24 - D3-B: TFS writeback cannot run before prepared archive, even with valid work item
+  ---
+  duration_ms: 2827.9111
+  type: 'test'
+  ...
+# Subtest: D3-B: prepared Delivery cannot become done before TFS writeback succeeds
+ok 25 - D3-B: prepared Delivery cannot become done before TFS writeback succeeds
+  ---
+  duration_ms: 10628.4802
+  type: 'test'
+  ...
+# Subtest: D3-B: missing TFS parent blocks Issue done; recovery reuses archived Change
+ok 26 - D3-B: missing TFS parent blocks Issue done; recovery reuses archived Change
+  ---
+  duration_ms: 12416.1982
+  type: 'test'
+  ...
+# Subtest: D3-B: pending and local archive without confirmed Prepare must not permit TFS writeback
+ok 27 - D3-B: pending and local archive without confirmed Prepare must not permit TFS writeback
+  ---
+  duration_ms: 6853.1651
+  type: 'test'
+  ...
+# Subtest: D3-B: stale TFS done marker cannot bypass actual parent status
+ok 28 - D3-B: stale TFS done marker cannot bypass actual parent status
+  ---
+  duration_ms: 6272.5516
+  type: 'test'
+  ...
+# Subtest: D3-B: TFS state write failure leaves pending, can resume without archive replay
+ok 29 - D3-B: TFS state write failure leaves pending, can resume without archive replay
+  ---
+  duration_ms: 12900.9571
+  type: 'test'
+  ...
+# Subtest: done replay validates minimum Analysis facts before clearing pending
+ok 30 - done replay validates minimum Analysis facts before clearing pending
+  ---
+  duration_ms: 2260.1699
+  type: 'test'
+  ...
+# Subtest: done replay with valid classification clears only pending without requiring root repo
+ok 31 - done replay with valid classification clears only pending without requiring root repo
+  ---
+  duration_ms: 651.8904
+  type: 'test'
+  ...
+# Subtest: done replay with valid facts and no pending remains a no-op
+ok 32 - done replay with valid facts and no pending remains a no-op
+  ---
+  duration_ms: 539.3239
+  type: 'test'
+  ...
+# Subtest: completed facts checker rejects missing classification and invalid Change ID
+ok 33 - completed facts checker rejects missing classification and invalid Change ID
+  ---
+  duration_ms: 2.2622
+  type: 'test'
+  ...
+# Subtest: done replay refuses missing or contradictory final Verify Decision before clearing pending
+ok 34 - done replay refuses missing or contradictory final Verify Decision before clearing pending
+  ---
+  duration_ms: 2179.9236
+  type: 'test'
+  ...
+# Subtest: Git 认证只限精确仓库 URL 的子进程环境，禁重定向且不改变父进程
+ok 35 - Git 认证只限精确仓库 URL 的子进程环境，禁重定向且不改变父进程
+  ---
+  duration_ms: 5.7414
+  type: 'test'
+  ...
+# Subtest: 远端归档固定最新 SHA 读取，批准契约允许 checkbox 进度，缓存无 Git 仓
+ok 36 - 远端归档固定最新 SHA 读取，批准契约允许 checkbox 进度，缓存无 Git 仓
+  ---
+  duration_ms: 21.7955
+  type: 'test'
+  ...
+# Subtest: 归档正文/文件集合偏离批准基线即关闭，不能跟随已更新 Evidence 放行
+ok 37 - 归档正文/文件集合偏离批准基线即关闭，不能跟随已更新 Evidence 放行
+  ---
+  duration_ms: 29.1845
+  type: 'test'
+  ...
+# Subtest: 当前/归档或多个归档身份冲突即拒绝
+ok 38 - 当前/归档或多个归档身份冲突即拒绝
+  ---
+  duration_ms: 3.3076
+  type: 'test'
+  ...
+# Subtest: 跨服务 URL、响应错版本与不安全相对路径不能物化或泄露凭据
+ok 39 - 跨服务 URL、响应错版本与不安全相对路径不能物化或泄露凭据
+  ---
+  duration_ms: 3.4867
+  type: 'test'
+  ...
+# Subtest: 稳定 Evidence 身份使用配置 repo_url 和完整 SHA，不读旧机器路径
+ok 40 - 稳定 Evidence 身份使用配置 repo_url 和完整 SHA，不读旧机器路径
+  ---
+  duration_ms: 1.4308
+  type: 'test'
+  ...
+# Subtest: 远端 Completion Evidence 拒绝旧路径或错仓候选，旧本地模式继续兼容
+ok 41 - 远端 Completion Evidence 拒绝旧路径或错仓候选，旧本地模式继续兼容
+  ---
+  duration_ms: 10.3849
+  type: 'test'
+  ...
+1..41
+# tests 41
+# suites 0
+# pass 41
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 260018.4969

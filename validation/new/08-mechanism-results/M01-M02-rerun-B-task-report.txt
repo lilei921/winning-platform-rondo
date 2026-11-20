@@ -1,0 +1,41 @@
+TEST-6 / M01-M02 独立 Run B 验证报告
+
+结果：M01 跨 Run 隔离（B 端证据）PASS；M02 新 Task 子仓自动出现检查 PASS，实际结果为未出现。全量 M02 验收仍为 PENDING_CONTROLLER。
+机器断言：17 PASS、0 FAIL、4 NOT_RUN。JSON 含 36 条带 cwd、argv、起止时间、退出码及脱敏 stdout/stderr 的命令记录，以及文件系统观测。
+
+身份
+Task：01a1d30c-a957-7a02-883e-b569fc44cf1b
+Issue：01a1d30c-a93a-7662-8d4e-ab81d77aaae2（TEST-6）
+Agent：9915af88-b5ce-42c2-9c3b-227d768c5bc0
+Workspace：60eb8cf4-31be-4a34-b744-8ef6a0bcf15d
+Project：d43bbc9d-4cc2-4cee-8f92-70c993ffbf97
+Runtime：c55feddd-7910-480a-8f9f-9d6180b1f061
+Daemon：01a01965-2f6a-72fe-899f-3e7556c5d51d
+Resource：eee149cc-9c37-415c-a1d8-b0c3b3b56585（github_repo，main）
+
+M01
+B 初始没有根仓。两次原生 checkout 均退出 0，均从真实 B Task cwd 发起。
+根仓：C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-6-b569fc44cf1b\workdir\winning-platform-monorepo
+HEAD = origin/main = dfdaf33fa58355332259524266045d1052ef9dea
+分支：agent/m01-checkout/b569fc44cf1b
+origin 与所分配 Resource URL 一致，无凭据 URL。
+git-dir = common-dir = 根仓下物理 .git 目录，无 commondir 指针，目录链无 reparse point。
+B 与 Issue 给定的 A2 工作目录不同。B 自身的 Git 元数据位于 B 下；A2 实际 common-dir 快照及前后完整性比较由控制端持有，本 Agent 未访问 A2。
+重复普通 checkout 返回 Kept；路径、HEAD、origin/main、分支、origin、git-dir、common-dir、.git 目录物理身份均保持，前后 status 为空。CLI 报告 0 uncommitted files、0 unpushed commits。
+
+M02
+本轮 HEAD 的 docs/config/repo-context.yaml:24-26 定义 common.repo_path = winning-dps-df-common；路径为安全的根仓内部相对路径。
+首次和重复 checkout 后该目录均不存在；由于整个 child 不存在，其内部 A2 脏修改及标记也未出现。
+git check-ignore 命中 HEAD 已有的 .gitignore:8:/winning-dps-df-*/；前后 git ls-files -- winning-dps-df-common 均为空。
+新 Task 原生根仓未带回本机未发布的嵌套子仓；未发布改动不会自动跨 Task 搬迁。本轮没有创建、clone 或 prepare 子仓。
+
+保留边界与异常
+A2 现场完整性待控制端核对，不能宣称全量 M02 PASS。Rondo dev prepare、跨机器和真实业务认证仍未验收；A2 沙箱自主 clone 的 MSYS 权限失败仍保留，本轮未重试或宣称修复。
+启动时 PowerShell profile 报安全错误，但首次 issue get 退出 0。首次评论扫描网络失败（退出 1），一次有界重试成功且无评论。辅助 auth status --output json 退出 1（不支持 --output），未重试；身份以 issue runs 和 daemon status 核验。
+初始引导命令未纳入精确计时，已在 JSON bootstrap_notes 标明；未补造时间。一次过宽只读搜索命中了无关历史回放，相关 stdout 从交付件移除并保留命令元数据和摘要，不用于结论。
+没有 push、远端 Git 写入、PR、TFS Work Item 修改、生产配置/Agent/Skill 修改、fresh/reset/clean、手工 cache 操作、Daemon 重启或额外 Run。
+Issue 已回读确认为 in_review；B 根仓与不存在的 child 状态原样保留。
+
+证据绝对路径：C:\Users\lilei\multica_workspaces\rondo-test-8ef6a0bcf15d\test-6-b569fc44cf1b\workdir\validation-evidence\M01-M02-run-B-evidence.json
+证据 SHA-256：e6d5bef575c2f9d6e73ac196fceb84228c0716ac07945c24bbb869ed4d5c4b31
+证据已冻结用于附件，交付回执另存 delivery-log.json，以保持上述 Hash 稳定。

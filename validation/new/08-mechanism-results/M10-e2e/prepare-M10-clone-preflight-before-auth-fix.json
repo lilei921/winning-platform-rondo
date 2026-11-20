@@ -1,0 +1,7 @@
+{
+  "task_id": "01a1d376-a69b-714d-9bad-46d52c60f3a2",
+  "cwd": "C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir",
+  "at": "2026-11-13T05:52:51.034Z",
+  "overall": "FAIL",
+  "error": "临时归档 Git 操作失败，现场保留于 C:\\Users\\lilei\\multica_workspaces\\rondo-test-8ef6a0bcf15d\\test-14-46d52c60f3a2\\workdir\\.rondo-finalize-OEGtsS: Cloning into '.'...\nfatal: Failed to enumerate credentials. [0x5]\nfatal: 拒绝访问。\nfatal: Failed to enumerate credentials. [0x5]\nfatal: 拒绝访问。\nfatal: Failed to enumerate credentials. [0x5]\nfatal: 拒绝访问。\nfatal: could not read Username for 'http://tfs2018-web.winning.com.cn:8080': terminal prompts disabled"
+}

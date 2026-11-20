@@ -1,0 +1,25 @@
+{
+  "workspace_id": "11f10093-ebb8-4c2d-80ea-aa76b99eab97",
+  "skills": {
+    "analysis-completion": "821b862c-83dc-4532-a4ff-1bbc65e78e30",
+    "backend-engineering": "7fad9cc3-d5c6-4879-848c-37ff1183d728",
+    "bug-analysis": "6e546c82-a73d-4101-b5f4-cb74034a4585",
+    "bug-delivery": "3734a1b2-4d32-4fa7-bb93-80c08a4dfc5c",
+    "codebase-explorer": "810fcde4-56a1-496a-af05-af2f157b3690",
+    "delivery-flow": "3c2b6433-266b-418f-aa33-2e065d9f8b36",
+    "delivery-gate": "2ca8e7d7-5fce-405f-8949-5daa428d8342",
+    "development-execution": "71ad84c1-1960-4ca7-8539-759976c1e155",
+    "diagnosing-bugs": "e3b59fef-44a4-495b-9292-d914c7dea227",
+    "finalize-delivery": "1e733bbf-af5b-4f70-b20b-592306952c21",
+    "frontend-engineering": "a461a7ab-8955-46ee-9188-f438ded41ddc",
+    "pr-status-sync": "d8be132f-1546-4cc6-87c4-8ccee9e8b695",
+    "pull-request": "181c725f-40f5-4d54-a5d8-0035083e062d",
+    "requirement-analysis": "2cae9692-ffbe-4a8e-ad42-3821fc25e434",
+    "spec-preparation": "b9af1f57-8c84-427c-bee3-1dbfbed5f6a8",
+    "tfs-sync": "feaa2c60-7bad-4f34-8e2c-b9958ff39b5c",
+    "workitem-triage": "97d1efae-efa0-4293-880a-a8746a23cef2"
+  },
+  "delivery_squad_id": "0df43872-21a2-457d-940e-582d8ec64598",
+  "project": "2b70fb3c-b5fe-4ca1-b7ab-6c1d67cebe90",
+  "multica_server_url": "http://172.17.1.97:8080"
+}

@@ -1,0 +1,27 @@
+{
+  "workitems": [
+    {
+      "id": 264839,
+      "rev": 12,
+      "state": "已解决"
+    },
+    {
+      "id": 265022,
+      "rev": 7,
+      "state": "已解决"
+    }
+  ],
+  "pr": {
+    "id": 3786,
+    "status": "completed",
+    "candidate": "977f1d853947e32c5fa7aba43838b0574c06c54c",
+    "merge": "4c6ae108d065433a5a4bd38a6b3d29510bfa4d88",
+    "target": "refs/heads/codex/08a-acceptance-20261114"
+  },
+  "production_dev": [
+    {
+      "name": "refs/heads/dev",
+      "sha": "0a2857e17d2a146a6c0b5440a993a3acfc9b9473"
+    }
+  ]
+}

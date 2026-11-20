@@ -1,0 +1,23 @@
+{
+  "workspace_id": "46b5f7c9-9434-4982-9b4a-6cb4fb6ae63b",
+  "project_id": "0141bbf6-52d0-4f42-9b3f-a067a17ed33b",
+  "coordinator_id": "825a4b40-fa65-4ecc-a34e-bbe07213fe6e",
+  "squads": {
+    "1dc49ce5-b0ec-4563-b6a2-e058091470b0": {
+      "leader_id": "97985196-b830-497d-9833-cabfa8b48666",
+      "capacity": 1
+    },
+    "d27982be-43ae-44f1-9294-c7649330926c": {
+      "leader_id": "20b2ff1b-2e41-420a-9143-a27d963a728a",
+      "capacity": 1
+    },
+    "a06d94dc-f84d-42eb-ab98-a2931feb7684": {
+      "leader_id": "64149bca-27cc-4cb6-a946-d39b92060e8f",
+      "capacity": 1
+    },
+    "57788b4b-aad4-46d3-8199-a21d9cc36148": {
+      "leader_id": "3160f15a-53db-4553-8f3f-7275d2729483",
+      "capacity": 1
+    }
+  }
+}
