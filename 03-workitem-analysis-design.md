@@ -229,7 +229,7 @@ Workitem Analyst（专业目标与最终结果 Owner）
 └── 提交审核：analysis-completion（内部调用 Analysis Gate）
 ```
 
-上述是能力组合而非强制顺序。`workitem-analysis` 已退役、源文件暂保留用于审计，不作为现行执行入口；有效 Skill 及绑定以 `workspace-skills/_shared/provisioning.json` 为准。已有有效产物与 Evidence 增量复用，定向返工仅修订必要部分。
+上述是能力组合而非强制顺序。`workitem-analysis` 已退役、源文件暂保留用于审计，不作为现行执行入口；有效 Skill 及绑定以 `workspace-config/provisioning.json` 为准。已有有效产物与 Evidence 增量复用，定向返工仅修订必要部分。
 
 ## 2.2 Agent Description（展示说明）
 
@@ -1364,7 +1364,7 @@ Analysis 输出的任务和约束需足以让 Engineer 不重新猜测需求，�
 
 ## 14.1 Agent 配置与 Skill 绑定
 
-Agent Goal 与长期职责由 [§2](#analysis-agent-model) 和 [01 §6](01-multica-openspec-design-guideline.md#section-6) 维护。当前仓内受管 Skill 与绑定以 `workspace-skills/_shared/provisioning.json` 为准；文件存在与真实 Workspace 发布状态必须区分。
+Agent Goal 与长期职责由 [§2](#analysis-agent-model) 和 [01 §6](01-multica-openspec-design-guideline.md#section-6) 维护。当前仓内受管 Skill 与绑定以 `workspace-config/provisioning.json` 为准；文件存在与真实 Workspace 发布状态必须区分。
 
 | 对象 | 当前源文件职责 |
 |---|---|
