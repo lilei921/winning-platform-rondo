@@ -121,8 +121,3 @@ wiki/dashboard/data/
 # tfs凭证
 tools/archive/tfs-cli/config/tfs.config.json
 
-# cli tgz
-tools/**/*.tgz
-
-# 远程 MCP 本机连接文件（可能包含认证信息）
-/mcps/connections/*.local.json
