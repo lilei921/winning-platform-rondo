@@ -46,8 +46,8 @@ function initRoots(): void {
   const r = resolveMulticaRoot();
   REPO_ROOT = r.multicaRoot;
   MONOREPO_ROOT = r.monorepoRoot;
-  SHARED = join(REPO_ROOT, "workspace-skills", "_shared");
-  SKILLS_ROOT = join(REPO_ROOT, "workspace-skills");
+  SHARED = join(REPO_ROOT, "skills", "_shared");
+  SKILLS_ROOT = join(REPO_ROOT, "skills");
 }
 
 /** 消费 repo-registry.json 的 Skill；仅渲染本次同步范围内的配置。 */
@@ -288,7 +288,7 @@ function renderConfigs(overlay: Overlay, scope: Set<string>): RenderTarget[] {
   return targets;
 }
 
-/** 仓内 Skill 清单：workspace-skills/ 下排除 _shared 的目录；SKILL.md = content，其余文件全量 = skill files */
+/** 仓内 Skill 清单：skills/ 下排除 _shared 的目录；SKILL.md = content，其余文件全量 = skill files */
 function listSkillFiles(skill: string): string[] {
   const dir = join(SKILLS_ROOT, skill);
   if (!existsSync(dir)) throw new UnknownError(`Skill 目录不存在: ${dir}`);

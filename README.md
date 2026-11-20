@@ -2,7 +2,23 @@
 
 本目录集中维护 Multica + OpenSpec 的设计方案、配置文本、工具与验证资料。本页只提供阅读导航和目录维护规则；技术设计、实现契约及待决项由对应专题文档维护。
 
-索引核对日期：2026-11-19。以下“最新”指本目录内的最新设计版本，不表示方案已实现、配置已发布或 Workspace 已完成同步。
+索引核对日期：2026-11-20。以下“最新”指本目录内的最新设计版本，不表示方案已实现、配置已发布或 Workspace 已完成同步。
+
+## 仓库目录
+
+| 目录 | 职责 |
+| --- | --- |
+| [`skills/`](skills/README.md) | Multica Skill 源文件、共享 manifest 与 Workspace overlay。 |
+| [`mcps/`](mcps/README.md) | 远程 MCP 模板和连接配置说明。 |
+| [`agents/`](agents/README.md) | Agent Description、Instructions 与绑定说明。 |
+| [`squads/`](squads/README.md) | Squad 协作指令。 |
+| [`rondo/`](rondo/package.json) | Rondo CLI 源码、构建与测试。 |
+| [`tools/`](tools/README.md) | Rondo CLI 命令与使用指南。 |
+| [`openspec/`](openspec/config.yaml) | OpenSpec Schema 与工件模板。 |
+| [`validation/`](validation/) | 测试和运行验证证据。 |
+| [`archive/`](archive/) | 历史设计与退役资产。 |
+
+上述目录均为本仓库根目录下的路径；`skills` 与 `mcps` 仅调整目录名称，不改变 Skill / MCP 对象名称。
 
 ## 定位与阅读顺序
 
@@ -56,11 +72,11 @@ Multica 组织交付运行与角色协作，OpenSpec 承载工程契约与工件
 
 入口约定：**研发测试阶段**初始化后停放 `backlog + Wayfinder Agent`，Human 手动改 `todo`；**目标态**仍由 TFS Sync 自动改 `todo`，均保留 Wayfinder 指派。阶段边界与验收以 [02 阶段约定](02-multica-delivery-lifecycle-design.md#wayfinder-entry-stages)为准。`eligible` 后按来源类型单次交接 Bug Fix Agent / Delivery Squad，并回读对应 Run；`needs_human` 停放于 `blocked`，Human 补充信息后改 `todo`、保留 Wayfinder 指派，按现行契约恢复。隔离 E2E 证据不等于正式 Workspace 部署验收。
 
-[Wayfinder Agent](agents/wayfinder-agent/README.md) 已有 Description / Instructions，并在 manifest 绑定 [`codebase-explorer`](workspace-skills/codebase-explorer/SKILL.md) 与 [`workitem-triage`](workspace-skills/workitem-triage/SKILL.md)。二者不修改 Workitem Analyst 的 `context-analysis`；当前源码保持研发测试入口，目标自动入口须另行接入与验收。正式 Workspace 的配置发布与真实 Run 联调仍未验收，仓内实现不等于已部署。
+[Wayfinder Agent](agents/wayfinder-agent/README.md) 已有 Description / Instructions，并在 manifest 绑定 [`codebase-explorer`](skills/codebase-explorer/SKILL.md) 与 [`workitem-triage`](skills/workitem-triage/SKILL.md)。二者不修改 Workitem Analyst 的 `context-analysis`；当前源码保持研发测试入口，目标自动入口须另行接入与验收。正式 Workspace 的配置发布与真实 Run 联调仍未验收，仓内实现不等于已部署。
 
 Wayfinder 与 Bug Fix 按 [08-A 共享基础](08a-remote-analysis-bug-fix-foundation.md) 使用原生 checkout。Requirement 的 Workitem Analyst 和统一 Engineer 需要准备常驻根仓时，使用 [08-B 工作区约定](08b-requirement-remote-git-delivery.md)。只读和派发不触发 Git 准备。
 
-## Squad / Agent / Skill 配置资产（squads/、agents/、workspace-skills/）
+## Squad / Agent / Skill 配置资产（squads/、agents/、skills/）
 
 2026-10-26 起，Squad、Agent 与 Skill 的现行配置以这三个目录内的源文件为准（原 20–34 号配置文档已归档至 `archive/squad-agent-docs-2026-10-26/`，编号段 20–39 废止）。平台侧发布经 `rondo workspace sync` 同步，现行命令入口见 [工具说明](tools/README.md)；原操作说明已归档，见 [历史索引](archive/README.md)。
 
@@ -88,9 +104,9 @@ Wayfinder 与 Bug Fix 按 [08-A 共享基础](08a-remote-analysis-bug-fix-founda
 | [tfs-sync-agent](agents/tfs-sync-agent/README.md) | 定时同步 TFS Work Item 并初始化 Delivery Issue 的自动驾驶薄适配器（含 Autopilot Prompt）。 |
 | [pr-status-sync-agent](agents/pr-status-sync-agent/README.md) | 核实和同步已登记 PR 状态，交付异常及待处理结果（含 Autopilot Prompt）。 |
 
-### Skill（workspace-skills/）
+### Skill（skills/）
 
-Agent ↔ Skill 绑定矩阵唯一来源：[`_shared/provisioning.json`](workspace-skills/_shared/provisioning.json)；registry / sync 渲染底稿与各 Workspace 定义在 `_shared/` 下维护。各 Skill 目录含 `SKILL.md` 及按需的 `references/` / `methods/` / `config/`。
+Agent ↔ Skill 绑定矩阵唯一来源：[`_shared/provisioning.json`](skills/_shared/provisioning.json)；registry / sync 渲染底稿与各 Workspace 定义在 `_shared/` 下维护。各 Skill 目录含 `SKILL.md` 及按需的 `references/` / `methods/` / `config/`。
 
 | Skill | 说明 |
 | --- | --- |
@@ -131,7 +147,7 @@ Agent ↔ Skill 绑定矩阵唯一来源：[`_shared/provisioning.json`](workspa
 1. 新版替代旧版时，将旧版移入 `archive/`，保留版本文件名与历史正文，并更新本页和历史索引。
 2. 未归档方案只能引用当前未归档版本，禁止通过链接、文件名、关联基线或章节引用依赖已归档文档。归档时必须将未归档方案的引用更新到当前版本，并核对链接文字、章节号与锚点；历史版本的文件入口统一放在归档索引中。版本记录中的历史名称与章节含义不改写为当前规则。
 3. 同文件内的旧版 Prompt 单独拆出归档，当前文件仅保留最新版本。
-4. 顶层文档采用“两位编号 + 连字符 + 文档名称”：01–09 为核心设计与实施规划文档（含 08a、08b 扩展设计，其中 07 是实施路线图）。原 20–39 编号段（Squad / Agent / 外部同步配置）已于 2026-10-26 废止，10 份配置文档保留编号归档至 `archive/squad-agent-docs-2026-10-26/`；Squad / Agent / Skill 现行配置以 `squads/`、`agents/`、`workspace-skills/` 目录内源文件为准，不再占用顶层编号。
+4. 顶层文档采用“两位编号 + 连字符 + 文档名称”：01–09 为核心设计与实施规划文档（含 08a、08b 扩展设计，其中 07 是实施路线图）。原 20–39 编号段（Squad / Agent / 外部同步配置）已于 2026-10-26 废止，10 份配置文档保留编号归档至 `archive/squad-agent-docs-2026-10-26/`；Squad / Agent / Skill 现行配置以 `squads/`、`agents/`、`skills/` 目录内源文件为准，不再占用顶层编号。
 5. 顶层保留 01–09 系列设计文档（含 08a、08b）与 `README.md`；其他独立文档按批次归入 `archive/` 并维护归档索引。现有子目录资产保留原名与职责，归档文档保留原文件名。
 6. 本页只维护入口和职责摘要，不在当前文档索引中重复维护版本号；版本声明与技术规则在对应专题文档维护，操作步骤在对应工具或子目录说明中维护。历史归档与验证证据中的版本号保留，用于追溯实际基线。
 7. 方案之间的引用和文内章节引用使用相对 Markdown 超链接；章节引用定位到目标锚点，优先复用已有锚点。连续引用须明确所属文档，章节范围可分别链接起止章节。调整章节时同步核对链接文字、章节号与锚点；历史记录和代码示例不机械改链到现行章节。
