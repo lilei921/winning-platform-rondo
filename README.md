@@ -93,7 +93,7 @@ Wayfinder 与 Bug Fix 按 [08-A 共享基础](08a-remote-analysis-bug-fix-founda
 
 ### Agent（agents/）
 
-每个 Agent 目录含 `description.md`（平台 Agent Description）、`instructions.md`（Agent Instructions 执行指令）、`README.md`（绑定 Skill 清单与维护记录）；Autopilot 驱动的 Agent 另含 `autopilot-prompt.md`。新增/修改评审规则见 [agents/_shared/review-checklist.md](agents/_shared/review-checklist.md)。
+每个 Agent 目录含 `description.md`（平台 Agent Description）、`instructions.md`（Agent Instructions 执行指令）、`README.md`（绑定 Skill 清单与维护记录）；Autopilot 驱动的 Agent 另含 `autopilot-prompt.md`。Agent / Skill 的设计原则见 [01 统一设计规范](01-multica-openspec-design-guideline.md)。
 
 | Agent | Description 摘要 |
 | --- | --- |
