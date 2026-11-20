@@ -16,7 +16,7 @@ function fixture(t, scenario = "normal") {
     const path = join(root, name); mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, typeof value === "string" ? value : JSON.stringify(value)); return path;
   };
-  const shared = "projects/multica/skills/_shared/";
+  const shared = "projects/multica/workspace-config/";
   const overlay = write(shared + "workspaces/pilot.json", { workspace_id: "ws-1" });
   const agents = [{ dir: "analyst", name: "Analyst", skills: ["spec-preparation"] }];
   if (scenario === "branch") agents.push({ dir: "engineer", name: "Engineer", skills: [] });

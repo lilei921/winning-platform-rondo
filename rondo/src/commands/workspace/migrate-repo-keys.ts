@@ -115,7 +115,7 @@ function loadOverlay(workspace: string): WorkspaceOverlay {
   if (!/^[A-Za-z0-9._-]+$/.test(workspace) || workspace === "." || workspace === "..") {
     throw new UnknownError(`非法 workspace 名称: ${workspace}`);
   }
-  const path = join(REPO_ROOT, "skills", "_shared", "workspaces", `${workspace}.json`);
+  const path = join(REPO_ROOT, "workspace-config", "workspaces", `${workspace}.json`);
   const overlay = parseJsonFile(path) as WorkspaceOverlay;
   if (!isObject(overlay) || typeof overlay.workspace_id !== "string" || !overlay.workspace_id) {
     throw new UnknownError(`overlay 缺少 workspace_id: ${path}`);

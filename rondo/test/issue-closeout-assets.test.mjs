@@ -8,7 +8,7 @@ const multicaRoot = fileURLToPath(new URL("../../", import.meta.url));
 const read = (path) => readFileSync(join(multicaRoot, path), "utf8");
 
 test("issue-closeout 名称、Manifest 与 Agent 绑定一致", () => {
-  const manifest = JSON.parse(read("skills/_shared/provisioning.json"));
+  const manifest = JSON.parse(read("workspace-config/provisioning.json"));
   const skillDir = join(multicaRoot, "skills/issue-closeout");
   const skill = read("skills/issue-closeout/SKILL.md");
   assert.equal(skill.split("\n")[1], "name: issue-closeout");

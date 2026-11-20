@@ -7,7 +7,7 @@ import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { UnknownError } from "../cli/errors.js";
 
-const STANDALONE_MARKER = join("skills", "_shared");
+const STANDALONE_MARKER = "workspace-config";
 const MONOREPO_MARKER = join("projects", "multica", STANDALONE_MARKER);
 
 function rootsAt(dir: string): { multicaRoot: string; monorepoRoot: string } | null {
@@ -25,7 +25,7 @@ export function resolveMulticaRoot(): { multicaRoot: string; monorepoRoot: strin
   if (envRoot) {
     const abs = resolve(envRoot);
     const roots = rootsAt(abs);
-    if (!roots) throw new UnknownError(`MULTICA_REPO_ROOT 无效（缺少 skills/_shared）: ${abs}`);
+    if (!roots) throw new UnknownError(`MULTICA_REPO_ROOT 无效（缺少 workspace-config）: ${abs}`);
     return roots;
   }
   let dir = resolve(process.cwd());
@@ -36,5 +36,5 @@ export function resolveMulticaRoot(): { multicaRoot: string; monorepoRoot: strin
     if (parent === dir) break;
     dir = parent;
   }
-  throw new UnknownError(`无法定位 Multica 根：从 cwd(${process.cwd()}) 上溯未找到 skills/_shared——请在项目仓库内执行，或设置 MULTICA_REPO_ROOT 环境变量`);
+  throw new UnknownError(`无法定位 Multica 根：从 cwd(${process.cwd()}) 上溯未找到 workspace-config——请在项目仓库内执行，或设置 MULTICA_REPO_ROOT 环境变量`);
 }

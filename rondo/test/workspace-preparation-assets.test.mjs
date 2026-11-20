@@ -6,7 +6,7 @@ import { join } from "node:path";
 
 const multica = fileURLToPath(new URL("../../", import.meta.url));
 const read = (path) => readFileSync(join(multica, path), "utf8");
-const skills = JSON.parse(read("skills/_shared/provisioning.json"));
+const skills = JSON.parse(read("workspace-config/provisioning.json"));
 
 test("workspace-preparation is managed and bound only to its three consumers", () => {
   assert.ok(skills.managed_skills.includes("workspace-preparation"));

@@ -6,7 +6,7 @@ import { resolve, dirname } from "node:path";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const multica = repoRoot;
-const manifest = JSON.parse(readFileSync(resolve(multica, "skills/_shared/provisioning.json"), "utf8"));
+const manifest = JSON.parse(readFileSync(resolve(multica, "workspace-config/provisioning.json"), "utf8"));
 
 test("Bug Fix Agent is managed independently of Delivery Squad", () => {
   const agent = manifest.agents.find((a) => a.dir === "bug-fix-agent");

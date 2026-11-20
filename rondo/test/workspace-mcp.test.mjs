@@ -18,7 +18,7 @@ function fixture(t) {
     const path = join(root, name); mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, typeof content === "string" ? content : JSON.stringify(content)); return path;
   };
-  const shared = "projects/multica/skills/_shared/";
+  const shared = "projects/multica/workspace-config/";
   const manifest = {
     mcp_servers: names.map(name => ({ name, template: name + ".json" })),
     managed_skills: ["demo"], agents: [
