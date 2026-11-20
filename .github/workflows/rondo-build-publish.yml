@@ -1,0 +1,114 @@
+name: Rondo Build and Publish
+
+on:
+  pull_request:
+    paths:
+      - "rondo/**"
+      - ".github/workflows/rondo-build-publish.yml"
+  push:
+    branches: [main]
+    paths:
+      - "rondo/**"
+      - ".github/workflows/rondo-build-publish.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # package-lock.json is intentionally not tracked in this repository.
+      - name: Install dependencies
+        run: npm install --package-lock=false --no-audit --no-fund
+        working-directory: rondo
+
+      - name: Build
+        run: npm run build
+        working-directory: rondo
+
+      - name: Test
+        run: npm test
+        working-directory: rondo
+
+      - name: Pack
+        run: npm pack
+        working-directory: rondo
+
+      - name: Check immutable package version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./rondo/package.json').version")"
+          package="rondo/winning-rondo-${version}.tgz"
+          existing="tools/winning-rondo-${version}.tgz"
+          if [[ ! -f "$package" ]]; then
+            echo "::error::Package does not match rondo/package.json version"
+            exit 1
+          fi
+          if [[ -f "$existing" ]] && ! cmp -s "$package" "$existing"; then
+            echo "::error::Version $version already exists with different content. Bump rondo/package.json version."
+            exit 1
+          fi
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rondo-cli-package
+          path: rondo/winning-rondo-*.tgz
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build-test-pack
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: rondo-cli-package
+          path: .artifacts
+
+      - name: Publish immutable versioned package to tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          packages=(.artifacts/winning-rondo-*.tgz)
+          if [[ ${#packages[@]} -ne 1 ]]; then
+            echo "::error::Expected exactly one Rondo package"
+            exit 1
+          fi
+
+          version="$(node -p "require('./rondo/package.json').version")"
+          filename="winning-rondo-${version}.tgz"
+          source="${packages[0]}"
+          if [[ "$(basename "$source")" != "$filename" ]]; then
+            echo "::error::Package filename does not match rondo/package.json"
+            exit 1
+          fi
+
+          target="tools/$filename"
+          if [[ -f "$target" ]]; then
+            if cmp -s "$source" "$target"; then
+              echo "Already published identical package: $target"
+              exit 0
+            fi
+            echo "::error::Version $version already exists with different content. Bump rondo/package.json version."
+            exit 1
+          fi
+
+          cp "$source" "$target"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$target"
+          git commit -m "chore(tools): publish $filename [skip ci]"
+          git push origin HEAD:main
