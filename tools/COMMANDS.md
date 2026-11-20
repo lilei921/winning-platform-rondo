@@ -1,14 +1,13 @@
 ---
 title: Rondo CLI 命令参考
 status: active
-updated_at: 2026-11-19
 ---
 
 # Rondo CLI 命令参考
 
 `rondo`（npm 包：`@winning/rondo`）用于 Multica 交付流程中的 OpenSpec Change 管理、工程分析与开发、Bug 交付、TFS Work Item 与 Git PR 操作、Workspace 配置和运行环境检查。
 
-其中 12 个命令组包含 44 个子命令，`query` 和 `doctor` 为顶级命令。
+具体可用命令以当前安装版本的 `rondo --help` 为准；本页按命令组介绍用途、参数和关键约束，不维护随版本变化的命令数量。
 
 ## 1. 命令格式与约定
 
@@ -25,60 +24,25 @@ rondo doctor --help
 - 退出码：`0` 成功或无须重复执行、`2` 前置条件不满足（FAIL）、`3` 结果不能确认（UNKNOWN）、`64` 命令用法错误。具体结果以命令输出为准。
 - `--help` 的具体输出和退出方式取决于子命令；可通过 `rondo --help` 和各命令组的 `--help` 查看入口。
 
-### 1.1 Multica 连接配置
-
-多数交付命令使用 `--config <repo-registry.json>`，其中 `runtime` 用于定义 Multica CLI、Workspace 和环境：
-
-```json
-{
-  "runtime": {
-    "multica_cli": "multica",
-    "workspace_id": "<workspace-id>",
-    "delivery_squad_id": "<delivery-squad-id>",
-    "multica_server_url": "<server-url>"
-  },
-  "registry": {}
-}
-```
-
-- `runtime.workspace_id` 指定工作区，避免操作落入 CLI 默认 Workspace。
-- `runtime.multica_profile` 用于选择命名的 Multica 连接配置；已绑定 `multica_server_url` 的配置需保持连接身份一致。
-- `registry` 按仓库键维护业务仓库路径、TFS 仓库名、项目和目标分支等信息；具体字段要求因命令而异。
-- 使用 `rondo workspace sync` 可为受管 Skill 生成所需的配置文件；`workitem-triage` 使用该配置调用 `rondo delivery handoff`。
-
-### 1.2 TFS 连接配置
-
-TFS 相关命令使用以下环境变量，或从 `config/tfs.config.json` 读取连接参数：
-
-| 环境变量 | 作用 |
-| --- | --- |
-| `TFS_PAT` | 访问令牌，不作为命令行参数传递 |
-| `TFS_SERVER_URL` | 完整的 TFS Collection URL，优先于 `TFS_URL` |
-| `TFS_URL` | TFS 基础地址，不包含 Collection |
-| `TFS_COLLECTION` | Collection 名称 |
-| `TFS_PROJECT` | 默认 TFS Project，可由命令的 `--project` 覆盖 |
-| `TFS_CLI_CONFIG` | 指定 TFS 配置文件路径 |
-
-TFS 配置按环境变量优先、配置文件其次的规则读取。配置文件可包含 `url`、`collection`、`project`、`token`；连接令牌不应写入命令或日志。
+配置安装、TFS 连接、Multica Workspace 和 Repository Registry 的说明见 [README.md](README.md#5-运行期配置)。本页仅保留命令调用契约。
 
 ## 2. 命令总览
 
-| 命令组 | 子命令 | 数量 | 主要用途 |
-| --- | --- | ---: | --- |
-| `change` | `resolve-identity`、`update-progress` | 2 | Change 身份解析、任务进度 |
-| `analysis` | `stage`、`validate`、`complete`、`read` | 4 | 分析事实、Gate、审核提交和工件读取 |
-| `dev` | `materialize`、`prepare`、`check-dispatch`、`check-completion`、`check-change`、`publish`、`pr-prep`、`contract-hash` | 8 | 旧派发与新 Change 研发准备、发布、验证 |
-| `bug` | `prepare-pr`、`git`、`resume` | 3 | 独立 TFS Bug 修复交付 |
-| `tfs` | `writeback`、`materialize-tasks`、`resolve-tasks`、`reconcile-workitem` | 4 | TFS 工作项同步与交付回写 |
-| `pr` | `materialize`、`worktree`、`reconcile-status`、`create`、`get`、`list` | 6 | PR 创建、查询、状态对账及 Worktree |
-| `delivery` | `handoff`、`route-decision`、`finalize` | 3 | 准入交接、人工决策路由与交付收口 |
-| `workspace` | `provision`、`sync`、`migrate-repo-keys`、`check-daemon` | 4 | Workspace 资源供给、同步及检查 |
-| `runtime` | `resolve-root-repo`、`check-checkout`、`prepare-root` | 3 | 根仓库定位、就绪检查与持久根仓安全同步 |
-| `repo` | `get` | 1 | 查询 TFS Git 仓库 |
-| `branch` | `get` | 1 | 查询 TFS Git 分支 |
-| `workitem` | `set-state`、`comment`、`create`、`link-commits`、`download-attachment` | 5 | TFS Work Item 操作 |
-| 顶级 | `query`、`doctor` | 2 | WIQL 查询、环境体检 |
-| **合计** | **46 个命令** | **46** | |
+| 命令组 | 子命令 | 主要用途 |
+| --- | --- | --- |
+| `change` | `resolve-identity`、`update-progress` | Change 身份解析、任务进度 |
+| `analysis` | `stage`、`validate`、`complete`、`read` | 分析事实、Gate、审核提交和工件读取 |
+| `dev` | `materialize`、`prepare`、`check-dispatch`、`check-completion`、`check-change`、`publish`、`pr-prep`、`contract-hash` | 旧派发与新 Change 研发准备、发布、验证 |
+| `bug` | `prepare-pr`、`git`、`resume` | 独立 TFS Bug 修复交付 |
+| `tfs` | `writeback`、`materialize-tasks`、`resolve-tasks`、`reconcile-workitem` | TFS 工作项同步与交付回写 |
+| `pr` | `materialize`、`worktree`、`reconcile-status`、`create`、`get`、`list` | PR 创建、查询、状态对账及 Worktree |
+| `delivery` | `handoff`、`route-decision`、`finalize` | 准入交接、人工决策路由与交付收口 |
+| `workspace` | `provision`、`sync`、`migrate-repo-keys`、`check-daemon` | Workspace 资源供给、同步及检查 |
+| `runtime` | `resolve-root-repo`、`check-checkout`、`prepare-root` | 根仓库定位、就绪检查与持久根仓安全同步 |
+| `repo` | `get` | 查询 TFS Git 仓库 |
+| `branch` | `get` | 查询 TFS Git 分支 |
+| `workitem` | `set-state`、`comment`、`create`、`link-commits`、`download-attachment` | TFS Work Item 操作 |
+| 顶级 | `query`、`doctor` | WIQL 查询、环境体检 |
 
 ## 3. Change 与 Analysis
 
@@ -205,8 +169,6 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 | `pr get` | 根据仓库和 PR ID 查询 TFS PR |
 | `pr list` | 按仓库、状态、源分支等条件查询 TFS PR 列表 |
 
-`pr worktree` 的 `create`、`remove` 和 `prune` 为一个命令的三种操作模式，命令总数按一个计算。
-
 ## 6. TFS 工作项与仓库
 
 ### 6.1 `rondo tfs`
@@ -283,7 +245,7 @@ rondo workspace check-daemon --workspace-id <id> [--project-id <id>]
 | `workspace migrate-repo-keys` | 预览或实施 Workspace Issue 中的 Repository Key Metadata 变更；`--apply` 才写入 |
 | `workspace check-daemon` | 检查 Daemon 环境变量、Runtime 注册、挂载唯一性和交付亲和条件 |
 
-`workspace provision` 的 `--dry-run` 只预览；`workspace sync --local-only` 只生成本地配置，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。完整 provision 将 `workspace-config/provisioning.json` 中的 `project.workspace_branch` 下发为每个受管 Agent 的 `RONDO_WORKSPACE_BRANCH`。
+`workspace provision` 的 `--dry-run` 只预览；`workspace sync --local-only` 只生成本地配置，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。完整 provision 将 `_shared/provisioning.json` 中的 `project.workspace_branch` 下发为每个受管 Agent 的 `RONDO_WORKSPACE_BRANCH`。
 
 ### 7.2 `rondo runtime`
 
@@ -301,7 +263,7 @@ rondo runtime prepare-root [--root-repo <path>] [--branch <branch>]
 rondo doctor [--require <check1,check2,...>] [--format text|json] [--expect-openspec <version>] [--workspace-id <id> [--profile <name>]] [--network-sample <N>] [--network-interval <ms>]
 ```
 
-`doctor` 为只读环境体检命令。默认检查 16 项，另有按需执行的 `network_baseline`，共 17 项可选检查。
+`doctor` 为只读环境体检命令。默认检查基础环境；`network_baseline` 需按需显式启用。具体检查项以当前版本 `doctor --help` 和输出为准。
 
 | 类别 | 检查项 |
 | --- | --- |
@@ -326,26 +288,3 @@ rondo doctor --require network_baseline --network-sample 5 --network-interval 50
 - `--network-sample`、`--network-interval` 仅用于 `network_baseline`，必须配合 `--require network_baseline`。
 - 不指定 `--format json` 时输出人类可读的文本结果。
 
-## 9. 常用命令示例
-
-以下均为 CLI 调用示例，请替换占位符为实际 Workspace、Issue、Repository 和文件路径：
-
-```bash
-# Wayfinder 已完成准入后交接
-rondo delivery handoff --config <repo-registry.json> --issue <KEY>
-
-# 读取 Change 的任务清单
-rondo analysis read --config <repo-registry.json> --issue <KEY> --file tasks.md
-
-# 查看单个 Issue 对应的 PR 状态
-rondo pr reconcile-status --config <repo-registry.json> --issue <KEY>
-
-# 检查 Workspace Skill 是否存在同步差异
-rondo workspace sync --workspace <name> --check
-
-# 查询 TFS Git PR
-rondo pr list --repo <repo> --status active --project <project>
-
-# 检查 CLI 与 Multica/TFS 的运行环境
-rondo doctor --require rondo_self,tfs_api,multica_api --format json
-```
