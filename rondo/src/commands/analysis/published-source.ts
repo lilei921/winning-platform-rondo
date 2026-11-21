@@ -50,7 +50,7 @@ export function assertCommittedContractFiles(
 export function committedContract(
   root: string, commit: string, facts: Facts, meta: Record<string, unknown>,
 ) {
-  const tree = readGitTree(root, commit, "openspec/changes/" + facts.change_ref, true);
+  const tree = readGitTree(root, commit, "openspec/changes/" + facts.change_ref);
   const read = (path: string): Buffer => {
     const entry = tree.get(path);
     if (!entry || !/^100(?:644|755)$/.test(entry.mode)) throw new FailError("Git 版本缺少普通 Gate 工件: " + path);
