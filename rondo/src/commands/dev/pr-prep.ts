@@ -67,7 +67,8 @@ type FailCode =
   | "head_mismatch"
   | "description_file_missing"
   | "description_file_empty"
-  | "invalid_delivery_facts";
+  | "invalid_delivery_facts"
+  | "precondition_failed";
 
 interface Args {
   config: string;
@@ -163,7 +164,7 @@ function resolveLegacyDescription(args: Args, openspecRoot: string): { path: str
 
 interface DeliveryInput {
   validation?: { command?: string[]; summary?: string };
-  code_review?: { result?: string; summary?: string; findings?: Array<{ resolved?: boolean; blocking?: boolean; risk_note?: string; risk_ref?: string }> };
+  code_review?: { result?: string; candidate_commit?: string; summary?: string; findings?: Array<{ resolved?: boolean; blocking?: boolean; risk_note?: string; risk_ref?: string }> };
   blockers?: string[];
   description?: string;
 }
@@ -289,6 +290,9 @@ async function main(rawArgs: string[]): Promise<number> {
     let delivery: DeliveryInput & { description: string } | undefined;
     if (args.mode === "requirement") {
       delivery = validateDeliveryInput(args.deliveryFacts, args.description);
+      if (delivery.code_review?.candidate_commit !== args.candidateCommit) {
+        throw new FailError("Code Review 审核的 Candidate 与实际待发布 Commit 不一致");
+      }
       verifyAndExecuteValidation(paths.rootRepo, args.validationCwd || hub, repo.repo_url!,
         args.candidateCommit, delivery.validation!.command!);
     } else {
@@ -299,7 +303,20 @@ async function main(rawArgs: string[]): Promise<number> {
     }
 
     // 3. 合并写入（保留其他仓条目，同仓条目整体替换）
-    const existing = parseExistingPrep(issue.metadata?.["pr_prep"], args.issue);
+    // Re-read after validation: it may have taken minutes and another repo may have completed meanwhile.
+    const fresh = multica.getIssue(args.issue);
+    if (fresh.status !== issue.status ||
+        ["analysis.source", "analysis.human_approval", "analysis.change_ref", "analysis.gate.result"].some(
+          k => fresh.metadata?.[k] !== issue.metadata?.[k])) {
+      throw new UnknownError("Validation 期间 Issue 授权或 Analysis 来源变化，请重新准备");
+    }
+    const beforePrep = parseExistingPrep(issue.metadata?.["pr_prep"], args.issue);
+    const existing = parseExistingPrep(fresh.metadata?.["pr_prep"], args.issue);
+    const originalMine = beforePrep.find(e => e?.repo_key === args.repo);
+    const currentMine = existing.find(e => e?.repo_key === args.repo);
+    if (JSON.stringify(originalMine) !== JSON.stringify(currentMine)) {
+      throw new UnknownError("Validation 期间本仓 PR Preparation 已被其他 Runtime 修改，停止覆盖");
+    }
     const preserved = existing.filter((e) => e?.repo_key !== args.repo);
     const entry: PrPrepEntry = {
       repo_key: args.repo,
@@ -311,7 +328,7 @@ async function main(rawArgs: string[]): Promise<number> {
         description: delivery.description,
         local_validation: { result: "PASS", summary: delivery.validation!.summary!, command: delivery.validation!.command!,
           exit_code: 0, candidate_commit: args.candidateCommit, source: "rondo dev pr-prep" as const },
-        code_review: { result: "PASS", candidate_commit: args.candidateCommit, summary: delivery.code_review!.summary!, findings: delivery.code_review!.findings! },
+        code_review: { result: "PASS", candidate_commit: delivery.code_review!.candidate_commit!, summary: delivery.code_review!.summary!, findings: delivery.code_review!.findings! },
         blockers: [],
       }),
     };
@@ -338,8 +355,8 @@ async function main(rawArgs: string[]): Promise<number> {
     if (fieldMismatch) {
       throw new UnknownError(`pr_prep 回读不一致：本仓条目与写入值不符（写入 ${JSON.stringify(entry)}，回读 ${JSON.stringify(mine ?? null)}）`);
     }
-    if (preservedAfter.length !== preserved.length) {
-      throw new UnknownError(`pr_prep 回读不一致：他仓条目数 ${preservedAfter.length} != 写入前 ${preserved.length}（疑似并发写冲突，交 Lead 核对）`);
+    if (JSON.stringify(preservedAfter) !== JSON.stringify(preserved)) {
+      throw new UnknownError("pr_prep 回读不一致：其他 Repository 的交付事实被覆盖或改变");
     }
 
     process.stdout.write(JSON.stringify({
@@ -359,7 +376,7 @@ async function main(rawArgs: string[]): Promise<number> {
     return 0;
   } catch (exc) {
     if (exc instanceof FailError) {
-      return fail(args.issue, "repo_key_not_in_registry", [exc.message]);
+      return fail(args.issue, "precondition_failed", [exc.message]);
     }
     if (exc instanceof UnknownError) {
       log(`UNKNOWN: ${exc.message}`);
