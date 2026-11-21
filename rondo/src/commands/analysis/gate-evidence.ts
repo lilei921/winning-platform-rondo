@@ -1,14 +1,12 @@
 /**
  * Analysis Gate 证据：绑定执行身份、当前 Change 工件和已审核的 Issue Facts。
- * 排除 Gate Result 自身与约定 Handoff 的派生 gate 字段，避免收口步骤使摘要失效；
- * 其他工程内容和 Review Evidence 必须保持一致。摘要不是审批凭据。
+ * 只计算当前 Engineering Contract 与显式引用的可信内容。
+ * Gate 是内存执行结果，不在 Change 内存储 Gate 或 Handoff 文件。
  */
 import { createHash } from "node:crypto";
 import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
-import { basename, join, resolve } from "node:path";
-import { FailError, UnknownError } from "../../cli/errors.js";
-import { assertStableChangeRef, type ChangeSchema, type ChangeKind } from "./change-schema.js";
-import { draftMetadataEntries, type Facts } from "./facts.js";
+import { basename, join } from "node:path";
+import { UnknownError } from "../../cli/errors.js";
 
 export const ANALYSIS_GATE_CHECKS = [
   "identity", "change", "acceptance_contract", "tasks",
@@ -135,83 +133,3 @@ export function digestGateFiles(changeId: string, selected: Set<string>, meta: R
   return hash.digest("hex");
 }
 
-export interface GateEvidence {
-  result: string;
-  issue_id: string;
-  workspace_id: string;
-  change_ref: string;
-  change_kind: ChangeKind;
-  schema: ChangeSchema;
-  change_digest: string;
-  digest_eol?: "lf";
-  metadata_digest: string;
-  checks: Array<{ name: string; result: string }>;
-}
-
-/** 拒绝错配或过期结果，不能只凭输入 Facts 中的 PASS 字符串提交审核。 */
-export function verifyGateEvidence(
-  rootRepo: string,
-  facts: Facts,
-  schema: ChangeSchema,
-  issueId: string,
-  workspaceId: string,
-  metadata: Record<string, unknown>,
-): GateEvidence {
-  assertStableChangeRef(facts.change_ref);
-  const expectedRef = `openspec/changes/${facts.change_ref}/logs/analysis-gate-result.json`;
-  if (facts.gate.reasons_ref !== expectedRef) {
-    throw new FailError(`gate.reasons_ref 必须是本次 Change 的 Gate 结果：${expectedRef}`);
-  }
-  const path = resolve(rootRepo, facts.gate.reasons_ref);
-  let gate: unknown;
-  try {
-    gate = JSON.parse(readFileSync(path, "utf8"));
-  } catch (exc) {
-    throw new UnknownError(`无法读取/解析 Gate Result ${path}: ${String(exc)}`);
-  }
-  const dir = join(rootRepo, "openspec", "changes", facts.change_ref);
-  return verifyGateEvidenceData(gate, facts, schema, issueId, workspaceId, metadata, changeEvidenceDigest(dir, metadata, undefined, (gate as GateEvidence | null)?.digest_eol === "lf"));
-}
-
-/** 审核重放核验固定 commit 内的 Gate，不能仅凭 metadata PASS 或 tasks.md 存在放行。 */
-export function verifyGateEvidenceData(
-  gate: unknown, facts: Facts, schema: ChangeSchema, issueId: string,
-  workspaceId: string, metadata: Record<string, unknown>, digest?: string,
-): GateEvidence {
-  if (facts.gate.reasons_ref !== `openspec/changes/${facts.change_ref}/logs/analysis-gate-result.json`) {
-    throw new FailError("gate.reasons_ref 必须引用当前 Change 的固定 Gate Result");
-  }
-  if (!gate || typeof gate !== "object") throw new FailError("Gate Result 不是对象");
-  const evidence = gate as Partial<GateEvidence>;
-  const mismatches: string[] = [];
-  if (evidence.result !== "PASS" || facts.gate.result !== "PASS") mismatches.push("Gate Result 不是 PASS");
-  if (evidence.issue_id !== issueId) mismatches.push("issue_id");
-  if (evidence.workspace_id !== workspaceId) mismatches.push("workspace_id");
-  if (evidence.change_ref !== facts.change_ref) mismatches.push("change_ref");
-  if (evidence.change_kind !== facts.change_kind) mismatches.push("change_kind");
-  if (evidence.schema !== schema) mismatches.push("schema");
-  if (evidence.metadata_digest !== metadataEvidenceDigest(metadata) ||
-      evidence.metadata_digest !== metadataEvidenceDigest({ ...metadata, ...draftMetadataEntries(facts) })) {
-    mismatches.push("Analysis Facts 与 Gate 审核快照不一致，请重新 stage 和 Gate");
-  }
-
-  if (!Array.isArray(evidence.checks)) {
-    mismatches.push("checks");
-  } else {
-    const observed = new Map<string, string>();
-    for (const check of evidence.checks) {
-      if (!check || typeof check.name !== "string" || observed.has(check.name)) {
-        mismatches.push("checks 存在重复或非法项"); break;
-      }
-      observed.set(check.name, check.result);
-    }
-    if (observed.size !== ANALYSIS_GATE_CHECKS.length ||
-        ANALYSIS_GATE_CHECKS.some((name) => observed.get(name) !== "PASS")) {
-      mismatches.push("checks 缺少必需 PASS 检查项");
-    }
-  }
-  if (typeof evidence.change_digest !== "string" || !/^[a-f0-9]{64}$/.test(evidence.change_digest)) mismatches.push("change_digest");
-  if (digest !== undefined && evidence.change_digest !== digest) mismatches.push("Change 工件已变化，请重新执行 Gate");
-  if (mismatches.length) throw new FailError(`Gate Result 与当前 Analysis 不一致: ${mismatches.join("; ")}`);
-  return evidence as GateEvidence;
-}
