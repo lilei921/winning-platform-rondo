@@ -31,7 +31,7 @@ function prep(key, sha) {
 }
 
 test("Requirement Scope, Candidate 和验证/Review 必须由同一份原生事实绑定", () => {
-  assert.deepEqual(parseRepositoryScope("schema: intentional-change\\nx-repositories:\\n  - frame\\n  - web\\n"), ["frame", "web"]);
+  assert.deepEqual(parseRepositoryScope("schema: intentional-change\nx-repositories:\n  - frame\n  - web\n"), ["frame", "web"]);
   assert.deepEqual(validateChangeDelivery([prep("frame", sha1)], ["frame","web"], 42, registry), {frame:sha1});
   assert.deepEqual(validateChangeDelivery([prep("frame",sha1),prep("web",sha2)], ["frame","web"],42,registry), {frame:sha1,web:sha2});
   assert.throws(() => validateChangeDelivery([prep("web",sha2)], ["frame"],42,registry), /Scope/);
@@ -44,12 +44,12 @@ test("Requirement Scope, Candidate 和验证/Review 必须由同一份原生事�
 test("Requirement Closeout 读取批准范围与现有 pr_prep，不依赖 Evidence JSON", t => {
   const changeDir = mkdtempSync(join(tmpdir(), "rondo-requirement-scope-"));
   t.after(() => rmSync(changeDir, { recursive: true, force: true }));
-  writeFileSync(join(changeDir, ".openspec.yaml"), "schema: intentional-change\\nx-repositories: [frame]\\n");
-  writeFileSync(join(changeDir, "proposal.md"), "# Proposal\\n");
-  writeFileSync(join(changeDir, "tasks.md"), "- [x] 1.1 Build\\n");
+  writeFileSync(join(changeDir, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [frame]\n");
+  writeFileSync(join(changeDir, "proposal.md"), "# Proposal\n");
+  writeFileSync(join(changeDir, "tasks.md"), "- [x] 1.1 Build\n");
   const md = { "tfs.id": "42", "analysis.change_ref": "foo-42", pr_prep: JSON.stringify([prep("frame", sha1)]) };
   assert.doesNotThrow(() => assertRequirementEvidence(registry, md, changeDir, "foo-42"));
-  writeFileSync(join(changeDir, ".openspec.yaml"), "schema: intentional-change\\nx-repositories: [web]\\n");
+  writeFileSync(join(changeDir, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [web]\n");
   assert.throws(() => assertRequirementEvidence(registry, md, changeDir, "foo-42"), /Scope/);
 });
 
