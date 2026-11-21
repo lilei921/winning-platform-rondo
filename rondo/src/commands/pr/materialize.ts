@@ -31,8 +31,6 @@ import { assertBugReadyForPr } from "../bug/scope.js";
 import { TfsClient } from "../../clients/tfs.js";
 import { checkPublishedChange } from "../dev/change-completion.js";
 import { isRequirementChangeDelivery } from "../delivery/requirement-mode.js";
-import { RemoteArtifactReader } from "../delivery/remote-artifacts.js";
-import { readAnalysisSource } from "../analysis/source.js";
 
 class FailItem extends Error {      // 单仓明确失败：记 failures，不中断其余仓
   readonly detail: Record<string, unknown>;
@@ -60,6 +58,7 @@ interface PrPrepEntry {
   candidate_commit: string;
   title: string;
   description_ref?: string;
+  description?: string;
 }
 
 interface CurrentPrEntry {
@@ -156,8 +155,10 @@ export function renderBugPrDescription(delivery: BugDeliveryEntry): string {
 
 /** 显式描述文件原样使用；独立 Bug 缺省格式化 bug.delivery；其他交付缺省使用 title。 */
 export function resolveDescription(entry: PrPrepEntry, bugDelivery?: BugDeliveryEntry, remoteDescription?: string): { file: string | null; cleanup: boolean } {
-  if (remoteDescription !== undefined && entry.description_ref?.startsWith("change:")) {
-    if (!remoteDescription.trim()) throw new FailItem({ repo_key: entry.repo_key, reason: "empty_remote_description" });
+  if (remoteDescription !== undefined) {
+    if (!remoteDescription.trim() || remoteDescription.includes("补 TFS 工作项 id")) {
+      throw new FailItem({ repo_key: entry.repo_key, reason: "empty_or_incomplete_description" });
+    }
     const tmp = join(tmpdir(), `pr-desc-${process.pid}-${Date.now()}-${entry.repo_key}.md`);
     writeFileSync(tmp, remoteDescription, "utf8");
     return { file: tmp, cleanup: true };
@@ -312,16 +313,9 @@ async function main(rawArgs: string[]): Promise<number> {
     }
 
     // Explicit Requirement mode: fully validate published Change before any external PR side effect.
-    let descriptions: Map<string, string> | undefined;
     if (args.mode === "requirement") {
       if (!args["change-ref"]) throw new FailError("Requirement PR 需要 --change-ref");
-      const checked = await checkPublishedChange(cfg, multica, args.issue, args["change-ref"]);
-      const reader = new RemoteArtifactReader(readAnalysisSource(md).repo_url);
-      descriptions = new Map<string, string>();
-      for (const entry of prep) {
-        descriptions.set(entry.repo_key, await reader.read(checked.commit,
-          "/openspec/changes/" + args["change-ref"] + "/pr-description-" + entry.repo_key + ".md"));
-      }
+      await checkPublishedChange(cfg, multica, args.issue, args["change-ref"]);
       const latest = multica.getIssue(args.issue);
       if (latest.metadata?.["pr_prep"] !== md["pr_prep"] ||
           latest.metadata?.["dev.publication"] !== md["dev.publication"] ||
@@ -340,7 +334,7 @@ async function main(rawArgs: string[]): Promise<number> {
         if (bugDeliveryByRepo && (!bugDelivery || bugDelivery.candidate_commit !== entry.candidate_commit)) {
           throw new FailItem({ repo_key: entry.repo_key, reason: "bug_delivery_identity_mismatch" });
         }
-        prs.push(await materializeOne(tfs, cfg, tfsId, entry, undefined, bugDelivery, descriptions?.get(entry.repo_key)));
+        prs.push(await materializeOne(tfs, cfg, tfsId, entry, undefined, bugDelivery, args.mode === "requirement" ? entry.description : undefined));
       } catch (exc) {
         if (exc instanceof UnknownError) throw exc; // 身份/事实不可确认：整体停止
         if (exc instanceof FailItem) {
