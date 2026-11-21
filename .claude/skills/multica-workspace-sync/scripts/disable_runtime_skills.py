@@ -23,6 +23,7 @@ import getpass
 import json
 import os
 from pathlib import Path
+import socket
 import sys
 import time
 import urllib.error
@@ -48,6 +49,27 @@ class RuntimeGoneError(ApiError):
     """
 
 
+# 传输层瞬态故障：连接被拒、连接超时、连接重置。服务端返回 5xx 属于业务面故障，不重试。
+TRANSIENT_CONNECTION_ERRORS = (
+    ConnectionRefusedError,
+    ConnectionResetError,
+    TimeoutError,
+    socket.timeout,
+    socket.gaierror,
+)
+# 幂等读的重试次数与退避基数（秒）。写操作不重试，见 request() 的 transient 参数。
+READ_RETRIES = 3
+READ_RETRY_BASE_DELAY = 1.0
+
+
+def is_transient_connection_error(exc: BaseException) -> bool:
+    """只把传输层故障判为可重试；HTTP 状态码与业务错误一律不重试。"""
+    if isinstance(exc, urllib.error.HTTPError):
+        return False
+    reason = exc.reason if isinstance(exc, urllib.error.URLError) else exc
+    return isinstance(reason, TRANSIENT_CONNECTION_ERRORS)
+
+
 class MulticaClient:
     def __init__(self, base_url: str, token: str, workspace_id: str) -> None:
         self.base_url = base_url.rstrip("/")
@@ -57,41 +79,62 @@ class MulticaClient:
             "Accept": "application/json",
         }
 
-    def request(self, method: str, path: str, data: dict[str, Any] | None = None) -> Any:
+    def request(
+        self,
+        method: str,
+        path: str,
+        data: dict[str, Any] | None = None,
+        transient: bool = False,
+    ) -> Any:
+        """执行一次 API 调用；transient=True 时对传输层故障重试（仅限幂等读）。"""
         body = json.dumps(data).encode("utf-8") if data is not None else None
         headers = self.headers.copy()
         if data is not None:
             headers["Content-Type"] = "application/json"
-        req = urllib.request.Request(
-            self.base_url + path,
-            data=body,
-            headers=headers,
-            method=method,
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=30) as response:
-                raw = response.read()
-        except urllib.error.HTTPError as exc:
-            detail = exc.read(800).decode("utf-8", "replace")
-            raise ApiError(f"HTTP {exc.code} ({method} {path}): {detail}") from exc
-        except urllib.error.URLError as exc:
-            raise ApiError(f"Connection failed ({method} {path}): {exc.reason}") from exc
-        if not raw:
-            return None  # 204 No Content from the disable API.
-        try:
-            return json.loads(raw)
-        except json.JSONDecodeError as exc:
-            raise ApiError(f"Invalid JSON returned from {method} {path}") from exc
+        attempts = READ_RETRIES if transient else 1
+        last_error: BaseException | None = None
+        for attempt in range(attempts):
+            req = urllib.request.Request(
+                self.base_url + path,
+                data=body,
+                headers=headers,
+                method=method,
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=30) as response:
+                    raw = response.read()
+            except urllib.error.HTTPError as exc:
+                detail = exc.read(800).decode("utf-8", "replace")
+                raise ApiError(f"HTTP {exc.code} ({method} {path}): {detail}") from exc
+            except urllib.error.URLError as exc:
+                last_error = exc
+                if transient and attempt < attempts - 1 and is_transient_connection_error(exc):
+                    time.sleep(READ_RETRY_BASE_DELAY * (2 ** attempt))
+                    continue
+                raise ApiError(f"Connection failed ({method} {path}): {exc.reason}") from exc
+            except OSError as exc:
+                last_error = exc
+                if transient and attempt < attempts - 1 and is_transient_connection_error(exc):
+                    time.sleep(READ_RETRY_BASE_DELAY * (2 ** attempt))
+                    continue
+                raise ApiError(f"Connection failed ({method} {path}): {exc}") from exc
+            if not raw:
+                return None  # 204 No Content from the disable API.
+            try:
+                return json.loads(raw)
+            except json.JSONDecodeError as exc:
+                raise ApiError(f"Invalid JSON returned from {method} {path}") from exc
+        raise ApiError(f"Connection failed ({method} {path}): {last_error}")  # pragma: no cover
 
     def list_agents(self, workspace_id: str) -> list[dict[str, Any]]:
         query = urllib.parse.urlencode({"workspace_id": workspace_id})
-        result = self.request("GET", f"/api/agents?{query}")
+        result = self.request("GET", f"/api/agents?{query}", transient=True)
         if not isinstance(result, list):
             raise ApiError("GET /api/agents did not return a list")
         return result
 
     def get_agent(self, agent_id: str) -> dict[str, Any]:
-        result = self.request("GET", f"/api/agents/{urllib.parse.quote(agent_id, safe='')}")
+        result = self.request("GET", f"/api/agents/{urllib.parse.quote(agent_id, safe='')}", transient=True)
         if not isinstance(result, dict):
             raise ApiError(f"Invalid response for agent {agent_id}")
         return result
@@ -99,7 +142,9 @@ class MulticaClient:
     def discover_runtime_skills(self, runtime_id: str, timeout: float) -> list[dict[str, Any]]:
         prefix = f"/api/runtimes/{urllib.parse.quote(runtime_id, safe='')}/local-skills"
         try:
-            result = self.request("POST", prefix)
+            # 发现是只读语义（只列出 runtime 本地 Skill），传输层故障可重试；
+            # 重试最多多建一个 discovery 请求，不会改动 Agent 绑定。
+            result = self.request("POST", prefix, transient=True)
         except ApiError as exc:
             # runtime 已从该 workspace 消失（daemon 注销或重注册）：Agent 保留了失效绑定，
             # 没有可禁用的 Skill，需要改绑而不是重试。
@@ -114,7 +159,7 @@ class MulticaClient:
             if time.monotonic() - started >= timeout:
                 raise ApiError(f"Runtime {runtime_id}: discovery timed out after {timeout:g}s")
             time.sleep(0.5)
-            result = self.request("GET", f"{prefix}/{request_id}")
+            result = self.request("GET", f"{prefix}/{request_id}", transient=True)
             if not isinstance(result, dict):
                 raise ApiError(f"Runtime {runtime_id}: invalid discovery status response")
         if result.get("status") != "completed":

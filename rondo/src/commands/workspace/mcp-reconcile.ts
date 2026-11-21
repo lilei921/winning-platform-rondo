@@ -24,7 +24,8 @@ export interface McpDeps {
   unchanged: string[];
   unmanaged: string[];
   allowMissingAgents?: boolean;
-  run: (args: string[], input?: string) => unknown;
+  /** 第三个参数标记「幂等读」：读命令遇传输层瞬态故障可重试，写命令必须传 false。 */
+  run: (args: string[], input?: string, transient?: boolean) => unknown;
 }
 const record = (v: unknown): v is Record<string, any> => !!v && typeof v === "object" && !Array.isArray(v);
 const nameOk = (v: unknown): v is string => typeof v === "string" && /^[a-z][a-z0-9-]*$/.test(v);
@@ -97,13 +98,14 @@ export function mcpPayload(spec: McpSpec, readConnection: (file: string) => stri
     ...(spec.default_tools_approval_mode ? { default_tools_approval_mode: spec.default_tools_approval_mode } : {}) });
 }
 
-/** 所有 CLI 异常统一脱敏，包含服务端可能回显的 URL / headers；写操作不自动重试。 */
-function call(deps: McpDeps, args: string[], operation: string, input?: string): unknown {
-  try { return deps.run([...deps.cli, ...args, "--output", "json"], input); }
+/** 所有 CLI 异常统一脱敏，包含服务端可能回显的 URL / headers。
+ * transient=true 仅用于幂等读：传输层故障由 runJson 内部重试；写操作必须传 false。 */
+function call(deps: McpDeps, args: string[], operation: string, input?: string, transient = false): unknown {
+  try { return deps.run([...deps.cli, ...args, "--output", "json"], input, transient); }
   catch { throw new UnknownError(`MCP ${operation} 结果未知；请先回读平台后重试（原始输出已隐藏）`); }
 }
 function servers(deps: McpDeps): { id: string; name: string }[] {
-  const result = call(deps, ["workspace", "mcp", "list", deps.workspaceId], "清单读取");
+  const result = call(deps, ["workspace", "mcp", "list", deps.workspaceId], "清单读取", undefined, true);
   if (!Array.isArray(result) || result.some(v => !record(v) || !idOk(v.id) || typeof v.name !== "string")
       || new Set(result.map(v => v.id)).size !== result.length) throw new UnknownError("MCP 服务清单响应非法");
   return result;
@@ -143,7 +145,7 @@ export function reconcileMcpServers(specs: McpSpec[], deps: McpDeps, readConnect
 }
 
 function assignments(deps: McpDeps, agentId: string): { id: string; enabled: boolean }[] {
-  const result = call(deps, ["agent", "mcp", "list", agentId, "--workspace-id", deps.workspaceId], "Agent 绑定读取");
+  const result = call(deps, ["agent", "mcp", "list", agentId, "--workspace-id", deps.workspaceId], "Agent 绑定读取", undefined, true);
   if (!Array.isArray(result)) throw new UnknownError("MCP 绑定清单响应非法");
   const mapped = result.map(v => ({ id: v?.mcp_server_id ?? v?.server_id ?? v?.id, enabled: v?.enabled }));
   if (mapped.some(v => !idOk(v.id) || typeof v.enabled !== "boolean") || new Set(mapped.map(v => v.id)).size !== mapped.length) throw new UnknownError("MCP 绑定清单字段非法");

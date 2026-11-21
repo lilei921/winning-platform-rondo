@@ -26,6 +26,8 @@ import json
 import subprocess
 import sys
 
+from cli_retry import run_cli
+
 DEFAULT_WORKSPACE_SLUG = "winning-admin"
 
 # 只补这三个 Agent（按用户指定）；其余 Agent 不注入 Rondo 工作区变量
@@ -38,12 +40,18 @@ RONDO_KEYS = ("RONDO_WORKSPACE_PATH", "RONDO_WORKSPACE_BRANCH")
 
 
 def run(args: list[str], stdin_text: str | None = None) -> subprocess.CompletedProcess:
-    return subprocess.run(args, input=stdin_text, capture_output=True, encoding="utf-8", errors="replace")
+    """执行 multica 写命令；写命令不自动重试（可能已在服务端落地）。"""
+    return run_cli(args, stdin_text=stdin_text)
+
+
+def run_read(args: list[str]) -> subprocess.CompletedProcess:
+    """执行 multica 只读命令；传输层故障自动重试。"""
+    return run_cli(args, transient=True)
 
 
 def resolve_workspace_id(name_or_id: str) -> tuple[str, str]:
     """把 slug 或 id 解析为 (workspace_id, slug)。"""
-    out = run(["multica", "workspace", "list", "--output", "json"])
+    out = run_read(["multica", "workspace", "list", "--output", "json"])
     if out.returncode != 0:
         raise SystemExit(f"workspace list 失败: {out.stderr.strip()[:200]}")
     for ws in json.loads(out.stdout):
@@ -71,7 +79,7 @@ def main() -> None:
         "RONDO_WORKSPACE_BRANCH": RONDO_WORKSPACE_BRANCH,
     }
 
-    out = run(["multica", "agent", "list", "--workspace-id", ws_id, "--output", "json"])
+    out = run_read(["multica", "agent", "list", "--workspace-id", ws_id, "--output", "json"])
     if out.returncode != 0:
         raise SystemExit(f"agent list 失败: {out.stderr.strip()[:200]}")
     agents = {a.get("name"): a for a in json.loads(out.stdout)}
@@ -84,7 +92,7 @@ def main() -> None:
             continue
         aid = agent["id"]
 
-        g = run(["multica", "agent", "env", "get", aid,
+        g = run_read(["multica", "agent", "env", "get", aid,
                  "--workspace-id", ws_id, "--output", "json"])
         if g.returncode != 0:
             failed.append((name, f"env get: {g.stderr.strip()[:120]}"))
@@ -109,7 +117,7 @@ def main() -> None:
             continue
 
         # 回读校验：只比对键与值是否生效，不输出值
-        v = run(["multica", "agent", "env", "get", aid,
+        v = run_read(["multica", "agent", "env", "get", aid,
                  "--workspace-id", ws_id, "--output", "json"])
         env = json.loads(v.stdout).get("custom_env") or {}
         bad = [k for k in missing if env.get(k) != inject[k]]
