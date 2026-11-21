@@ -27,7 +27,7 @@ if (!isMainThread) {
       if (state.remote) {
         const tree = spawnSync(workerData.git, ["--git-dir", state.remote, "ls-tree", "-r", "--name-only", commit, "--", scope.slice(1)], { encoding: "utf8" });
         if (tree.status !== 0) { res.writeHead(404).end("{}"); return; }
-        files = tree.stdout.split(/\\r?\\n/).filter(Boolean).map(name => "/" + name);
+        files = tree.stdout.split(/\r?\n/).filter(Boolean).map(name => "/" + name);
       } else {
         files = Object.keys(state.versions?.[commit] ?? {}).filter(name => name.startsWith(scope + "/"));
       }
