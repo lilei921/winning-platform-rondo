@@ -1,117 +1,90 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { changeEvidenceDigest, metadataEvidenceDigest, verifyGateEvidence, ANALYSIS_GATE_CHECKS } from "../dist/commands/analysis/gate-evidence.js";
-import { draftMetadataEntries } from "../dist/commands/analysis/facts.js";
+import { changeEvidenceDigest, metadataEvidenceDigest, digestGateFiles } from "../dist/commands/analysis/gate-evidence.js";
+import { draftMetadataEntries, validateDraftFields } from "../dist/commands/analysis/facts.js";
 
-/** 证据单测只操作临时 Change；完整命令链另由 analysis-complete.test 验证。 */
 function fixture(t) {
-  const root = mkdtempSync(join(tmpdir(), "rondo-gate-evidence-"));
-  t.after(() => { assert.equal(dirname(resolve(root)), resolve(tmpdir())); rmSync(root, { recursive: true, force: true }); });
-  const dir = join(root, "openspec/changes/fixture-123");
-  mkdirSync(join(dir, "logs"), { recursive: true });
-  writeFileSync(join(dir, ".openspec.yaml"), "schema: corrective-change\n");
-  writeFileSync(join(dir, "proposal.md"), "Expected Behavior\nRoot Cause\nFix Strategy\nRegression Scope\n");
-  writeFileSync(join(dir, "tasks.md"), "- [ ] 1.1 验证 Fix\n");
-  const facts = { change_kind: "corrective", change_ref: "fixture-123",
-    verify_agent: { recommendation: "not_required", reason: "本地可验证", focus_refs: ["proposal.md"] } };
-  const handoff = join(dir, "analysis-handoff.json");
-  writeFileSync(handoff, JSON.stringify(facts));
-  const meta = { "tfs.id": "123", "tfs.type": "Bug", ...draftMetadataEntries(facts) };
-  const evidence = { result: "PASS", issue_id: "issue-1", workspace_id: "ws-test", change_ref: facts.change_ref,
-    change_kind: facts.change_kind, schema: "corrective-change", change_digest: changeEvidenceDigest(dir, meta),
-    metadata_digest: metadataEvidenceDigest(meta), checks: ANALYSIS_GATE_CHECKS.map(name => ({ name, result: "PASS" })) };
-  const ref = "openspec/changes/fixture-123/logs/analysis-gate-result.json";
-  const save = () => writeFileSync(join(root, ref), JSON.stringify(evidence));
-  save();
-  facts.gate = { result: "PASS", reasons_ref: ref };
-  const verify = () => verifyGateEvidence(root, facts, "corrective-change", "issue-1", "ws-test", meta);
-  return { dir, handoff, facts, meta, evidence, save, verify };
+  const root = mkdtempSync(join(tmpdir(), "rondo-contract-gate-"));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const dir = join(root, "openspec", "changes", "fixture-123");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [frame]\n");
+  writeFileSync(join(dir, "proposal.md"), "## Why\nProblem\n## What Changes\nFix\n");
+  writeFileSync(join(dir, "tasks.md"), "- [ ] 1.1 Fix and verify\n");
+  const facts = { change_kind: "intentional", change_ref: "fixture-123",
+    verify_agent: { recommendation: "not_required", reason: "reviewed", focus_refs: ["proposal.md"] },
+    ai_review: { verdict: "APPROVED" } };
+  const meta = { "tfs.id": "123", "tfs.type": "需求", ...draftMetadataEntries(facts) };
+  return { root, dir, facts, meta };
 }
 
-test("Handoff 补写 gate 不失效，修改专业 Facts 或 Review 日志必须失效", t => {
+test("Intentional AI Review 只要求 verdict，findings_ref 不再是必需字段", t => {
   const f = fixture(t);
-  writeFileSync(f.handoff, JSON.stringify(f.facts, null, 2));
-  assert.doesNotThrow(f.verify);
-  f.facts.verify_agent.reason = "更改专业结论";
-  writeFileSync(f.handoff, JSON.stringify(f.facts));
-  assert.throws(f.verify, /工件已变化/);
+  assert.deepEqual(validateDraftFields(f.facts, "intentional-change"), []);
+  assert.equal(f.meta["analysis.ai_review.findings_ref"], undefined);
+  assert.ok(validateDraftFields({ ...f.facts, ai_review: { verdict: "NEEDS_REVISION" } }, "intentional-change").length);
 });
 
-test("Gate 后即使 Facts 与 metadata 一起被替换也不能复用旧 PASS", t => {
+test("Gate 摘要只绑定工程契约，不依赖派生 Handoff 或 Gate JSON", t => {
   const f = fixture(t);
-  f.facts.verify_agent.recommendation = "required";
-  Object.assign(f.meta, draftMetadataEntries(f.facts));
-  assert.throws(f.verify, /Facts/);
+  const original = changeEvidenceDigest(f.dir, f.meta);
+  writeFileSync(join(f.dir, "analysis-handoff.json"), JSON.stringify({ gate: { result: "PASS" } }));
+  mkdirSync(join(f.dir, "logs"));
+  writeFileSync(join(f.dir, "logs", "analysis-gate-result.json"), JSON.stringify({ result: "FAIL" }));
+  assert.equal(changeEvidenceDigest(f.dir, f.meta), original);
+  writeFileSync(join(f.dir, "proposal.md"), "## Why\nDifferent\n");
+  assert.notEqual(changeEvidenceDigest(f.dir, f.meta), original);
 });
 
-test("外部 Facts 必须与 Gate 审核的 metadata 一致", t => {
+test("每个引用的真实 Change 内容改变后，重新计算不同 digest", t => {
   const f = fixture(t);
-  f.facts.verify_agent.reason = "仅替换输入文件";
-  assert.throws(f.verify, /Facts/);
+  const initial = changeEvidenceDigest(f.dir, f.meta);
+  f.meta["analysis.verify_agent.focus_refs"] = JSON.stringify(["proposal.md", "review/findings.md"]);
+  mkdirSync(join(f.dir, "review"));
+  writeFileSync(join(f.dir, "review", "findings.md"), "actual reference");
+  const bound = changeEvidenceDigest(f.dir, f.meta);
+  assert.notEqual(bound, initial);
+  writeFileSync(join(f.dir, "review", "findings.md"), "updated findings");
+  assert.notEqual(changeEvidenceDigest(f.dir, f.meta), bound);
 });
 
-for (const field of ["issue_id", "workspace_id", "schema", "change_digest", "metadata_digest"]) {
-  test(`拒绝错配的 Gate ${field}`, t => {
-    const f = fixture(t); f.evidence[field] = "wrong"; f.save();
-    assert.throws(f.verify, /不一致/);
-  });
-}
-
-test("Gate 缺项、重复检查与伪 PASS 都不得提交", t => {
+test("Metadata 摘要绑定 Verdict，不要求已退役的 findings_ref", t => {
   const f = fixture(t);
-  f.evidence.checks.pop(); f.save(); assert.throws(f.verify, /检查项/);
-  f.evidence.checks.push(f.evidence.checks[0]); f.save(); assert.throws(f.verify, /重复/);
-  f.evidence.result = "FAIL"; f.save(); assert.throws(f.verify, /不是 PASS/);
+  const before = metadataEvidenceDigest(f.meta);
+  assert.equal(metadataEvidenceDigest({ ...f.meta, "analysis.ai_review.findings_ref": "legacy.md" }), before);
+  assert.notEqual(metadataEvidenceDigest({ ...f.meta, "analysis.ai_review.verdict": "NEEDS_REVISION" }), before);
 });
 
-test("未引用的运行日志不使 Gate 过期；明确引用的 Review Evidence 受摘要保护", t => {
+test("拒绝不存在的、跨 Change、不安全或自引用的内部证据路径", t => {
   const f = fixture(t);
-  const before = changeEvidenceDigest(f.dir, f.meta);
-  writeFileSync(join(f.dir, "logs", "debug.log"), "unrelated runtime output");
-  writeFileSync(join(f.dir, "logs", "review.json"), JSON.stringify({ reviewed: "v1" }));
-  assert.equal(changeEvidenceDigest(f.dir, f.meta), before);
-  assert.doesNotThrow(f.verify);
-
-  f.meta["analysis.verify_agent.focus_refs"] = JSON.stringify(["proposal.md", "logs/review.json"]);
-  f.facts.verify_agent.focus_refs = ["proposal.md", "logs/review.json"];
-  f.evidence.metadata_digest = metadataEvidenceDigest(f.meta);
-  f.evidence.change_digest = changeEvidenceDigest(f.dir, f.meta);
-  f.save();
-  assert.doesNotThrow(f.verify);
-  writeFileSync(join(f.dir, "logs", "review.json"), JSON.stringify({ reviewed: "v2" }));
-  assert.throws(f.verify, /工件已变化/);
+  for (const value of ["review/missing.md", "openspec/changes/other-999/review.md",
+    "logs/../review.md", "logs/analysis-gate-result.json"]) {
+    const bad = { ...f.meta, "analysis.verify_agent.focus_refs": JSON.stringify([value]) };
+    assert.throws(() => changeEvidenceDigest(f.dir, bad));
+  }
 });
 
-test("Handoff 的派生 gate 不影响摘要；专业字段改变或 JSON 损坏仍拒绝", t => {
+test("拒绝链接形式的 Change 或显式引用内容", { skip: process.platform === "win32" }, t => {
   const f = fixture(t);
-  const before = changeEvidenceDigest(f.dir, f.meta);
-  writeFileSync(f.handoff, JSON.stringify({ change_kind: "corrective", change_ref: "fixture-123",
-    verify_agent: { recommendation: "not_required", reason: "本地可验证", focus_refs: ["proposal.md"] },
-    gate: { result: "PASS" } }, null, 2));
-  assert.equal(changeEvidenceDigest(f.dir, f.meta), before);
-  writeFileSync(f.handoff, "{broken");
-  assert.throws(() => changeEvidenceDigest(f.dir, f.meta), /Handoff/);
-});
-
-test("缺失、跨 Change 和不安全的被引用证据不得悄悄忽略", t => {
-  const f = fixture(t);
-  const withFindings = (ref) => ({ ...f.meta, "analysis.ai_review.findings_ref": ref });
-  assert.throws(() => changeEvidenceDigest(f.dir, withFindings("logs/missing.md")), /不存在/);
-  assert.throws(() => changeEvidenceDigest(f.dir, withFindings("openspec/changes/other-999/review.md")), /其他 Change/);
-  assert.throws(() => changeEvidenceDigest(f.dir, withFindings("logs/../review.md")), /不安全/);
-  assert.throws(() => changeEvidenceDigest(f.dir, withFindings("logs/analysis-gate-result.json")), /自引用/);
-});
-
-test("Gate 不接受符号链接形式的 Change 或被引用 Evidence", { skip: process.platform === "win32" }, t => {
-  const f = fixture(t);
-  const linked = join(f.dir, "logs", "linked-review.md");
+  mkdirSync(join(f.dir, "review"));
+  const linked = join(f.dir, "review", "linked.md");
   symlinkSync(join(f.dir, "proposal.md"), linked);
-  const refs = { ...f.meta, "analysis.ai_review.findings_ref": "logs/linked-review.md" };
-  assert.throws(() => changeEvidenceDigest(f.dir, refs), /非普通文件|符号链接/);
-  const alias = join(dirname(f.dir), "alias-change");
+  assert.throws(() => changeEvidenceDigest(f.dir, {
+    ...f.meta, "analysis.verify_agent.focus_refs": JSON.stringify(["review/linked.md"]),
+  }));
+  const alias = join(dirname(f.dir), "alias");
   symlinkSync(f.dir, alias, "dir");
-  assert.throws(() => changeEvidenceDigest(alias, f.meta), /无法安全读取 Change 目录/);
+  assert.throws(() => changeEvidenceDigest(alias, f.meta));
+});
+
+test("只读文件快照与 Change 的规范 digest 同算法", t => {
+  const f = fixture(t);
+  const selected = new Set();
+  const read = name => readFileSync(join(f.dir, ...name.split("/")));
+  assert.equal(digestGateFiles("fixture-123", selected, f.meta, read, false),
+    changeEvidenceDigest(f.dir, f.meta));
+  assert.equal(existsSync(join(f.dir, "logs", "analysis-gate-result.json")), false);
 });
