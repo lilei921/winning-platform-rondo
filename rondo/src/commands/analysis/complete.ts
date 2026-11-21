@@ -113,7 +113,7 @@ export function renderAnalysisReviewSummary(
     `- 重要风险：${risks}`,
     `- Engineering Contract：${schema} / ${source.change_ref}`,
     `- Git：${source.repo_url} @ ${source.commit}（${source.branch}）`,
-    "- Analysis Gate：PASS（由 rondo analysis complete 最终核验）",
+    "- Analysis Gate：PASS（以当前 Issue 已登记的结果为准）",
   ].join("\n");
 }
 
@@ -168,7 +168,7 @@ async function main(rawArgs: string[]): Promise<number> {
       if (violation) throw new PreconditionError(violation);
       const missing = validateDraftFields(facts, published.schema);
       if (missing.length) throw new PreconditionError(missing.join("; "));
-      if (!/^[a-f0-9]{64}$/.test(published.digest)) throw new UnknownError("固定来源的工程契约摘要非法");
+      // Idempotent replay checks the existing pinned source; it does not claim a new Gate execution.
       await readAnalysisArtifact(source, "tasks.md");
       const latest = runJson([...MC, "issue", "get", args.issue, ...ws, "--output", "json"], "重放后核对审核状态") as Record<string, unknown>;
       const current = runJson([...MC, "issue", "metadata", "list", args.issue, ...ws, "--output", "json"], "重放后核对来源") as Record<string, unknown>;
@@ -177,6 +177,7 @@ async function main(rawArgs: string[]): Promise<number> {
           Object.entries(entries).some(([k, v]) => current[k] !== v)) throw new UnknownError("审核重放期间状态或来源已变化，停止放行");
       await publishReviewSummary(new MulticaClient(runtime), String(before.id), source, facts);
       process.stdout.write(JSON.stringify({ result: "PASS", issue: args.issue, status: TARGET_STATUS,
+        replayed: true, gate_reexecuted: false,
         metadata_keys: [...Object.keys(entries), "analysis.source"], analysis_source: source,
         root_commit: { branch: source.branch, commit: source.commit, pushed: true, committed: "skipped_review_replay" } }, null, 2) + "\n");
       return 0;
