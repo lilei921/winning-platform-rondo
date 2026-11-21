@@ -1,7 +1,7 @@
 /**
  * analysis validate — Analysis Gate 确定性检查（02 §5.4）。
  *
- * 用法: rondo analysis validate --issue <issue-id> --openspec-root <path> --workspace-id <id> [--out <path>] [--multica <cli>]
+ * 用法: rondo analysis validate --issue <issue-id> --openspec-root <path> --workspace-id <id> [--multica <cli>]
  *
  * 输入：Issue（metadata 已含 analysis.* 事实）+ OpenSpec Change 目录。
  * 输出：{ result: PASS | FAIL | UNKNOWN, checks: [...], reasons: [...] }
@@ -57,7 +57,7 @@ function parseArgs(argv: string[]): Args {
   const issue = get("--issue");
   const openspecRoot = get("--openspec-root");
   if (!issue || !openspecRoot || !get("--workspace-id")) {
-    process.stderr.write("用法: rondo analysis validate --issue <issue-id> --openspec-root <path> --workspace-id <id> [--out <path>] [--multica <cli>]\n");
+    process.stderr.write("用法: rondo analysis validate --issue <issue-id> --openspec-root <path> --workspace-id <id> [--multica <cli>]\n");
     process.exit(64);
   }
   return { issue, openspecRoot, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), out: get("--out") };
@@ -367,9 +367,8 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
     if (!context) return gateOutcome({ result: "UNKNOWN", checks, reasons: ["Gate 缺少可核验的 Change 身份"] }, 3, null);
     try {
       const { change_dir, metadata, ...identity } = context;
-      const portable = classifyTfsType(metadata["tfs.type"]) === "requirement" && Boolean(process.env.RONDO_WORKSPACE_BRANCH);
-      const change_digest = changeEvidenceDigest(change_dir, metadata, undefined, portable);
-      return gateOutcome({ result, tool_version: TOOL_VERSION, ...identity, change_digest, ...(portable && { digest_eol: "lf" }), checks, reasons }, code, null);
+      const change_digest = changeEvidenceDigest(change_dir, metadata, undefined, true);
+      return gateOutcome({ result, tool_version: TOOL_VERSION, ...identity, change_digest, digest_eol: "lf", checks, reasons }, code, null);
     } catch (exc) {
       if (exc instanceof UnknownError) {
         return gateOutcome({ result: "UNKNOWN", checks, reasons: [exc.message] }, 3, null);
