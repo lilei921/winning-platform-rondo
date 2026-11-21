@@ -1,6 +1,6 @@
 # PR Status Sync 2026-11-21 回放修复方案
 
-> 状态：**TFS P0 生产验证已完成（当前同机部署）**；Clone workdir 与异步执行修复待实施；LEI-49 正式收口待验收。
+> 状态：**TFS P0 生产验证已完成（当前同机部署）**；Clone workdir 修复已提交 PR #22，待合并与真实 Runtime 验收；LEI-49 正式收口待验收。
 >
 > 范围：LEI-49 / PR #3947 Requirement Closeout；只处理回放中确认的 TFS Inspect 门禁、Clone 路径及重复启动，记录非阻断异常的处置结论。
 >
@@ -48,16 +48,16 @@
 
 ### 3.2 最小实现
 
-1. 在 `rondo delivery root-clone` 增加必需的 `--workdir <absolute-path>`。由 PR Status Sync Agent 从当前 Run 的可靠执行上下文获取并传入；不能把任意 `cwd` 默认当成 Task workdir。缺失或不是有效目录时明确失败，**不回退系统 Temp**。
-2. `cloneCloseoutRoot()` 接收 workdir，使用 `mkdtempSync(join(validatedWorkdir, "rondo-closeout-"))` 创建**workdir 的独立一级子目录**，不在 workdir 根目录直接 Clone。
-3. 复用原有 `.git/rondo-closeout-owner.json`，仅增加规范化 `workdir` 字段；继续记录原有 `token/repo_url/branch/commit/change_ref`，不新增 Manifest/Registry。Clone 返回的 `root_repo`、`cleanup_token`，以及后续 `--root-repo` 的契约不变。
-4. `verifyCloseoutRoot()` 与 `cleanupCloseoutRoot()` 仅替换硬编码 `tmpdir()` 的父目录判定：核对真实、规范化路径，确认根仓是 Owner Marker 记录的 workdir 下**一级受控子目录**，拒绝符号链接/越界等不可信路径。在 Windows 下正确处理路径分隔符、大小写与规范化。**复用**现有 Origin、Branch、批准 Commit、Cleanup token、Git 锁/WIP、远端已推送等安全检查，不重新发明一套。
-5. `root-cleanup --root-repo ... --token ...` 保持不变；只删除确认属于本次 Clone 的子目录，绝不删除 workdir 或其他分组的 Clone。执行异常时按现有策略保留现场；旧 Temp Clone 若仍存在须先按原有安全机制处理，不引入永久性宽松回退。
+1. 保持 `rondo delivery root-clone` 命令参数不变。当前 Multica Desktop + Codex 回放中，`Run.work_dir`、Session `cwd` 与 PowerShell 子进程工作目录一致；Rondo 直接使用 `realpathSync(process.cwd())`，不由 Agent 重复搬运路径，也不使用系统 Temp。
+2. `cloneCloseoutRoot()` 在当前进程 cwd 下通过 `mkdtempSync(join(workdir, "rondo-closeout-"))` 创建**独立一级子目录**；不向既有 workdir 根目录直接 Clone。
+3. 原有 `.git/rondo-closeout-owner.json` 仅增加 `workdir` 字段，继续保留 `token/repo_url/branch/commit/change_ref`；不创建 Manifest、Registry 或第二套工作区管理。Clone 返回的 `root_repo`、`cleanup_token` 和后续 `--root-repo` 契约不变。
+4. `verifyCloseoutRoot()` 与 `cleanupCloseoutRoot()` 将原 `tmpdir()` 父目录判定替换为 Owner 所记录的 workdir 边界核验；继续使用真实路径、Token、Origin、Branch、批准 Commit、Git 锁/WIP、远端回读与未 Push Commit 等现有安全检查，只删除受控 Clone 子目录。
+5. PR Status Sync Agent 在**当前 Multica Task workdir** 执行原命令；同一 Repository/Branch 同时仅一个 Clone 进行中。异步结果不明时先核实原任务，确认失败可按原因重试。若未来其他 Runtime 的 cwd 语义不同，应先实测再针对该 Runtime 调整，不提前加环境变量、Run API 查询或 CLI 参数。
 
-命令形态：
+命令保持不变：
 
 ```powershell
-rondo delivery root-clone --issue LEI-49 --config "<config-path>" --workdir "<当前 Multica Task workdir 的绝对路径>"
+rondo delivery root-clone --issue LEI-49 --config "<config-path>"
 ```
 
 目标结构：
@@ -68,13 +68,14 @@ rondo delivery root-clone --issue LEI-49 --config "<config-path>" --workdir "<�
   rondo-closeout-YYYYYY/    # 仅不同分组需要时创建
 ```
 
+不修改 `TEMP`/`TMP`，不在 `RONDO_WORKSPACE_PATH` 或 TFS 共享锁目录中保存本次 Clone。旧 Temp Clone 如尚未清理应按原版安全流程处理，不增加永久路径回退。
 ### 3.3 验收
 
 - Clone 的 `root_repo` 位于当前 Task workdir 直接子目录下，不再落到 `AppData/Local/Temp`。
 - 已有 Prepare/Inspect/Complete 继续使用相同 `--root-repo`，Archive Push 与远端回读不退化。
 - 同组多 Issue 一次 Clone、不同组各自独立；Cleanup 不删除 workdir 及其他组。
 - 错 token、越界/符号链接、伪造 Owner Marker、脏工作区、未推送 Commit、未完成 Git 操作均拒绝不安全清理并保留现场。
-- 扩展现有 `rondo/test/closeout-stage-a.test.mjs`，运行 Build、相关单测和完整测试；最后在 Windows Multica Desktop 的真实 Run 验证实际目录。测试 fixture 通过不等于生产 workdir 行为已验收。
+- 扩展现有 `rondo/test/closeout-stage-a.test.mjs` 的 cwd 路径与 Owner 边界断言，复用既有组内复用及安全清理测试；运行 Build 和完整测试，再在 Windows Multica Desktop 的真实 Run 验证实际目录。单元测试通过不等于生产 workdir 行为已验收。
 
 ## 4. P1：重复 Clone 与异步结果不明确
 
@@ -97,8 +98,8 @@ rondo delivery root-clone --issue LEI-49 --config "<config-path>" --workdir "<�
 | 顺序 | Owner / 范围 | 工作 |
 | --- | --- | --- |
 | 1（已完成） | TFS 集成与当前同机 Runtime | 真实跨 Project 反查、同机共享锁验证和生产变量注入，证据见第 2 章；不重复作为开发任务。 |
-| 2 | `rondo/src/commands/delivery/closeout-root.ts` | `--workdir`、受控 Clone 子目录、Owner Marker 与目录边界验证；沿用现有安全清理。 |
-| 3 | `agents/pr-status-sync-agent/instructions.md` | 提供当前 Run workdir；保持一组一个进行中 Clone、异步结果核实及安全 Cleanup。 |
+| 2 | `rondo/src/commands/delivery/closeout-root.ts` | 消费 `process.cwd()`、受控 Clone 子目录、Owner Marker 与目录边界验证；沿用现有安全清理。 |
+| 3 | `agents/pr-status-sync-agent/instructions.md` | 在当前 Task workdir 执行原命令；保持一组一个进行中 Clone、异步结果核实及安全 Cleanup。 |
 | 4 | 现有 Rondo 测试及真实 Multica Run | 目录隔离、清理安全、组内复用、完整 Closeout 复核；包装器问题有实证才另行修改。 |
 
 ### LEI-49 恢复验收顺序
@@ -111,4 +112,4 @@ rondo delivery root-clone --issue LEI-49 --config "<config-path>" --workdir "<�
 
 **不改** `issue-closeout` 的单 Issue 收口职责；不改 `finalize`/TFS Writeback 业务 Gate，不重写 Git Clone/分支算法，不引入新 Agent、Skill、状态表或缓存。
 
-> 本文是修订后的实施方案；截至引用的生产验收记录，TFS P0 同机验证已完成，**不代表 LEI-49 已完成实际 TFS Writeback/Complete，也不代表 Clone/异步修复已经实施**。
+> TFS P0 同机验证已完成；Clone/workdir 的代码变更见 [PR #22](https://github.com/lilei921/winning-platform-rondo/pull/22)，尚未合并及完成真实 Runtime 验收。**这不代表 LEI-49 已执行实际 TFS Writeback/Complete**。
