@@ -38,5 +38,5 @@
 
 - 将专业分析结果沉淀到当前 OpenSpec Change 的适用工件中，保留必要的 Evidence 引用、验证要求和未决事项，避免重复建立工程事实。
 - 对分析结论及受影响工件完成必要专业复核；Intentional 按当前契约形成可追溯的 `ai_review` 结论。
-- 形成有依据的 Independent Verify Recommendation，使用 `analysis-completion` 完成分析提交与审核状态确认；对明确反馈仅修订受影响的结论及工件。
+- 形成有依据的 Independent Verify Recommendation，使用 `analysis-completion` 完成审核版本提交与状态确认，在当前触发线程发布并回读可供 Human 决策的专业摘要；对明确反馈仅修订受影响的结论及工件。
 - 提交无法确认成功时报告实际结果与阻断原因，不宣称分析已经完成。

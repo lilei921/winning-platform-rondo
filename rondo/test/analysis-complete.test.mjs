@@ -110,7 +110,7 @@ function fixture(t, requirement = true) {
   return { home, root, change, remote, report, tfs, env, gate, complete, stage, state, setState, factsPath, metadata };
 }
 
-test("Stage → Preview → Complete: final Gate and fixed Git Contract; native Human Review; no Gate file", t => {
+test("Stage → Preview → Complete: final Gate and fixed Git Contract; no automatic Comment or Gate file", t => {
   const f = fixture(t);
   assert.equal(f.stage().exit, 0);
   const preview = f.gate();
@@ -125,11 +125,7 @@ test("Stage → Preview → Complete: final Gate and fixed Git Contract; native 
   assert.equal(git(f.remote, "show", source.commit + ":openspec/changes/" + CHANGE + "/proposal.md"), PROPOSAL.trim());
   assert.equal(f.state().metadata["analysis.gate.result"], "PASS");
   assert.equal(f.state().status, "analysis_review");
-  const comments = f.state().comments["issue-1"];
-  assert.equal(comments.length, 1);
-  for (const phrase of ["目标", "方案", "影响范围", "验证建议", "重要风险", source.commit, "PASS"]) {
-    assert.match(comments[0].content, new RegExp(phrase));
-  }
+  assert.equal(f.state().comments?.["issue-1"]?.length ?? 0, 0);
   assert.equal(existsSync(join(f.change, "logs", "analysis-gate-result.json")), false);
   assert.equal(existsSync(join(f.change, "analysis-handoff.json")), false);
 });
@@ -178,7 +174,7 @@ test("Git clean filter 修改工程正文，固定 Commit 不匹配时必须阻�
   assert.equal(f.state().metadata["analysis.source"], undefined);
 });
 
-test("Human Review 重放只读取固定 Git Commit，不再追随共享 HEAD；Comment 不重复", t => {
+test("Human Review 重放只读取固定 Git Commit，不再追随共享 HEAD 或自动新增 Comment", t => {
   const f = fixture(t);
   assert.equal(f.complete().exit, 0);
   const saved = f.state().metadata["analysis.source"];
@@ -187,7 +183,8 @@ test("Human Review 重放只读取固定 Git Commit，不再追随共享 HEAD；
   const replay = f.complete();
   assert.equal(replay.exit, 0, JSON.stringify(replay));
   assert.equal(f.state().metadata["analysis.source"], saved);
-  assert.equal(f.state().comments["issue-1"].length, 1);
+  assert.equal(replay.body.replayed, true);
+  assert.equal(f.state().comments?.["issue-1"]?.length ?? 0, 0);
 });
 
 test("Source 写入后状态切换失败，重试只复用等价远端 Contract", t => {
@@ -203,14 +200,14 @@ test("Source 写入后状态切换失败，重试只复用等价远端 Contract"
   assert.equal(f.state().metadata["analysis.source"], source);
 });
 
-test("Status 成功但响应丢失，重放校验固定来源并补齐 Issue Summary", t => {
+test("Status 成功但响应丢失，重放校验固定来源且不自动新增 Comment", t => {
   const f = fixture(t);
   f.env.MOCK_STATUS_RESPONSE_LOST = "1";
   assert.equal(f.complete().exit, 3);
   assert.equal(f.state().status, "analysis_review");
   delete f.env.MOCK_STATUS_RESPONSE_LOST;
   assert.equal(f.complete().exit, 0);
-  assert.equal(f.state().comments["issue-1"].length, 1);
+  assert.equal(f.state().comments?.["issue-1"]?.length ?? 0, 0);
 });
 
 test("Requirement 必须使用 requirement 模式，禁止误选 legacy", t => {
