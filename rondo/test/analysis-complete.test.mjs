@@ -79,6 +79,9 @@ function fixture(t, requirement = true) {
     git(root, "push", "origin", "dev");
   }
 
+  git(root, "add", "openspec/changes/" + CHANGE);
+  git(root, "-c", "user.email=test@example.invalid", "-c", "user.name=Test", "commit", "-m", "reviewed Change contract");
+
   const bin = join(home, "bin"); mkdirSync(bin);
   const executable = join(bin, process.platform === "win32" ? "openspec.cmd" : "openspec");
   const report = join(bin, "report.json");
