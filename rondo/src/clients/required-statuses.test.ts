@@ -1,22 +1,20 @@
 /**
  * required-statuses 防漂移测试（workspace-workflow-status-provisioning-plan M3）。
  *
- * 断言 _shared/provisioning.json 的 workflow.statuses 覆盖流水线消费的自定义状态键，
+ * 断言 workspace-config/provisioning.json 的 workflow.statuses 覆盖流水线消费的自定义状态键，
  * 且不重复声明 multica 内建键——manifest 与 rondo 硬编码消费点的漂移在此拦截。
  */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { resolveMulticaRoot } from "./repo-root.js";
 import { BUILTIN_STATUS_KEYS, CUSTOM_PIPELINE_STATUSES } from "./required-statuses.js";
 
 interface ManifestStatus { key: string; name?: string; category?: string; after?: string }
 
 function loadManifestStatuses(): ManifestStatus[] {
-  const { multicaRoot } = resolveMulticaRoot();
+  // 测试仓内事实源，不读取开发机可能仍指向旧仓库的环境变量。
   const manifest = JSON.parse(
-    readFileSync(join(multicaRoot, "workspace-skills", "_shared", "provisioning.json"), "utf8"),
+    readFileSync(new URL("../../../workspace-config/provisioning.json", import.meta.url), "utf8"),
   ) as { workflow?: { statuses?: ManifestStatus[] } };
   return manifest.workflow?.statuses ?? [];
 }

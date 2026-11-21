@@ -92,7 +92,7 @@ export async function checkWorkflowStatuses(ctx: CheckContext): Promise<CheckOut
   try {
     const { multicaRoot } = resolveMulticaRoot();
     const manifest = JSON.parse(
-      readFileSync(join(multicaRoot, "workspace-skills", "_shared", "provisioning.json"), "utf8"),
+      readFileSync(join(multicaRoot, "workspace-config", "provisioning.json"), "utf8"),
     ) as { workflow?: { statuses?: Array<{ key?: string }> } };
     const statuses = manifest.workflow?.statuses;
     if (Array.isArray(statuses) && statuses.length > 0) {

@@ -2,7 +2,7 @@
 import { UnknownError } from "../../cli/errors.js";
 
 export interface McpAgent { name: string; mcp_servers?: string[]; mcp_phase?: "08-a" | "08-b"; }
-export interface McpManifest { mcp_servers?: { name: string; template: string }[]; agents: McpAgent[]; }
+export interface McpManifest { mcp_servers?: { name: string; template: string; connection_file?: string }[]; agents: McpAgent[]; }
 export interface McpOverlay {
   mcp_phase?: "08-a" | "08-b";
   mcp_servers?: Record<string, { id?: string; connection_file?: string }>;
@@ -52,7 +52,11 @@ export function loadMcpSpecs(manifest: McpManifest, overlay: McpOverlay, readTem
         || entry.name !== "remote-ripgrep" || JSON.stringify(t.enabled_tools) !== '["search"]')) {
       throw new UnknownError("自动批准兼容配置仅允许 remote-ripgrep 的 search");
     }
-    return { name: entry.name, ...t } as McpSpec;
+    // 分组可替换连接文件引用；工具白名单和批准策略仍由共享模板决定。
+    if (entry.connection_file !== undefined && !fileOk(entry.connection_file)) {
+      throw new UnknownError(`MCP ${entry.name} 连接文件引用非法`);
+    }
+    return { name: entry.name, ...t, ...(entry.connection_file ? { connection_file: entry.connection_file } : {}) } as McpSpec;
   });
   if (overlay.mcp_servers !== undefined) {
     if (!record(overlay.mcp_servers)) throw new UnknownError("overlay.mcp_servers 必须为对象");

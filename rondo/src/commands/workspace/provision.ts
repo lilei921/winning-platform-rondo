@@ -63,7 +63,7 @@ function initRoots(): void {
   CONFIG_ROOT = join(REPO_ROOT, "workspace-config");
   SKILLS_ROOT = join(REPO_ROOT, "skills");
   AGENTS_ROOT = join(REPO_ROOT, "agents");
-  SQUAD_INSTRUCTIONS = join(REPO_ROOT, "squads", "delivery-squad", "squad-instructions.md");
+  SQUAD_INSTRUCTIONS = join(REPO_ROOT, "squads", "squad-instructions.md");
 }
 
 interface ManifestAgent extends McpAgent { dir: string; name: string; visibility?: string; skills?: string[]; }
@@ -73,6 +73,11 @@ interface Manifest extends McpManifest {
   agents: ManifestAgent[];
   squad: { name: string; leader: string; members: SquadMemberSpec[] };
   project: { title: string; workspace_branch?: string };
+  workspace_groups?: Record<string, {
+    workspaces?: string[];
+    project?: Partial<Manifest["project"]>;
+    mcp_servers?: McpManifest["mcp_servers"];
+  }>;
   autopilots: ManifestAutopilot[];
   /** 自定义 workflow 状态供给（workspace-workflow-status-provisioning-plan M1）；缺段则整段跳过，向后兼容。 */
   workflow?: ManifestWorkflow;
@@ -219,6 +224,13 @@ function main(rawArgs: string[]): number {
     overlayPath = join(CONFIG_ROOT, "workspaces", `${args.workspace}.json`);
     overlay = existsSync(overlayPath) ? readJson(overlayPath, `工作区 overlay ${args.workspace}`) : {};
     const manifest = readJson(join(CONFIG_ROOT, "provisioning.json"), "provisioning manifest") as Manifest;
+    // 分组仅合并到本次调用的内存配置，避免同步时改写共享 manifest。
+    const slug = typeof args.slug === "string" ? args.slug : args.workspace;
+    const group = Object.values(manifest.workspace_groups ?? {}).find(g => g.workspaces?.includes(slug));
+    if (group) {
+      manifest.project = { ...manifest.project, ...group.project };
+      if (group.mcp_servers !== undefined) manifest.mcp_servers = group.mcp_servers;
+    }
     const branch = manifest.project?.workspace_branch;
     if (branch !== undefined && (typeof branch !== "string" || !branch.trim() || branch !== branch.trim())) {
       throw new UnknownError("project.workspace_branch 必须是非空分支名");

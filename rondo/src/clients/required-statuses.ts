@@ -4,7 +4,7 @@
  * 方案：projects/plans/workspace-workflow-status-provisioning-plan.md M3。
  *
  * CUSTOM_PIPELINE_STATUSES：流水线消费、且非 multica 内建的自定义状态键——必须由
- * workspace-skills/_shared/provisioning.json 的 workflow.statuses 段供给；
+ * workspace-config/provisioning.json 的 workflow.statuses 段供给；
  * 防漂移测试（required-statuses.test.ts）断言 manifest 覆盖本清单。
  * 消费点锚点（新增消费键必须先登记此处并过测试）：
  *   analysis_review — commands/analysis/complete.ts TARGET_STATUS（02 §5.4 收口置态）；

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """回读校验目标 workspace 的供给状态是否与仓内 manifest 一致（只读，不写平台与仓内文件）。
 
-校验维度（基准：projects/multica/workspace-skills/_shared/provisioning.json）：
+校验维度（基准：workspace-config/provisioning.json）：
   1. MCP        —— workspace MCP 库与 manifest mcp_servers（组覆盖优先于顶层默认）
   2. 仓库注册表 —— manifest workspace_repos 声明的 URL 均在 multica repo list 中（只增不维护，多余项只提示）
   3. Project    —— 分组 project.title 对应的项目存在，且挂有仓库资源（git URL 或匹配的 local_directory）
@@ -23,41 +23,21 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import subprocess
 import sys
 from pathlib import Path
 
-MANIFEST_REL = (
-    Path("projects") / "multica" / "workspace-skills" / "_shared" / "provisioning.json"
-)
+from workspace_paths import command_env, find_repo_root
+
+MANIFEST_REL = Path("workspace-config") / "provisioning.json"
 
 # TFS 环境变量三键（TFS_URL / TFS_COLLECTION / TFS_PAT）的最低键数
 TFS_ENV_KEY_COUNT = 3
 
 
-def find_repo_root() -> Path:
-    """定位 monorepo 根（以 _shared 为标记）：MULTICA_REPO_ROOT → 当前目录上溯 → 脚本上溯。"""
-    marker = MANIFEST_REL.parent
-    env_root = os.environ.get("MULTICA_REPO_ROOT", "").strip()
-    if env_root:
-        candidate = Path(env_root).expanduser().resolve()
-        if (candidate / marker).is_dir():
-            return candidate
-        raise SystemExit(f"MULTICA_REPO_ROOT 无效（缺少 {marker}）：{candidate}")
-    for base in (Path.cwd(), Path(__file__).resolve().parent):
-        for candidate in [base, *base.parents]:
-            if (candidate / marker).is_dir():
-                return candidate
-    raise SystemExit(
-        f"未找到 monorepo 根：向上查找缺少 {marker}。请在 monorepo 内执行，"
-        "或设置 MULTICA_REPO_ROOT 指向仓库根。"
-    )
-
-
 def run_json(args: list[str], workspace_id: str | None = None) -> object:
     """执行 multica 命令并解析 JSON 输出；用 MULTICA_WORKSPACE_ID 定向 workspace。"""
-    env = dict(os.environ)
+    env = command_env()
     if workspace_id:
         env["MULTICA_WORKSPACE_ID"] = workspace_id
     out = subprocess.run(args, capture_output=True, encoding="utf-8", errors="replace", env=env, timeout=120)
@@ -119,11 +99,11 @@ class Expectation:
 
     def __init__(self, manifest: dict, slug: str):
         self.group, group_cfg = resolve_group(manifest, slug)
-        mcps = group_cfg.get("mcp_servers") or manifest.get("mcp_servers") or []
+        mcps = group_cfg.get("mcp_servers", manifest.get("mcp_servers")) or []
         self.mcp_names = sorted(m["name"] for m in mcps if m.get("name"))
-        repos = group_cfg.get("workspace_repos") or manifest.get("workspace_repos") or []
+        repos = group_cfg.get("workspace_repos", manifest.get("workspace_repos")) or []
         self.repo_urls = [r["url"] for r in repos if r.get("url")]
-        project = group_cfg.get("project") or manifest.get("project") or {}
+        project = {**(manifest.get("project") or {}), **(group_cfg.get("project") or {})}
         self.project_title = project.get("title")
         self.agents = {
             a["name"]: sorted(a.get("skills", []))
@@ -367,9 +347,10 @@ def main() -> int:
         "--prefix", default="winning-",
         help="只校验 slug 以此前缀开头的 workspace（默认 winning-；传空字符串关闭筛选）",
     )
+    parser.add_argument("--repo-root", help="本次使用的仓库根目录；省略时从当前目录、脚本目录上溯")
     args = parser.parse_args()
 
-    root = find_repo_root()
+    root = find_repo_root(repo_root=args.repo_root)
     manifest = json.loads((root / MANIFEST_REL).read_text(encoding="utf-8"))
 
     try:

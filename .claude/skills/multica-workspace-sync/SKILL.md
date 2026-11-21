@@ -3,12 +3,12 @@ name: multica-workspace-sync
 description: Use when synchronizing Multica workspace assets — Skill、Agent、Squad、Project、Autopilot、MCP、workspace 仓库注册表 — into the winning-* workspaces that the admin user belongs to, or into explicitly named workspaces. 触发词：同步 workspace、同步 agent 和 skill、把 skill 同步到 workspace、Multica 同步、provision workspace。
 metadata:
   author: winning\li_lei
-  version: 1.7.0
+  version: 1.8.0
 ---
 
 # Multica Workspace Sync
 
-把仓内 `projects/multica` 声明的 Multica 资产供给到目标 workspace，并回读校验同步结果。
+把仓内 `workspace-config/provisioning.json` 声明、由 `skills/` `agents/` `squads/` `mcps/` 承载的 Multica 资产供给到目标 workspace，并回读校验同步结果。
 
 ## 何时使用
 
@@ -19,7 +19,7 @@ metadata:
 - 需要为 workspace 供给 workspace 级仓库注册表（`multica repo add`，只增不维护）。
 - 需要回读校验一批 workspace 的 MCP / 仓库注册表 / Project / Agent / Skill / Squad / Autopilot / runtime 绑定是否与 manifest 一致（`check_workspaces.py`，只读）。
 
-不适用：修改仓内 Skill 内容本身（改 `projects/multica/workspace-skills/` 后再走本流程）、Issue 派发与交付流程（在 Multica 内由 Squad 与 Skill 负责）、业务子仓开发。
+不适用：修改仓内 Skill 内容本身（改 `skills/` 后再走本流程）、Issue 派发与交付流程（在 Multica 内由 Squad 与 Skill 负责）、业务子仓开发。
 
 ## 目标 workspace 的确定
 
@@ -29,7 +29,7 @@ metadata:
 2. 按 slug 前缀筛选；
 3. 逐个 `multica workspace member list`，命中成员 name 或 email 为 admin 的即为目标。
 
-当前 admin（user_id `e4428a6d-2c65-4e96-970f-9c714d5c7045`）在 12 个 workspace 中都在列：winning-admin（owner）与 11 个同事 workspace（member）。
+目标清单与成员角色以本次 CLI 查询为准，不沿用历史 workspace 数量。
 
 指定 workspace 名称、成员或前缀时按参数覆盖：
 
@@ -44,31 +44,36 @@ metadata:
 | 条件 | 不满足时 |
 | --- | --- |
 | `multica` CLI 已安装并 `multica login` | 停止，提示先登录 |
-| `rondo` 在 PATH（`npm i -g @winning/rondo`）；退役前 `skill-flow` 亦兼容 | 停止，提示安装或构建（仓内 `tools/rondo`） |
-| PATH 上的 `python` ≥ 3.7 | 停止，提示升级；`rondo` 内部用它调用 `tools/repo_registry.py` |
+| 本仓 `rondo/dist/index.js` 已构建，或 PATH 有适配当前结构的 `rondo` | 优先在 `rondo/` 执行 `npm install`、`npm run build`；脚本优先本仓构建，缺失时再尝试全局 `rondo` / `skill-flow` |
+| PATH 上的 `python` ≥ 3.7 且安装 PyYAML | 停止，提示升级或 `python -m pip install PyYAML`；Rondo 用它调用 `tools/repo_registry.py` |
 | 目标 workspace 已存在且有 runtime | runtime 是 workspace 级对象，需先在该 workspace 启动 daemon 注册 |
 | manifest 含 `mcp_servers` 时：当前账号在目标 workspace 为 owner/admin，或可按下文临时提权 | member 角色会在 MCP 供给处失败，见「MCP 供给权限」 |
 
 ## 执行
 
-本 Skill 安装在全局目录，脚本路径按所在运行时取：
+本 Skill 随仓分发在 `.claude/skills/multica-workspace-sync/`，在仓库根目录执行：
 
 ```bash
-# Claude Code
-python ~/.claude/skills/multica-workspace-sync/scripts/sync_workspace.py
-
-# Codex
-python ~/.codex/skills/multica-workspace-sync/scripts/sync_workspace.py
+python .claude/skills/multica-workspace-sync/scripts/sync_workspace.py
 ```
 
-脚本自行定位 monorepo 根：优先 `MULTICA_REPO_ROOT` 环境变量，其次当前工作目录上溯
-（标记目录 `projects/multica/workspace-skills/_shared`）。因此须在 monorepo 内执行，
-或在仓外执行时设置 `MULTICA_REPO_ROOT`。
+仓库路径只在本次运行中确定，不要求用户配置全局变量：
+
+1. 用户提供路径时，用 `--repo-root <仓库根目录>`；否则先从当前目录上溯，再尝试脚本目录上溯，以 `workspace-config/provisioning.json` 为标记。
+2. 无法定位时，**询问用户仓库根目录路径**，收到后通过 `--repo-root` 传入；不要要求用户设置 `MULTICA_REPO_ROOT`。
+3. 输入路径无效时提示重新输入，不回落到其他仓库。调用 Rondo 时以选定仓库为工作目录，并屏蔽子进程继承的旧 `MULTICA_REPO_ROOT`，不修改用户的环境变量。
+
+显式输入路径的示例（也适用于 check / 仓库注册表脚本）：
+
+```powershell
+python .claude/skills/multica-workspace-sync/scripts/sync_workspace.py winning-lfw --repo-root "D:/ai-project/winning-platform-rondo" --dry-run
+```
 
 常用参数：
 
 | 参数 | 用途 |
 | --- | --- |
+| `--repo-root <路径>` | 本次使用的仓库根目录；路径未知时先询问用户 |
 | `--member <name/email>` | 改用其他成员筛选 workspace |
 | `--prefix <前缀>` | 改用其他 slug 前缀 |
 | `--runtime-id <uuid>` | 固定 runtime；缺省时沿用该 workspace 既有 Agent 的绑定，无既有绑定时在在线 runtime 中随机取一个 |
@@ -77,17 +82,19 @@ python ~/.codex/skills/multica-workspace-sync/scripts/sync_workspace.py
 | `--skip-workflow` | （默认开启）provision 跳过 workflow 检查与状态供给；97 服务端无 workflow API，必须保持跳过 |
 | `--with-workflow` | 恢复 workflow 检查与状态供给；仅在服务端支持 workflow API 时使用 |
 | `--skip-tfs-env` | 跳过默认的 Agent TFS 环境变量补齐步骤 |
+| `--skip-rondo-env` | 跳过默认的 Agent Rondo 环境变量补齐步骤 |
 | `--skip-repos` | 跳过默认的 workspace 仓库注册表供给步骤 |
 | `--dry-run` | 只预演，不写平台与仓内 overlay |
 
 每个 workspace 依次执行下列步骤，任一步失败即停止该 workspace 并计入失败数，其余 workspace 继续：
 
-1. **provision**（`rondo workspace provision`，默认带 `--skip-workflow`）— 供给 Skill / Agent / Squad / Project / Autopilot 对象，并把解析到的对象 ID 写入 `projects/multica/workspace-skills/_shared/workspaces/<name>.json` overlay。workspace 分组覆盖 project 时，provision 期间临时把共享 manifest 的 `project.title` 改写为组值、跑完恢复原文（备份哨兵 + 启动自检兜底，见「workspace 分组」节），rondo 无需改动。
+1. **provision**（`rondo workspace provision`，默认带 `--skip-workflow`）— 供给 Skill / Agent / Squad / Project / Autopilot 对象，并把解析到的对象 ID 写入 `workspace-config/workspaces/<name>.json` overlay。Rondo 按 workspace slug 在内存中合并分组 Project / MCP 配置，不改写共享 manifest。
 2. **sync**（`rondo workspace sync`）— 按 `docs/config/repo-context.yaml` 渲染仓库映射配置，upsert Skill 文件并逐文件回读校验。
 3. **绑定 Agent runtime**（仅当显式传入 `--runtime-id`）— provision 只在**新建** Agent 时使用 `--runtime-id`，已存在的 Agent 保留原 runtime；显式指定 runtime 时必须额外改绑，否则该参数对已供给的 workspace 无效。
 4. **禁用 runtime skills** — 关闭 Agent 从 runtime 继承的本地 Skill，避免与仓内 Skill 重复暴露；先预览再落盘。是否执行见下节。
 5. **补齐 Agent TFS 环境变量**（`provision_agent_tfs_env.py`）— 为全部 Agent 补齐 `TFS_URL` / `TFS_COLLECTION` / `TFS_PAT`，只增不改；规则与凭据红线见下节。`--dry-run` 会透传给该步骤；`--skip-tfs-env` 可整体跳过。
-6. **供给 workspace 仓库注册表**（`provision_workspace_repos.py`）— 按 manifest 的 `workspace_repos` 段执行 `multica repo add`，只增不维护；`--dry-run` 会透传；`--skip-repos` 可整体跳过。
+6. **补齐 Agent Rondo 环境变量**（`provision_agent_rondo_env.py`）— 为 Workitem Analyst / Engineer / Wayfinder Agent 补齐 `RONDO_WORKSPACE_PATH`（默认 `/tmp`）/ `RONDO_WORKSPACE_BRANCH`（独立补齐脚本兜底 `dev`；完整 provision 已按 manifest `project.workspace_branch` 下发，当前为 `main`），只增不改；`--dry-run` 透传；`--skip-rondo-env` 可整体跳过。
+7. **供给 workspace 仓库注册表**（`provision_workspace_repos.py`）— 按 manifest 的 `workspace_repos` 段执行 `multica repo add`，只增不维护；`--dry-run` 会透传；`--skip-repos` 可整体跳过。
 
 ## workspace 分组
 
@@ -99,7 +106,8 @@ python ~/.codex/skills/multica-workspace-sync/scripts/sync_workspace.py
 
 生效机制：
 
-- **Project**：rondo provision 只认共享 manifest 的 `project.title`（无注入参数）。`sync_workspace.py` 对分组覆盖的 workspace，在 provision 执行期间临时改写共享 manifest 的 `project.title` 为组值，结束立即恢复原文；改写前落哨兵备份 `provisioning.json.group-swap.bak`，进程被杀时下次启动自动从备份恢复。并发跑多个 sync 本就不支持（overlay 写入会冲突），与既有约束一致。
+- **Project**：Rondo provision 以 `--slug`（未传时用 `--workspace`）匹配分组，将组 `project` 覆盖到顶层默认；未覆盖的 `workspace_branch` 等字段继续继承。共享 manifest 全程不改写。旧版遗留的 `provisioning.json.group-swap.bak` 在正式同步启动时恢复；`--dry-run` 遇到该备份会停止并提示先恢复，保持零写入。
+- **MCP**：组 `mcp_servers` 替换顶层清单，组条目的 `connection_file` 替换模板默认连接引用；显式 workspace overlay 的连接引用优先级最高。连接仍从 `mcps/connections/*.local.json` 读取，工具白名单与批准策略仍由共享模板决定。
 - **仓库注册表**：`provision_workspace_repos.py` 按 slug 解析分组，组的 `workspace_repos` 覆盖顶层默认，只增不维护。
 
 ## workspace 仓库注册表供给
@@ -107,14 +115,14 @@ python ~/.codex/skills/multica-workspace-sync/scripts/sync_workspace.py
 主同步流水线的默认步骤（每个 workspace 最后执行）；也可单独按需执行：
 
 ```bash
-python ~/.claude/skills/multica-workspace-sync/scripts/provision_workspace_repos.py [workspace] [--dry-run]
-# 默认目标 winning-admin；Codex 侧路径换成 ~/.codex/skills/...
+python .claude/skills/multica-workspace-sync/scripts/provision_workspace_repos.py [workspace] [--dry-run]
+# 默认目标 winning-admin
 ```
 
 规则：
 
 - **只增不维护**：URL 已存在于 workspace 仓库注册表（`multica repo list`）时视为已配置，一律保留原描述不更新、不改动；仅补注册表中不存在的 URL。纠错场景先 `multica repo remove` 再重跑本步骤。
-- **声明来源**：`projects/multica/workspace-skills/_shared/provisioning.json` 的 `workspace_repos` 段（顶层默认，即 df 组）与 `workspace_groups.<组>.workspace_repos`（组覆盖，如 bi）；两者都缺或为空则整步跳过，向后兼容。
+- **声明来源**：`workspace-config/provisioning.json` 的 `workspace_repos` 段（顶层默认，即 df 组）与 `workspace_groups.<组>.workspace_repos`（组覆盖，如 bi）；两者都缺或为空则整步跳过，向后兼容。
 - 命令通过 `MULTICA_WORKSPACE_ID` 定向目标 workspace，不改动 CLI 默认工作区。
 - 写入后回读 `multica repo list` 校验 URL 已进入注册表。
 - **`multica repo add` 与 `workspace mcp add` 同为 owner/admin 级操作**：同事 workspace 里 admin 只有 member 角色时会被 403（`You do not have permission...`），处置方式与「MCP 供给权限」节相同（owner 本人执行，或临时提权后立即还原）。
@@ -124,8 +132,8 @@ python ~/.claude/skills/multica-workspace-sync/scripts/provision_workspace_repos
 主同步流水线的默认步骤（每个 workspace 最后执行）；也可单独按需执行：
 
 ```bash
-python ~/.claude/skills/multica-workspace-sync/scripts/provision_agent_tfs_env.py [workspace] [--dry-run]
-# 默认目标 winning-admin；Codex 侧路径换成 ~/.codex/skills/...
+python .claude/skills/multica-workspace-sync/scripts/provision_agent_tfs_env.py [workspace] [--dry-run]
+# 默认目标 winning-admin
 ```
 
 规则：
@@ -134,10 +142,8 @@ python ~/.claude/skills/multica-workspace-sync/scripts/provision_agent_tfs_env.p
 - **取值来源**：
   - `TFS_URL` = `http://tfs2018-web.winning.com.cn:8080/tfs`（base，不含 collection）
   - `TFS_COLLECTION` = `WN_Data_Platform`
-  - `TFS_PAT` 按 workspace 区分：
-    - `winning-admin` / `winning-lilei`：本机 git 全局配置 `http.http://tfs2018-web.winning.com.cn:8080/.extraheader` 中解出的 li_lei PAT —— **不是 multica 登录 token（not login）**，不得用 `~/.multica/config.json` 的 token 冒充。
-    - 其余 workspace：占位字面值 `not config`，表示 TFS 凭据未配置，由 owner 自行填写；**不得把本机真实 PAT 下发到同事 workspace**。
-- **凭据红线**：真实 PAT 只存在于内存与 `--custom-env-stdin` 管道，不打印、不落盘、不进命令行参数；`env get` 的读取结果由脚本捕获，不输出。
+  - `TFS_PAT` 按 workspace 区分：先查本机 `config/tfs-pat.yaml` 的 `pats` 表，按 `winning-<owner>` 取该 owner 自己的 PAT（非标准 slug 仅按脚本中的显式别名映射）；未登记时，`winning-admin` / `winning-lilei` 回退本机 Git extraheader，其他 workspace 用占位值 `not config`。
+- **凭据红线**：不得把本机 Git PAT 下发到同事 workspace；不使用 Multica 登录 token 冒充 TFS PAT。真实值仅从本机不入库的 PAT 配置或 Git 凭据读取，经 `--custom-env-stdin` 管道传递，不打印、不进命令行、不写 overlay。
 - 写入后逐 Agent 回读校验，只比对键与值是否生效，不输出值。
 - 权限与 `env set` 一致（agent owner 或 workspace owner/admin）；同事 workspace 遇 403 时按「MCP 供给权限」节的提权/转交思路处理，不要盲目重试。
 
@@ -145,12 +151,12 @@ python ~/.claude/skills/multica-workspace-sync/scripts/provision_agent_tfs_env.p
 
 manifest 登记 `mcp_servers` 时，provision 会自动按模板供给 workspace MCP 并绑定到 Agent（同事 workspace 配什么 MCP 不逐个问）。两个前提：
 
-- 模板在 `_shared/mcp/*.json`，连接凭据在 `_shared/mcp/connections/*.local.json`；后者不进 Git，必须在执行机上预先备齐。
+- 模板在 `mcps/*.json`，连接凭据在 `mcps/connections/*.local.json`；后者不进 Git，必须在执行机上预先备齐。
 - **`workspace mcp add` 是 owner/admin 级操作**。同事 workspace 里 admin 只有 member 角色，MCP 供给会被服务端 403 拒绝，且 rondo 会脱敏报成 `UNKNOWN: MCP <name> 创建 结果未知`。看到该报错先手动重跑对应 `multica workspace mcp add` 确认真实原因，不要盲目重试。
 
 处置方式二选一：
 
-1. **由 workspace owner 本人执行**：把 `_shared/mcp/connections/*.local.json` 交给 owner，在其账号下跑 `rondo workspace provision --workspace <name> --mcp-only`。
+1. **由 workspace owner 本人执行**：把 `mcps/connections/*.local.json` 交给 owner，在其账号下跑 `rondo workspace provision --workspace <name> --mcp-only`。
 2. **临时提权**（有平台 DB 访问权、且在本机即服务端时）：把执行账号在目标 workspace 的角色提为 `admin`，供给完成后**立即还原为 member 并回读确认**：
 
 ```bash
@@ -186,9 +192,8 @@ Agent 绑定的是**某台机器的** runtime，workspace 里可同时存在多�
 发现口径与主同步一致（缺省 = 成员含 admin 的 `winning-*`，支持位置参数 / `--member` / `--prefix`）：
 
 ```bash
-python ~/.claude/skills/multica-workspace-sync/scripts/check_workspaces.py                # 全部目标 workspace
-python ~/.claude/skills/multica-workspace-sync/scripts/check_workspaces.py winning-lfw    # 指定 workspace
-# Codex 侧路径换成 ~/.codex/skills/...
+python .claude/skills/multica-workspace-sync/scripts/check_workspaces.py                # 全部目标 workspace
+python .claude/skills/multica-workspace-sync/scripts/check_workspaces.py winning-lfw    # 指定 workspace
 ```
 
 校验维度与基准（`provisioning.json`，组覆盖优先于顶层默认）：
@@ -208,11 +213,11 @@ python ~/.claude/skills/multica-workspace-sync/scripts/check_workspaces.py winni
 
 同步后回读目标 workspace，与其他已同步 workspace 对齐（以下逐项已由 `check_workspaces.py` 自动化，见「状态校验（check）」节）：
 
-- Agent 数量与 `projects/multica/workspace-skills/_shared/provisioning.json` 的 `agents[]` 一致，且 Skill 绑定数一致。
+- Agent 数量与 `workspace-config/provisioning.json` 的 `agents[]` 一致，且 Skill 绑定数一致。
 - 所有 Agent 绑定同一 runtime。
 - workspace Skill 数量与 `managed_skills` 一致。
 - `Delivery Squad` 存在，成员数与 `squad.members` + leader 一致。
-- Project 标题符合分组：bi 组 workspace 为 `winning-base-winex-bi-monorepo`，其余（含未分组）为顶层默认 `winning-platform-monorepo`；同步结束后共享 manifest 的 `project.title` 必须已恢复为顶层默认（无 `.group-swap.bak` 残留）。
+- Project 标题符合分组：bi 组 workspace 为 `winning-base-winex-bi-monorepo`，其余（含未分组）为顶层默认 `winning-platform-monorepo`；同步期间共享 manifest 保持原文（不生成 `.group-swap.bak`）。
 - manifest 含 `mcp_servers` 时：`multica workspace mcp list <name>` 数量与 manifest 一致；MCP 完整配置只写不可回读，overlay 中的 `mcp_servers` ID 是唯一本地记录。
 - TFS 环境变量步骤输出无 `[FAIL]`：全部 Agent 的 `TFS_URL` / `TFS_COLLECTION` / `TFS_PAT` 三键均已配置（`[SKIP]` 或 `[OK  ]`）。
 - 仓库注册表步骤输出无 `[FAIL]`：manifest `workspace_repos` 声明的 URL 均在 `multica repo list` 中（`[SKIP]` 或 `[OK  ]`）。
@@ -226,4 +231,17 @@ overlay 文件是仓内唯一记录平台对象 ID 的位置，随同步产生�
 - runtime 必须在目标 workspace 内；跨 workspace 使用别处的 runtime id 会被拒绝。
 - 未显式指定 `--runtime-id` 时不改绑既有 Agent 的 runtime，只在新建 Agent 时使用选中的 runtime。
 - 禁用 runtime skills 只影响目标 Agent 自身绑定关系，不修改 runtime 机器上的文件；绑定同事机器时不执行禁用。
-- `skipped_unregistered` 中的 Skill（如 `multica-workspace-bootstrap`、`tfs-writeback`）不在 `managed_skills` 清单内，不供给、不报错。
+- `skipped_unregistered` 中的 Skill（如 `tfs-writeback`）不在 `managed_skills` 清单内，不供给、不报错。
+
+## 本地验证
+
+修改本 Skill 或同步命令后运行：
+
+```powershell
+python -X utf8 -m unittest discover -s .claude/skills/multica-workspace-sync/tests
+cd rondo
+npm run build
+node --test test/workspace-root-layout.test.mjs test/workspace-environment.test.mjs test/workspace-mcp.test.mjs test/d1-analysis-skills.test.mjs dist/clients/required-statuses.test.js
+```
+
+这些回归使用临时目录与模拟 CLI，不访问真实平台。用户只要求维护同步能力时，先完成本地验证；实际发布按其指定的 workspace 范围执行。

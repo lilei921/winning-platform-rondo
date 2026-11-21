@@ -6,8 +6,7 @@
 
 流水线（每步失败即停止该 workspace，其余 workspace 继续）：
   1. provision —— 供给 Skill / Agent / Squad / Project / Autopilot 对象
-                  （workspace 分组覆盖 project 时，provision 期间临时改写共享
-                  manifest 的 project.title 为组值，跑完恢复原文，rondo 无需改动）
+                  （Rondo 按 workspace slug 在内存中合并 Project / MCP 分组配置）
   2. sync      —— 渲染仓库映射配置并 upsert Skill 文件
   3. disable   —— 关闭 Agent 继承自 runtime 的本地 Skill
   4. tfs-env   —— 为 Agent 补齐 TFS_URL / TFS_COLLECTION / TFS_PAT（只增不改）
@@ -35,7 +34,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import random
 import shutil
 import socket
@@ -43,31 +41,17 @@ import subprocess
 import sys
 from pathlib import Path
 
+from workspace_paths import command_env, find_repo_root
+
 # provision / sync / disable 都由这三条外部命令承担，本脚本只编排。
 # CLI 名称：rondo 为当前主入口，skill-flow 为其前身（命令兼容，未退役前仍可用）。
 CLI_CANDIDATES = ("rondo", "skill-flow")
 CLI_LOCAL_FALLBACKS = (
-    Path("tools") / "rondo" / "dist" / "index.js",
-    Path("tools") / "skill-flow" / "dist" / "index.js",
+    Path("rondo") / "dist" / "index.js",
 )
 MIN_PYTHON = (3, 7)  # tools/repo_registry.py 使用 from __future__ import annotations
 
-MANIFEST_REL = (
-    Path("projects") / "multica" / "workspace-skills" / "_shared" / "provisioning.json"
-)
-
-
-def group_project_title(root: Path, workspace: str) -> str | None:
-    """目标 workspace 分组（workspace_groups）覆盖的 project.title；无覆盖返回 None。
-
-    顶层 manifest.project 是 df 组默认；bi 等组在组内声明 project 覆盖。
-    """
-    manifest_path = root / MANIFEST_REL
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    for group in (manifest.get("workspace_groups") or {}).values():
-        if workspace in (group.get("workspaces") or []):
-            return (group.get("project") or {}).get("title")
-    return None
+MANIFEST_REL = Path("workspace-config") / "provisioning.json"
 
 
 def manifest_backup_path(root: Path) -> Path:
@@ -75,95 +59,46 @@ def manifest_backup_path(root: Path) -> Path:
     return manifest.with_name(manifest.name + ".group-swap.bak")
 
 
-def restore_manifest_if_needed(root: Path) -> None:
+def restore_manifest_if_needed(root: Path, dry_run: bool = False) -> None:
     """上次运行在分组 project 供给期间被杀时，从哨兵备份恢复共享 manifest。"""
     backup = manifest_backup_path(root)
     if backup.is_file():
+        if dry_run:
+            raise SystemExit(f"检测到旧版同步遗留备份 {backup}；请先恢复 manifest 再预演。")
         manifest = root / MANIFEST_REL
         manifest.write_text(backup.read_text(encoding="utf-8"), encoding="utf-8")
         backup.unlink()
         print(f"[WARN] 检测到上次分组供给中断，已从备份恢复 {manifest}", file=sys.stderr)
 
 
-def run_provision_with_group_project(
-    command: list[str], root: Path, group_title: str | None,
-) -> None:
-    """执行 rondo provision；分组覆盖 project 时先临时改写共享 manifest，跑完恢复原文。
-
-    rondo provision 只认共享 manifest 的 project.title（无注入参数），
-    因此分组覆盖只能在此处换入/换回；备份哨兵保证被杀后下次启动可恢复。
-    """
-    if not group_title:
-        subprocess.run(command, cwd=root, check=True)
-        return
-    manifest = root / MANIFEST_REL
-    backup = manifest_backup_path(root)
-    original = manifest.read_text(encoding="utf-8")
-    data = json.loads(original)
-    data.setdefault("project", {})["title"] = group_title
-    backup.write_text(original, encoding="utf-8")
-    try:
-        manifest.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        subprocess.run(command, cwd=root, check=True)
-    finally:
-        manifest.write_text(original, encoding="utf-8")
-        try:
-            backup.unlink()
-        except FileNotFoundError:
-            pass
-
-
-def find_repo_root(start: Path) -> Path:
-    """定位 monorepo 根（以 projects/multica/workspace-skills/_shared 为标记）。
-
-    顺序：MULTICA_REPO_ROOT 环境变量 → 当前工作目录上溯 → 脚本自身上溯。
-    Skill 装在全局目录时脚本自身不在仓内，故以工作目录为主要依据。
-    """
-    marker = Path("projects") / "multica" / "workspace-skills" / "_shared"
-    env_root = os.environ.get("MULTICA_REPO_ROOT", "").strip()
-    if env_root:
-        candidate = Path(env_root).expanduser().resolve()
-        if not (candidate / marker).is_dir():
-            raise SystemExit(f"MULTICA_REPO_ROOT 无效（缺少 {marker}）：{candidate}")
-        return candidate
-    for base in (Path.cwd(), start):
-        for candidate in [base, *base.parents]:
-            if (candidate / marker).is_dir():
-                return candidate
-    raise SystemExit(
-        f"未找到 monorepo 根：向上查找缺少 {marker}。请在 monorepo 内执行，"
-        "或设置 MULTICA_REPO_ROOT 指向仓库根。"
-    )
-
-
 def run_json(command: list[str], cwd: Path) -> object:
     result = subprocess.run(
-        command, cwd=cwd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        command, cwd=cwd, env=command_env(), check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
     )
     return json.loads(result.stdout.decode("utf-8"))
 
 
 def resolve_cli(root: Path) -> list[str]:
-    """定位 workspace provision/sync CLI：优先 PATH 上的 rondo，再退 skill-flow，最后仓内已构建 dist。"""
-    for name in CLI_CANDIDATES:
-        installed = shutil.which(name)
-        if installed:
-            return [installed]
+    """优先使用当前仓库构建，避免全局旧版 CLI 继续读取迁移前的路径。"""
     for relative in CLI_LOCAL_FALLBACKS:
         local = root / relative
         if local.is_file():
             return ["node", str(local)]
+    for name in CLI_CANDIDATES:
+        installed = shutil.which(name)
+        if installed:
+            return [installed]
     raise SystemExit(
         "未找到 rondo / skill-flow。请先全局安装（npm i -g @winning/rondo）"
-        "或在仓内构建（cd tools/rondo && npm install && npm run build）。"
+        "或在仓内构建（cd rondo && npm install && npm run build）。"
     )
 
 
 def check_python() -> None:
-    """skill-flow 内部以 `python` 调用 tools/repo_registry.py，该解释器必须 ≥3.7。"""
+    """预检 Rondo 渲染 registry 使用的 python 版本和 PyYAML 依赖。"""
     executable = shutil.which("python")
     if not executable:
-        raise SystemExit("未找到 python。skill-flow 同步 Skill 时需要 `python` 在 PATH 上。")
+        raise SystemExit("未找到 python。rondo 同步 Skill 时需要 `python` 在 PATH 上。")
     probe = subprocess.run(
         [executable, "-c", "import sys; print('%d.%d' % sys.version_info[:2])"],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -178,6 +113,12 @@ def check_python() -> None:
         raise SystemExit(
             f"python {major}.{minor} 过低：tools/repo_registry.py 需要 ≥{MIN_PYTHON[0]}.{MIN_PYTHON[1]}。"
         )
+
+    dependency = subprocess.run(
+        [executable, "-c", "import yaml"], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+    )
+    if dependency.returncode != 0:
+        raise SystemExit("python 缺少 PyYAML；请先执行 python -m pip install PyYAML。")
 
 
 def list_workspaces(root: Path) -> list[dict]:
@@ -226,10 +167,11 @@ def list_runtimes(root: Path, workspace_id: str) -> list[dict]:
     )
 
 
-def resolve_workspace(name: str, root: Path) -> str:
+def resolve_workspace(name: str, root: Path) -> dict:
     for workspace in list_workspaces(root):
-        if workspace.get("name") == name or workspace.get("slug") == name:
-            return workspace["id"]
+        if name in (workspace.get("name"), workspace.get("slug"), workspace.get("id")):
+            return {"id": workspace["id"], "slug": workspace.get("slug") or name,
+                    "name": workspace.get("name") or name, "role": None}
     raise SystemExit(f"未找到 workspace：{name}")
 
 
@@ -360,14 +302,8 @@ def sync_workspace(
         provision.append("--dry-run")
         sync.append("--dry-run")
 
-    # workspace 分组：组（如 bi）的 project 覆盖顶层默认（df）；
-    # rondo 只认共享 manifest，provision 期间临时换入组标题，跑完恢复。
-    group_title = group_project_title(root, name)
-    if group_title:
-        print(f"分组 project 覆盖：{group_title}", flush=True)
-
     steps = [
-        ("配置 workspace", "provision", provision),
+        ("配置 workspace", None, provision),
         ("同步 skills 和 agents", None, sync),
     ]
     if rebind_runtime:
@@ -424,10 +360,7 @@ def sync_workspace(
                 return 1
             continue
         try:
-            if kind == "provision":
-                run_provision_with_group_project(command, root, group_title)
-            else:
-                subprocess.run(command, cwd=root, check=True)
+            subprocess.run(command, cwd=root, env=command_env(), check=True)
         except subprocess.CalledProcessError as exc:
             print(f"{label}失败（退出码 {exc.returncode}），已停止。", file=sys.stderr)
             return exc.returncode
@@ -485,11 +418,12 @@ def main() -> int:
         help="跳过默认的 workspace 仓库注册表供给（只增不维护）",
     )
     parser.add_argument("--dry-run", action="store_true", help="只预演，不写平台与仓内 overlay")
+    parser.add_argument("--repo-root", help="本次使用的仓库根目录；省略时从当前目录、脚本目录上溯")
     args = parser.parse_args()
 
-    root = find_repo_root(Path(__file__).resolve().parent)
+    root = find_repo_root(repo_root=args.repo_root)
     # 上次运行若在分组 project 供给期间被杀，先从哨兵备份恢复共享 manifest。
-    restore_manifest_if_needed(root)
+    restore_manifest_if_needed(root, args.dry_run)
     disable_script = Path(__file__).resolve().parent / "disable_runtime_skills.py"
     if not disable_script.is_file():
         print(f"未找到脚本：{disable_script}", file=sys.stderr)
@@ -511,10 +445,7 @@ def main() -> int:
         cli = resolve_cli(root)
         check_python()
         if args.workspaces:
-            targets = []
-            for name in args.workspaces:
-                workspace_id = resolve_workspace(name, root)
-                targets.append({"id": workspace_id, "slug": name, "name": name, "role": None})
+            targets = [resolve_workspace(name, root) for name in args.workspaces]
         else:
             targets = discover_workspaces(root, args.member, args.prefix)
     except SystemExit as exc:

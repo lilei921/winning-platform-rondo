@@ -16,23 +16,24 @@ function fixture(t, scenario = "normal") {
     const path = join(root, name); mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, typeof value === "string" ? value : JSON.stringify(value)); return path;
   };
-  const shared = "projects/multica/workspace-config/";
+  const shared = "workspace-config/";
   const overlay = write(shared + "workspaces/pilot.json", { workspace_id: "ws-1" });
   const agents = [{ dir: "analyst", name: "Analyst", skills: ["spec-preparation"] }];
   if (scenario === "branch") agents.push({ dir: "engineer", name: "Engineer", skills: [] });
   write(shared + "provisioning.json", {
     managed_skills: ["spec-preparation"], agents,
-    squad: { name: "Delivery", leader: "Analyst", members: [] }, project: { title: "Project", workspace_branch: scenario === "branch" ? "release" : undefined }, autopilots: [],
+    squad: { name: "Delivery", leader: "Analyst", members: [] }, project: { title: "Project", workspace_branch: ["branch", "group"].includes(scenario) ? "release" : undefined }, autopilots: [],
+    workspace_groups: { bi: { workspaces: ["pilot"], project: scenario === "group" ? { title: "BI Project" } : {} } },
     workflow: { statuses: [{ key: "analysis_review", name: "Analysis Review", category: "started" }] },
   });
-  write("projects/multica/skills/spec-preparation/SKILL.md", "---\nname: spec-preparation\ndescription: fixture\n---\n");
-  write("projects/multica/agents/analyst/instructions.md", "instructions");
-  write("projects/multica/agents/analyst/description.md", "description");
+  write("skills/spec-preparation/SKILL.md", "---\nname: spec-preparation\ndescription: fixture\n---\n");
+  write("agents/analyst/instructions.md", "instructions");
+  write("agents/analyst/description.md", "description");
   if (scenario === "branch") {
-    write("projects/multica/agents/engineer/instructions.md", "instructions");
-    write("projects/multica/agents/engineer/description.md", "description");
+    write("agents/engineer/instructions.md", "instructions");
+    write("agents/engineer/description.md", "description");
   }
-  write("projects/multica/squads/delivery-squad/squad-instructions.md", "instructions");
+  write("squads/squad-instructions.md", "instructions");
   const trace = join(root, "trace.jsonl");
   const script = write("bin/mock.cjs", `#!/usr/bin/env node
 const fs=require('node:fs'); const args=process.argv.slice(2); fs.appendFileSync(process.env.MC_TRACE,JSON.stringify(args)+'\\n');
@@ -69,7 +70,7 @@ else if(key==='agent env') {
 }
 else if(key==='squad list') out=[{id:'squad-1',name:'Delivery',leader_id:'agent-1',instructions:'instructions'}];
 else if(key==='squad member') out=[];
-else if(key==='project list') out=[{id:'project-1',title:'Project'}];
+else if(key==='project list') out=[{id:'project-1',title:process.env.MC_SCENARIO==='group'?'BI Project':'Project'}];
 else if(key==='autopilot list') out=[];
 else { console.error('Unexpected platform mutation: '+args.join(' ')); process.exit(1); }
 console.log(JSON.stringify(out));
@@ -89,6 +90,19 @@ console.log(JSON.stringify(out));
   const calls = () => existsSync(trace) ? readFileSync(trace, "utf8").trim().split("\n").map(JSON.parse) : [];
   return { overlay, run, calls, write, shared, trace };
 }
+
+test("根目录供给按分组选择 Project、继承默认分支且不改写 manifest", t => {
+  const f = fixture(t, "group");
+  const manifest = join(dirname(f.overlay), "..", "provisioning.json");
+  const before = readFileSync(manifest, "utf8");
+  for (const flags of [["--dry-run"], []]) {
+    const r = f.run("workspace", "provision", "--workspace", "pilot", "--skip-workflow", ...flags);
+    assert.equal(r.code, 0, r.stderr);
+    assert.ok(r.body.unchanged.includes("project/BI Project"));
+    assert.equal(readFileSync(manifest, "utf8"), before);
+  }
+  assert.equal(JSON.parse(readFileSync(f.trace + ".agent-1", "utf8")).RONDO_WORKSPACE_BRANCH, "release");
+});
 
 test("项目分支下发至新建和已有 Agent，保留其他变量且再次供给无写入", t => {
   const f = fixture(t, "branch");
@@ -174,7 +188,7 @@ test("sync dry-run 报告缺失引用且不上传；正式同步在上传前阻�
   const f = fixture(t);
   f.write(f.shared + "provisioning.json", { managed_skills: ["demo"] });
   f.write(f.shared + "workspaces/pilot.json", { workspace_id: "ws-1", skills: { "demo": "skill-1" } });
-  f.write("projects/multica/skills/demo/SKILL.md", "缺页：`references/missing.md`\n");
+  f.write("skills/demo/SKILL.md", "缺页：`references/missing.md`\n");
   const preview = f.run("workspace", "sync", "--workspace", "pilot", "--dry-run");
   assert.equal(preview.code, 0, preview.stderr);
   assert.match(preview.stderr, /references 引用问题.*1/);

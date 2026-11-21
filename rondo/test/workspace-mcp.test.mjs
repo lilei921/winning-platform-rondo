@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, chmodSync, rmSync, realpathSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, chmodSync, rmSync, realpathSync, unlinkSync } from "node:fs";
 import { join, dirname, delimiter } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -18,7 +18,7 @@ function fixture(t) {
     const path = join(root, name); mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, typeof content === "string" ? content : JSON.stringify(content)); return path;
   };
-  const shared = "projects/multica/workspace-config/";
+  const shared = "workspace-config/";
   const manifest = {
     mcp_servers: names.map(name => ({ name, template: name + ".json" })),
     managed_skills: ["demo"], agents: [
@@ -27,16 +27,16 @@ function fixture(t) {
     ], squad: { name: "Delivery", leader: "Wayfinder", members: [] }, project: { title: "Project" }, autopilots: [],
   };
   write(shared + "provisioning.json", manifest);
-  for (const name of names) write("projects/multica/mcps/" + name + ".json", readFileSync(join(source, name + ".json"), "utf8"));
-  for (const name of names) write("projects/multica/mcps/connections/" + name + ".local.json", {
+  for (const name of names) write("mcps/" + name + ".json", readFileSync(join(source, name + ".json"), "utf8"));
+  for (const name of names) write("mcps/connections/" + name + ".local.json", {
     url: "https://test.invalid/private-token", headers: { Authorization: "Bearer private-secret" },
   });
   for (const dir of ["wayfinder", "analyst"]) {
-    write(`projects/multica/agents/${dir}/instructions.md`, "instructions");
-    write(`projects/multica/agents/${dir}/description.md`, "description");
+    write(`agents/${dir}/instructions.md`, "instructions");
+    write(`agents/${dir}/description.md`, "description");
   }
-  write("projects/multica/skills/demo/SKILL.md", "---\nname: demo\ndescription: fixture\n---\n");
-  write("projects/multica/squads/delivery-squad/squad-instructions.md", "instructions");
+  write("skills/demo/SKILL.md", "---\nname: demo\ndescription: fixture\n---\n");
+  write("squads/squad-instructions.md", "instructions");
   const overlayPath = write(shared + "workspaces/pilot.json", { workspace_id: "ws-1" });
   const trace = join(root, "trace.jsonl");
   const statePath = write("state.json", { servers: [], bindings: {}, agents: manifest.agents.map((a, i) => ({
@@ -101,8 +101,8 @@ fs.writeFileSync(process.env.MC_STATE,JSON.stringify(s)); console.log(JSON.strin
   };
   const calls = () => existsSync(trace) ? readFileSync(trace, "utf8").trim().split("\n").map(JSON.parse) : [];
   return { run, calls, state: () => JSON.parse(readFileSync(statePath, "utf8")), overlay: () => JSON.parse(readFileSync(overlayPath, "utf8")),
-    setConnection: (name, value) => write("projects/multica/mcps/connections/" + name + ".local.json", value),
-    removeConnection: name => rmSync(join(root, "projects/multica/mcps/connections/" + name + ".local.json")),
+    setConnection: (name, value) => write("mcps/connections/" + name + ".local.json", value),
+    removeConnection: name => rmSync(join(root, "mcps/connections/" + name + ".local.json")),
     setState: s => writeFileSync(statePath, JSON.stringify(s)),
     setOverlay: value => writeFileSync(overlayPath, JSON.stringify(value)), overlayPath, root };
 }
@@ -134,6 +134,49 @@ test("专项供给和 check 不触碰其他资产；漂移 exit 2，检查零写
   assert.equal(f.run(["--mcp-only"]).status, 0);
   assert.equal(f.run(["--mcp-only", "--check"]).status, 0);
   assert.ok(f.calls().every(a => !a.some(v => ["skill", "runtime", "workflow", "squad", "project", "autopilot"].includes(v))));
+});
+
+test("分组 MCP 使用独立连接文件；缺失时在平台写入前失败", t => {
+  const f = fixture(t);
+  const manifestPath = join(dirname(f.overlayPath), "..", "provisioning.json");
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  manifest.workspace_groups = { bi: { workspaces: ["pilot"], mcp_servers: names.map(name => ({
+    name, template: name + ".json", connection_file: "bi-" + name + ".local.json",
+  })) } };
+  writeFileSync(manifestPath, JSON.stringify(manifest));
+  const before = readFileSync(manifestPath, "utf8");
+  const missing = f.run(["--mcp-only"]);
+  assert.equal(missing.status, 3, missing.stderr);
+  assert.match(missing.body.reason, /bi-remote-codegraph.local.json/);
+  assert.equal(f.calls().length, 0);
+  for (const name of names) {
+    const connections = join(dirname(manifestPath), "..", "mcps", "connections");
+    writeFileSync(join(connections, "bi-" + name + ".local.json"), JSON.stringify({
+      url: "https://bi.invalid", headers: { Authorization: "Bearer fixture" },
+    }));
+    // 默认连接不可读，保证分组供给没有回落到 df 的连接。
+    unlinkSync(join(connections, name + ".local.json"));
+  }
+  const actual = f.run(["--mcp-only"]);
+  assert.equal(actual.status, 0, actual.stderr);
+  assert.equal(readFileSync(manifestPath, "utf8"), before);
+  for (const name of names) assert.ok(f.overlay().mcp_servers[name].id);
+  // 分组默认引用由 manifest 维护，overlay 只记录平台 ID，避免默认值遮蔽后续分组调整。
+  assert.equal(f.run(["--mcp-only"]).status, 0);
+});
+
+test("分组连接文件不允许越过 mcps/connections 目录", t => {
+  const f = fixture(t);
+  const manifestPath = join(dirname(f.overlayPath), "..", "provisioning.json");
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  manifest.workspace_groups = { bi: { workspaces: ["pilot"], mcp_servers: [
+    { name: names[0], template: names[0] + ".json", connection_file: "../outside.local.json" },
+  ] } };
+  writeFileSync(manifestPath, JSON.stringify(manifest));
+  const r = f.run(["--mcp-only"]);
+  assert.equal(r.status, 3, r.stderr);
+  assert.match(r.body.reason, /连接文件引用非法/);
+  assert.equal(f.calls().length, 0);
 });
 
 test("第二个 MCP 创建失败保留第一个 ID；恢复只补缺失条目", t => {
@@ -182,7 +225,7 @@ test("非法模式在平台调用前拒绝", t => {
 });
 
 test("正式项目配置根仓分支，并为受管源码 Agent 声明 MCP", () => {
-  const m = JSON.parse(readFileSync(join(source, "provisioning.json"), "utf8"));
+  const m = JSON.parse(readFileSync(fileURLToPath(new URL("../../workspace-config/provisioning.json", import.meta.url)), "utf8"));
   assert.ok(m.project.workspace_branch.trim());
   assert.deepEqual(m.mcp_servers.map(s => s.name), names);
   for (const dir of ["wayfinder-agent", "bug-fix-agent", "workitem-analyst", "engineer"]) {

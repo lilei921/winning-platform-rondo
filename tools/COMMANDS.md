@@ -245,7 +245,7 @@ rondo workspace check-daemon --workspace-id <id> [--project-id <id>]
 | `workspace migrate-repo-keys` | 预览或实施 Workspace Issue 中的 Repository Key Metadata 变更；`--apply` 才写入 |
 | `workspace check-daemon` | 检查 Daemon 环境变量、Runtime 注册、挂载唯一性和交付亲和条件 |
 
-`workspace provision` 的 `--dry-run` 只预览；`workspace sync --local-only` 只生成本地配置，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。完整 provision 将 `_shared/provisioning.json` 中的 `project.workspace_branch` 下发为每个受管 Agent 的 `RONDO_WORKSPACE_BRANCH`。
+`workspace provision` 的 `--dry-run` 只预览；`workspace sync --local-only` 只生成本地配置，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。完整 provision 将 `workspace-config/provisioning.json` 中的 `project.workspace_branch` 下发为每个受管 Agent 的 `RONDO_WORKSPACE_BRANCH`。
 
 ### 7.2 `rondo runtime`
 

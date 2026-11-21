@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -79,9 +79,9 @@ test("D1 identity: duplicate, archived, wrong Schema and unknown remain safe", (
 
 test("D1 workspace sync renders spec-preparation config in dry-run and local-only modes", (t) => {
   const root = fixture(t);
-  const shared = join(root, "projects", "multica", "workspace-config");
-  const skill = join(root, "projects", "multica", "skills", "spec-preparation");
-  const workspaceSkill = join(root, "projects", "multica", "skills", "workspace-preparation");
+  const shared = join(root, "workspace-config");
+  const skill = join(root, "skills", "spec-preparation");
+  const workspaceSkill = join(root, "skills", "workspace-preparation");
   const tools = join(root, "tools");
   const docs = join(root, "docs", "config");
   mkdirSync(join(shared, "workspaces"), { recursive: true });
@@ -89,15 +89,12 @@ test("D1 workspace sync renders spec-preparation config in dry-run and local-onl
   mkdirSync(workspaceSkill, { recursive: true });
   mkdirSync(tools, { recursive: true });
   mkdirSync(docs, { recursive: true });
-  writeFileSync(join(docs, "repo-context.yaml"), "# fixture\n");
-  writeFileSync(join(tools, "repo_registry.py"), [
-    "import json",
-    "print(json.dumps({'contract_version':'repo-registry-result/v1','operation':'list','status':'ok','errors':[],",
-    "'repos':[{'repo_id':'root','repo_type':'root-workspace','repo_path':'.','responsibility':'root',",
-    "'keywords':[],'not_responsible_for':[]},",
-    "{'repo_id':'app','repo_type':'application','repo_path':'app','repo_url':'http://tfs.test/tfs/C/P/_git/app','responsibility':'business',",
-    "'keywords':[],'not_responsible_for':[]}] }))",
-  ].join("\n") + "\n");
+  // 使用真实的 registry 查询工具，验证独立仓库的 Python → Rondo 渲染链路。
+  writeFileSync(join(docs, "repo-context.yaml"), JSON.stringify({ repos: [
+    { repo_id: "root", repo_type: "root-workspace", repo_path: ".", responsibility: "root", keywords: [], not_responsible_for: [] },
+    { repo_id: "app", repo_type: "backend", repo_path: "app", repo_url: "http://tfs.test/tfs/C/P/_git/app", responsibility: "business", keywords: [], not_responsible_for: [] },
+  ] }));
+  copyFileSync(new URL("../../tools/repo_registry.py", import.meta.url), join(tools, "repo_registry.py"));
   writeFileSync(join(shared, "repo-registry.base.json"), JSON.stringify({
     runtime: { multica_cli: "multica", rondo: "rondo" },
     delivery: { app: { tfs_repo: "app", default_target_branch: "main" } },
@@ -133,9 +130,9 @@ test("D1 workspace sync renders spec-preparation config in dry-run and local-onl
 
 test("D1 workspace sync refuses missing squad identity rather than writing fallback registry", (t) => {
   const root = fixture(t);
-  const shared = join(root, "projects", "multica", "workspace-config");
+  const shared = join(root, "workspace-config");
   mkdirSync(join(shared, "workspaces"), { recursive: true });
-  mkdirSync(join(root, "projects", "multica", "skills", "spec-preparation"), { recursive: true });
+  mkdirSync(join(root, "skills", "spec-preparation"), { recursive: true });
   writeFileSync(join(shared, "workspaces", "badpilot.json"), JSON.stringify({
     workspace_id: "ws-pilot", skills: { "spec-preparation": "skill-id" },
   }));
