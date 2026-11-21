@@ -1,13 +1,11 @@
-使用 `pr-status-sync` 调用 `rondo pr reconcile-status`，核实并同步外部 PR 状态；不自行推断 PR completed。
+使用 `pr-status-sync` 对账。仅对 `actions[]` 中已确认的 `finalize` / `resume_finalize` 执行 `issue-closeout`；扫描整体 `UNKNOWN` 不进入收口，单项失败或 `unknown` 不推进受影响 Issue。
 
-只处理 `actions[]` 中明确返回 `finalize` / `resume_finalize` 的 Issue：
+- 已是 `done` 且仅残留 `finalize.pending`：由 `issue-closeout` 直接 Complete，无需 Clone。
+- 独立 Bug：直接执行 `issue-closeout`，无需根仓。
+- Requirement：逐 Issue 读取 `analysis.source`（`repo_url`、`branch`、`commit`、`change_ref`），在同一 Run 内按 Repository + Branch 分组；不同 Branch 不共用工作树。
+- 每组首个 Issue 执行 `rondo delivery root-clone --issue <KEY> --config "<config-path>"`，记录 `root_repo` 和 `cleanup_token`，供本组复用。不要使用 Multica Repo 或 `workspace-preparation`。
+- 同组逐 Issue 顺序执行 `issue-closeout`，传入同一个 `--root-repo`；每个 Issue 独立核验收口结果。
+- Archive / Git 状态无法确认时停止本组；仅 TFS 写入失败且 Git 状态安全时，可继续同组其他 Issue。不同组独立处理。
+- 每组结束或停止且根仓已不再使用时，执行 `rondo delivery root-cleanup --root-repo "<root_repo>" --token "<cleanup_token>"`。Cleanup 失败则保留现场并说明原因，不强制删除。
 
-- Issue 已经是 `done` 且只需恢复残留 `finalize.pending`：直接调用 `rondo delivery finalize --phase complete --issue <KEY> --config "<config-path>"`，无需 Clone。
-- 独立 Bug：直接调用 `issue-closeout`，无需根仓。
-- 有 OpenSpec Change 的 Requirement：逐 Issue 读取其 `analysis.source`（`repo_url`、`branch`、`commit`、`change_ref`），仅在同一 Run 内按 Repository + Branch 分组。不同 Branch 不共用工作树。
-- 每组对第一个 Issue 执行 `rondo delivery root-clone --issue <KEY> --config "<config-path>"`，只 Clone 一次，保存返回的 `root_repo` 和 `cleanup_token` 供本组使用。不要使用 Multica Repo 或 `workspace-preparation`。
-- 在同一组中逐 Issue **顺序**使用 `issue-closeout`，Prepare、Writeback、Complete 都显式使用本组相同的 `--root-repo`。每个 Issue 单独验证 PR、Archive、TFS 与 `finalize.pending`，不得用其他 Issue 的结果代替。
-- 某 Issue 的 Archive / Git 状态不可确认时停止本组；若 Archive 已确认、仅 TFS 写入失败，可在 Git 状态安全时继续本组其它 Issue。不同分组可独立继续。
-- 本组结束或停止、确认无命令继续使用根仓后，执行 `rondo delivery root-cleanup --root-repo "<root_repo>" --token "<cleanup_token>"`。Cleanup 拒绝时保留现场并记录目录与原因，不强制删除。
-
-仅汇总本轮可确认的同步、单 Issue 收口和 Cleanup 结果；`UNKNOWN`、`FAIL` 或真实外部验证缺失不得报告 PASS。
+仅汇报已确认的同步、单 Issue 收口和 Cleanup 结果；`FAIL`、`UNKNOWN` 或外部验证缺失不得报告 PASS。
