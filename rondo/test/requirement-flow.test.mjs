@@ -12,6 +12,7 @@ import { isRequirementChangeDelivery, assertRequirementEvidence } from "../dist/
 import { isDeliveryTaskTitle, findDeliveryTasks, ensureDeliveryTasks } from "../dist/commands/tfs/requirement-tasks.js";
 import { prepareRequirementWorktree } from "../dist/commands/dev/requirement-worktree.js";
 import { TfsClient } from "../dist/tfs/client.js";
+import { materializeOne } from "../dist/commands/pr/materialize.js";
 import { outgoing, prepareRoot, publishChange } from "../dist/commands/runtime/root-git.js";
 
 const repoUrl = "http://tfs.test/tfs/C/P/_git/biz";
@@ -23,35 +24,74 @@ const sha1 = "a".repeat(40);
 const sha2 = "b".repeat(40);
 function prep(key, sha) {
   return { repo_key: key, source_branch: "feature/42", target_branch: "dev",
-    candidate_commit: sha, title: "Change", description_ref: "change:pr-description-" + key + ".md" };
-}
-function evidence(key, sha) {
-  return { change_ref: "foo-42", repo_key: key, candidate_commit: sha,
-    local_validation: { result: "PASS", summary: "Tests passed" },
-    code_review: { result: "PASS", summary: "Reviewed" }, blockers: [],
-    commits: [{ repo_key: key, repo_url: registry[key].repo_url, sha }] };
+    candidate_commit: sha, title: "Change",
+    description: "实现修复；已完成验证；风险已评估。",
+    local_validation: { result: "PASS", summary: "Tests passed", command: ["node", "--test"],
+      exit_code: 0, candidate_commit: sha, source: "rondo dev pr-prep" },
+    code_review: { result: "PASS", candidate_commit: sha, summary: "Reviewed", findings: [] }, blockers: [] };
 }
 
-test("批准的 Repository Scope 是授权上限，不要求每个仓库均产生 PR", () => {
+test("Requirement Scope, Candidate 和验证/Review 必须由同一份原生事实绑定", () => {
   assert.deepEqual(parseRepositoryScope("schema: intentional-change\nx-repositories:\n  - frame\n  - web\n"), ["frame", "web"]);
-  assert.deepEqual(validateChangeDelivery([prep("frame", sha1)], { frame: evidence("frame", sha1) }, ["frame","web"], 42, registry),
-    {frame:sha1});
-  const both = validateChangeDelivery([prep("frame",sha1),prep("web",sha2)],
-    { frame:evidence("frame",sha1),web:evidence("web",sha2)}, ["frame","web"],42,registry);
-  assert.deepEqual(both,{frame:sha1,web:sha2});
-  assert.throws(() => validateChangeDelivery([prep("web",sha2)],{web:evidence("web",sha2)},["frame"],42,registry),/Scope/);
-  assert.throws(() => validateChangeDelivery([prep("frame",sha1)],{frame:evidence("frame",sha2)},["frame"],42,registry),/Evidence/);
-  assert.throws(() => validateChangeDelivery([prep("frame",sha1)],{frame:evidence("frame",sha1),web:evidence("web",sha2)},["frame","web"],42,registry),/Evidence/);
+  assert.deepEqual(validateChangeDelivery([prep("frame", sha1)], ["frame","web"], 42, registry), {frame:sha1});
+  assert.deepEqual(validateChangeDelivery([prep("frame",sha1),prep("web",sha2)], ["frame","web"],42,registry), {frame:sha1,web:sha2});
+  assert.throws(() => validateChangeDelivery([prep("web",sha2)], ["frame"],42,registry), /Scope/);
+  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),local_validation:{...prep("frame",sha1).local_validation,candidate_commit:sha2}}], ["frame"],42,registry), /Candidate/);
+  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),blockers:["blocking"]}], ["frame"],42,registry), /Blocking/);
+  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{...prep("frame",sha1).code_review,candidate_commit:sha2}}], ["frame"],42,registry), /Code Review/);
+  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{result:"PASS",candidate_commit:sha1,summary:"Review",findings:[{resolved:false,blocking:true}]}}], ["frame"],42,registry), /Blocking/);
+  assert.doesNotThrow(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{result:"PASS",candidate_commit:sha1,summary:"Review",findings:[{resolved:false,blocking:false,risk_note:"known acceptable risk"}]}}], ["frame"],42,registry));
 });
 
-test("Requirement 收口从 Change 元数据读取 Repository Scope", t => {
+test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专业描述", async () => {
+  const entry = prep("frame", sha1);
+  const cfg = { registry: { frame: { ...registry.frame, tfs_repo: "biz", tfs_project: "P" } } };
+  let remoteHead = sha1;
+  let description = "Engineer 已验证的专业 PR 描述";
+  let prStatus = "active";
+  let listed = false;
+  const calls = [];
+  const tfs = { run: async args => {
+    calls.push(args.slice(0, 2).join(" "));
+    if (args[0] === "branch") return { found: true, branch: { commit: remoteHead } };
+    if (args[0] === "pr" && args[1] === "get") return {
+      id: 17, status: prStatus, sourceBranch: "feature/42", targetBranch: "dev",
+      description, url: "http://tfs.test/pr/17",
+    };
+    if (args[0] === "pr" && args[1] === "list") {
+      listed = true;
+      return [{ id: 17, targetBranch: "dev", url: "http://tfs.test/pr/17" }];
+    }
+    throw Error("Unexpected external PR write");
+  } };
+  const prior = { repo_key: "frame", pr_id: 17, pr_url: "http://tfs.test/pr/17",
+    source_branch: "feature/42", target_branch: "dev" };
+  const reused = await materializeOne(tfs, cfg, "42", entry, prior, undefined, entry.description);
+  assert.equal(reused.pr_id, 17);
+  assert.equal(reused.reused, true);
+  assert.equal(listed, false, "已登记 PR 必须先按 ID 回读而不是凭分支查找");
+  assert.deepEqual(calls, ["branch get", "pr get"]);
+  remoteHead = sha2;
+  await assert.rejects(materializeOne(tfs, cfg, "42", entry, prior, undefined, entry.description), /HEAD/);
+  remoteHead = sha1;
+  description = "";
+  await assert.rejects(materializeOne(tfs, cfg, "42", entry, prior, undefined, entry.description), /existing_pr_description_missing/);
+  description = "专业内容";
+  prStatus = "abandoned";
+  await assert.rejects(materializeOne(tfs, cfg, "42", entry, prior, undefined, entry.description), /状态不匹配|外部身份/);
+  prStatus = "active";
+  listed = false;
+  assert.equal((await materializeOne(tfs, cfg, "42", entry, undefined, undefined, entry.description)).pr_id, 17);
+  assert.equal(listed, true, "未登记 PR 可通过外部 Active PR 发现后复用");
+});
+
+test("Requirement Closeout 读取批准范围与现有 pr_prep，不依赖 Evidence JSON", t => {
   const changeDir = mkdtempSync(join(tmpdir(), "rondo-requirement-scope-"));
   t.after(() => rmSync(changeDir, { recursive: true, force: true }));
   writeFileSync(join(changeDir, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [frame]\n");
   writeFileSync(join(changeDir, "proposal.md"), "# Proposal\n");
   writeFileSync(join(changeDir, "tasks.md"), "- [x] 1.1 Build\n");
-  writeFileSync(join(changeDir, "evidence-frame.json"), JSON.stringify(evidence("frame", sha1)));
-  const md = { "tfs.id": "42", pr_prep: JSON.stringify([prep("frame", sha1)]) };
+  const md = { "tfs.id": "42", "analysis.change_ref": "foo-42", pr_prep: JSON.stringify([prep("frame", sha1)]) };
   assert.doesNotThrow(() => assertRequirementEvidence(registry, md, changeDir, "foo-42"));
   writeFileSync(join(changeDir, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [web]\n");
   assert.throws(() => assertRequirementEvidence(registry, md, changeDir, "foo-42"), /Scope/);
@@ -85,8 +125,7 @@ test("Completion 读取批准 SHA 与登记的研发 SHA，其他 Change 推进�
   const branchTip = "c".repeat(40);
   const files = {
     [sha1]: { ".openspec.yaml": scopeMetadata, "proposal.md": proposal, "tasks.md": "- [ ] 1.1 Build" },
-    [sha2]: { ".openspec.yaml": scopeMetadata, "proposal.md": proposal, "tasks.md": "- [x] 1.1 Build",
-      "evidence-frame.json": JSON.stringify(evidence("frame", sha2)), "pr-description-frame.md": "published body" },
+    [sha2]: { ".openspec.yaml": scopeMetadata, "proposal.md": proposal, "tasks.md": "- [x] 1.1 Build" },
   };
   // A later commit to another Change leaves this directory identical; its SHA is not the delivery receipt.
   files[branchTip] = files[sha2];

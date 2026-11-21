@@ -104,14 +104,11 @@ test("Engineer 从批准 SHA 读取缺失工件，在分叉的常驻根仓独立
   writeFileSync(join(root, work, "evidence-biz.json"), '{"result":"PASS"}\n');
   git(root, "add", work);
   git(root, "commit", "-m", "include validation evidence");
-  const delivery = publish(0);
-  assert.notEqual(delivery.commit, published.commit);
-  // Replay the earlier Run against the same Issue after the newer receipt has landed.
-  git(root, "branch", "-m", "newer-local-run");
-  git(root, "switch", "-c", "integration", local);
-  assert.match(publish(3).reason, /旧回执/);
-  assert.equal(git(bare, "rev-parse", "integration"), delivery.commit);
-  assert.equal(JSON.parse(metadata()["dev.publication"]).commit, delivery.commit);
+  const rejectedEvidence = publish(2);
+  assert.match(rejectedEvidence.reason, /evidence-biz\.json|研发工件|允许/);
+  // The forbidden Evidence file does not generate a new publication receipt.
+  assert.equal(git(bare, "rev-parse", "integration"), published.commit);
+  assert.deepEqual(JSON.parse(metadata()["dev.publication"]), { analysis_commit: approved, commit: published.commit });
 });
 
 test("本机仍有旧 Tasks 时，依据批准编号与正文勾选并保留远端另一项进度", t => {
@@ -161,7 +158,7 @@ test("本机仍有旧 Tasks 时，依据批准编号与正文勾选并保留远�
   assert.deepEqual(JSON.parse(metadata()["dev.publication"]), receipt);
 });
 
-test("Design 细化只复用当前批准版本已确认的正文，后续 Evidence 可独立发布", t => {
+test("Design 细化仍受批准版本约束，Evidence JSON 不再参与发布", t => {
   const design = "Use the defined validation order.\n";
   const refined = design + "Validate required fields before optional fields.\n";
   const { root, analyst, bare, work, approved, source, publish, state, metadata } = fixture(t, { design });
@@ -173,9 +170,10 @@ test("Design 细化只复用当前批准版本已确认的正文，后续 Eviden
   writeFileSync(join(root, work, "evidence-biz.json"), '{"passed":true}\n');
   git(root, "add", work);
   git(root, "commit", "-m", "add evidence only");
-  const second = publish(0).commit;
-  assert.equal(git(bare, "diff", "--name-only", first, second), work + "/evidence-biz.json");
-  assert.deepEqual(JSON.parse(metadata()["dev.publication"]), { analysis_commit: approved, commit: second });
+  const rejected = publish(2);
+  assert.match(rejected.reason, /evidence-biz\.json|研发工件|允许/);
+  const second = first;
+  assert.deepEqual(JSON.parse(metadata()["dev.publication"]), { analysis_commit: approved, commit: first });
 
   writeFileSync(join(root, work, "design.md"), refined + "Additional unconfirmed detail.\n");
   git(root, "commit", "-am", "different design");

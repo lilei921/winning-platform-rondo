@@ -1,40 +1,27 @@
 ---
 name: pull-request
-description: PR 物化。当 Delivery Issue 的全部 required 研发任务完成、Delivery Lead 需要把 PR Preparation Facts 落为 TFS PR 时使用。
+description: 将已有 PR Preparation Facts 核验后创建或复用 TFS PR；专业描述只由 Engineer 提供。
 ---
 
 # pull-request
 
-薄适配器方法：确定性逻辑全部收编为 `rondo` 子命令，本文件只定义调用契约（并发写隔离契约唯一权威：`references/repo-write-isolation-contract.md`）。
+本 Skill 不生成或保存 PR Description Markdown。确定性 PR Admission、TFS PR 创建及复用由 Rondo 负责，元数据形状见 `references/pr-facts-contract.md`。
 
-## Preconditions / Inputs
+## Requirement
 
-- 默认配置：`config/repo-registry.json`（相对于本 Skill 目录）；通过 `--config` 传入该配置文件路径。
-- Issue metadata 必须已有 `pr_prep`（契约见 `references/pr-facts-contract.md`）。
-- 目标项目与所需仓库可被 `rondo` 访问；
-- 枢纽克隆 `<root_repo>/<repo_path>/` 就位（`repo_key = repo_id`，`repo_path` 来自 registry，root_repo 为运行时解析结果）；rondo 可用（凭证在本机 config，不进平台）。
-
-## Procedure
-
-**PR 物化（Lead 协调）**：
+`analysis.source` 已获独立 Human Approval，Engineer 已提交代码、完成真正的 Candidate Validation 与 Code Review，并由 `rondo dev pr-prep --mode requirement` 在 Issue 上保存逐仓 `pr_prep`。Change Tasks 已完成，`rondo dev publish` 已登记固定研发版本。
 
 ```bash
-rondo pr materialize --issue <KEY> --config "<config-path>"
+rondo dev check-change --config "<config-path>" --issue <KEY> --change-ref <change-ref>
+rondo pr materialize --mode requirement --config "<config-path>" --issue <KEY> --change-ref <change-ref>
 ```
 
-脚本行为（由脚本保证）：校验 candidate_commit == 分支 HEAD → 核对外部 PR 事实（已存在则复用登记）→ 需创建时建 PR 并关联 TFS 工作项 → 回写 `current_pr` → 全部 required 仓登记完成 → Issue → `in_review`（--no-start）。
+`check-change` 验证批准来源、固定研发版本、任务进度、逐仓 Candidate / Validation / Review / Blockers 与批准范围；`materialize` 在创建前重新执行相同 Gate，再核对 TFS 分支 HEAD，创建或复用 PR 并登记 `current_pr`。创建时将 Engineer Description 放进临时文件供 TFS CLI 使用，不写入 OpenSpec/Git。
 
-## Validation
+## Legacy / Direct Bug
 
-- `rondo pr materialize` 退出码 `0` 且 `result=PASS`：每个 `prs[]` 项回读 `current_pr` 已登记、Issue 状态 = `in_review`。
+保持已有不指定 `--mode requirement` 的 `rondo pr materialize` 路径，不迁移历史 Task-level 工件。
 
-## Output
+## 结果与异常
 
-- `rondo pr materialize`：`{ result: "PASS", issue, status: "in_review", prs: [...] }`；
-- Agent 汇总本次执行结果；FAIL/UNKNOWN 原样附 reason。
-
-## Error Handling / Stop Conditions
-
-- `result=FAIL`（exit 2）：按逐项 reason 处理（repo_key 未登记 / 分支未推送 / description_ref 不支持等），不绕过；
-- `result=UNKNOWN`（exit 3）：交 Delivery Lead 语义判断——仅"需改代码 / rebase / HEAD 不一致原因查明"才重新 @Engineer，TFS 临时失败与幂等恢复不需要 Engineer；
-- PR Title/Description 语义不由本 Skill 修改。
+仅当 Rondo 回读 `current_pr` 并将 Issue 转入 `in_review` 后报告物化成功。FAIL/UNKNOWN、Candidate 不符、缺少真实验证或未解决 Blocking Finding 时停止；不能把 Engineer 自报 PASS 当作独立验证。不修改专业 Title/Description 内容。

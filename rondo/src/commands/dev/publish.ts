@@ -11,7 +11,7 @@ import { readAnalysisArtifact, type AnalysisSource } from "../analysis/source.js
 import { approvedChange, developmentPublication } from "./requirement-guard.js";
 import { publishChange, requirementBranch, requirementRoot } from "../runtime/root-git.js";
 
-export const executionArtifact = /^(?:tasks\.md|design\.md|evidence[^/]*\.json|pr-description-[a-z][a-z0-9-]*\.md)$/;
+export const executionArtifact = /^(?:tasks\.md|design\.md)$/;
 const contractFile = /^(?:\.openspec\.yaml|proposal\.md|tasks\.md|design\.md|specs\/.+\.md)$/;
 
 /** Check the actual Git tree that would be published, including any compatible remote edits. */
