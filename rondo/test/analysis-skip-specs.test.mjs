@@ -3,7 +3,7 @@ import { changeEvidenceDigest, metadataEvidenceDigest } from "../dist/commands/a
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { cpSync, chmodSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -61,7 +61,6 @@ function fixture(t, { skip = false, schema = "intentional-change", estimate = tr
     const r = spawnSync(process.execPath, [
       CLI, "analysis", "validate", "--issue", "issue-1", "--openspec-root", root,
       "--workspace-id", "ws-test", "--multica", MOCK, "--registry-config", configPath,
-      "--out", join(change, "logs", "analysis-gate-result.json"),
     ], {
       encoding: "utf8", env: { ...process.env, MOCK_STATE: statePath, MOCK_EXPECT_PROFILE: "private", MOCK_EXPECT_SERVER: "https://private.example" }, timeout: 30_000,
     });
@@ -95,8 +94,7 @@ test("D3-A: legal native skip_specs does not require Delta Specs", { skip: !usab
   assert.equal(r.body.change_digest, changeEvidenceDigest(f.change, JSON.parse(readFileSync(join(f.root, "state.json"), "utf8")).metadata));
   assert.equal(r.body.metadata_digest,
     metadataEvidenceDigest(JSON.parse(readFileSync(join(f.root, "state.json"), "utf8")).metadata));
-  const persisted = JSON.parse(readFileSync(join(f.change, "logs", "analysis-gate-result.json"), "utf8"));
-  assert.equal(persisted.change_digest, r.body.change_digest);
+  assert.equal(existsSync(join(f.change, "logs", "analysis-gate-result.json")), false);
   assert.equal(r.code, 0, JSON.stringify(r.body));
 });
 
