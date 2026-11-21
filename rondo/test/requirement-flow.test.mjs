@@ -27,7 +27,7 @@ function prep(key, sha) {
     description: "实现修复；已完成验证；风险已评估。",
     local_validation: { result: "PASS", summary: "Tests passed", command: ["node", "--test"],
       exit_code: 0, candidate_commit: sha, source: "rondo dev pr-prep" },
-    code_review: { result: "PASS", summary: "Reviewed", findings: [] }, blockers: [] };
+    code_review: { result: "PASS", candidate_commit: sha, summary: "Reviewed", findings: [] }, blockers: [] };
 }
 
 test("Requirement Scope, Candidate 和验证/Review 必须由同一份原生事实绑定", () => {
@@ -37,8 +37,8 @@ test("Requirement Scope, Candidate 和验证/Review 必须由同一份原生事�
   assert.throws(() => validateChangeDelivery([prep("web",sha2)], ["frame"],42,registry), /Scope/);
   assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),local_validation:{...prep("frame",sha1).local_validation,candidate_commit:sha2}}], ["frame"],42,registry), /Candidate/);
   assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),blockers:["blocking"]}], ["frame"],42,registry), /Blocking/);
-  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{result:"PASS",summary:"Review",findings:[{resolved:false,blocking:true}]}}], ["frame"],42,registry), /Blocking/);
-  assert.doesNotThrow(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{result:"PASS",summary:"Review",findings:[{resolved:false,blocking:false,risk_note:"known acceptable risk"}]}}], ["frame"],42,registry));
+  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{result:"PASS",candidate_commit:sha1,summary:"Review",findings:[{resolved:false,blocking:true}]}}], ["frame"],42,registry), /Blocking/);
+  assert.doesNotThrow(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{result:"PASS",candidate_commit:sha1,summary:"Review",findings:[{resolved:false,blocking:false,risk_note:"known acceptable risk"}]}}], ["frame"],42,registry));
 });
 
 test("Requirement Closeout 读取批准范围与现有 pr_prep，不依赖 Evidence JSON", t => {
