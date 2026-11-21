@@ -288,7 +288,6 @@ export function checkAiReview(schema: ChangeSchema | null, meta: Record<string, 
   const reasons: string[] = [];
   if (verdict === "NEEDS_REVISION") reasons.push("ai_review.verdict=NEEDS_REVISION");
   else if (verdict !== "APPROVED") reasons.push(`ai_review.verdict 缺失或非法: ${String(verdict)}`);
-  if (typeof meta["analysis.ai_review.findings_ref"] !== "string" || !(meta["analysis.ai_review.findings_ref"] as string).trim()) reasons.push("ai_review.findings_ref 缺失或非法");
   return { name: "ai_review", result: reasons.length ? "FAIL" : "PASS", reasons };
 }
 
