@@ -24,6 +24,7 @@
   },
   "code_review": {
     "result": "PASS",
+    "candidate_commit": "<同一 Candidate SHA>",
     "summary": "Engineer 对 Candidate 的专业审查结论",
     "findings": []
   },
