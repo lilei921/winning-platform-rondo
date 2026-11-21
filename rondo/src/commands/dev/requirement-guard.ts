@@ -58,7 +58,8 @@ export function assertEngineerExecution(multica: MulticaClient, issue: IssueReco
 
 export async function approvedChange(cfg: BaseRegistryConfig, multica: MulticaClient, issueRef: string, changeRef: string, allowInReview = false): Promise<ApprovedChange> {
   const issue = multica.getIssue(issueRef), md = issue.metadata ?? {};
-  assertEngineerExecution(multica, issue, cfg.runtime.workspace_id);
+  // A completed Engineer Run is not active during read-only PR admission.
+  if (!allowInReview) assertEngineerExecution(multica, issue, cfg.runtime.workspace_id);
   if (md["tfs.type"] !== "需求") throw new FailError("当前 Change 研发仅支持 TFS Requirement，Bug 使用原有入口");
   if (!(allowInReview ? ["todo", "in_progress", "in_review"] : ["todo", "in_progress"]).includes(issue.status ?? "")) throw new FailError("当前 Issue 状态不允许 Requirement 开工");
   if (md["analysis.gate.result"] !== "PASS" || md["analysis.change_ref"] !== changeRef) {
