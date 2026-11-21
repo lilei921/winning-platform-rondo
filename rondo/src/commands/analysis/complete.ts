@@ -14,7 +14,8 @@ import { gitOk } from "../../clients/git.js";
 import { publishChange, requirementBranch, requirementRoot, rootRepositoryUrl } from "../runtime/root-git.js";
 import { assertAnalysisWritable } from "./guard.js";
 import { readChangeSchema, sourceSchemaViolation } from "./change-schema.js";
-import { changeEvidenceDigest, metadataEvidenceDigest, verifyGateEvidence, verifyGateEvidenceData } from "./gate-evidence.js";
+import { changeEvidenceDigest, metadataEvidenceDigest } from "./gate-evidence.js";
+import { evaluateAnalysisGate } from "./validate.js";
 import { parseAnalysisSource, readAnalysisArtifact, readAnalysisSource, repositoryUrl, sameAnalysisSource, type AnalysisSource } from "./source.js";
 import {
   PreconditionError,
@@ -25,27 +26,22 @@ import {
   type Facts,
 } from "./facts.js";
 
-import { committedGate, readPublishedGate, assertCommittedGateFiles } from "./published-source.js";
+import { committedContract, readPublishedContract, assertCommittedContractFiles } from "./published-source.js";
 
 const TARGET_STATUS = "analysis_review";
 
 function loadFacts(path: string): Facts {
   const f = loadFactsFile(path) as Partial<Facts>;
   const missing = validateDraftFields(f);
-  if (!f.gate?.result) missing.push("gate.result");
-  if (!f.gate?.reasons_ref?.trim()) missing.push("gate.reasons_ref");
   if (missing.length > 0) throw new PreconditionError(`facts 字段缺失或非法: ${missing.join("; ")}`);
-  if (f.gate!.result !== "PASS") {
-    throw new PreconditionError(`gate.result=${f.gate!.result}，analysis-completion 只接受 PASS（02 §5.4）`);
-  }
+  // Caller-supplied Gate status is never trusted. Complete re-runs the real Gate.
   return f as Facts;
 }
 
 function metadataEntries(f: Facts): Record<string, string> {
   return {
     ...draftMetadataEntries(f),
-    "analysis.gate.result": f.gate.result,
-    "analysis.gate.reasons_ref": f.gate.reasons_ref,
+    "analysis.gate.result": "PASS",
   };
 }
 
@@ -112,12 +108,13 @@ async function main(rawArgs: string[]): Promise<number> {
     // 审核中的重放只核验已发布来源，不用当前工作树或已前进的 HEAD 改写审核基线。
     if (!assertAnalysisWritable(before, priorMeta, "complete", entries)) {
       const source = readAnalysisSource(priorMeta);
-      const published = await readPublishedGate(source);
+      if (priorMeta["analysis.gate.result"] !== "PASS") throw new UnknownError("已审核 Issue 缺少可信的 PASS 状态，不能重放");
+      const published = await readPublishedContract(source, priorMeta);
       const violation = sourceSchemaViolation(tfsKind, published.schema);
       if (violation) throw new PreconditionError(violation);
       const missing = validateDraftFields(facts, published.schema);
       if (missing.length) throw new PreconditionError(missing.join("; "));
-      verifyGateEvidenceData(published.gate, facts, published.schema, String(before.id), args.workspaceId!, priorMeta);
+      if (!/^[a-f0-9]{64}$/.test(published.digest)) throw new UnknownError("固定来源的工程契约摘要非法");
       await readAnalysisArtifact(source, "tasks.md");
       const latest = runJson([...MC, "issue", "get", args.issue, ...ws, "--output", "json"], "重放后核对审核状态") as Record<string, unknown>;
       const current = runJson([...MC, "issue", "metadata", "list", args.issue, ...ws, "--output", "json"], "重放后核对来源") as Record<string, unknown>;
@@ -130,24 +127,34 @@ async function main(rawArgs: string[]): Promise<number> {
       return 0;
     }
 
-    // Gate 已按 Schema 验证；Complete 再次读取持久化 Change，防止在 Gate 之后
-    // 漏传 Intentional AI Review 或把来源类型与工程契约错误组合写进审核状态。
+    // Complete itself executes the final Gate. A prior validate or Metadata PASS is only a preview.
     const requirement = args.mode === "requirement";
     const root = requirement ? requirementRoot(args.rootRepo) : resolveRuntimePaths(cfg, {
       issue: before as { project_id?: string | null }, rootRepoArg: args.rootRepo || process.env.RONDO_WORKSPACE_PATH,
       need: ["openspec"],
     }).rootRepo;
     const changeDir = join(root, "openspec", "changes", facts.change_ref);
-    const readGateAt = (commit: string) => committedGate(root, commit, facts, String(before.id), args.workspaceId!, priorMeta);
-    const committed = requirement ? readGateAt("HEAD") : undefined;
-    const schema = committed?.schema ?? readChangeSchema(changeDir);
+    const readContractAt = (commit: string) => committedContract(root, commit, facts, priorMeta);
+    const schema = readChangeSchema(changeDir);
     const schemaIssues = validateDraftFields(facts, schema);
     if (schemaIssues.length > 0) throw new PreconditionError(`当前 Schema 的 Facts 校验失败: ${schemaIssues.join("; ")}`);
     const violation = sourceSchemaViolation(tfsKind, schema);
     if (violation) throw new PreconditionError(violation);
-    // Facts 中的 PASS 声明不足以提交审核：必须有与当前 Issue、Workspace、
-    // Change Kind / Schema 和工件快照一致的 Gate 结果文件。
-    const gateEvidence = committed?.gate ?? verifyGateEvidence(root, facts, schema, String(before.id), args.workspaceId!, priorMeta);
+    // Shared real Gate, independent of caller-supplied PASS or old Metadata.
+    const gate = evaluateAnalysisGate({ issue: args.issue, openspecRoot: root, workspaceId: args.workspaceId!, runtime });
+    if (gate.exitCode !== 0 || gate.payload.result !== "PASS") {
+      const reason = gate.payload.reasons.join("; ") || "Analysis Gate 未通过";
+      if (gate.payload.result === "FAIL") throw new FailError(reason);
+      throw new UnknownError(reason);
+    }
+    if (gate.payload.issue_id !== String(before.id) || gate.payload.workspace_id !== args.workspaceId ||
+        gate.payload.change_ref !== facts.change_ref || gate.payload.schema !== schema ||
+        gate.payload.metadata_digest !== metadataEvidenceDigest(priorMeta) ||
+        gate.payload.metadata_digest !== metadataEvidenceDigest({ ...priorMeta, ...draftMetadataEntries(facts) }) ||
+        !/^[a-f0-9]{64}$/.test(gate.payload.change_digest ?? "")) {
+      throw new UnknownError("本次真实 Gate 与 Analysis 身份、Facts 或 Change 摘要不一致");
+    }
+    const gateEvidence = { change_digest: gate.payload.change_digest!, metadata_digest: gate.payload.metadata_digest! };
     const writable = assertAnalysisWritable(before, priorMeta, "complete", entries);
     let rootCommit: Record<string, unknown> | null = null;
     if (writable) {
@@ -156,14 +163,13 @@ async function main(rawArgs: string[]): Promise<number> {
           throw new PreconditionError(`draft metadata ${key} 与本次 Facts 不一致；必须先完成 analysis stage 和 Gate`);
         }
       }
-      // 来源已写入但状态未切换时，以固定版本 Gate 识别同一审核包，不能顺带推送新 HEAD。
+      // Recover only from a previously pinned, byte-identical remote contract.
       let recovered: AnalysisSource | undefined;
       if (!requirement && priorMeta["analysis.source"] !== undefined) {
         const saved = parseAnalysisSource(priorMeta["analysis.source"]);
         if (saved.change_ref === facts.change_ref) {
-          const published = await readPublishedGate(saved);
-          if (published.gate.change_digest === gateEvidence.change_digest && published.gate.metadata_digest === gateEvidence.metadata_digest) {
-            verifyGateEvidenceData(published.gate, facts, schema, String(before.id), args.workspaceId!, priorMeta, gateEvidence.change_digest);
+          const published = await readPublishedContract(saved, priorMeta);
+          if (published.digest === gateEvidence.change_digest) {
             if (published.schema !== schema) throw new UnknownError("已保存来源的 Schema 与当前审核包不一致");
             recovered = saved;
           }
@@ -178,14 +184,15 @@ async function main(rawArgs: string[]): Promise<number> {
         const result = requirement ? await publishChange(root, facts.change_ref, args.issue, undefined, subject, {
           repoUrl: rootRepositoryUrl(root), expectedBranch: requirementBranch(),
           validateTree: (commit: string) => {
-            if (readGateAt(commit).gate.change_digest !== gateEvidence.change_digest) {
-              throw new FailError("候选发布版本与本次 Analysis Gate 工件不一致");
+            const candidate = readContractAt(commit);
+            if (candidate.schema !== schema || candidate.digest !== gateEvidence.change_digest) {
+              throw new FailError("候选发布版本与本次真实 Analysis Gate 工程契约不一致");
             }
           },
         }) : publishChange(root, facts.change_ref, args.issue, undefined, subject);
         rootCommit = { ...result };
       }
-      if (!requirement && changeEvidenceDigest(changeDir, priorMeta, undefined, gateEvidence.digest_eol === "lf") !== gateEvidence.change_digest) {
+      if (!requirement && changeEvidenceDigest(changeDir, priorMeta, undefined, true) !== gateEvidence.change_digest) {
         throw new UnknownError("根仓 Commit/Push 后 Change 工件发生变化，必须重新执行 Analysis Gate");
       }
       if (!recovered && canonicalRepositoryIdentity(pushRepositoryUrl(root)) !== canonicalRepositoryIdentity(String(rootCommit.repo_url))) {
@@ -193,14 +200,15 @@ async function main(rawArgs: string[]): Promise<number> {
       }
       const source = recovered ?? parseAnalysisSource({ repo_url: rootCommit.repo_url, branch: rootCommit.branch,
         commit: String(rootCommit.commit), change_ref: facts.change_ref }, facts.change_ref);
-      if (!requirement) assertCommittedGateFiles(root, source, priorMeta, gateEvidence.change_digest, gateEvidence.digest_eol === "lf");
+      if (!requirement) assertCommittedContractFiles(root, source, priorMeta, gateEvidence.change_digest);
       const remoteTasks = await readAnalysisArtifact(source, "tasks.md");
       const localBlob = gitOk(root, ["rev-parse", `${source.commit}:openspec/changes/${facts.change_ref}/tasks.md`], "核对任务快照");
       if (remoteTasks.object_id !== localBlob) throw new UnknownError("远端规范与最终 Git commit 不一致");
-      const publishedGate = await readPublishedGate(source);
-      if (publishedGate.schema !== schema) throw new UnknownError("远端规范 Schema 与 Gate 不一致");
-      verifyGateEvidenceData(publishedGate.gate, facts, schema, String(before.id), args.workspaceId!, priorMeta, gateEvidence.change_digest);
-      if (!requirement) assertCommittedGateFiles(root, source, priorMeta, gateEvidence.change_digest, gateEvidence.digest_eol === "lf");
+      const publishedContract = await readPublishedContract(source, priorMeta);
+      if (publishedContract.schema !== schema || publishedContract.digest !== gateEvidence.change_digest) {
+        throw new UnknownError("最终固定 Git Commit 与本次真实 Gate 检查的工程契约不一致");
+      }
+      if (!requirement) assertCommittedContractFiles(root, source, priorMeta, gateEvidence.change_digest);
       // HEAD 是共享的；实际发布版本由本次路径 Commit SHA 和远端读取确认。
       rootCommit.commit = source.commit;
       rootCommit.repo_url = source.repo_url;
