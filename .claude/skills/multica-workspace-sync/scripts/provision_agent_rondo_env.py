@@ -26,6 +26,7 @@ import json
 import subprocess
 import sys
 
+import encoding_bootstrap  # noqa: F401  # 先于任何输出完成 UTF-8 自举
 from cli_retry import run_cli
 
 DEFAULT_WORKSPACE_SLUG = "winning-admin"

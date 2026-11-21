@@ -34,6 +34,7 @@ import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
 import { runCommand, runJson } from "../../clients/spawn.js";
 import { bindEnvironment, multicaPrefix, type MulticaEnvironment } from "../../clients/multica-environment.js";
 import { resolveMulticaRoot } from "../../clients/repo-root.js";
+import { commandExists } from "../../clients/which.js";
 import { validateSkillReferences } from "./skill-refs.js";
 
 // 根定位见 clients/repo-root.ts（npm pack 全局安装后不能按包内位置回推）。
@@ -142,8 +143,11 @@ function renderRegistry(base: any): Record<string, Record<string, string>> {
   const toolPath = join(MONOREPO_ROOT, "tools", "repo_registry.py");
   if (!existsSync(contextPath)) throw new UnknownError(`仓库映射事实源不存在: ${contextPath}`);
   if (!existsSync(toolPath)) throw new UnknownError(`仓库映射只读查询工具不存在: ${toolPath}`);
+  // Linux 上通常只有 python3，Windows 上通常是 python；两者都探测。
+  const python = ["python", "python3"].find((c) => commandExists(c));
+  if (!python) throw new UnknownError("未找到 Python 解释器（python / python3 均不在 PATH）");
   const cp = runCommandEnv(
-    ["python", toolPath, "--workspace", MONOREPO_ROOT, "list"],
+    [python, toolPath, "--workspace", MONOREPO_ROOT, "list"],
     { PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1" },
   );
   if (cp.status !== 0) {

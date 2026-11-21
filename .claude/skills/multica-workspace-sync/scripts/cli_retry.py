@@ -12,6 +12,7 @@ from __future__ import annotations
 import subprocess
 import time
 from typing import Any
+import encoding_bootstrap  # noqa: F401  # 先于任何输出完成 UTF-8 自举
 
 # 传输层故障特征：CLI 把「连不上服务端」统一映射为 rc=2 + 下列文案。
 TRANSIENT_OUTPUT_MARKERS = (

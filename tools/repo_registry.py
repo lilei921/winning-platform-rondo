@@ -9,10 +9,33 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
+
+
+def _ensure_utf8_output() -> None:
+    """把 stdout / stderr 切到 UTF-8；Windows 上 Python 默认 GBK，中文会静默变乱码。
+
+    本模块输出 JSON 且含中文，GBK 编码后由 UTF-8 消费方（rondo）解码即成乱码。
+    PYTHONUTF8=1 需在进程启动前设置才生效，故此处用 reconfigure 自举。
+    """
+    for stream in (sys.stdout, sys.stderr):
+        encoding = (getattr(stream, "encoding", None) or "").lower()
+        if encoding in ("utf-8", "utf8", "cp65001"):
+            continue
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
+        try:
+            reconfigure(encoding="utf-8", errors="replace")
+        except (ValueError, OSError):
+            pass
+
+
+_ensure_utf8_output()
 
 CONTRACT_VERSION = "repo-registry-result/v1"
 REGISTRY_RELPATH = Path("docs/config/repo-context.yaml")

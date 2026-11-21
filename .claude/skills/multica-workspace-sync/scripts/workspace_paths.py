@@ -22,5 +22,13 @@ def find_repo_root(start: Path | None = None, repo_root: str | None = None) -> P
 
 
 def command_env() -> dict[str, str]:
-    """让子进程使用选定的工作目录，屏蔽历史变量但不修改用户环境。"""
-    return {key: value for key, value in os.environ.items() if key.upper() != "MULTICA_REPO_ROOT"}
+    """让子进程使用选定的工作目录，屏蔽历史变量但不修改用户环境。
+
+    额外注入 PYTHONUTF8 / PYTHONIOENCODING：Windows 上 Python 默认用 GBK 输出，
+    子脚本的中文会静默变乱码。该变量在子进程**启动时**生效，正好补上环境变量
+    传导这一环（本进程自身的编码由 encoding_bootstrap 负责）。
+    """
+    env = {key: value for key, value in os.environ.items() if key.upper() != "MULTICA_REPO_ROOT"}
+    env["PYTHONUTF8"] = "1"
+    env["PYTHONIOENCODING"] = "utf-8"
+    return env

@@ -26,6 +26,7 @@ import json
 import sys
 from pathlib import Path
 
+import encoding_bootstrap  # noqa: F401  # 先于任何输出完成 UTF-8 自举
 from cli_retry import run_cli_json
 from workspace_paths import command_env, find_repo_root
 

@@ -41,6 +41,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import encoding_bootstrap  # noqa: F401  # 先于任何输出完成 UTF-8 自举
 from workspace_paths import command_env, find_repo_root
 
 # provision / sync / disable 都由这三条外部命令承担，本脚本只编排。

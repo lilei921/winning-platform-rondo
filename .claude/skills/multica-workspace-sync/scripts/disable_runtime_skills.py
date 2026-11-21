@@ -30,6 +30,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any
+import encoding_bootstrap  # noqa: F401  # 先于任何输出完成 UTF-8 自举
 
 DEFAULT_SERVER = "https://api.multica.ai"
 VALID_ROOTS = {"provider", "universal", "plugin"}
