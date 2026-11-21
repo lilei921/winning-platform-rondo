@@ -10,10 +10,9 @@
   },
   "multica": {
     "cli": "multica",
-    "multica_profile": "desktop-172.17.1.97-8080",
     "multica_server_url": "http://172.17.1.97:8080",
-    "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
-    "project": "d43bbc9d-4cc2-4cee-8f92-70c993ffbf97",
+    "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+    "project": "68b81377-601e-4d6c-84fd-122c05f0308f",
     "intake_agent": "Wayfinder Agent",
     "initial_status": "backlog",
     "cli_note": "创建先 backlog + Wayfinder Agent；TFS 来源/附件与 Owner 回读完成即同步完成，Issue 保持 backlog 停放，不做状态激活（准入由 Human 在 Issue 上 Mention Wayfinder 触发）。只对新建或 pending 初始化进行收口；既有 Issue 的正常执行字段不改。workspace_id 必须显式指定。"
