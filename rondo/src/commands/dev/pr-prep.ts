@@ -21,15 +21,17 @@
  * 退出码：0 = PASS / 2 = FAIL / 3 = UNKNOWN / 64 用法错误。stdout 只出 JSON，日志走 stderr。
  */
 
-import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { isAbsolute, join, relative, resolve } from "node:path";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { logLine as log, markLeafExecuted } from "../../cli/output.js";
 import { TOOL_VERSION } from "../../cli/version.js";
 import { loadConfig, type BaseRegistryConfig } from "../../clients/config.js";
 import { MulticaClient } from "../../clients/multica.js";
-import { git } from "../../clients/git.js";
+import { git, gitOk } from "../../clients/git.js";
+import { runCommand } from "../../clients/spawn.js";
+import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 import { resolveRuntimePaths } from "../../clients/runtime-paths.js";
 import { requirementRoot } from "../runtime/root-git.js";
 import { runAuthenticatedGit } from "../../clients/authenticated-git.js";
@@ -52,6 +54,10 @@ interface PrPrepEntry {
   candidate_commit: string;
   title: string;
   description_ref?: string;
+  description?: string;
+  local_validation?: { result: "PASS"; summary: string; command: string[]; exit_code: 0; candidate_commit: string; source: "rondo dev pr-prep" };
+  code_review?: { result: "PASS"; summary: string; findings: Array<{ resolved?: boolean; blocking?: boolean; risk_note?: string; risk_ref?: string }> };
+  blockers?: string[];
 }
 
 type FailCode =
@@ -60,7 +66,8 @@ type FailCode =
   | "source_branch_not_found"
   | "head_mismatch"
   | "description_file_missing"
-  | "description_file_empty";
+  | "description_file_empty"
+  | "invalid_delivery_facts";
 
 interface Args {
   config: string;
@@ -74,12 +81,14 @@ interface Args {
   targetBranch: string | null;
   sourceBranch: string | null;
   description: string | null;
+  deliveryFacts: string | null;
+  validationCwd: string | null;
 }
 
 const USAGE =
   "用法: rondo dev pr-prep --config <repo-registry.json> --issue <KEY> --repo <repo_key>\n" +
   "  --root-repo <path> --change-ref <ref> --candidate-commit <sha> --title <PR 标题>\n" +
-  "  [--target-branch <branch>] [--source-branch <branch>] [--description <path>]\n";
+  "  [--target-branch <branch>] [--source-branch <branch>] [--delivery-facts <temporary.json>] [--validation-cwd <path>] [--description <path>]\n";
 
 function parseArgs(argv: string[]): Args {
   // --help/-h：stdout 用法 + exit 0（M5，先例：change resolve-identity）——正常求助不计入业务失败指标
@@ -103,6 +112,8 @@ function parseArgs(argv: string[]): Args {
     targetBranch: get("--target-branch"),
     sourceBranch: get("--source-branch"),
     description: get("--description"),
+    deliveryFacts: get("--delivery-facts"),
+    validationCwd: get("--validation-cwd"),
   };
   if (!args.config || !args.issue || !args.repo || (args.mode !== "requirement" && !args.rootRepo) || !args.changeRef || !args.candidateCommit || !args.title) {
     process.stderr.write(USAGE);
@@ -131,29 +142,60 @@ function checkRemoteHead(hub: string, sourceBranch: string, repoUrl?: string): {
   return { found: true, head };
 }
 
-/** 描述文件：显式路径只核对；默认路径缺失时按模板搭架，已存在不改写（语义归 Engineer）。 */
-function resolveDescriptionFile(args: Args, openspecRoot: string): { path: string; scaffolded: boolean } | { code: FailCode; reason: string } {
-  if (args.description) {
-    const p = isAbsolute(args.description) ? args.description : resolve(args.description);
-    if (!existsSync(p)) return { code: "description_file_missing", reason: `--description 指定的文件不存在: ${p}` };
-    if (statSync(p).size === 0) return { code: "description_file_empty", reason: `--description 指定的文件为空: ${p}` };
-    return { path: p, scaffolded: false };
+interface DeliveryInput {
+  validation?: { command?: string[]; summary?: string };
+  code_review?: { result?: string; summary?: string; findings?: Array<{ resolved?: boolean; blocking?: boolean; risk_note?: string; risk_ref?: string }> };
+  blockers?: string[];
+  description?: string;
+}
+
+/** The input is disposable. Only verified delivery facts are saved in the existing pr_prep. */
+function validateDeliveryInput(path: string | null, descriptionFile: string | null): DeliveryInput & { description: string } {
+  if (!path) throw new FailError("Requirement PR Preparation 必须提供 --delivery-facts 临时输入");
+  let input: DeliveryInput;
+  try { input = JSON.parse(readFileSync(path, "utf8")); }
+  catch { throw new FailError("交付输入不存在或不是有效 JSON"); }
+  if (!input || typeof input !== "object" || Array.isArray(input)) throw new FailError("交付输入必须为对象");
+  if (!Array.isArray(input.validation?.command) || input.validation.command.length === 0 ||
+      input.validation.command.some(x => typeof x !== "string" || !x.trim()) ||
+      typeof input.validation.summary !== "string" || !input.validation.summary.trim()) {
+    throw new FailError("必须提供真实可执行的 validation.command 与验证说明");
   }
-  const p = join(openspecRoot, "changes", args.changeRef, `pr-description-${args.repo}.md`);
-  if (existsSync(p)) {
-    if (statSync(p).size === 0) return { code: "description_file_empty", reason: `pr-description 文件为空: ${p}` };
-    log(`pr-description 已存在，保留原文: ${p}`);
-    return { path: p, scaffolded: false };
+  const review = input.code_review;
+  if (review?.result !== "PASS" || typeof review.summary !== "string" || !review.summary.trim() ||
+      !Array.isArray(review.findings)) throw new FailError("Code Review 缺少专业结论或 Findings");
+  if (review.findings.some(f => !f || typeof f !== "object" || (f.resolved !== true &&
+      (f.blocking !== false || !(f.risk_note?.trim() || f.risk_ref?.trim()))))) {
+    throw new FailError("存在未解决 Blocking Finding 或未记录风险的 Non-blocking Finding");
   }
-  const template =
-    `# ${args.title}\n\n` +
-    `> 本文件由 rondo dev pr-prep 按模板搭架（${new Date().toISOString().slice(0, 10)}）；` +
-    `语义内容由 Engineer 维护，脚本重跑不覆盖。\n\n` +
-    `## 变更摘要\n\n\n## 验证\n\n\n## 关联\n\n- Refs: #（补 TFS 工作项 id）\n`;
-  mkdirSync(dirname(p), { recursive: true });
-  writeFileSync(p, template, "utf8");
-  log(`pr-description 不存在，已按模板搭架: ${p}`);
-  return { path: p, scaffolded: true };
+  if (!Array.isArray(input.blockers) || input.blockers.some(x => typeof x !== "string") || input.blockers.length) {
+    throw new FailError("存在 Blocking Findings 或 blockers 格式不合法");
+  }
+  let description = input.description;
+  if (descriptionFile) {
+    try { description = readFileSync(descriptionFile, "utf8"); }
+    catch { throw new FailError("无法读取 --description 指定的专业 PR 描述"); }
+  }
+  if (!description?.trim() || description.includes("补 TFS 工作项 id")) throw new FailError("PR 专业描述缺失或仍含模板占位");
+  return { ...input, description };
+}
+
+/** Run validation against the actual, authorized candidate checkout rather than trusting a PASS string. */
+function verifyAndExecuteValidation(root: string, checkout: string, repoUrl: string, candidate: string, command: string[]): void {
+  const absoluteRoot = realpathSync(root);
+  const actual = realpathSync(checkout);
+  const rel = relative(absoluteRoot, actual);
+  if (rel.startsWith("..") || isAbsolute(rel)) throw new FailError("Validation 目录不属于当前授权 Root");
+  const origin = gitOk(actual, ["remote", "get-url", "origin"], "读取 Validation 仓库来源");
+  if (canonicalRepositoryIdentity(origin) !== canonicalRepositoryIdentity(repoUrl)) throw new FailError("Validation 仓库不等于获批 Repository");
+  if (gitOk(actual, ["rev-parse", "HEAD"], "核对实际 Validation Candidate") !== candidate) throw new FailError("Validation Checkout 的 HEAD 与 Candidate 不一致");
+  if (gitOk(actual, ["status", "--porcelain", "--untracked-files=no"], "读取 Validation 工作树")) throw new FailError("Validation 工作树含未提交修改，不能证明 Candidate 已验证");
+  const check = runCommand(command, actual);
+  if (check.status !== 0) throw new FailError(`Candidate Validation 失败 rc=${check.status}: ${check.stderr.slice(0, 300)}`);
+  if (gitOk(actual, ["rev-parse", "HEAD"], "复核 Validation Candidate") !== candidate ||
+      gitOk(actual, ["status", "--porcelain", "--untracked-files=no"], "复核 Validation 内容")) {
+    throw new FailError("Validation 执行期间 Candidate 或工作树发生变化");
+  }
 }
 
 function parseExistingPrep(raw: string | undefined, issue: string): PrPrepEntry[] {
@@ -221,11 +263,18 @@ async function main(rawArgs: string[]): Promise<number> {
     }
     log(`HEAD 核验一致: ${sourceBranch} @ ${head}`);
 
-    // 2. 描述文件（生成或核对）
-    const desc = resolveDescriptionFile(args, paths.openspecRoot);
-    if ("code" in desc) return fail(args.issue, desc.code, [desc.reason]);
-    const descriptionRef = args.mode === "requirement"
-      ? `change:pr-description-${args.repo}.md` : `file:${desc.path}`;
+    // 2. Requirement: execute validation against Candidate, preserve Engineer's semantic Review.
+    // Legacy Task-level/Direct Bug keeps its existing description-file contract.
+    let descriptionRef: string | undefined;
+    let delivery: DeliveryInput & { description: string } | undefined;
+    if (args.mode === "requirement") {
+      delivery = validateDeliveryInput(args.deliveryFacts, args.description);
+      verifyAndExecuteValidation(paths.rootRepo, args.validationCwd || hub, repo.repo_url!,
+        args.candidateCommit, delivery.validation!.command!);
+    } else if (args.description) {
+      descriptionRef = "file:" + resolve(args.description);
+      if (!existsSync(resolve(args.description))) return fail(args.issue, "description_file_missing", ["指定的 PR 描述文件不存在"]);
+    }
 
     // 3. 合并写入（保留其他仓条目，同仓条目整体替换）
     const existing = parseExistingPrep(issue.metadata?.["pr_prep"], args.issue);
@@ -235,7 +284,14 @@ async function main(rawArgs: string[]): Promise<number> {
       source_branch: sourceBranch,
       candidate_commit: args.candidateCommit,
       title: args.title,
-      description_ref: descriptionRef,
+      ...(descriptionRef && { description_ref: descriptionRef }),
+      ...(delivery && {
+        description: delivery.description,
+        local_validation: { result: "PASS", summary: delivery.validation!.summary!, command: delivery.validation!.command!,
+          exit_code: 0, candidate_commit: args.candidateCommit, source: "rondo dev pr-prep" as const },
+        code_review: { result: "PASS", summary: delivery.code_review!.summary!, findings: delivery.code_review!.findings! },
+        blockers: [],
+      }),
     };
     if (args.targetBranch) entry.target_branch = args.targetBranch;
     const merged = [...preserved, entry];
@@ -252,6 +308,10 @@ async function main(rawArgs: string[]): Promise<number> {
       mine.candidate_commit !== entry.candidate_commit ||
       mine.title !== entry.title ||
       mine.description_ref !== entry.description_ref ||
+      mine.description !== entry.description ||
+      JSON.stringify(mine.local_validation) !== JSON.stringify(entry.local_validation) ||
+      JSON.stringify(mine.code_review) !== JSON.stringify(entry.code_review) ||
+      JSON.stringify(mine.blockers) !== JSON.stringify(entry.blockers) ||
       (entry.target_branch ?? undefined) !== (mine.target_branch ?? undefined);
     if (fieldMismatch) {
       throw new UnknownError(`pr_prep 回读不一致：本仓条目与写入值不符（写入 ${JSON.stringify(entry)}，回读 ${JSON.stringify(mine ?? null)}）`);
@@ -269,7 +329,7 @@ async function main(rawArgs: string[]): Promise<number> {
       head,
       candidate_commit: args.candidateCommit,
       description_ref: descriptionRef,
-      description_scaffolded: desc.scaffolded,
+      validation_executed: args.mode === "requirement",
       pr_prep_size: merged.length,
       preserved_repo_keys: preserved.map((e) => e?.repo_key).filter(Boolean),
     }, null, 2) + "\n");
@@ -291,7 +351,7 @@ async function main(rawArgs: string[]): Promise<number> {
 export function registerDevPrPrep(group: Command): void {
   group
     .command("pr-prep")
-    .description("PR Preparation Facts 一段写入（HEAD 核验 + pr-description + 合并写 + 回读）")
+    .description("PR Preparation Facts（HEAD + Candidate Validation + Code Review + 合并写及回读）")
     .helpOption(false)
     .allowUnknownOption(true)
     .allowExcessArguments(true)
