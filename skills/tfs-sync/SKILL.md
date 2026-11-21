@@ -21,15 +21,3 @@ rondo tfs reconcile-workitem --config "<config-path>"
 - 重试无进展或需要外部处理时，报告原因及待处理项；不自行修改配置或回滚已确认写入。
 
 汇总最终的 `created / updated / skipped / failed` 数量、Issue 引用、失败原因及未确认或未处理项。
-
-## Issue 的 TFS 来源字段
-
-以下 metadata 由 `rondo tfs reconcile-workitem` 维护，供定位来源 Work Item、核对同步结果时查阅。
-
-| 字段 | 含义 |
-| --- | --- |
-| `source` | 固定为 `tfs` |
-| `tfs.id` | 来源 Work Item ID，字符串形式的同步匹配键 |
-| `tfs.type` | TFS Work Item 类型，保留来源值 |
-| `tfs.url` | 来源 Work Item 链接 |
-| `tfs.changed_at` | 来源 Work Item 的 `changedDate` |
