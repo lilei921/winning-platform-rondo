@@ -1,59 +1,42 @@
 ---
 name: analysis-completion
-description: 将已完成的 Analysis Package 通过 Analysis Gate 提交人工审核；分析准备就绪或定向返工完成后使用，负责 Facts 落账、真实 Gate、本地 Git Commit、Rondo 审核发布及状态确认。
+description: 将已完成的 Analysis Engineering Contract 以真实 Gate 和固定 Git 来源提交 Human Review；不落盘 Gate、Review 或 Handoff 过程工件。
 ---
 
 # analysis-completion
 
-## Preconditions / Inputs
+## Inputs / Preconditions
 
-- 当前 OpenSpec Change、专业分析结果与 draft Handoff Facts 已就绪。
-- 默认配置：`config/repo-registry.json`（相对于本 Skill 目录）。
-- Analysis 三步均传入 `--registry-config "<config-path>"`，读取配置中的工作区和 Multica 环境，禁止改用默认环境。
-- 规范来源及固定版本读取遵循 `references/analysis-source-contract.md`。
-- `<facts.json>` 是本次分析的 JSON 文件，包含 `change_kind`（`corrective` / `intentional`）、`change_ref`、`verify_agent` 与适用的 `ai_review`；不再要求或提交独立 `route`。若存入当前 Change，使用约定文件 `openspec/changes/<change_ref>/analysis-handoff.json`；也可放在 Change 目录外。stage 使用不含 `gate` 的 draft，Gate PASS 后在同一文件增加 `gate.{result,reasons_ref}`。
+- 当前 Issue 的授权、真实专业结论、唯一 OpenSpec Change，以及可用的当前 Root、配置、Multica Workspace。
+- `<facts.json>` 是 **Change 目录外的临时 CLI 输入**，包含 `change_kind`、`change_ref`、`verify_agent`，Intentional 还包含 `ai_review.verdict`。不需要 `ai_review.findings_ref`、`gate` 或 `analysis-handoff.json`。
+- `<config>` 是本 Skill 发布的 `config/repo-registry.json`；`runtime.workspace_id` 必须等于当前 Workspace。
 
-## Procedure
+## Execution
 
-使用已确认在当前项目分支就绪的实际 `root_repo` 运行 Gate 与发布命令；仅路径存在不代表就绪，准备结果无法确认时按需使用 `workspace-preparation`，不依赖其他 Skill 的隐式执行状态。
+确认根仓在本次项目分支真正就绪；仅路径存在不等于已准备成功。必要时使用 `workspace-preparation`。
 
-1. draft Facts 写入并回读：
+```bash
+rondo analysis stage --issue <issue> --facts <facts.json> --workspace-id <workspace> --registry-config "<config>"
+```
 
-   ```bash
-   rondo analysis stage --issue <issue-key> --facts <facts.json> --workspace-id <workspace-id> --registry-config "<config-path>"
-   ```
+按需预检查，输出直接在 stdout，不使用 `--out`：
 
-2. 在已解析的根仓执行 Analysis Gate，并将结果落盘。`--out` 的根仓相对路径由 CLI 根据 `--openspec-root` 解析，不依赖当前 `cwd`；仅允许当前 Change 的固定 Gate Result 位置：
+```bash
+rondo analysis validate --issue <issue> --openspec-root "<root>" --workspace-id <workspace> --registry-config "<config>"
+```
 
-   ```bash
-   rondo analysis validate --issue <issue-key> --openspec-root <root-repo> --workspace-id <workspace-id> --registry-config "<config-path>" \
-     --out openspec/changes/<change_ref>/logs/analysis-gate-result.json
-   ```
+`validate` 不构成可复用的 Gate 凭据。`complete` **再次执行相同的完整真实 Gate**，核对 staged Facts、OpenSpec 和当前工作树，比较将发布的 Commit 与远端固定版本，然后才写入 `analysis.gate.result=PASS`、`analysis.source` 并进入审核：
 
-3. 仅 Gate PASS 后，在同一 Facts 文件补充真实的 `gate.result=PASS` 和 `gate.reasons_ref=openspec/changes/<change_ref>/logs/analysis-gate-result.json`。Draft Facts 变化须重新 stage 与 Gate，审核工件或引用的 Review Evidence 变化须重新 Gate；不得伪造或复用其他 Change 的 PASS。
+```bash
+rondo analysis complete --mode requirement --issue <issue> --facts <facts.json> \
+  --registry-config "<config>" --workspace-id <workspace> --root-repo "<root>"
+```
 
-4. 在根仓仅暂存并本地 Git Commit 当前 Change 的必要审核工件、Gate Result 及被 Gate 引用的 Change 内 Evidence；外部 Evidence 只保留可信引用，不复制为本地文件。不包含无关改动，也不改动其他暂存内容。然后执行：
+仅在 TFS Requirement 使用 `--mode requirement`；现有其他流程保留其适用入口。Rondo 负责范围受限的 Git Commit/Push、来源回读及原生 Issue Comment 审核摘要。摘要呈现目标、方案、影响范围、验证建议、重要风险、固定 Git Commit 和 Gate 结果；专业风险或方案表达不足时由 Workitem Analyst 在现有 Issue Comment 补充，不新增报告。
 
-   ```bash
-   rondo analysis complete --mode requirement --issue <issue-key> --facts <facts.json> \
-     --registry-config "<config-path>" --workspace-id <workspace-id> --root-repo "<root-repo>"
-   ```
+## Acceptance / Stop
 
-   Rondo `complete` 负责远端发布、固定来源核验、`analysis.source` 写入、`analysis_review` 状态变更及回读；不另外执行 Push 或手工写入审核状态。
-
-## Validation
-
-- 以真实 Gate Result 和 `complete` 返回值为准；Intentional 的专业 AI Review 必须有效，`FAIL` / `UNKNOWN` 不得视为 PASS。
-- 成功后确认 Issue 为 `analysis_review`，Facts、Gate Result 和 `analysis.source` 可回读；`root_commit.commit` 与来源的 `analysis.source.commit` 一致，固定版本可用 `rondo analysis read` 核实。Human 审核引用该来源。
-- 本 Skill 不执行 TFS 写入、不批准 Issue。
-
-## Output
-
-- 返回真实的 `{ result, issue, status, metadata_keys }` 及来源引用。`complete` 成功后提供简洁 Human Review Summary（结论、范围、验证建议、未决项 / 风险和已确认的 Change / Gate / Source 引用），供现有 Issue View / Run Result 展示，不新增 Artifact 或独立发布步骤；不自动推进研发。
-
-## Error Handling / Stop Conditions
-
-- `0` 且 `result=PASS` 才可继续；`2` / `FAIL` 按真实原因修正 Facts 或工件并重跑必要步骤；`64` 修正参数。不得绕过 stage 手写 Issue Metadata。
-- `3` / `UNKNOWN`、超时或返回不明时，先回读当前 Issue、Facts / Gate Result、发布来源及状态，判断已有副作用后按真实结果恢复；无法确认时停止并说明阻断，不将未知当 PASS，也不盲目连续重试。
-- Gate FAIL 或审核 Evidence 变化时重新 Gate；Draft Facts 变化时重新 stage 与 Gate；配置、Workspace 身份不符或 Issue 已进入后续阶段时停止，不覆盖更新事实。
-- 发布冲突或核验失败时保留现场并报告差异；中断后按 `references/analysis-source-contract.md` 回读来源，再决定是否重跑 `complete`。
+- 只在 `complete` 返回 `result=PASS`、Issue 确认为 `analysis_review`、`analysis.source.commit` 固定且摘要评论可回读后声明审核发布完成。Human Approval 是后续独立决定，不等于 AI Review/Gate。
+- FAIL/UNKNOWN、Schema / Workspace / 来源不符、内容或 Metadata 变化、Git 版本无法核对时停止。不可将旧 PASS、可变 HEAD、外部虚构文件冒充本次 Gate。
+- 不创建 `ai-review.md`、`analysis-handoff.json`、`evidence.md`、`logs/analysis-gate-result.json`、`analysis-summary.md`；仅允许临时本地 Facts 输入，不加入 Git/Archive。
+- 本 Skill 不负责 TFS 回写、代码实现或 Human Approval。

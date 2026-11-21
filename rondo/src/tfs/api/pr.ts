@@ -33,6 +33,7 @@ function prShape(client: TfsClient, pr: any, repoName: string, project?: string)
   return {
     id: pr.pullRequestId,
     title: pr.title,
+    description: pr.description || "",
     status: PR_STATUS[statusRaw] || statusRaw.toLowerCase(),
     mergeStatus: mergeRaw != null ? MERGE_STATUS[mergeRaw] || mergeRaw.toLowerCase() : null,
     mergeCommitId: pr.lastMergeCommit?.commitId || null,

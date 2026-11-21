@@ -1,45 +1,45 @@
-# pull-request Facts 契约（metadata）
+# PR Facts 契约（Multica Issue Metadata）
 
-Delivery Issue 上与 PR 物化相关的两个 metadata key（均为 string 类型存储的 JSON）：
+已有 `pr_prep` 和 `current_pr` 是 PR 交付的唯一持久 Metadata；不新增独立 Evidence JSON 或 PR Description Markdown。
 
-## `pr_prep`（Engineer 写入，02 §10.1 最小输入契约的投影）
+## Requirement `pr_prep`
 
-JSON 数组，每个 required Repository Change 一项：
-
-```json
-[
-  {
-    "repo_key": "dataintegration",
-    "source_branch": "feat/256462",
-    "target_branch": "main",
-    "candidate_commit": "e018cfb75...",
-    "title": "PR 标题（语义内容只有 Engineer 可改）",
-    "description_ref": "file:D:/.../pr-description.md"
-  }
-]
-```
-
-| 字段 | 必需 | 说明 |
-|---|---|---|
-| `repo_key` | 是 | 须在 `config/repo-registry.json` 的 registry 中；值等于 repo-context 的 `repo_id`，本地路径另取该条目的 `repo_path` |
-| `source_branch` | 是 | 特性分支（§3.5：`feat/<tfs-id>`） |
-| `target_branch` | 否 | 缺省取 registry 的 `default_target_branch` |
-| `candidate_commit` | 是 | 物化校验锚点：TFS 侧分支 HEAD 必须等于它，不等 → UNKNOWN |
-| `title` | 是 | 脚本原样透传，不改写 |
-| `description_ref` | 否 | `file:<绝对路径>`；缺省用 title 作描述；其他形式 FAIL |
-
-## `current_pr`（`rondo pr materialize` 写回）
-
-JSON 数组，逐仓登记：
+`rondo dev pr-prep --mode requirement` 由当前 Engineer 在授权仓库的真实 Candidate Checkout 上执行验证后，按 `repo_key` 写入已有 `pr_prep` JSON 数组。每仓包含：
 
 ```json
-[
-  { "repo_key": "dataintegration", "pr_id": 3334, "pr_url": "http://...", "source_branch": "feat/256462", "target_branch": "main" }
-]
+{
+  "repo_key": "frame",
+  "source_branch": "feature/42",
+  "target_branch": "dev",
+  "candidate_commit": "<完整 40 位 Git SHA>",
+  "title": "Engineer 的 PR 标题",
+  "description": "变更摘要、验证结果及剩余风险",
+  "local_validation": {
+    "result": "PASS",
+    "summary": "实际执行过的验证与结果",
+    "command": ["npm", "test"],
+    "exit_code": 0,
+    "candidate_commit": "<同一 Candidate SHA>",
+    "source": "rondo dev pr-prep"
+  },
+  "code_review": {
+    "result": "PASS",
+    "candidate_commit": "<同一 Candidate SHA>",
+    "summary": "Engineer 对 Candidate 的专业审查结论",
+    "findings": []
+  },
+  "blockers": []
+}
 ```
 
-规则：
+`validation.command` 仅是示例，验证工具由 Engineer 依据仓库选择。Rondo 核对批准范围、来源仓库、远端分支 HEAD、实际 Checkout Commit、Validation 退出码与 Code Review Findings。未解决 Blocking Finding、Code Review 非 PASS、Candidate 漂移或验证失败必须阻断。
 
-1. `current_pr` 是 PR Status Sync（缺口⑥）与 finalize（缺口③）的输入事实；
-2. 外部已建 PR 而 `current_pr` 缺失时，materialize 复用登记恢复（不重建）；
-3. `current_pr` 指向的 PR 在外部查无 active → UNKNOWN，交 Delivery Lead 判断（可能已合并/废弃）。
+`description` 是 PR 创建前的必要交付输入，Rondo 仅转换为短期临时文件，**TFS PR 保存正式描述**。若 PR 已存在，则复用外部事实，不从 Git 读取 `pr-description-<repo>.md`。多仓分别维护一项；不可混淆 Candidate。
+
+## 现有 Legacy / Direct Bug
+
+保留原有 `description_ref=file:<path>` 和对应流程兼容，不在本次重构。Requirement 不使用 `description_ref=change:...`。
+
+## `current_pr`
+
+`rondo pr materialize` 在真实 TFS PR 创建/复用后继续记录 `repo_key`、`pr_id`、`pr_url`、`source_branch`、`target_branch`。读取外部 active PR 状态、源目标分支和 Candidate 一致性；事实冲突时 UNKNOWN，不由 Rondo 私自重建。后续 Closeout 读取已有 `current_pr`。

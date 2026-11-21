@@ -1,7 +1,7 @@
 /**
  * analysis validate — Analysis Gate 确定性检查（02 §5.4）。
  *
- * 用法: rondo analysis validate --issue <issue-id> --openspec-root <path> --workspace-id <id> [--out <path>] [--multica <cli>]
+ * 用法: rondo analysis validate --issue <issue-id> --openspec-root <path> --workspace-id <id> [--multica <cli>]
  *
  * 输入：Issue（metadata 已含 analysis.* 事实）+ OpenSpec Change 目录。
  * 输出：{ result: PASS | FAIL | UNKNOWN, checks: [...], reasons: [...] }
@@ -13,8 +13,8 @@
 
 import { analysisRuntime } from "./runtime.js";
 import type { RuntimeConfig } from "../../clients/config.js";
-import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, readdirSync, renameSync, statSync, writeFileSync } from "node:fs";
-import { basename, dirname, isAbsolute, join, resolve } from "node:path";
+import { existsSync, readFileSync, realpathSync, readdirSync, statSync } from "node:fs";
+import { basename, dirname, isAbsolute, join } from "node:path";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { assertStableChangeRef, readChangeSchema, sourceSchemaViolation, changeKindSchemaViolation, type ChangeSchema } from "./change-schema.js";
@@ -57,43 +57,33 @@ function parseArgs(argv: string[]): Args {
   const issue = get("--issue");
   const openspecRoot = get("--openspec-root");
   if (!issue || !openspecRoot || !get("--workspace-id")) {
-    process.stderr.write("用法: rondo analysis validate --issue <issue-id> --openspec-root <path> --workspace-id <id> [--out <path>] [--multica <cli>]\n");
+    process.stderr.write("用法: rondo analysis validate --issue <issue-id> --openspec-root <path> --workspace-id <id> [--multica <cli>]\n");
     process.exit(64);
   }
   return { issue, openspecRoot, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), out: get("--out") };
 }
 
-/** A Gate Result may only be saved under the validated Change; never rely on caller cwd. */
-function gateOutputPath(openspecRoot: string, changeRef: unknown, requested: string | null): string | null {
-  if (!requested) return null;
-  assertStableChangeRef(changeRef);
-  const expected = resolve(openspecRoot, "changes", changeRef, "logs", "analysis-gate-result.json");
-  const supplied = isAbsolute(requested) ? resolve(requested) : resolve(dirname(openspecRoot), requested);
-  if (supplied !== expected) {
-    throw new FailError("Gate --out 必须指向当前 Change 的 logs/analysis-gate-result.json");
-  }
-  for (const dir of [resolve(openspecRoot, "changes"), resolve(openspecRoot, "changes", changeRef), dirname(expected)]) {
-    if (existsSync(dir) && lstatSync(dir).isSymbolicLink()) {
-      throw new FailError("Gate --out 不允许经过符号链接目录: " + dir);
-    }
-  }
-  return expected;
+/** Gate is a read-only check; stdout and Complete share this in-memory result. */
+export interface GateOutcome {
+  exitCode: number;
+  payload: {
+    result: "PASS" | "FAIL" | "UNKNOWN";
+    checks: Check[];
+    reasons: string[];
+    change_digest?: string;
+    metadata_digest?: string;
+    digest_eol?: "lf";
+    schema?: ChangeSchema;
+    change_ref?: string;
+    issue_id?: string;
+    workspace_id?: string;
+  };
 }
-
-/**
- * 统一结果出口：stdout 契约不变（纯 JSON）；
- * --out 时同一 JSON 原子落盘（临时文件 + rename，目录不存在自动创建）——
- * 结果引用（facts gate.reasons_ref）据此获得确定性路径，无需刮取 stdout（P1-4）。
- */
-export function emitResult(payload: unknown, exitCode: number, outPath: string | null): number {
-  const text = JSON.stringify(payload, null, 2) + "\n";
-  if (outPath) {
-    mkdirSync(dirname(outPath), { recursive: true });
-    const tmp = `${outPath}.tmp-${process.pid}`;
-    writeFileSync(tmp, text, "utf8");
-    renameSync(tmp, outPath);
-  }
-  process.stdout.write(text);
+function gateOutcome(payload: unknown, exitCode: number, _out: string | null): GateOutcome {
+  return { payload: payload as GateOutcome["payload"], exitCode };
+}
+export function emitResult(payload: unknown, exitCode: number, _outPath: string | null): number {
+  process.stdout.write(JSON.stringify(payload, null, 2) + "\n");
   return exitCode;
 }
 
@@ -288,7 +278,6 @@ export function checkAiReview(schema: ChangeSchema | null, meta: Record<string, 
   const reasons: string[] = [];
   if (verdict === "NEEDS_REVISION") reasons.push("ai_review.verdict=NEEDS_REVISION");
   else if (verdict !== "APPROVED") reasons.push(`ai_review.verdict 缺失或非法: ${String(verdict)}`);
-  if (typeof meta["analysis.ai_review.findings_ref"] !== "string" || !(meta["analysis.ai_review.findings_ref"] as string).trim()) reasons.push("ai_review.findings_ref 缺失或非法");
   return { name: "ai_review", result: reasons.length ? "FAIL" : "PASS", reasons };
 }
 
@@ -326,20 +315,18 @@ function checkOpenSpecValidate(changeDir: string | null, openspecRoot: string): 
   return { name, result: "FAIL", reasons: [`openspec validate --strict 失败: ${details || changeRef}`] };
 }
 
-function main(rawArgs: string[]): number {
-  const args = parseArgs(rawArgs);
+export function evaluateAnalysisGate(input: { issue: string; openspecRoot: string; workspaceId: string; runtime: RuntimeConfig }): GateOutcome {
+  const args = input;
   const checks: Check[] = [];
   let context: { issue_id: string; workspace_id: string; change_ref: string; change_kind: "corrective" | "intentional"; schema: ChangeSchema; change_dir: string; metadata_digest: string; metadata: Record<string, unknown> } | null = null;
-  let checkedOut: string | null = null;
   try {
-    const cli = new Cli(analysisRuntime(rawArgs, args.cli, args.workspaceId));
+    const cli = new Cli(input.runtime);
     // 先确认 Issue 在当前工作区可读取（防止静默读错工作区）
     const issue = cli.getIssue(args.issue);
     if (!issue.id) throw new UnknownError(`Issue ${args.issue} 不可读取（不存在或不属于当前工作区）`);
     const meta = cli.getMetadata(args.issue);
     // --openspec-root 语义统一：根仓路径自动归一到其 openspec/ 子目录
     const openspecRoot = resolveOpenspecRootDir(args.openspecRoot);
-    checkedOut = gateOutputPath(openspecRoot, meta["analysis.change_ref"], args.out);
     const { check: change, changeDir, schema } = checkChange(openspecRoot, meta);
     checks.push(checkIdentity(meta, schema));
     checks.push(change);
@@ -357,10 +344,10 @@ function main(rawArgs: string[]): number {
       };
     }
   } catch (exc) {
-    if (exc instanceof FailError) return emitResult({ result: "FAIL", checks, reasons: [exc.message] }, 2, null);
+    if (exc instanceof FailError) return gateOutcome({ result: "FAIL", checks, reasons: [exc.message] }, 2, null);
     if (exc instanceof UnknownError) {
       const out = { result: "UNKNOWN", checks, reasons: [exc.message] };
-      return emitResult(out, 3, checkedOut);
+      return gateOutcome(out, 3, null);
     }
     throw exc;
   }
@@ -375,22 +362,34 @@ function main(rawArgs: string[]): number {
     const names = new Set(checks.map((check) => check.name));
     if (checks.length !== ANALYSIS_GATE_CHECKS.length || names.size !== ANALYSIS_GATE_CHECKS.length ||
         ANALYSIS_GATE_CHECKS.some((name) => !names.has(name))) {
-      return emitResult({ result: "UNKNOWN", checks, reasons: ["Analysis Gate 必需检查项集合不完整"] }, 3, checkedOut);
+      return gateOutcome({ result: "UNKNOWN", checks, reasons: ["Analysis Gate 必需检查项集合不完整"] }, 3, null);
     }
-    if (!context) return emitResult({ result: "UNKNOWN", checks, reasons: ["Gate 缺少可核验的 Change 身份"] }, 3, checkedOut);
+    if (!context) return gateOutcome({ result: "UNKNOWN", checks, reasons: ["Gate 缺少可核验的 Change 身份"] }, 3, null);
     try {
       const { change_dir, metadata, ...identity } = context;
-      const portable = classifyTfsType(metadata["tfs.type"]) === "requirement" && Boolean(process.env.RONDO_WORKSPACE_BRANCH);
-      const change_digest = changeEvidenceDigest(change_dir, metadata, undefined, portable);
-      return emitResult({ result, tool_version: TOOL_VERSION, ...identity, change_digest, ...(portable && { digest_eol: "lf" }), checks, reasons }, code, checkedOut);
+      const change_digest = changeEvidenceDigest(change_dir, metadata, undefined, true);
+      return gateOutcome({ result, tool_version: TOOL_VERSION, ...identity, change_digest, digest_eol: "lf", checks, reasons }, code, null);
     } catch (exc) {
       if (exc instanceof UnknownError) {
-        return emitResult({ result: "UNKNOWN", checks, reasons: [exc.message] }, 3, checkedOut);
+        return gateOutcome({ result: "UNKNOWN", checks, reasons: [exc.message] }, 3, null);
       }
       throw exc;
     }
   }
-  return emitResult({ result, tool_version: TOOL_VERSION, checks, reasons }, code, checkedOut);
+  return gateOutcome({ result, tool_version: TOOL_VERSION, checks, reasons }, code, null);
+}
+
+/** Preview never persists a file. Complete invokes the same check again before publication. */
+function main(rawArgs: string[]): number {
+  const args = parseArgs(rawArgs);
+  if (args.out) return emitResult({ result: "FAIL", checks: [], reasons: ["--out 已退役；Analysis Gate 结果不再持久化"] }, 2, null);
+  const outcome = evaluateAnalysisGate({
+    issue: args.issue,
+    openspecRoot: args.openspecRoot,
+    workspaceId: args.workspaceId!,
+    runtime: analysisRuntime(rawArgs, args.cli, args.workspaceId),
+  });
+  return emitResult(outcome.payload, outcome.exitCode, null);
 }
 
 /** commander 注册：group=analysis；参数解析沿用原脚本实现以保证契约逐字节等价。 */
