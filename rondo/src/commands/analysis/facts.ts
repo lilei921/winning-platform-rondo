@@ -19,10 +19,10 @@ export interface DraftFacts {
   change_kind: ChangeKind;
   change_ref: string;
   verify_agent: { recommendation: string; reason: string; focus_refs: string[] };
-  ai_review?: { verdict: string; findings_ref: string };
+  ai_review?: { verdict: string; findings_ref?: string };
 }
 export interface Facts extends DraftFacts {
-  gate: { result: string; reasons_ref: string };
+  gate?: { result: string; reasons_ref?: string };
 }
 
 export class PreconditionError extends Error {}
@@ -57,7 +57,6 @@ export function validateDraftFields(f: Partial<DraftFacts>, schema?: ChangeSchem
   if (schema === "intentional-change" || f.ai_review !== undefined) {
     const verdict = f.ai_review?.verdict;
     if (verdict !== "APPROVED" && verdict !== "NEEDS_REVISION") missing.push("ai_review.verdict");
-    if (typeof f.ai_review?.findings_ref !== "string" || !f.ai_review.findings_ref.trim()) missing.push("ai_review.findings_ref");
     if (schema === "intentional-change" && verdict === "NEEDS_REVISION") missing.push("ai_review.verdict=NEEDS_REVISION（尚未通过专业审查）");
   }
   return missing;
@@ -74,7 +73,6 @@ export function draftMetadataEntries(f: DraftFacts): Record<string, string> {
   };
   if (f.ai_review !== undefined) {
     entries["analysis.ai_review.verdict"] = f.ai_review.verdict;
-    entries["analysis.ai_review.findings_ref"] = f.ai_review.findings_ref;
   }
   return entries;
 }
