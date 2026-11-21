@@ -10,7 +10,7 @@ export interface PrPrep {
   repo_key: string; source_branch: string; target_branch?: string;
   candidate_commit: string; title: string; description?: string;
   local_validation?: { result?: string; summary?: string; command?: string[]; exit_code?: number; candidate_commit?: string; source?: string };
-  code_review?: { result?: string; summary?: string; findings?: Array<{ resolved?: boolean; blocking?: boolean; risk_note?: string; risk_ref?: string }> };
+  code_review?: { result?: string; candidate_commit?: string; summary?: string; findings?: Array<{ resolved?: boolean; blocking?: boolean; risk_note?: string; risk_ref?: string }> };
   blockers?: string[];
 }
 interface RepoConfig { repo_path?: string; repo_url?: string; default_target_branch?: string }
@@ -69,7 +69,7 @@ export function validateChangeDelivery(prep: PrPrep[], scope: string[], tfsId: n
       throw new FailError("缺少与 Candidate 一致的 Rondo 实际执行验证结果: " + key);
     }
     const review = entry.code_review;
-    if (review?.result !== "PASS" || !review.summary?.trim() || !Array.isArray(review.findings) ||
+    if (review?.result !== "PASS" || review.candidate_commit !== entry.candidate_commit || !review.summary?.trim() || !Array.isArray(review.findings) ||
         !Array.isArray(entry.blockers) || entry.blockers.length) {
       throw new FailError("Code Review 或 Blocking Findings 未通过: " + key);
     }
