@@ -42,7 +42,7 @@
 
 ### 3.1 原因和职责
 
-现有 [closeout-root.ts](../../../rondo/src/commands/delivery/closeout-root.ts) 使用 `mkdtempSync(join(tmpdir(), "rondo-closeout-"))` 创建 Clone，`verifyCloseoutRoot()` 和 `cleanupCloseoutRoot()` 也固定检查 `tmpdir()` 父目录。因此只修改 Agent Prompt、手动移动 Clone 或修改 `TEMP/TMP` 都不能正确解决。
+原始回放使用的 [closeout-root.ts](../../../rondo/src/commands/delivery/closeout-root.ts) 将 Clone 创建在 `os.tmpdir()`，验证及清理也固定检查临时目录父路径。已合并的 PR #22 改为当前 Runtime cwd 下的受控子目录，并保留 Owner 与安全清理检查；仅修改 Agent Prompt、手动移动 Clone 或修改 `TEMP/TMP` 不能替代此修复。
 
 目标目录是**当前 Multica Agent Run 的 Task workdir**，不是 Analysis/Engineer 常驻的 `RONDO_WORKSPACE_PATH`，更不是 `RONDO_TFS_COLLECTION_LOCK_DIR`。
 
