@@ -21,7 +21,7 @@ interface Owner { token: string; workdir: string; repo_url: string; branch: stri
 function assertManagedLocation(root: string, owner: Owner): void {
   if (typeof owner.workdir !== "string" || !isAbsolute(owner.workdir) ||
       realpathSync(dirname(root)) !== realpathSync(owner.workdir) ||
-      lstatSync(root).isSymbolicLink() || realpathSync(root) !== root) {
+      lstatSync(root).isSymbolicLink() || realpathSync(root) !== resolve(root)) {
     throw new UnknownError("Closeout Clone 路径与受控 workdir 不一致，保留现场");
   }
 }
@@ -169,7 +169,7 @@ export function cloneCloseoutRoot(source: AnalysisSource, remote = runAuthentica
 export function cleanupCloseoutRoot(raw: string, token: string, remote = runAuthenticatedGit): { removed: true } {
   const root = resolve(raw);
   if (!/^rondo-closeout-/.test(basename(root)) ||
-      lstatSync(root).isSymbolicLink() || realpathSync(root) !== root ||
+      lstatSync(root).isSymbolicLink() || realpathSync(root) !== resolve(root) ||
       !existsSync(join(root, ".git", ownerFile)) || process.cwd() === root ||
       process.cwd().startsWith(root + "/") || process.cwd().startsWith(root + "\\")) {
     throw new UnknownError("非本 Run 的安全临时 Clone 或当前目录仍在使用，拒绝清理");
