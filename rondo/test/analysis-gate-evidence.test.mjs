@@ -1,10 +1,12 @@
 import test from "node:test";
+import { spawnSync } from "node:child_process";
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { changeEvidenceDigest, metadataEvidenceDigest, digestGateFiles } from "../dist/commands/analysis/gate-evidence.js";
 import { draftMetadataEntries, validateDraftFields } from "../dist/commands/analysis/facts.js";
+import { committedContract } from "../dist/commands/analysis/published-source.js";
 
 function fixture(t) {
   const root = mkdtempSync(join(tmpdir(), "rondo-contract-gate-"));
@@ -87,4 +89,23 @@ test("只读文件快照与 Change 的规范 digest 同算法", t => {
   assert.equal(digestGateFiles("fixture-123", selected, f.meta, read, false),
     changeEvidenceDigest(f.dir, f.meta));
   assert.equal(existsSync(join(f.dir, "logs", "analysis-gate-result.json")), false);
+});
+
+test("Intentional/Corrective 的真实嵌套 Specs Git Tree 与工作树 Gate 摘要一致", t => {
+  const f = fixture(t);
+  const specDir = join(f.dir, "specs", "capability");
+  mkdirSync(specDir, { recursive: true });
+  writeFileSync(join(specDir, "spec.md"), "## ADDED Requirements\n### Requirement: Valid\n");
+  function git(...args) {
+    const result = spawnSync("git", args, { cwd: f.root, encoding: "utf8" });
+    assert.equal(result.status, 0, result.stderr);
+    return result.stdout.trim();
+  }
+  git("init");
+  git("add", "openspec/changes/fixture-123");
+  git("-c", "user.email=test@example.invalid", "-c", "user.name=Test", "commit", "-m", "nested specs");
+  const expected = changeEvidenceDigest(f.dir, f.meta, undefined, true);
+  const { schema, digest } = committedContract(f.root, "HEAD", { change_ref: "fixture-123" }, f.meta);
+  assert.equal(schema, "intentional-change");
+  assert.equal(digest, expected);
 });
