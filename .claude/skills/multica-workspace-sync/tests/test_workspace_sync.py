@@ -75,6 +75,19 @@ class WorkspaceSyncTests(unittest.TestCase):
             local.unlink()
             self.assertEqual(sync.resolve_cli(self.root), ["old-rondo"])
 
+    def test_python_preflight_uses_current_interpreter_without_path_alias(self):
+        with patch.object(sync.shutil, "which", return_value=None), patch.dict(sys.modules, {"yaml": object()}):
+            sync.check_python()
+
+    def test_entrypoint_help_is_utf8_under_legacy_stdio_encoding(self):
+        result = subprocess.run(
+            [sys.executable, sync.__file__, "--help"],
+            env={**os.environ, "PYTHONUTF8": "0", "PYTHONIOENCODING": "cp936"},
+            capture_output=True,
+            check=True,
+        )
+        self.assertIn("只预演", result.stdout.decode("utf-8"))
+
     def test_workspace_name_resolves_canonical_slug_for_groups(self):
         with patch.object(sync, "list_workspaces", return_value=[{
             "id": "ws-bi", "name": "BI Team", "slug": "winning-bi",
@@ -100,6 +113,8 @@ class WorkspaceSyncTests(unittest.TestCase):
             self.assertFalse(sync.manifest_backup_path(self.root).exists())
             self.assertEqual(kwargs["cwd"], self.root)
             self.assertFalse(any(key.upper() == "MULTICA_REPO_ROOT" for key in kwargs["env"]))
+            self.assertEqual(kwargs["env"]["RONDO_WORKSPACE_PYTHON"], sys.executable)
+            self.assertEqual(kwargs["env"]["PYTHONIOENCODING"], "utf-8")
             calls.append(command)
             if fail:
                 raise subprocess.CalledProcessError(3, command)

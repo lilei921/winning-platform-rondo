@@ -14,7 +14,7 @@ function fixture(t, scenario = "normal") {
   t.after(() => { assert.equal(dirname(root), realpathSync.native(tmpdir())); rmSync(root, { recursive: true, force: true }); });
   const write = (name, value) => {
     const path = join(root, name); mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, typeof value === "string" ? value : JSON.stringify(value)); return path;
+    writeFileSync(path, typeof value === "string" || Buffer.isBuffer(value) ? value : JSON.stringify(value)); return path;
   };
   const shared = "workspace-config/";
   const overlay = write(shared + "workspaces/pilot.json", { workspace_id: "ws-1" });
@@ -37,6 +37,7 @@ function fixture(t, scenario = "normal") {
   const trace = join(root, "trace.jsonl");
   const script = write("bin/mock.cjs", `#!/usr/bin/env node
 const fs=require('node:fs'); const args=process.argv.slice(2); fs.appendFileSync(process.env.MC_TRACE,JSON.stringify(args)+'\\n');
+const hash=(content)=>require('node:crypto').createHash('sha256').update(content).digest('hex');
 while(['--profile','--server-url'].includes(args[0])) args.splice(0,2);
 const key=args.slice(0,2).join(' '); let out;
 if(key==='workflow get' && process.env.MC_SCENARIO==='unsupported') { console.error('The requested resource was not found.'); process.exit(4); }
@@ -47,7 +48,29 @@ if(key==='workspace list') out=[];
 else if(key==='workspace create') out={id:'new-ws'};
 else if(key==='workflow get') out=['bad','new-bad'].includes(process.env.MC_SCENARIO)?{}:{steps:[{status_key:'todo'},{status_key:'analysis_review'},{status_key:'done'}]};
 else if(key==='runtime list') out=process.env.MC_SCENARIO==='no-runtime'?[]:[{id:'runtime-1'}];
-else if(key==='skill list') out=[{id:'skill-1',name:'spec-preparation'}];
+else if(key==='skill list') out=process.env.MC_SCENARIO==='skill-create'?[]:[{id:'skill-1',name:'spec-preparation'}];
+else if(key==='skill create') {
+  if(!args.includes('--content-stdin')) throw new Error('expected UTF-8 stdin');
+  fs.writeFileSync(process.env.MC_TRACE+'.skill',fs.readFileSync(0)); out={id:'skill-1'};
+}
+else if(key==='skill get') {
+  const path=process.env.MC_TRACE+'.skill';
+  out={content_hash:fs.existsSync(path)?hash(fs.readFileSync(path)):''};
+}
+else if(key==='skill update') {
+  if(!args.includes('--content-stdin')) throw new Error('expected UTF-8 stdin');
+  fs.writeFileSync(process.env.MC_TRACE+'.skill',fs.readFileSync(0)); out={};
+}
+else if(key==='skill files') {
+  const path=process.env.MC_TRACE+'.file';
+  if(args[2]==='upsert') {
+    if(!args.includes('--content-stdin')) throw new Error('expected UTF-8 stdin');
+    fs.writeFileSync(path,fs.readFileSync(0)); out={};
+  } else if(args[2]==='list') {
+    const content=fs.existsSync(path)?fs.readFileSync(path):null;
+    out=content?[{path:'references/note.md',content_hash:hash(content),size:content.length}]:[];
+  } else throw new Error('unexpected skill files operation');
+}
 else if(key==='agent list') {
   out=[{id:'agent-1',name:'Analyst',instructions:'instructions',description:'description',visibility:'workspace',skills:[{name:'spec-preparation'}]}];
   if(fs.existsSync(process.env.MC_TRACE+'.agent-2')) out.push({...out[0],id:'agent-2',name:'Engineer',skills:[]});
@@ -196,6 +219,51 @@ test("sync dry-run 报告缺失引用且不上传；正式同步在上传前阻�
   assert.equal(actual.code, 3, actual.stderr);
   assert.match(actual.body.reason, /references 引用缺页/);
   assert.ok(f.calls().every(a => !a.includes("skill")), "引用不完整时不访问远端 Skill");
+});
+
+test("供给新 Skill 时通过 UTF-8 stdin 发送去掉 BOM 和 CRLF 的正文", t => {
+  const f = fixture(t, "skill-create");
+  const content = "---\nname: spec-preparation\ndescription: 中文说明\n---\n";
+  f.write("skills/spec-preparation/SKILL.md", "\uFEFF" + content.replaceAll("\n", "\r\n"));
+  const result = f.run("workspace", "provision", "--workspace", "pilot", "--skip-workflow");
+  assert.equal(result.code, 0, result.stderr);
+  assert.ok(result.body.created.includes("skill/spec-preparation"));
+  assert.equal(readFileSync(f.trace + ".skill", "utf8"), content);
+});
+
+test("同步上传和校验统一使用无 BOM 的 UTF-8 LF，切换检出格式后无需重传", t => {
+  const f = fixture(t);
+  f.write(f.shared + "provisioning.json", { managed_skills: ["demo"] });
+  f.write(f.shared + "workspaces/pilot.json", { workspace_id: "ws-1", skills: { demo: "skill-1" } });
+  const skill = "---\nname: demo\ndescription: 中文描述\n---\n";
+  const note = "中文内容 🚀\n";
+  const asWindows = (text) => "\uFEFF" + text.replaceAll("\n", "\r\n");
+  const skillPath = f.write("skills/demo/SKILL.md", asWindows(skill));
+  const notePath = f.write("skills/demo/references/note.md", asWindows(note));
+  const sync = (...args) => f.run("workspace", "sync", "--workspace", "pilot", ...args);
+  const first = sync();
+  assert.equal(first.code, 0, first.stderr);
+  assert.equal(readFileSync(f.trace + ".skill", "utf8"), skill);
+  assert.equal(readFileSync(f.trace + ".file", "utf8"), note);
+  assert.equal(readFileSync(skillPath, "utf8"), asWindows(skill));
+  assert.equal(readFileSync(notePath, "utf8"), asWindows(note));
+
+  f.write("skills/demo/SKILL.md", skill);
+  f.write("skills/demo/references/note.md", note);
+  const before = f.calls().length;
+  const check = sync("--check");
+  assert.equal(check.code, 0, check.stderr);
+  const again = sync();
+  assert.equal(again.code, 0, again.stderr);
+  assert.equal(again.body.unchanged_files, 2);
+  assert.ok(f.calls().slice(before).every(args => !args.includes("update") && !args.includes("upsert")));
+
+  // CP936 的“中文”是非法 UTF-8，应该指出具体文件并停止上传。
+  f.write("skills/demo/references/note.md", Buffer.from([0xd6, 0xd0, 0xce, 0xc4]));
+  const invalid = sync();
+  assert.equal(invalid.code, 3, invalid.stderr);
+  assert.match(invalid.body.reason, /UTF-8.*note\.md/);
+  assert.equal(readFileSync(f.trace + ".file", "utf8"), note);
 });
 
 test("对象供给中断后保留恢复标志，sync 不得发布半成品绑定", t => {

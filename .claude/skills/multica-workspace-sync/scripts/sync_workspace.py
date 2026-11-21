@@ -96,30 +96,18 @@ def resolve_cli(root: Path) -> list[str]:
 
 
 def check_python() -> None:
-    """预检 Rondo 渲染 registry 使用的 python 版本和 PyYAML 依赖。"""
-    executable = shutil.which("python")
-    if not executable:
-        raise SystemExit("未找到 python。rondo 同步 Skill 时需要 `python` 在 PATH 上。")
-    probe = subprocess.run(
-        [executable, "-c", "import sys; print('%d.%d' % sys.version_info[:2])"],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-    )
-    if probe.returncode != 0:
-        raise SystemExit(f"无法执行 {executable}：{probe.stderr.decode('utf-8', 'replace').strip()}")
-    try:
-        major, minor = (int(part) for part in probe.stdout.decode().strip().split("."))
-    except ValueError:
-        raise SystemExit(f"无法解析 python 版本：{probe.stdout.decode().strip()!r}")
+    """检查当前解释器，Rondo 和其他子脚本继续使用同一个 Python。"""
+    major, minor = sys.version_info[:2]
     if (major, minor) < MIN_PYTHON:
         raise SystemExit(
             f"python {major}.{minor} 过低：tools/repo_registry.py 需要 ≥{MIN_PYTHON[0]}.{MIN_PYTHON[1]}。"
         )
-
-    dependency = subprocess.run(
-        [executable, "-c", "import yaml"], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-    )
-    if dependency.returncode != 0:
-        raise SystemExit("python 缺少 PyYAML；请先执行 python -m pip install PyYAML。")
+    try:
+        import yaml  # noqa: F401  # 验证当前解释器能导入 Rondo 所需的依赖
+    except ImportError as exc:
+        raise SystemExit(
+            f'当前 Python 缺少可用的 PyYAML。请用同一个解释器执行 "{sys.executable}" -m pip install PyYAML。'
+        ) from exc
 
 
 def list_workspaces(root: Path) -> list[dict]:
@@ -351,6 +339,8 @@ def sync_workspace(
         if dry_run:
             repos_command.append("--dry-run")
         steps.append(("供给 workspace 仓库注册表", None, repos_command))
+    # 把已通过预检的解释器传给 Rondo，兼容仅有 python3 的环境和虚拟环境。
+    env = {**command_env(), "RONDO_WORKSPACE_PYTHON": sys.executable}
     for index, (label, kind, command) in enumerate(steps, start=1):
         print(f"[{index}/{len(steps)}] {label}", flush=True)
         if kind == "bind":
@@ -361,7 +351,7 @@ def sync_workspace(
                 return 1
             continue
         try:
-            subprocess.run(command, cwd=root, env=command_env(), check=True)
+            subprocess.run(command, cwd=root, env=env, check=True)
         except subprocess.CalledProcessError as exc:
             print(f"{label}失败（退出码 {exc.returncode}），已停止。", file=sys.stderr)
             return exc.returncode

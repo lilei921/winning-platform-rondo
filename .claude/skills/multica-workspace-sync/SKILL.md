@@ -45,17 +45,19 @@ metadata:
 | --- | --- |
 | `multica` CLI 已安装并 `multica login` | 停止，提示先登录 |
 | 本仓 `rondo/dist/index.js` 已构建，或 PATH 有适配当前结构的 `rondo` | 优先在 `rondo/` 执行 `npm install`、`npm run build`；脚本优先本仓构建，缺失时再尝试全局 `rondo` / `skill-flow` |
-| PATH 上的 `python` ≥ 3.7 且安装 PyYAML | 停止，提示升级或 `python -m pip install PyYAML`；Rondo 用它调用 `tools/repo_registry.py` |
+| Python ≥ 3.7 且当前解释器已安装 PyYAML | Windows 通常用 `python -m pip install PyYAML`，Linux 通常用 `python3 -m pip install PyYAML`；Rondo 复用启动同步脚本的解释器 |
 | 目标 workspace 已存在且有 runtime | runtime 是 workspace 级对象，需先在该 workspace 启动 daemon 注册 |
 | manifest 含 `mcp_servers` 时：当前账号在目标 workspace 为 owner/admin，或可按下文临时提权 | member 角色会在 MCP 供给处失败，见「MCP 供给权限」 |
 
 ## 执行
 
-本 Skill 随仓分发在 `.claude/skills/multica-workspace-sync/`，在仓库根目录执行：
+本 Skill 随仓分发在 `.claude/skills/multica-workspace-sync/`。在 Windows 的 PowerShell 中，从仓库根目录执行：
 
-```bash
+```powershell
 python .claude/skills/multica-workspace-sync/scripts/sync_workspace.py
 ```
+
+Linux 上将本页命令中的 `python` 替换为 `python3`。Skill 正文和附属文件使用 UTF-8 保存，同步时统一为无 BOM、LF 换行的文本。
 
 仓库路径只在本次运行中确定，不要求用户配置全局变量：
 

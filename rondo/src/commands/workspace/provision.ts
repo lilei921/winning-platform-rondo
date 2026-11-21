@@ -43,6 +43,7 @@ import { Command } from "commander";
 import { UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
 import { runCommand, runJson, runJsonStdin } from "../../clients/spawn.js";
+import { readSkillContent } from "./skill-content.js";
 import { resolveMulticaRoot } from "../../clients/repo-root.js";
 import { bindEnvironment, multicaPrefix, type MulticaEnvironment } from "../../clients/multica-environment.js";
 import { BUILTIN_STATUS_KEYS } from "../../clients/required-statuses.js";
@@ -150,8 +151,7 @@ function listManagedSkills(managedSkills: string[]): string[] {
 }
 
 /** 从 SKILL.md frontmatter 解析 description（YAML 子集：单行值） */
-function skillDescription(skill: string): string {
-  const md = readText(join(SKILLS_ROOT, skill, "SKILL.md"), `Skill ${skill} 的 SKILL.md`);
+function skillDescription(skill: string, md: string): string {
   const m = md.match(/^---\n([\s\S]*?)\n---/);
   if (!m) throw new UnknownError(`Skill ${skill} 的 SKILL.md 缺 frontmatter`);
   const d = m[1].match(/^description:\s*(.+)$/m);
@@ -433,10 +433,13 @@ function main(rawArgs: string[]): number {
       } else if (dryRun) {
         created.push(`skill/${skill}`);
       } else {
-        const cp = runJson(
-          [...MC, "skill", "create", ...WS, "--name", skill, "--description", skillDescription(skill),
-            "--content-file", join(SKILLS_ROOT, skill, "SKILL.md"), "--output", "json"],
-          `skill create ${skill}`,
+        const skillMd = join(SKILLS_ROOT, skill, "SKILL.md");
+        if (!existsSync(skillMd)) throw new UnknownError(`Skill ${skill} 缺 SKILL.md: ${skillMd}`);
+        const content = readSkillContent(skillMd);
+        const cp = runJsonStdin(
+          [...MC, "skill", "create", ...WS, "--name", skill, "--description", skillDescription(skill, content),
+            "--content-stdin", "--output", "json"],
+          `skill create ${skill}`, content,
         ) as any;
         const id = cp.id ?? cp.skill?.id;
         if (!id) throw new UnknownError(`skill create ${skill} 输出缺 id`);

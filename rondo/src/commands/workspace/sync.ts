@@ -24,17 +24,17 @@
  * 运行环境：Node ≥ 23.6 直跑（22.6+ 需 --experimental-strip-types）；只用可擦除类型注解；零 npm 依赖。
  */
 
-import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { Command } from "commander";
 import { UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
-import { runCommand, runJson } from "../../clients/spawn.js";
+import { runCommand, runJson, runJsonStdin } from "../../clients/spawn.js";
 import { bindEnvironment, multicaPrefix, type MulticaEnvironment } from "../../clients/multica-environment.js";
 import { resolveMulticaRoot } from "../../clients/repo-root.js";
 import { commandExists } from "../../clients/which.js";
+import { readSkillContent } from "./skill-content.js";
 import { validateSkillReferences } from "./skill-refs.js";
 
 // 根定位见 clients/repo-root.ts（npm pack 全局安装后不能按包内位置回推）。
@@ -76,54 +76,6 @@ function sha256(buf: Buffer): string {
   return createHash("sha256").update(buf).digest("hex");
 }
 
-// --- 共享层缺口：clients/spawn.ts 的 runCommand 不支持 extraEnv，而 repo_registry.py 必须
-// PYTHONIOENCODING/PYTHONUTF8 才能保证 Windows 下 stdout 为 UTF-8。该单点保留原脚本的本地实现
-//（Windows where.exe 解析 + .cmd/.bat 经 cmd.exe + CRT 引用纪律，与原 runCommand 逐字一致）。
-const resolveCache = new Map<string, string>();
-
-function resolveCommand(cmd: string): string {
-  const hit = resolveCache.get(cmd);
-  if (hit) return hit;
-  let resolved = cmd;
-  if (process.platform === "win32") {
-    const r = spawnSync("where.exe", [cmd], { encoding: "utf8" });
-    if (!r.error && r.status === 0) {
-      const lines = (r.stdout ?? "").split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-      resolved = lines.find((l) => /\.exe$/i.test(l)) ?? lines.find((l) => /\.(cmd|bat)$/i.test(l)) ?? lines[0] ?? cmd;
-    }
-  }
-  resolveCache.set(cmd, resolved);
-  return resolved;
-}
-
-function quoteArg(arg: string): string {
-  return '"' + arg.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\*)$/g, "$1$1") + '"';
-}
-
-function runCommandEnv(cmd: string[], extraEnv: Record<string, string>): { status: number; stdout: string; stderr: string } {
-  log(`$ ${cmd.join(" ")}`);
-  const opts = {
-    encoding: "utf8" as const,
-    timeout: 300_000,
-    maxBuffer: 64 * 1024 * 1024,
-    env: { ...process.env, ...extraEnv },
-  };
-  let r;
-  if (process.platform === "win32") {
-    const resolved = resolveCommand(cmd[0]);
-    if (/\.(cmd|bat)$/i.test(resolved)) {
-      const line = [quoteArg(resolved), ...cmd.slice(1).map(quoteArg)].join(" ");
-      r = spawnSync(line, { ...opts, shell: true });
-    } else {
-      r = spawnSync(resolved, cmd.slice(1), opts);
-    }
-  } else {
-    r = spawnSync(cmd[0], cmd.slice(1), opts);
-  }
-  if (r.error) throw new UnknownError(`命令无法执行: ${cmd[0]}: ${r.error.message}`);
-  return { status: r.status ?? 1, stdout: r.stdout ?? "", stderr: r.stderr ?? "" };
-}
-
 // --- 渲染 ---
 
 interface RenderTarget { skill: string; relPath: string; content: string; }
@@ -143,11 +95,13 @@ function renderRegistry(base: any): Record<string, Record<string, string>> {
   const toolPath = join(MONOREPO_ROOT, "tools", "repo_registry.py");
   if (!existsSync(contextPath)) throw new UnknownError(`仓库映射事实源不存在: ${contextPath}`);
   if (!existsSync(toolPath)) throw new UnknownError(`仓库映射只读查询工具不存在: ${toolPath}`);
-  // Linux 上通常只有 python3，Windows 上通常是 python；两者都探测。
-  const python = ["python", "python3"].find((c) => commandExists(c));
+  // Skill 入口传入已预检的解释器；直接运行 Rondo 时按平台查找。
+  const candidates = process.platform === "win32" ? ["python", "python3"] : ["python3", "python"];
+  const python = process.env.RONDO_WORKSPACE_PYTHON?.trim() || candidates.find(commandExists);
   if (!python) throw new UnknownError("未找到 Python 解释器（python / python3 均不在 PATH）");
-  const cp = runCommandEnv(
+  const cp = runCommand(
     [python, toolPath, "--workspace", MONOREPO_ROOT, "list"],
+    MONOREPO_ROOT,
     { PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1" },
   );
   if (cp.status !== 0) {
@@ -471,20 +425,19 @@ function main(rawArgs: string[]): number {
       const skillDir = join(SKILLS_ROOT, skill);
       const skillMd = join(skillDir, "SKILL.md");
       if (!existsSync(skillMd)) throw new UnknownError(`Skill ${skill} 缺 SKILL.md`);
-      const skillMdHash = sha256(readFileSync(skillMd));
+      const skillContent = readSkillContent(skillMd);
+      const skillMdHash = sha256(Buffer.from(skillContent, "utf8"));
 
       // 本地事实集：仓内文件 + 渲染产物覆盖（--check 时渲染产物可能未写盘，以内存内容为准）
-      const localByPath = new Map<string, { abs: string; hash: string; size: number }>();
-      for (const rel of listSkillFiles(skill)) {
-        const abs = join(skillDir, rel);
-        const buf = readFileSync(abs);
-        localByPath.set(rel, { abs, hash: sha256(buf), size: buf.length });
+      const paths = new Set(listSkillFiles(skill));
+      for (const key of renderedContent.keys()) {
+        if (key.startsWith(skill + "/")) paths.add(key.slice(skill.length + 1));
       }
-      for (const [key, content] of renderedContent) {
-        if (!key.startsWith(skill + "/")) continue;
-        const rel = key.slice(skill.length + 1);
+      const localByPath = new Map<string, { content: string; hash: string; size: number }>();
+      for (const rel of paths) {
+        const content = renderedContent.get(`${skill}/${rel}`) ?? readSkillContent(join(skillDir, rel));
         const buf = Buffer.from(content, "utf8");
-        localByPath.set(rel, { abs: join(skillDir, rel), hash: sha256(buf), size: buf.length });
+        localByPath.set(rel, { content, hash: sha256(buf), size: buf.length });
       }
 
       // 回读平台实际状态（回读式 diff 的唯一比对依据；SKILL.md 经 skill get 的 content_hash 比对）
@@ -513,7 +466,7 @@ function main(rawArgs: string[]): number {
         log(`${skill}/SKILL.md: 未变化，跳过 update`);
         unchangedFiles.push(`${skill}/SKILL.md`);
       } else {
-        runJson([...MC, "skill", "update", skillId, ...WS, "--content-file", skillMd, "--output", "json"], `skill update ${skill}`);
+        runJsonStdin([...MC, "skill", "update", skillId, ...WS, "--content-stdin", "--output", "json"], `skill update ${skill}`, skillContent);
       }
       for (const [rel, f] of localByPath) {
         const rf = preByPath.get(rel);
@@ -522,9 +475,9 @@ function main(rawArgs: string[]): number {
           unchangedFiles.push(`${skill}/${rel}`);
           continue;
         }
-        runJson(
-          [...MC, "skill", "files", "upsert", skillId, ...WS, "--path", rel, "--content-file", f.abs, "--output", "json"],
-          `files upsert ${skill}/${rel}`,
+        runJsonStdin(
+          [...MC, "skill", "files", "upsert", skillId, ...WS, "--path", rel, "--content-stdin", "--output", "json"],
+          `files upsert ${skill}/${rel}`, f.content,
         );
       }
 
