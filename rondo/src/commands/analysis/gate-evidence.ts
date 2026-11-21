@@ -32,7 +32,7 @@ function canonicalJson(value: unknown): string {
 export function metadataEvidenceDigest(meta: Record<string, unknown>): string {
   const keys = ["tfs.id", "tfs.type", "analysis.change_ref", "analysis.change_kind",
     "analysis.verify_agent.recommendation", "analysis.verify_agent.reason", "analysis.verify_agent.focus_refs",
-    "analysis.ai_review.verdict", "analysis.ai_review.findings_ref"];
+    "analysis.ai_review.verdict"];
   return createHash("sha256").update(canonicalJson(Object.fromEntries(keys.map(key => [key, meta[key] ?? null])))).digest("hex");
 }
 
@@ -48,7 +48,7 @@ export function changeEvidenceDigest(changeDir: string, meta?: Record<string, un
     throw new UnknownError("无法安全读取 Change 目录: " + String(exc));
   }
   const selected = new Set<string>();
-  for (const optional of ["design.md", "analysis-handoff.json"]) {
+  for (const optional of ["design.md"]) {
     if (existsSync(join(changeDir, optional))) selected.add(optional);
   }
 
@@ -102,7 +102,7 @@ export function digestGateFiles(changeId: string, selected: Set<string>, meta: R
     if (value.startsWith(prefix)) rel = value.slice(prefix.length);
     else if (value.startsWith("openspec/changes/")) throw new UnknownError("Evidence 引用其他 Change: " + value);
     else if (value.startsWith("./")) rel = value.slice(2);
-    else if (/^(?:\.openspec\.yaml|proposal\.md|design\.md|tasks\.md|analysis-handoff\.json|specs\/|logs\/|review\/|evidence\/|references\/)/.test(value)) rel = value;
+    else if (/^(?:\.openspec\.yaml|proposal\.md|design\.md|tasks\.md|specs\/|logs\/|review\/|evidence\/|references\/)/.test(value)) rel = value;
     else return; // External repository/Issue reference: bind the locator in metadata_digest.
     if (!rel || rel.split("/").some(segment => !segment || segment === "." || segment === "..")) {
       throw new UnknownError("Evidence 路径不安全: " + value);
@@ -114,7 +114,6 @@ export function digestGateFiles(changeId: string, selected: Set<string>, meta: R
   }
 
   if (meta) {
-    includeReference(meta["analysis.ai_review.findings_ref"]);
     const rawFocus = meta["analysis.verify_agent.focus_refs"];
     if (typeof rawFocus === "string") {
       let focus: unknown;
@@ -130,16 +129,6 @@ export function digestGateFiles(changeId: string, selected: Set<string>, meta: R
     let bytes = read(name);
     if (normalizeEol && /\.(?:md|ya?ml|json|txt)$/i.test(name)) {
       bytes = Buffer.from(bytes.toString("latin1").replace(/\r\n/g, "\n"), "latin1");
-    }
-    if (name === "analysis-handoff.json") {
-      try {
-        const handoff = JSON.parse(bytes.toString("utf8"));
-        if (!handoff || typeof handoff !== "object" || Array.isArray(handoff)) throw new Error("必须为对象");
-        delete handoff.gate;
-        bytes = Buffer.from(canonicalJson(handoff));
-      } catch (exc) {
-        throw new UnknownError("无法解析 Handoff Facts: " + String(exc));
-      }
     }
     hash.update(name).update("\0").update(String(bytes.length)).update("\0").update(bytes).update("\0");
   }
