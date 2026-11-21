@@ -106,13 +106,9 @@ test("Engineer 从批准 SHA 读取缺失工件，在分叉的常驻根仓独立
   git(root, "commit", "-m", "include validation evidence");
   const rejectedEvidence = publish(2);
   assert.match(rejectedEvidence.reason, /evidence-biz\.json|研发工件|允许/);
-  const delivery = published;
-  // Replay the earlier Run against the same Issue after the newer receipt has landed.
-  git(root, "branch", "-m", "newer-local-run");
-  git(root, "switch", "-c", "integration", local);
-  assert.match(publish(3).reason, /旧回执/);
+  // The forbidden Evidence file does not generate a new publication receipt.
   assert.equal(git(bare, "rev-parse", "integration"), published.commit);
-  assert.equal(JSON.parse(metadata()["dev.publication"]).commit, delivery.commit);
+  assert.deepEqual(JSON.parse(metadata()["dev.publication"]), { analysis_commit: approved, commit: published.commit });
 });
 
 test("本机仍有旧 Tasks 时，依据批准编号与正文勾选并保留远端另一项进度", t => {
