@@ -178,7 +178,7 @@ export function resolveDescription(entry: PrPrepEntry, bugDelivery?: BugDelivery
 }
 
 /** 单仓物化：校验 → 核对/创建 → 返回 current_pr 条目。prior = 本地 current_pr 既有登记（可能 undefined）。 */
-async function materializeOne(tfs: TfsClient, cfg: RegistryConfig, tfsId: string, entry: PrPrepEntry, prior: CurrentPrEntry | undefined, bugDelivery?: BugDeliveryEntry, remoteDescription?: string): Promise<CurrentPrEntry & { reused: boolean }> {
+export async function materializeOne(tfs: TfsClient, cfg: RegistryConfig, tfsId: string, entry: PrPrepEntry, prior: CurrentPrEntry | undefined, bugDelivery?: BugDeliveryEntry, remoteDescription?: string): Promise<CurrentPrEntry & { reused: boolean }> {
   const repo = cfg.registry[entry.repo_key];
   if (!repo) throw new FailItem({ repo_key: entry.repo_key, reason: "repo_key_not_in_registry" });
   if (!repo.tfs_repo || !repo.tfs_project) {
