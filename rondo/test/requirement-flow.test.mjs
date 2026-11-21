@@ -23,37 +23,33 @@ const sha1 = "a".repeat(40);
 const sha2 = "b".repeat(40);
 function prep(key, sha) {
   return { repo_key: key, source_branch: "feature/42", target_branch: "dev",
-    candidate_commit: sha, title: "Change", description_ref: "change:pr-description-" + key + ".md" };
-}
-function evidence(key, sha) {
-  return { change_ref: "foo-42", repo_key: key, candidate_commit: sha,
-    local_validation: { result: "PASS", summary: "Tests passed" },
-    code_review: { result: "PASS", summary: "Reviewed" }, blockers: [],
-    commits: [{ repo_key: key, repo_url: registry[key].repo_url, sha }] };
+    candidate_commit: sha, title: "Change",
+    description: "实现修复；已完成验证；风险已评估。",
+    local_validation: { result: "PASS", summary: "Tests passed", command: ["node", "--test"],
+      exit_code: 0, candidate_commit: sha, source: "rondo dev pr-prep" },
+    code_review: { result: "PASS", summary: "Reviewed", findings: [] }, blockers: [] };
 }
 
-test("批准的 Repository Scope 是授权上限，不要求每个仓库均产生 PR", () => {
-  assert.deepEqual(parseRepositoryScope("schema: intentional-change\nx-repositories:\n  - frame\n  - web\n"), ["frame", "web"]);
-  assert.deepEqual(validateChangeDelivery([prep("frame", sha1)], { frame: evidence("frame", sha1) }, ["frame","web"], 42, registry),
-    {frame:sha1});
-  const both = validateChangeDelivery([prep("frame",sha1),prep("web",sha2)],
-    { frame:evidence("frame",sha1),web:evidence("web",sha2)}, ["frame","web"],42,registry);
-  assert.deepEqual(both,{frame:sha1,web:sha2});
-  assert.throws(() => validateChangeDelivery([prep("web",sha2)],{web:evidence("web",sha2)},["frame"],42,registry),/Scope/);
-  assert.throws(() => validateChangeDelivery([prep("frame",sha1)],{frame:evidence("frame",sha2)},["frame"],42,registry),/Evidence/);
-  assert.throws(() => validateChangeDelivery([prep("frame",sha1)],{frame:evidence("frame",sha1),web:evidence("web",sha2)},["frame","web"],42,registry),/Evidence/);
+test("Requirement Scope, Candidate 和验证/Review 必须由同一份原生事实绑定", () => {
+  assert.deepEqual(parseRepositoryScope("schema: intentional-change\\nx-repositories:\\n  - frame\\n  - web\\n"), ["frame", "web"]);
+  assert.deepEqual(validateChangeDelivery([prep("frame", sha1)], ["frame","web"], 42, registry), {frame:sha1});
+  assert.deepEqual(validateChangeDelivery([prep("frame",sha1),prep("web",sha2)], ["frame","web"],42,registry), {frame:sha1,web:sha2});
+  assert.throws(() => validateChangeDelivery([prep("web",sha2)], ["frame"],42,registry), /Scope/);
+  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),local_validation:{...prep("frame",sha1).local_validation,candidate_commit:sha2}}], ["frame"],42,registry), /Candidate/);
+  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),blockers:["blocking"]}], ["frame"],42,registry), /Blocking/);
+  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{result:"PASS",summary:"Review",findings:[{resolved:false,blocking:true}]}}], ["frame"],42,registry), /Blocking/);
+  assert.doesNotThrow(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{result:"PASS",summary:"Review",findings:[{resolved:false,blocking:false,risk_note:"known acceptable risk"}]}}], ["frame"],42,registry));
 });
 
-test("Requirement 收口从 Change 元数据读取 Repository Scope", t => {
+test("Requirement Closeout 读取批准范围与现有 pr_prep，不依赖 Evidence JSON", t => {
   const changeDir = mkdtempSync(join(tmpdir(), "rondo-requirement-scope-"));
   t.after(() => rmSync(changeDir, { recursive: true, force: true }));
-  writeFileSync(join(changeDir, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [frame]\n");
-  writeFileSync(join(changeDir, "proposal.md"), "# Proposal\n");
-  writeFileSync(join(changeDir, "tasks.md"), "- [x] 1.1 Build\n");
-  writeFileSync(join(changeDir, "evidence-frame.json"), JSON.stringify(evidence("frame", sha1)));
-  const md = { "tfs.id": "42", pr_prep: JSON.stringify([prep("frame", sha1)]) };
+  writeFileSync(join(changeDir, ".openspec.yaml"), "schema: intentional-change\\nx-repositories: [frame]\\n");
+  writeFileSync(join(changeDir, "proposal.md"), "# Proposal\\n");
+  writeFileSync(join(changeDir, "tasks.md"), "- [x] 1.1 Build\\n");
+  const md = { "tfs.id": "42", "analysis.change_ref": "foo-42", pr_prep: JSON.stringify([prep("frame", sha1)]) };
   assert.doesNotThrow(() => assertRequirementEvidence(registry, md, changeDir, "foo-42"));
-  writeFileSync(join(changeDir, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [web]\n");
+  writeFileSync(join(changeDir, ".openspec.yaml"), "schema: intentional-change\\nx-repositories: [web]\\n");
   assert.throws(() => assertRequirementEvidence(registry, md, changeDir, "foo-42"), /Scope/);
 });
 
@@ -85,8 +81,7 @@ test("Completion 读取批准 SHA 与登记的研发 SHA，其他 Change 推进�
   const branchTip = "c".repeat(40);
   const files = {
     [sha1]: { ".openspec.yaml": scopeMetadata, "proposal.md": proposal, "tasks.md": "- [ ] 1.1 Build" },
-    [sha2]: { ".openspec.yaml": scopeMetadata, "proposal.md": proposal, "tasks.md": "- [x] 1.1 Build",
-      "evidence-frame.json": JSON.stringify(evidence("frame", sha2)), "pr-description-frame.md": "published body" },
+    [sha2]: { ".openspec.yaml": scopeMetadata, "proposal.md": proposal, "tasks.md": "- [x] 1.1 Build" },
   };
   // A later commit to another Change leaves this directory identical; its SHA is not the delivery receipt.
   files[branchTip] = files[sha2];
