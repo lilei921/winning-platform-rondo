@@ -1,0 +1,89 @@
+{
+  "commands": [
+    [
+      "C:\\Users\\lilei\\.multica\\bin\\multica.EXE",
+      "--profile",
+      "desktop-172.17.1.97-8080",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "agent",
+      "tasks",
+      "34986774-e980-4695-816b-4266a25a86c9",
+      "--limit",
+      "10",
+      "--output",
+      "json"
+    ],
+    [
+      "C:\\Users\\lilei\\.multica\\bin\\multica.EXE",
+      "--profile",
+      "desktop-172.17.1.97-8080",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "autopilot",
+      "runs",
+      "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+      "--limit",
+      "10",
+      "--output",
+      "json"
+    ],
+    [
+      "C:\\Users\\lilei\\.multica\\bin\\multica.EXE",
+      "--profile",
+      "desktop-172.17.1.97-8080",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "issue",
+      "get",
+      "LEI-49",
+      "--output",
+      "json"
+    ]
+  ],
+  "source_files": [
+    {
+      "path": "D:\\Multica\\desktop-172.17.1.97-8080\\winning-lil-b39bad65de56\\task-17e2b9f10dd3\\codex-home\\sessions\\2026\\11\\21\\rollout-2026-11-21T16-01-42-01a1fd20-1e30-7cd1-89cd-f32064d7b29d.jsonl",
+      "size_bytes": 600817,
+      "sha256": "28ecb138e94231bdd3f115a73195ceed8e85ff595349a7aa55b66d56d985eff3"
+    }
+  ],
+  "source_stable_during_export": true,
+  "exporter_root": "D:\\ai-project\\winning-platform-monorepo\\.agents\\skills\\session-replay\\scripts",
+  "verification_before_redaction": {
+    "session_id": "01a1fd20-1e30-7cd1-89cd-f32064d7b29d",
+    "verification_schema": "item_completed",
+    "source_public_tool_count": 38,
+    "exported_tool_count": 38,
+    "source_user_messages": 1,
+    "source_assistant_messages": 7,
+    "messages_match": true,
+    "missing_tool_ids": [],
+    "extra_tool_ids": [],
+    "tool_order_matches": true,
+    "invalid_jsonl_lines": 0,
+    "unsupported_events": {},
+    "task_boundaries": [
+      {
+        "timestamp": "2026-11-21T08:01:43.157Z",
+        "type": "task_started"
+      },
+      {
+        "timestamp": "2026-11-21T08:13:28.308Z",
+        "type": "task_complete"
+      }
+    ],
+    "subagents": [],
+    "coverage_granularity": "item_completed (exec envelopes and injected response context excluded)",
+    "response_exec_envelopes": 37,
+    "unmatched_response_items": [],
+    "legacy_only_files": [],
+    "complete": true
+  },
+  "redactions": {
+    "cleanup_token": 4
+  },
+  "run_session_bound_by_platform": true,
+  "platform_output_matches_last_turn": true,
+  "daemon_log": "C:\\Users\\lilei\\.multica\\profiles\\desktop-172.17.1.97-8080\\daemon.log"
+}

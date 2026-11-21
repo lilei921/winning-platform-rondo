@@ -1,0 +1,47 @@
+{
+  "collected_at": "2026-11-21T16:14:44+08:00",
+  "profile": "desktop-172.17.1.97-8080",
+  "workspace": "winning-lilei",
+  "agent": "PR Status Sync Agent",
+  "run": {
+    "id": "01a1fd1f-ad3d-7158-81b8-17e2b9f10dd3",
+    "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+    "agent_id": "34986774-e980-4695-816b-4266a25a86c9",
+    "issue_id": "",
+    "kind": "autopilot",
+    "status": "completed",
+    "created_at": "2026-11-21T16:01:14+08:00",
+    "started_at": "2026-11-21T16:01:42+08:00",
+    "completed_at": "2026-11-21T16:13:28+08:00",
+    "error": null,
+    "autopilot_run_id": "01a1fd1f-ad39-7a6f-a1c9-15151fddac2b",
+    "session_id": "01a1fd20-1e30-7cd1-89cd-f32064d7b29d",
+    "work_dir": "D:\\Multica\\desktop-172.17.1.97-8080\\winning-lil-b39bad65de56\\task-17e2b9f10dd3\\workdir"
+  },
+  "autopilot_run": {
+    "id": "01a1fd1f-ad39-7a6f-a1c9-15151fddac2b",
+    "autopilot_id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+    "issue_id": null,
+    "task_id": "01a1fd1f-ad3d-7158-81b8-17e2b9f10dd3",
+    "status": "completed",
+    "source": "manual",
+    "triggered_at": "2026-11-21T16:01:14+08:00",
+    "completed_at": "2026-11-21T16:13:28+08:00",
+    "failure_reason": null
+  },
+  "discovered_issue": {
+    "id": "01a1fc8d-4ebe-79aa-b302-a544c548a9ed",
+    "identifier": "LEI-49",
+    "status": "in_review",
+    "updated_at": "2026-11-21T16:12:19+08:00",
+    "tfs_id": "267307",
+    "tfs_type": "需求",
+    "finalize_pending": {
+      "event_keys": [
+        "LEI-49#dataintegration-web#3947#completed"
+      ],
+      "recorded_at": "2026-11-21T08:02:50.883Z",
+      "prepared_change_ref": "variable-value-scope-query-267307"
+    }
+  }
+}
