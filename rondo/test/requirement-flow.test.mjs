@@ -12,6 +12,7 @@ import { isRequirementChangeDelivery, assertRequirementEvidence } from "../dist/
 import { isDeliveryTaskTitle, findDeliveryTasks, ensureDeliveryTasks } from "../dist/commands/tfs/requirement-tasks.js";
 import { prepareRequirementWorktree } from "../dist/commands/dev/requirement-worktree.js";
 import { TfsClient } from "../dist/tfs/client.js";
+import { materializeOne } from "../dist/commands/pr/materialize.js";
 import { outgoing, prepareRoot, publishChange } from "../dist/commands/runtime/root-git.js";
 
 const repoUrl = "http://tfs.test/tfs/C/P/_git/biz";
@@ -37,8 +38,51 @@ test("Requirement Scope, Candidate 和验证/Review 必须由同一份原生事�
   assert.throws(() => validateChangeDelivery([prep("web",sha2)], ["frame"],42,registry), /Scope/);
   assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),local_validation:{...prep("frame",sha1).local_validation,candidate_commit:sha2}}], ["frame"],42,registry), /Candidate/);
   assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),blockers:["blocking"]}], ["frame"],42,registry), /Blocking/);
+  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{...prep("frame",sha1).code_review,candidate_commit:sha2}}], ["frame"],42,registry), /Code Review/);
   assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{result:"PASS",candidate_commit:sha1,summary:"Review",findings:[{resolved:false,blocking:true}]}}], ["frame"],42,registry), /Blocking/);
   assert.doesNotThrow(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{result:"PASS",candidate_commit:sha1,summary:"Review",findings:[{resolved:false,blocking:false,risk_note:"known acceptable risk"}]}}], ["frame"],42,registry));
+});
+
+test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专业描述", async () => {
+  const entry = prep("frame", sha1);
+  const cfg = { registry: { frame: { ...registry.frame, tfs_repo: "biz", tfs_project: "P" } } };
+  let remoteHead = sha1;
+  let description = "Engineer 已验证的专业 PR 描述";
+  let prStatus = "active";
+  let listed = false;
+  const calls = [];
+  const tfs = { run: async args => {
+    calls.push(args.slice(0, 2).join(" "));
+    if (args[0] === "branch") return { found: true, branch: { commit: remoteHead } };
+    if (args[0] === "pr" && args[1] === "get") return {
+      id: 17, status: prStatus, sourceBranch: "feature/42", targetBranch: "dev",
+      description, url: "http://tfs.test/pr/17",
+    };
+    if (args[0] === "pr" && args[1] === "list") {
+      listed = true;
+      return [{ id: 17, targetBranch: "dev", url: "http://tfs.test/pr/17" }];
+    }
+    throw Error("Unexpected external PR write");
+  } };
+  const prior = { repo_key: "frame", pr_id: 17, pr_url: "http://tfs.test/pr/17",
+    source_branch: "feature/42", target_branch: "dev" };
+  const reused = await materializeOne(tfs, cfg, "42", entry, prior, undefined, entry.description);
+  assert.equal(reused.pr_id, 17);
+  assert.equal(reused.reused, true);
+  assert.equal(listed, false, "已登记 PR 必须先按 ID 回读而不是凭分支查找");
+  assert.deepEqual(calls, ["branch get", "pr get"]);
+  remoteHead = sha2;
+  await assert.rejects(materializeOne(tfs, cfg, "42", entry, prior, undefined, entry.description), /HEAD/);
+  remoteHead = sha1;
+  description = "";
+  await assert.rejects(materializeOne(tfs, cfg, "42", entry, prior, undefined, entry.description), /existing_pr_description_missing/);
+  description = "专业内容";
+  prStatus = "abandoned";
+  await assert.rejects(materializeOne(tfs, cfg, "42", entry, prior, undefined, entry.description), /状态不匹配|外部身份/);
+  prStatus = "active";
+  listed = false;
+  assert.equal((await materializeOne(tfs, cfg, "42", entry, undefined, undefined, entry.description)).pr_id, 17);
+  assert.equal(listed, true, "未登记 PR 可通过外部 Active PR 发现后复用");
 });
 
 test("Requirement Closeout 读取批准范围与现有 pr_prep，不依赖 Evidence JSON", t => {
