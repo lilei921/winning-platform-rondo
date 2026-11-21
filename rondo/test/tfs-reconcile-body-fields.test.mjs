@@ -59,8 +59,43 @@ function runCreate(t, workItems) {
   const state = JSON.parse(readFileSync(statePath, "utf8"));
   const issues = Object.values(state.issues || {});
   assert.equal(issues.length, 1);
-  return { body, issue: issues[0] };
+  return { body, issue: issues[0], statePath, queryFile, config };
 }
+
+
+test("无附件 Issue 创建时保留真实 Markdown 换行；旧版转义正文重跑仅修复一次", (t) => {
+  const { issue, statePath, queryFile, config } = runCreate(t, [baseWi({
+    type: "需求",
+    attachments: [],
+    fields: { "System.Description": "<p>第一行</p><p>第二行</p>" },
+  })]);
+  const expected = issue.description;
+  assert.ok(expected.startsWith("## Source Requirement（TFS 原始事实）\n\n- TFS Work Item:"), expected);
+  assert.ok(expected.includes("## 需求详细信息（System.Description）\n\n第一行\n第二行"), expected);
+
+  // 旧版 create 使用字面 \n，且已记录 tfs.body_at，不能等待 TFS 字段变更才修复。
+  const state = JSON.parse(readFileSync(statePath, "utf8"));
+  state.issues[issue.identifier].description = expected.replace(/\n/g, "\\n");
+  writeFileSync(statePath, JSON.stringify(state));
+
+  const syncAgain = () => {
+    const r = spawnSync(process.execPath, [CLI, "tfs", "reconcile-workitem", "--config", config], {
+      encoding: "utf8",
+      env: { ...process.env, MOCK_STATE: statePath, MOCK_TFS_QUERY_FILE: queryFile },
+    });
+    assert.equal(r.status, 0, r.stderr + "\n" + r.stdout);
+    return JSON.parse(r.stdout);
+  };
+
+  const repaired = syncAgain();
+  assert.equal(repaired.updated.length, 1);
+  assert.equal(repaired.updated[0].body_refreshed, true);
+  assert.equal(JSON.parse(readFileSync(statePath, "utf8")).issues[issue.identifier].description, expected);
+
+  const noChange = syncAgain();
+  assert.equal(noChange.updated.length, 0);
+  assert.equal(noChange.skipped.length, 1);
+});
 
 test("Bug：主字段为 ReproSteps/Symptom，Description 为空不渲染", (t) => {
   const { issue } = runCreate(t, [baseWi({

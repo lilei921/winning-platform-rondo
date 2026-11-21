@@ -188,11 +188,11 @@ if (a[0] === "issue" && a[1] === "get") {
   injectWriteFail();
   process.stdout.write(JSON.stringify({ id: cid }));
 } else if (a[0] === "issue" && a[1] === "create") {
-  // issue create --project <p> --parent <pid> --status <s> --title <t> --description-stdin | --description <escaped> → IssueRecord
+  // issue create --project <p> --parent <pid> --status <s> --title <t> --description-stdin | --description <text> → IssueRecord
   injectWriteFailClean();
   const descFlag = flag("--description");
-  // --description 走 CLI 约定（字面 \n 反转义）；--description-stdin 从 stdin 读取
-  const description = descFlag !== undefined ? descFlag.replace(/\\n/g, "\n") : fs.readFileSync(0, "utf8");
+  // --description 透传原始文本，不能替 CLI 将字面 \\n 反转义。
+  const description = descFlag !== undefined ? descFlag : fs.readFileSync(0, "utf8");
   st.issues = st.issues || {};
   st.issue_seq = (st.issue_seq || 0) + 1;
   const id = `issue-sub-${st.issue_seq}`;
