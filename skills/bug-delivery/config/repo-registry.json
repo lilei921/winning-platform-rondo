@@ -1,11 +1,10 @@
 {
   "runtime": {
     "multica_cli": "multica",
-    "multica_profile": "desktop-172.17.1.97-8080",
     "multica_server_url": "http://172.17.1.97:8080",
-    "workspace_id": "60eb8cf4-31be-4a34-b744-8ef6a0bcf15d",
+    "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
     "rondo": "rondo",
-    "delivery_squad_id": "85695c7b-0262-482e-92d6-ff90414db73f"
+    "delivery_squad_id": "03665e95-a7bd-48f0-afe3-c0860ebac5fc"
   },
   "registry": {
     "basedata": {
