@@ -1,8 +1,7 @@
 /** Run-scoped Requirement Closeout root: authenticated clone, identity, publication and safe release. */
 import { randomUUID } from "node:crypto";
 import { existsSync, lstatSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, rmdirSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
@@ -16,7 +15,28 @@ import { canonicalRepositoryIdentity } from "./evidence-repository.js";
 import { isRequirementChangeDelivery } from "./requirement-mode.js";
 
 const ownerFile = "rondo-closeout-owner.json";
-interface Owner { token: string; repo_url: string; branch: string; commit: string; change_ref: string }
+interface Owner { token: string; workdir: string; repo_url: string; branch: string; commit: string; change_ref: string }
+
+/** Clone 只允许创建在调用方明确指定的现有 workdir 下，不隐式退回系统 Temp。 */
+function checkedWorkdir(input: string): string {
+  if (!isAbsolute(input) || !existsSync(input) ||
+      !lstatSync(input).isDirectory() || lstatSync(input).isSymbolicLink()) {
+    throw new FailError("Closeout --workdir 必须是已存在的真实绝对目录");
+  }
+  return realpathSync(input);
+}
+
+/** 清理目标必须是原 Clone workdir 的直接子目录，且不能通过符号链接绕过边界。 */
+function assertManagedCloneLocation(root: string, owner: Owner): void {
+  let withinWorkdir = false;
+  try {
+    withinWorkdir = typeof owner.workdir === "string" &&
+      basename(root).startsWith("rondo-closeout-") &&
+      !lstatSync(root).isSymbolicLink() && realpathSync(root) === root &&
+      realpathSync(dirname(root)) === checkedWorkdir(owner.workdir);
+  } catch { /* 任何身份/路径异常都不得放行 */ }
+  if (!withinWorkdir) throw new UnknownError("Closeout Clone 不在所属 workdir 的受控子目录");
+}
 
 function local(root: string, args: string[], what: string): string {
   const r = runCommand(["git", ...args], root);
@@ -58,13 +78,13 @@ export function verifyCloseoutRoot(paths: RuntimePaths, source: AnalysisSource):
   const root = validateRootRepo(paths.rootRepo, "--root-repo");
   const marker = join(root, ".git", ownerFile);
   if (!basename(root).startsWith("rondo-closeout-") ||
-      realpathSync(dirname(root)) !== realpathSync(tmpdir()) ||
       lstatSync(root).isSymbolicLink() || !existsSync(marker)) {
     throw new UnknownError("Requirement Closeout 必须使用受控临时 Clone，禁止修改其它根仓");
   }
   let owner: Owner;
   try { owner = JSON.parse(readFileSync(marker, "utf8")) as Owner; }
   catch { throw new UnknownError("Closeout Clone 所有权标记不可读"); }
+  assertManagedCloneLocation(root, owner);
   if (typeof owner.token !== "string" || !owner.token ||
       owner.branch !== source.branch ||
       canonicalRepositoryIdentity(owner.repo_url) !== canonicalRepositoryIdentity(source.repo_url)) {
@@ -119,8 +139,9 @@ export function confirmPublishedArchive(paths: RuntimePaths, source: AnalysisSou
   return { commit: remoteCommit, folder: matches[0] };
 }
 
-export function cloneCloseoutRoot(source: AnalysisSource, remote = runAuthenticatedGit): { root_repo: string; cleanup_token: string } {
-  const root = mkdtempSync(join(tmpdir(), "rondo-closeout-"));
+export function cloneCloseoutRoot(source: AnalysisSource, workdir: string, remote = runAuthenticatedGit): { root_repo: string; cleanup_token: string } {
+  const base = checkedWorkdir(workdir);
+  const root = mkdtempSync(join(base, "rondo-closeout-"));
   let cleaned = false;
   try {
     validBranch(root, source.branch);
@@ -130,7 +151,7 @@ export function cloneCloseoutRoot(source: AnalysisSource, remote = runAuthentica
     const paths: RuntimePaths = { rootRepo: root, openspecRoot: join(root, "openspec"), projectId: "", daemonId: null, source: "explicit_arg" };
     verifyGitRoot(paths, source);
     const token = randomUUID();
-    const owner: Owner = { token, ...source };
+    const owner: Owner = { token, workdir: base, ...source };
     writeFileSync(join(root, ".git", ownerFile), JSON.stringify(owner), { flag: "wx", mode: 0o600 });
     try { locateChange(root, source.change_ref); }
     catch (error) {
@@ -159,7 +180,7 @@ export function cloneCloseoutRoot(source: AnalysisSource, remote = runAuthentica
 /** Token and temporary-parent proof must come from this Run; errors always preserve the root. */
 export function cleanupCloseoutRoot(raw: string, token: string, remote = runAuthenticatedGit): { removed: true } {
   const root = resolve(raw);
-  if (!/^rondo-closeout-/.test(basename(root)) || realpathSync(dirname(root)) !== realpathSync(tmpdir()) ||
+  if (!/^rondo-closeout-/.test(basename(root)) ||
       lstatSync(root).isSymbolicLink() || realpathSync(root) !== root ||
       !existsSync(join(root, ".git", ownerFile)) || process.cwd() === root ||
       process.cwd().startsWith(root + "/") || process.cwd().startsWith(root + "\\")) {
@@ -168,6 +189,7 @@ export function cleanupCloseoutRoot(raw: string, token: string, remote = runAuth
   let owner: Owner;
   try { owner = JSON.parse(readFileSync(join(root, ".git", ownerFile), "utf8")) as Owner; }
   catch { throw new UnknownError("Closeout 临时 Clone 所有权标记损坏，保留现场"); }
+  assertManagedCloneLocation(root, owner);
   if (!token || owner.token !== token) throw new FailError("Closeout Cleanup token 不匹配，拒绝清理");
   const source: AnalysisSource = owner;
   const paths: RuntimePaths = { rootRepo: root, openspecRoot: join(root, "openspec"), projectId: "", daemonId: null, source: "explicit_arg" };
@@ -211,13 +233,13 @@ async function invoke(action: "clone" | "cleanup", argv: string[]): Promise<numb
     const args = argsOf(argv);
     let value: Record<string, unknown>;
     if (action === "clone") {
-      if (!args.issue || !args.config) return 64;
+      if (!args.issue || !args.config || !args.workdir) return 64;
       const cfg = loadConfig<BaseRegistryConfig>(args.config);
       const issue = new MulticaClient(cfg.runtime).getIssue(args.issue);
       const md = issue.metadata ?? {};
       if (!isRequirementChangeDelivery(md)) throw new FailError("仅 Requirement OpenSpec Change 可以 Clone Closeout 根仓");
       const source = readAnalysisSource(md);
-      value = { ...cloneCloseoutRoot(source), repo_url: source.repo_url, branch: source.branch, change_ref: source.change_ref };
+      value = { ...cloneCloseoutRoot(source, args.workdir), repo_url: source.repo_url, branch: source.branch, change_ref: source.change_ref };
     } else {
       if (!args["root-repo"] || !args.token) return 64;
       value = cleanupCloseoutRoot(args["root-repo"], args.token);
