@@ -21,6 +21,27 @@ if (!isMainThread) {
     if (state.status) { res.writeHead(state.status).end('{}'); return; }
     const commit = query["versionDescriptor.version"];
     const path = query.path;
+    const scope = query.scopePath;
+    if (scope) {
+      let files = [];
+      if (state.remote) {
+        const tree = spawnSync(workerData.git, ["--git-dir", state.remote, "ls-tree", "-r", "--name-only", commit, "--", scope.slice(1)], { encoding: "utf8" });
+        if (tree.status !== 0) { res.writeHead(404).end("{}"); return; }
+        files = tree.stdout.split(/\\r?\\n/).filter(Boolean).map(name => "/" + name);
+      } else {
+        files = Object.keys(state.versions?.[commit] ?? {}).filter(name => name.startsWith(scope + "/"));
+      }
+      const items = files.map(name => {
+        const result = state.remote
+          ? spawnSync(workerData.git, ["--git-dir", state.remote, "rev-parse", commit + ":" + name.slice(1)], { encoding: "utf8" })
+          : null;
+        return { path: name, commitId: commit,
+          objectId: result?.stdout?.trim() || "a".repeat(40), isFolder: false };
+      });
+      res.end(JSON.stringify({ value: items }));
+      return;
+    }
+    if (!path) { res.writeHead(400).end("{}"); return; }
     let content, objectId;
     if (state.remote) {
       // 从真实临时 bare 仓读取；未推送的 commit 不能由此桩读取成功。
