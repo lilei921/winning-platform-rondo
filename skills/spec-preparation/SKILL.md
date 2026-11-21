@@ -20,16 +20,16 @@ description: 使用项目 OpenSpec CLI 与当前 Schema / Artifact Instruction �
 ## Artifact Contract & Safe Write
 
 - **Schema 权威**：确认 `openspec/schemas/<schema>/schema.yaml` 属于当前根仓，并通过 `openspec schema which <schema> --json` 核实来源；以当前 `openspec status --change <id> --json`、`openspec instructions <artifact> --change <id> --json` 提供的 Artifact State、Instruction、Template 和依赖为准。核对 CLI 返回的可用来源信息；`implicit`、错误来源或未知结果不得用于写入。
-- **实际依赖**：遵循当前 Artifact `requires` 和 `apply.requires`，不自建 Artifact Graph。按实际行为变化判断 Spec-level Delta；合法 `skip_specs`、Conditional Design 与其他省略以当前 Schema、专业语义和原生状态为准，不为填满文件清单制造 Artifact。
+- **实际依赖**：按当前 Artifact `requires` 准备工件；`apply.requires` 仅用于判断或报告 Apply Readiness，不作为工件写入前置。不自建 Artifact Graph。根据实际行为变化判断 Spec-level Delta；合法 `skip_specs`、Conditional Design 与其他省略以当前 Schema、专业语义和原生状态为准，不为填满文件清单制造 Artifact。
 - **Repository Scope**：在当前 Change 的 `.openspec.yaml` 顶层维护 `x-repositories`，`repo_id` 从 `docs/config/repo-context.yaml` 选取；不在其他工件创建第二套授权范围。
 - **最小写入**：使用当前 Instruction / Template 和已确认结论。`specs/**/*.md` 是生成模式而非文件名，需核对实际 Capability 文件；即使 `specs=done` 也应核对 Proposal 所要求的具体文件。只改获授权内容，不覆盖无关工件；需要技术决策时以必要 Design 支撑 Tasks，不需要时不生成空 Design。
-- **Task 与验证方法**：任务围绕可交付结果及完成判据，按真实依赖划分，不受 TFS 子任务数量或工时上限驱动。验证优先选择足以证明行为的现有测试、构建或可观察检查；确需完整业务链路或已批准验收要求时安排 E2E，不机械地因页面改动或场景数量要求 E2E。区分 PR 前工程任务与后续人工验收建议。
-- **按需一致性核对**：检查已确认的 Goal / Scope 与 Proposal、适用 Specs 是否一致，Tasks / Verification 是否覆盖受影响行为，必要 Design 的决策是否与任务一致；区分 Evidence、专业建议与未决事项。只复核实际受影响内容，最终专业 Review 与 `ai_review` Verdict 由调用方负责，不新增独立 Gate。
+- **Task 与验证方法**：按实际依赖和可验证结果组织任务；验证深度与变更风险匹配，优先复用足以证明行为的现有验证方式，必要或已批准要求时安排 E2E。具体任务格式与内容要求以当前 Artifact Instruction / Template 为准。
+- **按需一致性核对**：修改后仅核对受影响 Artifact 的内容与依赖；发现专业结论、授权或关键决策冲突时报告调用方，不自行给出 Review Verdict 或新增 Gate。
 - **授权边界**：Change 存在或 Issue 为 `in_progress` 不等于写入授权。返工若需要新增未授权业务选择，或实质改变已批准的 Goal / Scope / Acceptance / Verification，停止越界写入并返回调用方走既有 Lead / Human 决策；不自行批准。
 
 ## Validation / Recovery
 
-- 完成前在同一根仓执行 `openspec validate <id> --type change --strict --no-interactive --json` 并回读 `openspec status --change <id> --json`；结合退出码、结构化结果和实际文件核对必要 Artifact、合法省略、内容一致性及来源。FAIL / UNKNOWN 或来源不符时保留现场并报告；CLI PASS 不代替专业 Review、Analysis Gate 或 Human Approval。
+- 完成前在同一根仓执行 `openspec validate <id> --type change --strict --no-interactive --json` 并回读 `openspec status --change <id> --json`；结合退出码、结构化结果、诊断信息和实际文件核对必要 Artifact、合法省略、内容一致性及来源。出现 `Archive would refuse this delta` 等归档冲突提示时核实并报告，不仅凭 CLI PASS 推断归档一定成功，也不将所有 INFO 自动视为阻断。FAIL / UNKNOWN 或来源不符时保留现场并报告；CLI PASS 不代替专业 Review、Analysis Gate 或 Human Approval。
 - 创建结果未知时用已知身份回查 Change 和目录；写入结果未知时先回读实际 Artifact，确认缺失后才恢复，不能盲目重试。只用已授权 CLI / Schema，不调用 `/opsx:*` 或 OpenSpec 原生 AI Skill/Command。
 
 ## Output / Stop
