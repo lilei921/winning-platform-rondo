@@ -21,4 +21,4 @@ rondo pr reconcile-status --config "<config-path>"
 - `finalize` / `resume_finalize`：待交付收口，不代表交付完成。
 - `noop`：无需动作；`stopped_abandoned`：已停止，不重复处理。
 - `unknown`、`failures[]` 非空或 exit 2：停止受影响 Issue 的推进；exit 3：本轮扫描不可信。
-- 保留已确认的写入事实，不盲目重试或回滚。
+- 失败或 UNKNOWN 时主动核实原因；确认安全后可重试或恢复，无法确认时停止并报告。
