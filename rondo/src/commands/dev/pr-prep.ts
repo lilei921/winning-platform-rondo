@@ -21,8 +21,8 @@
  * 退出码：0 = PASS / 2 = FAIL / 3 = UNKNOWN / 64 用法错误。stdout 只出 JSON，日志走 stderr。
  */
 
-import { existsSync, readFileSync, realpathSync } from "node:fs";
-import { isAbsolute, join, relative, resolve } from "node:path";
+import { existsSync, mkdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { logLine as log, markLeafExecuted } from "../../cli/output.js";
@@ -140,6 +140,25 @@ function checkRemoteHead(hub: string, sourceBranch: string, repoUrl?: string): {
   if (!line) return { found: false, head: null };
   const head = line.split(/\s+/)[0];
   return { found: true, head };
+}
+
+/** Keep legacy Task-level description behaviour unchanged. Not used for Requirement. */
+function resolveLegacyDescription(args: Args, openspecRoot: string): { path: string; scaffolded: boolean } | { code: FailCode; reason: string } {
+  if (args.description) {
+    const p = isAbsolute(args.description) ? args.description : resolve(args.description);
+    if (!existsSync(p)) return { code: "description_file_missing", reason: `--description 指定的文件不存在: ${p}` };
+    if (statSync(p).size === 0) return { code: "description_file_empty", reason: `--description 指定的文件为空: ${p}` };
+    return { path: p, scaffolded: false };
+  }
+  const p = join(openspecRoot, "changes", args.changeRef, `pr-description-${args.repo}.md`);
+  if (existsSync(p)) {
+    if (statSync(p).size === 0) return { code: "description_file_empty", reason: `pr-description 文件为空: ${p}` };
+    return { path: p, scaffolded: false };
+  }
+  const template = `# ${args.title}\n\n> 本文件由 rondo dev pr-prep 生成草稿；语义内容由 Engineer 维护。\n\n## 变更摘要\n\n\n## 验证\n\n\n## 关联\n\n- Refs: #（补 TFS 工作项 id）\n`;
+  mkdirSync(dirname(p), { recursive: true });
+  writeFileSync(p, template, "utf8");
+  return { path: p, scaffolded: true };
 }
 
 interface DeliveryInput {
@@ -266,14 +285,17 @@ async function main(rawArgs: string[]): Promise<number> {
     // 2. Requirement: execute validation against Candidate, preserve Engineer's semantic Review.
     // Legacy Task-level/Direct Bug keeps its existing description-file contract.
     let descriptionRef: string | undefined;
+    let descriptionScaffolded = false;
     let delivery: DeliveryInput & { description: string } | undefined;
     if (args.mode === "requirement") {
       delivery = validateDeliveryInput(args.deliveryFacts, args.description);
       verifyAndExecuteValidation(paths.rootRepo, args.validationCwd || hub, repo.repo_url!,
         args.candidateCommit, delivery.validation!.command!);
-    } else if (args.description) {
-      descriptionRef = "file:" + resolve(args.description);
-      if (!existsSync(resolve(args.description))) return fail(args.issue, "description_file_missing", ["指定的 PR 描述文件不存在"]);
+    } else {
+      const desc = resolveLegacyDescription(args, paths.openspecRoot);
+      if ("code" in desc) return fail(args.issue, desc.code, [desc.reason]);
+      descriptionRef = "file:" + desc.path;
+      descriptionScaffolded = desc.scaffolded;
     }
 
     // 3. 合并写入（保留其他仓条目，同仓条目整体替换）
@@ -330,6 +352,7 @@ async function main(rawArgs: string[]): Promise<number> {
       candidate_commit: args.candidateCommit,
       description_ref: descriptionRef,
       validation_executed: args.mode === "requirement",
+      description_scaffolded: descriptionScaffolded,
       pr_prep_size: merged.length,
       preserved_repo_keys: preserved.map((e) => e?.repo_key).filter(Boolean),
     }, null, 2) + "\n");
