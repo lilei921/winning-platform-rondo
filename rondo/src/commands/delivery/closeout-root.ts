@@ -233,7 +233,11 @@ async function invoke(action: "clone" | "cleanup", argv: string[]): Promise<numb
     const args = argsOf(argv);
     let value: Record<string, unknown>;
     if (action === "clone") {
-      if (!args.issue || !args.config || !args.workdir) return 64;
+      if (!args.issue || !args.config) return 64;
+      if (!args.workdir) {
+        process.stderr.write("缺少 --workdir：请传入当前 Multica Task workdir 的绝对路径\n");
+        return 64;
+      }
       const cfg = loadConfig<BaseRegistryConfig>(args.config);
       const issue = new MulticaClient(cfg.runtime).getIssue(args.issue);
       const md = issue.metadata ?? {};
