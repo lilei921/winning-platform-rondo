@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, realpathSync } from "node:path";
 import { runCommand } from "../../clients/spawn.js";
@@ -60,6 +60,8 @@ function fixture(t: { after: (fn: () => void) => void }) {
 
 test("Clone 位于显式 workdir 一级子目录，Cleanup 仅清理受控 Clone", (t) => {
   const f = fixture(t);
+  const preserved = join(f.workdir, "unrelated.txt");
+  writeFileSync(preserved, "keep");
   const { root_repo, cleanup_token } = cloneCloseoutRoot(f.source, f.workdir, f.remote);
   assert.equal(dirname(root_repo), realpathSync(f.workdir));
   assert.equal(verifyCloseoutRoot(f.paths(root_repo), f.source).rootRepo, root_repo);
@@ -67,6 +69,7 @@ test("Clone 位于显式 workdir 一级子目录，Cleanup 仅清理受控 Clone
   assert.equal(marker.workdir, realpathSync(f.workdir));
   assert.deepEqual(cleanupCloseoutRoot(root_repo, cleanup_token, f.remote), { removed: true });
   assert.equal(existsSync(root_repo), false);
+  assert.equal(readFileSync(preserved, "utf8"), "keep");
   assert.equal(existsSync(f.workdir), true);
   assert.equal(existsSync(f.repository), true);
 });
@@ -75,6 +78,22 @@ test("不接受缺失或相对 workdir，且不回退系统 Temp", (t) => {
   const f = fixture(t);
   assert.throws(() => cloneCloseoutRoot(f.source, "relative-workdir", f.remote), /workdir/);
   assert.throws(() => cloneCloseoutRoot(f.source, join(f.workdir, "missing"), f.remote), /workdir/);
+});
+
+
+test("符号链接 workdir 不作为受控 Clone 目标", (t) => {
+  const f = fixture(t);
+  const link = join(f.base, "workdir-link");
+  try {
+    symlinkSync(f.workdir, link, process.platform === "win32" ? "junction" : "dir");
+  } catch (error) {
+    if (["EPERM", "EACCES", "ENOTSUP"].includes((error as NodeJS.ErrnoException).code ?? "")) {
+      t.skip("当前环境不允许创建目录符号链接");
+      return;
+    }
+    throw error;
+  }
+  assert.throws(() => cloneCloseoutRoot(f.source, link, f.remote), /workdir/);
 });
 
 test("所有权 workdir 篡改与错误 token 均拒绝清理并保留现场", (t) => {
