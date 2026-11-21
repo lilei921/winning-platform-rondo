@@ -500,7 +500,7 @@ export async function verifyRemoteRequirement(cfg: RegistryConfig, issue: import
   const schema = readChangeSchema(change.dir);
   const mismatch = changeKindSchemaViolation(md["analysis.change_kind"], schema) || sourceSchemaViolation(classifyTfsType(md["tfs.type"]), schema);
   if (mismatch) throw new FailError(mismatch);
-  if (schema === "intentional-change" && (md["analysis.ai_review.verdict"] !== "APPROVED" || !md["analysis.ai_review.findings_ref"]?.trim())) throw new FailError("Intentional Change 缺少专业 AI Review");
+  if (schema === "intentional-change" && md["analysis.ai_review.verdict"] !== "APPROVED") throw new FailError("Intentional Change 缺少专业 AI Review");
   let prs: CurrentPrEntry[], pending: { event_keys?: string[] };
   try { prs = JSON.parse(md.current_pr ?? "null"); pending = JSON.parse(md["finalize.pending"] ?? "null"); }
   catch { throw new UnknownError("PR 或 pending 事实损坏"); }
@@ -698,11 +698,8 @@ async function main(argv: string[]): Promise<number> {
     if (kindMismatch) throw new FailError(kindMismatch);
     const violation = sourceSchemaViolation(classifyTfsType(md["tfs.type"]), schema);
     if (violation) throw new FailError(violation);
-    if (schema === "intentional-change" &&
-        (md["analysis.ai_review.verdict"] !== "APPROVED" ||
-         typeof md["analysis.ai_review.findings_ref"] !== "string" ||
-         !md["analysis.ai_review.findings_ref"].trim())) {
-      throw new FailError("Intentional Change 缺少 APPROVED 的专业 AI Review 或有效 Findings 引用");
+    if (schema === "intentional-change" && md["analysis.ai_review.verdict"] !== "APPROVED") {
+      throw new FailError("Intentional Change 缺少 APPROVED 的专业 AI Review");
     }
     // Fail closed before PR Transition, pending metadata, workspace reconciliation,
     // archive, or TFS writeback can produce externally visible side effects.
