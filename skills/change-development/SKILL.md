@@ -28,6 +28,7 @@ description: 根据已批准的 OpenSpec Change 完成一个或多个授权仓�
   },
   "code_review": {
     "result": "PASS",
+    "candidate_commit": "<实际审查的完整 Candidate SHA>",
     "summary": "针对当前 Candidate 的专业审查结论",
     "findings": []
   },
@@ -45,10 +46,9 @@ rondo dev pr-prep --mode requirement --config "<config>" --issue <issue> --repo 
 
 rondo dev publish --config "<config>" --issue <issue> --change-ref <change_ref> --root-repo "<root>"
 rondo dev check-change --config "<config>" --issue <issue> --change-ref <change_ref>
-rondo pr materialize --mode requirement --config "<config>" --issue <issue> --change-ref <change_ref>
 ```
 
-只有确属非实质性 Design 细化才允许 `dev publish --minor-design`。多仓分别对各自的 Candidate 完成绑定；实际代码由 Git 持有，交付事实由 Multica 持有，最终 PR Description 由 TFS PR 持有。
+只有确属非实质性 Design 细化才允许 `dev publish --minor-design`。多仓分别对各自的 Candidate 完成绑定；外部 PR Materialize 由现有交付协调入口执行。实际代码由 Git 持有，交付事实由 Multica 持有，最终 PR Description 由 TFS PR 持有。
 
 ## Stop / Output
 
