@@ -4,19 +4,13 @@ import type { BaseRegistryConfig } from "../../clients/config.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { RemoteArtifactReader } from "../delivery/remote-artifacts.js";
 import { normalizeContractText } from "../delivery/contract-files.js";
-import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 import { approvedChange, readDevelopmentCommit } from "./requirement-guard.js";
 
-interface PrPrep {
+export interface PrPrep {
   repo_key: string; source_branch: string; target_branch?: string;
-  candidate_commit: string; title: string; description_ref: string;
-}
-interface Validation { result?: string; summary?: string }
-interface Evidence {
-  change_ref?: string; repo_key?: string; candidate_commit?: string;
-  commits?: Array<{ repo_key?: string; repo_url?: string; sha?: string }>;
-  local_validation?: Validation;
-  code_review?: Validation & { findings?: Array<{ resolved?: boolean; blocking?: boolean; risk_note?: string; risk_ref?: string }> };
+  candidate_commit: string; title: string; description?: string;
+  local_validation?: { result?: string; summary?: string; command?: string[]; exit_code?: number; candidate_commit?: string; source?: string };
+  code_review?: { result?: string; summary?: string; findings?: Array<{ resolved?: boolean; blocking?: boolean; risk_note?: string; risk_ref?: string }> };
   blockers?: string[];
 }
 interface RepoConfig { repo_path?: string; repo_url?: string; default_target_branch?: string }
@@ -52,43 +46,38 @@ export function checkedTaskProgress(text: string): number {
   return refs.size;
 }
 
-/** Do not accept a candidate solely because its hash is locally present. */
-export function validateChangeDelivery(prep: PrPrep[], evidence: Record<string, Evidence>, scope: string[], tfsId: number, registry: Record<string, RepoConfig>): Record<string, string> {
-  if (!Array.isArray(prep) || prep.length === 0) throw new FailError("没有实际代码 Candidate；本期不自动无 PR Finalize");
+/** Gate: each repo has a pinned candidate and Rondo-executed validation, not self-declared PASS. */
+export function validateChangeDelivery(prep: PrPrep[], scope: string[], tfsId: number, registry: Record<string, RepoConfig>): Record<string, string> {
+  if (!Array.isArray(prep) || prep.length === 0) throw new FailError("没有实际代码 Candidate；不自动无 PR Finalize");
   const candidates: Record<string, string> = {};
   for (const entry of prep) {
     const key = entry?.repo_key;
-    const expectedBranch = "feature/" + tfsId;
     const repo = registry[key];
     if (!scope.includes(key) || !repo?.repo_url) throw new FailError("PR Candidate 的 repo_key 不在批准 Repository Scope: " + key);
     if (key in candidates) throw new FailError("PR Preparation 仓库重复: " + key);
-    if (entry.source_branch !== expectedBranch || !/^[0-9a-f]{40}$/.test(entry.candidate_commit) ||
-        !entry.title?.trim() || entry.description_ref !== "change:pr-description-" + key + ".md" ||
+    if (entry.source_branch !== "feature/" + tfsId ||
+        !/^[0-9a-f]{40}$/.test(entry.candidate_commit ?? "") ||
+        !entry.title?.trim() || !entry.description?.trim() ||
+        entry.description.includes("补 TFS 工作项 id") ||
         (entry.target_branch && entry.target_branch !== repo.default_target_branch)) {
-      throw new FailError("PR Preparation 不符合 Requirement 分支 / Candidate / 远端描述契约: " + key);
+      throw new FailError("PR Preparation 缺少真实 Candidate 或 Engineer 专业描述: " + key);
     }
-    const ev = evidence[key];
-    if (!ev || ev.change_ref === undefined || ev.repo_key !== key || ev.candidate_commit !== entry.candidate_commit ||
-        ev.local_validation?.result !== "PASS" || !ev.local_validation.summary?.trim() ||
-        ev.code_review?.result !== "PASS" || !ev.code_review.summary?.trim() || (ev.blockers ?? []).length) {
-      throw new FailError("缺少与 Candidate 一致且验证 PASS 的 Evidence: " + key);
+    const validation = entry.local_validation;
+    if (validation?.result !== "PASS" || validation.source !== "rondo dev pr-prep" ||
+        validation.exit_code !== 0 || validation.candidate_commit !== entry.candidate_commit ||
+        !validation.summary?.trim() || !Array.isArray(validation.command) || validation.command.length === 0) {
+      throw new FailError("缺少与 Candidate 一致的 Rondo 实际执行验证结果: " + key);
     }
-    if ((ev.code_review.findings ?? []).some(f => f.resolved !== true && (f.blocking !== false || !(f.risk_note?.trim() || f.risk_ref?.trim())))) {
-      throw new FailError("Evidence 存在未解决的 Blocking Finding: " + key);
+    const review = entry.code_review;
+    if (review?.result !== "PASS" || !review.summary?.trim() || !Array.isArray(review.findings) ||
+        !Array.isArray(entry.blockers) || entry.blockers.length) {
+      throw new FailError("Code Review 或 Blocking Findings 未通过: " + key);
     }
-    if (!Array.isArray(ev.commits) || !ev.commits.some(c => c.sha === entry.candidate_commit)) {
-      throw new FailError("Evidence 未包含当前 Candidate Commit: " + key);
-    }
-    for (const c of ev.commits) {
-      if (c.repo_key !== key || !c.repo_url || !/^[0-9a-f]{40}$/.test(c.sha ?? "") ||
-          canonicalRepositoryIdentity(c.repo_url) !== canonicalRepositoryIdentity(repo.repo_url)) {
-        throw new FailError("Evidence Commit 缺少稳定仓库身份或越界: " + key);
-      }
+    if (review.findings.some(f => !f || (f.resolved !== true &&
+        (f.blocking !== false || !(f.risk_note?.trim() || f.risk_ref?.trim()))))) {
+      throw new FailError("Code Review 存在未解决 Blocking Finding: " + key);
     }
     candidates[key] = entry.candidate_commit;
-  }
-  for (const key of Object.keys(evidence)) {
-    if (!(key in candidates)) throw new FailError("Evidence 中存在未准备 PR 的实际代码仓: " + key);
   }
   return candidates;
 }
@@ -120,23 +109,7 @@ export async function checkPublishedChange(
   const taskCount = checkedTaskProgress(tasks);
   const rawPrep = parseJson(md["pr_prep"] ?? "null", "pr_prep");
   if (!Array.isArray(rawPrep)) throw new FailError("缺少 PR Preparation");
-  const evidence: Record<string, Evidence> = {};
-  const evidenceItems = currentList.filter(i => !i.isFolder && new RegExp("^" + prefix + "/evidence[^/]*\\.json$").test(i.path));
-  for (const item of evidenceItems) {
-    const ev = parseJson(await reader.read(commit, item.path), item.path) as Evidence;
-    if (!ev || typeof ev !== "object" || Array.isArray(ev) || typeof ev.repo_key !== "string" ||
-        ev.change_ref !== changeRef || Object.prototype.hasOwnProperty.call(evidence, ev.repo_key)) {
-      throw new FailError("Evidence 文件身份非法、重复或 Change 不一致: " + item.path);
-    }
-    evidence[ev.repo_key] = ev;
-  }
-  const candidates = validateChangeDelivery(rawPrep as PrPrep[], evidence, change.scope, change.tfsId, cfg.registry as Record<string, RepoConfig>);
-  for (const key of Object.keys(candidates)) {
-    const file = prefix + "/pr-description-" + key + ".md";
-    if (!currentList.some(i => i.path === file && !i.isFolder)) throw new FailError("缺少已发布的 PR Description: " + key);
-    const description = await reader.read(commit, file);
-    if (!description.trim() || description.includes("补 TFS 工作项 id")) throw new FailError("PR Description 尚未完善: " + key);
-  }
+  const candidates = validateChangeDelivery(rawPrep as PrPrep[], change.scope, change.tfsId, cfg.registry as Record<string, RepoConfig>);
   const latest = multica.getIssue(issueKey).metadata ?? {};
   if (["analysis.source", "analysis.human_approval", "dev.publication", "pr_prep"].some(key => latest[key] !== md[key])) {
     throw new UnknownError("完成检查期间批准、研发发布记录或 PR 候选发生变化，请重新检查");
