@@ -50,7 +50,7 @@ export function assertCommittedContractFiles(
 export function committedContract(
   root: string, commit: string, facts: Facts, meta: Record<string, unknown>,
 ) {
-  const tree = readGitTree(root, commit, "openspec/changes/" + facts.change_ref);
+  const tree = readGitTree(root, commit, "openspec/changes/" + facts.change_ref, true);
   const read = (path: string): Buffer => {
     const entry = tree.get(path);
     if (!entry || !/^100(?:644|755)$/.test(entry.mode)) throw new FailError("Git 版本缺少普通 Gate 工件: " + path);
@@ -59,7 +59,7 @@ export function committedContract(
   const schema = parseChangeSchema(read(".openspec.yaml").toString("utf8"));
   const selected = new Set<string>();
   for (const [name, entry] of tree) {
-    if (name === "specs" || (name.startsWith("specs/") && entry.mode === "120000")) {
+    if (name.startsWith("specs/") && !/^100(?:644|755)$/.test(entry.mode)) {
       throw new FailError("Specs 包含不可验证的 Git 工件: " + name);
     }
     if (name === "design.md" || (name.startsWith("specs/") && name.endsWith(".md"))) selected.add(name);
