@@ -1,6 +1,6 @@
 ---
 name: analysis-completion
-description: 将已完成的 Analysis Package 通过 Analysis Gate 提交人工审核；分析准备就绪或定向返工完成后使用，负责 Facts 落账、当前 Change 的根仓提交推送、审核发布及状态确认。
+description: 将已完成的 Analysis Package 通过 Analysis Gate 提交人工审核；分析准备就绪或定向返工完成后使用，负责 Facts 落账、真实 Gate、本地 Git Commit、Rondo 审核发布及状态确认。
 ---
 
 # analysis-completion
@@ -10,7 +10,7 @@ description: 将已完成的 Analysis Package 通过 Analysis Gate 提交人工�
 - 当前 OpenSpec Change、专业分析结果与 draft Handoff Facts 已就绪。
 - 默认配置：`config/repo-registry.json`（相对于本 Skill 目录）。
 - Analysis 三步均传入 `--registry-config "<config-path>"`，读取配置中的工作区和 Multica 环境，禁止改用默认环境。
-- 规范来源及固定版本读取遵循 `references/analysis-source-contract.md`；complete 的远端只读核验使用现有 TFS 凭据配置。
+- 规范来源及固定版本读取遵循 `references/analysis-source-contract.md`。
 - `<facts.json>` 是本次分析的 JSON 文件，包含 `change_kind`（`corrective` / `intentional`）、`change_ref`、`verify_agent` 与适用的 `ai_review`；不再要求或提交独立 `route`。若存入当前 Change，使用约定文件 `openspec/changes/<change_ref>/analysis-handoff.json`；也可放在 Change 目录外。stage 使用不含 `gate` 的 draft，Gate PASS 后在同一文件增加 `gate.{result,reasons_ref}`。
 
 ## Procedure
@@ -30,41 +30,30 @@ description: 将已完成的 Analysis Package 通过 Analysis Gate 提交人工�
      --out openspec/changes/<change_ref>/logs/analysis-gate-result.json
    ```
 
-3. 仅在 Gate PASS 后发布 Analysis Package 摘要、Change / Evidence 引用和 Gate 结果。摘要是 Issue View，不复制工程正文；facts 的 `gate.reasons_ref` 必须填写上述根仓相对路径（`openspec/changes/<change_ref>/logs/analysis-gate-result.json`）。Gate PASS 同时绑定 Issue / Workspace / Change Kind / Schema、当前 Change 工件和已审核的 Issue Facts；不得自行构造 PASS 内容或引用其他 Change 的结果。只补写约定 Handoff 的顶层 `gate` 不使结果失效；修改其他分析事实后须重新 stage 和 Gate。
-4. 在根仓按具体文件路径本地提交当前 Change 的审核工件及 Gate Result，保留其他暂存内容。随后发布本次分析：
+3. 仅 Gate PASS 后，在同一 Facts 文件补充真实的 `gate.result=PASS` 和 `gate.reasons_ref=openspec/changes/<change_ref>/logs/analysis-gate-result.json`。Draft Facts 变化须重新 stage 与 Gate，审核工件或引用的 Review Evidence 变化须重新 Gate；不得伪造或复用其他 Change 的 PASS。
+
+4. 在根仓仅暂存并本地 Git Commit 当前 Change 的必要审核工件、Gate Result 及被 Gate 引用的 Change 内 Evidence；外部 Evidence 只保留可信引用，不复制为本地文件。不包含无关改动，也不改动其他暂存内容。然后执行：
 
    ```bash
    rondo analysis complete --mode requirement --issue <issue-key> --facts <facts.json> \
      --registry-config "<config-path>" --workspace-id <workspace-id> --root-repo "<root-repo>"
    ```
 
-   Requirement 发布使用 `--mode requirement`。Gate 后修改了审核工件或引用的 Review Evidence 时，重新执行 Gate 并提交更新的结果。
+   Rondo `complete` 负责远端发布、固定来源核验、`analysis.source` 写入、`analysis_review` 状态变更及回读；不另外执行 Push 或手工写入审核状态。
 
 ## Validation
 
-- Gate 确认服务端 `analysis.change_kind` 与当前 Change Schema 对应，并按 Schema 核对必要 Artifact 与专业 Review（Intentional 的 APPROVED AI Review 不得省略）；Complete 必须核对真实 Gate Result 的身份和工件摘要，不能仅凭 facts 中的 PASS 字符串提交。PASS 后 Package 与 Gate Result 在 Issue 上可读取。
-- `root_commit.commit` 与回读的 `analysis.source.commit` 一致，对应远端可读取的本次发布。
-- `complete` 返回 PASS 且 `analysis_review` 与 Facts 已回读；本 Skill 不执行 TFS 写入。
-- `analysis.source` 已回读，可通过 `rondo analysis read` 获取固定版本的 tasks.md；审核摘要应引用该来源供 Human 确认。
+- 以真实 Gate Result 和 `complete` 返回值为准；Intentional 的专业 AI Review 必须有效，`FAIL` / `UNKNOWN` 不得视为 PASS。
+- 成功后确认 Issue 为 `analysis_review`，Facts、Gate Result 和 `analysis.source` 可回读；`root_commit.commit` 与来源的 `analysis.source.commit` 一致，固定版本可用 `rondo analysis read` 核实。Human 审核引用该来源。
+- 本 Skill 不执行 TFS 写入、不批准 Issue。
 
 ## Output
 
-- `{ result, issue, status, metadata_keys }`，成功后结束本次分析，不自动推进研发。
+- 返回真实的 `{ result, issue, status, metadata_keys }` 及来源引用。`complete` 成功后提供简洁 Human Review Summary（结论、范围、验证建议、未决项 / 风险和已确认的 Change / Gate / Source 引用），供现有 Issue View / Run Result 展示，不新增 Artifact 或独立发布步骤；不自动推进研发。
 
 ## Error Handling / Stop Conditions
 
-退出码矩阵（三条命令共用语义，stdout 均为纯 JSON）：
-
-| 退出码 | 语义 | 处置 |
-| --- | --- | --- |
-| 0 | PASS / 落账并回读一致 | 继续下一步 |
-| 2 | FAIL：字段非法 / 检查未过 / 回读不一致 | 修 facts 或工件后**幂等重跑**；stage 拒绝 gate 段时移除后重跑；不得绕过 stage 手工 `issue metadata set`（键名/值格式无保障） |
-| 3 | UNKNOWN：环境性失败（命令无法执行、超时、空响应、传输层错误） | 等待 ≥15s 原样重试一次；恢复后继续，不视为分析结论变化 |
-| 3 | UNKNOWN：检查项本身未知（如 openspec CLI 不可用）或重试后仍 UNKNOWN | 停止并交 Delivery Lead，附最后一次 reasons 作证据；不得连续重试，不把未知当批准 |
-| 64 | 参数用法错误 | 对照命令用法修正调用 |
-
-补充规则：
-
-- Gate FAIL：针对缺失项返工后重新走本 Skill；metadata 缺失类先重跑第 1 步 stage 修正 draft 键。
-- 配置不合法、Workspace 身份不匹配、Issue 已经进入后续阶段：停止，不覆盖状态。
-- 当前 Change 发布冲突时报告具体文件和差异，保留现场。发布中断后重跑 `complete` 确认结果，再交接审核。
+- `0` 且 `result=PASS` 才可继续；`2` / `FAIL` 按真实原因修正 Facts 或工件并重跑必要步骤；`64` 修正参数。不得绕过 stage 手写 Issue Metadata。
+- `3` / `UNKNOWN`、超时或返回不明时，先回读当前 Issue、Facts / Gate Result、发布来源及状态，判断已有副作用后按真实结果恢复；无法确认时停止并说明阻断，不将未知当 PASS，也不盲目连续重试。
+- Gate FAIL 或审核 Evidence 变化时重新 Gate；Draft Facts 变化时重新 stage 与 Gate；配置、Workspace 身份不符或 Issue 已进入后续阶段时停止，不覆盖更新事实。
+- 发布冲突或核验失败时保留现场并报告差异；中断后按 `references/analysis-source-contract.md` 回读来源，再决定是否重跑 `complete`。
