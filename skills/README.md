@@ -58,4 +58,4 @@ rondo workspace sync --workspace <name> --local-only
 rondo workspace sync --workspace <name> --check
 ```
 
-命令说明见 [tools/](../tools/README.md)。部署结果应以目标 Workspace 回读为准，不以仓库文件存在作为验收证据。
+命令说明见 [rondo/](../rondo/README.md)。部署结果应以目标 Workspace 回读为准，不以仓库文件存在作为验收证据。

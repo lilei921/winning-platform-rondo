@@ -48,7 +48,7 @@ node rondo/dist/index.js workspace provision --workspace <name> --mcp-only --upd
 node rondo/dist/index.js workspace provision --workspace <name> --mcp-only --mcp-phase 08-b
 ```
 
-新建 Workspace 需使用完整 `workspace provision` 流程；`--mcp-only` 只适用于现有 Workspace。正式供给前准备相应连接文件；`--dry-run` 和 `--check` 不验证实际 MCP 连通性。更完整的参数见 [Rondo 命令说明](../tools/COMMANDS.md)。
+新建 Workspace 需使用完整 `workspace provision` 流程；`--mcp-only` 只适用于现有 Workspace。正式供给前准备相应连接文件；`--dry-run` 和 `--check` 不验证实际 MCP 连通性。更完整的参数见 [Rondo 命令说明](../rondo/COMMANDS.md)。
 
 ## 验证与恢复
 

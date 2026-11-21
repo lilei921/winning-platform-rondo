@@ -11,8 +11,7 @@
 | [skills/](skills/README.md) | Skill 方法及支持文件 |
 | [mcps/](mcps/README.md) | MCP 模板与连接文件说明 |
 | [workspace-config/](workspace-config/provisioning.json) | Workspace 受管 Manifest、底稿和 Overlay |
-| [rondo/](rondo/package.json) | Rondo CLI 源码、构建和测试 |
-| [tools/](tools/README.md) | Rondo 安装、使用与命令参考 |
+| [rondo/](rondo/README.md) | Rondo CLI 源码、构建、测试、分发包及使用文档 |
 | [openspec/](openspec/config.yaml) | OpenSpec Schema 和模板 |
 | [projects/](projects/description.md) | Multica Project 描述资产 |
 | [validation/](validation/) | 实际验证材料 |
@@ -45,5 +44,5 @@ Workspace 的受管 Agent、Skill、MCP 与 Squad 配置以 [provisioning.json](
 ## 配置与使用
 
 - **职责**：Agent Instructions 定义角色边界，Squad Instructions 定义协作方式，Skill 提供专业方法；遵循 [01 设计规范](01-multica-openspec-design-guideline.md)。
-- **发布**：修改受管对象或绑定时使用 `rondo workspace provision`；同步 Skill 时使用 `rondo workspace sync`，具体参数见 [工具使用说明](tools/README.md) 和 [命令参考](tools/COMMANDS.md)。
+- **发布**：修改受管对象或绑定时使用 `rondo workspace provision`；同步 Skill 时使用 `rondo workspace sync`，具体参数见 [工具使用说明](rondo/README.md) 和 [命令参考](rondo/COMMANDS.md)。
 - **验证**：仓内修改、配置发布和真实运行是不同状态；不以文件存在或历史验证结果代替最新验收。

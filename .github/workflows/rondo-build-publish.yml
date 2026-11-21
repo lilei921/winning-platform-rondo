@@ -47,14 +47,19 @@ jobs:
           set -euo pipefail
           version="$(node -p "require('./rondo/package.json').version")"
           package="rondo/winning-rondo-${version}.tgz"
-          existing="tools/winning-rondo-${version}.tgz"
+          existing="$(mktemp)"
+          trap 'rm -f "$existing"' EXIT
           if [[ ! -f "$package" ]]; then
             echo "::error::Package does not match rondo/package.json version"
             exit 1
           fi
-          if [[ -f "$existing" ]] && ! cmp -s "$package" "$existing"; then
-            echo "::error::Version $version already exists with different content. Bump rondo/package.json version."
-            exit 1
+          # 从 Git 读取已发布包，避免 npm pack 覆盖工作区同名文件后误判。
+          if git cat-file -e "HEAD:$package" 2>/dev/null; then
+            git show "HEAD:$package" > "$existing"
+            if ! cmp -s "$package" "$existing"; then
+              echo "::error::Version $version already exists with different content. Bump rondo/package.json version."
+              exit 1
+            fi
           fi
 
       - name: Upload package artifact
@@ -77,7 +82,7 @@ jobs:
           name: rondo-cli-package
           path: .artifacts
 
-      - name: Publish immutable versioned package to tools
+      - name: Publish immutable versioned package to rondo
         shell: bash
         run: |
           set -euo pipefail
@@ -96,7 +101,7 @@ jobs:
             exit 1
           fi
 
-          target="tools/$filename"
+          target="rondo/$filename"
           if [[ -f "$target" ]]; then
             if cmp -s "$source" "$target"; then
               echo "Already published identical package: $target"
@@ -110,5 +115,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "$target"
-          git commit -m "chore(tools): publish $filename [skip ci]"
+          git commit -m "AI-CODING chore: publish $filename [skip ci]"
           git push origin HEAD:main

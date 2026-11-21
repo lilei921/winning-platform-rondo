@@ -201,4 +201,4 @@ CLI 从 Issue 正文解析 TFS 原始附件与 Multica 副本的映射，对已�
 - [同步配置](https://github.com/lilei921/winning-platform-rondo/blob/main/skills/tfs-sync/config/sync-config.json)
 - [Workspace Provisioning](https://github.com/lilei921/winning-platform-rondo/blob/main/workspace-config/provisioning.json)
 - [Rondo 对账实现](https://github.com/lilei921/winning-platform-rondo/blob/main/rondo/src/commands/tfs/reconcile-workitem.ts)
-- [Rondo CLI 命令参考](https://github.com/lilei921/winning-platform-rondo/blob/main/tools/COMMANDS.md)
+- [Rondo CLI 命令参考](https://github.com/lilei921/winning-platform-rondo/blob/main/rondo/COMMANDS.md)

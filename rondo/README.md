@@ -8,7 +8,7 @@ owner: winning\li_lei
 # Rondo CLI：安装与使用
 
 本目录提供 Multica 统一 CLI **rondo** 的安装、配置与常用操作说明；分发包（`.tgz`）按版本单独构建或分发，不保证随 Git 仓库提供。完整参数见 [COMMANDS.md](COMMANDS.md)。
-源码位于根仓 [`rondo/`](../rondo/package.json)（包 `@winning/rondo`，命令 `rondo`）。
+源码与分发包位于根仓 `rondo/`（包 `@winning/rondo`，命令 `rondo`）。
 
 ## 1. 分发包与版本
 
@@ -16,12 +16,12 @@ owner: winning\li_lei
 | --- | --- | --- |
 | `winning-rondo-<version>.tgz` | `@winning/rondo` | `rondo` |
 
-版本以 [`rondo/package.json`](../rondo/package.json) 为准；本页不维护固定版本号或安装包数量。旧包可留作回溯，安装时应明确指定版本。
+版本以本目录的 [`package.json`](package.json) 为准；本页不维护固定版本号或安装包数量。旧包可留作回溯，安装时应明确指定版本。
 
 ## 2. 前置条件
 
 - 推荐 Node.js 22+；具体兼容性以所选安装包及其依赖要求为准。
-- npm 可执行，且 **能访问 npm registry 或内部镜像** —— tgz 的 `files` 白名单只含 `dist`，
+- npm 可执行，且 **能访问 npm registry 或内部镜像** —— tgz 的 `files` 白名单包含 `dist`、`README.md` 和 `COMMANDS.md`，
   **不打包第三方依赖**，安装时仍需从配置的 registry 拉取依赖。
   离线环境须先准备依赖缓存或私有仓库，或改用免依赖的 `rondo.exe`（SEA 单文件，见操作手册）。
 
@@ -30,7 +30,7 @@ owner: winning\li_lei
 先在分发目录确认实际存在的安装包，再明确指定版本（`npm install -g` 支持本地 tgz）：
 
 ```bash
-cd tools
+cd rondo
 ls winning-rondo-*.tgz
 
 # 将 <version> 换成目录内实际存在的版本号
@@ -145,12 +145,12 @@ npm uninstall -g @winning/rondo
 
 ## 8. 注意事项
 
-1. **凭证不进包**：tgz 内不含任何 PAT / 配置文件；安装包只交付程序。
+1. **凭证不进包**：tgz 内不含任何 PAT / 配置文件；安装包交付程序及使用文档。
 2. **全局安装不改变既有流水线调用**：现有 Skill 仍按配置里的 `node + dist/index.js 绝对路径` 调用，
    安装全局命令不等于配置已切换，切换需同步改配置。
 3. **生产不用 `npm link`**：`npm link` 依赖源码目录，仅限开发机临时使用。
 4. 重新构建分发包在根仓 `rondo/` 执行：`npm pack`（`prepack` 自动 `npm run build`），产物文件名形如
-   `winning-rondo-<version>.tgz`，复制回本目录即可；本页不记录每次发布的版本清单。
+   `winning-rondo-<version>.tgz`，产物直接保留在 `rondo/` 目录；包内的 `README.md` 与 `COMMANDS.md` 和 `package.json` 同级。本页不记录每次发布的版本清单。
 
 ## 9. 相关文档
 
