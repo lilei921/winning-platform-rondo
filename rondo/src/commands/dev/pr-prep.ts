@@ -56,7 +56,7 @@ interface PrPrepEntry {
   description_ref?: string;
   description?: string;
   local_validation?: { result: "PASS"; summary: string; command: string[]; exit_code: 0; candidate_commit: string; source: "rondo dev pr-prep" };
-  code_review?: { result: "PASS"; summary: string; findings: Array<{ resolved?: boolean; blocking?: boolean; risk_note?: string; risk_ref?: string }> };
+  code_review?: { result: "PASS"; candidate_commit: string; summary: string; findings: Array<{ resolved?: boolean; blocking?: boolean; risk_note?: string; risk_ref?: string }> };
   blockers?: string[];
 }
 
@@ -311,7 +311,7 @@ async function main(rawArgs: string[]): Promise<number> {
         description: delivery.description,
         local_validation: { result: "PASS", summary: delivery.validation!.summary!, command: delivery.validation!.command!,
           exit_code: 0, candidate_commit: args.candidateCommit, source: "rondo dev pr-prep" as const },
-        code_review: { result: "PASS", summary: delivery.code_review!.summary!, findings: delivery.code_review!.findings! },
+        code_review: { result: "PASS", candidate_commit: args.candidateCommit, summary: delivery.code_review!.summary!, findings: delivery.code_review!.findings! },
         blockers: [],
       }),
     };
