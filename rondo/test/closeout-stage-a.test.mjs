@@ -17,8 +17,15 @@ function git(cwd, ...args) {
 }
 
 function fixture(t) {
+  const previousCwd = process.cwd();
   const dir = mkdtempSync(join(tmpdir(), 'rondo-closeout-fixture-'));
-  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const taskWorkdir = join(dir, 'task-workdir');
+  mkdirSync(taskWorkdir);
+  t.after(() => {
+    process.chdir(previousCwd);
+    rmSync(dir, { recursive: true, force: true });
+  });
+  process.chdir(taskWorkdir);
   const work = join(dir, 'work');
   const bare = join(dir, 'bare.git');
   mkdirSync(work);
@@ -123,6 +130,15 @@ test('same Repository on different Branch requires a separate Clone and rejects 
   assert.throws(() => verifyCloseoutRoot(f.paths(dev.root_repo), f.source('release-change', 'release')), /分支/);
   assert.deepEqual(cleanupCloseoutRoot(dev.root_repo, dev.cleanup_token, f.remote), { removed: true });
   assert.deepEqual(cleanupCloseoutRoot(release.root_repo, release.cleanup_token, f.remote), { removed: true });
+});
+
+test('cleanup uses recorded workdir after caller changes cwd', t => {
+  const f = fixture(t);
+  const { root_repo: root, cleanup_token: token } = cloneCloseoutRoot(f.source('change-a'), f.remote);
+  process.chdir(dirname(f.bare));
+  assert.notEqual(process.cwd(), dirname(root));
+  assert.deepEqual(cleanupCloseoutRoot(root, token, f.remote), { removed: true });
+  assert.equal(existsSync(root), false);
 });
 
 test('cleanup rejects Clone whose recorded workdir no longer matches its parent', t => {
