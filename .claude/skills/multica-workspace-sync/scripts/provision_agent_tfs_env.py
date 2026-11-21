@@ -34,6 +34,8 @@ import base64
 import json
 import subprocess
 import sys
+
+from cli_retry import run_cli
 from pathlib import Path
 
 import yaml
@@ -61,7 +63,13 @@ PAT_REGISTRY_PATH = Path(__file__).resolve().parent.parent / "config" / "tfs-pat
 
 
 def run(args: list[str], stdin_text: str | None = None) -> subprocess.CompletedProcess:
-    return subprocess.run(args, input=stdin_text, capture_output=True, encoding="utf-8", errors="replace")
+    """执行 multica 写命令；写命令不自动重试（可能已在服务端落地）。"""
+    return run_cli(args, stdin_text=stdin_text)
+
+
+def run_read(args: list[str]) -> subprocess.CompletedProcess:
+    """执行 multica 只读命令；传输层故障自动重试。"""
+    return run_cli(args, transient=True)
 
 
 def extract_pat() -> str:
@@ -108,7 +116,7 @@ def resolve_pat(ws_slug: str) -> tuple[str, str]:
 
 def resolve_workspace_id(name_or_id: str) -> tuple[str, str]:
     """把 slug 或 id 解析为 (workspace_id, slug)。"""
-    out = run(["multica", "workspace", "list", "--output", "json"])
+    out = run_read(["multica", "workspace", "list", "--output", "json"])
     if out.returncode != 0:
         raise SystemExit(f"workspace list 失败: {out.stderr.strip()[:200]}")
     for ws in json.loads(out.stdout):
@@ -136,7 +144,7 @@ def main() -> None:
     print(f"TFS_PAT 策略: {pat_kind}")
     inject = {"TFS_URL": TFS_URL, "TFS_COLLECTION": TFS_COLLECTION, "TFS_PAT": pat}
 
-    out = run(["multica", "agent", "list", "--workspace-id", ws_id, "--output", "json"])
+    out = run_read(["multica", "agent", "list", "--workspace-id", ws_id, "--output", "json"])
     if out.returncode != 0:
         raise SystemExit(f"agent list 失败: {out.stderr.strip()[:200]}")
     agents = json.loads(out.stdout)
@@ -147,7 +155,7 @@ def main() -> None:
         aid = a["id"]
         name = a.get("name", aid)
 
-        g = run(["multica", "agent", "env", "get", aid,
+        g = run_read(["multica", "agent", "env", "get", aid,
                  "--workspace-id", ws_id, "--output", "json"])
         if g.returncode != 0:
             failed.append((name, f"env get: {g.stderr.strip()[:120]}"))
@@ -179,7 +187,7 @@ def main() -> None:
             continue
 
         # 回读校验：只比对键与值是否生效，不输出值
-        v = run(["multica", "agent", "env", "get", aid,
+        v = run_read(["multica", "agent", "env", "get", aid,
                  "--workspace-id", ws_id, "--output", "json"])
         env = json.loads(v.stdout).get("custom_env") or {}
         bad = [k for k in changed if env.get(k) != inject[k]]

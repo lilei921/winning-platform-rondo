@@ -362,7 +362,12 @@ function main(rawArgs: string[]): number {
     const mcpDeps: McpDeps = {
       cli: MC, workspaceId: wsId, dryRun, overlay, created, updated, unchanged, unmanaged,
       allowMissingAgents: !mcpOnly,
-      run: (cmd, input) => input === undefined ? runJson(cmd, "MCP 元数据读取") : runJsonStdin(cmd, "MCP 配置写入", input),
+      // transient=true 只出现在幂等读上：传输层故障重试；带 input 的配置写入与
+      // agent mcp add/enable 都是写操作，一律不重试。
+      run: (cmd, input, transient) => {
+        if (input !== undefined) return runJsonStdin(cmd, "MCP 配置写入", input);
+        return runJson(cmd, "MCP 元数据读取", undefined, transient ? { transient: true } : undefined);
+      },
     };
     if (mcpOnly) {
       // 专项维护不触碰 Agent 正文、Skill、Squad、Project 或 Autopilot。

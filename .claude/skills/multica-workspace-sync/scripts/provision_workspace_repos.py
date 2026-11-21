@@ -25,6 +25,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from cli_retry import run_cli
 from workspace_paths import command_env, find_repo_root
 
 DEFAULT_WORKSPACE_SLUG = "winning-admin"
@@ -33,16 +34,25 @@ MANIFEST = Path("workspace-config") / "provisioning.json"
 
 
 def run(args: list[str], workspace_id: str) -> subprocess.CompletedProcess:
-    """执行 multica 命令，用 MULTICA_WORKSPACE_ID 定向 workspace，不改动 CLI 默认工作区。"""
+    """执行 multica 写命令，用 MULTICA_WORKSPACE_ID 定向 workspace，不改动 CLI 默认工作区。
+
+    写命令不自动重试：repo add 可能已在服务端落地，重试会造成重复写入。
+    """
     env = {**command_env(), "MULTICA_WORKSPACE_ID": workspace_id}
-    return subprocess.run(args, capture_output=True, encoding="utf-8", errors="replace", env=env)
+    return run_cli(args, env=env)
+
+
+def run_read(args: list[str], workspace_id: str) -> subprocess.CompletedProcess:
+    """执行 multica 只读命令；传输层故障自动重试。"""
+    env = {**command_env(), "MULTICA_WORKSPACE_ID": workspace_id}
+    return run_cli(args, env=env, transient=True)
 
 
 def resolve_workspace_id(name_or_id: str) -> tuple[str, str]:
     """把 slug 或 id 解析为 (workspace_id, slug)。"""
-    out = subprocess.run(
+    out = run_cli(
         ["multica", "workspace", "list", "--output", "json"],
-        capture_output=True, encoding="utf-8", errors="replace", env=command_env(),
+        env=command_env(), transient=True,
     )
     if out.returncode != 0:
         raise SystemExit(f"workspace list 失败: {out.stderr.strip()[:200]}")
@@ -73,7 +83,7 @@ def load_declared_repos(root: Path, slug: str) -> tuple[list[dict], str | None]:
 
 
 def list_existing_urls(workspace_id: str) -> set[str]:
-    out = run(["multica", "repo", "list", "--output", "json"], workspace_id)
+    out = run_read(["multica", "repo", "list", "--output", "json"], workspace_id)
     if out.returncode != 0:
         raise SystemExit(f"repo list 失败: {out.stderr.strip()[:200]}")
     return {r.get("url") for r in json.loads(out.stdout) if r.get("url")}

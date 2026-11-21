@@ -13,12 +13,12 @@ const secret = JSON.stringify({ url: "https://example.test/mcp/private-token", h
 function fixture(overlay: McpOverlay = {}) {
   const servers: any[] = [];
   const bindings: any[] = [];
-  const calls: { args: string[]; input?: string }[] = [];
+  const calls: { args: string[]; input?: string; transient?: boolean }[] = [];
   const deps: McpDeps = {
     cli: ["multica", "--profile", "test"], workspaceId: "ws-1", dryRun: false,
     overlay, created: [], updated: [], unchanged: [], unmanaged: [],
-    run(args, input) {
-      calls.push({ args, input });
+    run(args, input, transient) {
+      calls.push({ args, input, transient });
       if (args.includes("workspace")) {
         if (args.includes("list")) return structuredClone(servers);
         if (args.includes("add")) { servers.push({ id: "mcp-1", name: "remote-ripgrep" }); return servers[0]; }
@@ -123,4 +123,18 @@ test("文件读取异常脱敏，workspace 可引用专用连接文件", () => {
   const f = fixture({ mcp_servers: { "remote-ripgrep": { connection_file: "team-ripgrep.local.json" } } });
   assert.equal(f.specs[0].connection_file, "team-ripgrep.local.json");
   assert.throws(() => reconcileMcpServers(f.specs, f.deps, () => { throw new Error("private-secret"); }), e => /连接文件无法读取/.test(String(e)) && !String(e).includes("private-secret"));
+});
+
+test("MCP 读命令标记为可重试，写命令不标记", () => {
+  const f = fixture();
+  reconcileMcpServers(f.specs, f.deps, () => secret);
+  reconcileMcpBindings(manifest.agents, { Wayfinder: "a-1" }, f.specs, f.deps);
+  // 幂等读（清单读取、绑定读取）允许传输层重试。
+  for (const call of f.calls.filter(c => c.args.includes("list"))) {
+    assert.equal(call.transient, true, call.args.join(" "));
+  }
+  // 写操作（MCP 创建/更新、绑定 add/enable）绝不重试：可能已在服务端落地。
+  for (const call of f.calls.filter(c => c.args.some(v => ["add", "update", "enable"].includes(v)))) {
+    assert.notEqual(call.transient, true, call.args.join(" "));
+  }
 });

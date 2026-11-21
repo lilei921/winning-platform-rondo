@@ -23,10 +23,10 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 import sys
 from pathlib import Path
 
+from cli_retry import run_cli_json
 from workspace_paths import command_env, find_repo_root
 
 MANIFEST_REL = Path("workspace-config") / "provisioning.json"
@@ -36,14 +36,11 @@ TFS_ENV_KEY_COUNT = 3
 
 
 def run_json(args: list[str], workspace_id: str | None = None) -> object:
-    """执行 multica 命令并解析 JSON 输出；用 MULTICA_WORKSPACE_ID 定向 workspace。"""
+    """执行 multica 只读命令并解析 JSON 输出；用 MULTICA_WORKSPACE_ID 定向 workspace。"""
     env = command_env()
     if workspace_id:
         env["MULTICA_WORKSPACE_ID"] = workspace_id
-    out = subprocess.run(args, capture_output=True, encoding="utf-8", errors="replace", env=env, timeout=120)
-    if out.returncode != 0:
-        raise RuntimeError((out.stderr or out.stdout).strip()[:200])
-    return json.loads(out.stdout)
+    return run_cli_json(args, env=env)
 
 
 def list_workspaces() -> list[dict]:
