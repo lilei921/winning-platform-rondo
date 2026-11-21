@@ -33,7 +33,7 @@ rondo analysis complete --mode requirement --issue <issue> --facts <facts.json> 
   --registry-config "<config>" --workspace-id <workspace> --root-repo "<root>"
 ```
 
-仅 TFS Requirement 使用 `--mode requirement`，其他流程沿用其适用入口。`validate` 只用于预检查；`complete` 负责最终真实 Gate、Git 发布、固定来源核对及原生 Issue 审核摘要。需要补充专业结论时在当前 Issue Comment 说明，不另建报告。
+仅 TFS Requirement 使用 `--mode requirement`，其他流程沿用其适用入口。`validate` 只用于预检查；`complete` 首次发布时执行最终真实 Gate、Git 发布和固定来源核对；已处于 `analysis_review` 时核对固定审核版本，必要时补齐原生 Issue 审核摘要，不重新执行 Gate。需要补充专业结论时在当前 Issue Comment 说明，不另建报告。
 
 ## Acceptance / Stop
 
