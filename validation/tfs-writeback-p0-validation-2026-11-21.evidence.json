@@ -1,0 +1,31 @@
+{
+  "verified_at": "2026-11-21T16:30:59+08:00",
+  "agent_run": {
+    "id": "01a1fd3a-3bf4-73c0-90f7-6be4c5bca53b",
+    "runtime_id": "c0ae7474-866b-4bd1-b869-a361ab6d8be3",
+    "status": "completed",
+    "started_at": "2026-11-21T16:30:14+08:00",
+    "completed_at": "2026-11-21T16:30:50+08:00"
+  },
+  "autopilot_run": {
+    "id": "01a1fd3a-3bf1-7e51-ab74-cf2dbe5abda1",
+    "status": "completed",
+    "completed_at": "2026-11-21T16:30:50+08:00"
+  },
+  "nc_test_autopilot_triggers": 0,
+  "production_probe": {
+    "status": "PASS",
+    "host": "lileipc",
+    "reverse_verified": true,
+    "lock_dir": "D:/Multica/rondo-tfs-locks",
+    "cross_owners": [
+      258124
+    ],
+    "lei_49_owners": []
+  },
+  "lei_49": {
+    "status": "in_review",
+    "prepared_change_ref": "variable-value-scope-query-267307",
+    "writeback": null
+  }
+}
