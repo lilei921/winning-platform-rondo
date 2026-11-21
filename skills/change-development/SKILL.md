@@ -46,9 +46,10 @@ rondo dev pr-prep --mode requirement --config "<config>" --issue <issue> --repo 
 
 rondo dev publish --config "<config>" --issue <issue> --change-ref <change_ref> --root-repo "<root>"
 rondo dev check-change --config "<config>" --issue <issue> --change-ref <change_ref>
+rondo pr materialize --mode requirement --config "<config>" --issue <issue> --change-ref <change_ref> --root-repo "<root>"
 ```
 
-只有确属非实质性 Design 细化才允许 `dev publish --minor-design`。多仓分别对各自的 Candidate 完成绑定；外部 PR Materialize 由现有交付协调入口执行。实际代码由 Git 持有，交付事实由 Multica 持有，最终 PR Description 由 TFS PR 持有。
+只有确属非实质性 Design 细化才允许 `dev publish --minor-design`。多仓分别对各自的 Candidate 完成绑定。从持久根仓运行 `pr materialize`，Rondo 确认 PR 已登记且 Issue 已进入 `in_review` 后，回收本次研发的业务 Worktree。实际代码由 Git 持有，交付事实由 Multica 持有，最终 PR Description 由 TFS PR 持有。
 
 ## Stop / Output
 

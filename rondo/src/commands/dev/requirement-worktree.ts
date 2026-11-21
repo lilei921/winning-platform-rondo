@@ -24,6 +24,39 @@ function candidateBranchExists(path: string, branch: string): boolean {
   return git(path, ["show-ref", "--verify", "--quiet", "refs/heads/" + branch]).status === 0;
 }
 
+function verifyWorktree(worktree: string, hub: string, branch: string, url: string): void {
+  const dot = lstatSync(join(worktree, ".git"), { throwIfNoEntry: false });
+  if (!dot?.isFile() ||
+      !samePath(checked(worktree, ["rev-parse", "--show-toplevel"], "检查 Worktree 根"), worktree) ||
+      !samePath(checked(worktree, ["rev-parse", "--path-format=absolute", "--git-common-dir"], "检查 Worktree 归属"), join(hub, ".git")) ||
+      checked(worktree, ["symbolic-ref", "--short", "HEAD"], "检查 Worktree 分支") !== branch) {
+    throw new FailError("已有目录不是本 Requirement 的 Worktree，保留现场");
+  }
+  verifyOrigin(worktree, url);
+}
+
+/** 仅回收已通过 PR 校验的候选 Worktree，保留分支供评审返工。 */
+export function removePublishedRequirementWorktree(
+  root: string, repo: { repo_path: string; repo_url?: string }, tfsId: number, candidate: string,
+): string | undefined {
+  if (!Number.isSafeInteger(tfsId) || tfsId <= 0 || !repo.repo_url) throw new FailError("缺少有效 TFS ID 或仓库 URL");
+  const name = `${repo.repo_path}-${tfsId}`;
+  const worktree = validateBusinessPath(root, { repo_path: name });
+  if (!existsSync(worktree)) return;
+  const hub = validateBusinessPath(root, repo);
+  verifyWorktree(worktree, hub, `feature/${tfsId}`, repo.repo_url);
+  if (checked(worktree, ["rev-parse", "HEAD"], "核对候选 HEAD") !== candidate) {
+    throw new FailError("本地 HEAD 与已发布候选不一致");
+  }
+  // 忽略项也会随 Worktree 删除，只放行根目录下可重建的构建结果和依赖。
+  const status = checked(worktree, ["status", "--porcelain", "--untracked-files=normal", "--ignored=matching"], "检查工作区状态");
+  if (status && status.split(/\r?\n/).some(line => line !== "!! dist/" && line !== "!! node_modules/")) {
+    throw new FailError("工作区有本地修改或未确认可丢弃的文件");
+  }
+  checked(hub, ["worktree", "remove", worktree], "移除 Worktree");
+  return name;
+}
+
 /** Reentrancy preserves dirty/unpushed Worktree. Another Worktree holding the branch always blocks. */
 export function prepareRequirementWorktree(
   root: string, repo: PrepareRepo, tfsId: number, serverUrl: string, remote: Remote = runAuthenticatedGit,
@@ -57,13 +90,7 @@ export function prepareRequirementWorktree(
   }
   const wtExists = existsSync(worktree);
   if (wtExists) {
-    if (!existsSync(join(worktree, ".git")) || lstatSync(join(worktree, ".git")).isDirectory() ||
-        !samePath(checked(worktree, ["rev-parse", "--show-toplevel"], "检查 Worktree 根"), worktree) ||
-        !samePath(checked(worktree, ["rev-parse", "--path-format=absolute", "--git-common-dir"], "检查 Worktree 归属"), join(hub, ".git")) ||
-        checked(worktree, ["symbolic-ref", "--short", "HEAD"], "检查 Worktree 分支") !== branch) {
-      throw new FailError("已有目录不是本 Requirement 的 Worktree，保留现场");
-    }
-    verifyOrigin(worktree, repo.repo_url);
+    verifyWorktree(worktree, hub, branch, repo.repo_url);
     return { result: "PASS", path: worktree, base: hub, branch, head: checked(worktree, ["rev-parse", "HEAD"], "读取 Worktree HEAD"), changed: false };
   }
   // Remote discovery before branch creation; source can already exist from another Runtime.

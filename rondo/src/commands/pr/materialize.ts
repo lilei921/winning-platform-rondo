@@ -30,7 +30,9 @@ import { MulticaClient } from "../../clients/multica.js";
 import { assertBugReadyForPr } from "../bug/scope.js";
 import { TfsClient } from "../../clients/tfs.js";
 import { checkPublishedChange } from "../dev/change-completion.js";
+import { removePublishedRequirementWorktree } from "../dev/requirement-worktree.js";
 import { isRequirementChangeDelivery } from "../delivery/requirement-mode.js";
+import { requirementRoot } from "../runtime/root-git.js";
 
 class FailItem extends Error {      // 单仓明确失败：记 failures，不中断其余仓
   readonly detail: Record<string, unknown>;
@@ -42,6 +44,7 @@ class FailItem extends Error {      // 单仓明确失败：记 failures，不�
 
 interface RepoEntry {
   repo_path: string;
+  repo_url?: string;
   tfs_repo?: string;
   tfs_project?: string;
   default_target_branch?: string;
@@ -368,9 +371,35 @@ async function main(rawArgs: string[]): Promise<number> {
     }
 
     // 全部登记完成才回写 + 转状态（02 §10.2：所有 required PR 注册完成后才进 in_review）
-    multica.setMetadata(issue.id, "current_pr", JSON.stringify(prs.map(({ reused: _, ...rest }) => rest)));
+    const currentPr = JSON.stringify(prs.map(({ reused: _, ...rest }) => rest));
+    multica.setMetadata(issue.id, "current_pr", currentPr);
     // --no-start：in_review 是流转事实，不触发 Run（02：状态与 Run 生命周期分离）
     multica.setStatus(issue.id, "in_review");
+
+    const rootArg = args["root-repo"] || process.env.RONDO_WORKSPACE_PATH;
+    if (args.mode === "requirement" && rootArg) {
+      // 清理只使用本次已确认交付的候选，失败时保留 PR 的成功结果。
+      try {
+        const confirmed = multica.getIssue(issue.id);
+        const facts = confirmed.metadata ?? {};
+        if (confirmed.status !== "in_review" || facts.current_pr !== currentPr ||
+            facts.pr_prep !== md.pr_prep || facts["tfs.id"] !== tfsId) {
+          throw new UnknownError("本次 PR 登记、候选或 Issue 状态未确认");
+        }
+        const root = requirementRoot(rootArg);
+        for (const { repo_key, candidate_commit } of prep) {
+          const repo = cfg.registry[repo_key];
+          try {
+            const name = removePublishedRequirementWorktree(root, repo, Number(tfsId), candidate_commit);
+            if (name) log(`${name} 已清理`);
+          } catch (error) {
+            log(`${repo.repo_path}-${tfsId} 未清理：${(error as Error).message.split(/\r?\n/, 1)[0]}`);
+          }
+        }
+      } catch (error) {
+        log(`Worktree 未清理：${(error as Error).message.split(/\r?\n/, 1)[0]}`);
+      }
+    }
     process.stdout.write(JSON.stringify({ result: "PASS", issue: issue.identifier ?? issue.id, status: "in_review", prs }, null, 2) + "\n");
     return 0;
   } catch (exc) {

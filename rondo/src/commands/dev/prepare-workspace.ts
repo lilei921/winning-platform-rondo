@@ -25,7 +25,7 @@ export function validatePrepareRepo(repo: PrepareRepo | undefined, serverUrl: st
   return repo;
 }
 
-export function validateBusinessPath(root: string, repo: PrepareRepo): string {
+export function validateBusinessPath(root: string, repo: Pick<PrepareRepo, "repo_path">): string {
   // 在调用者遗漏 Registry 校验时也不得允许路径逃逸。
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(repo.repo_path) || /[.]$/.test(repo.repo_path)) throw new FailError("业务仓路径非法");
   const path = join(root, repo.repo_path);

@@ -150,7 +150,7 @@ rondo delivery finalize --phase prepare|complete --issue <KEY> --config <repo-re
 ### 5.2 `rondo pr`
 
 ```bash
-rondo pr materialize [--mode requirement --change-ref <ref>] --issue <KEY> --config <repo-registry.json>
+rondo pr materialize [--mode requirement --change-ref <ref> [--root-repo <path>]] --issue <KEY> --config <repo-registry.json>
 rondo pr worktree create --config <repo-registry.json> --issue <KEY> --repo <repo_key> --branch <branch> [--base <target>] [--root-repo <path>]
 rondo pr worktree remove --config <repo-registry.json> --issue <KEY> --repo <repo_key> [--root-repo <path>]
 rondo pr worktree prune --config <repo-registry.json> (--project-id <id> | --root-repo <path>)
@@ -162,7 +162,7 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 
 | 命令 | 功能 |
 | --- | --- |
-| `pr materialize` | 创建/复用 PR；新 Requirement 需 `--mode requirement --change-ref` 并先执行 Change 级 Completion |
+| `pr materialize` | 创建/复用 PR。Requirement 通过 Change 级 Completion，确认 PR 登记后，在 `--root-repo` 或 `RONDO_WORKSPACE_PATH` 对应的持久根仓清理本次业务 Worktree |
 | `pr worktree` | 使用 `create`、`remove`、`prune` 管理本地 Git Worktree |
 | `pr reconcile-status` | 对账已登记 PR 的外部状态，核实 `completed` / `abandoned` 等结果及后续收口条件 |
 | `pr create` | 在 TFS Git 仓库创建 PR，支持已有 PR 的幂等识别 |

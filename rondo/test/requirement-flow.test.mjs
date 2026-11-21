@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync, realpathSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync, realpathSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -10,7 +10,7 @@ import { parseRepositoryScope } from "../dist/commands/analysis/repository-scope
 import { checkedTaskProgress, validateChangeDelivery, checkPublishedChange } from "../dist/commands/dev/change-completion.js";
 import { isRequirementChangeDelivery, assertRequirementEvidence } from "../dist/commands/delivery/requirement-mode.js";
 import { isDeliveryTaskTitle, findDeliveryTasks, ensureDeliveryTasks } from "../dist/commands/tfs/requirement-tasks.js";
-import { prepareRequirementWorktree } from "../dist/commands/dev/requirement-worktree.js";
+import { prepareRequirementWorktree, removePublishedRequirementWorktree } from "../dist/commands/dev/requirement-worktree.js";
 import { TfsClient } from "../dist/tfs/client.js";
 import { materializeOne } from "../dist/commands/pr/materialize.js";
 import { outgoing, prepareRoot, publishChange } from "../dist/commands/runtime/root-git.js";
@@ -222,14 +222,14 @@ function git(cwd,...args){
   assert.equal(r.status,0,args.join(" ")+": "+r.stderr);
   return r.stdout.trim();
 }
-test("Requirement Worktree 首次、dirty 重入、跨 Runtime 远端候选恢复、分支占用安全阻断",t=>{
+test("Requirement Worktree 支持候选恢复和交付后安全回收",t=>{
   const folder=realpathSync(mkdtempSync(join(tmpdir(),"rondo-req-wt-")));
   t.after(()=>rmSync(folder,{recursive:true,force:true}));
   const root=join(folder,"root"), bare=join(folder,"bare.git");
   mkdirSync(root); mkdirSync(bare);
   git(bare,"init","--bare");
   git(root,"init","-b","dev");
-  writeFileSync(join(root,".gitignore"),"biz*/\n");
+  writeFileSync(join(root,".gitignore"),"biz*/\ndist/\nnode_modules/\n.env\n");
   git(root,"add",".gitignore");
   git(root,"-c","user.email=test@example.invalid","-c","user.name=Test","commit","-m","init");
   git(root,"push",bare,"dev");
@@ -268,6 +268,24 @@ test("Requirement Worktree 首次、dirty 重入、跨 Runtime 远端候选恢�
   const recovered=prepareRequirementWorktree(root,business,46,"http://tfs.test/tfs/C",runRemote);
   assert.equal(recovered.head,git(remoteClone,"rev-parse","HEAD"));
   assert.equal(readFileSync(join(recovered.path,"remote.txt"),"utf8"),"remote commit");
+
+  assert.throws(() => removePublishedRequirementWorktree(root, business, 42, sha1), /HEAD/);
+  assert.throws(() => removePublishedRequirementWorktree(root, business, 42, one.head), /本地修改/);
+  unlinkSync(join(one.path, "work.txt"));
+  writeFileSync(join(one.path, ".env"), "local");
+  assert.throws(() => removePublishedRequirementWorktree(root, business, 42, one.head), /未确认可丢弃/);
+  unlinkSync(join(one.path, ".env"));
+  for (const dir of ["dist", "node_modules"]) {
+    mkdirSync(join(one.path, dir));
+    writeFileSync(join(one.path, dir, "generated.txt"), "generated");
+  }
+  assert.equal(removePublishedRequirementWorktree(root, business, 42, one.head), "biz-42");
+  assert.equal(existsSync(one.path), false);
+  assert.equal(removePublishedRequirementWorktree(root, business, 42, one.head), undefined);
+  assert.equal(git(one.base, "rev-parse", "feature/42"), one.head);
+  assert.equal(git(recovered.path, "symbolic-ref", "--short", "HEAD"), "feature/46");
+  assert.equal(git(moved, "symbolic-ref", "--short", "HEAD"), "feature/43");
+
   writeFileSync(join(root,".gitignore"),"biz/\n");
   assert.throws(()=>prepareRequirementWorktree(root,business,44,"http://tfs.test/tfs/C",runRemote),/未被根仓忽略/);
 });
