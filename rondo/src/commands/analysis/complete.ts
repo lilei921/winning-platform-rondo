@@ -1,6 +1,8 @@
 /** Verify the reviewed Change, publish it and record its immutable remote source before review. */
 import { analysisRuntime } from "./runtime.js";
 import { multicaPrefix } from "../../clients/multica-environment.js";
+import { MulticaClient } from "../../clients/multica.js";
+import { parseRepositoryScope } from "./repository-scope.js";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Command } from "commander";
@@ -79,6 +81,57 @@ export function assertRegistryWorkspace(path: string, workspaceId: string): void
   }
 }
 
+/** A presentation view of the pinned Engineering Contract, not another persisted artifact. */
+export function renderAnalysisReviewSummary(
+  source: AnalysisSource, schema: string, proposal: string, tasks: string,
+  scope: string[], facts: Facts,
+): string {
+  const section = (name: RegExp): string | null => {
+    const lines = proposal.split(/\r?\n/);
+    const start = lines.findIndex(line => /^#{2,3}\s+/.test(line) && name.test(line.replace(/^#{2,3}\s+/, "").trim()));
+    if (start < 0) return null;
+    const body: string[] = [];
+    for (const line of lines.slice(start + 1)) {
+      if (/^#{2,3}\s+/.test(line)) break;
+      const clean = line.trim();
+      if (clean && !clean.startsWith("<!--")) body.push(clean);
+    }
+    return body.join(" ").slice(0, 700) || null;
+  };
+  const goal = section(/^(why|problem|目标|问题)$/i) ?? "详见已固定版本 proposal.md";
+  const plan = section(/^(what changes|fix strategy|方案|修复策略)$/i) ?? "详见已固定版本 proposal.md";
+  const risks = section(/^(risks?|风险|remaining risks?)$/i) ?? "未在 Proposal 单列；请核对已固定的工程契约与必要 Design";
+  const verification = tasks.split(/\r?\n/).filter(line => /验证|verification|regression/i.test(line))
+    .slice(0, 3).map(line => line.trim()).join("；") || facts.verify_agent.reason;
+  return [
+    "## Analysis Review",
+    `- 目标：${goal}`,
+    `- 方案：${plan}`,
+    `- 影响范围：${scope.join(", ")}`,
+    `- 验证建议：${verification}`,
+    `- 重要风险：${risks}`,
+    `- Engineering Contract：${schema} / ${source.change_ref}`,
+    `- Git：${source.repo_url} @ ${source.commit}（${source.branch}）`,
+    "- Analysis Gate：PASS（由 rondo analysis complete 最终核验）",
+  ].join("\n");
+}
+
+/** Idempotent native Multica Issue comment, posted only for an immutable verified source. */
+async function publishReviewSummary(multica: MulticaClient, issueId: string, source: AnalysisSource, facts: Facts): Promise<void> {
+  const comments = multica.listComments(issueId);
+  if (comments.some(c => c.content?.includes("## Analysis Review") && c.content.includes(source.commit) &&
+      c.content.includes(source.change_ref))) return;
+  const [proposal, tasks, metadata] = await Promise.all([
+    readAnalysisArtifact(source, "proposal.md"),
+    readAnalysisArtifact(source, "tasks.md"),
+    readAnalysisArtifact(source, ".openspec.yaml"),
+  ]);
+  const scope = parseRepositoryScope(metadata.content);
+  const kind = /^schema:\s*([^\s]+)/m.exec(metadata.content)?.[1] ?? facts.change_kind;
+  multica.addCommentContent(issueId,
+    renderAnalysisReviewSummary(source, kind, proposal.content, tasks.content, scope, facts));
+}
+
 async function main(rawArgs: string[]): Promise<number> {
   const args = parseArgs(rawArgs);
   const ws = ["--workspace-id", args.workspaceId!];
@@ -121,6 +174,7 @@ async function main(rawArgs: string[]): Promise<number> {
       if (String(latest.status ?? latest.status_name ?? "") !== TARGET_STATUS ||
           !sameAnalysisSource(source, readAnalysisSource(current)) || metadataEvidenceDigest(current) !== metadataEvidenceDigest(priorMeta) ||
           Object.entries(entries).some(([k, v]) => current[k] !== v)) throw new UnknownError("审核重放期间状态或来源已变化，停止放行");
+      await publishReviewSummary(new MulticaClient(runtime), String(before.id), source, facts);
       process.stdout.write(JSON.stringify({ result: "PASS", issue: args.issue, status: TARGET_STATUS,
         metadata_keys: [...Object.keys(entries), "analysis.source"], analysis_source: source,
         root_commit: { branch: source.branch, commit: source.commit, pushed: true, committed: "skipped_review_replay" } }, null, 2) + "\n");
@@ -247,6 +301,9 @@ async function main(rawArgs: string[]): Promise<number> {
       process.stdout.write(JSON.stringify({ result: "FAIL", reason: "回读校验不一致", mismatches }, null, 2) + "\n");
       return 2;
     }
+
+    const pinned = readAnalysisSource(meta);
+    await publishReviewSummary(new MulticaClient(runtime), String(issue.id), pinned, facts);
 
     // TFS 剥离（tfs-writeback-decoupling-plan）：此处不再有 TFS 写段——
     // 需求/Bug 的状态链由 PR 通过后的 `rondo tfs writeback` 统一逐跳补走。
