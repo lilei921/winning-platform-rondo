@@ -31,6 +31,7 @@ import {
 import { committedContract, readPublishedContract, assertCommittedContractFiles } from "./published-source.js";
 
 const TARGET_STATUS = "analysis_review";
+const ANALYSIS_CONTRACT_FILE = /^(?:\.openspec\.yaml|proposal\.md|tasks\.md|design\.md|specs\/.+\.md)$/;
 
 function loadFacts(path: string): Facts {
   const f = loadFactsFile(path) as Partial<Facts>;
@@ -235,7 +236,7 @@ async function main(rawArgs: string[]): Promise<number> {
       } else {
         const tfsId = String(priorMeta["tfs.id"] ?? "").trim();
         const subject = `analysis: ${facts.change_ref} (${args.issue}${tfsId ? ` / tfs ${tfsId}` : ""})`;
-        const result = requirement ? await publishChange(root, facts.change_ref, args.issue, undefined, subject, {
+        const result = requirement ? await publishChange(root, facts.change_ref, args.issue, ANALYSIS_CONTRACT_FILE, subject, {
           repoUrl: rootRepositoryUrl(root), expectedBranch: requirementBranch(),
           validateTree: (commit: string) => {
             const candidate = readContractAt(commit);
@@ -243,7 +244,7 @@ async function main(rawArgs: string[]): Promise<number> {
               throw new FailError("候选发布版本与本次真实 Analysis Gate 工程契约不一致");
             }
           },
-        }) : publishChange(root, facts.change_ref, args.issue, undefined, subject);
+        }) : publishChange(root, facts.change_ref, args.issue, ANALYSIS_CONTRACT_FILE, subject);
         rootCommit = { ...result };
       }
       if (!requirement && changeEvidenceDigest(changeDir, priorMeta, undefined, true) !== gateEvidence.change_digest) {
