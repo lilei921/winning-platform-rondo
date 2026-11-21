@@ -587,7 +587,7 @@ class MulticaClient {
       "issue", "create",
       "--project", this.project,
       "--title", `[TFS ${wi.id}] ${wi.title}`,
-      "--description", buildIssueBody(wi).replace(/\n/g, "\\n"),
+      "--description", buildIssueBody(wi),
       "--assignee", this.intakeAgent,
       "--status", "backlog",
       ...this.ws(),
@@ -710,17 +710,19 @@ function reconcile(cfg: SyncConfig, tfsCliPrefix: string[] | null): SyncResult {
       }
       // 附件待物化判定：解析既有正文映射，当前 TFS 附件存在无副本链接者（旧清单行/新附件 → 一次性补齐）
       const existingBody = String(existing.description ?? "");
+      // 仅识别旧版 create 写入的模板前缀，避免误改正文中合法的字面 \\n。
+      const legacyEscapedBody = existingBody.startsWith("## Source Requirement（TFS 原始事实）\\n\\n- TFS Work Item:");
       const parsed = parseAttachmentMap(existingBody);
       const attachmentsPending = (wi.attachments ?? []).some((a) => !parsed.map.get(attachmentIdentity(a.url))?.multicaUrl);
       const imageDisplayPending = inlineImageDisplayPending(wi, parsed.map, existingBody);
-      if (managedSame && !bodyStale && !attachmentsPending && !imageDisplayPending && !intakePending) {
+      if (managedSame && !bodyStale && !legacyEscapedBody && !attachmentsPending && !imageDisplayPending && !intakePending) {
         result.skipped.push({ tfs_id: tfsId, issue_id: issueId, reason: "管理字段、正文与附件均无变化" });
         continue;
       }
       if (!managedSame) client.updateManagedFields(issueId, wi);
       stage = "attachments";
       const att = syncAttachments(client, tfsCliPrefix, issueId, wi, existingBody);
-      const bodyRefreshed = bodyStale || att.changed || attachmentsPending || imageDisplayPending;
+      const bodyRefreshed = bodyStale || legacyEscapedBody || att.changed || attachmentsPending || imageDisplayPending;
       if (bodyRefreshed) {
         stage = "body";
         client.updateBody(issueId, wi, att.map);
