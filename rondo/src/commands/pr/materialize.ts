@@ -190,24 +190,23 @@ async function materializeOne(tfs: TfsClient, cfg: RegistryConfig, tfsId: string
   const target = entry.target_branch || repo.default_target_branch;
   if (!target) throw new FailItem({ repo_key: entry.repo_key, reason: "no_target_branch" });
 
-  // 0. 本地已登记：先按登记身份回核外部事实（02 §10.2：外部事实优先，身份冲突 UNKNOWN）
-  if (prior) {
+  // The actual remote branch always pins the Candidate, including when an existing PR is reused.
+  const reusePr = async (id: number): Promise<CurrentPrEntry & { reused: boolean }> => {
     const got = await tfs.run(
-      ["pr", "get", "--repo", repo.tfs_repo as string, "--id", String(prior.pr_id), "--project", repo.tfs_project as string],
-      `回核已登记 PR #${prior.pr_id}`,
-    ) as { found?: boolean; status?: string; sourceBranch?: string; targetBranch?: string; url?: string };
-    if (got.found === false) {
-      throw new UnknownError(`${entry.repo_key}: 已登记 PR #${prior.pr_id} 外部查无（身份不可确认，交 Lead）`);
+      ["pr", "get", "--repo", repo.tfs_repo as string, "--id", String(id), "--project", repo.tfs_project as string],
+      `核对已有 PR #${id}`,
+    ) as { found?: boolean; id?: number; status?: string; sourceBranch?: string; targetBranch?: string; description?: string; url?: string };
+    if (got.found === false || got.id !== id || got.status !== "active" ||
+        got.sourceBranch !== entry.source_branch || got.targetBranch !== target) {
+      throw new UnknownError(`${entry.repo_key}: PR #${id} 的外部身份、分支或状态不匹配`);
     }
-    if (got.status !== "active") {
-      throw new UnknownError(`${entry.repo_key}: 已登记 PR #${prior.pr_id} 状态 ${got.status}（非 active——可能已合并/废弃，交 Lead 判断，脚本不擅自重建）`);
+    if (remoteDescription !== undefined && (!got.description?.trim() || got.description.includes("补 TFS 工作项 id"))) {
+      throw new FailItem({ repo_key: entry.repo_key, reason: "existing_pr_description_missing",
+        hint: "已有 TFS PR 缺少有效的专业描述，需由 Engineer/Human 补充后再收口" });
     }
-    if (got.sourceBranch !== entry.source_branch || got.targetBranch !== target) {
-      throw new UnknownError(`${entry.repo_key}: 已登记 PR #${prior.pr_id} 分支事实与 pr_prep 不符（${got.sourceBranch}→${got.targetBranch} vs ${entry.source_branch}→${target}）`);
-    }
-    log(`${entry.repo_key}: 已登记 PR #${prior.pr_id} 回核一致，复用`);
-    return { repo_key: entry.repo_key, pr_id: prior.pr_id, pr_url: got.url ?? prior.pr_url, source_branch: entry.source_branch, target_branch: target, reused: true };
-  }
+    return { repo_key: entry.repo_key, pr_id: id, pr_url: got.url ?? "", source_branch: entry.source_branch,
+      target_branch: target, reused: true };
+  };
 
   // 1. HEAD 校验：不等 → UNKNOWN（02 §10.2：原因不明回 Engineer，不由脚本处置）
   const branch = await tfs.run(
@@ -222,7 +221,10 @@ async function materializeOne(tfs: TfsClient, cfg: RegistryConfig, tfsId: string
     throw new UnknownError(`${entry.repo_key}: 分支 HEAD(${head}) != candidate_commit(${entry.candidate_commit})，原因待 Lead 判断`);
   }
 
-  // 2. 外部事实核对：同 source+target 的 active PR 已存在 → 复用登记（02 §10.2）
+  // 2. Reuse only after checking both the remote Candidate and the actual TFS PR.
+  if (prior) return reusePr(prior.pr_id);
+
+  // 3. 外部事实核对：同 source+target 的 active PR 已存在 → 复用登记（02 §10.2）
   const prs = await tfs.run(
     ["pr", "list", "--repo", repo.tfs_repo as string, "--status", "active", "--source-branch", entry.source_branch, "--project", repo.tfs_project as string],
     `查询既有 PR(${entry.repo_key})`,
@@ -230,7 +232,7 @@ async function materializeOne(tfs: TfsClient, cfg: RegistryConfig, tfsId: string
   const existing = (prs ?? []).find((p) => p.targetBranch === target);
   if (existing) {
     log(`${entry.repo_key}: 复用既有 PR #${existing.id}`);
-    return { repo_key: entry.repo_key, pr_id: existing.id, pr_url: existing.url, source_branch: entry.source_branch, target_branch: target, reused: true };
+    return reusePr(existing.id);
   }
 
   // 3. 创建（幂等由 tfs-cli pr create 双保险：重复返回 created:false + existing）
@@ -326,6 +328,19 @@ async function main(rawArgs: string[]): Promise<number> {
       }
     } else if (args.mode !== undefined) throw new FailError("PR --mode 仅支持 requirement 或省略（legacy）");
 
+    const priorByRepo = new Map<string, CurrentPrEntry>();
+    if (args.mode === "requirement" && md["current_pr"]) {
+      let saved: unknown;
+      try { saved = JSON.parse(md["current_pr"]); } catch { throw new UnknownError("current_pr 不是合法 JSON"); }
+      if (!Array.isArray(saved)) throw new UnknownError("current_pr 必须是数组");
+      for (const item of saved) {
+        const pr = item as CurrentPrEntry;
+        if (!pr || typeof pr.repo_key !== "string" || !Number.isSafeInteger(pr.pr_id) || pr.pr_id <= 0 ||
+            priorByRepo.has(pr.repo_key)) throw new UnknownError("current_pr 包含无效或重复的仓库登记");
+        priorByRepo.set(pr.repo_key, pr);
+      }
+    }
+
     const prs: Array<CurrentPrEntry & { reused: boolean }> = [];
     const failures: unknown[] = [];
     for (const entry of prep) {
@@ -334,7 +349,8 @@ async function main(rawArgs: string[]): Promise<number> {
         if (bugDeliveryByRepo && (!bugDelivery || bugDelivery.candidate_commit !== entry.candidate_commit)) {
           throw new FailItem({ repo_key: entry.repo_key, reason: "bug_delivery_identity_mismatch" });
         }
-        prs.push(await materializeOne(tfs, cfg, tfsId, entry, undefined, bugDelivery, args.mode === "requirement" ? entry.description : undefined));
+        prs.push(await materializeOne(tfs, cfg, tfsId, entry, priorByRepo.get(entry.repo_key), bugDelivery,
+          args.mode === "requirement" ? entry.description : undefined));
       } catch (exc) {
         if (exc instanceof UnknownError) throw exc; // 身份/事实不可确认：整体停止
         if (exc instanceof FailItem) {
