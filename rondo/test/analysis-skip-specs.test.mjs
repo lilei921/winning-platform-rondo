@@ -33,7 +33,7 @@ function fixture(t, { skip = false, schema = "intentional-change", estimate = tr
       join(openspec, "schemas", name), { recursive: true });
   }
   writeFileSync(join(change, ".openspec.yaml"),
-    "schema: " + schema + "\n" + (skip ? "skip_specs: true\n" : ""));
+    "schema: " + schema + "\nx-repositories:\n  - frame\n" + (skip ? "skip_specs: true\n" : ""));
   writeFileSync(join(change, "proposal.md"),
     "# Internal change\n\n## Why\nRemove unnecessary internal overhead.\n\n## Goal\nRefactor without changing external behavior.\n\n## Capabilities\nNo Spec-level behavior change.\n");
   writeFileSync(join(change, "tasks.md"),
