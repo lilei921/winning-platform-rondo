@@ -1,6 +1,6 @@
 ---
 name: pr-status-sync
-description: 通过 Rondo 回核并同步已登记 PR 的外部状态。
+description: 核实已登记 PR 的外部状态并同步可信的终态事实。
 ---
 
 # PR Status Sync
