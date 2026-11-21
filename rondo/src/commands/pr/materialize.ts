@@ -191,7 +191,7 @@ export async function materializeOne(tfs: TfsClient, cfg: RegistryConfig, tfsId:
   if (!target) throw new FailItem({ repo_key: entry.repo_key, reason: "no_target_branch" });
 
   // The actual remote branch always pins the Candidate, including when an existing PR is reused.
-  const reusePr = async (id: number): Promise<CurrentPrEntry & { reused: boolean }> => {
+  const reusePr = async (id: number, priorUrl = ""): Promise<CurrentPrEntry & { reused: boolean }> => {
     const got = await tfs.run(
       ["pr", "get", "--repo", repo.tfs_repo as string, "--id", String(id), "--project", repo.tfs_project as string],
       `核对已有 PR #${id}`,
@@ -204,7 +204,7 @@ export async function materializeOne(tfs: TfsClient, cfg: RegistryConfig, tfsId:
       throw new FailItem({ repo_key: entry.repo_key, reason: "existing_pr_description_missing",
         hint: "已有 TFS PR 缺少有效的专业描述，需由 Engineer/Human 补充后再收口" });
     }
-    return { repo_key: entry.repo_key, pr_id: id, pr_url: got.url ?? "", source_branch: entry.source_branch,
+    return { repo_key: entry.repo_key, pr_id: id, pr_url: got.url ?? priorUrl, source_branch: entry.source_branch,
       target_branch: target, reused: true };
   };
 
@@ -222,7 +222,7 @@ export async function materializeOne(tfs: TfsClient, cfg: RegistryConfig, tfsId:
   }
 
   // 2. Reuse only after checking both the remote Candidate and the actual TFS PR.
-  if (prior) return reusePr(prior.pr_id);
+  if (prior) return reusePr(prior.pr_id, prior.pr_url);
 
   // 3. 外部事实核对：同 source+target 的 active PR 已存在 → 复用登记（02 §10.2）
   const prs = await tfs.run(
