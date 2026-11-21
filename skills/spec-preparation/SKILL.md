@@ -5,34 +5,34 @@ description: 使用项目 OpenSpec CLI 与当前 Schema / Artifact Instruction �
 
 # spec-preparation
 
-## When / Inputs
+## Inputs / Preconditions
 
-- 当前 Issue 的身份和授权、已确认的 Technical Change Kind 与当前 Change 的 Schema（首次准备时按项目契约确定并持久化）、可追溯专业结论、Evidence、已持久化的 `change_ref` 与来源 `tfs.id`（如有）。
-- 针对 New / Prepare / Revise 的真实需求；无需修改工件时仅核实并返回当前有效状态。
-- 本 Skill 的 `config/repo-registry.json` 由 `rondo workspace sync` 按目标 Workspace 渲染并发布。运行前必须确认此配置可读取且 `runtime.workspace_id` 与当前 Issue 所在 Workspace 一致；缺失或不匹配即停止，不借用其他 Skill 的配置或猜测路径。
-- 使用当前常驻根仓中的项目级 OpenSpec Schema。
+- 当前 Issue 的身份、写入授权、已确认的 Technical Change Kind、当前 Change 的 Schema、可追溯专业结论与 Evidence，以及已知的 `change_ref`、`tfs.id`。首次准备时按项目契约确定并持久化 Schema。
+- 本 Skill 的 `config/repo-registry.json` 由 `rondo workspace sync` 按 Workspace 发布；确认可读取且 `runtime.workspace_id` 与当前 Issue 所在 Workspace 一致，否则停止，不借用其他 Skill 配置或猜测路径。
+- 写入前确认 `root_repo` 在当前项目分支真正就绪（路径存在不等于准备成功）；必要时使用 `workspace-preparation`。所有 `openspec` 命令均以已核实根仓为 `cwd`。
 
 ## Method（按需选择，不是固定流水线）
 
-- **Inspect & Reuse**：定位当前 Change、已有 Artifact 与未满足的工程契约。已有可信结论、已完成工件和有效证据直接复用，不为走流程重建。
-- **Create / Complete**：仅当 Resolver 返回 `NOT_FOUND` 且身份、Schema 和创建授权明确时新建 Change。已知可信数字型 `tfs.id` 时以 kebab-case 的 `<semantic-slug>-<tfs.id>` 命名，TFS ID 必须为末尾独立段；核对拟用 ID 后执行 `openspec new change <id> --schema <schema>`。对新建或已有 active Change，仅补齐实际需要的 Artifact。
-- **Revise & Reconcile**：明确授权的返工仅修订受影响 Artifact；按实际变更检查相关上游/下游的 Requirement、Design、Tasks 和验证要求，保留仍然有效的内容。
+- **Inspect & Resolve**：查看当前 Change、Artifact 和未满足的契约，复用可信结论及有效工件。使用 `rondo change resolve-identity --openspec-root <root> [--change-ref <stable-id>] [--tfs-id <tfs.id>] [--expect-schema <schema>]`，仅传已知参数；两个身份已知时同时传入。`ACTIVE_FOUND` 复用（旧引用失效时可按 TFS ID 恢复并报告）；`ARCHIVED_FOUND` / `CONFLICT` / `INVALID` / UNKNOWN 停止，不新建规避冲突。
+- **Create / Complete**：仅在 `NOT_FOUND` 且身份、Schema 与创建授权明确时新建。存在可信数字型 `tfs.id` 时，Change ID 使用 kebab-case `<semantic-slug>-<tfs.id>`，以 TFS ID 为末尾独立段；核对 ID 后执行 `openspec new change <id> --schema <schema>`。按当前 Artifact State 补齐实际需要的工件；无需修改时只返回有效状态。
+- **Revise & Reconcile**：根据明确的返工反馈只修改受影响工件，检查相关上下游内容与验证要求，保留仍有效的结论；授权范围内的普通修订不逐文件重复确认。
 
-## Invariants（依据本次操作适用）
+## Artifact Contract & Safe Write
 
-- **Root / Change Identity**：确认 `root_repo` 在当前项目分支就绪；路径存在不等于准备成功，必要时使用 `workspace-preparation`，未就绪不得写入。执行 `rondo change resolve-identity --openspec-root <root> --change-ref <stable-id> --tfs-id <tfs.id> --expect-schema <schema>`，只传已知身份，两个身份已知时须同时提供。`ACTIVE_FOUND` 复用（旧引用失效时可依据 TFS ID 恢复并报告）；仅 `NOT_FOUND` 且获授权时可新建；`ARCHIVED_FOUND` / `CONFLICT` / `INVALID` / UNKNOWN 停止，不通过新建规避冲突。Change 已存在或 Issue 为 `in_progress` 不代表写入授权。
-- **Root / Schema / Dependencies**：全部 `openspec` 命令显式使用已核实根仓作为 `cwd`，不依赖 Agent 当前目录。写入前检查 `openspec/changes/`、`openspec/schemas/<schema>/schema.yaml`，以 `openspec schema which <schema> --json` 确认 Schema 来自当前项目；`new change --json`、`status --json`、`instructions --json` 返回的 Root / Workspace 必须一致，遇到 `implicit`、错误来源或未知结果即停止。按当前 `apply.requires` 和各 Artifact `requires` 核对传递依赖，结合 Artifact State / Instruction / Template 处理合法省略；是否存在 Spec-level Delta 根据预期行为的实际变化判断；Conditional Design 和合法 `skip_specs` 依专业语义与原生状态判断，不自建 Artifact Graph 或额外标志。
-- **Minimal Safe Write**：按照当前 Instruction / Template、已确认结论和真实依赖准备 Artifact。对 `specs/**/*.md` 确认具体 Capability 文件位于当前 Change 内；即使 `specs=done` 也核对 Proposal 要求的实际文件。只修改获授权内容，不将 Glob 当文件名、不覆盖无关有效工件；需要 Design 时先确定关键决策再定稿相关 Tasks，不需要时不生成空 Design。
-- **Targeted Rework**：修改前核对来源反馈、受影响范围与当前批准边界。发现必须新增未授权业务选择，或实质改变已批准 Goal / Scope / Acceptance / Verification 时，停止越界写入并交调用者按既有 Lead / Human 接口处理；合法授权范围内的普通修订不逐文件重复询问。
-- **Engineering Contract**：用当前 Schema 的 Instruction 和 Template 表达已经确认的专业结论。两类 Change 的 Repository Scope 均在 `.openspec.yaml` 顶层 `x-repositories` 维护，`repo_id` 从 `docs/config/repo-context.yaml` 选取。需要判断任务粒度或验证深度时，参考[工程任务写法](references/tasks-md-authoring-contract.md)。
-- **Validation / Outcome**：完成前在同一根仓运行 `openspec validate <id> --type change --strict --no-interactive --json`，并回读 `openspec status --change <id> --json`。结合退出码、结构化结果和实际文件核对 Root、必要 Artifact、合法 skipped、Conditional Design 及相关内容一致性。FAIL / UNKNOWN / 来源不符时保留现场并报告，不宣称通过；CLI PASS 不能代替专业 Review、Analysis Gate 或 Human Approval。
-- **CLI-only / Safe Recovery**：只用已授权的 CLI / Schema，不调用 `/opsx:*` 或 OpenSpec 原生 AI Skill/Command；无法安全满足委托则报告阻断，不自行绕过。创建结果未知时先以已知身份（两者均有则同时提供）回查 Change 和目录，写入结果未知时先回读 Artifact，确认缺失后才恢复，不能盲目重做。
+- **Schema 权威**：确认 `openspec/schemas/<schema>/schema.yaml` 属于当前根仓，并通过 `openspec schema which <schema> --json` 核实来源；以当前 `openspec status --change <id> --json`、`openspec instructions <artifact> --change <id> --json` 提供的 Artifact State、Instruction、Template 和依赖为准。核对 CLI 返回的可用来源信息；`implicit`、错误来源或未知结果不得用于写入。
+- **实际依赖**：遵循当前 Artifact `requires` 和 `apply.requires`，不自建 Artifact Graph。按实际行为变化判断 Spec-level Delta；合法 `skip_specs`、Conditional Design 与其他省略以当前 Schema、专业语义和原生状态为准，不为填满文件清单制造 Artifact。
+- **Repository Scope**：在当前 Change 的 `.openspec.yaml` 顶层维护 `x-repositories`，`repo_id` 从 `docs/config/repo-context.yaml` 选取；不在其他工件创建第二套授权范围。
+- **最小写入**：使用当前 Instruction / Template 和已确认结论。`specs/**/*.md` 是生成模式而非文件名，需核对实际 Capability 文件；即使 `specs=done` 也应核对 Proposal 所要求的具体文件。只改获授权内容，不覆盖无关工件；需要技术决策时以必要 Design 支撑 Tasks，不需要时不生成空 Design。
+- **Task 与验证方法**：任务围绕可交付结果及完成判据，按真实依赖划分，不受 TFS 子任务数量或工时上限驱动。验证优先选择足以证明行为的现有测试、构建或可观察检查；确需完整业务链路或已批准验收要求时安排 E2E，不机械地因页面改动或场景数量要求 E2E。区分 PR 前工程任务与后续人工验收建议。
+- **按需一致性核对**：检查已确认的 Goal / Scope 与 Proposal、适用 Specs 是否一致，Tasks / Verification 是否覆盖受影响行为，必要 Design 的决策是否与任务一致；区分 Evidence、专业建议与未决事项。只复核实际受影响内容，最终专业 Review 与 `ai_review` Verdict 由调用方负责，不新增独立 Gate。
+- **授权边界**：Change 存在或 Issue 为 `in_progress` 不等于写入授权。返工若需要新增未授权业务选择，或实质改变已批准的 Goal / Scope / Acceptance / Verification，停止越界写入并返回调用方走既有 Lead / Human 决策；不自行批准。
 
-## Optional Review Reference
+## Validation / Recovery
 
-- 对 Intentional 工件准备完成后的跨工件一致性校核，可按需参考 `references/contract-consistency-review.md`；专业语义与最终 `ai_review` 结论由调用者负责。Reference 是否被调用不作为 Gate。
+- 完成前在同一根仓执行 `openspec validate <id> --type change --strict --no-interactive --json` 并回读 `openspec status --change <id> --json`；结合退出码、结构化结果和实际文件核对必要 Artifact、合法省略、内容一致性及来源。FAIL / UNKNOWN 或来源不符时保留现场并报告；CLI PASS 不代替专业 Review、Analysis Gate 或 Human Approval。
+- 创建结果未知时用已知身份回查 Change 和目录；写入结果未知时先回读实际 Artifact，确认缺失后才恢复，不能盲目重试。只用已授权 CLI / Schema，不调用 `/opsx:*` 或 OpenSpec 原生 AI Skill/Command。
 
 ## Output / Stop
 
-- 返回当前唯一 `change_ref`、已核实根仓、实际新建或修订的**具体 Artifact 路径**、最新原生状态与 Validation 结果、合法省略依据、Evidence/未决事项；不创建平行 Preparation Result Markdown、Change Metadata Schema 或 Multica Stage。
-- 只维护当前 OpenSpec Change 工件，不执行生产代码、Issue 审批/状态操作或 Archive / Commit / Push。
+- 返回唯一 `change_ref`、已核实根仓、实际新增或修订的具体 Artifact 路径、原生状态、Validation 结果、合法省略依据、Evidence 引用与未决事项；不另建 Preparation Result、Metadata Schema 或 Multica Stage。
+- 本 Skill 仅准备当前 OpenSpec Change 工件，不执行生产代码修改、Issue 审批/状态变更、Archive、Commit 或 Push。
