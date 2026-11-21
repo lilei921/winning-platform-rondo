@@ -1,8 +1,7 @@
 /** Run-scoped Requirement Closeout root: authenticated clone, identity, publication and safe release. */
 import { randomUUID } from "node:crypto";
 import { existsSync, lstatSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, rmdirSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
@@ -16,7 +15,16 @@ import { canonicalRepositoryIdentity } from "./evidence-repository.js";
 import { isRequirementChangeDelivery } from "./requirement-mode.js";
 
 const ownerFile = "rondo-closeout-owner.json";
-interface Owner { token: string; repo_url: string; branch: string; commit: string; change_ref: string }
+interface Owner { token: string; workdir: string; repo_url: string; branch: string; commit: string; change_ref: string }
+
+/** 只允许在本次 Clone 记录的工作目录下操作其直属受控目录。 */
+function assertManagedLocation(root: string, owner: Owner): void {
+  if (typeof owner.workdir !== "string" || !isAbsolute(owner.workdir) ||
+      realpathSync(dirname(root)) !== realpathSync(owner.workdir) ||
+      lstatSync(root).isSymbolicLink() || realpathSync(root) !== root) {
+    throw new UnknownError("Closeout Clone 路径与受控 workdir 不一致，保留现场");
+  }
+}
 
 function local(root: string, args: string[], what: string): string {
   const r = runCommand(["git", ...args], root);
@@ -58,13 +66,13 @@ export function verifyCloseoutRoot(paths: RuntimePaths, source: AnalysisSource):
   const root = validateRootRepo(paths.rootRepo, "--root-repo");
   const marker = join(root, ".git", ownerFile);
   if (!basename(root).startsWith("rondo-closeout-") ||
-      realpathSync(dirname(root)) !== realpathSync(tmpdir()) ||
       lstatSync(root).isSymbolicLink() || !existsSync(marker)) {
     throw new UnknownError("Requirement Closeout 必须使用受控临时 Clone，禁止修改其它根仓");
   }
   let owner: Owner;
   try { owner = JSON.parse(readFileSync(marker, "utf8")) as Owner; }
   catch { throw new UnknownError("Closeout Clone 所有权标记不可读"); }
+  assertManagedLocation(root, owner);
   if (typeof owner.token !== "string" || !owner.token ||
       owner.branch !== source.branch ||
       canonicalRepositoryIdentity(owner.repo_url) !== canonicalRepositoryIdentity(source.repo_url)) {
@@ -120,7 +128,8 @@ export function confirmPublishedArchive(paths: RuntimePaths, source: AnalysisSou
 }
 
 export function cloneCloseoutRoot(source: AnalysisSource, remote = runAuthenticatedGit): { root_repo: string; cleanup_token: string } {
-  const root = mkdtempSync(join(tmpdir(), "rondo-closeout-"));
+  const workdir = realpathSync(process.cwd());
+  const root = mkdtempSync(join(workdir, "rondo-closeout-"));
   let cleaned = false;
   try {
     validBranch(root, source.branch);
@@ -130,7 +139,7 @@ export function cloneCloseoutRoot(source: AnalysisSource, remote = runAuthentica
     const paths: RuntimePaths = { rootRepo: root, openspecRoot: join(root, "openspec"), projectId: "", daemonId: null, source: "explicit_arg" };
     verifyGitRoot(paths, source);
     const token = randomUUID();
-    const owner: Owner = { token, ...source };
+    const owner: Owner = { token, workdir, ...source };
     writeFileSync(join(root, ".git", ownerFile), JSON.stringify(owner), { flag: "wx", mode: 0o600 });
     try { locateChange(root, source.change_ref); }
     catch (error) {
@@ -159,7 +168,7 @@ export function cloneCloseoutRoot(source: AnalysisSource, remote = runAuthentica
 /** Token and temporary-parent proof must come from this Run; errors always preserve the root. */
 export function cleanupCloseoutRoot(raw: string, token: string, remote = runAuthenticatedGit): { removed: true } {
   const root = resolve(raw);
-  if (!/^rondo-closeout-/.test(basename(root)) || realpathSync(dirname(root)) !== realpathSync(tmpdir()) ||
+  if (!/^rondo-closeout-/.test(basename(root)) ||
       lstatSync(root).isSymbolicLink() || realpathSync(root) !== root ||
       !existsSync(join(root, ".git", ownerFile)) || process.cwd() === root ||
       process.cwd().startsWith(root + "/") || process.cwd().startsWith(root + "\\")) {
@@ -168,6 +177,7 @@ export function cleanupCloseoutRoot(raw: string, token: string, remote = runAuth
   let owner: Owner;
   try { owner = JSON.parse(readFileSync(join(root, ".git", ownerFile), "utf8")) as Owner; }
   catch { throw new UnknownError("Closeout 临时 Clone 所有权标记损坏，保留现场"); }
+  assertManagedLocation(root, owner);
   if (!token || owner.token !== token) throw new FailError("Closeout Cleanup token 不匹配，拒绝清理");
   const source: AnalysisSource = owner;
   const paths: RuntimePaths = { rootRepo: root, openspecRoot: join(root, "openspec"), projectId: "", daemonId: null, source: "explicit_arg" };
