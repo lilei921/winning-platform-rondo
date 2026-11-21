@@ -14,6 +14,6 @@
 
 公开消息、工具顺序、执行边界和平台最终回复核验通过。回放使用共享导出器的默认截断长度，并脱敏了清理凭证。异步启动和轮询可查阅工作流事件证据。
 
-- [报错分析](20261121-1601-01a1fd20/review.md)
+- [修复方案（含 workdir Clone）](remediation-plan.md) · [报错分析](20261121-1601-01a1fd20/review.md)
 - [会话回放](20261121-1601-01a1fd20/replay.md) · [工具时间线](20261121-1601-01a1fd20/timeline.md) · [执行指标](20261121-1601-01a1fd20/metrics.md)
 - [平台状态](evidence/run.json) · [工作流事件](evidence/workflow-events.json) · [来源与覆盖核验](evidence/source-manifest.json)
