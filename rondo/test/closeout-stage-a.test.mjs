@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, appendFileSync, existsSync, renameSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, realpathSync, appendFileSync, existsSync, renameSync, rmSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { cloneCloseoutRoot, cleanupCloseoutRoot, verifyCloseoutRoot, confirmPublishedArchive, assertCloseoutChange } from '../dist/commands/delivery/closeout-root.js';
@@ -74,6 +74,9 @@ test('three Issues in one Repository+Branch share one Clone and publish separate
   const f = fixture(t);
   const first = f.source('change-a');
   const { root_repo: root, cleanup_token: token } = cloneCloseoutRoot(first, f.remote);
+  assert.equal(realpathSync(dirname(root)), realpathSync(process.cwd()));
+  const owner = JSON.parse(readFileSync(join(root, '.git', 'rondo-closeout-owner.json'), 'utf8'));
+  assert.equal(owner.workdir, realpathSync(process.cwd()));
   for (const changeRef of ['change-a', 'change-b', 'change-c']) {
     const issue = f.source(changeRef);
     assert.equal(verifyCloseoutRoot(f.paths(root), issue).gitRemoteUrl, repoUrl);
@@ -120,6 +123,19 @@ test('same Repository on different Branch requires a separate Clone and rejects 
   assert.throws(() => verifyCloseoutRoot(f.paths(dev.root_repo), f.source('release-change', 'release')), /分支/);
   assert.deepEqual(cleanupCloseoutRoot(dev.root_repo, dev.cleanup_token, f.remote), { removed: true });
   assert.deepEqual(cleanupCloseoutRoot(release.root_repo, release.cleanup_token, f.remote), { removed: true });
+});
+
+test('cleanup rejects Clone whose recorded workdir no longer matches its parent', t => {
+  const f = fixture(t);
+  const { root_repo: root, cleanup_token: token } = cloneCloseoutRoot(f.source('change-a'), f.remote);
+  const marker = join(root, '.git', 'rondo-closeout-owner.json');
+  const original = readFileSync(marker, 'utf8');
+  writeFileSync(marker, JSON.stringify({ ...JSON.parse(original), workdir: dirname(f.bare) }));
+  assert.throws(() => verifyCloseoutRoot(f.paths(root), f.source('change-a')), /workdir/);
+  assert.throws(() => cleanupCloseoutRoot(root, token, f.remote), /workdir/);
+  assert.equal(existsSync(root), true);
+  writeFileSync(marker, original);
+  assert.deepEqual(cleanupCloseoutRoot(root, token, f.remote), { removed: true });
 });
 
 test('cleanup preserves dirty tree, incorrect token and unpushed commits', t => {
