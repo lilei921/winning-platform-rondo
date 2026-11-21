@@ -1,8 +1,6 @@
-> 本包镜像；权威来源：analysis-completion/references/analysis-source-contract.md。修改权威后同步本文件。
+> 历史参考：`delivery-flow` 已不在当前受管 Skill 清单中。本文件不再维护现行来源契约；当前发布与来源校验以 `analysis-completion/SKILL.md` 和 Rondo CLI 为准。
 
-# Analysis Source 契约
-
-本文件由 analysis-completion 维护，是 `analysis.source` 的唯一权威；delivery-flow 包内同名文件为发布镜像。
+# Analysis Source 契约（历史参考）
 
 ## 来源与写入
 
