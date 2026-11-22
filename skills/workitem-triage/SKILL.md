@@ -23,7 +23,7 @@ description: 基于可信证据判断 Issue 准入、记录 Decision，并在适
 
 - 可核实的来源身份与版本，以及相关 `candidate_repositories`（`repo_id` 表示身份、`repo_path` 表示定位）。
 - `needs_human` 的待确认问题和恢复条件，或 `unsupported` 的硬性排除依据。
-- 替代旧 Decision 时引用 `supersedes`；Human 补充触发恢复时引用 `resume_ref`。
+- 替代旧 Decision 时用 `supersedes` 引用原 Decision Comment；Human 补充触发恢复时用 `resume_ref` 引用对应 Human Comment。
 
 证据应可追溯，区分事实、假设与未知项；不复制长源码或原始日志。发布前核对 Issue 身份、来源和关键事实仍适用；有实质变化时先修正结论。有明确 Human 补充 Comment 时回复对应线程，否则使用顶层 Comment。回读内容、Comment 引用和适用的回复关系；结果不明时先查询，不重复发布。
 
@@ -38,9 +38,9 @@ description: 基于可信证据判断 Issue 准入、记录 Decision，并在适
   ```
 
 - `needs_human`：保留 Wayfinder Assignee，保持或设置 `blocked`，说明待确认事项和恢复条件。
-- `unsupported`：保留 Wayfinder Assignee；确认 `unsupported` Status 的 Category 为 `closed` 后设置该状态，不修改 TFS Work Item。
+- `unsupported`：保留 Wayfinder Assignee；确认当前 Workspace 中 `unsupported` 是有效的终止状态后设置并回读，不修改 TFS Work Item。
 
-Human 在原 Issue 补充信息并将 Status 恢复为 `todo`、保留 Wayfinder Assignee 后，由 Multica 原生机制触发重新准入。非 TFS 入口只记录 Decision，不调用交接命令。
+`needs_human` 后，Human 在原 Issue 补充 Comment，由 Multica 原生 Comment Trigger 唤醒 Wayfinder；Wayfinder 增量评估并发布新 Decision，只有新结论为 `eligible` 且 `/note` 回读确认后才交接。Human 无须手动改 `todo`；唤醒未确认时不自行重放启动。非 TFS 入口只记录 Decision，不调用交接命令。
 
 目标映射、Assignment 和 Run 核验由 Rondo 负责。退出码 `0` 且结果为 `PASS / NOOP` 才表示交接确认，不代表下游 Run 已完成。来源、权限或写入结果不明，或命令返回 `FAIL / UNKNOWN` 时，停止受影响操作并先回读，不手工改派或重复触发。
 

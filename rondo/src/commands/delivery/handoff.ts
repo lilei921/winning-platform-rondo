@@ -82,7 +82,7 @@ function matchingRuns(runs: Run[], issueId: string, agentId: string): Run[] {
 function isWayfinderOwned(issue: Issue, wayfinderId: string): boolean {
   return issue.assignee_id === wayfinderId &&
     (!issue.assignee_type || issue.assignee_type === "agent") &&
-    (issue.status === "todo" || issue.status === "in_progress");
+    (issue.status === "todo" || issue.status === "in_progress" || issue.status === "blocked");
 }
 
 async function main(argv: string[]): Promise<number> {

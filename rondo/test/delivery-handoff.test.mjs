@@ -147,6 +147,29 @@ test("assignment without observed Run is UNKNOWN and cannot retrigger", t => {
   assert.equal(f.read().issues["WNDF-T"].assignee_id, "bug-1");
 });
 
+test("blocked + Wayfinder passes the CLI handoff state guard", t => {
+  const state = initialState("Requirement");
+  state.issues["WNDF-T"].status = "blocked";
+  const f = fixture(t, state);
+  const r = f.run();
+  assert.equal(r.code, 0, JSON.stringify(r.body));
+  assert.equal(r.body.result, "PASS");
+  assert.equal(r.body.target.type, "squad");
+  assert.equal(f.read().issues["WNDF-T"].status, "todo");
+  assert.equal(f.read().handoff_update_count, 1);
+  assert.equal(f.read().runs["issue-1"].length, 1);
+});
+
+test("unsupported terminal state cannot hand off", t => {
+  const state = initialState("Requirement");
+  state.issues["WNDF-T"].status = "unsupported";
+  const f = fixture(t, state);
+  const r = f.run();
+  assert.equal(r.code, 2);
+  assert.equal(r.body.result, "FAIL");
+  assert.equal(f.read().handoff_update_count, undefined);
+});
+
 test("workspace must be explicit", t => {
   const f = fixture(t, initialState(), { workspace_id: "" });
   assert.equal(f.run().code, 3);
