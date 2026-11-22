@@ -38,6 +38,7 @@ import { registerBugPreparePr } from "./commands/bug/prepare-pr.js";
 import { registerBugGit } from "./commands/bug/git.js";
 import { registerRuntimeCheckCheckout } from "./commands/runtime/check-checkout.js";
 import { registerRuntimePrepareRoot } from "./commands/runtime/prepare-root.js";
+import { registerRuntimeGetContext } from "./commands/runtime/get-context.js";
 import { registerBugResume } from "./commands/bug/resume.js";
 import { registerDeliveryHandoff } from "./commands/delivery/handoff.js";
 import { registerTfsMaterializeTasks } from "./commands/tfs/materialize-tasks.js";
@@ -136,6 +137,7 @@ const runtime = bareGroup(program.command("runtime").description("运行时路�
 registerRuntimeResolveRootRepo(runtime);
 registerRuntimeCheckCheckout(runtime);
 registerRuntimePrepareRoot(runtime);
+registerRuntimeGetContext(runtime);
 
 // TFS API 叶子(原 tfs-cli):query 顶级;repo/branch/workitem 各自成组
 registerTfsApiLeaf(program, "query", ["query"], "WIQL 查询(--wiql 必填)");
