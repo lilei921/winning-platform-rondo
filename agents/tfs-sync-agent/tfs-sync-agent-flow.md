@@ -11,6 +11,7 @@ flowchart TD
     C["rondo tfs reconcile-workitem --config"]
     D{"同步配置有效？"}
     E["内部调用 rondo query --wiql"]
+    E2["WIQL：需求 / Bug、@me、排除已验证和已关闭"]
     F{"查询结果有效且 Wayfinder 唯一？"}
     G{"还有待处理 Work Item？"}
     H["按 tfs.id 查找 Issue"]
@@ -34,7 +35,7 @@ flowchart TD
     Z([结束])
 
     A --> B --> C --> D
-    D -->|是| E --> F
+    D -->|是| E --> E2 --> F
     F -->|是| G
     G -->|是| H --> I
     I -->|否| J --> M
