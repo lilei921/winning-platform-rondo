@@ -38,7 +38,7 @@ rondo doctor --help
 | `pr` | `materialize`、`worktree`、`reconcile-status`、`create`、`get`、`list` | PR 创建、查询、状态对账及 Worktree |
 | `delivery` | `handoff`、`route-decision`、`finalize` | 准入交接、人工决策路由与交付收口 |
 | `workspace` | `provision`、`sync`、`migrate-repo-keys`、`check-daemon` | Workspace 资源供给、同步及检查 |
-| `runtime` | `resolve-root-repo`、`check-checkout`、`prepare-root` | 根仓库定位、就绪检查与持久根仓安全同步 |
+| `runtime` | `get-context`、`resolve-root-repo`、`check-checkout`、`prepare-root` | 当前 Run 上下文查询、根仓库就绪检查及准备 |
 | `repo` | `get` | 查询 TFS Git 仓库 |
 | `branch` | `get` | 查询 TFS Git 分支 |
 | `workitem` | `set-state`、`comment`、`create`、`link-commits`、`download-attachment` | TFS Work Item 操作 |
@@ -252,10 +252,13 @@ rondo workspace check-daemon --workspace-id <id> [--project-id <id>]
 ### 7.2 `rondo runtime`
 
 ```bash
+rondo runtime get-context
 rondo runtime resolve-root-repo --config <repo-registry.json> (--issue <KEY> | --project-id <id> | --root-repo <path>)
 rondo runtime check-checkout --root-repo <path>
 rondo runtime prepare-root [--root-repo <path>] [--branch <branch>]
 ```
+
+`runtime get-context` 只读获取当前 Multica Agent Run 的 Runtime 信息（`multica_cli`、`multica_server_url`、`workspace_id`、`rondo`、`delivery_squad_id`）。Workspace 和 Server 来自当前 Run 环境变量；按名称 `Delivery Squad` 在当前 Workspace 查找唯一有效 Squad。缺少环境或无法确认目标时返回 `UNKNOWN`（exit 3）；不依赖 `repo-registry.json`，不支持从外部终端猜测默认 Workspace。
 
 `runtime resolve-root-repo` 根据 Issue、Project 或指定路径解析根仓库位置，返回根仓及相关上下文路径信息。`check-checkout` 只读校验已有根仓。`prepare-root` 优先使用 `--root-repo`，省略时读取 `RONDO_WORKSPACE_PATH`。分支取必需的 `RONDO_WORKSPACE_BRANCH`，优先于 `--branch`。命令在原目录检查分支占用、按 Change 分别本地保存切换前的改动，并在安全时快进。历史分叉时保留本地提交和工作区。
 
