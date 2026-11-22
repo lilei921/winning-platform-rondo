@@ -21,7 +21,7 @@ interface Owner { token: string; workdir: string; repo_url: string; branch: stri
 function assertManagedLocation(root: string, owner: Owner): void {
   if (typeof owner.workdir !== "string" || !isAbsolute(owner.workdir) ||
       realpathSync(dirname(root)) !== realpathSync(owner.workdir) ||
-      lstatSync(root).isSymbolicLink() || realpathSync(root) !== root) {
+      lstatSync(root).isSymbolicLink() || realpathSync(root) !== resolve(root)) {
     throw new UnknownError("Closeout Clone 路径与受控 workdir 不一致，保留现场");
   }
 }

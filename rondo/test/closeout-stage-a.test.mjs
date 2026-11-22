@@ -132,6 +132,16 @@ test('same Repository on different Branch requires a separate Clone and rejects 
   assert.deepEqual(cleanupCloseoutRoot(release.root_repo, release.cleanup_token, f.remote), { removed: true });
 });
 
+test('Git-reported root path works for Verify and Cleanup on Windows', t => {
+  const f = fixture(t);
+  const source = f.source('change-a');
+  const { root_repo: root, cleanup_token: token } = cloneCloseoutRoot(source, f.remote);
+  const gitRoot = git(root, 'rev-parse', '--show-toplevel');
+  assert.equal(verifyCloseoutRoot(f.paths(gitRoot), source).gitRemoteUrl, repoUrl);
+  assert.deepEqual(cleanupCloseoutRoot(gitRoot, token, f.remote), { removed: true });
+  assert.equal(existsSync(root), false);
+});
+
 test('cleanup uses recorded workdir after caller changes cwd', t => {
   const f = fixture(t);
   const { root_repo: root, cleanup_token: token } = cloneCloseoutRoot(f.source('change-a'), f.remote);
