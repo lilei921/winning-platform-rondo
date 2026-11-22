@@ -64,6 +64,7 @@ function fixture(t, initial = initialState(), configPatch = {}) {
         ...process.env,
         [pathKey]: dir + delimiter + (process.env[pathKey] ?? ""),
         MOCK_STATE: statePath,
+        MOCK_REQUIRE_TASK_RUNTIME: noConfig ? "1" : "0",
         ...extraEnv,
       },
     });
@@ -117,6 +118,8 @@ const NATIVE_RUNTIME = {
   MULTICA_WORKSPACE_ID: "ws-1",
   MULTICA_SERVER_URL: "http://multica.test",
   MULTICA_AGENT_ID: "wayfinder-1",
+  MULTICA_TASK_ID: "task-1",
+  MULTICA_TOKEN: "mat_test", // fixture token, not a real credential
   MOCK_EXPECT_SERVER: "http://multica.test",
 };
 
@@ -141,12 +144,15 @@ test("configless Requirement: unique Squad and Delivery Lead", t => {
   assert.equal(f.read().runs["issue-1"][0].agent_id, "lead-1");
 });
 
-test("configless missing Runtime fields or mismatched Agent: UNKNOWN without write", t => {
+test("configless missing Runtime identity or Task credential: UNKNOWN without write", t => {
   for (const envPatch of [
     { MULTICA_WORKSPACE_ID: "" },
     { MULTICA_SERVER_URL: "" },
     { MULTICA_AGENT_ID: "" },
     { MULTICA_AGENT_ID: "not-wayfinder" },
+    { MULTICA_TASK_ID: "" },
+    { MULTICA_TOKEN: "" },
+    { MULTICA_TOKEN: "invalid" },
   ]) {
     const f = fixture(t);
     const result = f.run({ ...NATIVE_RUNTIME, ...envPatch }, true);
