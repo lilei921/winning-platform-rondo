@@ -28,11 +28,13 @@ export function resolveRuntimeContext(): RuntimeContext {
     "查询 Delivery Squad",
     { transient: true },
   );
-  if (!Array.isArray(squads)) {
+  if (!Array.isArray(squads) || squads.some((s) =>
+    !s || typeof s !== "object" || Array.isArray(s) ||
+    typeof s.id !== "string" || !s.id ||
+    typeof s.name !== "string")) {
     throw new UnknownError("Squad 列表不可确认");
   }
   const matches = squads.filter((s) =>
-    s && typeof s.id === "string" && s.id &&
     s.name === "Delivery Squad" && !s.archived_at);
   if (matches.length !== 1) {
     throw new UnknownError("Delivery Squad 不存在或不唯一");
