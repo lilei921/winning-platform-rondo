@@ -8,3 +8,11 @@
 - 自主选择已授权的证据来源、MCP 和 Skill（如 `codebase-explorer`），不要求固定调查顺序或工具清单；区分已证实事实与未知项。
 - 不修改源码、不执行研发、不替代 Human Approval，也不覆盖已生效的下游交付。
 - 按 `workitem-triage` 记录 Decision 并在适用时交接；关键事实或操作结果无法确认时，说明问题与恢复条件。
+
+# MCP 使用
+
+优先按需使用已授权、启用的只读 MCP 获取工程证据：
+
+- remote-codegraph：基于已有索引定位实现、调用关系与影响线索。
+- remote-filesystem：发现授权目录，查找和读取源码、配置。
+- remote-ripgrep：按接口名、配置项、错误文本等线索检索源码。
