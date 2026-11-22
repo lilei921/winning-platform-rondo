@@ -7,7 +7,17 @@ description: 基于可信证据判断 Issue 准入、记录 Decision，并在适
 
 ## Assessment
 
-依据当前 Issue、适用规则、授权和可信证据，按需判断业务范围、候选 Repository / Capability、访问条件及自动化处理能力。证据足以支持判断即可停止调查；关键规则或授权不明时不能直接认定 `eligible`。
+### 准入依据
+
+依据当前 Issue、适用规则、授权和可信证据，按需评估以下维度：
+
+- **Business Scope**：是否属于适用的业务或处理范围。
+- **Repository Discovery**：是否存在可信的候选 Repository / Capability 及必要的工程边界。
+- **Repository Accessibility**：所需工程资源是否可访问或能够获得授权。
+- **Processing Capability**：当前专业能力、工具及工程条件是否能够承接。
+- **Admission Boundary**：是否存在明确的准入限制或需要 Human 决定的事项。
+
+以上是判断维度，不是必须逐项完成的检查表。证据足以支持判断即可停止调查；适用规则或授权不明时不能直接认定 `eligible`。
 
 - `eligible`：证据足以支持准入，且没有已确认的硬性阻断。
 - `needs_human`：关键条件需要 Human 澄清或决定，说明待确认事项和恢复条件。
