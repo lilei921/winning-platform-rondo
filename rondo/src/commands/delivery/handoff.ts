@@ -1,7 +1,7 @@
 /**
  * Wayfinder -> Delivery owner handoff.
  * Only deterministic routing and one native Assignment Trigger live here.
- * Admission judgement and /note publication belong to workitem-triage.
+ * Admission judgement and /note publication belong to Wayfinder Agent.
  */
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
@@ -9,7 +9,7 @@ import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
 import { loadConfig, type BaseRegistryConfig } from "../../clients/config.js";
 import { MulticaClient, type IssueRecord } from "../../clients/multica.js";
 
-const USAGE = "用法: rondo delivery handoff --config <repo-registry.json> --issue <KEY>\n";
+const USAGE = "用法: rondo delivery handoff --issue <KEY> [--config <repo-registry.json>]\n";
 
 type TargetKind = "agent" | "squad";
 interface Route { type: TargetKind; name: string; }
@@ -34,14 +34,14 @@ export function resolveHandoffTarget(tfsType: string): Route | null {
   }
 }
 
-function parseArgs(argv: string[]): { config: string; issue: string } | null {
+function parseArgs(argv: string[]): { config?: string; issue: string } | null {
   const values: Record<string, string> = {};
   for (let i = 0; i < argv.length; i += 2) {
     const flag = argv[i], value = argv[i + 1];
     if (!["--config", "--issue"].includes(flag) || !value || value.startsWith("--") || values[flag]) return null;
     values[flag] = value;
   }
-  return values["--config"] && values["--issue"]
+  return values["--issue"]
     ? { config: values["--config"], issue: values["--issue"] } : null;
 }
 
@@ -97,9 +97,17 @@ async function main(argv: string[]): Promise<number> {
   }
 
   try {
-    const cfg = loadConfig<BaseRegistryConfig>(args.config, { requireRegistry: false });
-    if (!cfg.runtime.workspace_id) throw new UnknownError("缺少 runtime.workspace_id，禁止使用默认 Workspace 交接");
-    const client = new MulticaClient(cfg.runtime);
+    const runtime = args.config
+      ? loadConfig<BaseRegistryConfig>(args.config, { requireRegistry: false }).runtime
+      : {
+          multica_cli: "multica",
+          workspace_id: process.env.MULTICA_WORKSPACE_ID?.trim(),
+          multica_server_url: process.env.MULTICA_SERVER_URL?.trim(),
+        };
+    if (!runtime.workspace_id || (!args.config && !runtime.multica_server_url)) {
+      throw new UnknownError("缺少 Multica Runtime Workspace / Server，禁止使用默认环境交接");
+    }
+    const client = new MulticaClient(runtime);
     const issue = client.getIssue(args.issue) as Issue;
     const issueKey = issue.identifier ?? issue.id;
     const tfsType = issue.metadata?.["tfs.type"];
@@ -117,6 +125,9 @@ async function main(argv: string[]): Promise<number> {
       { transient: true },
     ), "Agent List");
     const wayfinder = uniqueName(agents, "Wayfinder Agent");
+    if (!args.config && process.env.MULTICA_AGENT_ID?.trim() !== wayfinder.id) {
+      throw new UnknownError("当前 Multica Runtime Agent 不是 Wayfinder，禁止交接");
+    }
     let target: NamedObject;
     let expectedAgentId: string;
     if (route.type === "agent") {
@@ -124,14 +135,14 @@ async function main(argv: string[]): Promise<number> {
       if (target.runtime_bound === false) throw new UnknownError("Bug Fix Agent 尚未绑定 Runtime");
       expectedAgentId = target.id;
     } else {
-      const squadId = cfg.runtime.delivery_squad_id;
-      if (!squadId) throw new UnknownError("缺少 runtime.delivery_squad_id");
+      const squadId = runtime.delivery_squad_id;
+      if (args.config && !squadId) throw new UnknownError("缺少 runtime.delivery_squad_id");
       const squads = namedList(client.run(
         ["squad", "list", ...client.ws(), "--output", "json"], "读取当前 Workspace Squads",
         { transient: true },
       ), "Squad List");
       target = uniqueName(squads, route.name);
-      if (target.id !== squadId) throw new UnknownError("Delivery Squad ID 与当前 Workspace 配置不一致");
+      if (squadId && target.id !== squadId) throw new UnknownError("Delivery Squad ID 与当前 Workspace 配置不一致");
       const lead = uniqueName(agents, "Delivery Lead");
       if (target.leader_id && target.leader_id !== lead.id) {
         throw new UnknownError("Delivery Squad Leader 与登记的 Delivery Lead 不一致");
