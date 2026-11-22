@@ -1,0 +1,36 @@
+{
+  "multica_server_url": "http://172.17.1.97:8080",
+  "workspace_id": "d2dca612-ff12-4957-abff-2ad1ac4b311a",
+  "mcp_servers": {
+    "remote-codegraph": {
+      "id": "2bf04aba-7cac-4a17-be66-877a1e962a51"
+    },
+    "remote-filesystem": {
+      "id": "a4be8ea1-f311-459e-827b-5faf03598c64"
+    },
+    "remote-ripgrep": {
+      "id": "c0d5f3ae-9490-40a1-b672-e297db3283fc"
+    }
+  },
+  "skills": {
+    "analysis-completion": "d2c6eb68-20f8-4136-ad03-770b4ef1a1c2",
+    "backend-engineering": "265addf8-bd2f-4914-afa2-71d2105bd7b0",
+    "bug-analysis": "29bb6ab5-fd54-472c-839a-36c253d42dab",
+    "bug-delivery": "0c6ca231-74d5-43db-90e9-c728f02731d6",
+    "codebase-explorer": "511cdb0a-c207-4130-b6e7-646c0bfd8f95",
+    "delivery-flow": "602c3921-ac60-4067-955e-fc4221bcad26",
+    "delivery-gate": "fbe24e60-f689-45c9-b575-2926bae4ddc5",
+    "development-execution": "7bb33911-f26d-478a-bbcc-dd858faac546",
+    "diagnosing-bugs": "d6a0afa1-aec5-4474-bbdf-7f262610dc66",
+    "finalize-delivery": "f754378c-293b-453a-8309-5dbed7f62f03",
+    "frontend-engineering": "c695fecb-b4a4-498b-a462-604614e3fb09",
+    "pr-status-sync": "bc048c08-f5b9-4cf3-946c-f25cd0d8bfce",
+    "pull-request": "3383efd7-e7e3-4248-a634-1ef2c8881cd7",
+    "requirement-analysis": "7137388b-5dc7-4e34-8b98-8d895a28ca99",
+    "spec-preparation": "f2f90f88-37b0-4f67-9cd4-315e3ba81fa2",
+    "tfs-sync": "c1a4bebf-c060-4b97-b1cc-61bd78404d09",
+    "workitem-triage": "9b8f328b-6c96-4abd-9ff9-64f56c6e6b48"
+  },
+  "delivery_squad_id": "5626405b-b449-4a64-a76a-149c42296028",
+  "project": "c438f620-26cb-4d9a-8dec-cde291962a6a"
+}

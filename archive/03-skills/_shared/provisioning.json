@@ -1,0 +1,218 @@
+{
+  "mcp_servers": [
+    { "name": "remote-codegraph", "template": "remote-codegraph.json" },
+    { "name": "remote-filesystem", "template": "remote-filesystem.json" },
+    { "name": "remote-ripgrep", "template": "remote-ripgrep.json" }
+  ],
+  "managed_skills": [
+    "analysis-completion",
+    "backend-engineering",
+    "bug-analysis",
+    "bug-delivery",
+    "codebase-explorer",
+    "delivery-flow",
+    "delivery-gate",
+    "development-execution",
+    "diagnosing-bugs",
+    "finalize-delivery",
+    "frontend-engineering",
+    "pr-status-sync",
+    "pull-request",
+    "requirement-analysis",
+    "spec-preparation",
+    "tfs-sync",
+    "workitem-triage"
+  ],
+  "agents": [
+    {
+      "dir": "delivery-lead",
+      "name": "Delivery Lead",
+      "visibility": "workspace",
+      "skills": [
+        "delivery-flow",
+        "delivery-gate",
+        "pull-request",
+        "finalize-delivery"
+      ]
+    },
+    {
+      "dir": "wayfinder-agent",
+      "name": "Wayfinder Agent",
+      "mcp_servers": ["remote-codegraph", "remote-filesystem", "remote-ripgrep"],
+      "visibility": "workspace",
+      "skills": [
+        "workitem-triage",
+        "codebase-explorer"
+      ]
+    },
+    {
+      "dir": "bug-fix-agent",
+      "name": "Bug Fix Agent",
+      "mcp_servers": ["remote-codegraph", "remote-filesystem", "remote-ripgrep"],
+      "visibility": "workspace",
+      "skills": [
+        "codebase-explorer",
+        "diagnosing-bugs",
+        "bug-delivery"
+      ]
+    },
+    {
+      "dir": "workitem-analyst",
+      "name": "Workitem Analyst",
+      "mcp_servers": ["remote-codegraph", "remote-filesystem", "remote-ripgrep"],
+      "mcp_phase": "08-b",
+      "visibility": "workspace",
+      "skills": [
+        "codebase-explorer",
+        "bug-analysis",
+        "requirement-analysis",
+        "spec-preparation",
+        "analysis-completion"
+      ]
+    },
+    {
+      "dir": "backend-engineer",
+      "name": "Backend Engineer",
+      "mcp_servers": ["remote-codegraph", "remote-filesystem", "remote-ripgrep"],
+      "mcp_phase": "08-b",
+      "visibility": "workspace",
+      "skills": [
+        "development-execution",
+        "backend-engineering",
+        "pull-request"
+      ]
+    },
+    {
+      "dir": "frontend-engineer",
+      "name": "Frontend Engineer",
+      "mcp_servers": ["remote-codegraph", "remote-filesystem", "remote-ripgrep"],
+      "mcp_phase": "08-b",
+      "visibility": "workspace",
+      "skills": [
+        "development-execution",
+        "frontend-engineering",
+        "pull-request"
+      ]
+    },
+    {
+      "dir": "tfs-sync-agent",
+      "name": "TFS Sync Agent",
+      "visibility": "workspace",
+      "skills": [
+        "tfs-sync"
+      ]
+    },
+    {
+      "dir": "pr-status-sync-agent",
+      "name": "PR Status Sync Agent",
+      "visibility": "workspace",
+      "skills": [
+        "pr-status-sync",
+        "finalize-delivery"
+      ]
+    }
+  ],
+  "squad": {
+    "name": "Delivery Squad",
+    "leader": "Delivery Lead",
+    "members": [
+      {
+        "name": "Workitem Analyst",
+        "role": "负责 TFS Requirement 的需求与纠正性问题分析及 OpenSpec 研发准备"
+      },
+      {
+        "name": "Backend Engineer",
+        "role": "负责后端服务实现与开发侧验证"
+      },
+      {
+        "name": "Frontend Engineer",
+        "role": "负责前端功能实现与开发侧验证"
+      }
+    ]
+  },
+  "project": {
+    "title": "winning-platform-monorepo"
+  },
+  "workspace_repos": [
+    {
+      "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
+      "description": "monorepo根仓库，负责 Agent 配置、共享文档、OpenSpec和工具。默认使用main"
+    }
+  ],
+  "workspace_groups": {
+    "df": {
+      "workspaces": [
+        "winning-lilei",
+        "winning-lnn",
+        "winning-lbs",
+        "winning-ydx",
+        "winning-dengkai",
+        "winning-dangbo",
+        "winning-lfw",
+        "winning-lwm",
+        "winning-lintao"
+      ],
+      "mcp_servers": [
+        { "name": "remote-codegraph", "template": "remote-codegraph.json", "connection_file": "remote-codegraph.local.json" },
+        { "name": "remote-filesystem", "template": "remote-filesystem.json", "connection_file": "remote-filesystem.local.json" },
+        { "name": "remote-ripgrep", "template": "remote-ripgrep.json", "connection_file": "remote-ripgrep.local.json" }
+      ]
+    },
+    "bi": {
+      "workspaces": [
+        "winning-heyan",
+        "winning-zqa",
+        "winning-hxg",
+        "winning-wangyue",
+        "winning-lyf5"
+      ],
+      "project": {
+        "title": "winning-base-winex-bi-monorepo"
+      },
+      "workspace_repos": [
+        {
+          "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/BI-01-%E6%95%B0%E6%8D%AE%E5%8F%AF%E8%A7%86%E5%8C%96%E5%88%86%E6%9E%90%E5%BC%95%E6%93%8E/_git/winning-base-winex-bi-monorepo",
+          "description": "monorepo根仓库，负责 Agent 配置、共享文档、OpenSpec和工具。默认使用main"
+        }
+      ],
+      "mcp_servers": [
+        { "name": "remote-codegraph", "template": "remote-codegraph.json", "connection_file": "bi-codegraph.local.json" },
+        { "name": "remote-filesystem", "template": "remote-filesystem.json", "connection_file": "bi-filesystem.local.json" },
+        { "name": "remote-ripgrep", "template": "remote-ripgrep.json", "connection_file": "bi-ripgrep.local.json" }
+      ]
+    }
+  },
+  "workflow": {
+    "ref": "default",
+    "statuses": [
+      {
+        "key": "analysis_review",
+        "name": "Analysis Review",
+        "category": "started",
+        "after": "in_progress"
+      },
+      {
+        "key": "unsupported",
+        "name": "Unsupported",
+        "category": "cancelled",
+        "after": "in_review"
+      }
+    ]
+  },
+  "autopilots": [
+    {
+      "title": "TFS Sync",
+      "agent": "TFS Sync Agent",
+      "mode": "run_only",
+      "prompt_file": "agents/tfs-sync-agent/autopilot-prompt.md",
+      "schedule_note": "*/15 * * * * Asia/Shanghai（登记用，trigger 不自动加——MG-5 安全纪律）"
+    },
+    {
+      "title": "PR Status Sync",
+      "agent": "PR Status Sync Agent",
+      "mode": "run_only",
+      "prompt_file": "agents/pr-status-sync-agent/autopilot-prompt.md",
+      "schedule_note": "*/15 * * * * Asia/Shanghai（同上）"
+    }
+  ]
+}

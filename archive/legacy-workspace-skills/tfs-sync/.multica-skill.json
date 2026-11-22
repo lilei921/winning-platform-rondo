@@ -1,8 +1,0 @@
-{
-  "schema_version": 1,
-  "skill_id": "3cb35780-537b-40bd-8960-f6ddddde42fb",
-  "workspace_id": "65b8f2ac-dbb0-48a6-b25c-3701be20f9d6",
-  "name": "tfs-sync",
-  "description": "使用 tfs-mcp 获取 TFS Work Item 原始事实，并通过确定性脚本幂等同步为 Multica Delivery Issue；用于 Autopilot 定时同步或手动执行 TFS → Multica 同步。",
-  "config": {}
-}

@@ -1,0 +1,18 @@
+{
+  "workspace_id": "b44b4ad2-4545-4f0a-95cf-3c52de452e49",
+  "skills": {
+    "analysis-completion": "9d0c83f7-b263-4ab2-8eaf-a14681956505",
+    "backend-engineering": "7af6b26f-cd06-43d1-b3fb-20c342400385",
+    "delivery-flow": "83b2e14a-4041-4a90-8f0e-852805f5ceaa",
+    "delivery-gate": "79f403fd-e509-4a89-93ae-e2f698d5cdee",
+    "development-execution": "121eaf94-c543-44e6-b93e-b5b3d4dd850c",
+    "finalize-delivery": "7a10edd3-4781-47e6-a1b0-7ca24888a8a3",
+    "frontend-engineering": "cdef050d-c5fe-4916-abbc-6c9b2dc81fe3",
+    "pr-status-sync": "3b7ccbd4-085f-4df9-8091-b7b55bcd22bb",
+    "pull-request": "ee0ab1fb-2faa-4f1b-9dcf-0143c4e43f98",
+    "tfs-sync": "26082c36-86ea-4972-ac0d-79eee4aaa809",
+    "workitem-analysis": "d7f75403-8ba7-4cea-8121-f19b2fb61b14"
+  },
+  "delivery_squad_id": "c30c203b-54c3-44e0-9602-094afe9a8b5b",
+  "project": "30c50a02-11f8-45bf-bf5a-7e488d4e012c"
+}

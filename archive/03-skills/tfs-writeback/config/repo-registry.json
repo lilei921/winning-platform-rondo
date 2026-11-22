@@ -1,0 +1,172 @@
+{
+  "runtime": {
+    "multica_cli": "multica",
+    "workspace_id": "ec70611d-faf8-4390-a5a3-68c07fd527c5",
+    "rondo": "rondo",
+    "delivery_squad_id": "febc477f-e57d-4b88-9800-1660fa7f5026"
+  },
+  "registry": {
+    "basedata": {
+      "repo_path": "winning-dps-df-basedata",
+      "tfs_repo": "winning-dps-df-basedata",
+      "tfs_project": "IP-08-基础数据管理软件",
+      "default_target_branch": "dev"
+    },
+    "basedata-webui": {
+      "repo_path": "winning-dps-df-basedata-webui",
+      "tfs_repo": "winning-dps-df-basedata-webui",
+      "tfs_project": "IP-08-基础数据管理软件",
+      "default_target_branch": "dev"
+    },
+    "common": {
+      "repo_path": "winning-dps-df-common",
+      "tfs_repo": "winning-dps-df-common",
+      "tfs_project": "WiNEX DataFactory",
+      "default_target_branch": "dev"
+    },
+    "dataasset": {
+      "repo_path": "winning-dps-df-dataasset",
+      "tfs_repo": "winning-dps-df-dataasset",
+      "tfs_project": "WiNEX_Data_Governance",
+      "default_target_branch": "dev"
+    },
+    "dataasset-web": {
+      "repo_path": "winning-dps-df-dataasset-web",
+      "tfs_repo": "winning-dps-df-dataasset-web",
+      "tfs_project": "WiNEX_Data_Governance",
+      "default_target_branch": "dev"
+    },
+    "dataengine": {
+      "repo_path": "winning-dps-df-dataengine",
+      "tfs_repo": "winning-dps-df-dataengine",
+      "tfs_project": "DP-03-数据采集管理软件",
+      "default_target_branch": "dev"
+    },
+    "dataintegration": {
+      "repo_path": "winning-dps-df-dataintegration",
+      "tfs_repo": "winning-dps-df-dataintegration",
+      "tfs_project": "DP-03-数据采集管理软件",
+      "default_target_branch": "dev"
+    },
+    "dataintegration-web": {
+      "repo_path": "winning-dps-df-dataintegration-web",
+      "tfs_repo": "winning-dps-df-dataintegration-web",
+      "tfs_project": "DP-03-数据采集管理软件",
+      "default_target_branch": "dev"
+    },
+    "datamodel": {
+      "repo_path": "winning-dps-df-datamodel",
+      "tfs_repo": "winning-dps-df-datamodel",
+      "tfs_project": "WiNEX_Data_Governance",
+      "default_target_branch": "dev"
+    },
+    "datamodel-web": {
+      "repo_path": "winning-dps-df-datamodel-web",
+      "tfs_repo": "winning-dps-df-datamodel-web",
+      "tfs_project": "WiNEX_Data_Governance",
+      "default_target_branch": "dev"
+    },
+    "dataquality": {
+      "repo_path": "winning-dps-df-dataquality",
+      "tfs_repo": "winning-dps-df-dataquality",
+      "tfs_project": "WiNEX_Data_Governance",
+      "default_target_branch": "dev"
+    },
+    "dataquality-web": {
+      "repo_path": "winning-dps-df-dataquality-web",
+      "tfs_repo": "winning-dps-df-dataquality-web",
+      "tfs_project": "WiNEX_Data_Governance",
+      "default_target_branch": "dev"
+    },
+    "datasecurity": {
+      "repo_path": "winning-dps-df-datasecurity",
+      "tfs_repo": "winning-dps-df-datasecurity",
+      "tfs_project": "WiNEX_Data_Governance",
+      "default_target_branch": "dev"
+    },
+    "datasecurity-web": {
+      "repo_path": "winning-dps-df-datasecurity-web",
+      "tfs_repo": "winning-dps-df-datasecurity-web",
+      "tfs_project": "WiNEX_Data_Governance",
+      "default_target_branch": "dev"
+    },
+    "dataservice-api": {
+      "repo_path": "winning-dps-df-dataservice-api",
+      "tfs_repo": "winning-dps-df-dataservice-api",
+      "tfs_project": "WiNEX Data service platform",
+      "default_target_branch": "dev"
+    },
+    "dataservice-gateway": {
+      "repo_path": "winning-dps-df-dataservice-gateway",
+      "tfs_repo": "winning-dps-df-dataservice-gateway",
+      "tfs_project": "WiNEX Data service platform",
+      "default_target_branch": "dev"
+    },
+    "dataservice-web": {
+      "repo_path": "winning-dps-df-dataservice-web",
+      "tfs_repo": "winning-dps-df-dataservice-web",
+      "tfs_project": "WiNEX Data service platform",
+      "default_target_branch": "dev"
+    },
+    "datatransfer-core": {
+      "repo_path": "winning-dps-df-datatransfer-core",
+      "tfs_repo": "winning-dps-df-datatransfer-core",
+      "tfs_project": "WiNEX Data Integrated Platform",
+      "default_target_branch": "dev"
+    },
+    "datatransfer-web": {
+      "repo_path": "winning-dps-df-datatransfer-web",
+      "tfs_repo": "winning-dps-df-datatransfer-web",
+      "tfs_project": "WiNEX Data Integrated Platform",
+      "default_target_branch": "dev"
+    },
+    "devops": {
+      "repo_path": "winning-dps-df-devops",
+      "tfs_repo": "winning-dps-df-devops",
+      "tfs_project": "WiNEX_Data_Operation",
+      "default_target_branch": "dev"
+    },
+    "devops-web": {
+      "repo_path": "winning-dps-df-devops-web",
+      "tfs_repo": "winning-dps-df-devops-web",
+      "tfs_project": "WiNEX_Data_Operation",
+      "default_target_branch": "dev"
+    },
+    "frame": {
+      "repo_path": "winning-dps-df-frame",
+      "tfs_repo": "winning-dps-df-frame",
+      "tfs_project": "WiNEX DataFactory",
+      "default_target_branch": "dev"
+    },
+    "frame-web": {
+      "repo_path": "winning-dps-df-frame-web",
+      "tfs_repo": "winning-dps-df-frame-web",
+      "tfs_project": "WiNEX DataFactory",
+      "default_target_branch": "dev"
+    },
+    "metadata": {
+      "repo_path": "winning-dps-df-metadata",
+      "tfs_repo": "winning-dps-df-metadata",
+      "tfs_project": "WiNEX_Data_Governance",
+      "default_target_branch": "dev"
+    },
+    "metadata-web": {
+      "repo_path": "winning-dps-df-metadata-web",
+      "tfs_repo": "winning-dps-df-metadata-web",
+      "tfs_project": "DP-06-元数据管理软件",
+      "default_target_branch": "dev"
+    },
+    "modular": {
+      "repo_path": "winning-dps-df-modular",
+      "tfs_repo": "winning-dps-df-modular",
+      "tfs_project": "DP-03-数据采集管理软件",
+      "default_target_branch": "dev"
+    },
+    "schedule-web": {
+      "repo_path": "winning-dps-df-schedule-web",
+      "tfs_repo": "winning-dps-df-schedule-web",
+      "tfs_project": "WiNEX Task Schedule Center",
+      "default_target_branch": "dev"
+    }
+  }
+}
