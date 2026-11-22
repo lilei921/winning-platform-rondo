@@ -1,6 +1,6 @@
 ---
 name: workitem-triage
-description: 基于可信证据判断 Issue 准入、记录 Decision，并在适用时交接；用于首次评估、增量重评或交接恢复。
+description: 基于可信证据评估 Issue 准入的判断方法与 Decision 记录规范；适用于首次评估、增量重评或交接恢复。
 ---
 
 # Workitem Triage
@@ -61,24 +61,14 @@ Repository 暂未定位、工具故障、权限待开通、根因未明或任务
 
 发布前确认 Issue、来源及关键事实仍然有效。有明确 Human 补充 Comment 时回复对应线程，否则发布顶层 Comment。
 
-发布后回读 Decision 内容、Comment 引用和适用的回复关系；结果不明时先查询，不重复发布。
+发布后回读 Decision 内容、Comment 引用和适用的回复关系；结果不明时先查询，不重复发布。不生成独立准入报告。
 
-## Handoff
+## Tool Usage
 
-对准入 Issue 执行以下交接动作：
+适用 TFS 入口交接时，先确认当前有效的 `eligible` Decision 已通过 `/note` 发布并回读；使用本 Skill 的 `config/repo-registry.json` 绝对路径执行：
 
-- `eligible`：确认当前有效 `/note` 已回读。适用 TFS 入口交接时，使用本 Skill 的 `config/repo-registry.json` 绝对路径执行：
-
-  ```bash
-  rondo delivery handoff --config "<本技能目录>/config/repo-registry.json" --issue <KEY>
-  ```
-
-- `needs_human`：保留 Wayfinder Assignee，保持或设置 `blocked`，说明待确认事项和恢复条件。
-
-- `unsupported`：保留 Wayfinder Assignee，确认 `unsupported` 为当前 Workspace 有效的终止状态后设置并回读，不修改 TFS Work Item。
+```bash
+rondo delivery handoff --config "<本技能目录>/config/repo-registry.json" --issue <KEY>
+```
 
 Handoff 退出码为 `0` 且结果为 `PASS / NOOP` 时确认交接，不代表下游 Run 已完成。`FAIL / UNKNOWN` 或结果不明时先回读核实，不手工改派或重复触发。
-
-## Output
-
-返回 Decision Comment 引用、结论、关键依据和未决项；执行 Handoff 时附 CLI 结果及可用的 Run 引用。不生成独立准入报告。
