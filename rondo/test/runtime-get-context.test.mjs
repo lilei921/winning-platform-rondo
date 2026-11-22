@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync, copyFileSync, chmodSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, readFileSync, copyFileSync, chmodSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, delimiter } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,7 +22,9 @@ function fixture(t, squads = [{ id: "squad-1", name: "Delivery Squad" }]) {
   }
 
   const statePath = join(dir, "state.json");
+  const callsPath = join(dir, "calls.jsonl");
   writeFileSync(statePath, JSON.stringify({ squads_list: squads }));
+  writeFileSync(callsPath, "");
   const pathKey = Object.keys(process.env).find(k => k.toLowerCase() === "path") ?? "PATH";
 
   return (overrides = {}) => {
@@ -32,6 +34,7 @@ function fixture(t, squads = [{ id: "squad-1", name: "Delivery Squad" }]) {
         ...process.env,
         [pathKey]: dir + delimiter + (process.env[pathKey] ?? ""),
         MOCK_STATE: statePath,
+        MOCK_SYNC_CALLS_FILE: callsPath,
         MOCK_EXPECT_SERVER: "http://multica.test",
         MULTICA_WORKSPACE_ID: "workspace-1",
         MULTICA_SERVER_URL: "http://multica.test",
@@ -42,7 +45,8 @@ function fixture(t, squads = [{ id: "squad-1", name: "Delivery Squad" }]) {
     let body;
     try { body = JSON.parse(cp.stdout); }
     catch { assert.fail("invalid JSON: " + cp.stdout + "\n" + cp.stderr); }
-    return { code: cp.status, body };
+    const calls = readFileSync(callsPath, "utf8").trim().split("\n").filter(Boolean).map(JSON.parse);
+    return { code: cp.status, body, calls };
   };
 }
 
@@ -64,6 +68,9 @@ test("get-context reads Runtime env and resolves the default Delivery Squad", t 
       delivery_squad_id: "squad-1",
     },
   });
+  assert.deepEqual(result.calls, [
+    ["squad", "list", "--workspace-id", "workspace-1", "--output", "json"],
+  ]);
 });
 
 test("get-context does not fall back to default Workspace or Server", t => {
@@ -82,6 +89,8 @@ test("get-context rejects missing, duplicate or malformed Squad lookup", t => {
     [{ id: "squad-1", name: "Other Squad" }],
     [{ id: "a", name: "Delivery Squad" }, { id: "b", name: "Delivery Squad" }],
     { invalid: true },
+    [{ id: "squad-1", name: "Delivery Squad" }, null],
+    [{ id: "squad-1", name: "Delivery Squad" }, { id: 1, name: "Other Squad" }],
   ]) {
     const run = fixture(t, squads);
     const result = run();
