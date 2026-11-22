@@ -55,13 +55,14 @@ function fixture(t, initial = initialState(), configPatch = {}) {
   }));
   const read = () => JSON.parse(readFileSync(statePath, "utf8"));
   const write = (state) => writeFileSync(statePath, JSON.stringify(state));
+  const pathKey = Object.keys(process.env).find(key => key.toLowerCase() === "path") ?? "PATH";
   const run = (extraEnv = {}, noConfig = false) => {
     const r = spawnSync(process.execPath, [CLI, "delivery", "handoff",
       ...(noConfig ? [] : ["--config", configPath]), "--issue", "WNDF-T"], {
       encoding: "utf8",
       env: {
         ...process.env,
-        PATH: dir + delimiter + (process.env.PATH ?? ""),
+        [pathKey]: dir + delimiter + (process.env[pathKey] ?? ""),
         MOCK_STATE: statePath,
         ...extraEnv,
       },
