@@ -84,7 +84,7 @@ Wayfinder Agent（Squad 外）
          ▼               ▼                ▼
       eligible       needs_human       unsupported
          │           blocked + Wayfinder   unsupported（终止状态）
-         │           Human 评论唤醒 Wayfinder      当前自动交付终止
+         │           Human Comment → Wayfinder    当前自动交付终止
          ▼
 Delivery Squad（status = todo；Assignment Trigger 自动启动）
          │ 仅已激活 eligible Issue
@@ -677,13 +677,13 @@ tfs.changed_at: "<changed-date>"
 
 `eligible`、`needs_human`、`unsupported` 的语义及判断顺序由 [Workitem Triage Skill](skills/workitem-triage/SKILL.md) 定义。本项目典型场景：已定位授权 Repository 但 Root Cause 未明，可进入后续专业分析；多候选系统无法消歧或权限待授权，需 Human 补充；外部封闭系统已确认禁止修改且无可行授权路径，则属于明确硬性排除。复杂度、Repository 数量或单一工具故障不能独立证明不支持。
 
-**交接顺序**：先将 Decision 写入当前 Issue 的 `/note` 并回读确认，再按当前交付场景执行必要的状态交接与结果回读。具体副作用顺序、目标身份及 UNKNOWN 恢复以 [Workitem Triage Skill](skills/workitem-triage/SKILL.md) 为执行依据；准入语义与 Comment 数据见 [Workitem Triage Skill](skills/workitem-triage/SKILL.md)。
+**交接顺序**：先按 [Workitem Triage Skill](skills/workitem-triage/SKILL.md) 将 Decision 写入 `/note` 并回读确认，再按准入结论交接；目标映射、Assignment 与 Run 校验由 `rondo delivery handoff` 负责。
 
 Decision Comment 的内容、来源版本引用和有效性判断统一遵循 [Workitem Triage Skill](skills/workitem-triage/SKILL.md)。本场景以原 Issue 的 `/note` 为交付事实入口，按需引用工程 Evidence，不新增独立 Triage Artifact 或平行事实源。
 
 **Decision 消费：** Workitem Analyst 读取当前有效 `/note` Decision 及 Evidence 时遵循 [Workitem Triage Skill](skills/workitem-triage/SKILL.md)，不得凭 Comment 自述推断 Root Cause 或已获研发批准。明确直接委派、未经过准入的 Analysis 不需要补造 Decision。
 
-本项目交接前的 TFS 来源版本复核、`/note` 后非预期 Wakeup 检查、原子 Assignment Update、预期 Run 回读及 UNKNOWN 恢复以 [Workitem Triage Skill](skills/workitem-triage/SKILL.md) 为准。确认 Comment 持久化和安全交接结果之前，不报告交接成功。
+交接前核对来源版本并确认 `/note` 持久化；目标更新、预期 Run 回读及 UNKNOWN 恢复由 `rondo delivery handoff` 执行。未经确认不报告交接成功。
 
 初版不自动重评估已移交 Squad、`needs_human` 或 `unsupported` 的 Issue；TFS Changed Date 增量同步只更新来源字段。
 
