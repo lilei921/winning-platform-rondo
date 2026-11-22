@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, writeFileSync, rmSync, chmodSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync, rmSync, chmodSync, copyFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, delimiter } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { resolveHandoffTarget } from "../dist/commands/delivery/handoff.js";
@@ -36,6 +36,14 @@ function fixture(t, initial = initialState(), configPatch = {}) {
   const dir = mkdtempSync(join(tmpdir(), "rondo-delivery-handoff-"));
   t.after(() => rmSync(dir, { force: true, recursive: true }));
   chmodSync(MOCK, 0o755);
+  // configless mode resolves the native "multica" executable from PATH.
+  const multicaShim = join(dir, process.platform === "win32" ? "multica.cmd" : "multica");
+  if (process.platform === "win32") {
+    writeFileSync(multicaShim, `@echo off\r\nnode "${MOCK}" %*\r\n`);
+  } else {
+    copyFileSync(MOCK, multicaShim);
+    chmodSync(multicaShim, 0o755);
+  }
   const statePath = join(dir, "state.json");
   const configPath = join(dir, "config.json");
   writeFileSync(statePath, JSON.stringify(initial));
@@ -47,11 +55,16 @@ function fixture(t, initial = initialState(), configPatch = {}) {
   }));
   const read = () => JSON.parse(readFileSync(statePath, "utf8"));
   const write = (state) => writeFileSync(statePath, JSON.stringify(state));
-  const run = (extraEnv = {}) => {
+  const run = (extraEnv = {}, noConfig = false) => {
     const r = spawnSync(process.execPath, [CLI, "delivery", "handoff",
-      "--config", configPath, "--issue", "WNDF-T"], {
+      ...(noConfig ? [] : ["--config", configPath]), "--issue", "WNDF-T"], {
       encoding: "utf8",
-      env: { ...process.env, MOCK_STATE: statePath, ...extraEnv },
+      env: {
+        ...process.env,
+        PATH: dir + delimiter + (process.env.PATH ?? ""),
+        MOCK_STATE: statePath,
+        ...extraEnv,
+      },
     });
     assert.equal(r.error, undefined, r.error?.message);
     let body;
@@ -98,6 +111,63 @@ for (const type of ["Requirement", "需求"]) {
     assert.equal(f.read().runs["issue-1"][0].agent_id, "lead-1");
   });
 }
+
+const NATIVE_RUNTIME = {
+  MULTICA_WORKSPACE_ID: "ws-1",
+  MULTICA_SERVER_URL: "http://multica.test",
+  MULTICA_AGENT_ID: "wayfinder-1",
+  MOCK_EXPECT_SERVER: "http://multica.test",
+};
+
+test("configless Bug: native Runtime handoff and repeated NOOP", t => {
+  const f = fixture(t);
+  const first = f.run(NATIVE_RUNTIME, true);
+  assert.equal(first.code, 0, JSON.stringify(first.body));
+  assert.equal(first.body.result, "PASS");
+  assert.equal(f.read().handoff_update_count, 1);
+  const second = f.run(NATIVE_RUNTIME, true);
+  assert.equal(second.code, 0, JSON.stringify(second.body));
+  assert.equal(second.body.result, "NOOP");
+  assert.equal(f.read().handoff_update_count, 1);
+});
+
+test("configless Requirement: unique Squad and Delivery Lead", t => {
+  const f = fixture(t, initialState("Requirement"));
+  const result = f.run(NATIVE_RUNTIME, true);
+  assert.equal(result.code, 0, JSON.stringify(result.body));
+  assert.equal(result.body.result, "PASS");
+  assert.equal(result.body.target.id, "squad-1");
+  assert.equal(f.read().runs["issue-1"][0].agent_id, "lead-1");
+});
+
+test("configless missing Runtime fields or mismatched Agent: UNKNOWN without write", t => {
+  for (const envPatch of [
+    { MULTICA_WORKSPACE_ID: "" },
+    { MULTICA_SERVER_URL: "" },
+    { MULTICA_AGENT_ID: "" },
+    { MULTICA_AGENT_ID: "not-wayfinder" },
+  ]) {
+    const f = fixture(t);
+    const result = f.run({ ...NATIVE_RUNTIME, ...envPatch }, true);
+    assert.equal(result.code, 3, JSON.stringify(result.body));
+    assert.equal(result.body.result, "UNKNOWN");
+    assert.equal(f.read().handoff_update_count, undefined);
+  }
+});
+
+test("configless Requirement rejects ambiguous Squad and wrong Leader", t => {
+  for (const mutate of [
+    state => state.squads_list.push({ id: "squad-2", name: "Delivery Squad", leader_id: "lead-1" }),
+    state => { state.squads_list[0].leader_id = "someone-else"; },
+  ]) {
+    const state = initialState("Requirement");
+    mutate(state);
+    const f = fixture(t, state);
+    const result = f.run(NATIVE_RUNTIME, true);
+    assert.equal(result.code, 3, JSON.stringify(result.body));
+    assert.equal(f.read().handoff_update_count, undefined);
+  }
+});
 
 test("unsupported type and non-Wayfinder owner cause zero write", t => {
   const f = fixture(t, initialState("Task"));
