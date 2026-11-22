@@ -127,7 +127,7 @@ rondo bug resume --config <repo-registry.json> --issue <KEY> --human-comment-id 
 ### 5.1 `rondo delivery`
 
 ```bash
-rondo delivery handoff --config <repo-registry.json> --issue <KEY>
+rondo delivery handoff --issue <KEY> [--config <repo-registry.json>]
 rondo delivery route-decision --config <repo-registry.json> --issue <KEY> --comment-id <uuid> --next ANALYSIS|ENGINEERING|RECREATE_PR|CANCEL_DELIVERY [--reason REJECTED|DISCARDED] [--affected-task-refs <1.1,1.2>]
 rondo delivery finalize --phase prepare|complete --issue <KEY> --config <repo-registry.json> [--root-repo <path>]
 ```
@@ -146,6 +146,8 @@ rondo delivery finalize --phase prepare|complete --issue <KEY> --config <repo-re
 | `Requirement`、`需求` | `Delivery Squad` |
 
 `handoff` 执行一次 `status=todo + assignee` 更新，通过 Multica 原生机制启动对应 Run。它不重新判断 Wayfinder 的 `eligible` 结论，也不解析 `/note` 或 Evidence。若无法确认结果则返回 `UNKNOWN`，不盲目重复交接。
+
+Agent Run 中省略 `--config` 时，使用 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL` 和 `MULTICA_AGENT_ID` 定位并核验当前 Wayfinder Runtime；缺失或身份不符则返回 `UNKNOWN`，不使用默认 Workspace。外部调用仍可通过 `--config` 使用原有配置和 Squad ID 校验。
 
 ### 5.2 `rondo pr`
 

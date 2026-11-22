@@ -18,6 +18,12 @@
 // 状态经 MOCK_STATE 文件持久化（写后 issue get / comment list 回读可见）；MOCK_ROOT_REPO 指定根仓。
 const fs = require("fs");
 const a = process.argv.slice(2);
+// Handoff 的无配置测试仅验证原生 Task 身份环境已传入；认证仍由真实 Multica CLI 负责。
+if (process.env.MOCK_REQUIRE_TASK_RUNTIME === "1" &&
+    (!process.env.MULTICA_TOKEN?.startsWith("mat_") || !process.env.MULTICA_TASK_ID)) {
+  process.stderr.write("mock-multica: missing Task Token or Task ID\n");
+  process.exit(3);
+}
 // 配置环境必须贯穿每次调用；测试未设置期望时仍兼容默认环境。
 for (const [flag, envKey] of [["--profile", "MOCK_EXPECT_PROFILE"], ["--server-url", "MOCK_EXPECT_SERVER"]]) {
   if (process.env[envKey] && a[a.indexOf(flag) + 1] !== process.env[envKey]) {

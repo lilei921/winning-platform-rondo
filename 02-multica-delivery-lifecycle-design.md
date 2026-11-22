@@ -689,7 +689,7 @@ Decision Comment 的内容、来源版本引用和有效性判断统一遵循 [W
 
 **来源实质变更复核（不新增 Gate）**：Workitem Analyst 在提交 `analysis_review` 前、Delivery Lead 在依据 Human APPROVED 提交批准基线或启动 Development 前，应核对当前 `tfs.changed_at` 与本轮 Analysis 所依据的来源版本。版本发生变化时，读取来源差异并判断：仅备注、排期等不影响 Engineering Contract 的管理变更，记录差异后可继续；影响需求目标、Expected Behavior、交付范围、系统归属、授权或验收要求的实质变更，必须先复核或更新 Analysis / OpenSpec Contract，并按既有 Human Review 规则处理受影响的批准边界，不得基于旧结论启动研发。无法确认变化性质时停止推进并澄清。不要求自动重跑 Wayfinder，也不增加独立状态、脚本或 Gate。
 
-人工补充或能力扩展后的重新准入沿用原 Issue。Human 补充 Comment 后通过 Multica 原生 Comment Trigger 唤醒 Wayfinder；Wayfinder 增量评估、在触发线程发布并回读新 `/note`，仅当新 Decision 为 `eligible` 时执行 [Workitem Triage Skill](skills/workitem-triage/SKILL.md) 约定的交接。Human 不需先改 `todo`。
+人工补充或能力扩展后的重新准入沿用原 Issue。Human 补充 Comment 后通过 Multica 原生 Comment Trigger 唤醒 Wayfinder；Wayfinder 增量评估、在触发线程发布并回读新 `/note`，仅当新 Decision 为 `eligible` 时，由 Wayfinder 调用 `rondo delivery handoff` 受控交接。Human 不需先改 `todo`。
 
 **`unsupported` 恢复边界**：以当前 Workspace 实际有效的终止 Status 为准（当前 Manifest 将 `unsupported` 定义为 `cancelled` Category）；该分支的 Comment 唤醒与恢复仍需独立验证，结果不明时停止。
 
@@ -699,7 +699,7 @@ Decision Comment 的内容、来源版本引用和有效性判断统一遵循 [W
 
 ## 4.2 Issue（交付事项）启动
 
-自动 TFS 入口的 Issue 需有已确认的 `eligible` Decision，再由 `rondo delivery handoff` 依 [Workitem Triage Skill](skills/workitem-triage/SKILL.md) 完成 Assignment Trigger 交接，启动 Bug Fix Agent 或 Delivery Lead；此动作只进入 Analysis，不构成 Human Approval 或编码授权。明确直接委派的 Analysis 不以 Wayfinder Decision 为前置。
+自动 TFS 入口的 Issue 需有已确认的 `eligible` Decision，再由 Wayfinder 调用 `rondo delivery handoff` 完成 Assignment Trigger 交接，启动 Bug Fix Agent 或 Delivery Lead；此动作只进入 Analysis，不构成 Human Approval 或编码授权。明确直接委派的 Analysis 不以 Wayfinder Decision 为前置。
 
 已通过准入的 Requirement `todo + Squad` Issue 由 Multica 原生 Assignment Trigger 自动启动 Lead。Bug Issue 则直接启动 Bug Fix Agent，不进入下述 Squad 分析路径。首次进入交付流程且尚未开展 Analysis 的 Issue，由 Delivery Lead 直接通过 `@mention` 将专业分析工作交给 Workitem Analyst：
 
@@ -3070,7 +3070,7 @@ workspace-skills/
 │   └── scripts/
 │       └── reconcile-workitem.py
 │
-├── workitem-triage/          # Wayfinder 准入判断与 Issue Comment 交接
+├── workitem-triage/          # Issue 准入评估与 Decision 记录方法
 ├── codebase-explorer/        # Wayfinder 独立代码库探索
 ├── workitem-analysis/   # Retired：历史源文件，不参与新绑定
 ├── codebase-explorer/       # 当前专业调查 Skill

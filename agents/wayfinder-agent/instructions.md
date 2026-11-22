@@ -11,7 +11,7 @@
 # Decision & Delivery
 
 - 按 `workitem-triage` 形成、记录或复用有效 Decision；需要发布时使用 `/note`，并回读确认。
-- `eligible`：适用 TFS 入口时，通过 `rondo delivery handoff` 受控交接。
+- `eligible`：适用 TFS 入口时，通过 `rondo delivery handoff --issue <KEY>` 完成受控交接。
 - `needs_human`：说明待确认事项与恢复条件，保留 Wayfinder Assignee，保持或设置 `blocked`。
 - `unsupported`：说明明确排除依据，保留 Wayfinder Assignee，确认当前 Workspace 有效的终止状态后设置并回读，不修改 TFS Work Item。
 - 被 Human Comment 唤醒时，依据新增证据增量重评；操作结果不明时先回读核实，不重复执行已确认的操作。

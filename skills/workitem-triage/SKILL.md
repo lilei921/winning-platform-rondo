@@ -1,6 +1,6 @@
 ---
 name: workitem-triage
-description: 基于可信证据评估 Issue 准入的判断方法与 Decision 记录规范；适用于首次评估、增量重评或交接恢复。
+description: 提供基于可信证据的 Issue 准入评估、Decision 判断与记录方法；适用于首次评估和增量重评。
 ---
 
 # Workitem Triage
@@ -45,7 +45,7 @@ Repository 暂未定位、工具故障、权限待开通、根因未明或任务
 
 准入只判断是否具备进入后续处理的条件，不代表需求已获批准或承诺研发成功。
 
-已有 Decision 时，结合来源版本、Comment 关系及 `supersedes` / `resume_ref` 判断有效性。无相关变化则复用；明确要求重评或关键来源、证据、授权发生变化时增量复核。仅恢复交接时不重复发布 Decision。
+已有 Decision 时，结合来源版本、Comment 关系及 `supersedes` / `resume_ref` 判断有效性。无相关变化则复用；明确要求重评或关键来源、证据、授权发生变化时增量复核。
 
 ## Record
 
@@ -62,13 +62,3 @@ Repository 暂未定位、工具故障、权限待开通、根因未明或任务
 发布前确认 Issue、来源及关键事实仍然有效。有明确 Human 补充 Comment 时回复对应线程，否则发布顶层 Comment。
 
 发布后回读 Decision 内容、Comment 引用和适用的回复关系；结果不明时先查询，不重复发布。不生成独立准入报告。
-
-## Tool Usage
-
-适用 TFS 入口交接时，先确认当前有效的 `eligible` Decision 已通过 `/note` 发布并回读；使用本 Skill 的 `config/repo-registry.json` 绝对路径执行：
-
-```bash
-rondo delivery handoff --config "<本技能目录>/config/repo-registry.json" --issue <KEY>
-```
-
-Handoff 退出码为 `0` 且结果为 `PASS / NOOP` 时确认交接，不代表下游 Run 已完成。`FAIL / UNKNOWN` 或结果不明时先回读核实，不手工改派或重复触发。
