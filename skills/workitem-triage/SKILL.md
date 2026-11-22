@@ -1,41 +1,49 @@
 ---
 name: workitem-triage
-description: 对 Issue 进行准入评估，基于可信证据形成准入结论并通过 /note 记录；适用于首次评估或重新评估。
+description: 基于可信证据判断 Issue 准入、记录 Decision，并在适用时交接；用于首次评估、重评或交接恢复。
 ---
 
 # Workitem Triage
 
-## Inputs
-
-- 当前 Issue、来源版本、适用准入规则及授权；已有 Comment、Decision 和证据。
-- 已绑定目标 Workspace 的 `multica`（Issue、评论及状态读写）、`rondo`（交接）和必要工程资料访问权限。
-- 执行交接时，使用本技能 `config/repo-registry.json` 的绝对路径；配置缺失或不可访问时停止交接。
-
 ## Assessment
 
-按 [Decision Contract](references/decision-contract.md) 核实当前来源和已有 Decision 的有效性，只补查影响准入的缺失、变化或冲突事实。形成 `eligible`、`needs_human` 或 `unsupported` 结论，说明依据和未决项；暂缺证据或工具故障不等于 `unsupported`。证据足以判断准入时停止调查。
+依据当前 Issue、适用规则、授权和可信证据，按需判断业务范围、候选 Repository / Capability、访问条件、处理能力与准入限制。这些是判断维度，不是必填检查表；规则或授权不明时不能直接认定 `eligible`。
 
-无重新评估触发且已有有效 Decision 时直接复用。明确要求重新评估，或出现来源、授权、证据变化及约定的恢复触发时，增量复核受影响结论。仅恢复交接时不重复调查或发布 Decision。
+- `unsupported`：已有可信的硬性排除依据，且不能通过一般信息补充解除。
+- `eligible`：证据足以支持准入，且没有已确认的硬性阻断。
+- `needs_human`：关键条件仍需澄清或由 Human 决定，说明问题与恢复条件。
 
-## Publication & Handoff
+暂未找到 Repository、工具故障、权限待开通、未定位根因或任务复杂度不能单独证明 `unsupported`；不影响准入的技术细节留待后续分析。
 
-1. 写入前复核 Issue 身份、相关内容、来源版本及权限；有实质变化时先修正结论。
-2. 按 Decision Contract 发布 `/note`。有明确 Human 补充 Comment 时回复对应线程，否则使用顶层 Comment；回读 Comment ID、内容及适用的 `parent_id`。仅恢复交接时，核实已有有效 `/note`。
-3. 核对本技能的 [Handoff Contract](references/multica-handoff-contract.md)。适用且 `eligible`、`/note` 已回读确认时执行：
+已有 Decision 时，结合来源版本、顶层与回复 Comment 关系，以及适用的 `supersedes` / `resume_ref` 判断其有效性，不仅凭最新顶层 Comment。无相关变化则复用；明确重评或关键来源、证据、授权变化时增量复核。仅恢复交接时不重复发布 Decision。
 
-   ```bash
-   rondo delivery handoff --config "<本技能目录>/config/repo-registry.json" --issue <KEY>
-   ```
+## Record
 
-   `needs_human`、`unsupported` 的状态处理按该契约执行；不适用交接时只交付 Decision。交接目标与结果核验由命令负责，不手工改派或重复触发。
+在当前 Issue 用 `/note` 记录 `decision`、简要 `rationale`、关键事实和必要的 `evidence_refs`；存在未知项时说明 `unknowns`。根据实际情况补充：
+
+- 可核实的来源身份与版本，以及相关 `candidate_repositories`（`repo_id` 表示身份、`repo_path` 表示定位）。
+- `needs_human` 的待确认问题和恢复条件，或 `unsupported` 的硬性排除依据。
+- 替代旧 Decision 时用 `supersedes` 引用原 Decision Comment；Human 补充触发恢复时用 `resume_ref` 引用对应 Human Comment。
+
+证据应可追溯，区分事实、假设与未知项；不复制长源码或原始日志。发布前核对 Issue 身份、来源和关键事实仍适用；有实质变化时先修正结论。有明确 Human 补充 Comment 时回复对应线程，否则使用顶层 Comment。回读内容、Comment 引用和适用的回复关系；结果不明时先查询，不重复发布。
+
+## Handoff
+
+仅对原始 TFS 准入 Issue 执行以下交接动作：
+
+- `eligible` 且当前有效 `/note` 已回读确认：使用本 Skill 的 `config/repo-registry.json` 绝对路径执行：
+
+  ```bash
+  rondo delivery handoff --config "<本技能目录>/config/repo-registry.json" --issue <KEY>
+  ```
+
+- `needs_human`：保留 Wayfinder Assignee，保持或设置 `blocked`，说明待确认事项和恢复条件。
+- `unsupported`：保留 Wayfinder Assignee；确认当前 Workspace 中 `unsupported` 是有效的终止状态后设置并回读，不修改 TFS Work Item。
+
+`needs_human` 后，Human 在原 Issue 补充 Comment，由 Multica 原生 Comment Trigger 唤醒 Wayfinder；Wayfinder 增量评估并发布新 Decision，只有新结论为 `eligible` 且 `/note` 回读确认后才交接。Human 无须手动改 `todo`；唤醒未确认时不自行重放启动。非 TFS 入口只记录 Decision，不调用交接命令。
+
+目标映射、Assignment 和 Run 核验由 Rondo 负责。退出码 `0` 且结果为 `PASS / NOOP` 才表示交接确认，不代表下游 Run 已完成。来源、权限或写入结果不明，或命令返回 `FAIL / UNKNOWN` 时，停止受影响操作并先回读，不手工改派或重复触发。
 
 ## Output
 
-返回 Decision 引用、准入结论、关键理由和未决项；执行交接时附实际结果与 Run 引用。不生成独立准入报告。
-
-## Validation & Stop Conditions
-
-- Decision 符合准入契约，事实可追溯，未知项和限制已说明。
-- `/note` 发布或回读未确认时不交接；先查询已有结果，不重复发布。
-- 交接须取得退出码 `0` 且 `PASS / NOOP`；Run 创建或排队不代表任务完成。
-- 关键事实冲突、权限不明或操作返回 `FAIL / UNKNOWN` 时停止受影响操作，说明原因及恢复条件，不猜测成功或重放未确认的写入。
+返回 Decision Comment 引用、结论、关键依据和未决项；执行交接时附 CLI 结果与 Run 引用。不生成独立准入报告。

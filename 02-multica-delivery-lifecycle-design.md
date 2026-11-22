@@ -83,8 +83,8 @@ Wayfinder Agent（Squad 外）
          ┌───────────────┼────────────────┐
          ▼               ▼                ▼
       eligible       needs_human       unsupported
-         │           blocked + Wayfinder   unsupported（closed）
-         │           Human 回复并改 todo      当前自动交付终止
+         │           blocked + Wayfinder   unsupported（终止状态）
+         │           Human Comment → Wayfinder    当前自动交付终止
          ▼
 Delivery Squad（status = todo；Assignment Trigger 自动启动）
          │ 仅已激活 eligible Issue
@@ -178,7 +178,7 @@ Wayfinder Intake Triage（codebase-explorer 深入探索）
  ↓
 /note Comment 持久化并回读确认 → 准入结论
  ├─ eligible → rondo delivery handoff（按 tfs.type 单次 todo + Bug Fix Agent / Delivery Squad Update）
- ├─ needs_human → status = blocked + assignee = Wayfinder（Human 回复并改 todo 恢复）
+ ├─ needs_human → status = blocked + assignee = Wayfinder（Human Comment 唤醒后重评）
  └─ unsupported → unsupported（终止当前自动交付路径）
  （仅 eligible 且满足启动条件时继续）
  ↓
@@ -666,32 +666,32 @@ tfs.changed_at: "<changed-date>"
 
 - **执行主体**：Squad 外的 `Wayfinder Agent`，Canonical Entry 为 `workitem-triage`；独立绑定 `codebase-explorer` Project Skill，与 Workitem Analyst 按需复用 `codebase-explorer` 的可追溯工程证据；CodeGraph、源码、Spec 的权限须单独配置和验证，**不影响 Workitem Analyst 现有 Skill 绑定与执行规则**。
 - **执行方式**：`workitem-triage` 按需调用 `codebase-explorer`；根据当前工作项的不确定性深入 Repository Mapping → CodeGraph / Exact Source → 跨仓调用链、数据流和现有 Specs；不要求每项完整调查根因。找到第一个候选仓库不表示调查结束，直到可判断准入的关键证据足够或已说明无法确认的原因。
-- **判断内容**：依 [Decision Contract](workspace-skills/workitem-triage/references/decision-contract.md) 的准入维度与结论语义判断；不得将“找到 Repository”等同于交付成功，也不得以 TFS Type、仓库数量或修改文件数推断专业变更性质。
+- **判断内容**：依 [Workitem Triage Skill](skills/workitem-triage/SKILL.md) 的准入维度与结论语义判断；不得将“找到 Repository”等同于交付成功，也不得以 TFS Type、仓库数量或修改文件数推断专业变更性质。
 - **停止边界**：不写生产代码、不创建 OpenSpec Change、不形成正式 Root Cause / Solution / Acceptance Contract，不替代 Analyst / Human 的决定。
 
 ### 准入判断维度（Delivery Eligibility Dimensions）
 
-准入维度、证据充分性与未知项的处理标准以 [Decision Contract](workspace-skills/workitem-triage/references/decision-contract.md) 为唯一执行依据。本项目自动 TFS 入口依当前 Issue 的业务归属、候选 Repository、访问权限和处理能力等信息判断准入；按需通过 `codebase-explorer` 补充工程证据，不要求在准入阶段完成 Root Cause 或技术方案。
+准入维度、证据充分性与未知项的处理标准以 [Workitem Triage Skill](skills/workitem-triage/SKILL.md) 为唯一执行依据。本项目自动 TFS 入口依当前 Issue 的业务归属、候选 Repository、访问权限和处理能力等信息判断准入；按需通过 `codebase-explorer` 补充工程证据，不要求在准入阶段完成 Root Cause 或技术方案。
 
 ### Triage Decision 判定顺序
 
-`eligible`、`needs_human`、`unsupported` 的语义及判断顺序由 [Decision Contract](workspace-skills/workitem-triage/references/decision-contract.md) 定义。本项目典型场景：已定位授权 Repository 但 Root Cause 未明，可进入后续专业分析；多候选系统无法消歧或权限待授权，需 Human 补充；外部封闭系统已确认禁止修改且无可行授权路径，则属于明确硬性排除。复杂度、Repository 数量或单一工具故障不能独立证明不支持。
+`eligible`、`needs_human`、`unsupported` 的语义及判断顺序由 [Workitem Triage Skill](skills/workitem-triage/SKILL.md) 定义。本项目典型场景：已定位授权 Repository 但 Root Cause 未明，可进入后续专业分析；多候选系统无法消歧或权限待授权，需 Human 补充；外部封闭系统已确认禁止修改且无可行授权路径，则属于明确硬性排除。复杂度、Repository 数量或单一工具故障不能独立证明不支持。
 
-**交接顺序**：先将 Decision 写入当前 Issue 的 `/note` 并回读确认，再按当前交付场景执行必要的状态交接与结果回读。具体副作用顺序、目标身份及 UNKNOWN 恢复以 [Multica 准入交接契约](workspace-skills/workitem-triage/references/multica-handoff-contract.md) 为执行依据；准入语义与 Comment 数据见 [Decision Contract](workspace-skills/workitem-triage/references/decision-contract.md)。
+**交接顺序**：先按 [Workitem Triage Skill](skills/workitem-triage/SKILL.md) 将 Decision 写入 `/note` 并回读确认，再按准入结论交接；目标映射、Assignment 与 Run 校验由 `rondo delivery handoff` 负责。
 
-Decision Comment 的内容、来源版本引用和有效性判断统一遵循 [Decision Contract](workspace-skills/workitem-triage/references/decision-contract.md)。本场景以原 Issue 的 `/note` 为交付事实入口，按需引用工程 Evidence，不新增独立 Triage Artifact 或平行事实源。
+Decision Comment 的内容、来源版本引用和有效性判断统一遵循 [Workitem Triage Skill](skills/workitem-triage/SKILL.md)。本场景以原 Issue 的 `/note` 为交付事实入口，按需引用工程 Evidence，不新增独立 Triage Artifact 或平行事实源。
 
-**Decision 消费：** Workitem Analyst 读取当前有效 `/note` Decision 及 Evidence 时遵循 [Decision Contract](workspace-skills/workitem-triage/references/decision-contract.md)，不得凭 Comment 自述推断 Root Cause 或已获研发批准。明确直接委派、未经过准入的 Analysis 不需要补造 Decision。
+**Decision 消费：** Workitem Analyst 读取当前有效 `/note` Decision 及 Evidence 时遵循 [Workitem Triage Skill](skills/workitem-triage/SKILL.md)，不得凭 Comment 自述推断 Root Cause 或已获研发批准。明确直接委派、未经过准入的 Analysis 不需要补造 Decision。
 
-本项目交接前的 TFS 来源版本复核、`/note` 后非预期 Wakeup 检查、原子 Assignment Update、预期 Run 回读及 UNKNOWN 恢复以 [Multica 准入交接契约](workspace-skills/workitem-triage/references/multica-handoff-contract.md) 为准。确认 Comment 持久化和安全交接结果之前，不报告交接成功。
+交接前核对来源版本并确认 `/note` 持久化；目标更新、预期 Run 回读及 UNKNOWN 恢复由 `rondo delivery handoff` 执行。未经确认不报告交接成功。
 
 初版不自动重评估已移交 Squad、`needs_human` 或 `unsupported` 的 Issue；TFS Changed Date 增量同步只更新来源字段。
 
 **来源实质变更复核（不新增 Gate）**：Workitem Analyst 在提交 `analysis_review` 前、Delivery Lead 在依据 Human APPROVED 提交批准基线或启动 Development 前，应核对当前 `tfs.changed_at` 与本轮 Analysis 所依据的来源版本。版本发生变化时，读取来源差异并判断：仅备注、排期等不影响 Engineering Contract 的管理变更，记录差异后可继续；影响需求目标、Expected Behavior、交付范围、系统归属、授权或验收要求的实质变更，必须先复核或更新 Analysis / OpenSpec Contract，并按既有 Human Review 规则处理受影响的批准边界，不得基于旧结论启动研发。无法确认变化性质时停止推进并澄清。不要求自动重跑 Wayfinder，也不增加独立状态、脚本或 Gate。
 
-人工补充或能力扩展后的重新准入沿用原 Issue，通过原生 Status Trigger 发起；具体 `todo` 条件、Decision 关联和再次交接均遵循 [Multica 准入交接契约](workspace-skills/workitem-triage/references/multica-handoff-contract.md)。只增量调查受影响事实，不因为恢复重新执行完整探索。
+人工补充或能力扩展后的重新准入沿用原 Issue。Human 补充 Comment 后通过 Multica 原生 Comment Trigger 唤醒 Wayfinder；Wayfinder 增量评估、在触发线程发布并回读新 `/note`，仅当新 Decision 为 `eligible` 时执行 [Workitem Triage Skill](skills/workitem-triage/SKILL.md) 约定的交接。Human 不需先改 `todo`。
 
-**`unsupported` 恢复边界**：`unsupported` 为 `closed` Category，重新准入的状态触发和安全恢复依 [Multica 准入交接契约](workspace-skills/workitem-triage/references/multica-handoff-contract.md)；实际执行状态无法确认时停止。
+**`unsupported` 恢复边界**：以当前 Workspace 实际有效的终止 Status 为准（当前 Manifest 将 `unsupported` 定义为 `cancelled` Category）；该分支的 Comment 唤醒与恢复仍需独立验证，结果不明时停止。
 
 ---
 
@@ -699,7 +699,7 @@ Decision Comment 的内容、来源版本引用和有效性判断统一遵循 [D
 
 ## 4.2 Issue（交付事项）启动
 
-自动 TFS 入口的 Issue 需有已确认的 `eligible` Decision，再由 `rondo delivery handoff` 依 [Multica 准入交接契约](workspace-skills/workitem-triage/references/multica-handoff-contract.md) 完成 Assignment Trigger 交接，启动 Bug Fix Agent 或 Delivery Lead；此动作只进入 Analysis，不构成 Human Approval 或编码授权。明确直接委派的 Analysis 不以 Wayfinder Decision 为前置。
+自动 TFS 入口的 Issue 需有已确认的 `eligible` Decision，再由 `rondo delivery handoff` 依 [Workitem Triage Skill](skills/workitem-triage/SKILL.md) 完成 Assignment Trigger 交接，启动 Bug Fix Agent 或 Delivery Lead；此动作只进入 Analysis，不构成 Human Approval 或编码授权。明确直接委派的 Analysis 不以 Wayfinder Decision 为前置。
 
 已通过准入的 Requirement `todo + Squad` Issue 由 Multica 原生 Assignment Trigger 自动启动 Lead。Bug Issue 则直接启动 Bug Fix Agent，不进入下述 Squad 分析路径。首次进入交付流程且尚未开展 Analysis 的 Issue，由 Delivery Lead 直接通过 `@mention` 将专业分析工作交给 Workitem Analyst：
 
@@ -760,7 +760,7 @@ backlog
 → done
 ```
 
-入口准入例外：`needs_human → blocked`；`unsupported → unsupported`（自定义 `closed`）。`eligible` 不是状态 Key，成功交接后对应目标 Agent / Squad 持有的 `todo` Issue。二者与正常 Human Analysis Review 的 `analysis_review` 互不替代，禁止把审核等待改为 `blocked`。未创建并回读自定义 `unsupported` Status 前不得假设其在 Workspace 已可用。
+入口准入例外：`needs_human → blocked`；`unsupported → unsupported`（自定义终止状态，当前 Manifest 为 `cancelled`）。`eligible` 不是状态 Key，成功交接后对应目标 Agent / Squad 持有的 `todo` Issue。二者与正常 Human Analysis Review 的 `analysis_review` 互不替代，禁止把审核等待改为 `blocked`。未创建并回读自定义 `unsupported` Status 前不得假设其在 Workspace 已可用。
 
 其中：
 
@@ -3161,7 +3161,7 @@ Issue 启动使用 Multica 原生 Squad Leader → Member 协作，不设置独�
 
 | 验收范围 | 对应权威章节 | 应覆盖的主要情形 |
 |---|---|---|
-| 同步 / Wayfinder 准入 / 启动 | [§4](#section-4) | TFS 初始化与受控激活、三种 Triage Decision、`/note` 持久化 / 回读、Owner / Status 交接、`unsupported (closed)` 人工恢复 E2E、重复启动与失败对账 |
+| 同步 / Wayfinder 准入 / 启动 | [§4](#section-4) | TFS 初始化与受控激活、三种 Triage Decision、`/note` 持久化 / 回读、Owner / Status 交接、`unsupported` 终止状态人工恢复 E2E、重复启动与失败对账 |
 | 分析 / 人审 | [§5](#section-5)–[§6](#human-analysis-review) | Gate PASS / FAIL / UNKNOWN、审核自然语言批准 / 驳回、状态回读与恢复 |
 | 研发投影 | [§7](#development-materialization) | Parent / Sub-Issue 两种入口、Owner、Stage、派发失败和依赖激活 |
 | 研发完成 / 回流 | [§8](#development-execution) | Task Set Coverage、Local Validation、Code Review、并行回流、旧 Evidence 失效 |
