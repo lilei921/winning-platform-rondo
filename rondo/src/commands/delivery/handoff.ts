@@ -6,7 +6,7 @@
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
-import { loadConfig, type BaseRegistryConfig } from "../../clients/config.js";
+import { loadConfig, type BaseRegistryConfig, type RuntimeConfig } from "../../clients/config.js";
 import { MulticaClient, type IssueRecord } from "../../clients/multica.js";
 
 const USAGE = "用法: rondo delivery handoff --issue <KEY> [--config <repo-registry.json>]\n";
@@ -97,7 +97,7 @@ async function main(argv: string[]): Promise<number> {
   }
 
   try {
-    const runtime = args.config
+    const runtime: RuntimeConfig = args.config
       ? loadConfig<BaseRegistryConfig>(args.config, { requireRegistry: false }).runtime
       : {
           multica_cli: "multica",
