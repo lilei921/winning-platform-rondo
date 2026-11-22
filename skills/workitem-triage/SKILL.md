@@ -7,13 +7,25 @@ description: 基于可信证据判断 Issue 准入、记录 Decision，并在适
 
 ## Assessment
 
-基于当前 Issue、适用的来源、准入规则、授权及已有 Decision，按 [Decision Contract](references/decision-contract.md) 判断 `eligible`、`needs_human` 或 `unsupported`。按需补查影响结论的事实，证据充分即可停止；不要求固定工具、调查顺序或定位最终改动点。
+依据当前 Issue、适用规则、授权和可信证据，按需判断业务范围、候选 Repository / Capability、访问条件、处理能力与准入限制。这些是判断维度，不是必填检查表；规则或授权不明时不能直接认定 `eligible`。
 
-已有有效 Decision 且无相关变化时复用；明确重评或关键来源、证据、授权变化时增量复核。仅恢复交接时不重复发布 Decision。
+- `unsupported`：已有可信的硬性排除依据，且不能通过一般信息补充解除。
+- `eligible`：证据足以支持准入，且没有已确认的硬性阻断。
+- `needs_human`：关键条件仍需澄清或由 Human 决定，说明问题与恢复条件。
+
+暂未找到 Repository、工具故障、权限待开通、未定位根因或任务复杂度不能单独证明 `unsupported`；不影响准入的技术细节留待后续分析。
+
+已有 Decision 时，结合来源版本、顶层与回复 Comment 关系，以及适用的 `supersedes` / `resume_ref` 判断其有效性，不仅凭最新顶层 Comment。无相关变化则复用；明确重评或关键来源、证据、授权变化时增量复核。仅恢复交接时不重复发布 Decision。
 
 ## Record
 
-发布 `/note` 前确认 Issue 身份、来源版本及关键事实仍适用；如发生实质变化，先修正判断。按 Decision Contract 记录；有明确 Human 补充 Comment 时回复对应线程，否则使用顶层 Comment。回读已发布内容与 Comment 引用（含适用的回复关系）；结果不明时先查询，不重复发布。
+在当前 Issue 用 `/note` 记录 `decision`、简要 `rationale`、关键事实和必要的 `evidence_refs`；存在未知项时说明 `unknowns`。根据实际情况补充：
+
+- 可核实的来源身份与版本，以及相关 `candidate_repositories`（`repo_id` 表示身份、`repo_path` 表示定位）。
+- `needs_human` 的待确认问题和恢复条件，或 `unsupported` 的硬性排除依据。
+- 替代旧 Decision 时引用 `supersedes`；Human 补充触发恢复时引用 `resume_ref`。
+
+证据应可追溯，区分事实、假设与未知项；不复制长源码或原始日志。发布前核对 Issue 身份、来源和关键事实仍适用；有实质变化时先修正结论。有明确 Human 补充 Comment 时回复对应线程，否则使用顶层 Comment。回读内容、Comment 引用和适用的回复关系；结果不明时先查询，不重复发布。
 
 ## Handoff
 
