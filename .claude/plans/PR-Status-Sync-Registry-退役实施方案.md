@@ -17,7 +17,7 @@ rondo pr reconcile-status --recover-done
 - Autopilot 使用当前 Run 注入的 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL` 和可选的 `MULTICA_CLI_PATH`，默认 CLI 名称为 `multica`。手动调用显式设置同一组环境变量，CLI 已具备访问该环境的认证。Workspace 或服务地址缺失时返回 `UNKNOWN`（exit 3），在任何 Issue 读写前停止。
 - `--issue` 与 `--recover-done` 互斥。退役后传入 `--config` 返回用法错误（exit 64），避免旧调用在迁移遗漏时被静默接受。
 - 常规巡检继续分页扫描 `in_review` 和 `blocked`，逐条读取 Issue metadata。`done` 只通过定向调用或 `--recover-done` 处理残留 `finalize.pending`，该路径无需 TFS 查询或认证。Agent 继续根据 `actions[]` 驱动收口，`result=PASS` 仍需逐项检查 `unknown`。
-- Issue 决定查询哪些 PR，配置好的 TFS 客户端决定请求发往哪个 collection，TFS API 决定 PR 的真实身份和状态。`repo_key` 继续用于交付关联和事件键，`current_pr` 字段形状保持兼容。[对账命令](../../rondo/src/commands/pr/reconcile-status.ts) · [生命周期契约 `11](../../02-multica-delivery-lifecycle-design.md#pr-status-sync)
+- Issue 决定查询哪些 PR，配置好的 TFS 客户端决定请求发往哪个 collection，TFS API 决定 PR 的真实身份和状态。Materialize 在可信 Registry 下绑定 `repo_key` 与真实 TFS PR；Reconcile 不根据 URL 猜测逻辑 `repo_key`。`repo_key` 继续用于交付关联和事件键，`current_pr` 字段形状保持兼容。[对账命令](../../rondo/src/commands/pr/reconcile-status.ts) · [生命周期契约 `11](../../02-multica-delivery-lifecycle-design.md#pr-status-sync)
 
 ## 二、开发任务
 
@@ -39,14 +39,14 @@ rondo pr reconcile-status --recover-done
 
 - [ ] 更新 [pr-status-sync Skill](../../skills/pr-status-sync/SKILL.md) 和 [CLI 命令文档](../../rondo/COMMANDS.md)，移除 `--config` 调用及旧文件路径，写明 Run 和手动执行的环境要求。
 - [ ] 在 [Agent 指令](../../agents/pr-status-sync-agent/instructions.md) 及 [issue-closeout Skill](../../skills/issue-closeout/SKILL.md) 明确，`root-prepare`、`delivery finalize` 和 `tfs writeback` 使用当前 Workspace 挂载的 `issue-closeout/config/repo-registry.json` 的绝对路径。
-- [ ] 在 [workspace sync](../../rondo/src/commands/workspace/sync.ts) 的 `REPO_REGISTRY_SKILLS` 中移除 `pr-status-sync`，并删除仓库内的旧 JSON。两项需随同一版本发布，因为发布器也会上传 Skill 目录里已存在的文件。保留 Workspace Overlay 里的 Skill ID、Autopilot 绑定和 `issue-closeout` 的配置生成。
+- [ ] 在 [workspace sync](../../rondo/src/commands/workspace/sync.ts) 的 `REPO_REGISTRY_SKILLS` 中移除 `pr-status-sync`，并删除仓库内的旧 JSON。部署前核对实际 `SKILLS_ROOT` 不再残留该文件（包括曾被渲染但未清理的本地文件），否则同步可能再次上传。无需新增长期黑名单。保留 Workspace Overlay 里的 Skill ID、Autopilot 绑定和 `issue-closeout` 的配置生成。
 
 ## 三、上线前盘点存量
 
 已抽查的 3 条历史交付证据包含可解析的项目、仓库和 PR ID，且已有编码路径样本。真实 Autopilot 环境和当前待巡检 Issue 的覆盖率需在发布前确认。
 
 1. 对目标 Workspace 分页列出 `in_review` 和 `blocked` 的 Issue，回读 `current_pr`。记录有效、缺失、格式异常和 collection 不匹配的条目。对可解析条目抽样用 TFS API 核对 PR 身份，至少覆盖 Bug、Requirement 及含中文或空格的项目路径。
-2. 对异常条目，通过现有可信 Registry 和 TFS API 核实原 PR，确认 project、repository、ID 和分支后，仅补齐 `pr_url`。写回前重新检查 `current_pr` 是否仍为盘点时的值，以免覆盖并行重建的 PR。该 Workspace 在身份待确认的条目处理完毕前暂缓切换。
+2. 对仅 URL 缺失或格式异常且 PR 身份已独立确认的条目，通过可信 Registry 和 TFS API 核实 project、repository、ID 和分支后，仅补齐 `pr_url`。如 ID、`repo_key` 或分支事实冲突，不得仅改 URL 掩盖问题；无法确认时保持 `UNKNOWN`。写回前检查 `current_pr` 是否仍为盘点时的值，避免覆盖并行登记。
 3. 直接复用可解析的存量记录。只有实际发现规范链接仍无法覆盖受支持的路由或仓库改名场景，才评估为新登记补充 TFS Project / Repository ID。无需为正常切换新增长期兼容配置或定期迁移任务。
 
 ## 四、验收
@@ -65,7 +65,7 @@ rondo pr reconcile-status --recover-done
 
 1. **测试 Workspace 先行。** 在旧 Run 结束后升级 Rondo，发布 Agent 指令和新 Skill，确认真实对账与收口验收通过，再安排生产切换。
 2. **逐 Workspace 切换。** 待旧 Run 结束并避开下一轮 Autopilot 启动窗口。先升级该 Runtime 的 Rondo，再通过现有 Agent 供给流程发布更新后的指令，随后同步 `pr-status-sync`。同一窗口内完成版本配套，避免旧 Skill 调用已取消的 `--config`，或旧 CLI 收到无配置调用。
-3. **回读并观察首轮。** 同步应报告旧附件已删除。随后运行 `--check`，观察首轮 Autopilot 的 Workspace、`actions[]`、`failures[]` 和收口结果。相关命令见 [Workspace CLI](../../rondo/COMMANDS.md)。
+3. **回读并观察首轮。** 确认实际本地旧文件不存在，同步报告旧附件已删除；仅 `--check=PASS` 不足以证明退役（本地和远端同时残留也可能一致）。随后运行 `--check`，观察首轮 Autopilot 的 Workspace、`actions[]`、`failures[]` 和收口结果。相关命令见 [Workspace CLI](../../rondo/COMMANDS.md)。
 
 ```powershell
 rondo workspace sync --workspace "<name>" --skill pr-status-sync

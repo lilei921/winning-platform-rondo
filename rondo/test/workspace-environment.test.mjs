@@ -335,3 +335,15 @@ test("新建工作区 dry-run 输出计划且不使用空工作区 ID", t => {
   assert.ok(f.calls().every(a => !a.includes("create") && !a.includes("--workspace-id")));
   assert.equal(readFileSync(f.overlay, "utf8"), before);
 });
+
+test("pr-status-sync no longer renders Repository Registry", t => {
+  const f = fixture(t);
+  f.write(f.shared + "workspaces/pilot.json", {
+    workspace_id: "ws-1", skills: { "pr-status-sync": "skill-1" },
+  });
+  f.write("skills/pr-status-sync/SKILL.md", "---\\nname: pr-status-sync\\ndescription: fixture\\n---\\n");
+  const result = f.run("workspace", "sync", "--workspace", "pilot", "--local-only");
+  assert.equal(result.code, 0, JSON.stringify(result.body));
+  assert.deepEqual(result.body.rendered, []);
+  assert.equal(existsSync(join(dirname(f.overlay), "..", "..", "skills", "pr-status-sync", "config", "repo-registry.json")), false);
+});

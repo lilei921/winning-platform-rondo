@@ -33,6 +33,8 @@ import { checkPublishedChange } from "../dev/change-completion.js";
 import { removePublishedRequirementWorktree } from "../dev/requirement-worktree.js";
 import { isRequirementChangeDelivery } from "../delivery/requirement-mode.js";
 import { requirementRoot } from "../runtime/root-git.js";
+import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
+import { normalizeTfsPrWebUrl } from "../../tfs/api/pr.js";
 
 class FailItem extends Error {      // 单仓明确失败：记 failures，不中断其余仓
   readonly detail: Record<string, unknown>;
@@ -192,6 +194,8 @@ export async function materializeOne(tfs: TfsClient, cfg: RegistryConfig, tfsId:
   }
   const target = entry.target_branch || repo.default_target_branch;
   if (!target) throw new FailItem({ repo_key: entry.repo_key, reason: "no_target_branch" });
+  const prWebUrl = (candidate: string | undefined, id: number): string =>
+    normalizeTfsPrWebUrl(candidate, loadTfsConfig().serverUrl, repo.tfs_project as string, repo.tfs_repo as string, id);
 
   // The actual remote branch always pins the Candidate, including when an existing PR is reused.
   const reusePr = async (id: number, priorUrl = ""): Promise<CurrentPrEntry & { reused: boolean }> => {
@@ -207,7 +211,7 @@ export async function materializeOne(tfs: TfsClient, cfg: RegistryConfig, tfsId:
       throw new FailItem({ repo_key: entry.repo_key, reason: "existing_pr_description_missing",
         hint: "已有 TFS PR 缺少有效的专业描述，需由 Engineer/Human 补充后再收口" });
     }
-    return { repo_key: entry.repo_key, pr_id: id, pr_url: got.url ?? priorUrl, source_branch: entry.source_branch,
+    return { repo_key: entry.repo_key, pr_id: id, pr_url: prWebUrl(got.url ?? priorUrl, id), source_branch: entry.source_branch,
       target_branch: target, reused: true };
   };
 
@@ -255,7 +259,7 @@ export async function materializeOne(tfs: TfsClient, cfg: RegistryConfig, tfsId:
     if (created.pr?.workItemLinkFailures?.length) {
       throw new UnknownError(`${entry.repo_key}: PR #${pr.id} 已建但工作项 ${created.pr.workItemLinkFailures} 关联失败（外部事实已变，交人工核对补挂）`);
     }
-    return { repo_key: entry.repo_key, pr_id: pr.id, pr_url: pr.url, source_branch: entry.source_branch, target_branch: target, reused: !created.created };
+    return { repo_key: entry.repo_key, pr_id: pr.id, pr_url: prWebUrl(pr.url, pr.id), source_branch: entry.source_branch, target_branch: target, reused: !created.created };
   } finally {
     if (desc.cleanup && desc.file) {
       try { unlinkSync(desc.file); } catch { /* 临时文件清理失败不阻塞 */ }
