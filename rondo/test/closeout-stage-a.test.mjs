@@ -292,6 +292,22 @@ test('Origin/Push URL 和批准 Commit 错误时拒绝', t => {
   assert.throws(() => verifyCloseoutRoot(f.paths(root), { ...source, commit: 'a'.repeat(40) }), /Commit/);
 });
 
+test('认证 Fetch 前必须拒绝不匹配的 Origin 与 Push URL', t => {
+  const f = fixture(t);
+  const source = f.source('change-a');
+  const root = f.prepare(source).root_repo;
+  const guard = () => { throw new Error('authenticated fetch must not be reached'); };
+
+  git(root, 'remote', 'set-url', 'origin', 'http://tfs.test/tfs/C/P/_git/foreign');
+  assert.throws(() => prepareRoot(source, { checkout: f.checkout, remote: guard }), /Origin\/Push/);
+  git(root, 'remote', 'set-url', 'origin', repoUrl);
+
+  git(root, 'remote', 'set-url', '--push', 'origin', 'http://tfs.test/tfs/C/P/_git/foreign');
+  assert.throws(() => prepareRoot(source, { checkout: f.checkout, remote: guard }), /Origin\/Push/);
+  assert.equal(git(root, 'rev-parse', '--abbrev-ref', 'HEAD'), 'rondo/closeout/' + taskSuffix + '/dev');
+  assert.equal(f.checkoutCount, 1);
+});
+
 test('拒绝复用没有 Multica isolated 身份的用户目录', t => {
   const f = fixture(t);
   const root = join(process.cwd(), 'root');
