@@ -116,7 +116,10 @@ function platformIsolatedMode(root: string, workdir: string, workspaceId: string
 function verifyPlatformCheckout(root: string, workdir: string, reportedBranch?: string): void {
   const taskId = process.env.MULTICA_TASK_ID;
   const workspaceId = process.env.MULTICA_WORKSPACE_ID;
-  const manifest = readPlatformCheckoutManifest(gitDirOf(root));
+  const gitDir = gitDirOf(root);
+  const commonDir = local(root, ["rev-parse", "--path-format=absolute", "--git-common-dir"], "定位 Git 公共目录");
+  const manifest = readPlatformCheckoutManifest(gitDir) ??
+    (commonDir !== gitDir ? readPlatformCheckoutManifest(commonDir) : null);
   const branch = manifest?.checkout_branch ?? reportedBranch ?? checkoutBranch(root);
   if (runCommand(["git", "show-ref", "--verify", "--quiet", "refs/heads/" + branch], root).status !== 0) {
     throw new UnknownError("平台分配的 Checkout 分支不存在，拒绝使用");
