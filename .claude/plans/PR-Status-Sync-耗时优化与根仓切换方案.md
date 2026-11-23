@@ -1,8 +1,8 @@
 # PR Status Sync 耗时优化与根仓切换方案
 
-> 状态：方案已形成，待用户确认两个设计选择后实施。
+> 状态：方案已 review，含阻断级问题修正；待实施。
 > 日期：2026-11-23
-> 依据：run `01a20697`（2026-11-23 12:08:45–13:00:24）的 daemon 日志、codex 本地日志、thread_items 命令耗时，以及 Rondo 源码逐文件调研。
+> 依据：run `01a20697`（2026-11-23 12:08:45–13:00:24）的 daemon 日志、codex 本地日志、thread_items 命令耗时，Rondo 源码逐文件调研，以及 LEI-49 真实 task 验证。
 
 ---
 
@@ -34,7 +34,7 @@
 - `rondo/src/commands/delivery/closeout-root.ts:137-138`：`git clone --single-branch --no-tags --branch <branch>`，**无 `--depth`/`--filter`**，超时硬编码 20 分钟。
 - 残留产物实测：pack **394.7 MB**、27,862 个对象、1,336 个 commit，工作区仅 20 MB —— 98% 流量是历史对象。
 - 395 MB ÷ 396 s ≈ **1 MB/s**（到 TFS 2018 内网 HTTP 的实际吞吐）。
-- 同轮对照：`multica repo checkout` 拉同一个 monorepo URL 只花 **21.6s**，因为它复用 daemon bare cache，是增量 worktree。
+- 同轮对照：`multica repo checkout` 拉同一个 monorepo URL 只花 **21.6s**，因为它复用 daemon bare cache。
 
 ### 1.4 42 分钟僵死的根因（codex 本地日志）
 
@@ -45,102 +45,110 @@
 
 ---
 
-## 二、已确认的关键事实
+## 二、真实环境验证（2026-11-23 14:14–14:15，已完成）
 
-| 事实 | 证据 |
+在 LEI-49 上通过评论触发真实 daemon task run `01a2070a-4796-7a93-8a93-c6553ed738e5`，只读验证：
+
+| 验证项 | 结果 |
 |---|---|
-| TFS 远端默认分支是 master，master = main = `09c04918` | `git ls-remote --symref HEAD` → `refs/heads/master` |
-| daemon bare cache 过期：HEAD 仍指向 main（`f77b9d0…`），需刷新 | `D:\Multica\default\.repos\<workspace>\winning-platform-*.git` |
-| `sameAnalysisSource()` **不比较 branch**，只比 repo_url/commit/change_ref | `rondo/src/commands/analysis/source.ts:51-53` |
-| 平台 checkout 的 HEAD 是 `agent/<agent>/<task-id前12位>`，不是 master | `.git/config` 有 `[multica] checkout-mode = isolated` |
-| `finalize.ts:356-369` 从 **HEAD** 取分支用于归档推送，`:453-455` push 该分支；`confirmPublishedArchive` 从 `source.branch` 回读 | 直接用平台 checkout 会把归档推到 agent 分支再从 master 回读，必然失败 |
-| 身份信号可用：`checkout-mode=isolated`、任务分支尾号、`MULTICA_TASK_ID/WORKSPACE_ID`、task root manifest；checkout 内无 owner marker | Explore 调研 |
-| 还有第二条 clone 路径 `remote-artifacts.ts:156-166`（已有 `--depth 1`） | 要"彻底"需一并处理 |
-| 生产调用 root-clone 只有一处 | `agents/pr-status-sync-agent/instructions.md:7` |
+| task 凭证 `MULTICA_DAEMON_PORT` / `MULTICA_TOKEN` | 均为 True |
+| 平台 `multica repo checkout` 在 task 内退出码 | **0，耗时约 18 秒** |
+| checkout 路径 / 初始分支 | `verify-checkout/winning-platform-monorepo` / `agent/pr-status-sync-agent/c6553ed738e5` |
+| `fetch origin master` | 退出码 0 |
+| `git switch -c master origin/master` | 退出码 0，HEAD `09c04918` |
+| 批准 commit `5e804cf…` 是 master 祖先 | 是（退出码 0） |
+| 归档目录 `2026-11-21-variable-value-scope-query-267307` | 存在（退出码 0） |
+
+**结论：平台 checkout → 切分支 → 校验链路在真实 task 内成立**；该 run 未做任何写入。
 
 ---
 
-## 三、方案总览
+## 三、方案 Review 结论
 
-### P0 · 立即止血（用户决定：**暂不处理**）
+### 3.1 阻断级问题（必须修正）
 
-```powershell
-multica config set agent_timeout 15m
-multica config set agent_idle_watchdog 3m
-multica config set agent_tool_watchdog 8m
-multica config set codex_semantic_inactivity_timeout 3m
-multica daemon restart
-```
+1. **`remote-artifacts.ts` 的 clone 不能删**。它是 Bug/无 root-repo 收口路径的 `--depth 1` 浅克隆（`finalize.ts:675-680,776`、`remote-artifacts.ts:165`），不是 395MB 全量。删除会破坏 Bug 收口。**本方案不涉及它。**
+2. **`multica repo checkout` 会复用同名 checkout**。daemon 启动时已 checkout 到 agent 分支；Rondo 若在同一目录调用会拿到 agent 分支目录，切分支会干扰 agent。**Rondo 必须在独立子目录里调用 checkout**（先建子目录再 `cd` 进去）。
+3. **`assertManagedLocation` 不兼容子目录**：`closeout-root.ts:22-26` 要求 `dirname(root) === owner.workdir`。子目录 checkout 时需让 `owner.workdir` 记录该子目录，或放宽为"是 workdir 的子目录"。
+4. **`verifyCloseoutRoot` 的 `basename.startsWith("rondo-closeout-")` 必须改写**：平台 checkout 目录名为 `winning-platform-monorepo`，永不匹配。改为：位于受控子目录内 + 弱校验四条件。
+5. **测试需可注入 backend**：`closeout-stage-a.test.mjs:83-251` 直接测 `cloneCloseoutRoot`，改为平台 checkout 后无法本地跑。需要抽象 `prepareRoot(source)` 接口，单测注入 fake。
 
-效果：本次场景 12:18:14 断连后约 3 分钟即可失败，总耗时 51 分钟 → 约 13 分钟。
-注意：这是 daemon 全局配置，影响所有 agent run。
+### 3.2 需澄清/补充
 
-### P1–P4 · 彻底方案（当前待实施）
+| # | 问题 | 证据 |
+|---|---|---|
+| 6 | 迁移范围（已决定不做，见下文） | — |
+| 7 | `requirementBranch()` 读环境变量 `RONDO_WORKSPACE_BRANCH`，不是硬编码 | `root-git.ts:78-82` |
+| 8 | `git switch -c <branch> origin/<branch>` 非幂等，需 `git switch <branch> \|\| git switch -c <branch> origin/<branch>` | — |
+| 9 | 弱校验依赖平台 API `issue runs --active`，平台故障时收口会失败 | 第五节 |
+| 10 | 平台 checkout 工作区必须干净才能 switch | — |
+| 11 | `root-clone` 命令名与实现语义脱节，建议改名 `root-prepare` 或文档说明 | `instructions.md:7` |
 
-目标：根仓来源唯一化为 `multica repo checkout`（daemon bare cache + worktree，~22s）；`source.branch` 统一为 master；直接 `git clone` 降级为 fallback。
+### 3.3 已验证正确的假设
 
-**注意：彻底方案只解决 clone 慢，不解决尾部 42 分钟僵死**（那是 P0 的范围）。
+- 平台 checkout 的 origin / push URL 是真实 TFS 地址，且恰好 1 个 → `verifyGitRoot:91-94` 能过
+- push 认证由 Rondo `runAuthenticatedRootGit` 注入（`finalize.ts:72-81`），不依赖平台 checkout 自带 credential
+- master 包含批准 commit 和归档目录
+- `sameAnalysisSource` 不比 branch（`analysis/source.ts:51-53`）
 
 ---
 
-## 四、彻底方案 · 分阶段
+## 四、已确认决策
 
-### Phase 1 · 数据迁移
+| 决策 | 结论 | 影响 |
+|---|---|---|
+| P0 超时配置 | **暂不做** | 尾部 42 分钟僵死仍存在，最坏情况仍是 ~51 分钟 |
+| 存量 Issue 迁移 main→master | **不做** | `source.branch` 保持原值；根仓必须切到 `source.branch` 而不是硬编码 master |
+| 非平台 fallback | **方案 B：彻底删除** | Rondo 收口只能在 Multica task 内运行 |
+| 身份校验 | **弱方案 B + 强方案接口** | 四条件交叉验证；预留 manifest 接口 |
 
-1. 批量把 active Requirement 的 `analysis.source.branch` 从 `main` 改为 `master`，commit 不变：
-   ```
-   multica issue metadata set <id> --key analysis.source --type string --value '<json>'
-   ```
-2. **不动** `analysis.human_approval.source`（里面 `branch=main` 是批准时的历史快照）、`dev.publication`、`pr_prep`。`sameAnalysisSource` 不比 branch，审批链不受影响。
-3. 写迁移说明评论/metadata：注明"迁移时 main 与 master 同指 09c04918，仅更新追溯分支标签，commit 与批准内容未变"。
-4. 刷新 daemon bare cache（执行一次 `multica repo checkout <url> --fresh`）。
-5. 可仿 `rondo/src/commands/workspace/migrate-repo-keys.ts` 写带 dry-run + 回读的批量脚本。
+### 迁移不做的直接技术后果
+
+存量 Issue（如 LEI-49）的 `analysis.source.branch = main`。因此：
+
+- 根仓准备时**切换到 `source.branch`**（LEI-49 → `main`），而不是硬编码 master。
+- `verifyGitRoot:96-97` 的 `HEAD == source.branch` **保持原样**，不需要改双模式。
+- `routeArchive` 从 HEAD 派生分支 → 得到 `main`，push `origin main`；`confirmPublishedArchive` 从 `source.branch`(main) 回读 `origin/main`。远端 `main` 与 `master` 同指 `09c04918`，全部自洽。
+- **前提**：远端 `main` 分支必须保留且与 `master` 持续对齐。若将来删除 `main`，则必须先做迁移。
+- 结论：**不迁移反而让方案更简单**——`finalize.ts` 和 `verifyGitRoot` 都不必改。
+
+> 若要长期统一到 master：再单独做 Phase 1 迁移（或让新分析写入 master），届时根仓切换目标自然跟随 `source.branch`，逻辑不变。
+
+---
+
+## 五、最终方案 · 分阶段
+
+### Phase 1 · 数据迁移 —— **不做**
+
+保留 `analysis.source.branch` 原值；依赖远端 `master = main` 对齐。写一条平台说明即可（"当前根仓按 source.branch 切换，main/master 同指"）。
 
 ### Phase 2 · 根仓来源重构（核心）
 
-| 文件:行 | 改动 | 必须/可选 |
-|---|---|---|
-| `closeout-root.ts:17-27,64-82` | Owner 增加 `provenance/task_id/workspace_id/base_ref`；身份门接受平台 checkout，用 `checkout-mode=isolated` + 任务分支尾号 + `MULTICA_TASK_ID` + `issue runs --active` 交叉验证；仍拒绝任意用户目录 | 必须 |
-| `closeout-root.ts:84-105` | `verifyGitRoot` 双模式：只读准入受控 agent 分支，写模式要求 HEAD 为目标分支或 marker 登记的 closeout 分支；commit 祖先、origin 校验保留 | 必须 |
-| `closeout-root.ts:130-166` | `cloneCloseoutRoot` 默认改调 `multica repo checkout <url> --ref master`，解析文本返回路径，写自己的 token marker；直接 `git clone` 降级为 `--local-clone` fallback | 必须 |
-| `closeout-root.ts:168-209` | 平台根 cleanup **不 rmSync**（worktree 归 daemon），只验 token、释放 marker；legacy clone 保留原删除逻辑 | 必须 |
-| **`finalize.ts:326-351,356-369,445-456`** | **`syncArchiveBranch`/`routeArchive` 增加显式 `targetBranch = source.branch`，fetch/upstream/push 全部用它，HEAD 只作 provenance** | 必须 |
-| `writeback.ts:761-776` | 接受平台根（经共享 verify），确认回读分支来自 `source.branch` | 必须 |
-| `native-checkout.ts:8-16` | 增加平台 checkout 只读校验入口（manifest/branch/task binding），不求值 clone | 必须 |
-| `remote-artifacts.ts:156-166` | 默认不再自行 clone，改走平台 checkout；仅显式 fallback 保留 | 可选（要彻底则必须） |
-| `finalize.ts:674-686,778-779,814` | 保持强制 `--root-repo` 和 verify；向 archive/readback 传 source.branch | 必须 |
-
-### Phase 3 · 新写入固定 master
-
 | 文件:行 | 改动 |
 |---|---|
-| `analysis/complete.ts:186-204,217` | `analysis.source.branch` 显式固定 master，不取 agent HEAD |
-| `runtime/root-git.ts:78-82,409-415` | `requirementBranch()` 默认值/环境变量改为 master |
-| `dev/publish.ts:56-57` | 项目根仓分支校验对齐 master |
-| `skills/issue-closeout/config/repo-registry.json:2-7`、`skills/pr-status-sync/config/repo-registry.json:2-7` | 如需启用远端工件模式，补 `runtime.root_branch="master"` |
+| `closeout-root.ts:130-166` | `cloneCloseoutRoot` 改为 `prepareRoot(source)`：①在 `workdir` 下建受控子目录（如 `closeout-<issue>/`）并 `cd` 进去；②调用 `multica repo checkout <url>`（解析文本返回路径）；③`git fetch origin refs/heads/<source.branch>`；④`git switch <source.branch> \|\| git switch -c <source.branch> origin/<source.branch>`；⑤写 token marker。**删除直接 `git clone` 路径** |
+| `closeout-root.ts:17-27` | `Owner` 增加 `provenance/task_id/workspace_id/base_branch`；`assertManagedLocation` 改为校验 `root` 位于 `owner.workdir` 的受控子目录内 |
+| `closeout-root.ts:64-82` | `verifyCloseoutRoot` 删除 `basename.startsWith("rondo-closeout-")` 硬检查，改为：目录在受控子目录内 + 弱校验四条件（`checkout-mode=isolated`、HEAD 分支尾号等于 `MULTICA_TASK_ID` 前 12 位、`MULTICA_WORKSPACE_ID`、`issue runs --active`）；若存在 `.git/multica-checkout.json` 则优先用它（强方案接口）；repo_url / branch / commit 检查保留 |
+| `closeout-root.ts:84-105` | `verifyGitRoot` **保持原样**（HEAD == source.branch），不引入双模式 |
+| `closeout-root.ts:168-209` | 平台根 cleanup **不 `rmSync`**（worktree 归 daemon），只验 token、释放 marker；删除 legacy clone 删除逻辑 |
+| `native-checkout.ts:8-16` | 增加平台 checkout 只读校验入口（弱校验 + manifest 接口） |
+| `finalize.ts` / `writeback.ts` | **不改**。根仓切到 `source.branch` 后，现有 `routeArchive`/`syncArchiveBranch`/`confirmPublishedArchive` 全部正确 |
+| `remote-artifacts.ts` | **不改**（Bug 收口路径，见 review 第 1 条） |
+
+### Phase 3 · 新写入固定 master —— **取消**
+
+迁移不做，则新分析继续沿用 `RONDO_WORKSPACE_BRANCH` 当前值。统一 master 作为独立后续项，不并入本方案。
 
 ### Phase 4 · Agent / Skill / 测试
 
 | 文件:行 | 改动 |
 |---|---|
-| `agents/pr-status-sync-agent/instructions.md:7` | 改为 `multica repo checkout <url> --ref master` + `rondo runtime check-checkout`；禁止 Agent 自行删平台 worktree |
+| `agents/pr-status-sync-agent/instructions.md:7` | 改为：在受控子目录运行 `multica repo checkout`，切到 `analysis.source.branch`，把返回路径作为 `--root-repo`；禁止 Agent 自行删平台 worktree；**不再有 395MB 全量 clone** |
 | `skills/issue-closeout/SKILL.md:10-12,17,25,33,39,47,56` | 声明根仓来自平台 checkout；所有命令复用同一 `--root-repo`；清理由平台负责 |
-| `skills/workspace-preparation/SKILL.md:12-22,30-36,44-48` | Requirement 路径改为平台 checkout |
-| `rondo/test/closeout-stage-a.test.mjs:83-251` | 增加平台 checkout fixture、任务绑定误判、cleanup 不删目录用例 |
+| `skills/workspace-preparation/SKILL.md:12-22,30-36,44-48` | Requirement 根仓路径改为平台 checkout |
+| `rondo/test/closeout-stage-a.test.mjs:83-251` | 抽象 `prepareRoot` 接口，注入 fake checkout backend；覆盖：受控目录、分支切换幂等、身份误判拒绝、cleanup 不删目录 |
 | `rondo/test/08a-foundation.test.mjs:106-138` | 增加平台 checkout 形态测试 |
-| `rondo/COMMANDS.md:257-263` | 更新 check-checkout/prepare-root/root-clone 契约说明 |
-
----
-
-## 五、待用户拍板的设计选择
-
-1. **身份校验强度**
-   - **强方案**：请 Multica 平台在 checkout 的 `.git/multica-checkout.json` 写 owner manifest（workspace/task/agent/base_ref）。最干净，但需改平台（不在本仓库）。
-   - **弱方案**（纯 Rondo 侧）：用现有 `checkout-mode=isolated` + 任务分支名尾号 + `MULTICA_TASK_ID` + `issue runs --active` 交叉验证。够用但依赖平台产物格式稳定。
-
-2. **非平台环境 fallback**
-   - 建议保留 `--local-clone` / `RONDO_CLOSEOUT_CLONE=local`，默认走平台 checkout。两条 backend 产出同一 `RuntimePaths` + 同一 owner marker schema，统一进 `verifyCloseoutRoot` → `routeArchive` → `confirmPublishedArchive`，不引入第二套状态机。
-   - 另一选择：彻底删除本地 clone，Rondo 只能在 Multica 平台上收口。
+| `rondo/COMMANDS.md:257-263` | 更新 `root-clone`（建议改名 `root-prepare`）契约说明 |
 
 ---
 
@@ -148,18 +156,24 @@ multica daemon restart
 
 | 项 | 当前 | 方案后 |
 |---|---:|---:|
-| 根仓准备 | 396s | ~22s |
-| 单次 run（clone 慢问题） | ~51min | ~10min（若同时做 P0） |
-| 尾部僵死 | 42min | 仍存在，除非做 P0 |
+| 根仓准备（Requirement） | 396s | **约 18s（真实 task 实测）** |
+| 单次 run（clone 已解决） | ~51min（含 42min 僵死） | clone 不再主导；**但尾部僵死仍在，最坏仍 ~51min，除非做 P0** |
+| Bug 收口 | 不受影响 | 不受影响 |
+
+**风险提示**：只做本方案、不做 P0，下次网络断连仍会出现 ~42 分钟僵死。届时配置三行 `multica config set` + `daemon restart` 即可收敛。
 
 ---
 
 ## 七、实施前检查清单
 
-- [ ] 用户确认身份校验强度（强/弱）
-- [ ] 用户确认是否保留本地 clone fallback
-- [ ] 刷新 daemon bare cache，确认 master 引用为 09c04918
-- [ ] 盘点所有 active Requirement 的 `analysis.source.branch=main` 的 Issue
-- [ ] 迁移前备份 metadata（可回读原值）
-- [ ] 更新测试 fixture，先跑 `rondo` 完整测试
+- [x] 用户确认身份校验强度（弱方案 B + 强方案接口）
+- [x] 用户确认非平台 fallback（方案 B：彻底删除）
+- [x] 用户确认迁移（不做）
+- [x] 用户确认 P0（暂不做）
+- [x] 真实 task 验证核心链路（LEI-49 run `01a2070a-4796...`）
+- [ ] 确认远端 `main` 分支保留且与 `master` 持续对齐（迁移不做的前提）
+- [ ] 实现 `prepareRoot` 可注入接口 + fake backend
+- [ ] 更新 `assertManagedLocation` / `verifyCloseoutRoot` / cleanup 三处
+- [ ] 更新 agent instructions 与两个 SKILL
+- [ ] 先跑 `rondo` 完整测试（含 fake backend 用例）
 - [ ] 用 LEI-49 做真实 Multica Run 验收（不凭单元测试宣称 PASS）
