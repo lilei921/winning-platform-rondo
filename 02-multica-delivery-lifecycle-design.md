@@ -2138,9 +2138,7 @@ provider_status = abandoned
 ↓
 pending_event / event_key
 ↓
-Issue.status = blocked
-↓
-assignee = Delivery Squad
+Issue.status = blocked（Assignee 保持不变）
 ↓
 STOP，等待 Human Decision
 ```
@@ -2160,7 +2158,7 @@ NEXT:
 - CANCEL_DELIVERY
 ```
 
-因为 Issue 是 Squad-owned，Human Comment 按 Multica 原生机制唤醒 Delivery Lead。普通讨论或补充信息按 [§6.3](#section-6-3) 返回 `NO_ACTION`，不得仅因没有 `NEXT` 就视为异常。
+正常 Requirement Issue 已由 Delivery Squad 持有，Human Comment 按 Multica 原生机制唤醒 Delivery Lead；PR Status Sync 不重新指派 Issue，若 Owner 已被其他操作更改，应由 Delivery Lead / Human 核对，而非自动覆盖。普通讨论或补充信息按 [§6.3](#section-6-3) 返回 `NO_ACTION`，不得仅因没有 `NEXT` 就视为异常。
 
 Delivery Lead 调用：
 
