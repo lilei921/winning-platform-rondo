@@ -43,7 +43,7 @@ function fixture(status, metadata = {}) {
     setStatus: (...args) => calls.push(["status", ...args]),
   };
   const cfg = {
-    runtime: { delivery_squad_id: "squad" },
+    runtime: {},
     registry: { repo: { tfs_repo: "remote", tfs_project: "project" } },
   };
   const pr = {
@@ -108,6 +108,22 @@ test("completed PR marks pending, and active PR is a no-op", async () => {
   const active = await processIssue(f.multica, f.cfg, f.issue, { attempts: 0, successes: 0 }, lookup("active"));
   assert.equal(active.action, "noop");
   assert.deepEqual(f.calls, []);
+});
+
+test("new abandoned PR blocks without reassigning Issue or requiring delivery_squad_id", async () => {
+  for (const owner of ["delivery-squad", "bug-fix-agent"]) {
+    const f = fixture("in_review");
+    f.issue.assignee_id = owner;
+    const action = await processIssue(f.multica, f.cfg, f.issue, { attempts: 0, successes: 0 }, () => ({
+      status: "ok",
+      pr: { status: "abandoned", sourceBranch: "feature/a", targetBranch: "dev" },
+    }));
+    assert.equal(action.action, "stopped_abandoned");
+    assert.deepEqual(f.calls.map((call) => call[0]), ["metadata", "status"]);
+    assert.equal(f.calls[0][2], "pr.abandoned");
+    assert.deepEqual(f.calls[1], ["status", "issue-id", "blocked"]);
+    assert.equal(f.issue.assignee_id, owner);
+  }
 });
 
 test("repeated abandoned event preserves human-updated status and assignment", async () => {
