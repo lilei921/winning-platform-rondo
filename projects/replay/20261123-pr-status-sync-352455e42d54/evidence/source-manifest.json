@@ -1,5 +1,5 @@
 {
-  "collected_at": "2026-11-23T15:56:23+08:00",
+  "collected_at": "2026-11-23T16:33:44+08:00",
   "profile": "default (C:/Users/lilei/.multica/config.json)",
   "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
   "autopilot_id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
@@ -29,7 +29,7 @@
       "runs",
       "ba14e806-eee4-4ab1-889d-209d7e4b2454",
       "--limit",
-      "5",
+      "10",
       "--output",
       "json"
     ],
@@ -104,6 +104,22 @@
     "provider": "codex",
     "sources_stable": true
   },
+  "session_stats": {
+    "duration_seconds": 536.6,
+    "user_prompts": 1,
+    "assistant_turns": 8,
+    "tool_calls_total": 30,
+    "tool_errors_total": 2,
+    "subagents": 0,
+    "tokens": {
+      "input_tokens": 2524362,
+      "cache_read_input_tokens": 2475392,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 7260,
+      "reasoning_output_tokens": 1554,
+      "total_tokens": 2531622
+    }
+  },
   "run_coverage": {
     "complete": false,
     "run_intervals": {
@@ -125,21 +141,5 @@
     "平台 Autopilot Run 状态 failed(task failed)，Task 状态 cancelled(cancelled_by lilei)，两者不一致",
     "未观察到根仓清理命令；task workdir 下 rondo-closeout-nyVfo8 仍在现场（回放未修改）"
   ],
-  "verified_at": "2026-11-23T15:56:23+08:00",
-  "session_stats": {
-    "duration_seconds": 536.6,
-    "user_prompts": 1,
-    "assistant_turns": 8,
-    "tool_calls_total": 30,
-    "tool_errors_total": 2,
-    "subagents": 0,
-    "tokens": {
-      "input_tokens": 2524362,
-      "cache_read_input_tokens": 2475392,
-      "cache_creation_input_tokens": 0,
-      "output_tokens": 7260,
-      "reasoning_output_tokens": 1554,
-      "total_tokens": 2531622
-    }
-  }
+  "verified_at": "2026-11-23T16:33:44+08:00"
 }

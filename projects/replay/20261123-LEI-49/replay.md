@@ -1,9 +1,9 @@
 # LEI-49 回放记录
 
 - 任务：[TFS 267307] 数据集成-变量配置：增加根据value值查询、根据作用域查询
-- 采集时间：2026-11-23T16:00:22+08:00；平台状态快照：`in_progress`。
+- 采集时间：2026-11-23T16:32:25+08:00；平台状态快照：`in_progress`。
 - Profile：``；Workspace：`a9469044-700c-4206-80d2-b39bad65de56`。
-- 覆盖：**partial**；17 次 Run，7 个已导出 session，主会话 330 次工具调用，子代理 0 次。
+- 覆盖：**partial**；19 次 Run，7 个已导出 session，主会话 353 次工具调用，子代理 0 次。
 
 ## 会话入口
 
@@ -14,8 +14,8 @@
 | Workitem Analyst / codex | 2026-11-21 14:23:22 — 2026-11-21 14:41:36 | 2 | 78 | [回放](workitem-analyst/20261121-1423-01a1fcc6/replay.md) | [时间线](workitem-analyst/20261121-1423-01a1fcc6/timeline.md) | PASS |
 | Engineer / codex | 2026-11-21 14:43:00 — 2026-11-21 15:06:42 | 1 | 105 | [回放](engineer/20261121-1443-01a1fcd8/replay.md) | [时间线](engineer/20261121-1443-01a1fcd8/timeline.md) | PASS |
 | PR Status Sync Agent / codex | 2026-11-23 14:14:04 — 2026-11-23 14:15:33 | 1 | 8 | [回放](pr-status-sync/20261123-1414-01a2070a/replay.md) | [时间线](pr-status-sync/20261123-1414-01a2070a/timeline.md) | PASS |
-| Delivery Lead / codex | 2026-11-23 14:15:30 — 2026-11-23 15:45:18 | 2 | 11 | [回放](delivery-lead/20261123-1415-01a2070b/replay.md) | [时间线](delivery-lead/20261123-1415-01a2070b/timeline.md) | PARTIAL |
-| PR Status Sync Agent / claude | 2026-11-23 15:39:47 — 2026-11-23 15:54:39 | 2 | 70 | [回放](pr-status-sync/20261123-1539-5d730da5/replay.md) | [时间线](pr-status-sync/20261123-1539-5d730da5/timeline.md) | PASS |
+| Delivery Lead / codex | 2026-11-23 14:15:30 — 2026-11-23 16:25:05 | 3 | 18 | [回放](delivery-lead/20261123-1415-01a2070b/replay.md) | [时间线](delivery-lead/20261123-1415-01a2070b/timeline.md) | PARTIAL |
+| PR Status Sync Agent / claude | 2026-11-23 15:39:47 — 2026-11-23 16:24:23 | 3 | 86 | [回放](pr-status-sync/20261123-1539-5d730da5/replay.md) | [时间线](pr-status-sync/20261123-1539-5d730da5/timeline.md) | PASS |
 
 ## Run 与 session 对应
 
@@ -38,6 +38,8 @@
 | Workitem Analyst | `01a2075d-ba91-7467-854e-e469691e68ac` | `-` | cancelled | 2026-11-23 15:45:13 / 2026-11-23 15:45:50 |
 | PR Status Sync Agent | `01a20764-239e-7264-ba64-84915ed92451` | `5d730da5-5ed7-4dfc-bc0f-7f54700bfc86` | completed | 2026-11-23 15:52:13 / 2026-11-23 15:54:39 |
 | Delivery Lead | `01a20766-462c-7dcd-a0c7-912857b61318` | `-` | cancelled | 2026-11-23 15:54:33 / 2026-11-23 15:54:48 |
+| PR Status Sync Agent | `01a2077f-5b18-7504-9d83-326def9bc70e` | `5d730da5-5ed7-4dfc-bc0f-7f54700bfc86` | completed | 2026-11-23 16:21:56 / 2026-11-23 16:24:23 |
+| Delivery Lead | `01a20781-7f64-7e4f-b1db-2b2bdd46375b` | `01a2070b-988e-7f71-87f2-a4c167dcc92e` | completed | 2026-11-23 16:24:17 / 2026-11-23 16:25:05 |
 
 ## 平台完成消息
 
@@ -58,6 +60,8 @@
 - **Workitem Analyst**（`01a2075d-ba91-7467-854e-e469691e68ac`）：-
 - **PR Status Sync Agent**（`01a20764-239e-7264-ba64-84915ed92451`）：已回帖（回复线程 `01a20764-238b-72d9-b419-093d651c2d5d`）。 **结论：仍未通过，收口未执行。** - `root-prepare` 重跑：`UNKNOWN` / exit 3，耗时 **6.4s**，无 `root_repo`、无 token；命令轨迹里**没有** `git clone`。 - 修复 1（stdout+stderr 解析）**已生效**：平台 checkout 成功、根仓定位正确，分支 `agent/pr-status-sync-agent/84915ed92451`、HEAD `ed3ee58a`。 - 修复 2（env 回退）**未生效**：linked worktree 无 `[multica] checkout-mode`，且本 Task 环境里没有 `MULTICA_REPO_CHECKOUT_MODE`（`.managed_env.json` 也只有三个键），故抛「当前 checkout 缺少 isolated 平台标记」。 - 修复 3（时间戳尾号）本轮未触发（本次分支尾号与 Task 尾号完全一致）。 - 现场三个平台 worktree 均保留未动，无所有权标记可 cleanup；Issue 状态未由我改动。 待你决定：由 daemon 导出该 env，或改为基于 gitdir 位置客观判定 isolated；若授权我在本进程补入该环境变量继续，我也会明确标注该门禁被绕过。
 - **Delivery Lead**（`01a20766-462c-7dcd-a0c7-912857b61318`）：-
+- **PR Status Sync Agent**（`01a2077f-5b18-7504-9d83-326def9bc70e`）：已回帖（线程 `01a2077f-5b09-7eea-a687-da683b7e1590`）。 **第三轮：仍未通过，但前进了一步。** - isolated 证据（git-common-dir 位于 `.repos/<workspace-id>/` + `daemon_task_context.json` 匹配）**已生效**，`issue runs --active` 也通过。 - root-prepare 耗时 **69.8s**，exit 3；新失败点：`git switch main` 复用了共享 bare cache 的陈旧本地 `main`（`7af3c09b`，落后 `origin/main=09c04918` 28 个提交），批准 commit `5e804cf` 不可达 → 「批准 Commit 不在当前根仓分支历史中」。 - `origin/main` 侧归档/发布提交都已核实正常，切对分支后应可通过；建议 `git merge --ff-only origin/main` 或 `git switch -C main origin/main`（均 fail-closed）。 - 无 `git clone`、无 TFS 写入、无 token 可 cleanup；worktree 全部保留未动。
+- **Delivery Lead**（`01a20781-7f64-7e4f-b1db-2b2bdd46375b`）：已在 Issue 请 lilei 协调 Rondo 维护方修复 main 同步逻辑，修复后重新完整验收。本轮未授权手工续跑，Issue 保持 `in_progress`。
 
 ## 覆盖缺口
 

@@ -10,7 +10,7 @@
   "id": "01a1fc8d-4ebe-79aa-b302-a544c548a9ed",
   "identifier": "LEI-49",
   "labels": [],
-  "last_activity_at": "2026-11-23T15:54:32.858058+08:00",
+  "last_activity_at": "2026-11-23T16:24:59.911086+08:00",
   "metadata": {
     "analysis.ai_review.verdict": "APPROVED",
     "analysis.change_kind": "intentional",
@@ -40,13 +40,13 @@
   "project_id": "68b81377-601e-4d6c-84fd-122c05f0308f",
   "properties": {},
   "requester_id": null,
-  "revision": 60,
+  "revision": 63,
   "stage": null,
   "start_date": null,
   "status": "in_progress",
   "status_category": "in_progress",
   "status_name": "",
   "title": "[TFS 267307] 数据集成-变量配置：增加根据value值查询、根据作用域查询",
-  "updated_at": "2026-11-23T15:54:32+08:00",
+  "updated_at": "2026-11-23T16:24:59+08:00",
   "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56"
 }

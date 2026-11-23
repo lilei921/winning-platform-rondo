@@ -11,7 +11,7 @@ owner: winning\li_lei
 # 工具调用事件序列表 · 01a2070b-988e-7f71-87f2-a4c167dcc92e
 
 > 数据源：`replay.json`（与本目录 `replay.md` 同源）。
-> 时间轴为 **UTC**；会话 `2026-11-23T06:15:36.431000+00:00 → 2026-11-23T07:54:46.075000+00:00`，共 5950s。
+> 时间轴为 **UTC**；会话 `2026-11-23T06:15:36.431000+00:00 → 2026-11-23T08:25:04.130000+00:00`，共 7768s。
 > 事件粒度：轮次级（assistant turn 时间戳，同一轮内并行工具共享时间戳）。
 > 域：MAIN = 主线程，SUB = 子代理。
 
@@ -19,7 +19,7 @@ owner: winning\li_lei
 
 无重复项：所有文档 / 脚本 / pattern 均只出现 1 次。
 
-## 完整事件序列表（11 条，按时间升序）
+## 完整事件序列表（18 条，按时间升序）
 
 | # | 时间(UTC) | 域 | 工具 | 对象 | 结果 |
 | --- | --- | --- | --- | --- | --- |
@@ -34,3 +34,10 @@ owner: winning\li_lei
 | 9 | 07:45:16 | MAIN | `CommandExecution` | C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command & "$env:MULTICA_CLI_PATH" issue comment add 01a1fc8d-4ebe-79aa-b302-a544c548a9ed --parent 01a2075c-f178-79dd-99eb-bc2919cadf15 --content-file ./reply.md --output table if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } Remove-Item -LiteralPath ./reply.md | ✓ |
 | 10 | 07:45:16 | MAIN | `CommandExecution` | C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command & "$env:MULTICA_CLI_PATH" squad activity 01a1fc8d-4ebe-79aa-b302-a544c548a9ed action --reason "收口验收失败，已交 Workitem Analyst 确认 Rondo 修复范围与授权并准备回归要求；暂不实施工具链改动，Issue 转回 in_progress。" | ✓ |
 | 11 | 07:54:46 | MAIN | `CommandExecution` | C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command & "$env:MULTICA_CLI_PATH" issue comment list 01a1fc8d-4ebe-79aa-b302-a544c548a9ed --since 2026-11-23T07:44:21Z --compact --output json | ✓ |
+| 12 | 08:25:04 | MAIN | `CommandExecution` | C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command & "$env:MULTICA_CLI_PATH" issue comment list 01a1fc8d-4ebe-79aa-b302-a544c548a9ed --roots-only --summary --compact --output json | ✓ |
+| 13 | 08:25:04 | MAIN | `CommandExecution` | C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command & "$env:MULTICA_CLI_PATH" issue get 01a1fc8d-4ebe-79aa-b302-a544c548a9ed --output json | ✓ |
+| 14 | 08:25:04 | MAIN | `CommandExecution` | C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command & "$env:MULTICA_CLI_PATH" issue runs 01a1fc8d-4ebe-79aa-b302-a544c548a9ed --active --output json | ✓ |
+| 15 | 08:25:04 | MAIN | `CommandExecution` | C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command & "$env:MULTICA_CLI_PATH" issue comment list 01a1fc8d-4ebe-79aa-b302-a544c548a9ed --thread 01a2077f-5b09-7eea-a687-da683b7e1590 --tail 30 --compact --output json | ✓ |
+| 16 | 08:25:04 | MAIN | `FileChange` | D:\Multica\default\winning-lil-b39bad65de56\lei-49-c962da7561e9\workdir\reply.md | ✓ |
+| 17 | 08:25:04 | MAIN | `CommandExecution` | C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command & "$env:MULTICA_CLI_PATH" issue comment add 01a1fc8d-4ebe-79aa-b302-a544c548a9ed --parent 01a20781-7f3f-79b1-b08f-9237ca6bae0b --content-file ./reply.md --output table if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } Remove-Item -LiteralPath ./reply.md | ✓ |
+| 18 | 08:25:04 | MAIN | `CommandExecution` | C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command & "$env:MULTICA_CLI_PATH" squad activity 01a1fc8d-4ebe-79aa-b302-a544c548a9ed action --reason "第三轮验收被陈旧 main 阻断，已请 Human 协调现有 Rondo 维护方修复；复用已有分析分工，不授权手工绕过验收，保持 in_progress。" | ✓ |

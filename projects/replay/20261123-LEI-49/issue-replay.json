@@ -5,7 +5,7 @@
   "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
   "issue_id": "01a1fc8d-4ebe-79aa-b302-a544c548a9ed",
   "identifier": "LEI-49",
-  "collected_at": "2026-11-23T16:00:22+08:00",
+  "collected_at": "2026-11-23T16:32:25+08:00",
   "coverage": "partial",
   "sessions": [
     {
@@ -98,14 +98,15 @@
       "provider": "codex",
       "run_ids": [
         "01a2070b-9726-7248-921a-c962da7561e9",
-        "01a2075c-f19e-7861-aa17-732d0fc836e3"
+        "01a2075c-f19e-7861-aa17-732d0fc836e3",
+        "01a20781-7f64-7e4f-b1db-2b2bdd46375b"
       ],
       "agent_ids": [
         "3c1c3ac1-a922-4e7b-abdf-07a6268398a3"
       ],
       "started_at": "2026-11-23T14:15:30+08:00",
-      "completed_at": "2026-11-23T15:45:18+08:00",
-      "tool_calls_total": 11,
+      "completed_at": "2026-11-23T16:25:05+08:00",
+      "tool_calls_total": 18,
       "replay": "delivery-lead/20261123-1415-01a2070b/replay.json",
       "timeline": "delivery-lead/20261123-1415-01a2070b/timeline.md",
       "verification": "PARTIAL"
@@ -115,14 +116,15 @@
       "provider": "claude",
       "run_ids": [
         "01a20758-c3a3-73c7-91ec-795c637fbd86",
-        "01a20764-239e-7264-ba64-84915ed92451"
+        "01a20764-239e-7264-ba64-84915ed92451",
+        "01a2077f-5b18-7504-9d83-326def9bc70e"
       ],
       "agent_ids": [
         "34986774-e980-4695-816b-4266a25a86c9"
       ],
       "started_at": "2026-11-23T15:39:47+08:00",
-      "completed_at": "2026-11-23T15:54:39+08:00",
-      "tool_calls_total": 70,
+      "completed_at": "2026-11-23T16:24:23+08:00",
+      "tool_calls_total": 86,
       "replay": "pr-status-sync/20261123-1539-5d730da5/replay.json",
       "timeline": "pr-status-sync/20261123-1539-5d730da5/timeline.md",
       "verification": "PASS"
@@ -167,9 +169,9 @@
     "01a2070b-988e-7f71-87f2-a4c167dcc92e": "delivery-lead/20261123-1415-01a2070b",
     "5d730da5-5ed7-4dfc-bc0f-7f54700bfc86": "pr-status-sync/20261123-1539-5d730da5"
   },
-  "run_count": 17,
+  "run_count": 19,
   "active_run_count": 0,
-  "tool_calls_total": 330,
+  "tool_calls_total": 353,
   "subagent_tool_calls_total": 0,
   "gaps": [
     "Run 01a1fcc3-459d-7b26-bf93-8555b867e8f9 没有 session_id",

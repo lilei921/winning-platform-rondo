@@ -11,7 +11,7 @@
   "ended_at": "2026-11-23T04:17:48.959000+00:00",
   "duration_seconds": 536.6,
   "first_prompt": "You are running as a local coding agent for a Multica workspace.\n\nThis task was triggered by an Autopilot in run-only mode. There is no assigned Multica issue for this run.\n\nAutopilot run ID: 01a20697-8f6a-7331-b4c8-ce6ff1fde295\nAutopilot ID: ba14e806-eee4-4ab1-889d-209d7e4b2454\nAutopilot title: PR Status Sync\nTrigger source: manual\n\nAutopilot instructions:\n使用 `pr-status-sync` Skill 完成本轮 PR 状态同步；根据已确认的结果，使用 `issue-closeout` Skill 完成符合条件的交付收口，并报告最终结果及待处理事项。\n\nStart by running `multica autopilot get ba14e806-eee4-4ab1-889d-209d7e4b2454 --output json` if you need the full autopilot configuration, then complete the instructions above.\n\n## On Behalf Of\n\nYou are acting on behalf of **lilei** (lilei@winning.com.cn). Apply any person-specific privacy or access rules in your instructions to this person. Your Multica credentials and access remain scoped to the runtime owner; do not assume this person can access everything you can.",
-  "exported_at": "2026-11-23T15:53:37+08:00",
+  "exported_at": "2026-11-23T16:33:22+08:00",
   "stats": {
     "user_prompts": 1,
     "assistant_turns": 8,

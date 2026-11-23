@@ -1,5 +1,5 @@
 {
-  "collected_at": "2026-11-23T15:56:23+08:00",
+  "collected_at": "2026-11-23T16:33:44+08:00",
   "profile": "default (C:/Users/lilei/.multica/config.json)",
   "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
   "workspace_name": "winning-lilei",
@@ -89,7 +89,7 @@
   "observed_issue": {
     "identifier": "LEI-49",
     "status": "in_progress",
-    "updated_at": "2026-11-23T15:54:32+08:00",
+    "updated_at": "2026-11-23T16:24:59+08:00",
     "note": "采集时的平台状态；晚于本次 Run，不能作为 Run 运行期间状态"
   },
   "platform_status_conflict": "Autopilot Run=failed(task failed)，Task=cancelled(cancelled_by lilei)"
