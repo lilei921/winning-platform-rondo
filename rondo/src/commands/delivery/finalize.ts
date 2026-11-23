@@ -391,7 +391,12 @@ export function routeArchive(paths: RuntimePaths, issueKey: string, changeRef: s
       assertArchiveIndex(root, allowed);
       return changed;
     };
-    checkWorkspace();
+    const initialChanges = checkWorkspace();
+    // An untouched capability path is not proof that its existing changes belong to this Issue.
+    // Recovery after OpenSpec has already moved the Change keeps its existing resume path.
+    if (!current.archived && initialChanges.some(p => caps.some(c => p.startsWith(`openspec/specs/${c}/`)))) {
+      throw new UnknownError("首次 Archive 前存在已修改的 Specs，无法确认属于当前 Change，保留现场");
+    }
     // 新增本地提交之前同步，避免“先保存再拉取”制造本可避免的分叉。
     const preHash = JSON.stringify(computeContractFiles(current.dir).files);
     syncArchiveBranch(root, localBranch, branch, allowed, expectedRemoteCommit, paths.gitRemoteUrl);
@@ -789,10 +794,9 @@ async function main(argv: string[]): Promise<number> {
       }
 
       const change = resolveChangeDir(paths, changeRef);
-      if (!changeMode) {
-        deliveryCompletionGate(cfg, md, issue.status, change.dir, changeRef, { rootRepo: paths.rootRepo, issueKey, remote: Boolean(remote) });
-        steps.completion_gate = { status: "done" };
-      }
+      deliveryCompletionGate(cfg, md, issue.status, change.dir, changeRef,
+        { rootRepo: paths.rootRepo, issueKey, remote: Boolean(remote) });
+      steps.completion_gate = { status: "done" };
       if (remote?.archived) {
         steps.route_archive = { status: "done", detail: { archive: "skipped_already_archived", pushed: true, commit: remote.commit } };
       } else if (remote) {
