@@ -9,19 +9,29 @@ export interface RuntimeContext extends RuntimeConfig {
   delivery_squad_id: string;
 }
 
-/** 只从当前 Multica Run 获取身份；Squad 按默认名称从当前 Workspace 只读解析。 */
-export function resolveRuntimeContext(): RuntimeContext {
+/** 当前 Run 的最小运行身份，不查 Squad 或读取 Registry。 */
+export interface MulticaRuntime {
+  multica_cli: string;
+  multica_server_url: string;
+  workspace_id: string;
+}
+
+export function resolveMulticaRuntime(): MulticaRuntime {
   const workspaceId = process.env.MULTICA_WORKSPACE_ID?.trim();
   const serverUrl = process.env.MULTICA_SERVER_URL?.trim();
   if (!workspaceId || !serverUrl) {
     throw new UnknownError("缺少 MULTICA_WORKSPACE_ID 或 MULTICA_SERVER_URL");
   }
-
-  const runtime = {
-    multica_cli: "multica",
+  return {
+    multica_cli: process.env.MULTICA_CLI_PATH?.trim() || "multica",
     multica_server_url: serverUrl,
     workspace_id: workspaceId,
   };
+}
+
+/** 保持 runtime get-context 的 Delivery Squad 输出契约。 */
+export function resolveRuntimeContext(): RuntimeContext {
+  const runtime = resolveMulticaRuntime();
   const client = new MulticaClient(runtime);
   const squads = client.run(
     ["squad", "list", ...client.ws(), "--output", "json"],

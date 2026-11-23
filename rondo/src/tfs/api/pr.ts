@@ -12,6 +12,54 @@ import * as fs from 'node:fs';
 import { TfsClient, FailError, UnknownError } from '../client.js';
 import { isTransientTfsError, withTransientRetry } from '../retry.js';
 
+export interface TfsPrLocation {
+  project: string;
+  repository: string;
+  prId: number;
+}
+
+/** 仅解析配置 Collection 内的 TFS PR 网页链接，不请求链接地址。 */
+export function parseTfsPrWebUrl(prUrl: string, collectionUrl: string): TfsPrLocation | null {
+  try {
+    const url = new URL(prUrl);
+    const collection = new URL(collectionUrl);
+    if (!["http:", "https:"].includes(url.protocol) || url.origin !== collection.origin ||
+        url.username || url.password || collection.username || collection.password) return null;
+    const decode = (segment: string): string => {
+      const decoded = decodeURIComponent(segment);
+      if (!decoded || decoded === "." || decoded === ".." || /[/\\\x00-\x1f]/.test(decoded)) throw new Error("invalid segment");
+      return decoded;
+    };
+    const base = collection.pathname.split("/").filter(Boolean).map(decode);
+    const parts = url.pathname.split("/").filter(Boolean).map(decode);
+    if (parts.length !== base.length + 5 || base.some((segment, i) => parts[i] !== segment)) return null;
+    const [project, marker, repository, route, rawId] = parts.slice(base.length);
+    if (marker !== "_git" || route !== "pullrequest" || !/^[1-9]\d*$/.test(rawId)) return null;
+    const prId = Number(rawId);
+    return Number.isSafeInteger(prId) ? { project, repository, prId } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** 仅规范化缺失或不受支持的链接；可解析的身份冲突必须停止。 */
+export function normalizeTfsPrWebUrl(
+  candidate: string | undefined, collectionUrl: string, project: string, repository: string, prId: number,
+): string {
+  const parsed = candidate ? parseTfsPrWebUrl(candidate, collectionUrl) : null;
+  if (parsed) {
+    if (parsed.prId !== prId ||
+        parsed.project.toLowerCase() !== project.toLowerCase() ||
+        parsed.repository.toLowerCase() !== repository.toLowerCase()) {
+      throw new UnknownError("TFS 返回的 PR URL 与已核实的 Project、Repository 或 PR ID 不一致");
+    }
+    return candidate!;
+  }
+  const base = new URL(collectionUrl);
+  return base.origin + base.pathname.replace(/\/+$/, "") + "/" +
+    encodeURIComponent(project) + "/_git/" + encodeURIComponent(repository) + "/pullrequest/" + prId;
+}
+
 function normalizeRef(branch: string): string {
   return branch.startsWith('refs/') ? branch : `refs/heads/${branch}`;
 }

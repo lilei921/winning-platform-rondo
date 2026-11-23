@@ -5,7 +5,7 @@ description: PR 状态同步返回 finalize 或 resume_finalize 后，单 Issue 
 
 # Issue Closeout
 
-消费 `pr-status-sync` 返回的 Issue `<KEY>`。配置 `<config-path>` 为当前 Workspace 的 `config/repo-registry.json` 绝对路径。
+消费 `pr-status-sync` 返回的 Issue `<KEY>`。配置 `<config-path>` 为当前 Workspace 挂载的 `issue-closeout/config/repo-registry.json` 绝对路径。
 
 Issue 已经 `done` 且仅需清理残留 pending 时，直接执行不带根仓的 `delivery finalize --phase complete`，按 `already=done` 结束；无需根仓。
 

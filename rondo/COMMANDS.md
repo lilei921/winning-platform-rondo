@@ -160,7 +160,7 @@ rondo pr materialize [--mode requirement --change-ref <ref> [--root-repo <path>]
 rondo pr worktree create --config <repo-registry.json> --issue <KEY> --repo <repo_key> --branch <branch> [--base <target>] [--root-repo <path>]
 rondo pr worktree remove --config <repo-registry.json> --issue <KEY> --repo <repo_key> [--root-repo <path>]
 rondo pr worktree prune --config <repo-registry.json> (--project-id <id> | --root-repo <path>)
-rondo pr reconcile-status --config <repo-registry.json> [--issue <KEY> | --recover-done]
+rondo pr reconcile-status [--issue <KEY> | --recover-done]
 rondo pr create --repo <name|id> --source <branch> --target <branch> --title <title> [--description-file <path>] [--work-items <id,id>] [--project <project>]
 rondo pr get --repo <name|id> --id <pr-id> [--project <project>]
 rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-branch <branch>] [--top <n>] [--project <project>]
@@ -170,7 +170,9 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 | --- | --- |
 | `pr materialize` | 创建/复用 PR。Requirement 通过 Change 级 Completion，确认 PR 登记后，在 `--root-repo` 或 `RONDO_WORKSPACE_PATH` 对应的持久根仓清理本次业务 Worktree |
 | `pr worktree` | 使用 `create`、`remove`、`prune` 管理本地 Git Worktree |
-| `pr reconcile-status` | 对账已登记 PR 的外部状态，核实 `completed` / `abandoned` 等结果及后续收口条件 |
+| `pr reconcile-status` | 从当前 Run Workspace 扫描 Issue 的 `current_pr`，核实 `completed` / `abandoned` 等外部状态，不使用 Registry |
+
+`pr reconcile-status` 使用 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`（可选 `MULTICA_CLI_PATH`，默认 `multica`）；手动执行需具有相同环境及 CLI 认证。
 | `pr create` | 在 TFS Git 仓库创建 PR，支持已有 PR 的幂等识别 |
 | `pr get` | 根据仓库和 PR ID 查询 TFS PR |
 | `pr list` | 按仓库、状态、源分支等条件查询 TFS PR 列表 |
