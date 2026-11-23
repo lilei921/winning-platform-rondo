@@ -180,7 +180,7 @@ test('批准 tasks 始终按不可变 Commit 读取，每个 Issue 独立检查 
 test('main 与 master 各自 Fetch、Push、Readback，且不占用共享本地 main/master', t => {
   const f = fixture(t, { linked: true });
   const shared = join(dirname(f.bare), 'other-worktree');
-  git(f.bare, 'worktree', 'add', '-b', 'occupied-main', shared, 'main');
+  git(f.bare, 'worktree', 'add', shared, 'main');
   let root;
   for (const branch of ['main', 'master']) {
     const issue = f.source('change-a', branch);
@@ -220,6 +220,20 @@ test('跨 Run 远端先行推进时普通 Push 被拒绝且本地提交保留', 
   assert.notEqual(push.status, 0, 'Non-FF must not replace another Run');
   assert.equal(git(root, 'rev-parse', 'HEAD'), head);
   assert.equal(git(f.bare, 'rev-parse', 'dev'), git(peer, 'rev-parse', 'HEAD'));
+});
+
+test('linked worktree 的 Git common-dir manifest 必须校验当前 Task 身份', t => {
+  const f = fixture(t, { linked: true });
+  const source = f.source('change-a');
+  const root = f.prepare(source).root_repo;
+  const manifest = join(f.bare, 'multica-checkout.json');
+  writeFileSync(manifest, JSON.stringify({
+    checkout_branch: 'agent/pr-status-sync-agent/' + taskSuffix,
+    task_id: 'another-task', workspace_id: workspaceId, checkout_mode: 'isolated',
+  }));
+  assert.throws(() => verifyCloseoutRoot(f.paths(root), source), /Task\/Workspace/);
+  rmSync(manifest);
+  assert.doesNotThrow(() => verifyCloseoutRoot(f.paths(root), source));
 });
 
 test('上一归档分支存在未推送 Commit 时拒绝切组并保留现场', t => {
