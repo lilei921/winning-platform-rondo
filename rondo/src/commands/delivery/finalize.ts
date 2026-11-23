@@ -754,6 +754,17 @@ async function main(argv: string[]): Promise<number> {
         steps.workspace_reconciliation = { status: "done", detail: reconcileDetails };
       }
 
+      // 已确认 Prepare 的 Requirement 只回读归档；事件或 Change 变更时应保留原恢复事实。
+      if (source && pending.prepared_change_ref !== undefined) {
+        if (pending.prepared_change_ref !== changeRef) {
+          throw new FailError("finalize.pending 的已准备 Change 与当前 Change 不一致，拒绝恢复");
+        }
+        steps.archive_readback = { status: "done", detail: confirmPublishedArchive(paths, source) };
+        steps.route_archive = { status: "skipped", detail: { archive: "skipped_already_archived" } };
+        process.stdout.write(JSON.stringify({ result: "PASS", issue: issueKey, status: "prepared", steps }, null, 2) + "\n");
+        return 0;
+      }
+
       const change = resolveChangeDir(paths, changeRef);
       if (!changeMode) {
         deliveryCompletionGate(cfg, md, issue.status, change.dir, changeRef, { rootRepo: paths.rootRepo, issueKey, remote: Boolean(remote) });

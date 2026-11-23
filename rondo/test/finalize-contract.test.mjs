@@ -76,7 +76,7 @@ const TFS_LOCATIONS = [
   { id: "1a9c53f7-f243-4447-b110-35ef023636e4", area: "wit", resourceName: "wiql", routeTemplate: "{project}/_apis/wit/wiql", resourceVersion: 2, minVersion: "1.0", maxVersion: "4.1", releasedVersion: "4.1" },
 ];
 
-function startTfsStub(wiState, opsLog, control = { denyStateWrite: false }) {
+function startTfsStub(wiState, opsLog, control = { denyStateWrite: false }, gitRoot) {
   const wis = new Map([[999, {
     id: 999, rev: 1,
     fields: { "System.State": wiState, "System.WorkItemType": "Bug", "System.Title": "bug-999" },
@@ -86,7 +86,14 @@ function startTfsStub(wiState, opsLog, control = { denyStateWrite: false }) {
   const updates = new Map([[999, [{ id: 1, workItemId: 999, rev: 1, fields: {} }]]]);
   const srv = createServer((req, res) => {
     const url = new URL(req.url, "http://x");
-    const p = url.pathname;
+    const p = gitRoot ? url.pathname.replace(/^\/tfs\/Test(?=\/)/, "") : url.pathname;
+    // Git 的 HTTP 只读 fixture，共用 TFS stub 的地址，保留真实的认证和 Fetch 调用路径。
+    const gitFile = p.match(/^\/Proj1\/_git\/root\/(HEAD|info\/refs|objects\/(?:info\/packs|[0-9a-f]{2}\/[0-9a-f]{38}))$/);
+    if (gitRoot && req.method === "GET" && gitFile) {
+      const file = join(gitRoot, gitFile[1]);
+      if (!existsSync(file)) return res.writeHead(404).end();
+      return res.writeHead(200).end(readFileSync(file));
+    }
     const json = (code, obj) => { res.writeHead(code, { "content-type": "application/json" }); res.end(JSON.stringify(obj)); };
     if (req.method === "OPTIONS" && /^\/_apis\/[^/]+$/.test(p)) return json(200, { value: TFS_LOCATIONS });
     if (req.method === "GET" && p === "/_apis/resourceAreas") return json(200, { count: 0, value: null });
@@ -226,7 +233,7 @@ async function fixture(t, opts = {}) {
   const rootRemote = join(dir, "root-remote.git");
   mkdirSync(rootRemote);
   git(rootRemote, "init", "--bare");
-  const rootRepo = join(dir, "root-repo");
+  const rootRepo = join(dir, opts.requirement ? "rondo-closeout-root" : "root-repo");
   mkdirSync(rootRepo);
   git(rootRepo, "init");
   git(rootRepo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "--allow-empty", "-m", "init");
@@ -282,8 +289,24 @@ async function fixture(t, opts = {}) {
 
   // TFS stub
   const tfsControl = { denyStateWrite: opts.denyTfsStateWrite === true };
-  const { srv, port, wis } = await startTfsStub(opts.wiState ?? "活动", opsLog, tfsControl);
+  const { srv, port, wis } = await startTfsStub(opts.wiState ?? "活动", opsLog, tfsControl, opts.requirement ? rootRemote : undefined);
   t.after(() => srv.close());
+  const tfsUrl = `http://127.0.0.1:${port}${opts.requirement ? "/tfs/Test" : ""}`;
+  let metadata = baseMetadata(opts.metadata);
+  if (opts.requirement) {
+    git(rootRemote, "symbolic-ref", "HEAD", "refs/heads/dev");
+    git(rootRemote, "update-server-info");
+    const source = { repo_url: tfsUrl + "/Proj1/_git/root", branch: "dev", commit: git(rootRepo, "rev-parse", "HEAD"), change_ref: CHANGE_REF };
+    git(rootRepo, "remote", "set-url", "origin", source.repo_url);
+    writeFileSync(join(rootRepo, ".git", "rondo-closeout-owner.json"), JSON.stringify({ ...source, workdir: dir, token: "fixture" }));
+    metadata = {
+      ...metadata,
+      "tfs.type": "需求",
+      "analysis.source": JSON.stringify(source),
+      "dev.dispatch": undefined,
+      pr_prep: JSON.stringify([{ repo_key: "repo1", source_branch: "feature/999" }]),
+    };
+  }
 
   // multica mock state
   chmodSync(MOCK, 0o755);
@@ -295,7 +318,7 @@ async function fixture(t, opts = {}) {
   const statePath = join(dir, "state.json");
   writeFileSync(statePath, JSON.stringify({
     issues: {
-      "WNDF-T": { id: "issue-1", identifier: "WNDF-T", project_id: "project1", status: "in_progress", metadata: baseMetadata(opts.metadata) },
+      "WNDF-T": { id: "issue-1", identifier: "WNDF-T", project_id: "project1", status: "in_progress", metadata },
     },
   }));
 
@@ -308,7 +331,7 @@ async function fixture(t, opts = {}) {
   Object.assign(env, {
     MOCK_STATE: statePath, MOCK_ROOT_REPO: rootRepo, OPS_LOG: opsLog,
     ARCHIVE_TEST_HOOK: join(dir, "archive-hook.cjs"),
-    TFS_SERVER_URL: `http://127.0.0.1:${port}`, TFS_PAT: "dummy-pat",
+    TFS_SERVER_URL: tfsUrl, TFS_PAT: "dummy-pat",
     PATH: bin + delimiter + inheritedPath,
   });
 
@@ -761,6 +784,46 @@ test("D3-B: TFS writeback cannot run before prepared archive, even with valid wo
   assert.notEqual(f.readState().issues["WNDF-T"].status, "done");
   assert.equal(f.wis.get(999).fields["System.State"], "活动");
   assert.equal(f.readOps().includes("archive"), false);
+});
+
+test("Requirement 已 Prepare 时仅回读归档，保留 pending 并直接放行 TFS Writeback", async t => {
+  const pending = JSON.stringify({ event_keys: ["WNDF-T#repo1#1#completed"], prepared_change_ref: CHANGE_REF, recorded_at: "t" });
+  const f = await fixture(t, { requirement: true, preArchived: true, metadata: { "finalize.pending": pending } });
+  const head = git(f.rootRepo, "rev-parse", "HEAD");
+  const resumed = await f.phase("prepare");
+  assert.equal(resumed.exit, 0, resumed.stdout + resumed.stderr);
+  assert.equal(resumed.body.status, "prepared");
+  assert.equal(resumed.body.steps.route_archive.status, "skipped");
+  assert.equal(resumed.body.steps.archive_readback.detail.commit, head);
+  assert.equal((resumed.stderr.match(/\$ git fetch origin/g) ?? []).length, 1);
+  assert.doesNotMatch(resumed.stderr, /\$ git (?:merge|commit|push) |issue metadata set/);
+  assert.equal(f.readState().issues["WNDF-T"].metadata["finalize.pending"], pending);
+  assert.deepEqual(f.readOps(), []);
+});
+
+test("Requirement 已 Prepare 但远端仍为活跃 Change 时停止恢复", async t => {
+  const pending = JSON.stringify({ event_keys: ["WNDF-T#repo1#1#completed"], prepared_change_ref: CHANGE_REF });
+  const f = await fixture(t, { requirement: true, metadata: { "finalize.pending": pending } });
+  const resumed = await f.phase("prepare");
+  assert.equal(resumed.exit, 3, resumed.stdout + resumed.stderr);
+  assert.match(resumed.body.reason, /远端.*(?:归档|Archive)/);
+  assert.deepEqual(f.readOps(), []);
+  assert.equal(f.readState().issues["WNDF-T"].metadata["finalize.pending"], pending);
+});
+
+test("Requirement 的 pending 与当前 PR 或 Change 不一致时拒绝恢复", async t => {
+  for (const [eventKey, changeRef, reason] of [
+    ["WNDF-T#repo1#2#completed", CHANGE_REF, /PR 完成事件不一致/],
+    ["WNDF-T#repo1#1#completed", "another-change", /Change 不一致/],
+  ]) {
+    const pending = JSON.stringify({ event_keys: [eventKey], prepared_change_ref: changeRef });
+    const f = await fixture(t, { requirement: true, preArchived: true, metadata: { "finalize.pending": pending } });
+    const resumed = await f.phase("prepare");
+    assert.equal(resumed.exit, 2, resumed.stdout + resumed.stderr);
+    assert.match(resumed.body.reason, reason);
+    assert.doesNotMatch(resumed.stderr, /\$ git fetch origin/);
+    assert.equal(f.readState().issues["WNDF-T"].metadata["finalize.pending"], pending);
+  }
 });
 
 test("D3-B: prepared Delivery cannot become done before TFS writeback succeeds", async t => {

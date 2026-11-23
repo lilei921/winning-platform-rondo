@@ -19,7 +19,11 @@ rondo delivery finalize --phase prepare --issue <KEY> --config "<config-path>" -
 
 Bug 去掉 `--root-repo`。若返回 `already=done`，结束该 Issue；`status=prepared` 才继续。所有 PR 必须由 TFS 确认 completed，Requirement 的 Archive/Push/远端回读属于 Prepare 的 Hard Gate；不要重做 Analysis / Engineer 质量 Gate。
 
+已 Prepare 的 Requirement 使用同一命令恢复。Rondo 核对当前 PR 完成事件和 Change，回读远端归档成功后返回 `status=prepared`（`route_archive=skipped`），直接继续 TFS Writeback。只有 pending 缺少 Prepare 标记时才走完整归档流程。已确认的归档无法回读或事实冲突时，按异常流程处理。
+
 ## TFS Writeback
+
+已确认有保存计划的 Requirement，直接执行本节的已有计划恢复命令。需要新计划或计划状态尚未确认时，先运行 Inspect。
 
 ```bash
 rondo tfs writeback --issue <KEY> --config "<config-path>" --root-repo "<root_repo>" --inspect
