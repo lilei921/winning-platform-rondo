@@ -42,14 +42,19 @@ export function parseTfsPrWebUrl(prUrl: string, collectionUrl: string): TfsPrLoc
   }
 }
 
-/** PR 身份由 TFS 查询确认后，规范化不适用的网页 URL。 */
+/** 仅规范化缺失或不受支持的链接；可解析的身份冲突必须停止。 */
 export function normalizeTfsPrWebUrl(
   candidate: string | undefined, collectionUrl: string, project: string, repository: string, prId: number,
 ): string {
   const parsed = candidate ? parseTfsPrWebUrl(candidate, collectionUrl) : null;
-  if (parsed && parsed.prId === prId &&
-      parsed.project.toLowerCase() === project.toLowerCase() &&
-      parsed.repository.toLowerCase() === repository.toLowerCase()) return candidate!;
+  if (parsed) {
+    if (parsed.prId !== prId ||
+        parsed.project.toLowerCase() !== project.toLowerCase() ||
+        parsed.repository.toLowerCase() !== repository.toLowerCase()) {
+      throw new UnknownError("TFS 返回的 PR URL 与已核实的 Project、Repository 或 PR ID 不一致");
+    }
+    return candidate!;
+  }
   const base = new URL(collectionUrl);
   return base.origin + base.pathname.replace(/\/+$/, "") + "/" +
     encodeURIComponent(project) + "/_git/" + encodeURIComponent(repository) + "/pullrequest/" + prId;

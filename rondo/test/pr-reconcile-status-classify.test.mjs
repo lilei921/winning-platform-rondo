@@ -177,6 +177,23 @@ test("PR URL parser validates TFS collection, identity and encoded names", () =>
     COLLECTION + "/%E5%85%83%E6%95%B0%E6%8D%AE%20%25/_git/repo%20web/pullrequest/42");
 });
 
+test("normalization rejects a parseable PR URL that conflicts with the verified identity", () => {
+  for (const candidate of [
+    COLLECTION + "/Project/_git/other/pullrequest/42",
+    COLLECTION + "/Other/_git/remote/pullrequest/42",
+    COLLECTION + "/Project/_git/remote/pullrequest/43",
+  ]) {
+    assert.throws(
+      () => normalizeTfsPrWebUrl(candidate, COLLECTION, "Project", "remote", 42),
+      /PR URL 与已核实的 Project、Repository 或 PR ID 不一致/,
+    );
+  }
+  assert.equal(
+    normalizeTfsPrWebUrl("https://unsupported.example/pr/42", COLLECTION, "Project", "remote", 42),
+    COLLECTION + "/Project/_git/remote/pullrequest/42",
+  );
+});
+
 test("mismatched PR URL or provider identity cannot write finalize.pending", async () => {
   const f = fixture("in_review");
   const pr = JSON.parse(f.issue.metadata.current_pr)[0];

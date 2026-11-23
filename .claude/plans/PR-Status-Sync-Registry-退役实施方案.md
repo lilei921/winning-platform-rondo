@@ -32,7 +32,7 @@ rondo pr reconcile-status --recover-done
 - [ ] 在 [TFS PR 查询层](../../rondo/src/tfs/api/pr.ts) 附近实现一处链接解析，供物化和对账复用。识别配置 collection 下的 `<project>/_git/<repository>/pullrequest/<id>`。用 URL 解析器校验协议、来源和 collection 路径边界，逐段解码项目及仓库名，校验正整数 PR ID 与 `current_pr.pr_id` 一致。查询参数不参与身份判定。
 - [ ] 继续使用现有 TFS 连接和 PAT，仅在有 PR 需要回查时读取配置。用 URL 解析出的 project、repository 和 ID 调用现有 TFS PR 查询。请求地址取 [TFS 连接配置](../../rondo/src/tfs/config.ts)，避免将凭据发送到 Issue metadata 中随意填写的地址。
 - [ ] 在指定 project 和 repository 内核对返回的 PR ID、源分支和目标分支，再读取 provider 状态。格式无法解析、collection 不符、查无 PR、分支或 ID 不符、状态不可识别时，记录受影响 Issue 的 `UNKNOWN` 和具体原因。全局查询失败继续按现有退出码处理。
-- [ ] 在 [materialize.ts](../../rondo/src/commands/pr/materialize.ts) 的新建和复用路径统一校验 `pr_url`。若 TFS 网页链接不能定位，使用已确认的 TFS collection、project、repository 和 PR ID 生成规范链接。所有条目校验通过后才保存 `current_pr` 并进入 `in_review`。已创建 PR 但登记未完成时沿用现有认领逻辑，重试时恢复登记。
+- [ ] 在 [materialize.ts](../../rondo/src/commands/pr/materialize.ts) 的新建和复用路径统一校验 `pr_url`。链接缺失或无法解析为受支持格式时，仅在本次 TFS 查询已通过可信 Registry 核对 PR ID / 分支后生成规范链接；可解析链接与已核实的 project、repository 或 PR ID 冲突时返回 `UNKNOWN`，不得静默改写。所有条目校验通过后才保存 `current_pr` 并进入 `in_review`。已创建 PR 但登记未完成时沿用现有认领逻辑，重试时恢复登记。
 - [ ] 保留原有聚合顺序 `abandoned → unknown → 全部 completed → noop`，并沿用 `issue#repo_key#pr_id#status`。已确认 abandoned 仍按现有规则停止推进，且保留 Assignee。只有全部当前 PR 均确认 completed 才写入 `finalize.pending`。重试复用已登记事件。
 
 ### 3. 更新 Skill 和发布清单
