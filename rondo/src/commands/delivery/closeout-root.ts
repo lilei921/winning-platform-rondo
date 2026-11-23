@@ -149,9 +149,8 @@ export function assertCloseoutChange(paths: RuntimePaths, source: AnalysisSource
   locateChange(paths.rootRepo, source.change_ref);
 }
 
-function verifyGitRoot(paths: RuntimePaths, source: AnalysisSource): RuntimePaths {
-  const root = validateRootRepo(paths.rootRepo, "--root-repo");
-  validBranch(root, source.branch);
+/** Verify both fetch and push destinations before any authenticated remote operation. */
+function assertRepositoryRemote(root: string, source: AnalysisSource): void {
   const origin = local(root, ["remote", "get-url", "origin"], "核对 origin");
   const pushUrls = local(root, ["remote", "get-url", "--push", "--all", "origin"], "核对 push origin")
     .split(/\r?\n/).filter(Boolean);
@@ -160,6 +159,12 @@ function verifyGitRoot(paths: RuntimePaths, source: AnalysisSource): RuntimePath
       identity !== canonicalRepositoryIdentity(pushUrls[0])) {
     throw new FailError("Closeout 根仓 Origin/Push 与 analysis.source.repo_url 不一致");
   }
+}
+
+function verifyGitRoot(paths: RuntimePaths, source: AnalysisSource): RuntimePaths {
+  const root = validateRootRepo(paths.rootRepo, "--root-repo");
+  validBranch(root, source.branch);
+  assertRepositoryRemote(root, source);
   if (local(root, ["symbolic-ref", "--short", "HEAD"], "核对本地归档分支") !== archiveBranch(root, source)) {
     throw new UnknownError("Closeout 本地 Task 归档分支与 analysis.source.branch 不一致");
   }
@@ -256,6 +261,7 @@ export function prepareRoot(source: AnalysisSource, options: PrepareRootOptions)
       throw new UnknownError("平台 checkout 未落在 workdir/<repo-name> 直属目录");
     }
     verifyPlatformCheckout(root, workdir, reportedBranch);
+    assertRepositoryRemote(root, source);
     const paths: RuntimePaths = { rootRepo: root, openspecRoot: join(root, "openspec"),
       projectId: "", daemonId: null, source: "explicit_arg" };
 
