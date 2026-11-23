@@ -12,7 +12,7 @@
  *     归档发生且 push 到达；contract_files 以未勾选 tasks.md 计算（勾选变化不改哈希仍 PASS）；
  *  T2 gate 三态：旧 hash → exit 2；缺 contract_files → exit 3；无适用 Evidence → exit 3；
  *  T3 M2.3：Change 工件未提交 → 先 "finalize:" 提交再归档；foreign 预暂存 → exit 3 且不提交；
- *  T4 M2.5：未涉及 capability 的 specs 脏文件 → exit 3；涉及 capability 的 → 随归档提交；
+ *  T4 M2.5：首次归档前的外来 Specs 脏文件（即使同 capability）→ exit 3；归档生成的 Specs 正常提交；
  *  T5 续走：完整跑一遍后重跑 → done-shortcut；预置"已归档+writeback 完成+无 summary_comment_id"
  *     → summary 恰好发一次。
  */
@@ -28,6 +28,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
 const MOCK = fileURLToPath(new URL("./mock-multica.cjs", import.meta.url));
 const { computeContractFiles } = await import(pathToFileURL(fileURLToPath(new URL("../dist/commands/delivery/contract-files.js", import.meta.url))).href);
+const { routeArchive } = await import(pathToFileURL(fileURLToPath(new URL("../dist/commands/delivery/finalize.js", import.meta.url))).href);
 
 const CHANGE_REF = "c-fin";
 const STEPS_GOLDEN = ["pr_transition_gate", "pending_written", "workspace_reconciliation", "completion_gate",
@@ -397,7 +398,7 @@ async function fixture(t, opts = {}) {
 
   const readState = () => JSON.parse(readFileSync(statePath, "utf8"));
   const readOps = () => (existsSync(opsLog) ? readFileSync(opsLog, "utf8").trim().split("\n") : []);
-  return { run, phase, writeback, readState, readOps, rootRepo, rootRemote, changeDir: changeParent, dir, wis, tfsControl,
+  return { run, phase, writeback, readState, readOps, rootRepo, rootRemote, changeDir: changeParent, dir, bin, wis, tfsControl,
     archiveHook: join(dir, "archive-hook.cjs") };
 }
 
@@ -434,6 +435,25 @@ test("T1 happy finalize：PASS + steps 键序 golden + archive<writeback<summary
   assert.ok(!existsSync(join(f.rootRepo, "openspec", "changes", CHANGE_REF)));
   const remoteLog = git(f.rootRemote, "log", "dev", "--format=%s");
   assert.match(remoteLog, new RegExp(`archive: ${CHANGE_REF} \\(WNDF-T / tfs 999\\)`));
+});
+
+test("routeArchive 在本地 Task 分支提交，只发布到明确的远端 dev", async t => {
+  const f = await fixture(t);
+  git(f.rootRepo, "switch", "-c", "rondo/closeout/fixture/dev");
+  git(f.rootRepo, "config", "user.name", "Rondo Test");
+  git(f.rootRepo, "config", "user.email", "test@example.invalid");
+  const previousPath = process.env.PATH;
+  process.env.PATH = f.bin + delimiter + (previousPath ?? "");
+  t.after(() => { if (previousPath === undefined) delete process.env.PATH; else process.env.PATH = previousPath; });
+  const paths = { rootRepo: f.rootRepo, openspecRoot: join(f.rootRepo, "openspec"),
+    projectId: "", daemonId: null, source: "explicit_arg" };
+  const detail = routeArchive(paths, "WNDF-T", CHANGE_REF, "999", undefined, "dev");
+  assert.equal(detail.branch, "dev");
+  assert.equal(detail.local_branch, "rondo/closeout/fixture/dev");
+  assert.equal(detail.pushed, true);
+  assert.equal(git(f.rootRepo, "symbolic-ref", "--short", "HEAD"), "rondo/closeout/fixture/dev");
+  assert.match(git(f.rootRemote, "log", "dev", "--format=%s"), /archive: c-fin/);
+  assert.equal(git(f.rootRemote, "rev-parse", "dev"), git(f.rootRepo, "rev-parse", "HEAD"));
 });
 
 test("T2 gate 三态：旧 hash → exit 2；缺 contract_files → exit 3；无适用 Evidence → exit 3", async (t) => {
