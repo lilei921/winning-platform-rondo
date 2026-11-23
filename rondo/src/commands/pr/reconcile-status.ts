@@ -10,7 +10,7 @@
  * 调 issue-closeout Skill 完成（脚本不内嵌调用）。
  *
  * 聚合规则（02 §11）：
- *   任一 abandoned → 写 pr.abandoned（event_key 已存在 → NO-OP）→ Issue blocked + assignee=Squad
+ *   任一 abandoned → 写 pr.abandoned（event_key 已存在 → NO-OP）→ Issue blocked（保留 Assignee）
  *                    → action "stopped_abandoned"（§11.2 确定性停止，机器不解释原因）
  *   任一 UNKNOWN   → 不推进、不覆盖已有事实 → action "unknown"
  *   全部 completed → finalize.pending 已存在 → "resume_finalize"；否则先写 pending → "finalize"
@@ -37,7 +37,6 @@ import { loadConfig, type BaseRegistryConfig, type RuntimeConfig } from "../../c
 import { MulticaClient, type IssueRecord } from "../../clients/multica.js";
 import { FailError } from "../../tfs/client.js";
 import { dispatchTfs, UsageError } from "../../tfs/dispatch.js";
-import { isDirectBugDelivery } from "../bug/finalize-facts.js";
 
 interface RepoEntry {
   repo_path: string;
@@ -47,7 +46,7 @@ interface RepoEntry {
 }
 
 interface RegistryConfig extends BaseRegistryConfig {
-  runtime: RuntimeConfig & { delivery_squad_id: string };
+  runtime: RuntimeConfig;
   registry: Record<string, RepoEntry>;
 }
 
@@ -133,14 +132,6 @@ function listByStatus(cfg: RegistryConfig, status: string): IssueRecord[] {
   ));
 }
 
-function assignToSquad(cfg: RegistryConfig, issueId: string): void {
-  multicaJson(
-    [...multicaPrefix(cfg.runtime), "issue", "assign", issueId,
-     "--to-id", cfg.runtime.delivery_squad_id, "--no-start", ...wsArgs(cfg), "--output", "json"],
-    `Issue ${issueId} assignee → Delivery Squad`,
-  );
-}
-
 /** 回核 PR：返回 { status, sourceBranch, targetBranch }；found:false / tfs UNKNOWN 经 tfsUnknown 标记区分。 */
 async function prGet(cfg: RegistryConfig, repoKey: string, prId: number): Promise<{ status: "ok" | "not_found" | "tfs_unknown"; pr?: { status?: string; sourceBranch?: string; targetBranch?: string } }> {
   const repo = cfg.registry[repoKey];
@@ -161,7 +152,6 @@ export async function processIssue(
   issue: IssueRecord,
   tfs: { attempts: number; successes: number },
   lookupPr: typeof prGet = prGet,
-  assign: typeof assignToSquad = assignToSquad,
 ): Promise<Action | null> {
   const md = issue.metadata ?? {};
   const issueKey = issue.identifier ?? issue.id;
@@ -234,9 +224,7 @@ export async function processIssue(
     // §11.4：先持久化 abandoned 事实，再做状态写入
     multica.setMetadata(issue.id, "pr.abandoned", JSON.stringify([...known, ...fresh]));
     if (issue.status !== "blocked") multica.setStatus(issue.id, "blocked");
-    // Independent Bug delivery remains with its Bug Fix Agent on PR abandonment;
-    // it must not be silently reassigned to a Squad Lead.
-    if (!isDirectBugDelivery(md) && issue.assignee_id !== cfg.runtime.delivery_squad_id) assign(cfg, issue.id);
+    // PR 状态同步只负责停止推进，不改变当前 Issue Owner。
     return {
       issue: issueKey, action: "stopped_abandoned",
       event_keys: fresh.map((e) => e.event_key),
@@ -288,9 +276,6 @@ async function main(rawArgs: string[]): Promise<number> {
   }
   try {
     const cfg = loadConfig<RegistryConfig>(args.config);
-    if (!cfg.runtime?.delivery_squad_id) {
-      throw new UnknownError("配置缺少 runtime.delivery_squad_id");
-    }
     const multica = new MulticaClient(cfg.runtime);
 
     // 常规巡检不遍历所有历史 done；--recover-done 用于独立、低频恢复扫描。
