@@ -80,9 +80,6 @@ export async function prChangedCommits(client: TfsClient, repo: VerifiedRepo, pr
  */
 export async function commitTaskOwners(client: TfsClient, repo: VerifiedRepo, sha: string): Promise<number[]> {
   if (!fullSha(sha)) throw new UnknownError("Commit 必须为完整 SHA");
-  if (process.env.RONDO_TFS_REVERSE_QUERY_VERIFIED !== "1") {
-    throw new UnknownError("TFS 2018 Commit 反向关联尚未通过跨 Project 真实验证；停止独占关联");
-  }
   const url = gitUrl(client, repo, "commits");
   url.searchParams.set("searchCriteria.fromCommitId", sha);
   url.searchParams.set("searchCriteria.toCommitId", sha);

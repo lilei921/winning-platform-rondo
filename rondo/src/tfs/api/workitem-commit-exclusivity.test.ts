@@ -18,7 +18,6 @@ function fixture(t: any, initialOwners: number[], reverseStale = false) {
     TFS_PAT: process.env.TFS_PAT,
     TFS_PROJECT: process.env.TFS_PROJECT,
     TFS_SERVER_URL: process.env.TFS_SERVER_URL,
-    RONDO_TFS_REVERSE_QUERY_VERIFIED: process.env.RONDO_TFS_REVERSE_QUERY_VERIFIED,
     RONDO_TFS_COLLECTION_LOCK_DIR: process.env.RONDO_TFS_COLLECTION_LOCK_DIR,
   };
   const root = mkdtempSync(join(tmpdir(),"rondo-task-link-"));
@@ -26,7 +25,6 @@ function fixture(t: any, initialOwners: number[], reverseStale = false) {
     TFS_PAT: "fixture",
     TFS_PROJECT: "Hospital",
     TFS_SERVER_URL:"http://tfs.test/tfs/C",
-    RONDO_TFS_REVERSE_QUERY_VERIFIED:"1",
     RONDO_TFS_COLLECTION_LOCK_DIR:root,
   });
   const state = { owners:[...initialOwners], taskLinks: [] as string[], patches:0 };
