@@ -26,7 +26,6 @@ import { isTransientTfsError, withTransientRetry } from '../retry.js';
 import { resolveRepo } from './repo.js';
 import { commitArtifactUrl, parseCommitArtifact } from './commit-identity.js';
 import { commitTaskOwners } from './commit-facts.js';
-import { withCollectionWriterLock } from '../collection-lock.js';
 import { normalizeAttachmentUrl } from '../attachments.js';
 
 /** M3.3：SDK 读统一瞬态重试（重试前重建传输层；缓存的 witApi 随旧连接作废后重取）。 */
@@ -291,7 +290,7 @@ export async function cmdWorkItemLinkCommits(opts: { id: number; repo: string; s
       }
       let owners: number[] = [];
       if (isTask) {
-        // Same Collection lock also covers the higher-level writeback transaction.
+        // Recheck current Commit ownership before binding.
         owners = await commitTaskOwners(client, identityRepo, sha);
         if (owners.length > 1 || (owners.length === 1 && owners[0] !== opts.id)) {
           failed.push({sha, error: `Commit 已归属其他 TFS Task: ${owners.join(",")}`});
@@ -352,7 +351,7 @@ export async function cmdWorkItemLinkCommits(opts: { id: number; repo: string; s
     if (failed.length > 0) throw new FailError(JSON.stringify(result));
     return result;
   };
-  return isTask ? withCollectionWriterLock(client.config.serverUrl, linkAll) : linkAll();
+  return linkAll();
 }
 
 export async function cmdWorkItemComment(opts: { id: number; textFile: string; project?: string }): Promise<unknown> {

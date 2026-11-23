@@ -1,8 +1,5 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { TfsClient, FailError, UnknownError } from "../client.js";
 import { commitArtifactUrl } from "./commit-identity.js";
 import { cmdWorkItemLinkCommits } from "./workitem.js";
@@ -18,14 +15,11 @@ function fixture(t: any, initialOwners: number[], reverseStale = false) {
     TFS_PAT: process.env.TFS_PAT,
     TFS_PROJECT: process.env.TFS_PROJECT,
     TFS_SERVER_URL: process.env.TFS_SERVER_URL,
-    RONDO_TFS_COLLECTION_LOCK_DIR: process.env.RONDO_TFS_COLLECTION_LOCK_DIR,
   };
-  const root = mkdtempSync(join(tmpdir(),"rondo-task-link-"));
   Object.assign(process.env,{
     TFS_PAT: "fixture",
     TFS_PROJECT: "Hospital",
     TFS_SERVER_URL:"http://tfs.test/tfs/C",
-    RONDO_TFS_COLLECTION_LOCK_DIR:root,
   });
   const state = { owners:[...initialOwners], taskLinks: [] as string[], patches:0 };
   t.mock.method(TfsClient.prototype, "getGitApi", async () => ({
@@ -63,7 +57,6 @@ function fixture(t: any, initialOwners: number[], reverseStale = false) {
       if (value === undefined) delete process.env[key];
       else process.env[key] = value;
     }
-    rmSync(root,{recursive:true,force:true});
   });
   return state;
 }
