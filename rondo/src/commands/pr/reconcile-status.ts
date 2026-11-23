@@ -92,7 +92,7 @@ function multicaJson(cmd: string[], what: string): unknown {
 
 // --- 命令特化的 Multica / TFS 调用形态（共享层缺口，见移植报告）。flag 已对照 0.6.1 核验；升级 CLI 版本后须复核。 ---
 function wsArgs(cfg: MulticaRuntime): string[] {
-  return cfg.runtime.workspace_id ? ["--workspace-id", cfg.runtime.workspace_id] : [];
+  return cfg.workspace_id ? ["--workspace-id", cfg.workspace_id] : [];
 }
 
 /** 支持 CLI 的数组分页和带 has_more 的对象分页；仅返回候选身份，metadata 按需回读。 */
@@ -115,7 +115,7 @@ export function collectStatusPages(fetchPage: (offset: number, limit: number) =>
 
 function listByStatus(cfg: MulticaRuntime, status: string): IssueRecord[] {
   return collectStatusPages((offset, limit) => multicaJson(
-    [...multicaPrefix(cfg.runtime), "issue", "list", "--status", status,
+    [...multicaPrefix(cfg), "issue", "list", "--status", status,
      "--limit", String(limit), "--offset", String(offset), "--fields", "id,identifier,status",
      ...wsArgs(cfg), "--output", "json"],
     `扫描 Issue(status=${status})`,
