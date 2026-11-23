@@ -9,7 +9,15 @@ description: PR 状态同步返回 finalize 或 resume_finalize 后，单 Issue 
 
 Issue 已经 `done` 且仅需清理残留 pending 时，直接执行不带根仓的 `delivery finalize --phase complete`，按 `already=done` 结束；无需根仓。
 
-Requirement 的根仓由当前 Autopilot Run 按 `analysis.source.repo_url + branch` 通过 `rondo delivery root-prepare` 准备：Rondo 在 Task `workdir/<repo-name>` 复用平台 Checkout，切换至 Task 独立本地归档分支，远端发布始终使用 `analysis.source.branch`。同组共用一次准备；本 Skill **不负责分组、准备根仓或删除 worktree**。Requirement 的全部命令都传相同的 `--root-repo "<root_repo>"`，Rondo 逐 Issue 校验 Checkout 的 Task/Workspace 身份、Origin、批准 Commit、Change 和远端归档；不将 PR Status Sync Task 的 Active Run 误判为每个 Issue 的 Run。独立 Bug 不传根仓。
+## 根仓准备
+
+Requirement 由 Agent 按 `analysis.source.repo_url + analysis.source.branch` 协调同组根仓复用。首次准备时执行：
+
+```bash
+rondo delivery root-prepare --issue <KEY>
+```
+
+使用返回的 `root_repo` 执行同组 Issue 的后续收口；同组无需重复准备。Requirement 的收口命令均传相同的 `--root-repo "<root_repo>"`，Rondo 负责根仓与远端归档的安全校验。Bug 不需要根仓。
 
 ## Prepare
 

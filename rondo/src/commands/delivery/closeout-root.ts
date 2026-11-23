@@ -4,7 +4,7 @@ import { dirname, isAbsolute, join, resolve, win32 } from "node:path";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
-import { loadConfig, type BaseRegistryConfig, type RuntimeConfig } from "../../clients/config.js";
+import { resolveMulticaRuntime, type MulticaRuntime } from "../../clients/runtime-context.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { multicaPrefix } from "../../clients/multica-environment.js";
 import { runAuthenticatedGit } from "../../clients/authenticated-git.js";
@@ -328,7 +328,7 @@ function argsOf(argv: string[]): Record<string, string> {
   return args;
 }
 
-function platformCheckout(runtime: RuntimeConfig): CloseoutCheckout {
+function platformCheckout(runtime: MulticaRuntime): CloseoutCheckout {
   return (workdir, repoUrl) => {
     const r = runCommand([...multicaPrefix(runtime), "repo", "checkout", repoUrl], workdir, undefined, 600_000);
     if (r.status !== 0) throw new UnknownError("平台 repo checkout 失败: " + (r.stderr || r.stdout).trim().slice(0, 400));
@@ -339,14 +339,14 @@ function platformCheckout(runtime: RuntimeConfig): CloseoutCheckout {
 async function invoke(argv: string[]): Promise<number> {
   try {
     const args = argsOf(argv);
-    if (!args.issue || !args.config) return 64;
-    const cfg = loadConfig<BaseRegistryConfig>(args.config);
-    const client = new MulticaClient(cfg.runtime);
+    if (!args.issue) return 64;
+    const runtime = resolveMulticaRuntime();
+    const client = new MulticaClient(runtime);
     const issue = client.getIssue(args.issue);
     const md = issue.metadata ?? {};
     if (!isRequirementChangeDelivery(md)) throw new FailError("仅 Requirement OpenSpec Change 可以准备 Closeout 根仓");
     const source = readAnalysisSource(md);
-    const prepared = prepareRoot(source, { checkout: platformCheckout(cfg.runtime) });
+    const prepared = prepareRoot(source, { checkout: platformCheckout(runtime) });
     process.stdout.write(JSON.stringify({ result: "PASS", ...prepared,
       repo_url: source.repo_url, branch: source.branch, change_ref: source.change_ref }) + "\n");
     return 0;

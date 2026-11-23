@@ -77,3 +77,13 @@ test("workitem 叶子参数错误:exit 64(set-state 缺 --id/--state)", () => {
   assert.equal(r.status, 64);
   assert.equal(r.stdout, "");
 });
+
+test("delivery root-prepare 不要求 --config，从当前 Runtime 解析环境", () => {
+  const r = runCli(["delivery", "root-prepare", "--issue", "TEST-1"], {
+    MULTICA_WORKSPACE_ID: "", MULTICA_SERVER_URL: "",
+  });
+  assert.equal(r.status, 3, `rc=${r.status} stdout=${r.stdout.slice(0, 300)}`);
+  const body = JSON.parse(r.stdout);
+  assert.equal(body.result, "UNKNOWN");
+  assert.match(body.reason, /MULTICA_WORKSPACE_ID.*MULTICA_SERVER_URL/);
+});
