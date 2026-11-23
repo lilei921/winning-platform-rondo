@@ -6,10 +6,16 @@
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
-import { loadConfig, type BaseRegistryConfig, type RuntimeConfig } from "../../clients/config.js";
 import { MulticaClient, type IssueRecord } from "../../clients/multica.js";
 
-const USAGE = "用法: rondo delivery handoff --issue <KEY> [--config <repo-registry.json>]\n";
+// handoff 只接受 --issue；Workspace、CLI 与身份一律来自 Runtime 环境变量，不读外部配置。
+const USAGE = [
+  "用法: rondo delivery handoff --issue <KEY>",
+  "",
+  "从 MULTICA_WORKSPACE_ID / MULTICA_SERVER_URL 定位 Workspace，",
+  "MULTICA_CLI_PATH 可指定 CLI（默认 multica）。",
+  "校验 MULTICA_AGENT_ID 必须是当前 Workspace 的 Wayfinder Agent；缺失或不符返回 UNKNOWN。",
+].join("\n");
 
 type TargetKind = "agent" | "squad";
 interface Route { type: TargetKind; name: string; }
@@ -34,15 +40,14 @@ export function resolveHandoffTarget(tfsType: string): Route | null {
   }
 }
 
-function parseArgs(argv: string[]): { config?: string; issue: string } | null {
+function parseArgs(argv: string[]): { issue: string } | null {
   const values: Record<string, string> = {};
   for (let i = 0; i < argv.length; i += 2) {
     const flag = argv[i], value = argv[i + 1];
-    if (!["--config", "--issue"].includes(flag) || !value || value.startsWith("--") || values[flag]) return null;
+    if (flag !== "--issue" || !value || value.startsWith("--") || values[flag]) return null;
     values[flag] = value;
   }
-  return values["--issue"]
-    ? { config: values["--config"], issue: values["--issue"] } : null;
+  return values["--issue"] ? { issue: values["--issue"] } : null;
 }
 
 function namedList(raw: unknown, what: string): NamedObject[] {
@@ -97,14 +102,13 @@ async function main(argv: string[]): Promise<number> {
   }
 
   try {
-    const runtime: RuntimeConfig = args.config
-      ? loadConfig<BaseRegistryConfig>(args.config, { requireRegistry: false }).runtime
-      : {
-          multica_cli: "multica",
-          workspace_id: process.env.MULTICA_WORKSPACE_ID?.trim(),
-          multica_server_url: process.env.MULTICA_SERVER_URL?.trim(),
-        };
-    if (!runtime.workspace_id || (!args.config && !runtime.multica_server_url)) {
+    // 仅从 Runtime 环境变量取配置；MULTICA_CLI_PATH 保留显式指定 CLI 的能力。
+    const runtime = {
+      multica_cli: process.env.MULTICA_CLI_PATH?.trim() || "multica",
+      workspace_id: process.env.MULTICA_WORKSPACE_ID?.trim(),
+      multica_server_url: process.env.MULTICA_SERVER_URL?.trim(),
+    };
+    if (!runtime.workspace_id || !runtime.multica_server_url) {
       throw new UnknownError("缺少 Multica Runtime Workspace / Server，禁止使用默认环境交接");
     }
     const client = new MulticaClient(runtime);
@@ -125,7 +129,7 @@ async function main(argv: string[]): Promise<number> {
       { transient: true },
     ), "Agent List");
     const wayfinder = uniqueName(agents, "Wayfinder Agent");
-    if (!args.config && process.env.MULTICA_AGENT_ID?.trim() !== wayfinder.id) {
+    if (process.env.MULTICA_AGENT_ID?.trim() !== wayfinder.id) {
       throw new UnknownError("当前 Multica Runtime Agent 不是 Wayfinder，禁止交接");
     }
     let target: NamedObject;

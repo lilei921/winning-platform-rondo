@@ -17,6 +17,16 @@ const AGENTS = [
 ];
 const SQUADS = [{ id: "squad-1", name: "Delivery Squad", leader_id: "lead-1" }];
 
+// handoff 只接受 --issue；所有用例统一走 Runtime 环境变量（含 Task 身份）。
+const NATIVE_RUNTIME = {
+  MULTICA_WORKSPACE_ID: "ws-1",
+  MULTICA_SERVER_URL: "http://multica.test",
+  MULTICA_AGENT_ID: "wayfinder-1",
+  MULTICA_TASK_ID: "task-1",
+  MULTICA_TOKEN: "mat_test", // fixture token, not a real credential
+  MOCK_EXPECT_SERVER: "http://multica.test",
+};
+
 function initialState(type = "Bug") {
   return {
     issues: {
@@ -32,11 +42,11 @@ function initialState(type = "Bug") {
   };
 }
 
-function fixture(t, initial = initialState(), configPatch = {}) {
+function fixture(t, initial = initialState()) {
   const dir = mkdtempSync(join(tmpdir(), "rondo-delivery-handoff-"));
   t.after(() => rmSync(dir, { force: true, recursive: true }));
   chmodSync(MOCK, 0o755);
-  // configless mode resolves the native "multica" executable from PATH.
+  // 从 PATH 解析原生 "multica" 可执行文件；Runtime 身份由环境变量提供。
   const multicaShim = join(dir, process.platform === "win32" ? "multica.cmd" : "multica");
   if (process.platform === "win32") {
     writeFileSync(multicaShim, `@echo off\r\nnode "${MOCK}" %*\r\n`);
@@ -45,26 +55,19 @@ function fixture(t, initial = initialState(), configPatch = {}) {
     chmodSync(multicaShim, 0o755);
   }
   const statePath = join(dir, "state.json");
-  const configPath = join(dir, "config.json");
   writeFileSync(statePath, JSON.stringify(initial));
-  writeFileSync(configPath, JSON.stringify({
-    runtime: {
-      multica_cli: MOCK, workspace_id: "ws-1",
-      ...configPatch,
-    },
-  }));
   const read = () => JSON.parse(readFileSync(statePath, "utf8"));
   const write = (state) => writeFileSync(statePath, JSON.stringify(state));
   const pathKey = Object.keys(process.env).find(key => key.toLowerCase() === "path") ?? "PATH";
-  const run = (extraEnv = {}, noConfig = false) => {
-    const r = spawnSync(process.execPath, [CLI, "delivery", "handoff",
-      ...(noConfig ? [] : ["--config", configPath]), "--issue", "WNDF-T"], {
+  const run = (extraEnv = {}) => {
+    const r = spawnSync(process.execPath, [CLI, "delivery", "handoff", "--issue", "WNDF-T"], {
       encoding: "utf8",
       env: {
         ...process.env,
         [pathKey]: dir + delimiter + (process.env[pathKey] ?? ""),
         MOCK_STATE: statePath,
-        MOCK_REQUIRE_TASK_RUNTIME: noConfig ? "1" : "0",
+        MOCK_REQUIRE_TASK_RUNTIME: "1",
+        ...NATIVE_RUNTIME,
         ...extraEnv,
       },
     });
@@ -114,22 +117,13 @@ for (const type of ["Requirement", "需求"]) {
   });
 }
 
-const NATIVE_RUNTIME = {
-  MULTICA_WORKSPACE_ID: "ws-1",
-  MULTICA_SERVER_URL: "http://multica.test",
-  MULTICA_AGENT_ID: "wayfinder-1",
-  MULTICA_TASK_ID: "task-1",
-  MULTICA_TOKEN: "mat_test", // fixture token, not a real credential
-  MOCK_EXPECT_SERVER: "http://multica.test",
-};
-
 test("configless Bug: native Runtime handoff and repeated NOOP", t => {
   const f = fixture(t);
-  const first = f.run(NATIVE_RUNTIME, true);
+  const first = f.run();
   assert.equal(first.code, 0, JSON.stringify(first.body));
   assert.equal(first.body.result, "PASS");
   assert.equal(f.read().handoff_update_count, 1);
-  const second = f.run(NATIVE_RUNTIME, true);
+  const second = f.run();
   assert.equal(second.code, 0, JSON.stringify(second.body));
   assert.equal(second.body.result, "NOOP");
   assert.equal(f.read().handoff_update_count, 1);
@@ -137,7 +131,7 @@ test("configless Bug: native Runtime handoff and repeated NOOP", t => {
 
 test("configless Requirement: unique Squad and Delivery Lead", t => {
   const f = fixture(t, initialState("Requirement"));
-  const result = f.run(NATIVE_RUNTIME, true);
+  const result = f.run();
   assert.equal(result.code, 0, JSON.stringify(result.body));
   assert.equal(result.body.result, "PASS");
   assert.equal(result.body.target.id, "squad-1");
@@ -170,7 +164,7 @@ test("configless Requirement rejects ambiguous Squad and wrong Leader", t => {
     const state = initialState("Requirement");
     mutate(state);
     const f = fixture(t, state);
-    const result = f.run(NATIVE_RUNTIME, true);
+    const result = f.run();
     assert.equal(result.code, 3, JSON.stringify(result.body));
     assert.equal(f.read().handoff_update_count, undefined);
   }
@@ -196,16 +190,6 @@ test("missing target is UNKNOWN and causes zero write", t => {
   const f = fixture(t, state);
   assert.equal(f.run().code, 3);
   assert.equal(f.read().handoff_update_count, undefined);
-});
-
-test("legacy Squad ID does not override the unique current Workspace target", t => {
-  const state = initialState("Requirement");
-  state.squads_list.push({ id: "other-squad", name: "Another Squad", leader_id: "lead-1" });
-  const f = fixture(t, state, { delivery_squad_id: "other-squad" });
-  const result = f.run();
-  assert.equal(result.code, 0, JSON.stringify(result.body));
-  assert.equal(result.body.target.id, "squad-1");
-  assert.equal(f.read().handoff_update_count, 1);
 });
 
 test("lost update response: recognize committed assignment, do not trigger again", t => {
@@ -251,8 +235,8 @@ test("unsupported terminal state cannot hand off", t => {
 });
 
 test("workspace must be explicit", t => {
-  const f = fixture(t, initialState(), { workspace_id: "" });
-  assert.equal(f.run().code, 3);
+  const f = fixture(t);
+  assert.equal(f.run({ MULTICA_WORKSPACE_ID: "" }).code, 3);
   assert.equal(f.read().handoff_update_count, undefined);
 });
 
