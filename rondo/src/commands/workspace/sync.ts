@@ -193,9 +193,6 @@ function renderConfigs(overlay: Overlay, scope: Set<string>): RenderTarget[] {
 
   const needRegistry = REPO_REGISTRY_SKILLS.some((s) => scope.has(s));
   if (needRegistry) {
-    if (!overlay.delivery_squad_id) {
-      throw new UnknownError("overlay 缺少 delivery_squad_id（repo-registry 渲染必需； Squad 未建时先只同步其他 Skill）");
-    }
     const base = readJson(join(CONFIG_ROOT, "repo-registry.base.json"), "repo-registry base");
     requiredString(base.runtime?.multica_cli, "repo-registry base.runtime.multica_cli");
     const registry = renderRegistry(base);
@@ -211,7 +208,6 @@ function renderConfigs(overlay: Overlay, scope: Set<string>): RenderTarget[] {
         ...(overlay.multica_server_url ? { multica_server_url: overlay.multica_server_url } : {}),
         workspace_id: overlay.workspace_id,
         rondo,
-        delivery_squad_id: overlay.delivery_squad_id,
       },
       // 机器路径已全部退场：根仓路径运行时解析；registry 是 repo-context + delivery overlay 的渲染投影。
       registry,

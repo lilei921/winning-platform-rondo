@@ -135,14 +135,11 @@ async function main(argv: string[]): Promise<number> {
       if (target.runtime_bound === false) throw new UnknownError("Bug Fix Agent 尚未绑定 Runtime");
       expectedAgentId = target.id;
     } else {
-      const squadId = runtime.delivery_squad_id;
-      if (args.config && !squadId) throw new UnknownError("缺少 runtime.delivery_squad_id");
       const squads = namedList(client.run(
         ["squad", "list", ...client.ws(), "--output", "json"], "读取当前 Workspace Squads",
         { transient: true },
       ), "Squad List");
       target = uniqueName(squads, route.name);
-      if (squadId && target.id !== squadId) throw new UnknownError("Delivery Squad ID 与当前 Workspace 配置不一致");
       const lead = uniqueName(agents, "Delivery Lead");
       if (target.leader_id && target.leader_id !== lead.id) {
         throw new UnknownError("Delivery Squad Leader 与登记的 Delivery Lead 不一致");
