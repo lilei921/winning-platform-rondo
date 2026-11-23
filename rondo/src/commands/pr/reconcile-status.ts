@@ -144,7 +144,6 @@ async function prGet(project: string, repository: string, prId: number): Promise
 /** 单 Issue 处理（02 §11 聚合规则的确定性投影）。写失败抛 Error 由上层记入 failures。 */
 export async function processIssue(
   multica: Pick<MulticaClient, "setMetadata" | "setStatus">,
-  cfg: MulticaRuntime,
   issue: IssueRecord,
   tfs: { attempts: number; successes: number },
   lookupPr: typeof prGet = prGet,
@@ -308,7 +307,7 @@ async function main(rawArgs: string[]): Promise<number> {
         continue;
       }
       try {
-        const action = await processIssue(multica, cfg, issue, tfs);
+        const action = await processIssue(multica, issue, tfs);
         if (action) actions.push(action);
       } catch (exc) {
         if (exc instanceof ConfigError) throw new UnknownError("TFS 连接配置不可用: " + exc.message);
