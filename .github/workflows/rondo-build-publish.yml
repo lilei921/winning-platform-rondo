@@ -42,6 +42,7 @@ jobs:
         working-directory: rondo
 
       - name: Check immutable package version
+        id: package_check
         shell: bash
         run: |
           set -euo pipefail
@@ -61,12 +62,13 @@ jobs:
               exit 1
             fi
           fi
+          echo "path=$package" >> "$GITHUB_OUTPUT"
 
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
           name: rondo-cli-package
-          path: rondo/winning-rondo-*.tgz
+          path: ${{ steps.package_check.outputs.path }}
           if-no-files-found: error
 
   publish:

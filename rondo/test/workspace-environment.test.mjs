@@ -9,7 +9,7 @@ import { spawnSync } from "node:child_process";
 const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
 
 /** 完全隔离的 CLI/工作区夹具，所有平台调用只写本地 trace。 */
-function fixture(t, scenario = "normal") {
+function fixture(t, scenario = "normal", extraEnv = {}) {
   const root = realpathSync.native(mkdtempSync(join(tmpdir(), "rondo-workspace-env-")));
   t.after(() => { assert.equal(dirname(root), realpathSync.native(tmpdir())); rmSync(root, { recursive: true, force: true }); });
   const write = (name, value) => {
@@ -101,7 +101,7 @@ console.log(JSON.stringify(out));
   if (process.platform === "win32") write("bin/multica.cmd", `@echo off\r\n"${process.execPath}" "${script}" %*\r\n`);
   else { const shim = write("bin/multica", `#!/bin/sh\nexec '${process.execPath}' '${script}' "$@"\n`); chmodSync(shim, 0o755); }
   const run = (...args) => {
-    const env = { ...process.env, MULTICA_REPO_ROOT: root, MC_TRACE: trace, MC_SCENARIO: scenario };
+    const env = { ...process.env, ...extraEnv, MULTICA_REPO_ROOT: root, MC_TRACE: trace, MC_SCENARIO: scenario };
     delete env.MULTICA_SERVER_URL; delete env.RONDO_MULTICA_PROFILE;
     for (const key of Object.keys(env)) if (key.toLowerCase() === "path") delete env[key];
     env.PATH = join(root, "bin") + delimiter + process.env.PATH;
@@ -198,6 +198,32 @@ test("provision 保存环境；重复执行继承环境且拒绝跨 profile 覆�
   const before = readFileSync(f.overlay, "utf8"); const count = f.calls().length;
   assert.equal(f.run("workspace", "provision", "--workspace", "pilot", "--profile", "cloud").code, 3);
   assert.equal(f.calls().length, count); assert.equal(readFileSync(f.overlay, "utf8"), before);
+});
+
+test("sync renders Registry without a static Squad ID", t => {
+  // Use Node as an isolated repo-context fixture interpreter; no live Multica or Python dependency.
+  const f = fixture(t, "normal", { RONDO_WORKSPACE_PYTHON: process.execPath });
+  f.write(f.shared + "workspaces/pilot.json", {
+    workspace_id: "ws-1", skills: { "spec-preparation": "skill-1" },
+  });
+  f.write(f.shared + "repo-registry.base.json", {
+    runtime: { multica_cli: "multica", rondo: "rondo" }, delivery: {},
+  });
+  f.write("docs/config/repo-context.yaml", "fixture\n");
+  f.write("tools/repo_registry.py", `console.log(JSON.stringify({
+    contract_version: "repo-registry-result/v1", operation: "list", status: "ok",
+    repos: [{
+      repo_id: "child", repo_type: "child", repo_path: "child",
+      responsibility: "fixture", keywords: [], not_responsible_for: [],
+    }], errors: [],
+  }));\n`);
+  const registryPath = f.write("skills/spec-preparation/config/repo-registry.json", "{}\n");
+  const result = f.run("workspace", "sync", "--workspace", "pilot", "--local-only");
+  assert.equal(result.code, 0, JSON.stringify(result.body));
+  const rendered = JSON.parse(readFileSync(registryPath, "utf8"));
+  assert.equal(rendered.runtime.workspace_id, "ws-1");
+  assert.equal(rendered.runtime.multica_cli, "multica");
+  assert.equal(Object.hasOwn(rendered.runtime, "delivery_squad_id"), false);
 });
 
 test("旧 Analyst overlay 同步必须先完成供给，不能静默跳过新 Skills", t => {

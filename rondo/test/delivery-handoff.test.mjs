@@ -49,7 +49,7 @@ function fixture(t, initial = initialState(), configPatch = {}) {
   writeFileSync(statePath, JSON.stringify(initial));
   writeFileSync(configPath, JSON.stringify({
     runtime: {
-      multica_cli: MOCK, workspace_id: "ws-1", delivery_squad_id: "squad-1",
+      multica_cli: MOCK, workspace_id: "ws-1",
       ...configPatch,
     },
   }));
@@ -190,16 +190,22 @@ test("unsupported type and non-Wayfinder owner cause zero write", t => {
   assert.equal(f.read().handoff_update_count, undefined);
 });
 
-test("missing or mismatched target is UNKNOWN and causes zero write", t => {
+test("missing target is UNKNOWN and causes zero write", t => {
   const state = initialState("Bug");
   state.agents_list = state.agents_list.filter(a => a.name !== "Bug Fix Agent");
   const f = fixture(t, state);
   assert.equal(f.run().code, 3);
   assert.equal(f.read().handoff_update_count, undefined);
-  f.write(initialState("Requirement"));
-  const g = fixture(t, initialState("Requirement"), { delivery_squad_id: "other-squad" });
-  assert.equal(g.run().code, 3);
-  assert.equal(g.read().handoff_update_count, undefined);
+});
+
+test("legacy Squad ID does not override the unique current Workspace target", t => {
+  const state = initialState("Requirement");
+  state.squads_list.push({ id: "other-squad", name: "Another Squad", leader_id: "lead-1" });
+  const f = fixture(t, state, { delivery_squad_id: "other-squad" });
+  const result = f.run();
+  assert.equal(result.code, 0, JSON.stringify(result.body));
+  assert.equal(result.body.target.id, "squad-1");
+  assert.equal(f.read().handoff_update_count, 1);
 });
 
 test("lost update response: recognize committed assignment, do not trigger again", t => {

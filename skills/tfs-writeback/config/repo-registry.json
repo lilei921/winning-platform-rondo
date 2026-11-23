@@ -2,8 +2,7 @@
   "runtime": {
     "multica_cli": "multica",
     "workspace_id": "ec70611d-faf8-4390-a5a3-68c07fd527c5",
-    "rondo": "rondo",
-    "delivery_squad_id": "febc477f-e57d-4b88-9800-1660fa7f5026"
+    "rondo": "rondo"
   },
   "registry": {
     "basedata": {

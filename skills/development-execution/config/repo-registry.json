@@ -3,8 +3,7 @@
     "multica_cli": "multica",
     "multica_server_url": "http://172.17.1.97:8080",
     "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
-    "rondo": "rondo",
-    "delivery_squad_id": "03665e95-a7bd-48f0-afe3-c0860ebac5fc"
+    "rondo": "rondo"
   },
   "registry": {
     "basedata": {
