@@ -45,10 +45,6 @@ function fixture(status, metadata = {}) {
     setMetadata: (...args) => calls.push(["metadata", ...args]),
     setStatus: (...args) => calls.push(["status", ...args]),
   };
-  const cfg = {
-    runtime: {},
-    registry: { repo: { tfs_repo: "remote", tfs_project: "project" } },
-  };
   const pr = {
     repo_key: "repo",
     pr_id: 42,
@@ -63,12 +59,12 @@ function fixture(status, metadata = {}) {
     assignee_id: "engineer",
     metadata: { current_pr: JSON.stringify([pr]), ...metadata },
   };
-  return { calls, multica, cfg, pr, issue };
+  return { calls, multica, pr, issue };
 }
 
 test("done without pending is skipped without PR lookup or writes", async () => {
   const f = fixture("done");
-  const action = await processIssue(f.multica, f.cfg, f.issue, { attempts: 0, successes: 0 }, () => {
+  const action = await processIssue(f.multica, f.issue, { attempts: 0, successes: 0 }, () => {
     throw new Error("unexpected PR lookup");
   });
   assert.equal(action, null);
@@ -77,7 +73,7 @@ test("done without pending is skipped without PR lookup or writes", async () => 
 
 test("done with pending only requests finalize recovery and never reopens issue", async () => {
   const f = fixture("done", { "finalize.pending": "{}" });
-  const action = await processIssue(f.multica, f.cfg, f.issue, { attempts: 0, successes: 0 }, () => {
+  const action = await processIssue(f.multica, f.issue, { attempts: 0, successes: 0 }, () => {
     throw new Error("unexpected PR lookup");
   });
   assert.equal(action.action, "resume_finalize");
@@ -86,7 +82,7 @@ test("done with pending only requests finalize recovery and never reopens issue"
 
 test("unknown PR status does not write completion facts", async () => {
   const f = fixture("in_review");
-  const action = await processIssue(f.multica, f.cfg, f.issue, { attempts: 0, successes: 0 }, () => ({
+  const action = await processIssue(f.multica, f.issue, { attempts: 0, successes: 0 }, () => ({
     status: "ok",
     pr: { id: 42, status: "draft", sourceBranch: "feature/a", targetBranch: "dev" },
   }), COLLECTION);
@@ -100,7 +96,7 @@ test("completed PR marks pending, and active PR is a no-op", async () => {
     status: "ok",
     pr: { id: 42, status, sourceBranch: "feature/a", targetBranch: "dev" },
   });
-  const complete = await processIssue(f.multica, f.cfg, f.issue, { attempts: 0, successes: 0 }, lookup("completed"), COLLECTION);
+  const complete = await processIssue(f.multica, f.issue, { attempts: 0, successes: 0 }, lookup("completed"), COLLECTION);
   assert.equal(complete.action, "finalize");
   assert.equal(f.calls.length, 1);
   assert.equal(f.calls[0][1], "issue-id");
@@ -108,7 +104,7 @@ test("completed PR marks pending, and active PR is a no-op", async () => {
   assert.deepEqual(JSON.parse(f.calls[0][3]).event_keys, ["DF-1#repo#42#completed"]);
 
   f.calls.length = 0;
-  const active = await processIssue(f.multica, f.cfg, f.issue, { attempts: 0, successes: 0 }, lookup("active"), COLLECTION);
+  const active = await processIssue(f.multica, f.issue, { attempts: 0, successes: 0 }, lookup("active"), COLLECTION);
   assert.equal(active.action, "noop");
   assert.deepEqual(f.calls, []);
 });
@@ -117,7 +113,7 @@ test("new abandoned PR blocks without reassigning Issue or requiring delivery_sq
   for (const owner of ["delivery-squad", "bug-fix-agent"]) {
     const f = fixture("in_review");
     f.issue.assignee_id = owner;
-    const action = await processIssue(f.multica, f.cfg, f.issue, { attempts: 0, successes: 0 }, () => ({
+    const action = await processIssue(f.multica, f.issue, { attempts: 0, successes: 0 }, () => ({
       status: "ok",
       pr: { id: 42, status: "abandoned", sourceBranch: "feature/a", targetBranch: "dev" },
     }), COLLECTION);
@@ -134,7 +130,7 @@ test("repeated abandoned event preserves human-updated status and assignment", a
   const f = fixture("in_progress", {
     "pr.abandoned": JSON.stringify([{ repo_key: "repo", pr_id: 42, event_key, detected_at: "2026-11-03T00:00:00Z" }]),
   });
-  const action = await processIssue(f.multica, f.cfg, f.issue, { attempts: 0, successes: 0 }, () => ({
+  const action = await processIssue(f.multica, f.issue, { attempts: 0, successes: 0 }, () => ({
     status: "ok",
     pr: { id: 42, status: "abandoned", sourceBranch: "feature/a", targetBranch: "dev" },
   }), COLLECTION);
@@ -186,7 +182,7 @@ test("mismatched PR URL or provider identity cannot write finalize.pending", asy
   const pr = JSON.parse(f.issue.metadata.current_pr)[0];
   pr.pr_url = COLLECTION + "/Project/_git/remote/pullrequest/43";
   f.issue.metadata.current_pr = JSON.stringify([pr]);
-  const badUrl = await processIssue(f.multica, f.cfg, f.issue, { attempts: 0, successes: 0 }, () => {
+  const badUrl = await processIssue(f.multica, f.issue, { attempts: 0, successes: 0 }, () => {
     throw new Error("must not query invalid URL");
   }, COLLECTION);
   assert.equal(badUrl.action, "unknown");
@@ -194,7 +190,7 @@ test("mismatched PR URL or provider identity cannot write finalize.pending", asy
 
   pr.pr_url = COLLECTION + "/Project/_git/remote/pullrequest/42";
   f.issue.metadata.current_pr = JSON.stringify([pr]);
-  const badIdentity = await processIssue(f.multica, f.cfg, f.issue, { attempts: 0, successes: 0 }, () => ({
+  const badIdentity = await processIssue(f.multica, f.issue, { attempts: 0, successes: 0 }, () => ({
     status: "ok", pr: { id: 99, status: "completed", sourceBranch: "feature/a", targetBranch: "dev" },
   }), COLLECTION);
   assert.equal(badIdentity.action, "unknown");
