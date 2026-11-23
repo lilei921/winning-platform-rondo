@@ -1,6 +1,6 @@
 # PR Status Sync 耗时优化与根仓切换方案
 
-> 状态：真实 task 只读验证已完成。同分支多 Issue 收口仍有阻断项，写入验收待完成。
+> 状态：真实 task 只读验证已完成。组内顺序复用已有本地验证，跨 Run 同分支收口仍有阻断项，真实写入验收待完成。
 > 日期：2026-11-23
 > 依据：run `01a20697`（2026-11-23 12:08:45–13:00:24）的 daemon 日志、codex 本地日志、thread_items 命令耗时，Rondo 源码逐文件调研，以及 LEI-49 真实 task 验证。
 
@@ -78,6 +78,7 @@
 |---|---|
 | 真实 Multica 缓存中 `main` 的占用情况 | 只读检查 LEI-49 的 monorepo bare cache。`git worktree list --porcelain` 显示 `rondo-closeout-LEI-49-2WkkkR/winning-platform-monorepo` 仍检出 `refs/heads/main`，HEAD 为 `7af3c09b`，工作目录存在，未发现 Rondo 所有权标记。另一 LEI-49 checkout 位于同一个 `--git-common-dir`，HEAD 仍在 `agent/...`。缓存中的 `origin/main` 和 `origin/master` 均为 `09c04918`。 |
 | 单个 worktree 切到 `main` 并提交 | 在临时 bare cache 下建立两个 linked worktree。`main` 可用时，A 执行 `git switch main` 和 `git commit` 均成功。B 能读到 A 更新后的共享 `refs/heads/main`，B 自己的 HEAD 仍在 agent 分支。 |
+| 同一 Run 的多个 Issue 顺序复用一个根仓 | PR Status Sync Agent 按 `analysis.source.repo_url + branch` 分组，每组准备一次，逐条复用同一 worktree。每个 Issue 的提交、push 和远端回读完成后，下一个 Issue 从更新后的 HEAD 继续。`closeout-stage-a.test.mjs` 已覆盖 3 个 Issue 共用根仓，分别模拟归档、提交、push 并确认各自的远端目录。 |
 | 同一 bare cache 的两个 worktree 切同一个分支 | A 检出 `main` 后，B 执行 `git switch main` 返回 128，报 `main is already used by worktree`。A 离开 `main` 后，B 才能切入，并会读到 A 留在本地 `main` 的未推送提交。 |
 | 两个独立本地分支推同一个远端 `main` | A、B 从同一基线各提交一个不同文件。A 普通 push 成功，B 返回 1，被 Git 拒绝。B 的本地提交仍在。在最新远端基线上重新应用 B 的变更并 push，回读确认两个文件均在远端。 |
 
@@ -87,9 +88,9 @@
 
 ### 2.3 上线前需补齐的保护与验收
 
-- **根仓分支**。继续复用 daemon bare cache，每个归档 checkout 使用从最新 `origin/<source.branch>` 建立的独立本地分支。所有权校验分别核验本地归档分支与 `analysis.source.branch`。fetch、普通 push（`HEAD:refs/heads/<source.branch>`）和远端回读均显式使用 `source.branch`。禁止用 `--ignore-other-worktrees` 绕过 Git 的分支占用保护。
+- **根仓分支**。继续复用 daemon bare cache。每个 Run 的仓库与目标分支分组共用一个归档 worktree 和从最新 `origin/<source.branch>` 建立的本地归档分支，组内按 Issue 顺序提交、推送和回读。不同 Run 使用各自的本地归档分支。所有权校验分别核验本地归档分支与 `analysis.source.branch`。fetch、普通 push（`HEAD:refs/heads/<source.branch>`）和远端回读均显式使用 `source.branch`。禁止用 `--ignore-other-worktrees` 绕过 Git 的分支占用保护。
 - **发布顺序**。同一远端仓库和目标分支的归档发布需跨 Run 串行，范围覆盖获取最新基线、门禁复核、归档提交、push 和远端回读。当前 `RootLock` 位于各自 worktree 下，Agent 的组内顺序也只覆盖单个 Run。外部写入仍可能推进远端，遇到分叉或 push 拒绝时保留提交与 pending，重新核验最新基线后再恢复。确认远端归档后方可推进 TFS 写回或关闭 Issue。
-- **写入验收（待做）**。用真实 Multica daemon 和可写测试仓库，先验证单 Issue 完成归档、提交、推送到 `main` 和远端回读。再让两个 Issue 在同一 Workspace 对同一目标分支并发发起归档，分别覆盖不同 capability 和同一 capability，确认后发布的 Issue 基于最新提交继续，远端保留两份归档且规格正确。补测首个 Run 完结后 worktree 尚存，以及归档完成但 push 前远端被外部推进的恢复路径。另需核验实际 TFS 目标分支的服务账号推送权限和分支策略。
+- **写入验收（待做）**。用真实 Multica daemon 和可写测试仓库，验证同一个 Run 在同一根仓内依次归档两个 Issue。再让同一 Workspace 的两个 Run 对同一目标分支并发发起归档，分别覆盖不同 capability 和同一 capability，确认后发布的 Issue 基于最新提交继续，远端保留两份归档且规格正确。补测首个 Run 完结后 worktree 尚存，以及归档完成但 push 前远端被外部推进的恢复路径。另需核验实际 TFS 目标分支的服务账号推送权限和分支策略。
 
 ---
 
@@ -103,7 +104,7 @@
 4. **`verifyCloseoutRoot` 的 `basename.startsWith("rondo-closeout-")` 必须改写**：平台 checkout 目录名为 `winning-platform-monorepo`，永不匹配。改为：位于受控子目录内 + 弱校验（isolated 平台证据、Task/Workspace、分支尾号、活跃 Run；详见 2.1 修正）。
 5. **测试需可注入 backend**：`closeout-stage-a.test.mjs:83-251` 直接测 `cloneCloseoutRoot`，改为平台 checkout 后无法本地跑。需要抽象 `prepareRoot(source)` 接口，单测注入 fake。
 
-**共享分支的占用与并发发布也是上线阻断项**。当前实现直接切到 `source.branch`，会占用共享本地分支，现有锁只覆盖单个 worktree。按第 2.3 节补齐分支隔离和发布顺序，再做双 Issue 写入验收。
+**跨 Run 的共享分支占用与并发发布是上线阻断项**。当前实现直接切到 `source.branch`，会占用共享本地分支，现有锁只覆盖单个 worktree。按第 2.3 节补齐分支隔离和发布顺序，再做同 Run 和跨 Run 的真实写入验收。
 
 ### 3.2 需澄清/补充
 
@@ -208,4 +209,4 @@
 - [ ] 更新 `assertManagedLocation` / `verifyCloseoutRoot` / cleanup 三处
 - [ ] 更新 agent instructions 与两个 SKILL
 - [ ] 先跑 `rondo` 完整测试（含 fake backend 用例）
-- [ ] 在真实 Multica daemon 和可写测试仓库完成单 Issue `main` 写入、双 Issue 并发及恢复验收（见第 2.3 节）
+- [ ] 在真实 Multica daemon 和可写测试仓库完成同 Run 顺序归档、跨 Run 并发归档及恢复验收（见第 2.3 节）
