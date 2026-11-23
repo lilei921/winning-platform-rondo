@@ -323,12 +323,12 @@ function assertArchiveCommits(root: string, upstream: string, allowed: (path: st
 }
 
 /** 只做安全快进；分叉不 rebase、不 stash，保留本地提交、索引及运行时文件。 */
-function syncArchiveBranch(root: string, branch: string, allowed: (path: string) => boolean, expectedRemoteCommit?: string, remoteUrl?: string): void {
-  if (gitOk(root, ["symbolic-ref", "--short", "HEAD"], "核对根仓分支") !== branch) {
+function syncArchiveBranch(root: string, localBranch: string, targetBranch: string, allowed: (path: string) => boolean, expectedRemoteCommit?: string, remoteUrl?: string): void {
+  if (gitOk(root, ["symbolic-ref", "--short", "HEAD"], "核对根仓分支") !== localBranch) {
     throw new UnknownError("归档期间根仓分支已变化（保留现场，停止推进）");
   }
-  const upstream = `refs/remotes/origin/${branch}`;
-  gitOk(root, ["fetch", "origin", `refs/heads/${branch}:${upstream}`], "刷新根仓远端分支", remoteUrl);
+  const upstream = `refs/remotes/origin/${targetBranch}`;
+  gitOk(root, ["fetch", "origin", `refs/heads/${targetBranch}:${upstream}`], "刷新根仓远端分支", remoteUrl);
   if (expectedRemoteCommit) {
     const remoteHead = gitOk(root, ["rev-parse", upstream], "核对固定归档基线");
     const localHead = gitOk(root, ["rev-parse", "HEAD"], "核对本次归档提交");
@@ -340,7 +340,7 @@ function syncArchiveBranch(root: string, branch: string, allowed: (path: string)
   const [ahead, behind] = gitOk(root, ["rev-list", "--left-right", "--count", `HEAD...${upstream}`], "核对根仓分支关系")
     .split(/\s+/).map(Number);
   if (ahead > 0 && behind > 0) {
-    throw new UnknownError(`根仓分支 ${branch} 已分叉（本地领先 ${ahead}、落后 ${behind}；保留提交与工作区，停止自动收口）`);
+    throw new UnknownError(`根仓目标分支 ${targetBranch} 已分叉（本地领先 ${ahead}、落后 ${behind}；保留提交与工作区，停止自动收口）`);
   }
   assertArchiveCommits(root, upstream, allowed);
   const staged = assertArchiveIndex(root, allowed);
@@ -353,20 +353,23 @@ function syncArchiveBranch(root: string, branch: string, allowed: (path: string)
 /** Route Archive：安全快进 → 保存本 Change → 原生归档 → 限定提交/推送。
  * openspec 外未暂存改动允许保留；外来暂存项和无关 OpenSpec 修改仍拒绝。
  * 对齐后与归档后复核契约；分叉保留现场，不自动改写历史或暂存用户文件。 */
-export function routeArchive(paths: RuntimePaths, issueKey: string, changeRef: string, tfsId: string, expectedRemoteCommit?: string): Record<string, unknown> {
+export function routeArchive(paths: RuntimePaths, issueKey: string, changeRef: string, tfsId: string, expectedRemoteCommit?: string, targetBranch?: string): Record<string, unknown> {
   const detail: Record<string, unknown> = {};
   const lock = new RootLock(paths, issueKey);
   try {
     const root = paths.rootRepo;
-    // §4.6（2026-10-19 实证缺陷修复）：fetch/push 目标 = 当前检出分支。硬编码 master 曾在 dev 检出下
-    // 静默假成功（rev-list origin/master..HEAD 永≠0 → push origin master NO-OP → pushed:true，
-    // dev 上的归档提交从未推送）。
+    // The Task-local branch is isolated from the approved remote publication target.
     const branchRes = git(root, ["symbolic-ref", "--short", "HEAD"]);
     if (branchRes.status !== 0 || !branchRes.stdout.trim()) {
-      throw new UnknownError("根仓处于 detach HEAD 或无法探测当前分支（无法确定 push 目标）");
+      throw new UnknownError("根仓处于 detach HEAD 或无法探测本地归档分支");
     }
-    const branch = branchRes.stdout.trim();
+    const localBranch = branchRes.stdout.trim();
+    const branch = targetBranch ?? localBranch;
+    if (runCommand(["git", "check-ref-format", "--branch", branch], root).status !== 0) {
+      throw new FailError("归档远端目标分支非法");
+    }
     detail.branch = branch;
+    if (branch !== localBranch) detail.local_branch = localBranch;
     const liveDir = join(paths.openspecRoot, "changes", changeRef);
     const changePrefix = `openspec/changes/${changeRef}/`;
     // M2.5：specs 白名单收窄为本 Change 触及的 capability；未触及的 specs/ 改动按 foreign 拒绝
@@ -388,10 +391,15 @@ export function routeArchive(paths: RuntimePaths, issueKey: string, changeRef: s
       assertArchiveIndex(root, allowed);
       return changed;
     };
-    checkWorkspace();
+    const initialChanges = checkWorkspace();
+    // An untouched capability path is not proof that its existing changes belong to this Issue.
+    // Recovery after OpenSpec has already moved the Change keeps its existing resume path.
+    if (!current.archived && initialChanges.some(p => caps.some(c => p.startsWith(`openspec/specs/${c}/`)))) {
+      throw new UnknownError("首次 Archive 前存在已修改的 Specs，无法确认属于当前 Change，保留现场");
+    }
     // 新增本地提交之前同步，避免“先保存再拉取”制造本可避免的分叉。
     const preHash = JSON.stringify(computeContractFiles(current.dir).files);
-    syncArchiveBranch(root, branch, allowed, expectedRemoteCommit, paths.gitRemoteUrl);
+    syncArchiveBranch(root, localBranch, branch, allowed, expectedRemoteCommit, paths.gitRemoteUrl);
     const aligned = resolveChangeDir(paths, changeRef);
     if (aligned.dir !== current.dir || JSON.stringify(computeContractFiles(aligned.dir).files) !== preHash) {
       throw new UnknownError("根仓对齐后契约文件或归档位置漂移（此前 completion_gate PASS 失效，须重新核验）");
@@ -442,23 +450,43 @@ export function routeArchive(paths: RuntimePaths, issueKey: string, changeRef: s
       detail.committed = "skipped_no_changes";
     }
 
-    // push 失败先回读远端：已接受则幂等成功，分叉则停止，其余有界重试 ≤3。
-    for (let attempt = 1; ; attempt++) {
-      checkWorkspace();
-      syncArchiveBranch(root, branch, allowed, expectedRemoteCommit, paths.gitRemoteUrl);
-      const archived = resolveChangeDir(paths, changeRef);
-      if (!archived.archived || JSON.stringify(computeContractFiles(archived.dir).files) !== preHash) {
-        throw new UnknownError("推送前归档契约漂移（保留现场，停止后续收口）");
-      }
-      const unpushed = gitOk(root, ["rev-list", `origin/${branch}..HEAD`, "--count"], "核对未推送提交");
-      if (unpushed === "0") { detail.pushed = true; break; }
-      const push = git(root, ["push", "origin", branch], paths.gitRemoteUrl);
-      if (push.status === 0) { detail.pushed = true; break; }
-      if (attempt >= 3) {
-        throw new UnknownError(`根仓 push 失败（已重试 ${attempt} 次）: ${push.stderr.trim().slice(0, 300)}（本地 Commit 保留，恢复时只补 push）`);
-      }
-      log(`push 失败，回核远端后决定是否重试（第 ${attempt} 次；本地 Commit 保留）`);
+    // One ordinary fast-forward push; resolve an uncertain reply from remote facts.
+    checkWorkspace();
+    syncArchiveBranch(root, localBranch, branch, allowed, expectedRemoteCommit, paths.gitRemoteUrl);
+    const archived = resolveChangeDir(paths, changeRef);
+    if (!archived.archived || JSON.stringify(computeContractFiles(archived.dir).files) !== preHash) {
+      throw new UnknownError("推送前归档契约漂移（保留现场，停止后续收口）");
     }
+    const upstream = "refs/remotes/origin/" + branch;
+    const unpushed = gitOk(root, ["rev-list", upstream + "..HEAD", "--count"], "核对未推送提交");
+    if (unpushed !== "0") {
+      const push = git(root, ["push", "origin", "HEAD:refs/heads/" + branch], paths.gitRemoteUrl);
+      if (push.status !== 0) {
+        // A lost response may mean success. Never reset/rebase after a rejected push.
+        gitOk(root, ["fetch", "origin", "refs/heads/" + branch + ":" + upstream],
+          "Push 结果不确定时回读远端", paths.gitRemoteUrl);
+        if (git(root, ["merge-base", "--is-ancestor", "HEAD", upstream]).status !== 0) {
+          throw new UnknownError("根仓 Push 未确认或发生 Non-Fast-Forward，保留本地 Commit: " + push.stderr.trim().slice(0, 300));
+        }
+        const folder = archived.dir.split(/[\\/]/).at(-1);
+        const remoteArchive = upstream + ":openspec/changes/archive/" + folder;
+        const localArchive = "HEAD:openspec/changes/archive/" + folder;
+        if (gitOk(root, ["rev-parse", localArchive], "读取本地归档树") !==
+            gitOk(root, ["rev-parse", remoteArchive], "回读远端归档树")) {
+          throw new UnknownError("Push 回执不确定且远端归档内容不一致，保留现场");
+        }
+        for (const cap of caps) {
+          const suffix = ":openspec/specs/" + cap;
+          const localSpec = git(root, ["rev-parse", "HEAD" + suffix]);
+          const remoteSpec = git(root, ["rev-parse", upstream + suffix]);
+          if (localSpec.status !== remoteSpec.status ||
+              (localSpec.status === 0 && localSpec.stdout.trim() !== remoteSpec.stdout.trim())) {
+            throw new UnknownError("Push 回执不确定且远端 Specs 已变化，保留现场");
+          }
+        }
+      }
+    }
+    detail.pushed = true;
     return detail;
   } finally {
     lock.release();
@@ -671,7 +699,7 @@ async function main(argv: string[]): Promise<number> {
     // 在任何持久化写入（finalize.pending）之前完成解析，失败即 UNKNOWN 零写入。
     // 显式配置固定分支才启用新路径；旧本地模式与独立 Bug 均保持原契约。
     const changeMode = isRequirementChangeDelivery(md);
-    if (changeMode && !args["root-repo"]) throw new UnknownError("Requirement Closeout 必须使用受控 Clone，并显式传入 --root-repo");
+    if (changeMode && !args["root-repo"]) throw new UnknownError("Requirement Closeout 必须使用当前 Task 的 Multica Checkout，并显式传入 --root-repo");
     if (!args["root-repo"] && cfg.runtime.root_branch !== undefined) {
       if (!cfg.runtime.workspace_id) throw new UnknownError("远端收口必须显式配置 workspace_id");
       const authorized = readAnalysisSource(md);
@@ -766,10 +794,9 @@ async function main(argv: string[]): Promise<number> {
       }
 
       const change = resolveChangeDir(paths, changeRef);
-      if (!changeMode) {
-        deliveryCompletionGate(cfg, md, issue.status, change.dir, changeRef, { rootRepo: paths.rootRepo, issueKey, remote: Boolean(remote) });
-        steps.completion_gate = { status: "done" };
-      }
+      deliveryCompletionGate(cfg, md, issue.status, change.dir, changeRef,
+        { rootRepo: paths.rootRepo, issueKey, remote: Boolean(remote) });
+      steps.completion_gate = { status: "done" };
       if (remote?.archived) {
         steps.route_archive = { status: "done", detail: { archive: "skipped_already_archived", pushed: true, commit: remote.commit } };
       } else if (remote) {
@@ -786,7 +813,7 @@ async function main(argv: string[]): Promise<number> {
           steps.archive_readback = { status: "done", detail: { commit: confirmed.commit, archived: true } };
         } finally { confirmed.dispose(); }
       } else {
-        steps.route_archive = { status: "done", detail: routeArchive(paths, issueKey, changeRef, tfsId) };
+        steps.route_archive = { status: "done", detail: routeArchive(paths, issueKey, changeRef, tfsId, undefined, source?.branch) };
         if (source) steps.archive_readback = { status: "done", detail: confirmPublishedArchive(paths, source) };
       }
       // 只有安全归档 + Git Push 返回成功后才能给独立 TFS Writer 提供可执行准备事实。
@@ -827,7 +854,7 @@ async function main(argv: string[]): Promise<number> {
       deliveryCompletionGate(cfg, md, issue.status, remote.changeDir, changeRef, { rootRepo: paths.rootRepo, issueKey, remote: true });
       steps.route_archive = { status: "done", detail: { archived: true, commit: remote.commit, source: "fixed_commit_api" } };
     } else {
-      steps.route_archive = { status: "done", detail: routeArchive(paths, issueKey, changeRef, tfsId) };
+      steps.route_archive = { status: "done", detail: routeArchive(paths, issueKey, changeRef, tfsId, undefined, source?.branch) };
     }
 
     // 先查询本次摘要；ID 缺失/旧 ID 均不能作为发布或跳过的依据。

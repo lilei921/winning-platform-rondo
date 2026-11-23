@@ -131,7 +131,6 @@ rondo delivery handoff --issue <KEY>
 rondo delivery route-decision --config <repo-registry.json> --issue <KEY> --comment-id <uuid> --next ANALYSIS|ENGINEERING|RECREATE_PR|CANCEL_DELIVERY [--reason REJECTED|DISCARDED] [--affected-task-refs <1.1,1.2>]
 rondo delivery finalize --phase prepare|complete --issue <KEY> --config <repo-registry.json> [--root-repo <path>]
 rondo delivery root-prepare --issue <KEY> --config <repo-registry.json>
-rondo delivery root-cleanup --root-repo <path> --token <cleanup_token>
 ```
 
 | 命令 | 功能 |
@@ -139,10 +138,9 @@ rondo delivery root-cleanup --root-repo <path> --token <cleanup_token>
 | `delivery handoff` | Wayfinder 准入通过后依据 Issue 的 `tfs.type` 将 Issue 交给目标 Agent / Squad，并回读原生 Run |
 | `delivery route-decision` | 根据已确定的 Human Decision 执行交付返工、重建 PR 等确定性动作 |
 | `delivery finalize` | `prepare` 核验交付并准备收口；`complete` 在外部回写完成后核验并结束交付 |
-| `delivery root-prepare` | 在 Task workdir 的受控子目录内调用平台 `multica repo checkout`，切到 `analysis.source.branch`，返回 `root_repo` 与 `cleanup_token` |
-| `delivery root-cleanup` | 只释放本 Run 的根仓所有权标记；平台 worktree 归 daemon 管理，不删除目录 |
+| `delivery root-prepare` | 在 Task `workdir/<repo-name>` 复用 Multica Checkout，建立 Task 独立本地归档分支，返回 `root_repo` |
 
-`delivery root-prepare` 仅用于 Requirement OpenSpec Change，且必须在 Multica Task 内运行。它复用 daemon bare cache（不再执行全量 `git clone`），并通过平台 checkout 身份（isolated 证据：完整 checkout 的 `[multica] checkout-mode`，或 daemon `.repos/<workspace-id>/` 缓存 worktree + `.multica/daemon_task_context.json`；Task/Workspace、平台分支尾号、`issue runs --active`）、Origin/Branch、批准 Commit 与远端归档逐项校验。旧命令名 `root-clone` 保留为同义别名。`root-cleanup` 只删除 `.git` 内的所有权标记，保留平台 worktree。
+`delivery root-prepare` 仅用于 Requirement OpenSpec Change，必须在 Multica Task workdir 内运行。优先复用现有 Checkout，必要时直接调用 `multica repo checkout`，校验平台 isolated/Task/Workspace 身份、Origin/Push URL 与 `analysis.source.commit` 的可达性；本地归档分支按 Task 和来源分支隔离。Fetch、普通 Push（`HEAD:refs/heads/<analysis.source.branch>`）及 Readback 均指向 `analysis.source.branch`。不使用 Owner Marker、Cleanup Token 或 `root-cleanup`；平台 Worktree 由 Multica 管理。`root-clone` 暂保留为 Native Checkout 兼容别名。
 
 `delivery handoff` 的映射规则：
 

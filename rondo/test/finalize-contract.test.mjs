@@ -12,7 +12,7 @@
  *     归档发生且 push 到达；contract_files 以未勾选 tasks.md 计算（勾选变化不改哈希仍 PASS）；
  *  T2 gate 三态：旧 hash → exit 2；缺 contract_files → exit 3；无适用 Evidence → exit 3；
  *  T3 M2.3：Change 工件未提交 → 先 "finalize:" 提交再归档；foreign 预暂存 → exit 3 且不提交；
- *  T4 M2.5：未涉及 capability 的 specs 脏文件 → exit 3；涉及 capability 的 → 随归档提交；
+ *  T4 M2.5：首次归档前的外来 Specs 脏文件（即使同 capability）→ exit 3；归档生成的 Specs 正常提交；
  *  T5 续走：完整跑一遍后重跑 → done-shortcut；预置"已归档+writeback 完成+无 summary_comment_id"
  *     → summary 恰好发一次。
  */
@@ -28,6 +28,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
 const MOCK = fileURLToPath(new URL("./mock-multica.cjs", import.meta.url));
 const { computeContractFiles } = await import(pathToFileURL(fileURLToPath(new URL("../dist/commands/delivery/contract-files.js", import.meta.url))).href);
+const { routeArchive } = await import(pathToFileURL(fileURLToPath(new URL("../dist/commands/delivery/finalize.js", import.meta.url))).href);
 
 const CHANGE_REF = "c-fin";
 const STEPS_GOLDEN = ["pr_transition_gate", "pending_written", "workspace_reconciliation", "completion_gate",
@@ -237,11 +238,8 @@ async function fixture(t, opts = {}) {
   const rootRemote = join(dir, "root-remote.git");
   mkdirSync(rootRemote);
   git(rootRemote, "init", "--bare");
-  // Requirement 根仓模拟平台 checkout：位于 workdir 的受控子目录，带 isolated 标记与 agent 分支。
-  const rootRepo = opts.requirement
-    ? join(dir, "rondo-closeout-fixture", "winning-platform-monorepo")
-    : join(dir, "root-repo");
-  if (opts.requirement) mkdirSync(dirname(rootRepo), { recursive: true });
+  // Requirement root is directly inside the Task workdir, without a Rondo-owned parent.
+  const rootRepo = opts.requirement ? join(dir, "root") : join(dir, "root-repo");
   mkdirSync(rootRepo);
   git(rootRepo, "init");
   git(rootRepo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "--allow-empty", "-m", "init");
@@ -256,7 +254,8 @@ async function fixture(t, opts = {}) {
   // change 目录
   const changeParent = opts.preArchived ? join(rootRepo, "openspec", "changes", "archive", `2026-01-01-${CHANGE_REF}`) : join(rootRepo, "openspec", "changes", CHANGE_REF);
   mkdirSync(join(changeParent, "specs", "cap1"), { recursive: true });
-  writeFileSync(join(changeParent, ".openspec.yaml"), "schema: corrective-change\n");
+  writeFileSync(join(changeParent, ".openspec.yaml"), opts.requirement
+    ? "schema: corrective-change\nx-repositories: [repo1]\n" : "schema: corrective-change\n");
   writeFileSync(join(changeParent, "proposal.md"), "# 提案\n");
   writeFileSync(join(changeParent, "tasks.md"), TASKS_CHECKED);
   writeFileSync(join(changeParent, "specs", "cap1", "spec.md"), "# cap1 spec\n");
@@ -306,21 +305,25 @@ async function fixture(t, opts = {}) {
     git(rootRemote, "update-server-info");
     const source = { repo_url: tfsUrl + "/Proj1/_git/root", branch: "dev", commit: git(rootRepo, "rev-parse", "HEAD"), change_ref: CHANGE_REF };
     git(rootRepo, "remote", "set-url", "origin", source.repo_url);
-    // 平台 checkout 的可见证据：isolated 配置、agent 分支、以及 Rondo 所有权标记。
+    // Keep the platform agent branch as evidence; all archive commits use a Task-local branch.
     git(rootRepo, "config", "multica.checkout-mode", "isolated");
     git(rootRepo, "switch", "-c", "agent/pr-status-sync-agent/" + taskSuffix);
-    git(rootRepo, "switch", "dev");
-    writeFileSync(join(rootRepo, ".git", "rondo-closeout-owner.json"), JSON.stringify({
-      ...source, workdir: dir, token: "fixture", provenance: "multica-repo-checkout", issue_id: "issue-1",
-      task_id: taskId, workspace_id: workspaceId,
-      checkout_branch: "agent/pr-status-sync-agent/" + taskSuffix, checkout_mode: "isolated",
-    }));
+    git(rootRepo, "switch", "-c", "rondo/closeout/" + taskSuffix + "/dev");
     metadata = {
       ...metadata,
       "tfs.type": "需求",
       "analysis.source": JSON.stringify(source),
       "dev.dispatch": undefined,
-      pr_prep: JSON.stringify([{ repo_key: "repo1", source_branch: "feature/999" }]),
+      pr_prep: JSON.stringify([{
+        repo_key: "repo1", source_branch: "feature/999", target_branch: "main",
+        candidate_commit: git(seed, "rev-parse", "HEAD"), title: "Requirement delivery",
+        description: "Implementation and verification completed",
+        local_validation: { result: "PASS", summary: "Verified", command: ["node", "--test"], exit_code: 0,
+          candidate_commit: git(seed, "rev-parse", "HEAD"), source: "rondo dev pr-prep" },
+        code_review: { result: "PASS", summary: "Reviewed", findings: [],
+          candidate_commit: git(seed, "rev-parse", "HEAD") },
+        blockers: [],
+      }]),
     };
   }
 
@@ -329,7 +332,8 @@ async function fixture(t, opts = {}) {
   const config = join(dir, "registry.json");
   writeFileSync(config, JSON.stringify({
     runtime: { multica_cli: MOCK, workspace_id: "ws-test" },
-    registry: { repo1: { repo_path: "repo1", tfs_repo: "repo1", tfs_project: "Proj1" } },
+    registry: { repo1: { repo_path: "repo1", repo_url: bizRemote, default_target_branch: "main",
+      tfs_repo: "repo1", tfs_project: "Proj1" } },
   }));
   const statePath = join(dir, "state.json");
   writeFileSync(statePath, JSON.stringify({
@@ -355,7 +359,7 @@ async function fixture(t, opts = {}) {
   // 模拟 PR Status Sync Agent 的同一个 Run：Prepare → 独立 TFS Writeback → Complete。
   // 每段都是真实 CLI 子进程；测试组合结果仅用于兼容既有 Finalize 契约断言。
   const runCli = (args) => new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [CLI, ...args], { env });
+    const child = spawn(process.execPath, [CLI, ...args], { env, cwd: dir });
     let stdout = "", stderr = "";
     child.stdout.on("data", d => { stdout += d; });
     child.stderr.on("data", d => { stderr += d; });
@@ -394,7 +398,7 @@ async function fixture(t, opts = {}) {
 
   const readState = () => JSON.parse(readFileSync(statePath, "utf8"));
   const readOps = () => (existsSync(opsLog) ? readFileSync(opsLog, "utf8").trim().split("\n") : []);
-  return { run, phase, writeback, readState, readOps, rootRepo, rootRemote, changeDir: changeParent, dir, wis, tfsControl,
+  return { run, phase, writeback, readState, readOps, rootRepo, rootRemote, changeDir: changeParent, dir, bin, wis, tfsControl,
     archiveHook: join(dir, "archive-hook.cjs") };
 }
 
@@ -431,6 +435,25 @@ test("T1 happy finalize：PASS + steps 键序 golden + archive<writeback<summary
   assert.ok(!existsSync(join(f.rootRepo, "openspec", "changes", CHANGE_REF)));
   const remoteLog = git(f.rootRemote, "log", "dev", "--format=%s");
   assert.match(remoteLog, new RegExp(`archive: ${CHANGE_REF} \\(WNDF-T / tfs 999\\)`));
+});
+
+test("routeArchive 在本地 Task 分支提交，只发布到明确的远端 dev", async t => {
+  const f = await fixture(t);
+  git(f.rootRepo, "switch", "-c", "rondo/closeout/fixture/dev");
+  git(f.rootRepo, "config", "user.name", "Rondo Test");
+  git(f.rootRepo, "config", "user.email", "test@example.invalid");
+  const previousPath = process.env.PATH;
+  process.env.PATH = f.bin + delimiter + (previousPath ?? "");
+  t.after(() => { if (previousPath === undefined) delete process.env.PATH; else process.env.PATH = previousPath; });
+  const paths = { rootRepo: f.rootRepo, openspecRoot: join(f.rootRepo, "openspec"),
+    projectId: "", daemonId: null, source: "explicit_arg" };
+  const detail = routeArchive(paths, "WNDF-T", CHANGE_REF, "999", undefined, "dev");
+  assert.equal(detail.branch, "dev");
+  assert.equal(detail.local_branch, "rondo/closeout/fixture/dev");
+  assert.equal(detail.pushed, true);
+  assert.equal(git(f.rootRepo, "symbolic-ref", "--short", "HEAD"), "rondo/closeout/fixture/dev");
+  assert.match(git(f.rootRemote, "log", "dev", "--format=%s"), /archive: c-fin/);
+  assert.equal(git(f.rootRemote, "rev-parse", "dev"), git(f.rootRepo, "rev-parse", "HEAD"));
 });
 
 test("T2 gate 三态：旧 hash → exit 2；缺 contract_files → exit 3；无适用 Evidence → exit 3", async (t) => {
@@ -472,7 +495,7 @@ test("T3 M2.3：未提交 Change 工件先 finalize: 提交再归档；foreign �
   assert.ok(!log2.includes(`finalize: ${CHANGE_REF}`), "foreign 时不得提交");
 });
 
-test("T4 M2.5：未涉及 capability 的 specs 脏文件 → exit 3；涉及的 → 随归档提交", async (t) => {
+test("T4 M2.5：首次 Archive 前任何遗留 Specs 都不得夹带，正常 Archive 仍生成所属 Specs", async (t) => {
   const f = await fixture(t);
   mkdirSync(join(f.rootRepo, "openspec", "specs", "other"), { recursive: true });
   writeFileSync(join(f.rootRepo, "openspec", "specs", "other", "spec.md"), "foreign cap");
@@ -484,8 +507,14 @@ test("T4 M2.5：未涉及 capability 的 specs 脏文件 → exit 3；涉及的 
   mkdirSync(join(f2.rootRepo, "openspec", "specs", "cap1"), { recursive: true });
   writeFileSync(join(f2.rootRepo, "openspec", "specs", "cap1", "extra.md"), "touched cap extra");
   const r2 = await f2.run();
-  assert.equal(r2.exit, 0, `stdout=${r2.stdout.slice(0, 400)} stderr=${r2.stderr.slice(0, 400)}`);
-  assert.equal(git(f2.rootRepo, "status", "--porcelain"), "", "提交后净树");
+  assertPending(f2, r2);
+  assert.match(r2.body.reason, /首次 Archive 前存在已修改的 Specs/);
+  assert.ok(existsSync(join(f2.rootRepo, "openspec", "specs", "cap1", "extra.md")));
+  assert.ok(!f2.readOps().includes("archive"));
+  const clean = await fixture(t);
+  const ok = await clean.run();
+  assert.equal(ok.exit, 0, ok.stdout + ok.stderr);
+  assert.equal(readFileSync(join(clean.rootRepo, "openspec", "specs", "cap1", "spec.md"), "utf8"), "# cap1 spec\n");
 });
 
 test("T5 续走：完成后重跑 → done-shortcut；预置已归档+writeback 完成 → summary 恰一次", async (t) => {
@@ -755,7 +784,7 @@ test("前导空格的范围外路径不能伪装成 openspec 路径", async (t) 
   assert.ok(!f.readOps().includes("archive"));
 });
 
-test("远端未前进的临时推送失败可重试，AGENTS.md 保持原样且不 rebase", async (t) => {
+test("远端未接受 Push 时安全停止，下一轮依据远端事实恢复而不重复 Archive", async (t) => {
   const f = await fixture(t);
   const hooks = join(f.dir, "hooks");
   mkdirSync(hooks);
@@ -763,13 +792,14 @@ test("远端未前进的临时推送失败可重试，AGENTS.md 保持原样且�
   writeFileSync(hook, '#!/bin/sh\nif test ! -f "$0.once"; then\n  touch "$0.once"\n  exit 1\nfi\nexit 0\n');
   chmodSync(hook, 0o755);
   git(f.rootRepo, "config", "core.hooksPath", hooks);
-  writeFileSync(join(f.rootRepo, "AGENTS.md"), "运行时指令\n");
-  const r = await f.run();
-  assert.equal(r.exit, 0, r.stdout + r.stderr);
-  assert.match(r.stderr, /push 失败，回核远端/);
-  assert.doesNotMatch(r.stderr, /\$ git (?:pull --rebase|rebase)\b/);
-  assert.equal(readFileSync(join(f.rootRepo, "AGENTS.md"), "utf8"), "运行时指令\n");
+  const first = await f.phase("prepare");
+  assertPending(f, first);
+  assert.match(first.body.reason, /Push 未确认|Non-Fast-Forward/);
   assert.equal(f.readOps().filter(x => x === "archive").length, 1);
+  const resumed = await f.run();
+  assert.equal(resumed.exit, 0, resumed.stdout + resumed.stderr);
+  assert.equal(f.readOps().filter(x => x === "archive").length, 1);
+  assert.doesNotMatch(resumed.stderr, /\$ git (?:pull --rebase|rebase)\b/);
 });
 
 test("推送时远端才前进：拒绝后回核分叉，不自动 rebase 或再次推送", async (t) => {
@@ -786,8 +816,7 @@ test("推送时远端才前进：拒绝后回核分叉，不自动 rebase 或再
   writeFileSync(join(f.rootRepo, "AGENTS.md"), "运行时指令\n");
   const r = await f.run();
   assertPending(f, r);
-  assert.match(r.stderr, /push 失败，回核远端/);
-  assert.match(r.body.reason, /分叉/);
+  assert.match(r.body.reason, /Push 未确认|Non-Fast-Forward/);
   assert.match(git(f.rootRepo, "log", "-1", "--format=%s"), /archive:/);
   assert.doesNotMatch(git(f.rootRemote, "log", "dev", "--format=%s"), /archive:/);
   assert.equal(readFileSync(join(f.rootRepo, "AGENTS.md"), "utf8"), "运行时指令\n");
@@ -800,6 +829,27 @@ test("D3-B: TFS writeback cannot run before prepared archive, even with valid wo
   assert.match(result.body.reason, /finalize.pending/);
   assert.notEqual(f.readState().issues["WNDF-T"].status, "done");
   assert.equal(f.wis.get(999).fields["System.State"], "活动");
+  assert.equal(f.readOps().includes("archive"), false);
+});
+
+test("Requirement 首次 Prepare 复用完成 Gate，未完成 tasks 不归档", async t => {
+  const f = await fixture(t, { requirement: true });
+  writeFileSync(join(f.changeDir, "tasks.md"), "- [ ] 1.1 Pending\n");
+  const r = await f.phase("prepare");
+  assert.equal(r.exit, 2, r.stdout + r.stderr);
+  assert.match(r.body.reason, /未完成|tasks\.md/);
+  assert.ok(existsSync(f.changeDir));
+  assert.ok(!f.readOps().includes("archive"));
+  assert.equal(f.wis.get(999).fields["System.State"], "活动");
+});
+
+test("Requirement 已归档且 Gate 满足时可补 Prepare 回读，不重复 Archive", async t => {
+  const f = await fixture(t, { requirement: true, preArchived: true });
+  const r = await f.phase("prepare");
+  assert.equal(r.exit, 0, r.stdout + r.stderr);
+  assert.equal(r.body.status, "prepared");
+  assert.equal(r.body.steps.completion_gate.status, "done");
+  assert.equal(r.body.steps.route_archive.detail.archive, "skipped_already_archived");
   assert.equal(f.readOps().includes("archive"), false);
 });
 
