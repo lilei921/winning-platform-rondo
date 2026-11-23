@@ -22,4 +22,4 @@ rondo pr reconcile-status
 - `stopped_abandoned`：PR 已放弃，停止自动推进。
 - `unknown`：PR 状态或登记事实尚未确认。
 
-`failures[]` 非空或全局 `UNKNOWN` 时，核实异常；未确认前不推进受影响 Issue，必要时报告。
+出现异常时，核实原因并根据实际情况处理；未经确认的结果不作为后续操作依据。
