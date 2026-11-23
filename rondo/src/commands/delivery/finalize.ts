@@ -854,7 +854,8 @@ async function main(argv: string[]): Promise<number> {
       deliveryCompletionGate(cfg, md, issue.status, remote.changeDir, changeRef, { rootRepo: paths.rootRepo, issueKey, remote: true });
       steps.route_archive = { status: "done", detail: { archived: true, commit: remote.commit, source: "fixed_commit_api" } };
     } else {
-      steps.route_archive = { status: "done", detail: routeArchive(paths, issueKey, changeRef, tfsId, undefined, source?.branch) };
+      // 此分支 source 已收窄为 null，无需再传分支名
+      steps.route_archive = { status: "done", detail: routeArchive(paths, issueKey, changeRef, tfsId, undefined, undefined) };
     }
 
     // 先查询本次摘要；ID 缺失/旧 ID 均不能作为发布或跳过的依据。
