@@ -1,0 +1,145 @@
+{
+  "collected_at": "2026-11-23T15:56:23+08:00",
+  "profile": "default (C:/Users/lilei/.multica/config.json)",
+  "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+  "autopilot_id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+  "autopilot_run_id": "01a20697-8f6a-7331-b4c8-ce6ff1fde295",
+  "agent_run_id": "01a20697-8f6d-7c66-a79e-352455e42d54",
+  "session_id": "01a20697-8eee-7a03-a2a9-2309bda1e998",
+  "provider": "codex",
+  "read_only_commands": [
+    [
+      "multica",
+      "autopilot",
+      "list",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "autopilot",
+      "get",
+      "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "autopilot",
+      "runs",
+      "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+      "--limit",
+      "5",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "agent",
+      "tasks",
+      "34986774-e980-4695-816b-4266a25a86c9",
+      "--limit",
+      "200",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "agent",
+      "get",
+      "34986774-e980-4695-816b-4266a25a86c9",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "issue",
+      "get",
+      "LEI-49",
+      "--output",
+      "json"
+    ]
+  ],
+  "export": {
+    "exporter": ".agents/skills/session-replay/scripts/session_export.py",
+    "timeline_generator": ".agents/skills/session-replay/scripts/session_timeline.py",
+    "replay_json": "20261123-1208-01a20697/replay.json",
+    "replay_md": "20261123-1208-01a20697/replay.md",
+    "timeline_md": "20261123-1208-01a20697/timeline.md",
+    "tool_truncation": "默认（工具结果 800 字符、用户输入 4000 字符）"
+  },
+  "source_files": [
+    {
+      "path": "D:\\Multica\\default\\winning-lil-b39bad65de56\\task-352455e42d54\\codex-home\\sessions\\2026\\11\\23\\rollout-2026-11-23T12-08-48-01a20697-8eee-7a03-a2a9-2309bda1e998.jsonl",
+      "size_bytes": 728318,
+      "sha256": "b306a758c98a27da771a82cea0f47b6b4ee07269eaef955dc200e2b9694f74f7"
+    }
+  ],
+  "sources_stable_during_export": true,
+  "verification": {
+    "session_id": "01a20697-8eee-7a03-a2a9-2309bda1e998",
+    "verification_schema": "item_completed",
+    "source_public_tool_count": 30,
+    "exported_tool_count": 30,
+    "source_user_messages": 1,
+    "source_assistant_messages": 7,
+    "messages_match": true,
+    "missing_tool_ids": [],
+    "extra_tool_ids": [],
+    "tool_order_matches": true,
+    "invalid_jsonl_lines": 0,
+    "unsupported_events": {},
+    "task_boundaries": [
+      {
+        "timestamp": "2026-11-23T04:08:48.215Z",
+        "type": "task_started"
+      }
+    ],
+    "subagents": [],
+    "coverage_granularity": "item_completed (exec envelopes and injected response context excluded)",
+    "response_exec_envelopes": 72,
+    "unmatched_response_items": [],
+    "legacy_only_files": [],
+    "complete": true,
+    "provider": "codex",
+    "sources_stable": true
+  },
+  "run_coverage": {
+    "complete": false,
+    "run_intervals": {
+      "01a20697-8f6a-7331-b4c8-ce6ff1fde295": []
+    },
+    "uncovered_run_ids": [
+      "01a20697-8f6a-7331-b4c8-ce6ff1fde295"
+    ],
+    "ambiguous_intervals": [],
+    "invalid_boundaries": false,
+    "open_task": true,
+    "reason": "日志只有 task_started，没有 task_complete；Session 最后事件 12:17:58，平台 13:00:24 取消"
+  },
+  "coverage": "partial",
+  "gaps": [
+    "Run 没有最终 session_id（Task result=null），session 通过 work_dir 内 codex-home 完整 session ID 定位",
+    "日志缺少 task_complete 边界，Run 执行区间无法闭环",
+    "Session 在写回 inspect 结果后直接中断，没有最终 Assistant 回复或后续工具调用",
+    "平台 Autopilot Run 状态 failed(task failed)，Task 状态 cancelled(cancelled_by lilei)，两者不一致",
+    "未观察到根仓清理命令；task workdir 下 rondo-closeout-nyVfo8 仍在现场（回放未修改）"
+  ],
+  "verified_at": "2026-11-23T15:56:23+08:00",
+  "session_stats": {
+    "duration_seconds": 536.6,
+    "user_prompts": 1,
+    "assistant_turns": 8,
+    "tool_calls_total": 30,
+    "tool_errors_total": 2,
+    "subagents": 0,
+    "tokens": {
+      "input_tokens": 2524362,
+      "cache_read_input_tokens": 2475392,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 7260,
+      "reasoning_output_tokens": 1554,
+      "total_tokens": 2531622
+    }
+  }
+}

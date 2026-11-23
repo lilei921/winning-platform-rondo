@@ -1,0 +1,39 @@
+{
+  "collected_at": "2026-11-23T15:56:23+08:00",
+  "autopilot": {
+    "assignee_id": "34986774-e980-4695-816b-4266a25a86c9",
+    "assignee_type": "agent",
+    "can_manage_access": true,
+    "can_write": true,
+    "created_at": "2026-10-29T10:41:15+08:00",
+    "created_by_id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+    "created_by_type": "member",
+    "description": "使用 `pr-status-sync` Skill 完成本轮 PR 状态同步；根据已确认的结果，使用 `issue-closeout` Skill 完成符合条件的交付收口，并报告最终结果及待处理事项。",
+    "execution_mode": "run_only",
+    "id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+    "issue_title_template": null,
+    "last_run_at": "2026-11-23T12:08:45+08:00",
+    "pause_reason": null,
+    "project_id": null,
+    "status": "active",
+    "subscribers": [],
+    "title": "PR Status Sync",
+    "updated_at": "2026-11-23T12:08:45+08:00",
+    "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56"
+  },
+  "target_run": {
+    "autopilot_id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+    "completed_at": "2026-11-23T13:00:24+08:00",
+    "created_at": "2026-11-23T12:08:45+08:00",
+    "failure_reason": "task failed",
+    "id": "01a20697-8f6a-7331-b4c8-ce6ff1fde295",
+    "issue_id": null,
+    "result": null,
+    "source": "manual",
+    "status": "failed",
+    "task_id": "01a20697-8f6d-7c66-a79e-352455e42d54",
+    "trigger_id": null,
+    "trigger_payload": null,
+    "triggered_at": "2026-11-23T12:08:45+08:00"
+  }
+}
