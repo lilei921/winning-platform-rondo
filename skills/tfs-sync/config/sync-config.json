@@ -6,7 +6,7 @@
       "--wiql",
       "SELECT [System.Id], [System.WorkItemType], [System.Title], [System.AssignedTo], [System.State], [System.Tags], [System.CreatedDate], [System.ChangedDate] FROM workitems WHERE [System.WorkItemType] IN ('需求','Bug') AND [System.AssignedTo] = @me AND [System.State] <> '已验证' AND [System.State] <> '已关闭' ORDER BY [System.Id]"
     ],
-    "query_command_note": "输出必须是 JSON 数组，元素字段：id, type, title, url, state, changedDate（rondo query 已对齐此契约）。本 TFS 实例为中文本地化（2026-10-14 实测）：类型名 '需求'/'任务'/'问题'（Bug 保持英文），状态名 '已建议'/'已分析'/'活动'/'已解决'/'已验证'/'已关闭'。同步查询：AssignedTo=@me（@me 解析为 PAT 属主 lintao，2026-10-14 用户定：先只接指派给当前成员的项，后续看情况调整）；2026-10-29 用户裁定：只同步需求与 Bug（WorkItemType IN 过滤），任务/问题不建 Issue（此前 WIQL 无类型过滤，需求下挂任务也被逐项同步）。改范围只需改此 WIQL。退出码 3 = UNKNOWN（不得视为空结果）。"
+    "query_command_note": "查询TFS需求、任务的WIQL语句"
   },
   "multica": {
     "cli": "multica",
@@ -15,7 +15,7 @@
     "project": "68b81377-601e-4d6c-84fd-122c05f0308f",
     "intake_agent": "Wayfinder Agent",
     "initial_status": "backlog",
-    "cli_note": "创建先 backlog + Wayfinder Agent；TFS 来源/附件与 Owner 回读完成即同步完成，Issue 保持 backlog 停放，不做状态激活（准入由 Human 在 Issue 上 Mention Wayfinder 触发）。只对新建或 pending 初始化进行收口；既有 Issue 的正常执行字段不改。workspace_id 必须显式指定。"
+    "cli_note": "创建先 backlog + Wayfinder Agent；Issue 保持 backlog 停放，暂不做状态激活。"
   },
   "sync": {
     "managed_fields_only_on_existing": true,
