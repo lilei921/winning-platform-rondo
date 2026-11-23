@@ -237,11 +237,8 @@ async function fixture(t, opts = {}) {
   const rootRemote = join(dir, "root-remote.git");
   mkdirSync(rootRemote);
   git(rootRemote, "init", "--bare");
-  // Requirement 根仓模拟平台 checkout：位于 workdir 的受控子目录，带 isolated 标记与 agent 分支。
-  const rootRepo = opts.requirement
-    ? join(dir, "rondo-closeout-fixture", "winning-platform-monorepo")
-    : join(dir, "root-repo");
-  if (opts.requirement) mkdirSync(dirname(rootRepo), { recursive: true });
+  // Requirement root is directly inside the Task workdir, without a Rondo-owned parent.
+  const rootRepo = opts.requirement ? join(dir, "root") : join(dir, "root-repo");
   mkdirSync(rootRepo);
   git(rootRepo, "init");
   git(rootRepo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "--allow-empty", "-m", "init");
@@ -306,15 +303,10 @@ async function fixture(t, opts = {}) {
     git(rootRemote, "update-server-info");
     const source = { repo_url: tfsUrl + "/Proj1/_git/root", branch: "dev", commit: git(rootRepo, "rev-parse", "HEAD"), change_ref: CHANGE_REF };
     git(rootRepo, "remote", "set-url", "origin", source.repo_url);
-    // 平台 checkout 的可见证据：isolated 配置、agent 分支、以及 Rondo 所有权标记。
+    // Keep the platform agent branch as evidence; all archive commits use a Task-local branch.
     git(rootRepo, "config", "multica.checkout-mode", "isolated");
     git(rootRepo, "switch", "-c", "agent/pr-status-sync-agent/" + taskSuffix);
-    git(rootRepo, "switch", "dev");
-    writeFileSync(join(rootRepo, ".git", "rondo-closeout-owner.json"), JSON.stringify({
-      ...source, workdir: dir, token: "fixture", provenance: "multica-repo-checkout", issue_id: "issue-1",
-      task_id: taskId, workspace_id: workspaceId,
-      checkout_branch: "agent/pr-status-sync-agent/" + taskSuffix, checkout_mode: "isolated",
-    }));
+    git(rootRepo, "switch", "-c", "rondo/closeout/" + taskSuffix + "/dev");
     metadata = {
       ...metadata,
       "tfs.type": "需求",
@@ -355,7 +347,7 @@ async function fixture(t, opts = {}) {
   // 模拟 PR Status Sync Agent 的同一个 Run：Prepare → 独立 TFS Writeback → Complete。
   // 每段都是真实 CLI 子进程；测试组合结果仅用于兼容既有 Finalize 契约断言。
   const runCli = (args) => new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [CLI, ...args], { env });
+    const child = spawn(process.execPath, [CLI, ...args], { env, cwd: dir });
     let stdout = "", stderr = "";
     child.stdout.on("data", d => { stdout += d; });
     child.stderr.on("data", d => { stderr += d; });
@@ -755,7 +747,7 @@ test("前导空格的范围外路径不能伪装成 openspec 路径", async (t) 
   assert.ok(!f.readOps().includes("archive"));
 });
 
-test("远端未前进的临时推送失败可重试，AGENTS.md 保持原样且不 rebase", async (t) => {
+test("远端未接受 Push 时安全停止，下一轮依据远端事实恢复而不重复 Archive", async (t) => {
   const f = await fixture(t);
   const hooks = join(f.dir, "hooks");
   mkdirSync(hooks);
@@ -763,13 +755,14 @@ test("远端未前进的临时推送失败可重试，AGENTS.md 保持原样且�
   writeFileSync(hook, '#!/bin/sh\nif test ! -f "$0.once"; then\n  touch "$0.once"\n  exit 1\nfi\nexit 0\n');
   chmodSync(hook, 0o755);
   git(f.rootRepo, "config", "core.hooksPath", hooks);
-  writeFileSync(join(f.rootRepo, "AGENTS.md"), "运行时指令\n");
-  const r = await f.run();
-  assert.equal(r.exit, 0, r.stdout + r.stderr);
-  assert.match(r.stderr, /push 失败，回核远端/);
-  assert.doesNotMatch(r.stderr, /\$ git (?:pull --rebase|rebase)\b/);
-  assert.equal(readFileSync(join(f.rootRepo, "AGENTS.md"), "utf8"), "运行时指令\n");
+  const first = await f.phase("prepare");
+  assertPending(f, first);
+  assert.match(first.body.reason, /Push 未确认|Non-Fast-Forward/);
   assert.equal(f.readOps().filter(x => x === "archive").length, 1);
+  const resumed = await f.run();
+  assert.equal(resumed.exit, 0, resumed.stdout + resumed.stderr);
+  assert.equal(f.readOps().filter(x => x === "archive").length, 1);
+  assert.doesNotMatch(resumed.stderr, /\$ git (?:pull --rebase|rebase)\b/);
 });
 
 test("推送时远端才前进：拒绝后回核分叉，不自动 rebase 或再次推送", async (t) => {
@@ -786,7 +779,7 @@ test("推送时远端才前进：拒绝后回核分叉，不自动 rebase 或再
   writeFileSync(join(f.rootRepo, "AGENTS.md"), "运行时指令\n");
   const r = await f.run();
   assertPending(f, r);
-  assert.match(r.stderr, /push 失败，回核远端/);
+  assert.match(r.body.reason, /Push 未确认|Non-Fast-Forward/);
   assert.match(r.body.reason, /分叉/);
   assert.match(git(f.rootRepo, "log", "-1", "--format=%s"), /archive:/);
   assert.doesNotMatch(git(f.rootRemote, "log", "dev", "--format=%s"), /archive:/);
