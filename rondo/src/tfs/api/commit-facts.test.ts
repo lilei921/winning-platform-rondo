@@ -20,18 +20,11 @@ function clientWith(owners:number[], mode:"okay"|"omitted"|"mismatch"="okay"):an
     },
   };
 }
-test("反向查询未经真实 TFS 2018 验证则 UNKNOWN，不能认为没有占用", async t=>{
+test("未配置验收开关仍可反查其他 Task，缺 Work Items 或直链不符则 UNKNOWN",async t=>{
   const prev=process.env.RONDO_TFS_REVERSE_QUERY_VERIFIED;
   t.after(()=>prev===undefined?delete process.env.RONDO_TFS_REVERSE_QUERY_VERIFIED:
     process.env.RONDO_TFS_REVERSE_QUERY_VERIFIED=prev);
   delete process.env.RONDO_TFS_REVERSE_QUERY_VERIFIED;
-  await assert.rejects(commitTaskOwners(clientWith([]),repo,sha),/尚未通过/);
-});
-test("反向查询识别其他 Issue 的 Task，缺 Work Items 或直链不符则 UNKNOWN",async t=>{
-  const prev=process.env.RONDO_TFS_REVERSE_QUERY_VERIFIED;
-  t.after(()=>prev===undefined?delete process.env.RONDO_TFS_REVERSE_QUERY_VERIFIED:
-    process.env.RONDO_TFS_REVERSE_QUERY_VERIFIED=prev);
-  process.env.RONDO_TFS_REVERSE_QUERY_VERIFIED="1";
   assert.deepEqual(await commitTaskOwners(clientWith([102,101]),repo,sha),[101,102]);
   assert.deepEqual(await commitTaskOwners(clientWith([]),repo,sha),[]);
   await assert.rejects(commitTaskOwners(clientWith([101],"omitted"),repo,sha),/不完整/);
