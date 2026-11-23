@@ -7,27 +7,27 @@ import { fileURLToPath } from "node:url";
 const multicaRoot = fileURLToPath(new URL("../../", import.meta.url));
 const read = (path) => readFileSync(join(multicaRoot, path), "utf8");
 
-test("issue-closeout 名称、Manifest 与 Agent 绑定一致", () => {
+test("delivery-closeout 名称、Manifest 与 Agent 绑定一致", () => {
   const manifest = JSON.parse(read("workspace-config/provisioning.json"));
-  const skillDir = join(multicaRoot, "skills/issue-closeout");
-  const skill = read("skills/issue-closeout/SKILL.md");
-  assert.equal(skill.split("\n")[1], "name: issue-closeout");
+  const skillDir = join(multicaRoot, "skills/delivery-closeout");
+  const skill = read("skills/delivery-closeout/SKILL.md");
+  assert.equal(skill.split("\n")[1], "name: delivery-closeout");
   assert.ok(existsSync(join(skillDir, "config/repo-registry.json")));
-  assert.ok(!existsSync(join(multicaRoot, "skills/finalize-delivery")));
-  assert.ok(manifest.managed_skills.includes("issue-closeout"));
-  assert.ok(!manifest.managed_skills.includes("finalize-delivery"));
+  assert.ok(!existsSync(join(multicaRoot, "skills/issue-closeout")));
+  assert.ok(manifest.managed_skills.includes("delivery-closeout"));
+  assert.ok(!manifest.managed_skills.includes("issue-closeout"));
   const agent = manifest.agents.find((a) => a.name === "PR Status Sync Agent");
   assert.ok(agent?.skills.includes("pr-status-sync"));
-  assert.ok(agent?.skills.includes("issue-closeout"));
-  assert.ok(!manifest.agents.some((a) => a.skills?.includes("finalize-delivery")));
-  assert.ok(read("agents/pr-status-sync-agent/autopilot-prompt.md").includes("issue-closeout"));
+  assert.ok(agent?.skills.includes("delivery-closeout"));
+  assert.ok(!manifest.agents.some((a) => a.skills?.includes("issue-closeout")));
+  assert.ok(read("agents/pr-status-sync-agent/autopilot-prompt.md").includes("delivery-closeout"));
   const sync = readFileSync(new URL("../src/commands/workspace/sync.ts", import.meta.url), "utf8");
-  assert.ok(sync.includes('"issue-closeout"'), "Workspace Sync 应为新 Skill 渲染配置");
-  assert.ok(!sync.includes('"finalize-delivery"'));
+  assert.ok(sync.includes('"delivery-closeout"'), "Workspace Sync 应为新 Skill 渲染配置");
+  assert.ok(!sync.includes('"issue-closeout"'));
 });
 
-test("issue-closeout 保留三段 CLI 收口顺序和异常回执", () => {
-  const skill = read("skills/issue-closeout/SKILL.md");
+test("delivery-closeout 保留三段 CLI 收口顺序和异常回执", () => {
+  const skill = read("skills/delivery-closeout/SKILL.md");
   const commands = [
     "rondo delivery finalize --phase prepare --issue",
     "rondo tfs writeback --issue",

@@ -1,11 +1,11 @@
 ---
-name: issue-closeout
-description: PR 状态同步返回 finalize 或 resume_finalize 后，单 Issue 执行 Prepare、TFS Writeback 和 Complete；Requirement 消费已准备的根仓。
+name: delivery-closeout
+description: PR 完成后执行交付收口，包括 Prepare、TFS Writeback 和 Complete，支持幂等恢复。
 ---
 
-# Issue Closeout
+# Delivery Closeout
 
-消费 `pr-status-sync` 返回的 Issue `<KEY>`。配置 `<config-path>` 为当前 Workspace 挂载的 `issue-closeout/config/repo-registry.json` 绝对路径。
+消费 `pr-status-sync` 返回的 Issue `<KEY>`。配置 `<config-path>` 为当前 Workspace 挂载的 `delivery-closeout/config/repo-registry.json` 绝对路径。
 
 Issue 已经 `done` 且仅需清理残留 pending 时，直接执行不带根仓的 `delivery finalize --phase complete`，按 `already=done` 结束；无需根仓。
 

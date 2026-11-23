@@ -12,7 +12,7 @@
     "change-development",
     "codebase-explorer",
     "diagnosing-bugs",
-    "issue-closeout",
+    "delivery-closeout",
     "pr-status-sync",
     "requirement-analysis",
     "spec-preparation",
@@ -86,7 +86,7 @@
       "visibility": "workspace",
       "skills": [
         "pr-status-sync",
-        "issue-closeout"
+        "delivery-closeout"
       ]
     }
   ],
