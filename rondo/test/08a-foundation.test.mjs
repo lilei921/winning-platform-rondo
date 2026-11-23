@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, realpathSync, symlinkSync, existsSync, unlinkSync, renameSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { prepareBusinessWorkspace, validatePrepareRepo } from '../dist/commands/dev/prepare-workspace.js';
-import { validateNativeCheckout } from '../dist/clients/native-checkout.js';
+import { validateNativeCheckout, platformCheckoutMode, platformTaskSuffix, assertPlatformCheckoutIdentity, readPlatformCheckoutManifest, isDaemonCacheWorktree, readDaemonTaskContext } from '../dist/clients/native-checkout.js';
 import { assertBugExecution, assertBugStart, assertBugSource } from '../dist/commands/bug/authorization.js';
 import { ensureDeliverySummary } from '../dist/commands/delivery/summary.js';
 import { deliveryCommentReference, readTfsHistory } from '../dist/commands/tfs/delivery-comment.js';
@@ -117,6 +117,68 @@ test('根仓就绪检查支持自定义目录布局和 linked worktree', t => {
   assert.ok(readFileSync(join(worktree, '.git'), 'utf8').startsWith('gitdir:'));
   assert.equal(validateNativeCheckout(worktree).rootRepo, git(worktree, 'rev-parse', '--show-toplevel'));
   assert.equal(readFileSync(join(worktree, 'AGENTS.md'), 'utf8'), '规则');
+});
+
+test('平台 checkout 形态：isolated 标记、任务分支尾号与 manifest 身份交叉验证', t => {
+  const f = fixture(t);
+  git(f.root, 'config', 'multica.checkout-mode', 'isolated');
+  assert.equal(platformCheckoutMode(f.root), 'isolated');
+  const taskId = '01a1d2fc-da3a-796b-9584-f8f23e188c07';
+  const identity = {
+    checkout_branch: 'agent/pr-status-sync-agent/' + platformTaskSuffix(taskId),
+    task_id: taskId,
+    workspace_id: 'ws',
+    checkout_mode: 'isolated',
+  };
+  // 当前 Run 与平台 checkout 证据必须逐项一致。
+  assert.doesNotThrow(() => assertPlatformCheckoutIdentity(identity, { mode: 'isolated', taskId, workspaceId: 'ws' }));
+  assert.throws(() => assertPlatformCheckoutIdentity(
+    { ...identity, checkout_branch: 'agent/pr-status-sync-agent/000000000000' },
+    { mode: 'isolated', taskId, workspaceId: 'ws' }), /尾号/);
+  // 平台为同一 Task 的多个 checkout 追加时间戳时仍接受。
+  assert.doesNotThrow(() => assertPlatformCheckoutIdentity(
+    { ...identity, checkout_branch: identity.checkout_branch + '-1795419784' },
+    { mode: 'isolated', taskId, workspaceId: 'ws' }));
+  // 非纯数字后缀不冒充同一 Task。
+  assert.throws(() => assertPlatformCheckoutIdentity(
+    { ...identity, checkout_branch: identity.checkout_branch + '-evil' },
+    { mode: 'isolated', taskId, workspaceId: 'ws' }), /尾号/);
+  assert.throws(() => assertPlatformCheckoutIdentity(identity, { mode: 'shared', taskId, workspaceId: 'ws' }), /isolated/);
+  assert.throws(() => assertPlatformCheckoutIdentity(identity, { mode: 'isolated', taskId, workspaceId: 'other' }), /Task\/Workspace/);
+  // 强方案接口：manifest 存在时字段可读且完整；不可识别必须 fail closed。
+  const manifest = join(f.root, '.git', 'multica-checkout.json');
+  writeFileSync(manifest, JSON.stringify({ checkout_mode: 'isolated', task_id: taskId, workspace_id: 'ws', branch: identity.checkout_branch }));
+  assert.deepEqual(readPlatformCheckoutManifest(join(f.root, '.git')), identity);
+  writeFileSync(manifest, JSON.stringify({ checkout_mode: 'isolated' }));
+  assert.throws(() => readPlatformCheckoutManifest(join(f.root, '.git')), /缺少身份字段/);
+  writeFileSync(manifest, 'not-json');
+  assert.throws(() => readPlatformCheckoutManifest(join(f.root, '.git')), /合法 JSON/);
+});
+
+test('daemon 缓存 linked worktree 与任务上下文可作为 isolated 证据', t => {
+  const f = fixture(t);
+  const reposDir = join(f.dir, '.repos', 'ws');
+  mkdirSync(reposDir, { recursive: true });
+  const cache = join(reposDir, 'winning-platform-cache.git');
+  git(f.dir, 'clone', '--bare', f.remote, cache);
+  const worktree = join(f.dir, 'workdir', 'rondo-closeout-x', 'winning-platform-monorepo');
+  mkdirSync(dirname(worktree), { recursive: true });
+  git(cache, 'worktree', 'add', '--detach', worktree, 'main');
+  assert.ok(readFileSync(join(worktree, '.git'), 'utf8').startsWith('gitdir:'));
+  // 公共 Git 目录位于 .repos/<workspace-id>/ 才被认定为 daemon cache worktree。
+  assert.equal(isDaemonCacheWorktree(worktree, 'ws'), true);
+  assert.equal(isDaemonCacheWorktree(worktree, 'other'), false);
+  // 任务上下文由 daemon 写入；缺失返回 null，由调用方拒绝。
+  const workdir = join(f.dir, 'workdir');
+  mkdirSync(join(workdir, '.multica'), { recursive: true });
+  writeFileSync(join(workdir, '.multica', 'daemon_task_context.json'), JSON.stringify({
+    managed_by: 'multica-daemon-task', issue_id: 'issue-1', agent_id: 'agent-1',
+  }));
+  assert.deepEqual(readDaemonTaskContext(workdir), {
+    managed_by: 'multica-daemon-task', issue_id: 'issue-1', agent_id: 'agent-1',
+  });
+  rmSync(join(workdir, '.multica', 'daemon_task_context.json'));
+  assert.equal(readDaemonTaskContext(workdir), null);
 });
 
 test('根仓就绪检查拒绝相对路径、仓内目录、缺失规范和不完整检出', t => {

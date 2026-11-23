@@ -29,11 +29,7 @@ rondo dev prepare --mode bug --config "<config>" --issue <issue> --repo <repo_ke
 
 ## Requirement
 
-需要本地 OpenSpec 工件时，按 `RONDO_WORKSPACE_PATH` 和 `RONDO_WORKSPACE_BRANCH` 准备根仓，使用返回的 `root_repo`。当前根仓和项目分支仍就绪时可复用成功结果。Workitem Analyst 准备根仓即可。
-
-```bash
-rondo runtime prepare-root
-```
+需要本地 OpenSpec 工件时，优先使用当前 Task 的平台 checkout：尚未检出时在 Task workdir 执行 `multica repo checkout <root-url> --ref <项目分支>`，使用实际返回路径，并用 `rondo runtime check-checkout --root-repo "<root>"` 校验；已有检出直接复用，不重复 checkout，也不手工 `git clone`。常驻根仓模式仍可用 `rondo runtime prepare-root`（读取 `RONDO_WORKSPACE_PATH` 与 `RONDO_WORKSPACE_BRANCH`）。Workitem Analyst 准备根仓即可。
 
 Engineer 修改业务源码时，使用当前 Issue、获批的 `change_ref` 及其 `x-repositories` 内的 `repo_id`。已有适用于当前 Issue、批准版本和仓库的成功准备结果时，使用其 Worktree `path`。首次准备、仅有目录或上次准备中断时，调用同一入口：
 
@@ -43,6 +39,6 @@ rondo dev prepare --mode requirement --config "<config>" --issue <issue> --chang
 
 ## Result / Stop
 
-Rondo 命令退出码为 0 且 `result=PASS` 时使用其实际路径。Requirement 根仓的 `branch` 须与项目配置一致；业务仓使用 `dev prepare` 返回的 `path`。
+Rondo 命令退出码为 0 且 `result=PASS` 时使用其实际路径。Requirement 根仓的当前分支须与项目配置一致，平台 checkout 必须通过 `check-checkout` 身份校验；业务仓使用 `dev prepare` 返回的 `path`。
 
 `FAIL` / `UNKNOWN`、Workspace 不匹配、授权或路径不明时，停止受影响的操作，保留现场并按工具反馈核实。

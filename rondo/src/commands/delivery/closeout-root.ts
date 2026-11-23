@@ -1,28 +1,82 @@
-/** Run-scoped Requirement Closeout root: authenticated clone, identity, publication and safe release. */
+/** Run-scoped Requirement Closeout root: platform checkout, identity gate, publication and safe release. */
 import { randomUUID } from "node:crypto";
-import { existsSync, lstatSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, rmdirSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
-import { loadConfig, type BaseRegistryConfig } from "../../clients/config.js";
-import { MulticaClient } from "../../clients/multica.js";
+import { loadConfig, type BaseRegistryConfig, type RuntimeConfig } from "../../clients/config.js";
+import { MulticaClient, type IssueRecord } from "../../clients/multica.js";
+import { multicaPrefix } from "../../clients/multica-environment.js";
 import { runAuthenticatedGit } from "../../clients/authenticated-git.js";
 import { runCommand } from "../../clients/spawn.js";
 import { validateRootRepo, type RuntimePaths } from "../../clients/runtime-paths.js";
+import {
+  assertPlatformCheckoutIdentity,
+  isDaemonCacheWorktree,
+  platformCheckoutMode,
+  readDaemonTaskContext,
+  readPlatformCheckoutManifest,
+  type PlatformCheckoutIdentity,
+} from "../../clients/native-checkout.js";
 import { readAnalysisSource, type AnalysisSource } from "../analysis/source.js";
 import { canonicalRepositoryIdentity } from "./evidence-repository.js";
 import { isRequirementChangeDelivery } from "./requirement-mode.js";
 
 const ownerFile = "rondo-closeout-owner.json";
-interface Owner { token: string; workdir: string; repo_url: string; branch: string; commit: string; change_ref: string }
 
-/** 只允许在本次 Clone 记录的工作目录下操作其直属受控目录。 */
+/**
+ * 收口根仓所有权标记。
+ * 平台 worktree 的生命周期归 daemon；Rondo 只在 `.git` 内写标记，证明"本次 Run 使用过该目录"，
+ * 清理时只释放标记、绝不删除平台 worktree。
+ */
+interface Owner extends AnalysisSource {
+  token: string;
+  workdir: string;
+  provenance: "multica-repo-checkout";
+  issue_id: string;
+  task_id: string;
+  workspace_id: string;
+  /** 平台 checkout 首次分配的 agent 分支，形如 agent/<agent>/<task 尾号>。 */
+  checkout_branch: string;
+  checkout_mode: "isolated";
+}
+
+/** 平台 checkout 后端：在 dir 下调用平台 checkout，返回根仓路径与平台分配分支。测试可注入 fake。 */
+export type CloseoutCheckout = (dir: string, repoUrl: string) => { root: string; branch: string };
+
+export interface PrepareRootOptions {
+  /** Issue KEY 仅用于受控子目录命名；非法字符拒绝。 */
+  issueKey: string;
+  /** Multica Issue UUID，用于 `issue runs --active` 回读。 */
+  issueId: string;
+  checkout: CloseoutCheckout;
+  /** 四条件的第四项：平台 `issue runs --active` 交叉验证，由调用方注入。 */
+  verifyRun?: () => void;
+  remote?: typeof runAuthenticatedGit;
+}
+
+/** 由 Git 自身解析工作树 Git 目录（兼容 `.git` 目录与 linked worktree 的 `.git` 文件）。 */
+function gitDirOf(root: string): string {
+  const dir = local(root, ["rev-parse", "--absolute-git-dir"], "定位 Git 目录");
+  if (!isAbsolute(dir)) throw new UnknownError("无法确认根仓 Git 目录的绝对路径，保留现场");
+  return dir;
+}
+
+/** 只允许在本次准备记录的 workdir 的一次性受控子目录内操作，且根仓本身不得是符号链接。 */
 function assertManagedLocation(root: string, owner: Owner): void {
-  if (typeof owner.workdir !== "string" || !isAbsolute(owner.workdir) ||
-      realpathSync(dirname(root)) !== realpathSync(owner.workdir) ||
-      lstatSync(root).isSymbolicLink() || realpathSync(root) !== resolve(root)) {
-    throw new UnknownError("Closeout Clone 路径与受控 workdir 不一致，保留现场");
+  if (typeof owner.workdir !== "string" || !isAbsolute(owner.workdir)) {
+    throw new UnknownError("Closeout 根仓的受控 workdir 记录无效，保留现场");
+  }
+  let realWorkdir: string;
+  try { realWorkdir = realpathSync(owner.workdir); }
+  catch { throw new UnknownError("Closeout 根仓的受控 workdir 已不存在，保留现场"); }
+  const realRoot = realpathSync(root);
+  const parent = realpathSync(dirname(realRoot));
+  if (lstatSync(root).isSymbolicLink() || realRoot !== resolve(root) ||
+      !basename(parent).startsWith("rondo-closeout-") ||
+      dirname(parent) !== realWorkdir) {
+    throw new UnknownError("Closeout 根仓不在受控 workdir 的一次性子目录内，保留现场");
   }
 }
 
@@ -61,23 +115,69 @@ export function assertCloseoutChange(paths: RuntimePaths, source: AnalysisSource
   locateChange(paths.rootRepo, source.change_ref);
 }
 
-/** The prepared root must belong to a managed temporary Clone, not a user's checkout. */
+/**
+ * 平台 isolated 证据（对应四条件中的 checkout-mode=isolated）：
+ * - 完整 checkout 由平台写 `[multica] checkout-mode=isolated`；
+ * - 新版 daemon 的 linked worktree 不写该键，改用「位于 `.repos/<workspace-id>/` 的 bare cache worktree」
+ *   加 daemon 写入的任务上下文（managed_by/issue/agent）判定；
+ * - 不使用 `MULTICA_REPO_CHECKOUT_MODE` 环境变量（当前 daemon task 不提供）。
+ */
+function platformIsolatedMode(root: string, workdir: string, workspaceId: string | undefined, issueId: string): string | null {
+  const configured = platformCheckoutMode(root);
+  if (configured) return configured;
+  if (isDaemonCacheWorktree(root, workspaceId)) {
+    const context = readDaemonTaskContext(workdir);
+    if (context?.managed_by === "multica-daemon-task" && context.issue_id === issueId) {
+      const agentId = process.env.MULTICA_AGENT_ID;
+      if (!agentId || context.agent_id === agentId) return "isolated";
+    }
+  }
+  return null;
+}
+
+/** 收口根仓的弱方案四条件交叉验证；manifest 存在时以平台 manifest 为准。 */
+function verifyPlatformCheckout(root: string, gitDir: string, owner: Owner): void {
+  // 强方案接口：平台 manifest 若存在，身份字段必须与当前 Run 一致。
+  // linked worktree 的 manifest 可能落在公共 Git 目录，因此两个位置都探测。
+  const commonDir = local(root, ["rev-parse", "--path-format=absolute", "--git-common-dir"], "定位 Git 公共目录");
+  const manifest = readPlatformCheckoutManifest(gitDir) ??
+    (commonDir !== gitDir ? readPlatformCheckoutManifest(commonDir) : null);
+  const evidence: PlatformCheckoutIdentity = manifest ?? {
+    checkout_branch: owner.checkout_branch,
+    task_id: owner.task_id,
+    workspace_id: owner.workspace_id,
+    checkout_mode: owner.checkout_mode,
+  };
+  const live = {
+    // 平台形态证据优先，环境变量兜底。
+    mode: platformIsolatedMode(root, owner.workdir, process.env.MULTICA_WORKSPACE_ID, owner.issue_id),
+    taskId: process.env.MULTICA_TASK_ID,
+    workspaceId: process.env.MULTICA_WORKSPACE_ID,
+  };
+  assertPlatformCheckoutIdentity(evidence, live);
+}
+
+/** The prepared root must belong to a platform checkout recorded by this Run, not a user's checkout. */
 export function verifyCloseoutRoot(paths: RuntimePaths, source: AnalysisSource): RuntimePaths {
   const root = validateRootRepo(paths.rootRepo, "--root-repo");
-  const marker = join(root, ".git", ownerFile);
-  if (!basename(root).startsWith("rondo-closeout-") ||
-      lstatSync(root).isSymbolicLink() || !existsSync(marker)) {
-    throw new UnknownError("Requirement Closeout 必须使用受控临时 Clone，禁止修改其它根仓");
+  const gitDir = gitDirOf(root);
+  const marker = join(gitDir, ownerFile);
+  if (lstatSync(root).isSymbolicLink() || !existsSync(marker)) {
+    throw new UnknownError("Requirement Closeout 必须使用平台 checkout 准备的受控根仓，禁止修改其它根仓");
   }
   let owner: Owner;
   try { owner = JSON.parse(readFileSync(marker, "utf8")) as Owner; }
-  catch { throw new UnknownError("Closeout Clone 所有权标记不可读"); }
+  catch { throw new UnknownError("Closeout 根仓所有权标记不可读"); }
   assertManagedLocation(root, owner);
   if (typeof owner.token !== "string" || !owner.token ||
       owner.branch !== source.branch ||
       canonicalRepositoryIdentity(owner.repo_url) !== canonicalRepositoryIdentity(source.repo_url)) {
-    throw new FailError("Closeout Clone 所有权与当前 Issue 的 Repository/Branch 不一致");
+    throw new FailError("Closeout 根仓所有权与当前 Issue 的 Repository/Branch 不一致");
   }
+  if (owner.provenance !== "multica-repo-checkout") {
+    throw new UnknownError("Closeout 根仓不是平台 checkout 准备的，禁止使用");
+  }
+  verifyPlatformCheckout(root, gitDir, owner);
   return verifyGitRoot(paths, source);
 }
 
@@ -127,85 +227,152 @@ export function confirmPublishedArchive(paths: RuntimePaths, source: AnalysisSou
   return { commit: remoteCommit, folder: matches[0] };
 }
 
-export function cloneCloseoutRoot(source: AnalysisSource, remote = runAuthenticatedGit): { root_repo: string; cleanup_token: string } {
+/**
+ * 解析 `multica repo checkout` 人类可读输出：
+ * 路径写 stdout，`Checked out <url> → <path> (branch: <branch>)` 写 stderr（实测）。
+ * 两个流都参与解析，避免因流分离丢失平台分配分支。
+ */
+export function parsePlatformCheckoutOutput(stdout: string, stderr = ""): { root: string; branch: string } {
+  const combined = stdout + "\n" + stderr;
+  const root = stdout.split(/\r?\n/).map((line) => line.trim()).find((line) => isAbsolute(line)) ??
+    combined.split(/\r?\n/).map((line) => line.trim()).find((line) => isAbsolute(line));
+  const branch = /\(branch:\s*([^)]+)\)/.exec(combined)?.[1]?.trim();
+  if (!root || !isAbsolute(root) || !branch || !branch.includes("/")) {
+    throw new UnknownError("平台 repo checkout 输出无法识别，拒绝使用: " + combined.trim().slice(0, 300));
+  }
+  return { root, branch };
+}
+
+/**
+ * 在 Task workdir 的受控子目录内准备平台 checkout，并切换到 analysis.source.branch。
+ * 不再执行任何直接 `git clone`；平台 worktree 由 daemon 管理，Rondo 只写所有权标记。
+ */
+export function prepareRoot(source: AnalysisSource, options: PrepareRootOptions): { root_repo: string; cleanup_token: string } {
+  const remote = options.remote ?? runAuthenticatedGit;
   const workdir = realpathSync(process.cwd());
-  const root = mkdtempSync(join(workdir, "rondo-closeout-"));
-  let cleaned = false;
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(options.issueKey)) {
+    throw new FailError("Issue KEY 含非法字符，不能用于受控目录名");
+  }
+  // 必须在独立子目录中 checkout，避免复用/干扰 daemon 已检出的 agent 分支工作树。
+  const subdir = mkdtempSync(join(workdir, "rondo-closeout-" + options.issueKey + "-"));
+  let marker: string | undefined;
+  let root: string | undefined;
   try {
+    validBranch(subdir, source.branch);
+    const platform = options.checkout(subdir, source.repo_url);
+    if (!platform || typeof platform.root !== "string" || !isAbsolute(platform.root)) {
+      throw new UnknownError("平台 repo checkout 未返回绝对根仓路径，拒绝使用");
+    }
+    root = validateRootRepo(platform.root, "平台 checkout");
+    if (realpathSync(dirname(root)) !== realpathSync(subdir)) {
+      throw new UnknownError("平台 checkout 未落在受控子目录内，拒绝使用");
+    }
     validBranch(root, source.branch);
+    const taskId = process.env.MULTICA_TASK_ID;
+    const workspaceId = process.env.MULTICA_WORKSPACE_ID;
+    // 平台身份证据：完整 checkout 配置、daemon cache linked worktree 形态、或任务环境变量。
+    const liveMode = platformIsolatedMode(root, workdir, workspaceId, options.issueId);
+    if ((liveMode ?? "").toLowerCase() !== "isolated") {
+      throw new UnknownError("当前 checkout 缺少 isolated 平台证据，拒绝使用");
+    }
+    assertPlatformCheckoutIdentity({
+      checkout_branch: platform.branch,
+      task_id: taskId ?? "",
+      workspace_id: workspaceId ?? "",
+      checkout_mode: liveMode as string,
+    }, {
+      mode: liveMode,
+      taskId,
+      workspaceId,
+    });
+    // 平台分配分支必须真实存在于该 checkout，防止仅伪造输出文本。
+    if (runCommand(["git", "rev-parse", "--verify", "--quiet", "refs/heads/" + platform.branch], root).status !== 0) {
+      throw new UnknownError("平台分配分支不存在于 checkout，拒绝使用该根仓");
+    }
+    // 第四条件：平台回读当前 Task 仍是该 Issue 的活跃 Run。
+    options.verifyRun?.();
+
+    // 显式抓取到远端跟踪引用，保证后续 switch 的目标一定存在且是最新远端提交。
     authenticated(root, source,
-      ["-c", "core.symlinks=false", "clone", "--single-branch", "--no-tags", "--branch", source.branch, "--", source.repo_url, "."],
-      "受控根仓 Clone", 1_200_000, remote);
+      ["fetch", "origin", "refs/heads/" + source.branch + ":refs/remotes/origin/" + source.branch],
+      "收口分支 Fetch", 600_000, remote);
+    // `git switch` 幂等复用已有本地分支；不存在时才以 origin/<branch> 创建。
+    const switched = runCommand(["git", "switch", source.branch], root);
+    if (switched.status !== 0) {
+      const created = runCommand(["git", "switch", "-c", source.branch, "origin/" + source.branch], root);
+      if (created.status !== 0) {
+        throw new UnknownError("切换收口分支失败: " + (created.stderr || created.stdout).trim().slice(0, 400));
+      }
+    }
+    // daemon bare cache 可能已有同名本地分支且落后于刚抓取的远端（LEI-49 实测 main 落后）。
+    // 只允许快进对齐；分叉或无法快进则拒绝，避免在旧提交上做收口。
+    const originRef = "refs/remotes/origin/" + source.branch;
+    const localCommit = local(root, ["rev-parse", source.branch], "读取本地收口分支");
+    const remoteCommit = local(root, ["rev-parse", originRef], "读取远端收口分支");
+    if (localCommit !== remoteCommit) {
+      const ancestor = runCommand(["git", "merge-base", "--is-ancestor", localCommit, originRef], root);
+      if (ancestor.status !== 0) throw new UnknownError("本地收口分支与远端分叉，拒绝使用");
+      const merged = runCommand(["git", "merge", "--ff-only", originRef], root);
+      if (merged.status !== 0) {
+        throw new UnknownError("收口分支无法快进到远端: " + (merged.stderr || merged.stdout).trim().slice(0, 400));
+      }
+    }
+
     const paths: RuntimePaths = { rootRepo: root, openspecRoot: join(root, "openspec"), projectId: "", daemonId: null, source: "explicit_arg" };
     verifyGitRoot(paths, source);
     const token = randomUUID();
-    const owner: Owner = { token, workdir, ...source };
-    writeFileSync(join(root, ".git", ownerFile), JSON.stringify(owner), { flag: "wx", mode: 0o600 });
-    try { locateChange(root, source.change_ref); }
-    catch (error) {
-      // Missing or ambiguous Change is a known, clean clone failure: release it safely.
-      // If cleanup cannot be proven safe, keep the root and expose recovery details.
-      try { cleanupCloseoutRoot(root, token, remote); cleaned = true; }
-      catch (cleanupError) {
-        throw new UnknownError("Change 核验失败且 Clone 无法安全清理，保留 " + root +
-          ": " + (cleanupError instanceof Error ? cleanupError.message : String(cleanupError)));
-      }
-      throw error;
-    }
+    const owner: Owner = {
+      token,
+      workdir,
+      repo_url: source.repo_url,
+      branch: source.branch,
+      commit: source.commit,
+      change_ref: source.change_ref,
+      provenance: "multica-repo-checkout",
+      issue_id: options.issueId,
+      task_id: taskId as string,
+      workspace_id: workspaceId as string,
+      checkout_branch: platform.branch,
+      checkout_mode: "isolated",
+    };
+    marker = join(gitDirOf(root), ownerFile);
+    writeFileSync(marker, JSON.stringify(owner), { flag: "wx", mode: 0o600 });
+    locateChange(root, source.change_ref);
     return { root_repo: root, cleanup_token: token };
   } catch (error) {
-    // Only remove a truly empty directory left by an early failure. Keep partial
-    // clones and any unknown Git state for investigation.
-    if (!cleaned && existsSync(root) && readdirSync(root).length === 0) {
-      rmdirSync(root);
-      cleaned = true;
+    // 平台 worktree 不删除、不改动；失败时只释放本次所有权标记，或移除尚未落地的空子目录。
+    if (marker && existsSync(marker)) {
+      try { unlinkSync(marker); } catch { /* 标记释放失败则保留现场 */ }
     }
-    throw new UnknownError("Clone/身份核验失败（" + (cleaned ? "已安全清理临时 Clone" : "保留现场 " + root) + "）: " +
+    if (!marker && existsSync(subdir) && readdirSync(subdir).length === 0) {
+      rmdirSync(subdir);
+    }
+    throw new UnknownError("收口根仓准备失败（" + (marker ? "已释放所有权标记，保留现场 " + root : "保留现场 " + subdir) + "）: " +
       (error instanceof Error ? error.message : String(error)));
   }
 }
 
-/** Token and temporary-parent proof must come from this Run; errors always preserve the root. */
-export function cleanupCloseoutRoot(raw: string, token: string, remote = runAuthenticatedGit): { removed: true } {
-  const root = resolve(raw);
-  if (!/^rondo-closeout-/.test(basename(root)) ||
-      lstatSync(root).isSymbolicLink() || realpathSync(root) !== root ||
-      !existsSync(join(root, ".git", ownerFile)) || process.cwd() === root ||
-      process.cwd().startsWith(root + "/") || process.cwd().startsWith(root + "\\")) {
-    throw new UnknownError("非本 Run 的安全临时 Clone 或当前目录仍在使用，拒绝清理");
+/**
+ * 只释放本 Run 的所有权标记，绝不删除平台 worktree。
+ * 平台目录的生命周期归 daemon；错误始终保留标记与现场。
+ */
+export function cleanupCloseoutRoot(raw: string, token: string): { released: true } {
+  const rootArg = resolve(raw);
+  if (!existsSync(rootArg)) throw new UnknownError("收口根仓目录不存在，拒绝清理");
+  const root = validateRootRepo(rootArg, "--root-repo");
+  const gitDir = gitDirOf(root);
+  const marker = join(gitDir, ownerFile);
+  if (lstatSync(root).isSymbolicLink() || !existsSync(marker)) {
+    throw new UnknownError("非本 Run 准备的平台收口根仓，拒绝清理");
   }
   let owner: Owner;
-  try { owner = JSON.parse(readFileSync(join(root, ".git", ownerFile), "utf8")) as Owner; }
-  catch { throw new UnknownError("Closeout 临时 Clone 所有权标记损坏，保留现场"); }
+  try { owner = JSON.parse(readFileSync(marker, "utf8")) as Owner; }
+  catch { throw new UnknownError("Closeout 根仓所有权标记损坏，保留现场"); }
   assertManagedLocation(root, owner);
   if (!token || owner.token !== token) throw new FailError("Closeout Cleanup token 不匹配，拒绝清理");
-  const source: AnalysisSource = owner;
-  const paths: RuntimePaths = { rootRepo: root, openspecRoot: join(root, "openspec"), projectId: "", daemonId: null, source: "explicit_arg" };
-  verifyCloseoutRoot(paths, source);
-  for (const file of ["index.lock", "HEAD.lock", "packed-refs.lock", "MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply", "sequencer"]) {
-    if (existsSync(join(root, ".git", file))) throw new UnknownError("Git 操作尚未结束: " + file + "（保留 Clone）");
-  }
-  const localRefs = local(root, ["for-each-ref", "--format=%(refname)", "refs/heads", "refs/tags", "refs/stash"], "核对临时 Clone 本地引用")
-    .split(/\r?\n/).filter(Boolean);
-  if (localRefs.some(ref => ref !== "refs/heads/" + source.branch)) {
-    throw new UnknownError("临时 Clone 仍有其它 Branch/Tag/Stash 引用，可能包含未 Push Commit，保留现场");
-  }
-  const worktrees = local(root, ["worktree", "list", "--porcelain"], "核对 Clone Worktree")
-    .split(/\r?\n/).filter(line => line.startsWith("worktree "));
-  if (worktrees.length !== 1) throw new UnknownError("临时 Clone 存在其它 Worktree，拒绝清理");
-  const dirty = local(root, ["status", "--porcelain=v1", "--untracked-files=all"], "核对 Clone WIP");
-  if (dirty) throw new UnknownError("临时 Clone 存在未提交修改，保留现场");
-  const ignored = local(root, ["ls-files", "--others", "--ignored", "--exclude-standard"], "核对 Clone 被忽略文件");
-  if (ignored) throw new UnknownError("临时 Clone 存在被 Git 忽略的文件，保留现场");
-  const remoteRef = "refs/remotes/origin/" + source.branch;
-  authenticated(root, source, ["fetch", "origin", "refs/heads/" + source.branch + ":" + remoteRef], "Cleanup 前核对远端", undefined, remote);
-  if (runCommand(["git", "merge-base", "--is-ancestor", "HEAD", remoteRef], root).status !== 0) {
-    throw new UnknownError("临时 Clone 存在未 Push Commit 或分叉，保留现场");
-  }
-  // No concurrent operation may use this root; the caller invokes cleanup only after the group has stopped.
-  rmSync(root, { recursive: true });
-  if (existsSync(root)) throw new UnknownError("临时 Clone 清理后仍存在");
-  return { removed: true };
+  if (owner.provenance !== "multica-repo-checkout") throw new UnknownError("收口根仓不是平台 checkout 准备的，拒绝清理");
+  unlinkSync(marker);
+  return { released: true };
 }
 
 function argsOf(argv: string[]): Record<string, string> {
@@ -216,18 +383,55 @@ function argsOf(argv: string[]): Record<string, string> {
   return args;
 }
 
-async function invoke(action: "clone" | "cleanup", argv: string[]): Promise<number> {
+/** 平台 repo checkout 后端：multica CLI 的人可读输出解析为根仓路径与平台分支。 */
+function platformCheckout(runtime: RuntimeConfig): CloseoutCheckout {
+  return (dir, repoUrl) => {
+    const r = runCommand([...multicaPrefix(runtime), "repo", "checkout", repoUrl], dir, undefined, 600_000);
+    if (r.status !== 0) {
+      throw new UnknownError("平台 repo checkout 失败: " + (r.stderr || r.stdout).trim().slice(0, 400));
+    }
+    return parsePlatformCheckoutOutput(r.stdout, r.stderr);
+  };
+}
+
+/** 四条件的第四项：当前 Task 必须仍是该 Issue 的活跃 Run。 */
+function assertCloseoutRun(client: MulticaClient, issue: IssueRecord): void {
+  const taskId = process.env.MULTICA_TASK_ID;
+  const workspaceId = process.env.MULTICA_WORKSPACE_ID;
+  if (!taskId || !workspaceId) throw new UnknownError("缺少 Multica Task/Workspace 上下文，不能准备收口根仓");
+  const raw = client.run(["issue", "runs", issue.id, "--active", ...client.ws(), "--output", "json"], "核验收口 Run", { transient: true });
+  if (!Array.isArray(raw)) throw new UnknownError("收口 Run 列表不可核实");
+  const runs = raw.filter((r) => r?.id === taskId);
+  if (runs.length !== 1) throw new UnknownError("当前 Task 不属于该 Issue 的有效 Run");
+  const run = runs[0];
+  if (run.issue_id !== issue.id || run.workspace_id !== workspaceId || run.status !== "running") {
+    throw new FailError("收口 Run / Issue / Workspace 绑定不一致或未运行");
+  }
+}
+
+async function invoke(action: "prepare" | "cleanup", argv: string[]): Promise<number> {
   try {
     const args = argsOf(argv);
     let value: Record<string, unknown>;
-    if (action === "clone") {
+    if (action === "prepare") {
       if (!args.issue || !args.config) return 64;
       const cfg = loadConfig<BaseRegistryConfig>(args.config);
-      const issue = new MulticaClient(cfg.runtime).getIssue(args.issue);
+      const client = new MulticaClient(cfg.runtime);
+      const issue = client.getIssue(args.issue);
       const md = issue.metadata ?? {};
-      if (!isRequirementChangeDelivery(md)) throw new FailError("仅 Requirement OpenSpec Change 可以 Clone Closeout 根仓");
+      if (!isRequirementChangeDelivery(md)) throw new FailError("仅 Requirement OpenSpec Change 可以准备 Closeout 根仓");
       const source = readAnalysisSource(md);
-      value = { ...cloneCloseoutRoot(source), repo_url: source.repo_url, branch: source.branch, change_ref: source.change_ref };
+      value = {
+        ...prepareRoot(source, {
+          issueKey: issue.identifier ?? args.issue,
+          issueId: issue.id,
+          checkout: platformCheckout(cfg.runtime),
+          verifyRun: () => assertCloseoutRun(client, issue),
+        }),
+        repo_url: source.repo_url,
+        branch: source.branch,
+        change_ref: source.change_ref,
+      };
     } else {
       if (!args["root-repo"] || !args.token) return 64;
       value = cleanupCloseoutRoot(args["root-repo"], args.token);
@@ -244,9 +448,12 @@ async function invoke(action: "clone" | "cleanup", argv: string[]): Promise<numb
 }
 
 export function registerCloseoutRoot(group: Command): void {
-  for (const action of ["clone", "cleanup"] as const) {
-    group.command("root-" + action)
-      .description(action === "clone" ? "按 Issue 批准来源准备一次性根仓" : "安全释放本 Run 的根仓 Clone")
+  // root-clone 是旧名兼容别名；新流程统一为 root-prepare（平台 checkout）。
+  for (const [name, action] of [["root-prepare", "prepare"], ["root-clone", "prepare"], ["root-cleanup", "cleanup"]] as const) {
+    group.command(name)
+      .description(action === "prepare"
+        ? "在受控子目录准备平台收口根仓并切换到 analysis.source.branch"
+        : "只释放本 Run 的收口根仓所有权标记（平台 worktree 由 daemon 管理）")
       .helpOption(false).allowUnknownOption(true).allowExcessArguments(true)
       .action(async (...values: unknown[]) => {
         markLeafExecuted();

@@ -4,11 +4,17 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, realpathSync, appe
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
-import { cloneCloseoutRoot, cleanupCloseoutRoot, verifyCloseoutRoot, confirmPublishedArchive, assertCloseoutChange } from '../dist/commands/delivery/closeout-root.js';
+import { prepareRoot, cleanupCloseoutRoot, verifyCloseoutRoot, confirmPublishedArchive, assertCloseoutChange, parsePlatformCheckoutOutput } from '../dist/commands/delivery/closeout-root.js';
+import { readPlatformCheckoutManifest } from '../dist/clients/native-checkout.js';
 import { approvedTasksAtCommit, inspectRequirementCommits } from '../dist/commands/tfs/requirement-commits.js';
 import { prChangedCommits } from '../dist/tfs/api/commit-facts.js';
 
 const repoUrl = 'http://tfs.test/tfs/C/P/_git/root';
+// 平台任务 ID -> 分支尾号取去连字符后的末 12 位（与真实 daemon checkout 一致）。
+const taskId = '01a1d2fc-da3a-796b-9584-f8f23e188c07';
+const taskSuffix = 'f8f23e188c07';
+const workspaceId = 'ws-fixture';
+const multicaEnvKeys = ['MULTICA_TASK_ID', 'MULTICA_WORKSPACE_ID'];
 
 function git(cwd, ...args) {
   const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
@@ -16,22 +22,36 @@ function git(cwd, ...args) {
   return result.stdout.trim();
 }
 
-function fixture(t) {
+function fixture(t, { checkoutSuffix = taskSuffix, checkoutThrows = false, staleLocal = false } = {}) {
   const previousCwd = process.cwd();
+  const savedEnv = Object.fromEntries(multicaEnvKeys.map((key) => [key, process.env[key]]));
   const dir = mkdtempSync(join(tmpdir(), 'rondo-closeout-fixture-'));
   const taskWorkdir = join(dir, 'task-workdir');
   mkdirSync(taskWorkdir);
   t.after(() => {
     process.chdir(previousCwd);
+    for (const key of multicaEnvKeys) {
+      if (savedEnv[key] === undefined) delete process.env[key];
+      else process.env[key] = savedEnv[key];
+    }
     rmSync(dir, { recursive: true, force: true });
   });
   process.chdir(taskWorkdir);
+  // 模拟真实 daemon Task 环境：isolated checkout + Task/Workspace 身份。
+  // 注意：不使用 MULTICA_REPO_CHECKOUT_MODE；平台证据来自 checkout 配置或 daemon cache 形态。
+  Object.assign(process.env, {
+    MULTICA_TASK_ID: taskId,
+    MULTICA_WORKSPACE_ID: workspaceId,
+  });
+
   const work = join(dir, 'work');
   const bare = join(dir, 'bare.git');
   mkdirSync(work);
   git(work, 'init', '-b', 'dev');
   git(work, 'config', 'user.name', 'Rondo Test');
   git(work, 'config', 'user.email', 'test@example.invalid');
+  // 基线提交：让后续"本地分支落后"场景有可回退的父提交。
+  git(work, 'commit', '--allow-empty', '-m', 'base');
   for (const ref of ['change-a', 'change-b', 'change-c']) {
     const path = join(work, 'openspec', 'changes', ref);
     mkdirSync(path, { recursive: true });
@@ -51,39 +71,85 @@ function fixture(t) {
   git(work, 'commit', '-m', 'release change');
   const releaseApproved = git(work, 'rev-parse', 'HEAD');
   git(work, 'push', 'origin', 'release');
+  // 让平台模拟 checkout 的默认分支稳定落在 dev。
+  git(bare, 'symbolic-ref', 'HEAD', 'refs/heads/dev');
 
-  let cloneCalls = 0;
+  let lastSubdir;
+  let lastRoot;
+  // 传输适配：认证 Fetch 的 origin 指向本地 bare fixture；其它操作不得借道。
   const remote = (url, args, cwd) => {
     assert.equal(url, repoUrl);
     const rewritten = [...args];
-    if (rewritten.includes('clone')) {
-      cloneCalls++;
-      rewritten[rewritten.indexOf(url)] = bare;
-    } else if (rewritten[0] === 'fetch') {
-      rewritten[1] = bare;
-    } else {
-      throw new Error('unexpected authenticated operation ' + args.join(' '));
-    }
+    if (rewritten[0] !== 'fetch') throw new Error('unexpected authenticated operation ' + args.join(' '));
+    rewritten[1] = bare;
     const r = spawnSync('git', rewritten, { cwd, encoding: 'utf8' });
-    if (r.status === 0 && args.includes('clone')) git(cwd, 'remote', 'set-url', 'origin', url);
     return { status: r.status ?? 1, stdout: r.stdout, stderr: r.stderr };
+  };
+  // 模拟 `multica repo checkout`：在子目录生成独立 checkout、真实 origin、isolated 标记与 agent 分支。
+  const checkout = (subdir, url) => {
+    lastSubdir = subdir;
+    assert.equal(url, repoUrl);
+    if (checkoutThrows) return { throw: true };
+    const root = join(subdir, 'winning-platform-monorepo');
+    git(subdir, 'clone', bare, root);
+    git(root, 'config', 'user.name', 'Rondo Test');
+    git(root, 'config', 'user.email', 'test@example.invalid');
+    // 模拟 daemon cache 中已存在且落后于远端的同名本地分支。
+    if (staleLocal) git(root, 'reset', '--hard', 'HEAD~1');
+    git(root, 'switch', '-c', `agent/pr-status-sync-agent/${checkoutSuffix}`);
+    git(root, 'config', 'multica.checkout-mode', 'isolated');
+    git(root, 'remote', 'set-url', 'origin', repoUrl);
+    git(root, 'remote', 'set-url', '--push', 'origin', repoUrl);
+    lastRoot = root;
+    return { root, branch: `agent/pr-status-sync-agent/${checkoutSuffix}` };
+  };
+  const wrappedCheckout = (subdir, url) => {
+    const result = checkout(subdir, url);
+    if (result.throw) throw new Error('platform checkout failed');
+    return result;
   };
   const source = (ref, branch = 'dev') => ({
     repo_url: repoUrl, branch, commit: branch === 'dev' ? approved : releaseApproved, change_ref: ref,
   });
+  const prepare = (value, extra = {}) => prepareRoot(value, {
+    issueKey: 'LEI-1', issueId: 'issue-1', checkout: wrappedCheckout, remote, verifyRun: () => {}, ...extra,
+  });
   const paths = root => ({
     rootRepo: root, openspecRoot: join(root, 'openspec'), projectId: '', daemonId: null, source: 'explicit_arg',
   });
-  return { bare, source, paths, remote, get cloneCalls() { return cloneCalls; } };
+  return { bare, source, paths, remote, prepare, get lastRoot() { return lastRoot; }, get lastSubdir() { return lastSubdir; }, checkout: wrappedCheckout };
 }
 
-test('three Issues in one Repository+Branch share one Clone and publish separate archives', t => {
+test('平台 checkout 输出：路径在 stdout、分支在 stderr 仍可解析', () => {
+  const root = 'D:\\Multica\\default\\w\\lei-49-1\\workdir\\rondo-closeout-LEI-49-abc\\winning-platform-monorepo';
+  const parsed = parsePlatformCheckoutOutput(root + '\n',
+    'Checked out http://tfs/x/_git/winning-platform-monorepo -> ' + root + ' (branch: agent/pr-status-sync-agent/795c637fbd86)\n');
+  assert.deepEqual(parsed, { root, branch: 'agent/pr-status-sync-agent/795c637fbd86' });
+});
+
+test('daemon cache 已有落后的同名本地分支时快进到刚抓取的远端', t => {
+  const f = fixture(t, { staleLocal: true });
+  const source = f.source('change-a');
+  const { root_repo: root, cleanup_token: token } = f.prepare(source);
+  // 本地 dev 原本落后；必须 fast-forward 到 origin/dev 上的批准版本。
+  assert.equal(git(root, 'rev-parse', 'HEAD'), source.commit);
+  assert.equal(verifyCloseoutRoot(f.paths(root), source).gitRemoteUrl, repoUrl);
+  assert.deepEqual(cleanupCloseoutRoot(root, token), { released: true });
+});
+
+test('three Issues in one Repository+Branch share one platform root and publish separate archives', t => {
   const f = fixture(t);
   const first = f.source('change-a');
-  const { root_repo: root, cleanup_token: token } = cloneCloseoutRoot(first, f.remote);
-  assert.equal(realpathSync(dirname(root)), realpathSync(process.cwd()));
+  const { root_repo: root, cleanup_token: token } = f.prepare(first);
   const owner = JSON.parse(readFileSync(join(root, '.git', 'rondo-closeout-owner.json'), 'utf8'));
   assert.equal(owner.workdir, realpathSync(process.cwd()));
+  assert.equal(owner.provenance, 'multica-repo-checkout');
+  assert.equal(owner.task_id, taskId);
+  assert.equal(owner.workspace_id, workspaceId);
+  assert.equal(owner.checkout_branch, `agent/pr-status-sync-agent/${taskSuffix}`);
+  // 根仓位于受控 workdir 的一次性子目录，而非 workdir 直属目录。
+  assert.notEqual(realpathSync(dirname(root)), realpathSync(process.cwd()));
+  assert.match(dirname(root), /rondo-closeout-/);
   for (const changeRef of ['change-a', 'change-b', 'change-c']) {
     const issue = f.source(changeRef);
     assert.equal(verifyCloseoutRoot(f.paths(root), issue).gitRemoteUrl, repoUrl);
@@ -97,15 +163,16 @@ test('three Issues in one Repository+Branch share one Clone and publish separate
     git(root, 'push', f.bare, 'dev');
     assert.equal(confirmPublishedArchive(f.paths(root), issue, f.remote).folder, '2026-11-20-' + changeRef);
   }
-  assert.equal(f.cloneCalls, 1);
-  assert.deepEqual(cleanupCloseoutRoot(root, token, f.remote), { removed: true });
-  assert.equal(existsSync(root), false);
+  assert.deepEqual(cleanupCloseoutRoot(root, token), { released: true });
+  // 平台 worktree 归 daemon 所有：只释放标记，不删除目录。
+  assert.equal(existsSync(root), true);
+  assert.equal(existsSync(join(root, '.git', 'rondo-closeout-owner.json')), false);
 });
 
 test('approved tasks are read from the immutable analysis.source.commit and each Issue checks its Change', t => {
   const f = fixture(t);
   const source = f.source('change-a');
-  const { root_repo: root, cleanup_token: token } = cloneCloseoutRoot(source, f.remote);
+  const { root_repo: root, cleanup_token: token } = f.prepare(source);
   const original = approvedTasksAtCommit(root, source.commit, 'change-a');
   assert.match(original, /\[ \] 1\.1 Implement change-a/);
   writeFileSync(join(root, 'openspec', 'changes', 'change-a', 'tasks.md'), '- [x] 1.1 Implement change-a\\n');
@@ -113,131 +180,136 @@ test('approved tasks are read from the immutable analysis.source.commit and each
   assert.doesNotThrow(() => assertCloseoutChange(f.paths(root), f.source('change-b')));
   assert.throws(() => assertCloseoutChange(f.paths(root), f.source('not-on-branch')), /不存在/);
   git(root, 'restore', '.');
-  assert.deepEqual(cleanupCloseoutRoot(root, token, f.remote), { removed: true });
+  assert.deepEqual(cleanupCloseoutRoot(root, token), { released: true });
 });
 
-test('missing Change fails clone and safely releases its clean temporary checkout', t => {
+test('missing Change fails preparation, releases the marker and keeps the platform worktree', t => {
   const f = fixture(t);
-  assert.throws(() => cloneCloseoutRoot(f.source('missing-change'), f.remote), /Change/);
+  assert.throws(() => f.prepare(f.source('missing-change')), /Change/);
+  assert.equal(existsSync(f.lastRoot), true);
+  assert.equal(existsSync(join(f.lastRoot, '.git', 'rondo-closeout-owner.json')), false);
 });
 
-test('same Repository on different Branch requires a separate Clone and rejects cross-branch reuse', t => {
+test('same Repository on different Branch requires a separate root and rejects cross-branch reuse', t => {
   const f = fixture(t);
-  const dev = cloneCloseoutRoot(f.source('change-a'), f.remote);
-  const release = cloneCloseoutRoot(f.source('release-change', 'release'), f.remote);
+  const dev = f.prepare(f.source('change-a'));
+  const release = f.prepare(f.source('release-change', 'release'));
   assert.notEqual(dev.root_repo, release.root_repo);
-  assert.equal(f.cloneCalls, 2);
-  assert.throws(() => verifyCloseoutRoot(f.paths(dev.root_repo), f.source('release-change', 'release')), /分支/);
-  assert.deepEqual(cleanupCloseoutRoot(dev.root_repo, dev.cleanup_token, f.remote), { removed: true });
-  assert.deepEqual(cleanupCloseoutRoot(release.root_repo, release.cleanup_token, f.remote), { removed: true });
+  assert.throws(() => verifyCloseoutRoot(f.paths(dev.root_repo), f.source('release-change', 'release')), /Branch|分支/);
+  assert.deepEqual(cleanupCloseoutRoot(dev.root_repo, dev.cleanup_token), { released: true });
+  assert.deepEqual(cleanupCloseoutRoot(release.root_repo, release.cleanup_token), { released: true });
 });
 
 test('Git-reported root path works for Verify and Cleanup on Windows', t => {
   const f = fixture(t);
   const source = f.source('change-a');
-  const { root_repo: root, cleanup_token: token } = cloneCloseoutRoot(source, f.remote);
+  const { root_repo: root, cleanup_token: token } = f.prepare(source);
   const gitRoot = git(root, 'rev-parse', '--show-toplevel');
   assert.equal(verifyCloseoutRoot(f.paths(gitRoot), source).gitRemoteUrl, repoUrl);
-  assert.deepEqual(cleanupCloseoutRoot(gitRoot, token, f.remote), { removed: true });
-  assert.equal(existsSync(root), false);
+  assert.deepEqual(cleanupCloseoutRoot(gitRoot, token), { released: true });
+  assert.equal(existsSync(root), true);
 });
 
 test('cleanup uses recorded workdir after caller changes cwd', t => {
   const f = fixture(t);
-  const { root_repo: root, cleanup_token: token } = cloneCloseoutRoot(f.source('change-a'), f.remote);
+  const { root_repo: root, cleanup_token: token } = f.prepare(f.source('change-a'));
   process.chdir(dirname(f.bare));
-  assert.notEqual(process.cwd(), dirname(root));
-  assert.deepEqual(cleanupCloseoutRoot(root, token, f.remote), { removed: true });
-  assert.equal(existsSync(root), false);
+  assert.notEqual(process.cwd(), realpathSync(dirname(root)));
+  assert.deepEqual(cleanupCloseoutRoot(root, token), { released: true });
 });
 
-test('cleanup rejects Clone whose recorded workdir no longer matches its parent', t => {
+test('cleanup rejects a root whose recorded workdir no longer matches its controlled parent', t => {
   const f = fixture(t);
-  const { root_repo: root, cleanup_token: token } = cloneCloseoutRoot(f.source('change-a'), f.remote);
+  const { root_repo: root, cleanup_token: token } = f.prepare(f.source('change-a'));
   const marker = join(root, '.git', 'rondo-closeout-owner.json');
   const original = readFileSync(marker, 'utf8');
   writeFileSync(marker, JSON.stringify({ ...JSON.parse(original), workdir: dirname(f.bare) }));
-  assert.throws(() => verifyCloseoutRoot(f.paths(root), f.source('change-a')), /workdir/);
-  assert.throws(() => cleanupCloseoutRoot(root, token, f.remote), /workdir/);
+  assert.throws(() => verifyCloseoutRoot(f.paths(root), f.source('change-a')), /workdir|受控/);
+  assert.throws(() => cleanupCloseoutRoot(root, token), /workdir|受控/);
   assert.equal(existsSync(root), true);
   writeFileSync(marker, original);
-  assert.deepEqual(cleanupCloseoutRoot(root, token, f.remote), { removed: true });
+  assert.deepEqual(cleanupCloseoutRoot(root, token), { released: true });
 });
 
-test('cleanup preserves dirty tree, incorrect token and unpushed commits', t => {
+test('cleanup rejects incorrect token and a second release', t => {
   const f = fixture(t);
-  const { root_repo: root, cleanup_token: token } = cloneCloseoutRoot(f.source('change-a'), f.remote);
-  assert.throws(() => cleanupCloseoutRoot(root, 'wrong-token', f.remote), /token/);
-  appendFileSync(join(root, 'openspec', 'changes', 'change-a', 'tasks.md'), 'work in progress\n');
-  assert.throws(() => cleanupCloseoutRoot(root, token, f.remote), /未提交/);
-  assert.equal(existsSync(root), true);
-  git(root, 'restore', '.');
-  git(root, 'config', 'user.name', 'Rondo Test');
-  git(root, 'config', 'user.email', 'test@example.invalid');
-  writeFileSync(join(root, 'new-file.md'), 'unpublished\n');
-  git(root, 'add', '.');
-  git(root, 'commit', '-m', 'unpushed');
-  assert.throws(() => cleanupCloseoutRoot(root, token, f.remote), /未 Push/);
-  assert.equal(existsSync(root), true);
-  git(root, 'push', f.bare, 'dev');
-  assert.deepEqual(cleanupCloseoutRoot(root, token, f.remote), { removed: true });
+  const { root_repo: root, cleanup_token: token } = f.prepare(f.source('change-a'));
+  assert.throws(() => cleanupCloseoutRoot(root, 'wrong-token'), /token/);
+  assert.equal(existsSync(join(root, '.git', 'rondo-closeout-owner.json')), true);
+  assert.deepEqual(cleanupCloseoutRoot(root, token), { released: true });
+  assert.throws(() => cleanupCloseoutRoot(root, token), /拒绝清理/);
 });
 
-test('ignored files and another group remain untouched on unsafe cleanup', t => {
-  const f = fixture(t);
-  const first = cloneCloseoutRoot(f.source('change-a'), f.remote);
-  const other = cloneCloseoutRoot(f.source('release-change', 'release'), f.remote);
-  appendFileSync(join(first.root_repo, '.git', 'info', 'exclude'), '\nignored-temp.txt\n');
-  writeFileSync(join(first.root_repo, 'ignored-temp.txt'), 'must preserve');
-  assert.throws(() => cleanupCloseoutRoot(first.root_repo, first.cleanup_token, f.remote), /忽略/);
-  assert.equal(existsSync(first.root_repo), true);
-  assert.equal(existsSync(other.root_repo), true);
-  assert.deepEqual(cleanupCloseoutRoot(other.root_repo, other.cleanup_token, f.remote), { removed: true });
-  rmSync(join(first.root_repo, 'ignored-temp.txt'));
-  assert.deepEqual(cleanupCloseoutRoot(first.root_repo, first.cleanup_token, f.remote), { removed: true });
+test('platform branch 尾号与当前 Task 不一致时拒绝准备', t => {
+  const f = fixture(t, { checkoutSuffix: '000000000000' });
+  assert.throws(() => f.prepare(f.source('change-a')), /尾号/);
 });
 
-test('cleanup preserves additional local Git refs even with a clean working tree', t => {
+test('platform identity: Task / Workspace / isolated 缺失或不一致时拒绝', t => {
   const f = fixture(t);
-  const { root_repo: root, cleanup_token: token } = cloneCloseoutRoot(f.source('change-a'), f.remote);
-  git(root, 'branch', 'offline-work');
-  assert.throws(() => cleanupCloseoutRoot(root, token, f.remote), /Branch\/Tag\/Stash/);
-  assert.equal(existsSync(root), true);
-  git(root, 'branch', '-D', 'offline-work');
-  assert.deepEqual(cleanupCloseoutRoot(root, token, f.remote), { removed: true });
+  const { root_repo: root, cleanup_token: token } = f.prepare(f.source('change-a'));
+  const swapped = { ...process.env, MULTICA_TASK_ID: taskId.replace('f8f23e188c07', '111111111111') };
+  assert.throws(() => {
+    process.env.MULTICA_TASK_ID = swapped.MULTICA_TASK_ID;
+    verifyCloseoutRoot(f.paths(root), f.source('change-a'));
+  }, /Task/);
+  process.env.MULTICA_TASK_ID = taskId;
+  // 没有平台 isolated 证据（无 [multica] 配置、也不是 daemon cache worktree）时必须拒绝。
+  git(root, 'config', '--unset', 'multica.checkout-mode');
+  assert.throws(() => verifyCloseoutRoot(f.paths(root), f.source('change-a')), /isolated/);
+  git(root, 'config', 'multica.checkout-mode', 'isolated');
+  assert.deepEqual(cleanupCloseoutRoot(root, token), { released: true });
+});
+
+test('manifest（强方案接口）存在时优先使用，字段不一致即拒绝', t => {
+  const f = fixture(t);
+  const { root_repo: root, cleanup_token: token } = f.prepare(f.source('change-a'));
+  const manifest = join(root, '.git', 'multica-checkout.json');
+  const identity = {
+    checkout_branch: `agent/pr-status-sync-agent/${taskSuffix}`,
+    task_id: taskId,
+    workspace_id: workspaceId,
+    checkout_mode: 'isolated',
+  };
+  writeFileSync(manifest, JSON.stringify(identity));
+  assert.doesNotThrow(() => verifyCloseoutRoot(f.paths(root), f.source('change-a')));
+  assert.deepEqual(readPlatformCheckoutManifest(join(root, '.git')), identity);
+  writeFileSync(manifest, JSON.stringify({ ...identity, task_id: 'other-task' }));
+  assert.throws(() => verifyCloseoutRoot(f.paths(root), f.source('change-a')), /Task\/Workspace/);
+  writeFileSync(manifest, 'not-json');
+  assert.throws(() => verifyCloseoutRoot(f.paths(root), f.source('change-a')), /manifest/);
+  rmSync(manifest);
+  assert.deepEqual(cleanupCloseoutRoot(root, token), { released: true });
 });
 
 test('wrong origin or unavailable approved commit rejects a shared root', t => {
   const f = fixture(t);
-  const { root_repo: root, cleanup_token: token } = cloneCloseoutRoot(f.source('change-a'), f.remote);
-  assert.throws(() => verifyCloseoutRoot(f.paths(root), { ...f.source('change-a'), repo_url: 'http://tfs.test/tfs/C/P/_git/other' }), /Origin/);
+  const { root_repo: root, cleanup_token: token } = f.prepare(f.source('change-a'));
+  assert.throws(() => verifyCloseoutRoot(f.paths(root), { ...f.source('change-a'), repo_url: 'http://tfs.test/tfs/C/P/_git/other' }), /Origin|所有权/);
   assert.throws(() => verifyCloseoutRoot(f.paths(root), { ...f.source('change-a'), commit: 'a'.repeat(40) }), /批准 Commit/);
-  assert.deepEqual(cleanupCloseoutRoot(root, token, f.remote), { removed: true });
+  assert.deepEqual(cleanupCloseoutRoot(root, token), { released: true });
 });
 
 test('Requirement refuses an unmanaged checkout even if origin and branch match', t => {
   const f = fixture(t);
-  const root = mkdtempSync(join(tmpdir(), 'rondo-unmanaged-'));
-  t.after(() => rmSync(root, { recursive: true, force: true }));
-  git(root, 'clone', '--single-branch', '--branch', 'dev', f.bare, '.');
+  // 用户 checkout：直接放在 task workdir 下，既无受控子目录也无所有权标记。
+  const root = join(realpathSync(process.cwd()), 'winning-platform-monorepo');
+  git(process.cwd(), 'clone', '--single-branch', '--branch', 'dev', f.bare, root);
   git(root, 'remote', 'set-url', 'origin', repoUrl);
-  assert.throws(() => verifyCloseoutRoot(f.paths(root), f.source('change-a')), /受控临时 Clone/);
+  assert.throws(() => verifyCloseoutRoot(f.paths(root), f.source('change-a')), /受控|所有权/);
+  rmSync(root, { recursive: true, force: true });
 });
 
-test('early clone failure releases its empty temporary directory', t => {
-  const f = fixture(t);
-  let root;
-  assert.throws(() => cloneCloseoutRoot(f.source('change-a'), (_url, _args, cwd) => {
-    root = cwd;
-    return { status: 1, stdout: '', stderr: 'clone failed' };
-  }), /已安全清理临时 Clone/);
-  assert.equal(existsSync(root), false);
+test('platform checkout failure releases the empty controlled directory', t => {
+  const f = fixture(t, { checkoutThrows: true });
+  assert.throws(() => f.prepare(f.source('change-a')), /准备失败/);
+  assert.equal(existsSync(f.lastSubdir), false);
 });
 
 test('Inspect rejects a PR whose repository branch disagrees with approved preparation', async t => {
   const f = fixture(t);
   const source = f.source('change-a');
-  const { root_repo: root, cleanup_token: token } = cloneCloseoutRoot(source, f.remote);
+  const { root_repo: root, cleanup_token: token } = f.prepare(source);
   const md = {
     'analysis.change_ref': source.change_ref,
     'analysis.source': JSON.stringify(source),
@@ -248,7 +320,7 @@ test('Inspect rejects a PR whose repository branch disagrees with approved prepa
     inspectRequirementCommits({ app: { repo_url: repoUrl } }, md, root, { config: {} }, {}),
     /PR Preparation.*分支不一致/,
   );
-  assert.deepEqual(cleanupCloseoutRoot(root, token, f.remote), { removed: true });
+  assert.deepEqual(cleanupCloseoutRoot(root, token), { released: true });
 });
 
 test('TFS completed PR commit enumeration no longer requires a Candidate SHA', async () => {

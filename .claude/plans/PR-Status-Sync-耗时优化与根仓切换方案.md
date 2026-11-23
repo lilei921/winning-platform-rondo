@@ -61,6 +61,17 @@
 
 **结论：平台 checkout → 切分支 → 校验链路在真实 task 内成立**；该 run 未做任何写入。
 
+### 2.1 实施期真实 run 修正（2026-11-23 15:39–15:52，LEI-49 两轮验收）
+
+| 发现 | 实测事实 | 方案修正 |
+|---|---|---|
+| checkout 输出分流 | 根仓路径写 **stdout**；`Checked out … (branch: …)` 写 **stderr** | Rondo 同时解析 stdout + stderr；不能再只读 stdout |
+| linked worktree 形态 | 新版 daemon（0.11.1）的 checkout 是 linked worktree：`.git` 是文件，公共 Git 目录在 `D:\Multica\default\.repos\<workspace-id>\<repo>.git\worktrees\<name>`，**不写 `[multica] checkout-mode=isolated`** | 身份证据改为：完整 checkout 读 `[multica] checkout-mode=isolated`；linked worktree 用「公共目录位于 `.repos/<workspace-id>/`」+「workdir 下 `.multica/daemon_task_context.json` 的 managed_by/issue/agent 匹配」判定 isolated |
+| 环境变量 | 当前 daemon task 环境**没有** `MULTICA_REPO_CHECKOUT_MODE` | **用户决定：删除该校验**，不再依赖该环境变量；`MULTICA_TASK_ID` / `MULTICA_WORKSPACE_ID` 仍保留 |
+| 分支尾号 | 平台分支为 `agent/<agent>/<MULTICA_TASK_ID 去连字符后的末 12 位>`；同一 Task 再次 checkout 会追加 `-<时间戳>` | 尾号按**末 12 位**核对，并允许纯数字时间戳后缀；拒绝其它后缀 |
+| 本地分支落后 | daemon bare cache 中已有同名本地分支且可能落后于远端（LEI-49 实测 `main=7af3c09b`、`origin/main=09c04918`）；`git switch main` 会复用旧本地分支 | switch 后必须比较本地与 `origin/<branch>`：落后则 `git merge --ff-only` 快进；分叉或快进失败即拒绝 |
+| prepare 耗时 | 失败发生在解析阶段，退出前实测约 7.8s（平台 checkout 已完成） | 解析修复后该阶段仍为秒级，无全量 clone |
+
 ---
 
 ## 三、方案 Review 结论
@@ -70,7 +81,7 @@
 1. **`remote-artifacts.ts` 的 clone 不能删**。它是 Bug/无 root-repo 收口路径的 `--depth 1` 浅克隆（`finalize.ts:675-680,776`、`remote-artifacts.ts:165`），不是 395MB 全量。删除会破坏 Bug 收口。**本方案不涉及它。**
 2. **`multica repo checkout` 会复用同名 checkout**。daemon 启动时已 checkout 到 agent 分支；Rondo 若在同一目录调用会拿到 agent 分支目录，切分支会干扰 agent。**Rondo 必须在独立子目录里调用 checkout**（先建子目录再 `cd` 进去）。
 3. **`assertManagedLocation` 不兼容子目录**：`closeout-root.ts:22-26` 要求 `dirname(root) === owner.workdir`。子目录 checkout 时需让 `owner.workdir` 记录该子目录，或放宽为"是 workdir 的子目录"。
-4. **`verifyCloseoutRoot` 的 `basename.startsWith("rondo-closeout-")` 必须改写**：平台 checkout 目录名为 `winning-platform-monorepo`，永不匹配。改为：位于受控子目录内 + 弱校验四条件。
+4. **`verifyCloseoutRoot` 的 `basename.startsWith("rondo-closeout-")` 必须改写**：平台 checkout 目录名为 `winning-platform-monorepo`，永不匹配。改为：位于受控子目录内 + 弱校验（isolated 平台证据、Task/Workspace、分支尾号、活跃 Run；详见 2.1 修正）。
 5. **测试需可注入 backend**：`closeout-stage-a.test.mjs:83-251` 直接测 `cloneCloseoutRoot`，改为平台 checkout 后无法本地跑。需要抽象 `prepareRoot(source)` 接口，单测注入 fake。
 
 ### 3.2 需澄清/补充
@@ -100,7 +111,7 @@
 | P0 超时配置 | **暂不做** | 尾部 42 分钟僵死仍存在，最坏情况仍是 ~51 分钟 |
 | 存量 Issue 迁移 main→master | **不做** | `source.branch` 保持原值；根仓必须切到 `source.branch` 而不是硬编码 master |
 | 非平台 fallback | **方案 B：彻底删除** | Rondo 收口只能在 Multica task 内运行 |
-| 身份校验 | **弱方案 B + 强方案接口** | 四条件交叉验证；预留 manifest 接口 |
+| 身份校验 | **弱方案 B + 强方案接口** | 交叉验证：isolated 平台证据（完整 checkout 配置 / daemon cache worktree + 任务上下文）、Task/Workspace、分支尾号、`issue runs --active`；预留 manifest 接口；**不使用 `MULTICA_REPO_CHECKOUT_MODE`** |
 
 ### 迁移不做的直接技术后果
 
@@ -126,9 +137,9 @@
 
 | 文件:行 | 改动 |
 |---|---|
-| `closeout-root.ts:130-166` | `cloneCloseoutRoot` 改为 `prepareRoot(source)`：①在 `workdir` 下建受控子目录（如 `closeout-<issue>/`）并 `cd` 进去；②调用 `multica repo checkout <url>`（解析文本返回路径）；③`git fetch origin refs/heads/<source.branch>`；④`git switch <source.branch> \|\| git switch -c <source.branch> origin/<source.branch>`；⑤写 token marker。**删除直接 `git clone` 路径** |
-| `closeout-root.ts:17-27` | `Owner` 增加 `provenance/task_id/workspace_id/base_branch`；`assertManagedLocation` 改为校验 `root` 位于 `owner.workdir` 的受控子目录内 |
-| `closeout-root.ts:64-82` | `verifyCloseoutRoot` 删除 `basename.startsWith("rondo-closeout-")` 硬检查，改为：目录在受控子目录内 + 弱校验四条件（`checkout-mode=isolated`、HEAD 分支尾号等于 `MULTICA_TASK_ID` 前 12 位、`MULTICA_WORKSPACE_ID`、`issue runs --active`）；若存在 `.git/multica-checkout.json` 则优先用它（强方案接口）；repo_url / branch / commit 检查保留 |
+| `closeout-root.ts:130-166` | `cloneCloseoutRoot` 改为 `prepareRoot(source)`：①在 `workdir` 下建受控子目录（如 `closeout-<issue>/`）并 `cd` 进去；②调用 `multica repo checkout <url>`（路径取 stdout、分支取 stderr，二者合并解析）；③`git fetch origin refs/heads/<source.branch>:refs/remotes/origin/<source.branch>`；④`git switch <source.branch> \|\| git switch -c <source.branch> origin/<source.branch>`，若本地同名分支落后于 `origin/<source.branch>` 则 `git merge --ff-only` 快进，分叉即拒绝；⑤写 token marker。**删除直接 `git clone` 路径** |
+| `closeout-root.ts:17-27` | `Owner` 增加 `provenance/task_id/workspace_id`；`assertManagedLocation` 改为校验 `root` 位于 `owner.workdir` 的受控子目录内 |
+| `closeout-root.ts:64-82` | `verifyCloseoutRoot` 删除 `basename.startsWith("rondo-closeout-")` 硬检查，改为：目录在受控子目录内 + 弱校验（isolated 平台证据、`MULTICA_TASK_ID` / `MULTICA_WORKSPACE_ID`、分支尾号=Task ID 末 12 位且允许 `-<时间戳>`、`issue runs --active`）；若存在 `.git/multica-checkout.json` 则优先用它（强方案接口）；repo_url / branch / commit 检查保留 |
 | `closeout-root.ts:84-105` | `verifyGitRoot` **保持原样**（HEAD == source.branch），不引入双模式 |
 | `closeout-root.ts:168-209` | 平台根 cleanup **不 `rmSync`**（worktree 归 daemon），只验 token、释放 marker；删除 legacy clone 删除逻辑 |
 | `native-checkout.ts:8-16` | 增加平台 checkout 只读校验入口（弱校验 + manifest 接口） |

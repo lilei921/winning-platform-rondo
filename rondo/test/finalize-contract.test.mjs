@@ -20,7 +20,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, chmodSync, realpathSync, rmSync, appendFileSync, renameSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, delimiter } from "node:path";
+import { join, delimiter, dirname } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { createServer } from "node:http";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -220,6 +220,10 @@ async function fixture(t, opts = {}) {
   const dir = realpathSync.native(mkdtempSync(join(tmpdir(), "finalize-contract-")));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const opsLog = join(dir, "ops.log");
+  // 平台 Task/Workspace 身份：Requirement 收口根仓按平台 checkout 契约校验。
+  const taskId = "01a1d2fc-da3a-796b-9584-f8f23e188c07";
+  const taskSuffix = taskId.replace(/-/g, "").slice(-12);
+  const workspaceId = "ws-test";
 
   // 假 openspec
   const bin = join(dir, "bin");
@@ -233,7 +237,11 @@ async function fixture(t, opts = {}) {
   const rootRemote = join(dir, "root-remote.git");
   mkdirSync(rootRemote);
   git(rootRemote, "init", "--bare");
-  const rootRepo = join(dir, opts.requirement ? "rondo-closeout-root" : "root-repo");
+  // Requirement 根仓模拟平台 checkout：位于 workdir 的受控子目录，带 isolated 标记与 agent 分支。
+  const rootRepo = opts.requirement
+    ? join(dir, "rondo-closeout-fixture", "winning-platform-monorepo")
+    : join(dir, "root-repo");
+  if (opts.requirement) mkdirSync(dirname(rootRepo), { recursive: true });
   mkdirSync(rootRepo);
   git(rootRepo, "init");
   git(rootRepo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "--allow-empty", "-m", "init");
@@ -298,7 +306,15 @@ async function fixture(t, opts = {}) {
     git(rootRemote, "update-server-info");
     const source = { repo_url: tfsUrl + "/Proj1/_git/root", branch: "dev", commit: git(rootRepo, "rev-parse", "HEAD"), change_ref: CHANGE_REF };
     git(rootRepo, "remote", "set-url", "origin", source.repo_url);
-    writeFileSync(join(rootRepo, ".git", "rondo-closeout-owner.json"), JSON.stringify({ ...source, workdir: dir, token: "fixture" }));
+    // 平台 checkout 的可见证据：isolated 配置、agent 分支、以及 Rondo 所有权标记。
+    git(rootRepo, "config", "multica.checkout-mode", "isolated");
+    git(rootRepo, "switch", "-c", "agent/pr-status-sync-agent/" + taskSuffix);
+    git(rootRepo, "switch", "dev");
+    writeFileSync(join(rootRepo, ".git", "rondo-closeout-owner.json"), JSON.stringify({
+      ...source, workdir: dir, token: "fixture", provenance: "multica-repo-checkout", issue_id: "issue-1",
+      task_id: taskId, workspace_id: workspaceId,
+      checkout_branch: "agent/pr-status-sync-agent/" + taskSuffix, checkout_mode: "isolated",
+    }));
     metadata = {
       ...metadata,
       "tfs.type": "需求",
@@ -332,6 +348,7 @@ async function fixture(t, opts = {}) {
     MOCK_STATE: statePath, MOCK_ROOT_REPO: rootRepo, OPS_LOG: opsLog,
     ARCHIVE_TEST_HOOK: join(dir, "archive-hook.cjs"),
     TFS_SERVER_URL: tfsUrl, TFS_PAT: "dummy-pat",
+    MULTICA_TASK_ID: taskId, MULTICA_WORKSPACE_ID: workspaceId,
     PATH: bin + delimiter + inheritedPath,
   });
 

@@ -15,7 +15,7 @@
     "project": "68b81377-601e-4d6c-84fd-122c05f0308f",
     "intake_agent": "Wayfinder Agent",
     "initial_status": "backlog",
-    "cli_note": "创建先 backlog + Wayfinder Agent；Issue 保持 backlog 停放，暂不做状态激活。"
+    "cli_note": "创建先 backlog + Wayfinder Agent；initial_status=backlog 时保持停放，=todo 时在初始化收口后激活一次。"
   },
   "sync": {
     "managed_fields_only_on_existing": true,
