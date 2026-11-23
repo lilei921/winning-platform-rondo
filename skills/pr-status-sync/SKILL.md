@@ -7,8 +7,6 @@ description: 核实已登记 PR 的外部状态并同步可信的终态事实。
 
 ## 执行
 
-使用当前 Multica Run 的 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`，可通过 `MULTICA_CLI_PATH` 指定 CLI（默认 `multica`）。手动执行需提供相同环境及 CLI 认证。
-
 ```bash
 rondo pr reconcile-status
 ```
