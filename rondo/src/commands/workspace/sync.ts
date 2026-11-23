@@ -59,7 +59,6 @@ const TFS_SYNC_SKILL = "tfs-sync";
 interface Overlay extends MulticaEnvironment {
   provisioning_required?: string[];
   workspace_id?: string;
-  delivery_squad_id?: string;
   project?: string;
   skills?: Record<string, string>;
 }
