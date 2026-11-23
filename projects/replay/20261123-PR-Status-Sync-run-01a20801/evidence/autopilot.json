@@ -1,0 +1,13 @@
+{
+  "id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+  "title": "PR Status Sync",
+  "description": "使用 `pr-status-sync` Skill 完成本轮 PR 状态同步；根据已确认的结果，使用 `issue-closeout` Skill 完成符合条件的交付收口，并报告最终结果及待处理事项。",
+  "execution_mode": "run_only",
+  "status": "active",
+  "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+  "assignee_id": "34986774-e980-4695-816b-4266a25a86c9",
+  "created_at": "2026-10-29T10:41:15+08:00",
+  "updated_at": "2026-11-23T18:45:17+08:00",
+  "last_run_at": "2026-11-23T18:45:17+08:00",
+  "last_run_status": null
+}

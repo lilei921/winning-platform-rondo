@@ -1,0 +1,22 @@
+[
+  {
+    "autopilot_id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+    "completed_at": "2026-11-23T18:44:35+08:00",
+    "created_at": "2026-11-23T18:43:46+08:00",
+    "failure_reason": null,
+    "id": "01a20801-344b-7e6f-95a5-49e7238a39d4",
+    "issue_id": null,
+    "result": {
+      "output": "本轮 PR 状态同步与交付收口已完成：\n\n- **LEI-52**：`dataintegration-web` PR **#3954** 已确认 completed。\n- 按 **Bug** 流程完成收口，无需准备根仓、创建 TFS 子任务或关联业务 Commit。\n- TFS 父工作项 **#267394** 已回写并核实为 **已解决**。\n- 交付总结已写入，Issue 已更新为 **Done**，`finalize.pending` 已清理。\n\n**待处理事项：无。**",
+      "pr_url": "",
+      "session_id": "2841e17c-3a9e-448e-bb2c-16677696eb50",
+      "work_dir": "D:\\Multica\\default\\winning-lil-b39bad65de56\\task-dc1597d02545\\workdir"
+    },
+    "source": "manual",
+    "status": "completed",
+    "task_id": "01a20801-3450-78f0-9d17-dc1597d02545",
+    "trigger_id": null,
+    "trigger_payload": null,
+    "triggered_at": "2026-11-23T18:43:46+08:00"
+  }
+]

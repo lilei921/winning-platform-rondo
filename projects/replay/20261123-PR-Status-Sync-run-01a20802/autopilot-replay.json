@@ -1,0 +1,31 @@
+{
+  "schema": "multica-autopilot-replay/v1",
+  "collected_at": "2026-11-23T18:51:40+08:00",
+  "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+  "autopilot_id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+  "title": "PR Status Sync",
+  "agent": {
+    "id": "34986774-e980-4695-816b-4266a25a86c9",
+    "name": "PR Status Sync Agent"
+  },
+  "selection": "single_run",
+  "coverage": "complete",
+  "run_count": 1,
+  "tool_calls_total": 12,
+  "subagent_tool_calls_total": 0,
+  "sessions": [
+    {
+      "run_id": "01a20802-980d-7bed-8e20-bcd8c28d3a63",
+      "session_id": "ae7629e9-82e3-4c63-b029-ab8053120d74",
+      "provider": "claude",
+      "started_at": "2026-11-23T18:45:17+08:00",
+      "completed_at": "2026-11-23T18:47:28+08:00",
+      "tool_calls_total": 12,
+      "status": "completed",
+      "replay": "pr-status-sync/20261123-1845-ae7629e9/replay.json",
+      "timeline": "pr-status-sync/20261123-1845-ae7629e9/timeline.md",
+      "verification": "PASS"
+    }
+  ],
+  "gaps": []
+}

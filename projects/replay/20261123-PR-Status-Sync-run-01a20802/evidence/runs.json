@@ -1,0 +1,22 @@
+[
+  {
+    "autopilot_id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+    "completed_at": "2026-11-23T18:47:28+08:00",
+    "created_at": "2026-11-23T18:45:17+08:00",
+    "failure_reason": null,
+    "id": "01a20802-980d-7bed-8e20-bcd8c28d3a63",
+    "issue_id": null,
+    "result": {
+      "output": "本轮 PR 状态同步及收口结果：\n\n- 扫描 1 个 Issue：**LEI-49**，动作为 `resume_finalize`。\n- PR **dataintegration-web#3947** 已完成；交付 Prepare 恢复成功，远端归档回读通过，归档提交为 `09c049182ef61bbd8d4f71922a30c42f029669d0`。\n- **TFS Writeback 阻断**：Inspect 返回 `UNKNOWN`，原因为“TFS 2018 Commit 反向关联尚未通过跨 Project 真实验证；停止独占关联”。\n- 因未获得实际写回 `PASS`，未执行 Complete。LEI-49 保持 `in_review`，`finalize.pending` 保留，未创建或重复创建 TFS 子任务。\n\n**待处理**：完成 TFS 2018 跨 Project Commit 反向关联的真实验证后，重新执行 LEI-49 的 TFS Writeback 与 Complete。",
+      "pr_url": "",
+      "session_id": "ae7629e9-82e3-4c63-b029-ab8053120d74",
+      "work_dir": "D:\\Multica\\default\\winning-lil-b39bad65de56\\task-4aeb488365ad\\workdir"
+    },
+    "source": "manual",
+    "status": "completed",
+    "task_id": "01a20802-9814-72ef-88c3-4aeb488365ad",
+    "trigger_id": null,
+    "trigger_payload": null,
+    "triggered_at": "2026-11-23T18:45:17+08:00"
+  }
+]

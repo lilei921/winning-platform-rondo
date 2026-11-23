@@ -1,0 +1,88 @@
+{
+  "collected_at": "2026-11-23T18:51:40+08:00",
+  "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+  "autopilot_id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+  "read_only_commands": [
+    [
+      "multica",
+      "autopilot",
+      "get",
+      "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "autopilot",
+      "runs",
+      "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+      "--limit",
+      "2",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "agent",
+      "get",
+      "34986774-e980-4695-816b-4266a25a86c9",
+      "--output",
+      "json"
+    ]
+  ],
+  "run_window_basis": "triggered_at 至 completed_at",
+  "sessions": [
+    {
+      "verification_schema": "claude_public_messages",
+      "coverage_granularity": "public text + tool_use/tool_result",
+      "invalid_jsonl_lines": 0,
+      "identity_mismatch_files": [],
+      "conflicting_uuids": [],
+      "source_public_tool_count": 12,
+      "exported_tool_count": 12,
+      "source_user_messages": 1,
+      "source_assistant_messages": 1,
+      "messages_match": true,
+      "missing_tool_ids": [],
+      "extra_tool_ids": [],
+      "tool_order_matches": true,
+      "tool_results_match": true,
+      "missing_tool_results": [],
+      "orphan_tool_results": [],
+      "duplicate_tool_ids": [],
+      "duplicate_tool_results": [],
+      "unsupported_events": {},
+      "complete": true,
+      "session_id": "ae7629e9-82e3-4c63-b029-ab8053120d74",
+      "subagents": [],
+      "inline_sidechain_records": 0,
+      "missing_subagent_ids": [],
+      "provider": "claude",
+      "sources": [
+        {
+          "path": "C:\\Users\\lilei\\.claude\\projects\\D--Multica-default-winning-lil-b39bad65de56-task-4aeb488365ad-workdir\\ae7629e9-82e3-4c63-b029-ab8053120d74.jsonl",
+          "size_bytes": 460510,
+          "sha256": "54cdcfbe01a3886203917b7c262b14d9855f8b471ac32a1520201cecad5beadc"
+        }
+      ],
+      "sources_stable": true,
+      "run_coverage": {
+        "method": "claude_public_request_and_completion",
+        "run_intervals": {
+          "01a20802-980d-7bed-8e20-bcd8c28d3a63": [
+            {
+              "started_at": "2026-11-23T10:45:19.758Z",
+              "completed_at": "2026-11-23T10:47:25.007Z",
+              "message_id": "02179543083041323c5b6bc0dca724893eb7d2b1f969c7c6fb655",
+              "matched_by": "platform_final_output"
+            }
+          ]
+        },
+        "uncovered_run_ids": [],
+        "complete": true
+      }
+    }
+  ],
+  "coverage": "complete",
+  "verified_at": "2026-11-23T18:51:40+08:00"
+}
