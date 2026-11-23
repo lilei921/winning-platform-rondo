@@ -290,7 +290,7 @@ export async function cmdWorkItemLinkCommits(opts: { id: number; repo: string; s
       }
       let owners: number[] = [];
       if (isTask) {
-        // Same Collection lock also covers the higher-level writeback transaction.
+        // Recheck current Commit ownership before binding.
         owners = await commitTaskOwners(client, identityRepo, sha);
         if (owners.length > 1 || (owners.length === 1 && owners[0] !== opts.id)) {
           failed.push({sha, error: `Commit 已归属其他 TFS Task: ${owners.join(",")}`});
