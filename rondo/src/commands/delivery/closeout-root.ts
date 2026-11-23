@@ -21,6 +21,7 @@ import {
 } from "../../clients/native-checkout.js";
 import { readAnalysisSource, type AnalysisSource } from "../analysis/source.js";
 import { canonicalRepositoryIdentity } from "./evidence-repository.js";
+import { touchedCapabilities } from "./contract-files.js";
 import { isRequirementChangeDelivery } from "./requirement-mode.js";
 
 export type CloseoutCheckout = (workdir: string, repoUrl: string) => { root: string; branch: string };
@@ -202,6 +203,16 @@ export function confirmPublishedArchive(paths: RuntimePaths, source: AnalysisSou
   const localTree = local(root, ["rev-parse", "HEAD:openspec/changes/archive/" + matches[0]], "核对本地归档树");
   const remoteTree = local(root, ["rev-parse", remoteRef + ":openspec/changes/archive/" + matches[0]], "核对远端归档树");
   if (localTree !== remoteTree) throw new UnknownError("远端归档内容与本地发布版本不一致");
+  // Other Runs may archive a different Change against the same capability.
+  for (const cap of touchedCapabilities(join(root, "openspec", "changes", "archive", matches[0]))) {
+    const suffix = ":openspec/specs/" + cap;
+    const localSpec = runCommand(["git", "rev-parse", "HEAD" + suffix], root);
+    const remoteSpec = runCommand(["git", "rev-parse", remoteRef + suffix], root);
+    if (localSpec.status !== remoteSpec.status ||
+        (localSpec.status === 0 && localSpec.stdout.trim() !== remoteSpec.stdout.trim())) {
+      throw new UnknownError("远端归档后的 Specs 与本地发布版本不一致: " + cap);
+    }
+  }
   return { commit: remoteCommit, folder: matches[0] };
 }
 
