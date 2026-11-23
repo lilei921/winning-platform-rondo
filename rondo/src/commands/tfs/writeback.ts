@@ -23,7 +23,6 @@ import { isRequirementChangeDelivery } from "../delivery/requirement-mode.js";
 import { validateRequirementTaskPlan, ensurePlannedDeliveryTasks, findExistingPlannedTasks,
   type RequirementTaskPlan } from "./requirement-tasks.js";
 import { inspectRequirementCommits, currentCommitOwners, type AvailableCommit } from "./requirement-commits.js";
-import { withCollectionWriterLock } from "../../tfs/collection-lock.js";
 import { TfsClient as TfsApiClient } from "../../tfs/client.js";
 import { hasExactArtifactLink } from "../../tfs/api/commit-facts.js";
 import { commitKey, parseCommitArtifact } from "../../tfs/api/commit-identity.js";
@@ -579,70 +578,68 @@ async function executePlannedRequirement(
   const stored = parseStoredTaskPlan(md["delivery.tfs_task_plan"], "delivery.tfs_task_plan");
   const plan = approvedTaskPlan(opts.taskPlan, stored, snapshot.approvedTasks, snapshot.commits);
   const api = new TfsApiClient();
-  return withCollectionWriterLock(api.config.serverUrl, async () => {
-    const latestIssue = clients.getIssue(issueKey);
-    const fresh = latestIssue.metadata ?? {};
-    if (fresh["finalize.pending"] !== md["finalize.pending"] ||
-        fresh["analysis.change_ref"] !== md["analysis.change_ref"] ||
-        fresh["analysis.source"] !== md["analysis.source"] ||
-        fresh["current_pr"] !== md["current_pr"] ||
-        fresh["tfs.id"] !== md["tfs.id"]) {
-      throw new UnknownError("收口期间 Issue 事实发生变化，停止外部 TFS 写入");
+  const latestIssue = clients.getIssue(issueKey);
+  const fresh = latestIssue.metadata ?? {};
+  if (fresh["finalize.pending"] !== md["finalize.pending"] ||
+      fresh["analysis.change_ref"] !== md["analysis.change_ref"] ||
+      fresh["analysis.source"] !== md["analysis.source"] ||
+      fresh["current_pr"] !== md["current_pr"] ||
+      fresh["tfs.id"] !== md["tfs.id"]) {
+    throw new UnknownError("收口期间 Issue 事实发生变化，停止外部 TFS 写入");
+  }
+  const prior = parseStoredTaskPlan(fresh["delivery.tfs_task_plan"], "delivery.tfs_task_plan");
+  approvedTaskPlan(plan, prior, snapshot.approvedTasks, snapshot.commits);
+  const existing = await findExistingPlannedTasks(clients, issueKey, md["analysis.change_ref"], tfsId, plan);
+  // This check happens under the collection lock, before creating ANY TFS Task.
+  for (let i = 0; i < plan.tasks.length; i++) for (const ref of plan.tasks[i].commits) {
+    const commit = commitByRef(snapshot.commits).get(ref.repo_key + "/" + ref.sha)!;
+    const owners = await currentCommitOwners(api, commit);
+    if (owners.length > 1 || (owners.length === 1 && owners[0] !== existing[i])) {
+      throw new FailError(`Commit ${commit.repo_key}/${commit.sha} 已归属其他 TFS Task: ${owners.join(",")}`);
     }
-    const prior = parseStoredTaskPlan(fresh["delivery.tfs_task_plan"], "delivery.tfs_task_plan");
-    approvedTaskPlan(plan, prior, snapshot.approvedTasks, snapshot.commits);
-    const existing = await findExistingPlannedTasks(clients, issueKey, md["analysis.change_ref"], tfsId, plan);
-    // This check happens under the collection lock, before creating ANY TFS Task.
-    for (let i = 0; i < plan.tasks.length; i++) for (const ref of plan.tasks[i].commits) {
-      const commit = commitByRef(snapshot.commits).get(ref.repo_key + "/" + ref.sha)!;
-      const owners = await currentCommitOwners(api, commit);
-      if (owners.length > 1 || (owners.length === 1 && owners[0] !== existing[i])) {
-        throw new FailError(`Commit ${commit.repo_key}/${commit.sha} 已归属其他 TFS Task: ${owners.join(",")}`);
+  }
+  if (!prior) {
+    clients.setMetadata(issue.id, "delivery.tfs_task_plan", JSON.stringify(plan));
+    const saved = clients.getIssue(issueKey).metadata?.["delivery.tfs_task_plan"];
+    if (saved !== JSON.stringify(plan)) throw new UnknownError("任务计划未回读确认；禁止创建 TFS Task");
+  }
+  const materialized = await ensurePlannedDeliveryTasks(clients, issueKey, md["analysis.change_ref"], tfsId, plan);
+  const byCommit = commitByRef(snapshot.commits);
+  for (let i = 0; i < plan.tasks.length; i++) for (const ref of plan.tasks[i].commits) {
+    const commit = byCommit.get(ref.repo_key + "/" + ref.sha)!;
+    const taskId = materialized.ids[i];
+    const readback = await clients.tfsQuery(
+      `SELECT [System.Id] FROM WorkItems WHERE [System.Id] = ${taskId}`, "核对当前 TFS Task Commit 关系",
+    );
+    if (readback.length !== 1 || readback[0].id !== taskId) throw new UnknownError("TFS Task 不可读");
+    if (!hasExactArtifactLink(readback[0].artifactLinks, commit)) {
+      // Never broadcast an entire Change commit list to every Task.
+      const linked = await clients.tfsLinkCommits(taskId, commit.repo, [commit.sha], commit.project);
+      if (linked?.failed?.length || !(linked?.linked?.includes(commit.sha) || linked?.skipped?.includes(commit.sha))) {
+        throw new UnknownError(`Commit ${commit.sha} 关联至 Task ${taskId} 未确认`);
       }
     }
-    if (!prior) {
-      clients.setMetadata(issue.id, "delivery.tfs_task_plan", JSON.stringify(plan));
-      const saved = clients.getIssue(issueKey).metadata?.["delivery.tfs_task_plan"];
-      if (saved !== JSON.stringify(plan)) throw new UnknownError("任务计划未回读确认；禁止创建 TFS Task");
+    // A write response alone is not proof: verify both directions before any Task state transition.
+    const confirmed = await clients.tfsQuery(
+      `SELECT [System.Id] FROM WorkItems WHERE [System.Id] = ${taskId}`, "核对 Commit ArtifactLink",
+    );
+    if (confirmed.length !== 1 || !hasExactArtifactLink(confirmed[0].artifactLinks, commit)) {
+      throw new UnknownError("TFS Commit ArtifactLink 写入后回读不可信");
     }
-    const materialized = await ensurePlannedDeliveryTasks(clients, issueKey, md["analysis.change_ref"], tfsId, plan);
-    const byCommit = commitByRef(snapshot.commits);
-    for (let i = 0; i < plan.tasks.length; i++) for (const ref of plan.tasks[i].commits) {
-      const commit = byCommit.get(ref.repo_key + "/" + ref.sha)!;
-      const taskId = materialized.ids[i];
-      const readback = await clients.tfsQuery(
-        `SELECT [System.Id] FROM WorkItems WHERE [System.Id] = ${taskId}`, "核对当前 TFS Task Commit 关系",
-      );
-      if (readback.length !== 1 || readback[0].id !== taskId) throw new UnknownError("TFS Task 不可读");
-      if (!hasExactArtifactLink(readback[0].artifactLinks, commit)) {
-        // Never broadcast an entire Change commit list to every Task.
-        const linked = await clients.tfsLinkCommits(taskId, commit.repo, [commit.sha], commit.project);
-        if (linked?.failed?.length || !(linked?.linked?.includes(commit.sha) || linked?.skipped?.includes(commit.sha))) {
-          throw new UnknownError(`Commit ${commit.sha} 关联至 Task ${taskId} 未确认`);
-        }
-      }
-      // A write response alone is not proof: verify both directions before any Task state transition.
-      const confirmed = await clients.tfsQuery(
-        `SELECT [System.Id] FROM WorkItems WHERE [System.Id] = ${taskId}`, "核对 Commit ArtifactLink",
-      );
-      if (confirmed.length !== 1 || !hasExactArtifactLink(confirmed[0].artifactLinks, commit)) {
-        throw new UnknownError("TFS Commit ArtifactLink 写入后回读不可信");
-      }
-      const owners = await currentCommitOwners(api, commit);
-      if (owners.length !== 1 || owners[0] !== taskId) {
-        throw new UnknownError(`Commit ${commit.sha} 存在外部 Task 竞争或反向回读不可信`);
-      }
+    const owners = await currentCommitOwners(api, commit);
+    if (owners.length !== 1 || owners[0] !== taskId) {
+      throw new UnknownError(`Commit ${commit.sha} 存在外部 Task 竞争或反向回读不可信`);
     }
-    await verifyPlannedTaskFacts(clients, api, plan, materialized.ids, snapshot.commits, false);
-    for (const id of materialized.ids) {
-      const result = await clients.tfsSetState(id, "已解决", true);
-      if (result.estimateMissing) throw new UnknownError(`TFS Task ${id} 缺少 OriginalEstimate`);
-    }
-    await verifyPlannedTaskFacts(clients, api, plan, materialized.ids, snapshot.commits, true);
-    const parent = await writebackParent(clients, issue, issueKey, md, tfsId);
-    return { tasks_materialized: materialized, tasks_resolved: materialized.ids,
-      commit_links: "verified_exclusive", parent_writeback: parent };
-  });
+  }
+  await verifyPlannedTaskFacts(clients, api, plan, materialized.ids, snapshot.commits, false);
+  for (const id of materialized.ids) {
+    const result = await clients.tfsSetState(id, "已解决", true);
+    if (result.estimateMissing) throw new UnknownError(`TFS Task ${id} 缺少 OriginalEstimate`);
+  }
+  await verifyPlannedTaskFacts(clients, api, plan, materialized.ids, snapshot.commits, true);
+  const parent = await writebackParent(clients, issue, issueKey, md, tfsId);
+  return { tasks_materialized: materialized, tasks_resolved: materialized.ids,
+    commit_links: "verified_exclusive", parent_writeback: parent };
 }
 
 /** 核心流程（commander 包装与 finalize 共用）：硬失败上抛 FailError/UnknownError，返回各步明细。 */
