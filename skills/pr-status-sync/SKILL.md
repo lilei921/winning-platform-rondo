@@ -7,10 +7,10 @@ description: 核实已登记 PR 的外部状态并同步可信的终态事实。
 
 ## 执行
 
-使用本 Skill 的 `config/repo-registry.json` 绝对路径：
+使用当前 Multica Run 的 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`，可通过 `MULTICA_CLI_PATH` 指定 CLI（默认 `multica`）。手动执行需提供相同环境及 CLI 认证。
 
 ```bash
-rondo pr reconcile-status --config "<config-path>"
+rondo pr reconcile-status
 ```
 
 指定 Issue 时附加 `--issue <KEY>`；恢复已完成 Issue 的残留 `finalize.pending` 时使用 `--recover-done`，两者不可同时使用。

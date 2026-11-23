@@ -35,6 +35,7 @@ function fixture(t, scenario = "normal", extraEnv = {}) {
   }
   write("squads/squad-instructions.md", "instructions");
   const trace = join(root, "trace.jsonl");
+  if (scenario === "remote-stale") writeFileSync(trace + ".stale", "legacy");
   const script = write("bin/mock.cjs", `#!/usr/bin/env node
 const fs=require('node:fs'); const args=process.argv.slice(2); fs.appendFileSync(process.env.MC_TRACE,JSON.stringify(args)+'\\n');
 const hash=(content)=>require('node:crypto').createHash('sha256').update(content).digest('hex');
@@ -68,7 +69,19 @@ else if(key==='skill files') {
     fs.writeFileSync(path,fs.readFileSync(0)); out={};
   } else if(args[2]==='list') {
     const content=fs.existsSync(path)?fs.readFileSync(path):null;
-    out=content?[{path:'references/note.md',content_hash:hash(content),size:content.length}]:[];
+    const files=content?[{path:'references/note.md',content_hash:hash(content),size:content.length}]:[];
+    const stale=process.env.MC_TRACE+'.stale';
+    if(process.env.MC_SCENARIO==='remote-stale' && fs.existsSync(stale)) {
+      const old=fs.readFileSync(stale);
+      files.push({id:'stale-registry',path:'config/repo-registry.json',content_hash:hash(old),size:old.length});
+    }
+    out=files;
+  } else if(args[2]==='delete') {
+    if(process.env.MC_SCENARIO!=='remote-stale' || args[args.length-1]!=='stale-registry') {
+      throw new Error('unexpected skill files delete');
+    }
+    fs.rmSync(process.env.MC_TRACE+'.stale',{force:true});
+    out={};
   } else throw new Error('unexpected skill files operation');
 }
 else if(key==='agent list') {
@@ -334,4 +347,37 @@ test("新建工作区 dry-run 输出计划且不使用空工作区 ID", t => {
   assert.ok(r.body.deferred_checks.includes("runtime"));
   assert.ok(f.calls().every(a => !a.includes("create") && !a.includes("--workspace-id")));
   assert.equal(readFileSync(f.overlay, "utf8"), before);
+});
+
+test("pr-status-sync no longer renders Repository Registry", t => {
+  const f = fixture(t);
+  f.write(f.shared + "workspaces/pilot.json", {
+    workspace_id: "ws-1", skills: { "pr-status-sync": "skill-1" },
+  });
+  f.write("skills/pr-status-sync/SKILL.md", "---\nname: pr-status-sync\ndescription: fixture\n---\n");
+  const result = f.run("workspace", "sync", "--workspace", "pilot", "--local-only");
+  assert.equal(result.code, 0, JSON.stringify(result.body));
+  assert.deepEqual(result.body.rendered, []);
+  assert.equal(existsSync(join(dirname(f.overlay), "..", "..", "skills", "pr-status-sync", "config", "repo-registry.json")), false);
+});
+
+test("pr-status-sync sync deletes a stale remote Repository Registry attachment", t => {
+  const f = fixture(t, "remote-stale");
+  f.write(f.shared + "workspaces/pilot.json", {
+    workspace_id: "ws-1", skills: { "pr-status-sync": "skill-1" },
+  });
+  f.write("skills/pr-status-sync/SKILL.md", "---\nname: pr-status-sync\ndescription: fixture\n---\n");
+  const localRegistry = join(dirname(f.overlay), "..", "..", "skills", "pr-status-sync", "config", "repo-registry.json");
+  assert.equal(existsSync(localRegistry), false);
+
+  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "pr-status-sync");
+  assert.equal(result.code, 0, JSON.stringify(result.body));
+  assert.deepEqual(result.body.deleted_remote, ["pr-status-sync/config/repo-registry.json"]);
+  assert.ok(f.calls().some(args =>
+    args[0] === "skill" && args[1] === "files" && args[2] === "delete" && args.at(-1) === "stale-registry"));
+  assert.equal(existsSync(f.trace + ".stale"), false);
+
+  const check = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "pr-status-sync", "--check");
+  assert.equal(check.code, 0, JSON.stringify(check.body));
+  assert.equal(check.body.result, "PASS");
 });

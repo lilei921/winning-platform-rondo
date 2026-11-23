@@ -16,7 +16,7 @@
  *   全部 completed → finalize.pending 已存在 → "resume_finalize"；否则先写 pending → "finalize"
  *   否则           → "noop"（§11.1：active 时不写评论、不唤醒、不改变任何流向）
  *
- * 用法：rondo pr reconcile-status --config <repo-registry.json> [--issue <KEY> | --recover-done]
+ * 用法：rondo pr reconcile-status [--issue <KEY> | --recover-done]
  * 退出码：0 全部处理成功（noop 也是成功）/ 2 存在单项失败（failures 逐项 reason）/
  *         3 扫描本身不可信（CLI/TFS 全局故障）/ 64 用法错误。stdout 只出 JSON；日志走 stderr。
  *
@@ -33,22 +33,12 @@ import { Command } from "commander";
 import { UnknownError } from "../../cli/errors.js";
 import { ExitSignal, logLine, markLeafExecuted } from "../../cli/output.js";
 import { runCommand } from "../../clients/spawn.js";
-import { loadConfig, type BaseRegistryConfig, type RuntimeConfig } from "../../clients/config.js";
+import { resolveMulticaRuntime, type MulticaRuntime } from "../../clients/runtime-context.js";
+import { loadConfig as loadTfsConfig, ConfigError } from "../../tfs/config.js";
+import { parseTfsPrWebUrl } from "../../tfs/api/pr.js";
 import { MulticaClient, type IssueRecord } from "../../clients/multica.js";
 import { FailError } from "../../tfs/client.js";
 import { dispatchTfs, UsageError } from "../../tfs/dispatch.js";
-
-interface RepoEntry {
-  repo_path: string;
-  tfs_repo?: string;
-  tfs_project?: string;
-  default_target_branch?: string;
-}
-
-interface RegistryConfig extends BaseRegistryConfig {
-  runtime: RuntimeConfig;
-  registry: Record<string, RepoEntry>;
-}
 
 interface CurrentPrEntry {
   repo_key: string;
@@ -101,8 +91,8 @@ function multicaJson(cmd: string[], what: string): unknown {
 }
 
 // --- 命令特化的 Multica / TFS 调用形态（共享层缺口，见移植报告）。flag 已对照 0.6.1 核验；升级 CLI 版本后须复核。 ---
-function wsArgs(cfg: RegistryConfig): string[] {
-  return cfg.runtime.workspace_id ? ["--workspace-id", cfg.runtime.workspace_id] : [];
+function wsArgs(cfg: MulticaRuntime): string[] {
+  return cfg.workspace_id ? ["--workspace-id", cfg.workspace_id] : [];
 }
 
 /** 支持 CLI 的数组分页和带 has_more 的对象分页；仅返回候选身份，metadata 按需回读。 */
@@ -123,35 +113,41 @@ export function collectStatusPages(fetchPage: (offset: number, limit: number) =>
   return out;
 }
 
-function listByStatus(cfg: RegistryConfig, status: string): IssueRecord[] {
+function listByStatus(cfg: MulticaRuntime, status: string): IssueRecord[] {
   return collectStatusPages((offset, limit) => multicaJson(
-    [...multicaPrefix(cfg.runtime), "issue", "list", "--status", status,
+    [...multicaPrefix(cfg), "issue", "list", "--status", status,
      "--limit", String(limit), "--offset", String(offset), "--fields", "id,identifier,status",
      ...wsArgs(cfg), "--output", "json"],
     `扫描 Issue(status=${status})`,
   ));
 }
 
-/** 回核 PR：返回 { status, sourceBranch, targetBranch }；found:false / tfs UNKNOWN 经 tfsUnknown 标记区分。 */
-async function prGet(cfg: RegistryConfig, repoKey: string, prId: number): Promise<{ status: "ok" | "not_found" | "tfs_unknown"; pr?: { status?: string; sourceBranch?: string; targetBranch?: string } }> {
-  const repo = cfg.registry[repoKey];
+/** 使用解析后的 TFS PR 定位参数回核身份及状态。 */
+async function prGet(project: string, repository: string, prId: number): Promise<{
+  status: "ok" | "not_found" | "tfs_unknown" | "invalid";
+  pr?: { id?: number; status?: string; sourceBranch?: string; targetBranch?: string };
+}> {
   const r = await tfsApiJson(
-    ["pr", "get", "--repo", repo.tfs_repo as string, "--id", String(prId), "--project", repo.tfs_project as string],
-    `回核 PR #${prId}(${repoKey})`,
+    ["pr", "get", "--repo", repository, "--id", String(prId), "--project", project],
+    "回核 PR #" + prId + "(" + repository + ")",
   );
   if (r.tfsUnknown) return { status: "tfs_unknown" };
-  const d = r.data as { found?: boolean; status?: string; sourceBranch?: string; targetBranch?: string };
-  if (d.found === false) return { status: "not_found" };
+  const d = r.data as { found?: boolean; id?: number; status?: string; sourceBranch?: string; targetBranch?: string } | null;
+  if (d?.found === false) return { status: "not_found" };
+  if (!d || d.id !== prId || typeof d.sourceBranch !== "string" ||
+      typeof d.targetBranch !== "string" || classifyProviderStatus(d.status) === "unknown") {
+    return { status: "invalid" };
+  }
   return { status: "ok", pr: d };
 }
 
 /** 单 Issue 处理（02 §11 聚合规则的确定性投影）。写失败抛 Error 由上层记入 failures。 */
 export async function processIssue(
   multica: Pick<MulticaClient, "setMetadata" | "setStatus">,
-  cfg: RegistryConfig,
   issue: IssueRecord,
   tfs: { attempts: number; successes: number },
   lookupPr: typeof prGet = prGet,
+  tfsCollectionUrl?: string,
 ): Promise<Action | null> {
   const md = issue.metadata ?? {};
   const issueKey = issue.identifier ?? issue.id;
@@ -175,35 +171,43 @@ export async function processIssue(
     return { issue: issueKey, action: "unknown", detail: "current_pr 为空数组" };
   }
 
-  // 逐 PR 回核身份与状态（先全部确认，再聚合写入——不在身份未明时写任何事实）
+  // done 恢复无需 TFS；其他路径只在存在 PR 登记时读取 TFS 连接配置。
+  const collectionUrl = tfsCollectionUrl ?? loadTfsConfig().serverUrl;
   const unknowns: string[] = [];
   const abandoned: CurrentPrEntry[] = [];
+  const seenRepoKeys = new Set<string>();
   let completedCount = 0;
   for (const entry of prs) {
-    const repo = cfg.registry[entry.repo_key];
-    if (!repo) {
-      unknowns.push(`repo_key 未登记: ${entry.repo_key}`);
+    if (!entry || typeof entry.repo_key !== "string" || !entry.repo_key.trim() ||
+        !Number.isSafeInteger(entry.pr_id) || entry.pr_id <= 0 ||
+        typeof entry.source_branch !== "string" || !entry.source_branch ||
+        typeof entry.target_branch !== "string" || !entry.target_branch ||
+        typeof entry.pr_url !== "string" || seenRepoKeys.has(entry.repo_key)) {
+      unknowns.push("current_pr 包含无效或重复的 PR 登记");
       continue;
     }
-    if (!repo.tfs_repo || !repo.tfs_project) {
-      unknowns.push(`${entry.repo_key}: 缺少 tfs_repo/tfs_project 交付配置，无法回核 PR`);
+    seenRepoKeys.add(entry.repo_key);
+    const location = parseTfsPrWebUrl(entry.pr_url, collectionUrl);
+    if (!location || location.prId !== entry.pr_id) {
+      unknowns.push(entry.repo_key + ": PR URL 与配置的 TFS Collection 或登记 ID 不匹配");
       continue;
     }
     tfs.attempts++;
-    const got = await lookupPr(cfg, entry.repo_key, entry.pr_id);
-    if (got.status === "tfs_unknown") { unknowns.push(`${entry.repo_key}#${entry.pr_id}: TFS 查询 UNKNOWN`); continue; }
-    if (got.status === "not_found") { unknowns.push(`${entry.repo_key}: 已登记 PR #${entry.pr_id} 外部查无（身份不可确认）`); continue; }
-    tfs.successes++;
+    const got = await lookupPr(location.project, location.repository, entry.pr_id);
+    if (got.status === "tfs_unknown") { unknowns.push(entry.repo_key + "#" + entry.pr_id + ": TFS 查询 UNKNOWN"); continue; }
+    if (got.status === "not_found") { unknowns.push(entry.repo_key + ": 已登记 PR #" + entry.pr_id + " 外部查无"); continue; }
+    if (got.status === "invalid") { unknowns.push(entry.repo_key + ": PR #" + entry.pr_id + " 回核身份或状态无效"); continue; }
     const pr = got.pr!;
-    if (pr.sourceBranch !== entry.source_branch || pr.targetBranch !== entry.target_branch) {
-      unknowns.push(`${entry.repo_key}: PR #${entry.pr_id} 分支事实与登记不符（${pr.sourceBranch}→${pr.targetBranch} vs ${entry.source_branch}→${entry.target_branch}）`);
+    if (pr.id !== entry.pr_id || pr.sourceBranch !== entry.source_branch || pr.targetBranch !== entry.target_branch) {
+      unknowns.push(entry.repo_key + ": PR #" + entry.pr_id + " 身份或分支与登记不符");
       continue;
     }
     const status = classifyProviderStatus(pr.status);
+    if (status === "unknown") { unknowns.push(entry.repo_key + ": PR #" + entry.pr_id + " 状态不可识别"); continue; }
+    tfs.successes++;
     if (status === "abandoned") abandoned.push(entry);
     else if (status === "completed") completedCount++;
-    else if (status === "unknown") unknowns.push(`${entry.repo_key}: PR #${entry.pr_id} 返回未知状态 ${JSON.stringify(pr.status)}`);
-    // 仅明确的 active 可以继续等待；缺失或不支持的 status 不能作为 noop。
+    // active 不写入交付事实。
   }
 
   // 聚合（顺序即 02 §11 优先级）：abandoned → unknown → completed → noop
@@ -250,39 +254,39 @@ export async function processIssue(
   return { issue: issueKey, action: "noop", detail: `${completedCount}/${prs.length} PR completed，其余 active（§11.1 NO-OP）` };
 }
 
-function parseArgs(argv: string[]): Record<string, string> {
-  const out: Record<string, string> = {};
+function parseArgs(argv: string[]): { issue?: string; recoverDone: boolean } | null {
+  let issue: string | undefined;
+  let recoverDone = false;
   for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (a === "--recover-done") { out["recover-done"] = "true"; continue; }
-    if (a.startsWith("--")) {
-      const key = a.slice(2);
-      const next = argv[i + 1];
-      if (next !== undefined && !next.startsWith("--")) { out[key] = next; i++; }
+    if (argv[i] === "--recover-done" && !recoverDone) { recoverDone = true; continue; }
+    if (argv[i] === "--issue" && !issue && argv[i + 1] && !argv[i + 1].startsWith("--")) {
+      issue = argv[++i];
+      continue;
     }
+    return null; // 包括已退役的 --config
   }
-  return out;
+  return { issue, recoverDone };
 }
 
 async function main(rawArgs: string[]): Promise<number> {
   const args = parseArgs(rawArgs);
-  if (!args.config) {
-    process.stderr.write("用法: rondo pr reconcile-status --config <repo-registry.json> [--issue <KEY> | --recover-done]\n");
+  if (!args) {
+    process.stderr.write("用法: rondo pr reconcile-status [--issue <KEY> | --recover-done]\n");
     return 64;
   }
-  if (args.issue && args["recover-done"]) {
+  if (args.issue && args.recoverDone) {
     process.stderr.write("--issue 与 --recover-done 不可同时使用\n");
     return 64;
   }
   try {
-    const cfg = loadConfig<RegistryConfig>(args.config);
-    const multica = new MulticaClient(cfg.runtime);
+    const cfg = resolveMulticaRuntime();
+    const multica = new MulticaClient(cfg);
 
     // 常规巡检不遍历所有历史 done；--recover-done 用于独立、低频恢复扫描。
     let candidates: IssueRecord[];
     if (args.issue) {
       candidates = [multica.getIssue(args.issue)];
-    } else if (args["recover-done"]) {
+    } else if (args.recoverDone) {
       candidates = listByStatus(cfg, "done");
     } else {
       const inReview = listByStatus(cfg, "in_review");
@@ -303,9 +307,10 @@ async function main(rawArgs: string[]): Promise<number> {
         continue;
       }
       try {
-        const action = await processIssue(multica, cfg, issue, tfs);
+        const action = await processIssue(multica, issue, tfs);
         if (action) actions.push(action);
       } catch (exc) {
+        if (exc instanceof ConfigError) throw new UnknownError("TFS 连接配置不可用: " + exc.message);
         // 单项写入失败：记入 failures，不中断其余 Issue
         failures.push({ issue: issue.identifier ?? issue.id, error: exc instanceof Error ? exc.message : String(exc) });
       }
