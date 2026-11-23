@@ -590,7 +590,7 @@ async function executePlannedRequirement(
   const prior = parseStoredTaskPlan(fresh["delivery.tfs_task_plan"], "delivery.tfs_task_plan");
   approvedTaskPlan(plan, prior, snapshot.approvedTasks, snapshot.commits);
   const existing = await findExistingPlannedTasks(clients, issueKey, md["analysis.change_ref"], tfsId, plan);
-  // This check happens under the collection lock, before creating ANY TFS Task.
+  // Recheck Commit ownership immediately before creating any TFS Task.
   for (let i = 0; i < plan.tasks.length; i++) for (const ref of plan.tasks[i].commits) {
     const commit = commitByRef(snapshot.commits).get(ref.repo_key + "/" + ref.sha)!;
     const owners = await currentCommitOwners(api, commit);
