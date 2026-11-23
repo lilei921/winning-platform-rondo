@@ -177,17 +177,49 @@ test('批准 tasks 始终按不可变 Commit 读取，每个 Issue 独立检查 
   git(root, 'restore', '.');
 });
 
-test('main 与 master 各自使用来源分支，不争抢共享本地 main/master', t => {
+test('main 与 master 各自 Fetch、Push、Readback，且不占用共享本地 main/master', t => {
   const f = fixture(t, { linked: true });
-  const first = f.prepare(f.source('change-a', 'main'));
-  assert.equal(git(first.root_repo, 'symbolic-ref', '--short', 'HEAD'), 'rondo/closeout/' + taskSuffix + '/main');
-  assert.equal(f.prepare(f.source('change-a', 'master')).root_repo, first.root_repo);
-  assert.equal(git(first.root_repo, 'symbolic-ref', '--short', 'HEAD'), 'rondo/closeout/' + taskSuffix + '/master');
   const shared = join(dirname(f.bare), 'other-worktree');
   git(f.bare, 'worktree', 'add', '-b', 'occupied-main', shared, 'main');
-  assert.equal(f.prepare(f.source('change-a', 'main')).root_repo, first.root_repo);
+  let root;
+  for (const branch of ['main', 'master']) {
+    const issue = f.source('change-a', branch);
+    root = f.prepare(issue).root_repo;
+    assert.equal(git(root, 'symbolic-ref', '--short', 'HEAD'), 'rondo/closeout/' + taskSuffix + '/' + branch);
+    const dest = join(root, 'openspec', 'changes', 'archive', '2026-11-20-change-a');
+    mkdirSync(dirname(dest), { recursive: true });
+    renameSync(join(root, 'openspec', 'changes', 'change-a'), dest);
+    git(root, 'add', '-A');
+    git(root, 'commit', '-m', 'archive on ' + branch);
+    git(root, 'push', f.bare, 'HEAD:refs/heads/' + branch);
+    assert.equal(confirmPublishedArchive(f.paths(root), issue, f.remote).folder, '2026-11-20-change-a');
+    assert.equal(git(f.bare, 'rev-parse', branch), git(root, 'rev-parse', 'HEAD'));
+  }
   assert.equal(f.checkoutCount, 1);
-  assert.equal(git(first.root_repo, 'symbolic-ref', '--short', 'HEAD'), 'rondo/closeout/' + taskSuffix + '/main');
+  assert.equal(git(root, 'symbolic-ref', '--short', 'HEAD'), 'rondo/closeout/' + taskSuffix + '/master');
+  assert.notEqual(git(f.bare, 'rev-parse', 'main'), git(f.bare, 'rev-parse', 'master'));
+});
+
+test('跨 Run 远端先行推进时普通 Push 被拒绝且本地提交保留', t => {
+  const f = fixture(t);
+  const issue = f.source('change-a');
+  const root = f.prepare(issue).root_repo;
+  const peer = join(dirname(f.bare), 'peer');
+  git(dirname(f.bare), 'clone', '--branch', 'dev', f.bare, peer);
+  git(peer, 'config', 'user.name', 'Peer');
+  git(peer, 'config', 'user.email', 'peer@example.invalid');
+  writeFileSync(join(peer, 'peer.txt'), 'concurrent\n');
+  git(peer, 'add', 'peer.txt');
+  git(peer, 'commit', '-m', 'remote concurrent');
+  git(peer, 'push', 'origin', 'dev');
+  writeFileSync(join(root, 'local.txt'), 'local archive\n');
+  git(root, 'add', 'local.txt');
+  git(root, 'commit', '-m', 'local archive');
+  const head = git(root, 'rev-parse', 'HEAD');
+  const push = spawnSync('git', ['push', f.bare, 'HEAD:refs/heads/dev'], { cwd: root, encoding: 'utf8' });
+  assert.notEqual(push.status, 0, 'Non-FF must not replace another Run');
+  assert.equal(git(root, 'rev-parse', 'HEAD'), head);
+  assert.equal(git(f.bare, 'rev-parse', 'dev'), git(peer, 'rev-parse', 'HEAD'));
 });
 
 test('上一归档分支存在未推送 Commit 时拒绝切组并保留现场', t => {
