@@ -130,7 +130,7 @@ rondo bug resume --config <repo-registry.json> --issue <KEY> --human-comment-id 
 rondo delivery handoff --issue <KEY>
 rondo delivery route-decision --config <repo-registry.json> --issue <KEY> --comment-id <uuid> --next ANALYSIS|ENGINEERING|RECREATE_PR|CANCEL_DELIVERY [--reason REJECTED|DISCARDED] [--affected-task-refs <1.1,1.2>]
 rondo delivery finalize --phase prepare|complete --issue <KEY> --config <repo-registry.json> [--root-repo <path>]
-rondo delivery root-prepare --issue <KEY> --config <repo-registry.json>
+rondo delivery root-prepare --issue <KEY>
 ```
 
 | 命令 | 功能 |
@@ -140,7 +140,7 @@ rondo delivery root-prepare --issue <KEY> --config <repo-registry.json>
 | `delivery finalize` | `prepare` 核验交付并准备收口；`complete` 在外部回写完成后核验并结束交付 |
 | `delivery root-prepare` | 在 Task `workdir/<repo-name>` 复用 Multica Checkout，建立 Task 独立本地归档分支，返回 `root_repo` |
 
-`delivery root-prepare` 仅用于 Requirement OpenSpec Change，必须在 Multica Task workdir 内运行。优先复用现有 Checkout，必要时直接调用 `multica repo checkout`，校验平台 isolated/Task/Workspace 身份、Origin/Push URL 与 `analysis.source.commit` 的可达性；本地归档分支按 Task 和来源分支隔离。Fetch、普通 Push（`HEAD:refs/heads/<analysis.source.branch>`）及 Readback 均指向 `analysis.source.branch`。不使用 Owner Marker、Cleanup Token 或 `root-cleanup`；平台 Worktree 由 Multica 管理。`root-clone` 暂保留为 Native Checkout 兼容别名。
+`delivery root-prepare` 使用当前 Run 的 Multica Runtime（`MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`），仅用于 Requirement OpenSpec Change，必须在 Multica Task workdir 内运行。优先复用现有 Checkout，必要时直接调用 `multica repo checkout`，校验平台 isolated/Task/Workspace 身份、Origin/Push URL 与 `analysis.source.commit` 的可达性；本地归档分支按 Task 和来源分支隔离。Fetch、普通 Push（`HEAD:refs/heads/<analysis.source.branch>`）及 Readback 均指向 `analysis.source.branch`。不使用 Owner Marker、Cleanup Token 或 `root-cleanup`；平台 Worktree 由 Multica 管理。`root-clone` 暂保留为 Native Checkout 兼容别名。
 
 `delivery handoff` 的映射规则：
 
