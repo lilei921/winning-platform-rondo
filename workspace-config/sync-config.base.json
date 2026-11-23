@@ -11,7 +11,7 @@
   "multica": {
     "cli": "multica",
     "initial_status": "backlog",
-    "cli_note": "创建先 backlog + Wayfinder Agent；Issue 保持 backlog 停放，暂不做状态激活。",
+    "cli_note": "创建先 backlog + Wayfinder Agent；initial_status=backlog 时保持停放，=todo 时在初始化收口后激活一次。",
     "intake_agent": "Wayfinder Agent"
   },
   "sync": {

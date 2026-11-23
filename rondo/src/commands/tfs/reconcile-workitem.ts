@@ -18,8 +18,8 @@
  *      或旧式 `!file[name](url)`）按文件名认领（歧义 → UNKNOWN 停止）；
  *   4. 已存在则更新 TFS 管理字段，不修改执行状态与负责人；tfs.changed_at 变化或
  *      附件未物化时同步刷新 Issue 正文（来源内容投影归同步所有，执行事实绝不触碰）；
- *   5. 来源及附件完成回读后清除 pending 标记，Issue 保持 backlog + Wayfinder 停放，
- *      不做状态激活（准入由 Human 在 Issue 上 Mention Wayfinder 触发）；pending 可安全续接。
+ *   5. 来源及附件完成回读后清除 pending 标记；initial_status=backlog 时保持停放，
+ *      =todo 时在收口后发一次启动信号触发 Multica 原生 Run（准入默认仍由 Human 触发）。
  *   6. 全程幂等；单项失败不中断其余项。
  *
  * 退出码：
@@ -122,8 +122,10 @@ function loadConfig(path: string): SyncConfig {
   if (!cfg.multica?.workspace_id || !cfg.multica?.project || !cfg.multica?.intake_agent) {
     throw new UnknownError("TFS Sync 缺少 workspace_id / project / intake_agent，停止以免向错误工作区或 Owner 写入");
   }
-  if ((cfg.multica.initial_status ?? "backlog") !== "backlog") {
-    throw new UnknownError("TFS Sync 新建 Issue 必须先停放 backlog，不能提前启动准入");
+  // initial_status 由配置驱动：backlog=停放；todo=初始化收口后发一次启动信号
+  const initialStatus = cfg.multica.initial_status ?? "backlog";
+  if (initialStatus !== "backlog" && initialStatus !== "todo") {
+    throw new UnknownError(`TFS Sync 不支持 initial_status=${initialStatus}（仅 backlog / todo）`);
   }
   return cfg;
 }
@@ -496,6 +498,7 @@ class MulticaClient {
   private client: SharedMulticaClient;
   private project: string;
   private intakeAgent: string;
+  private initialStatus: string;
   private intakeAgentId: string | null = null;
 
   constructor(cfg: SyncConfig) {
@@ -510,6 +513,7 @@ class MulticaClient {
     });
     this.project = mc.project;
     this.intakeAgent = mc.intake_agent;
+    this.initialStatus = mc.initial_status ?? "backlog";
   }
 
   private ws(): string[] {
@@ -556,6 +560,19 @@ class MulticaClient {
       throw new UnknownError(`Issue ${issueId} 收口后 Owner 未能回读为 Wayfinder，需人工核对`);
     }
     return { status: String(after.status) };
+  }
+
+  /**
+   * 初始化收口后按配置激活：backlog 直接返回；todo 发一次不带 --no-start 的状态写，
+   * 触发 Multica 原生 Run。启动信号不可重发，响应不确定时 setStatusWithStart 抛 UNKNOWN。
+   */
+  activateIssue(issueId: string): void {
+    if (this.initialStatus === "backlog") return;
+    this.client.setStatusWithStart(issueId, this.initialStatus, `Issue ${issueId} 初始化收口后激活`);
+    const after = this.client.getIssue(issueId) as IssueRecord;
+    if (String(after.status) !== this.initialStatus) {
+      throw new UnknownError(`Issue ${issueId} 激活后状态回读为 ${String(after.status)}，期望 ${this.initialStatus}`);
+    }
   }
 
   /** 按 metadata tfs.id 查找既有 Delivery Issue。返回 null 表示不存在。 */
@@ -687,6 +704,7 @@ function reconcile(cfg: SyncConfig, tfsCliPrefix: string[] | null): SyncResult {
         }
         stage = "finalize";
         const intake = client.finalizeIntake(issueId, wi);
+        client.activateIssue(issueId); // 仅本次新建：配置 todo 时收口后才发启动信号
         result.created.push({ tfs_id: tfsId, issue: created, attachments: (wi.attachments ?? []).length, intake });
         log(`created: tfs ${tfsId}`);
         continue;
@@ -731,6 +749,8 @@ function reconcile(cfg: SyncConfig, tfsCliPrefix: string[] | null): SyncResult {
       // 仅本同步新建的 pending Issue 可恢复收口；其他存量 Issue 绝不改状态或 Owner。
       stage = "finalize";
       const intake = intakePending ? client.finalizeIntake(issueId, wi) : undefined;
+      // 仅 pending 续接可补发启动信号；普通既有 Issue 的更新绝不重复激活
+      if (intakePending) client.activateIssue(issueId);
       result.updated.push({
         tfs_id: tfsId, issue_id: issueId,
         managed_updated: !managedSame, body_refreshed: bodyRefreshed, attachments_materialized: att.changed,
