@@ -57,7 +57,7 @@ if(key==='workspace list') out=[];
 else if(key==='workspace create') out={id:'new-ws'};
 else if(key==='workflow get') out=['bad','new-bad'].includes(process.env.MC_SCENARIO)?{}:{steps:[{status_key:'todo'},{status_key:'analysis_review'},{status_key:'done'}]};
 else if(key==='runtime list') out=process.env.MC_SCENARIO==='no-runtime'?[]:[{id:'runtime-1'}];
-else if(key==='skill list') out=process.env.MC_SCENARIO==='skill-create'?[]:[{id:'skill-1',name:'spec-preparation'}];
+else if(key==='skill list') out=process.env.MC_SCENARIO==='skill-create'?[]:[{id:'skill-1',name:'spec-preparation'}, ...(['branch','group','native-branch'].includes(process.env.MC_SCENARIO)?[{id:'skill-2',name:process.env.MC_SCENARIO==='native-branch'?'native-workspace':'workspace-preparation'}]:[])];
 else if(key==='skill create') {
   if(!args.includes('--content-stdin')) throw new Error('expected UTF-8 stdin');
   fs.writeFileSync(process.env.MC_TRACE+'.skill',fs.readFileSync(0)); out={id:'skill-1'};
@@ -93,14 +93,16 @@ else if(key==='skill files') {
   } else throw new Error('unexpected skill files operation');
 }
 else if(key==='agent list') {
-  out=[{id:'agent-1',name:'Workitem Analyst',instructions:'instructions',description:'description',visibility:'workspace',skills:[{name:'spec-preparation'}]}];
-  if(fs.existsSync(process.env.MC_TRACE+'.agent-2')) out.push({...out[0],id:'agent-2',name:'Engineer',skills:[]});
-  if(process.env.MC_SCENARIO==='branch') out.push({...out[0],id:'agent-3',name:'Delivery Lead',skills:[]});
+  const preparation=['branch','group','native-branch'].includes(process.env.MC_SCENARIO)?[{name:process.env.MC_SCENARIO==='native-branch'?'native-workspace':'workspace-preparation'}]:[];
+  out=[{id:'agent-1',name:'Workitem Analyst',instructions:'instructions',description:'description',visibility:'workspace',skills:[{name:'spec-preparation'},...preparation]}];
+  if(fs.existsSync(process.env.MC_TRACE+'.agent-2')) out.push({...out[0],id:'agent-2',name:'Engineer',skills:preparation});
+  if(['branch','native-branch'].includes(process.env.MC_SCENARIO)) out.push({...out[0],id:'agent-3',name:'Delivery Lead',skills:[]});
 }
 else if(key==='agent create') {
-  const env=JSON.parse(args[args.indexOf('--custom-env')+1]);
+  const env=args.includes('--custom-env')?JSON.parse(args[args.indexOf('--custom-env')+1]):{};
   fs.writeFileSync(process.env.MC_TRACE+'.agent-2',JSON.stringify(env)); out={id:'agent-2'};
 }
+else if(key==='agent skills') out={};
 else if(key==='agent env') {
   const id=args[3], path=process.env.MC_TRACE+'.'+id;
   const env=fs.existsSync(path)?JSON.parse(fs.readFileSync(path)): {RONDO_WORKSPACE_BRANCH:'dev',OTHER:'fixture-private-value'};

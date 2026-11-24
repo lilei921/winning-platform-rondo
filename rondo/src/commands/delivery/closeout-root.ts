@@ -25,7 +25,7 @@ import { canonicalRepositoryIdentity } from "./evidence-repository.js";
 import { touchedCapabilities } from "./contract-files.js";
 import { isRequirementChangeDelivery } from "./requirement-mode.js";
 
-export type CloseoutCheckout = (workdir: string, repoUrl: string) => { root: string; branch: string };
+export type CloseoutCheckout = (workdir: string, repoUrl: string, ref: string) => { root: string; branch: string };
 
 export interface PrepareRootOptions {
   checkout: CloseoutCheckout;
@@ -243,7 +243,7 @@ export function prepareRoot(source: AnalysisSource, options: PrepareRootOptions)
   let root: string;
   try {
     if (!existsSync(expected)) {
-      const platform = options.checkout(workdir, source.repo_url);
+      const platform = options.checkout(workdir, source.repo_url, source.branch);
       if (!platform || !platform.root || !isAbsolute(platform.root)) {
         throw new UnknownError("平台 repo checkout 未返回绝对根仓路径");
       }
@@ -322,8 +322,8 @@ function argsOf(argv: string[]): Record<string, string> {
 }
 
 function platformCheckout(runtime: MulticaRuntime): CloseoutCheckout {
-  return (workdir, repoUrl) => {
-    const r = runCommand([...multicaPrefix(runtime), "repo", "checkout", repoUrl], workdir, undefined, 600_000);
+  return (workdir, repoUrl, ref) => {
+    const r = runCommand([...multicaPrefix(runtime), "repo", "checkout", repoUrl, "--ref", ref], workdir, undefined, 600_000);
     if (r.status !== 0 || /fetch[_ -]error|fetch (?:failed|failure)/i.test(r.stdout + "\n" + r.stderr)) throw new UnknownError("平台 repo checkout 失败: " + (r.stderr || r.stdout).trim().slice(0, 400));
     return parsePlatformCheckoutOutput(r.stdout, r.stderr);
   };

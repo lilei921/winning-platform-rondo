@@ -54,6 +54,7 @@ function assertRootLayout(root: string, preserveChangeDeletion = false): void {
 
 export function requirementRoot(arg?: string | null): string {
   const root = rootPath(arg);
+  if (!arg && nativeCheckoutExpected(root)) throw new UnknownError("Native Checkout 必须显式提供 --root-repo");
   assertRootLayout(root);
   return root;
 }
