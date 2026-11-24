@@ -40,12 +40,12 @@ export function removePublishedRequirementWorktree(
   root: string, repo: { repo_path: string; repo_url?: string }, tfsId: number, candidate: string,
 ): string | undefined {
   if (!Number.isSafeInteger(tfsId) || tfsId <= 0 || !repo.repo_url) throw new FailError("缺少有效 TFS ID 或仓库 URL");
-  const name = `${repo.repo_path}-${tfsId}`;
-  const worktree = validateBusinessPath(root, { repo_path: name });
-  if (!existsSync(worktree)) return;
   const hub = validateBusinessPath(root, repo);
   // Only Rondo-owned worktrees backed by an independent clone are eligible for removal.
   if (!lstatSync(join(hub, ".git"), { throwIfNoEntry: false })?.isDirectory()) return;
+  const name = `${repo.repo_path}-${tfsId}`;
+  const worktree = validateBusinessPath(root, { repo_path: name });
+  if (!existsSync(worktree)) return;
   verifyWorktree(worktree, hub, `feature/${tfsId}`, repo.repo_url);
   if (checked(worktree, ["rev-parse", "HEAD"], "核对候选 HEAD") !== candidate) {
     throw new FailError("本地 HEAD 与已发布候选不一致");
