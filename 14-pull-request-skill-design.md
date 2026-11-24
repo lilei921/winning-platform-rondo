@@ -14,7 +14,7 @@ Bug 与 Requirement 的本质区别是修改目标、工程授权及专业验收
 
 目标：已完成实现和必要验证的授权代码变更 → 可信 Candidate → PR Preparation → PR 创建或复用 → Issue in_review。
 
-保留当前 Bug / Requirement 的授权、工程质量、Completion、适用 Verification / PR Gate、TFS Writeback 和 Closeout 业务语义。已有有效能力优先复用，不因统一入口而降低校验强度。
+保留当前 Bug / Requirement 的授权、工程质量、Completion、PR 提交条件、现有 Independent Verification 执行边界、TFS Writeback 和 Closeout 业务语义。Bug 不再写入或依赖 analysis.change_kind=corrective：tfs.type=Bug 已表达业务类型，不新增替代分类字段。已有有效能力优先复用，不因统一入口而降低校验强度。
 
 ## 2. 当前实现与真实差异
 
@@ -34,7 +34,7 @@ Bug 与 Requirement 的本质区别是修改目标、工程授权及专业验收
 | 多仓交付 | required_repos = pr_prep = bug.delivery 的仓库集合 | 实际 PR 仓库属于批准 Scope，Tasks / Completion 检查工程完成 | 部分 / 高 | 统一完整交付原则；保留必交仓集合与允许修改范围的不同语义 |
 | PR 创建 | pr materialize，Bug Gate，外部 active PR 复用 | pr materialize --mode requirement，Completion Gate，优先核对 current_pr | 高 / 高 | 统一入口、PR 身份、回读及幂等创建；保留适用 Gate |
 | PR Description | CLI 默认格式化 bug.delivery，支持本地 description_ref | Engineer 编写，pr_prep.description 持久化 | 高 / 高 | 统一 Agent 编写，保存正文并原样提交 |
-| 交付事实存储 | bug.required_repos、bug.delivery、pr_prep，部分 Candidate 身份重复 | OpenSpec、dev.publication、pr_prep | 部分 / 中 | 公共输入和准备逻辑统一；本次保留现有 Metadata Key 及 Bug Closeout 消费契约，不迁移存储 |
+| 交付事实存储 | bug.required_repos、bug.delivery、pr_prep，部分 Candidate 身份重复；额外写 corrective | OpenSpec、dev.publication、pr_prep | 部分 / 中 | 公共输入和逻辑统一；保留必要事实，不重复存储 Validation / Review，不迁移 bug.delivery；取消 Bug corrective 冗余分类 |
 | Abandoned PR 恢复 | bug resume 支持 REWORK / RECREATE_PR | 同样 blocked，但当前源码无对等 Requirement resume CLI；02 有返工设计 | 部分 / 中 | 统一事实核验与恢复原则；仅对现有 bug resume 无配置化 |
 | Worktree | Native Checkout | Native Checkout；materialize 仍有历史 Rondo 自建 Worktree 清理分支 | 高 / 高 | 统一 Native 所有权，删除本 PR 路径的旧清理逻辑 |
 
@@ -65,13 +65,13 @@ Bug 与 Requirement 的本质区别是修改目标、工程授权及专业验收
 | rondo analysis read | 从当前 Issue 读取获批工件，无 Registry |
 | rondo change update-progress | 已无 Registry 依赖，保持不变 |
 
-以 tfs.type 为专业路径判定依据；Requirement 使用当前 Issue 的 analysis.change_ref / analysis.source，核验一致性。无需让 Agent 为公共 Git / PR 命令重复传 --mode、--change-ref、--config 或自行选择授权机制。未知类型、冲突事实不得进入默认旧路径。
+以 tfs.type 为唯一专业路径选择依据（Bug / 需求）；Requirement 使用当前 Issue 的 analysis.change_ref / analysis.source，核验一致性。分支和已登记交付事实用于校验而非推断业务类型。无需让 Agent 为公共 Git / PR 命令重复传 --mode、--change-ref、--config 或自行选择授权机制。未知类型、冲突事实不得进入默认旧路径。
 
 三个被替换命令收敛为两个；不是新增并行 facade。同步调整所有有效调用方、测试、帮助及文档，不保留针对未上线历史接口的别名或参数兼容。明确属于其他功能的命令不借本次重构退役。
 
 ### 4.1 Candidate 与受控 Git
 
-统一远端 Candidate Branch 为 `feature/<tfs.id>`；不再根据 Bug / Requirement 区分 feat / feature，不提供额外自定义候选分支或目标分支覆盖机制。统一应用于 Native prepare、Git Push、PR Preparation、Materialization、Gate、恢复与有关校验。旧 feat 分支及测试 Replay 不迁移、不作为运行回退；不删除远端历史分支。
+统一远端 Candidate Branch 为 `feature/<tfs.id>`；不再根据 Bug / Requirement 区分 feat / feature，不提供额外自定义候选分支或目标分支覆盖机制。以一个最小 Candidate Branch 函数统一应用于 Native prepare、Git Push、PR Preparation、Materialization、Gate、恢复与有关校验；不新增 Branch Policy。同步核查 requirement-mode 等下游消费者，保留各自必要工程契约与准备事实检查。旧 feat 分支及测试 Replay 不迁移、不作为运行回退；不删除远端历史分支。
 
 PR Target Branch 来自指定版本 repo-context.yaml.default_target_branch。Multica Resource ref、本地 Task Branch、Candidate Branch、PR Target Branch 是不同事实；不能混用。
 
@@ -92,7 +92,7 @@ rondo pr prepare --issue <KEY> --repo <repo_id> \
 
 按需提供 --validation-cwd，缺省为实际授权业务仓；Bug 多仓首次提供 --required-repos <repo1,repo2>，单仓可省略。Requirement 不接受 --required-repos。--facts 支持 UTF-8 临时文件及现有非交互 stdin 读取方式，不依赖特定 Shell。
 
-采用直接的 Bug / Requirement 分支及小型公共校验函数，不引入 Strategy / Provider / Adapter 注册机制。先核实当前 Runtime、专业授权、仓库映射、实际工作树、分支及完整 Candidate SHA，校验真实 Facts，执行适用 Validation；在写入前复核授权、Candidate 与本仓已有事实，保留他仓条目，写入后回读。远端 Candidate 或授权发生变化不得覆盖。保留 Bug Refs: #<tfs.id> 唯一尾注要求，不强制扩展到 Requirement Commit。
+采用直接的 Bug / Requirement 分支及小型公共校验函数，不引入 Strategy / Provider / Adapter 注册机制。先核实当前 Runtime、专业授权、仓库映射、实际工作树、分支及完整 Candidate SHA，校验真实 Facts，执行适用 Validation；在写入前复核授权、本地及远端 Candidate 与本仓已有事实，保留他仓条目，写入后回读。远端 Candidate 或授权发生变化不得覆盖。Bug 保留原 ready_for_pr / required_repos 结果语义，只有全部必要仓准备完成才允许物化。保留 Bug Refs: #<tfs.id> 唯一尾注要求，不强制扩展到 Requirement Commit。
 
 ### 4.3 公共 Facts 与必要 Bug 专属事实
 
@@ -101,6 +101,7 @@ rondo pr prepare --issue <KEY> --repo <repo_id> \
 ```json
 {
   "validation": {
+    "result": "PASS",
     "command": ["npm", "test"],
     "summary": "实际验证范围、结果和必要局限"
   },
@@ -144,17 +145,28 @@ Validation 与 Evidence 真实、可核查，不保存完整日志或敏感信�
 
 提取并复用现有 verifyAndExecuteValidation 的公共能力：验证工作目录归属于当前授权业务仓，实际 Origin、HEAD 与 Candidate 一致，检查已跟踪内容在验证前后无未提交变化，执行命令并检查退出码，结束后复核 Candidate。保留 Native Task 所有权和远端 SHA 核验。
 
-- Requirement：validation.command 必须是真实可执行的命令，CLI 实际执行成功后才能记录 PASS；不放宽当前 Completion Gate。
-- Bug：可执行的本地验证采用同一能力。不能安全重现原始故障时，允许真实、适用的替代验证；在确无可执行本地验证命令时，沿用可信 Evidence，validation.summary 说明原因、范围、结果与局限，提供 evidence_refs。不得将 Evidence-only 记录成 CLI 已执行的 PASS；不得用无法证明必要质量的证据放行。
+- 公共输入 validation.result 必须为 PASS，且 summary 非空。若提供 command，必须是非空合法命令数组，由 CLI 实际执行并以退出码和 Candidate 核验作为机器结果；空数组、非法命令或执行失败不得自动降级为 Evidence-only PASS。
+- Requirement：validation.command 必须提供，CLI 实际执行成功后才能记录 PASS；不放宽当前 Completion Gate。
+- Bug：可执行的本地验证采用同一能力。不能安全重现原始故障时，允许真实、适用的替代验证；确无可执行本地验证命令时可省略 command，但必须提供 PASS 的真实专业结论、evidence_refs，summary 说明原因、范围、结果与局限。Evidence-only 不是机器执行结果；不能掩盖失败或以不足的证据放行。CLI 负责验证确定性结构与执行结果，Agent 对替代验证真实性和充分性负责。不新增验证模式字段、失败历史记录或验证策略配置。
 - Agent 自主选择与风险相称的方法、范围及命令，不统一 npm/mvn 等工具，也不规定完整构建或固定测试套件。CLI 执行的 Candidate Validation 是确定性提交检查；Agent 不因提示词重复执行同一项检查，但专业调查、修复反馈、回归或其他必要验证仍按实际需要执行。
 
-复用现有 pr_prep.local_validation / code_review / blockers 的结构记录公共验证事实；机器执行事实的 source 统一为新命令名，Completion 对应更新。Evidence-only Bug 保留 bug.delivery.local_validation 的原有语义，不伪造 command、exit_code 或机器 source。无需新 Metadata Key 或额外 Evidence 报告。
+统一输入及校验，不强制统一存储。Requirement 的 Validation / Review 仍在 pr_prep；Bug 的 Validation / Review 仍在 bug.delivery，不复制到 pr_prep。机器执行时记录实际 command、exit_code、Candidate、source=rondo pr prepare，Requirement Completion 对应更新；Bug Evidence-only 保留原 result / summary / evidence_refs，不伪造机器执行字段。无需新 Metadata Key 或额外 Evidence 报告。
 
 ### 4.5 Description 与 Metadata
 
 两场景均由专业 Agent 编写 PR Description，CLI 仅检查必要完整性、保存现有 pr_prep.description 正文并原样提交，不固定 Markdown 模板，不持久化 description_ref 或本地描述文件。Bug 根因、修复、回归及风险等仍应反映在描述中。
 
-保留现有顶层 Metadata Key：pr_prep、current_pr、bug.required_repos、bug.delivery、dev.publication 等。Bug 专属事实映射至现有 bug.delivery，validation 映射至 local_validation，确保 Bug PR Gate、Resume、Finalization、Digest 与 TFS Writeback 仍可消费。现有 Bug Candidate 身份重复校验保留；不为本次统一输入迁移所有交付事实或重构 Closeout。仅在现有 pr_prep 扩展对公共字段的使用，不新增 Key 或数据服务。
+保留现有必要顶层 Metadata Key，不新增 Key 或数据服务。事实归属：
+
+| 事实 | Bug | Requirement |
+| --- | --- | --- |
+| Repository / Candidate / Branch、Title、Description | pr_prep | pr_prep |
+| Validation / Code Review | bug.delivery.local_validation / code_review | pr_prep.local_validation / code_review |
+| Expected / Actual、Root Cause、Fix、Regression | bug.delivery | 不适用 |
+| 必要交付仓集合 | bug.required_repos | 获批 Scope + 实际 pr_prep |
+| 工程发布 | 不适用 | dev.publication |
+
+Bug 保留现有 bug.delivery 与 pr_prep 的 Candidate / Branch 身份关联及一致性检查，不迁移存储。Bug Finalization 需要 regression、local_validation、code_review 的真实 PASS、summary、evidence_refs，及完整行为、修复和根因事实；映射公共输入时不得遗漏。Bug 不再写入或回读确认 analysis.change_kind=corrective。同步删除 Bug 开工对 change_kind 的冲突检查、Bug Finalization 的 corrective 强制要求、bugDeliveryDigest 的 change_kind 成分；复用 tfs.type、无 OpenSpec Change 的事实、Scope、Candidate 与现有状态约束。保留其他实际授权及禁止混入 OpenSpec Analysis Gate 的检查。Digest 其余成员及 Closeout / TFS Writeback 的必要完整性检查不变。不清理其他场景的 change_kind 或 01 的 Technical Change Kind 术语，不增加历史 Metadata 迁移。
 
 退役两个旧准备命令的输入格式、Bug 专用描述生成路径和 file: 引用；不新增历史格式转换器。
 
@@ -168,13 +180,13 @@ rondo change update-progress --openspec-root "<openspec-root>" --change-ref <cha
 rondo dev publish --issue <KEY> --change-ref <change_ref> --root-repo "<root>"
 ```
 
-保留发布授权、dev.publication、原有契约及非实质 Design 细化规则。dev check-change 保持独立、可选诊断入口：
+保留发布授权、dev.publication、原有契约；只有确属非实质性 Design 细化才使用现有 --minor-design。dev check-change 保持独立、可选诊断入口：
 
 ```bash
 rondo dev check-change --issue <KEY> --change-ref <change_ref>
 ```
 
-pr materialize 内部已执行适用 Completion Check，正常 Skill 路径不再规定重复独立调用；不得绕过发布或降低原有 Gate。
+pr materialize 内部已执行适用 Completion Check，正常 Skill 路径不再规定重复独立调用；不得绕过发布或降低原有 Gate。当前 checkPublishedChange 检查工程契约、Tasks、发布和开发侧质量；Independent Verification 决定及现有 Closeout 阻断仍按当前实际执行边界处理（assertRequirementPrepareGate / assertBugFinalizationFacts），不宣称已有完整 PR 前独立验证流程，也不在本次补建。
 
 ### 4.7 PR Materialization
 
@@ -182,9 +194,13 @@ pr materialize 内部已执行适用 Completion Check，正常 Skill 路径不�
 rondo pr materialize --issue <KEY>
 ```
 
-根据当前 Issue 类型执行适用 Gate，复用现有公共创建 / 复用逻辑。Bug 核对全部 required_repos 及 pr_prep / bug.delivery 的身份和证据；Requirement 重新检查获批 Scope、固定映射、Tasks、发布、Candidate 与真实验证及原有适用 Gate。Requirement 的 pr_prep.repo_url 和目标分支须与批准映射一致。
+根据当前 Issue 类型执行适用提交条件，复用现有公共创建 / 复用逻辑。Bug 核对全部 required_repos 及 pr_prep / bug.delivery 的身份和证据；Requirement 重新检查获批 Scope、固定映射、Tasks、发布、Candidate 与真实验证及现有 Completion。Requirement 的 pr_prep.repo_url 和目标分支须与批准映射一致。
 
-两者统一核实已登记 current_pr 与外部 PR 身份、源目标分支、远端 Candidate，按现有 TFS API 创建或复用 PR，保留 Work Item 关联；全部必要 PR 成功登记后才能进入 in_review。错误或部分成功保留事实，按实际外部状态安全重试。CLI 不替代 Human Review、Merge 或 Closeout。
+状态与授权：todo / in_progress 的 PR 写入要求当前授权 Bug Fix Agent / Engineer 的有效 Run、TFS 身份和适用提交条件；复用现有身份检查与业务授权，不直接套用会阻断已有 PR 重入的开工检查。in_review 仅核实已完整登记的 PR 及 Work Item 关联，确认已提交结果，不创建或修补外部事实。blocked、done、canceled、未知状态及收口中（finalize.pending / delivery.tfs_written=true）不允许新 PR 写入；Bug abandoned 后须先经 bug resume。写入前复核 Issue 状态、授权与准备事实，最终登记前复核未变化；不建锁或新状态机。
+
+两场景统一核实已登记 current_pr 与外部 PR 身份、源目标分支、远端 Candidate。先核实全部待提交仓的 TFS Collection / Project / Repository 身份，拒绝不同 repo_key 指向同一真实仓库；不为此增加 Metadata。对已存在或创建返回 existing 的 PR，同样回读核对身份与适用状态，不直接信任返回结果。
+
+PR 新建与复用都必须核实原 TFS Work Item 已存在准确的 PR ArtifactLink（Project GUID / Repository GUID / PR ID）。复用现有 Work Item 侧读回 / ArtifactLink 能力：已关联则复用，缺失且当前仍授权写入则补挂并回读，失败或未知不放行。修复当前 tfs/api/pr.ts 的 existing 路径直接返回、materializeOne 复用 PR 跳过关联的缺口；不新增独立命令、状态或重试框架。全部必要 PR 和 Work Item 关联确认后，登记 current_pr，回读并进入 in_review。错误或部分成功按实际外部事实安全重试，不盲目重复创建或覆盖。CLI 不替代 Human Review、Merge 或 Closeout。
 
 不需要 --mode、--change-ref、--root-repo、--config。Materialization 不准备本地根仓、不负责 Native Worktree 清理；删除当前 PR 路径中 Rondo 自建 Worktree 的旧清理调用。不删除其他仍有独立用途的能力，不强制清理未发布成果。
 
@@ -217,9 +233,9 @@ rondo bug resume --issue <KEY> --human-comment-id <id> --next REWORK|RECREATE_PR
 
 直接复用 [resolveMulticaRuntime](rondo/src/clients/runtime-context.ts)，不查询 Delivery Squad。Runtime 缺失或跨 Workspace / Actor / Issue 身份冲突不得回退静态配置。
 
-复用 [readNativeRepoMapping](rondo/src/commands/dev/native-prepare.ts) 及 validatePrepareRepo、实际工作树校验。Bug 使用已提交 HEAD，Requirement 固定获批 Commit；禁止读取未提交 YAML 或回退其他版本。保留根仓 Origin / Push URL、业务仓身份、路径、TFS Collection、目标分支与授权核验；无需 assertNativeDeliveryMapping 比较 Registry 副本。
+复用 [readNativeRepoMapping](rondo/src/commands/dev/native-prepare.ts) 及 validatePrepareRepo、实际工作树校验。Bug 使用当前已核实 Project Resource 对应的 Task 根仓已提交 HEAD，Requirement 固定获批 Commit；禁止读取未提交 YAML 或回退其他版本。dev git / pr prepare 复用 Native prepare 已有根仓身份核验：当前 Task 所有权、Origin / Push URL；Requirement 根仓 URL 与 analysis.source.repo_url 一致且 HEAD 包含获批 Commit。保留业务仓身份、路径、TFS Collection、目标分支与授权核验；无需 assertNativeDeliveryMapping 比较 Registry 副本。
 
-Requirement approvedChange / guardRepository 继续核对全部获批 repo_id 是否已登记；dev publish、dev check-change、pr materialize 使用获批版本映射。无本地根仓的 Completion / Materialization 复用 [RemoteArtifactReader](rondo/src/commands/delivery/remote-artifacts.ts).read(source.commit, "/docs/config/repo-context.yaml")；本地 Git 和远端读取共用最小 YAML 解析函数，分别保留已有身份 / 服务边界与固定版本核验。不新增 Repository Service、Provider、缓存或第二套配置。Bug Materialization 使用已准备的 pr_prep.repo_url 及交叉核实后的 Bug 事实，由 TFS API 核实实际仓库和 Candidate；不重新 Checkout。
+Requirement approvedChange / guardRepository 继续核对全部获批 repo_id 是否已登记；dev publish、dev check-change、pr materialize 使用获批版本映射。无本地根仓的 Completion / Materialization 复用 [RemoteArtifactReader](rondo/src/commands/delivery/remote-artifacts.ts).read(source.commit, "/docs/config/repo-context.yaml")；本地 Git 和远端读取共用最小 YAML 解析函数，分别保留已有身份 / 服务边界与固定版本核验。不新增 Repository Service、Provider、缓存或第二套配置。Bug Materialization 信任经授权 CLI 在 Preparation 核验后登记的 pr_prep.repo_url，以 bug.delivery 核对 Candidate / Branch，由 TFS API 核实实际仓库和 Candidate；不重新 Checkout。该边界依赖现有 Issue Metadata 写入权限与可信 Runtime，不声称 TFS 可反向证明未保存的根仓映射或防御任意 Metadata 篡改。不增加仓库身份证明副本、签名或 Receipt。
 
 Bug Resume 使用 current_pr / original_prs 的 PR URL、ID、分支和外部 abandoned 状态，pr_prep 仍存在时核实其仓库身份，不将已清空的事实设为必然前提。复用已有 [PR Status Sync](rondo/src/commands/pr/reconcile-status.ts) / [Closeout PR](rondo/src/commands/delivery/closeout-pr.ts) 的身份解析及核验能力，不复用 completed 状态要求。
 
@@ -253,31 +269,32 @@ description: 为已完成实现和验证的代码变更准备并创建 PR，适�
 1. 核查最新 main 和当前有效调用点，统一 Native Candidate Branch 为 feature/<tfs.id>（dev/prepare、相关 Git / PR / Gate 及测试）；不迁移远端旧分支，不增加兼容路径。
 2. 复用当前 Runtime、根仓指定版本映射读取与授权检查，取消目标 CLI 对 Registry 文件的依赖。公共 Run 身份检查仅提取真正相同部分，不改变 Bug 直接指派与 Requirement 获批契约。
 3. 将 bug git 收敛为 dev git，将 bug / dev pr-prepare 收敛为 pr prepare，复用 Candidate、Validation、Review、Facts 与写入回读逻辑；保留必要的专业分支。更新 Completion 对新机器验证来源的检查，保证原有强度。
-4. pr materialize 统一 Issue 驱动入口，消除旧 mode / config / root-repo 参数及旧清理路径；保留并复用适用 Gate、PR 身份、幂等创建和关联行为。
-5. dev publish、dev check-change、analysis read、bug resume 无配置化；保留工程发布、Completion 与恢复语义。
+4. pr materialize 统一 Issue 驱动入口，消除旧 mode / config / root-repo 参数及旧清理路径；补齐状态 / 授权与真实仓库身份检查、已有 PR 回读和创建 / 复用后的 Work Item 关联确认。
+5. dev publish、dev check-change、analysis read、bug resume 无配置化；保留工程发布、Completion 与恢复语义。取消 Bug 的 analysis.change_kind=corrective：删除被替换的 bug/pr-prepare 写入和回读、bug/authorization.ts 中依赖、bug/finalize-facts.ts 强制校验及 Digest 成分；同步相关回归测试，不改变其他场景分类。
 6. 删除被替换命令注册、旧输入及描述引用路径；更新有效调用点、命令帮助、next 提示及回归测试。不要为旧路径建设兼容层；若共享代码还有其他当前功能消费者，仅调整本次涉及的调用，不扩大清理范围。
 
 ### 阶段二：Skill 合并与资产退役
 
 创建 pull-request/SKILL.md，删除 bug-delivery、change-development 及其配置与独立 Evidence Reference。更新 workspace-config/provisioning.json 的 managed_skills 和两 Agent 绑定；删除 Registry 生成名单中的三个名称，更新必要 Agent Instructions、README、COMMANDS.md、当前有效设计与测试引用。
 
-核实新 Skill 注册、绑定与旧资产解绑退役，复用 Workspace Sync / Provision 既有机制，不默认删除 Git 文件即已删除平台资产。不改写历史 Archive、Replay、Validation Evidence。不变更其他 Skill 或独立工作流。
+核实新 Skill 注册、绑定与旧资产解绑退役。workspace/provision.ts 的 workspace_preparation_skill Overlay 不能再将 Bug Fix Agent / Engineer 切换到 workspace-preparation，最小调整两 Agent 的有效绑定；其他 Agent 的配置选择不动。现有 Provision 将未受管远程 Skill 标记为 unmanaged 而非自动删除；Sync 只清理受管 Skill 内文件。通过现有平台能力核实两旧 Skill 无消费者后退役，不新增垃圾回收机制，不默认删除 Git 文件即已删除平台资产。不改写历史 Archive、Replay、Validation Evidence。不变更其他 Skill 或独立工作流。
 
 ## 8. 验收
 
 | 场景 | 必须满足 |
 | --- | --- |
 | Native Workspace / Branch | Bug 与 Requirement 均使用 feature/<tfs.id>，保留 Multica Task Branch；不使用旧 feat 回退，不将 Resource ref 当 PR 目标 |
-| Runtime / Scope | 无 Registry 即可运行；错误 Task / Actor / Workspace / Issue、越权仓库、未知类型、错误映射或目标分支不放行 |
+| Runtime / Scope | 无 Registry 即可运行；错误 Task / Actor / Workspace / Issue、越权仓库、未知类型、根仓与批准来源不符、错误映射或目标分支不放行 |
 | Candidate | 本地实际工作树、远端完整 SHA、审核事实一致；非强制 Push，异常回读；Bug 保留 Refs 尾注 |
-| Validation | Requirement 实际命令执行及 Completion 不降级；Bug 可执行验证复用同一能力，替代证据如实说明局限；失败或 Candidate 变化不写入有效 PASS |
-| 公共 Facts | Review/Findings/Blockers 规则一致；Bug 根因、回归及引用仍满足现有 Finalization；Description 正文可跨 Run 复用，无 file: 依赖 |
+| Validation | Requirement 实际命令执行及 Completion 不降级；Bug 机器验证与 Evidence-only 正确区分；空/非法/失败命令不得降级；缺少真实 PASS / 引用不通过；Candidate 或授权变化不写入有效 PASS |
+| 公共 Facts | Review/Findings/Blockers 规则一致；Bug Validation / Review 仅存 bug.delivery，完整事实可通过 Bug Finalization；Description 正文可跨 Run 复用，无 file: 依赖 |
+| Bug 分类退役 | 无 analysis.change_kind 时可完整开工、准备、创建 PR、Resume、Finalize 及 TFS Writeback；不再写入、检查或将该字段纳入 Bug Digest；其他冲突检查仍生效 |
 | 多仓 | Bug 必要仓集合完整；Requirement 实际仓属于批准 Scope，不强制无改动仓 PR；保留他仓事实 |
 | Requirement Completion | 固定获批映射、Tasks、dev.publication、实际验证与现有适用 Gate；不需本地 Checkout 即可检查 |
-| PR Materialization | 两类 Issue 均通过同一入口；已有 PR 核验、远端 HEAD、实际 TFS 身份、Work Item 关联、部分失败重试及全部成功后 in_review 正确 |
+| PR Materialization | 两类 Issue 均通过同一入口；已有 PR 核验、远端 HEAD、实际 TFS 身份正确；重复实际仓库拒绝；blocked / 收口 / 终态拒绝写入，in_review 只核实；新建或复用 PR 均核实 Work Item 关联，创建成功但关联失败重试可补挂并回读，全部成功后才 in_review |
 | Bug Resume | REWORK / RECREATE_PR、全部 abandoned、Human 授权与清除事实后的中断重入行为正确 |
 | Worktree | 不依赖本地根仓物化 PR，不删除 Multica Native Worktree |
-| 配置 / Skill | 新 Skill 只有 SKILL.md，旧 Skill、绑定及 Registry 投影退役，不重新生成；其他有效消费者不受影响 |
+| 配置 / Skill | 新 Skill 只有 SKILL.md；两研发 Agent 始终绑定 native-workspace 与 pull-request，不受旧 Overlay 切换影响；旧 Skill、绑定及 Registry 投影退役，不重新生成；其他有效消费者不受影响 |
 | 回归 | 当前 Bug / Requirement Native prepare、Git、PR、Completion、Resume、Closeout、TFS Writeback 与 Workspace Sync / Provision 相关测试通过 |
 
 以实际构建、测试和运行回读作为验收依据。未实际执行的验证或平台同步不得宣称通过。
@@ -290,12 +307,12 @@ description: 为已完成实现和验证的代码变更准备并创建 PR，适�
 | --- | --- |
 | KISS / YAGNI | 公共入口与实际公共实现收敛，删除配置副本；不统一非公共专业事实或过早抽象 |
 | Greenfield First | 未上线，直接采用统一分支和命令契约，无历史兼容、迁移、双轨 |
-| One Rule, One Owner | Runtime、工程映射、交付事实、TFS 实际事实各有归属；同一公共校验只维护一次 |
+| One Rule, One Owner | Runtime、工程映射、交付事实、TFS 实际事实各有归属；公共校验只维护一次；Bug 不重复保存类型、Validation 或 Review |
 | Native First | Multica 原生 Checkout 及生命周期，复用当前 Runtime |
 | Specialist Focus | Agent 专业实现与审查；Skill 聚焦 PR；CLI 承担确定性操作 |
 | Contract First | 统一必要公共契约，保留真实专业授权、证据及 Gate |
 | Minimal Sufficient / Outcome First | 只提供必要输入与操作；无重复 Completion、无固定测试方法或额外报告 |
 
-目标：Skill 2 → 1；Skill 内 Registry 2 → 0；3 个被替换命令 → 2 个公共命令；Candidate Branch 规则 2 → 1；新增顶层 Metadata Key 0。
+目标：Skill 2 → 1；Skill 内 Registry 2 → 0；3 个被替换命令 → 2 个公共命令；Candidate Branch 规则 2 → 1；Bug 冗余分类写入 1 → 0；新增顶层 Metadata Key 0。
 
 本方案仅更新设计，未实施代码改造或运行验证。
