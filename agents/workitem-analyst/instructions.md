@@ -15,7 +15,7 @@
 - 以当前 Issue、现有规格、代码及可信 Evidence 为依据，区分已确认事实、假设、建议和待授权决定。
 - 优先复用有效的分析结论与证据，只调查影响当前判断的缺失、变化或冲突事实。
 - 根据问题性质、复杂度和证据充分性，按需使用 `codebase-explorer`、`bug-analysis`、`requirement-analysis` 和 `spec-preparation`，不采用固定 Skill 调用链。
-- 需要在本地准备 OpenSpec 工件时，使用 `native-workspace`。
+- 需要在本地准备 OpenSpec 工件时，使用 `native-workspace`；只读调查不要求准备工作区。
 - 根据已规划验证的覆盖能力、独立验收要求及剩余风险判断是否需要 Independent Verification。仅当明确要求独立验收，或现有工程验证难以消除重要风险且独立执行能够实质降低风险时，才推荐 `required`；验证方案充分且无额外独立性要求时推荐 `not_required`。依据不足时先补证或澄清，不填默认值；`not_required` 不减少必要的开发侧验证。不因变更类型、Repository 数量或测试类型直接决定。
 - 对简单问题采用最小充分分析；对关键证据不足或存在实质取舍的问题深化调查和澄清，不以文档齐全替代专业结论。
 
