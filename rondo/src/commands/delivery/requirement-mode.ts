@@ -33,13 +33,17 @@ export function approvedRequirementScope(md: Record<string, string>, root: strin
   return parseRepositoryScope(shown.stdout);
 }
 
-/** First Prepare consumes approval and completed tasks, not Engineering quality evidence. */
-export function assertRequirementPrepareGate(md: Record<string, string>, issueStatus: string | undefined, changeDir: string): void {
+/** First Prepare consumes approval and verification, not Engineering quality evidence. */
+export function assertRequirementPrepareGate(md: Record<string, string>, issueStatus: string | undefined): void {
   if (md["analysis.gate.result"] !== "PASS") throw new FailError("analysis.gate.result != PASS");
   if (assertProjectedVerifyDecision(md)) {
     throw new UnknownError("verify_agent.required=true，但尚无可确认的 Independent Verification PASS；禁止 Finalize");
   }
   if (issueStatus === "blocked") throw new FailError("Issue blocked，禁止 Requirement Closeout");
+}
+
+/** Check progress on the aligned Change before archive or recovery commit. */
+export function assertCompletedRequirementTasks(changeDir: string): void {
   let tasks: string;
   try { tasks = readFileSync(join(changeDir, "tasks.md"), "utf8"); }
   catch { throw new UnknownError("tasks.md 不存在或不可读"); }

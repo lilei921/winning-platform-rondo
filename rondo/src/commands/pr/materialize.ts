@@ -404,17 +404,22 @@ async function main(rawArgs: string[]): Promise<number> {
     // 全部登记完成才回写 + 转状态（02 §10.2：所有 required PR 注册完成后才进 in_review）
     const currentPr = JSON.stringify(prs.map(({ reused: _, ...rest }) => rest));
     multica.setMetadata(issue.id, "current_pr", currentPr);
+    if (multica.getIssue(issue.id).metadata?.current_pr !== currentPr) {
+      throw new UnknownError("current_pr 登记未确认，禁止进入 in_review");
+    }
     // --no-start：in_review 是流转事实，不触发 Run（02：状态与 Run 生命周期分离）
     multica.setStatus(issue.id, "in_review");
+    const confirmed = multica.getIssue(issue.id);
+    if (confirmed.status !== "in_review" || confirmed.metadata?.current_pr !== currentPr) {
+      throw new UnknownError("PR 登记或 in_review 状态未确认");
+    }
 
     const rootArg = args["root-repo"] || process.env.RONDO_WORKSPACE_PATH;
     if (args.mode === "requirement" && rootArg) {
       // 清理只使用本次已确认交付的候选，失败时保留 PR 的成功结果。
       try {
-        const confirmed = multica.getIssue(issue.id);
         const facts = confirmed.metadata ?? {};
-        if (confirmed.status !== "in_review" || facts.current_pr !== currentPr ||
-            facts.pr_prep !== md.pr_prep || facts["tfs.id"] !== tfsId) {
+        if (facts.pr_prep !== md.pr_prep || facts["tfs.id"] !== tfsId) {
           throw new UnknownError("本次 PR 登记、候选或 Issue 状态未确认");
         }
         const root = requirementRoot(rootArg);

@@ -867,7 +867,7 @@ test("D3-B: TFS writeback cannot run before prepared archive, even with valid wo
   assert.equal(f.readOps().includes("archive"), false);
 });
 
-test("Requirement 首次 Prepare 复用完成 Gate，未完成 tasks 不归档", async t => {
+test("Requirement 首次 Prepare 未完成 tasks 不归档", async t => {
   const f = await fixture(t, { requirement: true });
   writeFileSync(join(f.changeDir, "tasks.md"), "- [ ] 1.1 Pending\n");
   const r = await f.phase("prepare");
@@ -1055,4 +1055,20 @@ test("Requirement Inspect 固定批准任务，读取 PR 实际业务 Commit 并
   assert.equal(resumed.body.tasks_materialized.created.length,0);
   const complete = await f.phase("complete");
   assert.equal(complete.exit,0,complete.stdout+complete.stderr);
+});
+
+test("Requirement 对齐远端后任务退回未完成，不归档", async t => {
+  const f = await fixture(t);
+  const peer = join(f.dir, "peer-unchecked");
+  git(f.dir, "clone", "--branch", "dev", f.rootRemote, peer);
+  const tasks = join(peer, "openspec", "changes", CHANGE_REF, "tasks.md");
+  writeFileSync(tasks, readFileSync(tasks, "utf8").replace(/\[x\]/gi, "[ ]"));
+  git(peer, "add", "openspec");
+  git(peer, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-m", "task reopened");
+  git(peer, "push", "origin", "dev");
+  const result = await f.phase("prepare");
+  assert.equal(result.exit, 2, result.stdout + result.stderr);
+  assert.match(result.body.reason, /未完成|tasks\.md/);
+  assert.ok(!f.readOps().includes("archive"));
+  assert.ok(existsSync(f.changeDir));
 });

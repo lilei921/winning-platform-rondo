@@ -311,7 +311,7 @@ async function executePlannedRequirement(
     if (readback.length !== 1 || readback[0].id !== taskId) throw new UnknownError("TFS Task 不可读");
     if (!hasExactArtifactLink(readback[0].artifactLinks, commit)) {
       // Never broadcast an entire Change commit list to every Task.
-      const linked = await clients.tfsLinkCommits(taskId, commit.repo, [commit.sha], commit.project);
+      const linked = await clients.tfsLinkCommits(taskId, commit.repoId, [commit.sha], commit.projectId);
       if (linked?.failed?.length || !(linked?.linked?.includes(commit.sha) || linked?.skipped?.includes(commit.sha))) {
         throw new UnknownError(`Commit ${commit.sha} 关联至 Task ${taskId} 未确认`);
       }
