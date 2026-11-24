@@ -63,7 +63,7 @@ rondo change update-progress --openspec-root <path> --change-ref <ref> --check <
 ```bash
 rondo analysis stage --issue <id> --facts <facts.json> --workspace-id <id> [--registry-config <repo-registry.json>] [--multica <cli>] [--profile <name>]
 rondo analysis validate --issue <id> --openspec-root <path> --workspace-id <id> [--out <path>] [--registry-config <repo-registry.json>] [--multica <cli>] [--profile <name>]
-rondo analysis complete [--mode requirement] --issue <id> --facts <facts.json> --registry-config <repo-registry.json> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--profile <name>]
+rondo analysis complete [--mode requirement] --issue <id> --facts <facts.json> --registry-config <repo-registry.json> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>] [--profile <name>]
 rondo analysis read --config <repo-registry.json> --issue <KEY> --file <Change内相对路径>
 ```
 
@@ -71,7 +71,7 @@ rondo analysis read --config <repo-registry.json> --issue <KEY> --file <Change�
 | --- | --- |
 | `analysis stage` | 将分析结果暂存到 Issue Metadata，不直接推进审核状态 |
 | `analysis validate` | 核对 Analysis Facts，在指定根仓对当前 Change 运行 OpenSpec 严格校验，并核实返回的根仓和 Change 身份 |
-| `analysis complete` | Requirement 使用 `--mode requirement` 核验 Gate，向项目根仓分支发布当前 Change 已提交的审核工件，并登记可回读的 `analysis.source` |
+| `analysis complete` | Requirement 使用 `--mode requirement` 核验 Gate，向已确认的项目根仓分支发布当前 Change 已提交的审核工件（Native 可显式提供 `--target-branch`），并登记可回读的 `analysis.source` |
 | `analysis read` | 按 Issue 中的 `analysis.source` 读取指定版本的 `tasks.md`、`proposal.md`、`design.md` 或 Spec，属于只读操作 |
 
 `stage`、`validate`、`complete` 面向当前分析事实；涉及 `--workspace-id` 的命令需保证其与配置中的 Workspace 身份一致。
@@ -157,7 +157,7 @@ rondo delivery root-prepare --issue <KEY>
 ### 5.2 `rondo pr`
 
 ```bash
-rondo pr materialize [--workspace native] [--mode requirement --change-ref <ref> [--root-repo <path>]] --issue <KEY> --config <repo-registry.json>
+rondo pr materialize [--mode requirement --change-ref <ref> [--root-repo <path>]] --issue <KEY> --config <repo-registry.json>
 rondo pr worktree create --config <repo-registry.json> --issue <KEY> --repo <repo_key> --branch <branch> [--base <target>] [--root-repo <path>]
 rondo pr worktree remove --config <repo-registry.json> --issue <KEY> --repo <repo_key> [--root-repo <path>]
 rondo pr worktree prune --config <repo-registry.json> (--project-id <id> | --root-repo <path>)
