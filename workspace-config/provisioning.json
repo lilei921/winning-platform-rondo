@@ -107,7 +107,7 @@
   },
   "project": {
     "title": "winning-platform-monorepo",
-    "workspace_branch": "main"
+    "workspace_branch": "master"
   },
   "workspace_repos": [
     {

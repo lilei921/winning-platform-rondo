@@ -18,11 +18,14 @@ function fixture(t, scenario = "normal", extraEnv = {}) {
   };
   const shared = "workspace-config/";
   const overlay = write(shared + "workspaces/pilot.json", { workspace_id: "ws-1" });
-  const agents = [{ dir: "analyst", name: "Analyst", skills: ["spec-preparation"] }];
-  if (scenario === "branch") agents.push({ dir: "engineer", name: "Engineer", skills: [] });
+  const agents = [{ dir: "analyst", name: "Workitem Analyst", skills: ["spec-preparation"] }];
+  if (scenario === "branch") agents.push(
+    { dir: "engineer", name: "Engineer", skills: [] },
+    { dir: "delivery-lead", name: "Delivery Lead", skills: [] },
+  );
   write(shared + "provisioning.json", {
     managed_skills: ["spec-preparation"], agents,
-    squad: { name: "Delivery", leader: "Analyst", members: [] }, project: { title: "Project", workspace_branch: ["branch", "group"].includes(scenario) ? "release" : undefined }, autopilots: [],
+    squad: { name: "Delivery", leader: "Workitem Analyst", members: [] }, project: { title: "Project", workspace_branch: ["branch", "group"].includes(scenario) ? "release" : undefined }, autopilots: [],
     workspace_groups: { bi: { workspaces: ["pilot"], project: scenario === "group" ? { title: "BI Project" } : {} } },
     workflow: { statuses: [{ key: "analysis_review", name: "Analysis Review", category: "started" }] },
   });
@@ -30,8 +33,10 @@ function fixture(t, scenario = "normal", extraEnv = {}) {
   write("agents/analyst/instructions.md", "instructions");
   write("agents/analyst/description.md", "description");
   if (scenario === "branch") {
-    write("agents/engineer/instructions.md", "instructions");
-    write("agents/engineer/description.md", "description");
+    for (const dir of ["engineer", "delivery-lead"]) {
+      write(`agents/${dir}/instructions.md`, "instructions");
+      write(`agents/${dir}/description.md`, "description");
+    }
   }
   write("squads/squad-instructions.md", "instructions");
   const trace = join(root, "trace.jsonl");
@@ -85,8 +90,9 @@ else if(key==='skill files') {
   } else throw new Error('unexpected skill files operation');
 }
 else if(key==='agent list') {
-  out=[{id:'agent-1',name:'Analyst',instructions:'instructions',description:'description',visibility:'workspace',skills:[{name:'spec-preparation'}]}];
+  out=[{id:'agent-1',name:'Workitem Analyst',instructions:'instructions',description:'description',visibility:'workspace',skills:[{name:'spec-preparation'}]}];
   if(fs.existsSync(process.env.MC_TRACE+'.agent-2')) out.push({...out[0],id:'agent-2',name:'Engineer',skills:[]});
+  if(process.env.MC_SCENARIO==='branch') out.push({...out[0],id:'agent-3',name:'Delivery Lead',skills:[]});
 }
 else if(key==='agent create') {
   const env=JSON.parse(args[args.indexOf('--custom-env')+1]);
@@ -140,17 +146,20 @@ test("根目录供给按分组选择 Project、继承默认分支且不改写 ma
   assert.equal(JSON.parse(readFileSync(f.trace + ".agent-1", "utf8")).RONDO_WORKSPACE_BRANCH, "release");
 });
 
-test("项目分支下发至新建和已有 Agent，保留其他变量且再次供给无写入", t => {
+test("项目分支仅下发至 Analyst / Engineer，保留其他变量且再次供给无写入", t => {
   const f = fixture(t, "branch");
   const provision = (...flags) => f.run("workspace", "provision", "--workspace", "pilot", "--skip-workflow", ...flags);
   const preview = provision("--dry-run");
   assert.equal(preview.code, 0, preview.stderr);
-  assert.ok(preview.body.updated.includes("agent/Analyst (RONDO_WORKSPACE_BRANCH)"));
+  assert.ok(preview.body.updated.includes("agent/Workitem Analyst (RONDO_WORKSPACE_BRANCH)"));
   assert.ok(!f.calls().some(args => args.includes("set") || args.includes("create")));
   const first = provision();
   assert.equal(first.code, 0, first.stderr);
   assert.deepEqual(JSON.parse(readFileSync(f.trace + ".agent-1")), { RONDO_WORKSPACE_BRANCH: "release", OTHER: "fixture-private-value" });
   assert.deepEqual(JSON.parse(readFileSync(f.trace + ".agent-2")), { RONDO_WORKSPACE_BRANCH: "release" });
+  // Delivery Lead 不是根仓 Agent：不读不写其 env，也不因新建参数携带分支。
+  assert.equal(existsSync(f.trace + ".agent-3"), false);
+  assert.ok(!f.calls().some(args => args.includes("env") && args.includes("agent-3")));
   assert.doesNotMatch(first.stderr + JSON.stringify(first.body) + readFileSync(f.trace, "utf8"), /fixture-private-value/);
   const before = f.calls().length;
   const again = provision();
@@ -175,7 +184,7 @@ for (const scenario of ["old", "unsupported"]) test(`显式跳过 ${scenario} wo
   assert.equal(r.body.workflow_skipped, true);
   assert.ok(f.calls().every(a => !a.includes("workflow") && !a.includes("--version")));
   assert.ok(f.calls().some(a => a.includes("runtime")));
-  assert.ok(r.body.unchanged.includes("agent/Analyst"));
+  assert.ok(r.body.unchanged.includes("agent/Workitem Analyst"));
   assert.ok(r.body.unchanged.includes("project/Project"));
   const overlay = JSON.parse(readFileSync(f.overlay, "utf8"));
   assert.equal(overlay.skills["spec-preparation"], "skill-1");

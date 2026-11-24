@@ -10,8 +10,8 @@
   2. sync      —— 渲染仓库映射配置并 upsert Skill 文件
   3. disable   —— 关闭 Agent 继承自 runtime 的本地 Skill
   4. tfs-env   —— 为 Agent 补齐 TFS_URL / TFS_COLLECTION / TFS_PAT（只增不改）
-  5. rondo-env —— 为 Workitem Analyst / Engineer / Wayfinder Agent 补齐
-                  RONDO_WORKSPACE_PATH（默认 /tmp）/ RONDO_WORKSPACE_BRANCH（默认 dev）
+  5. rondo-env —— 仅为 Workitem Analyst / Engineer 补齐
+                  RONDO_WORKSPACE_PATH（默认 /tmp）/ RONDO_WORKSPACE_BRANCH（默认 master）
                   （只增不改）
   6. repos     —— 供给 workspace 级仓库注册表（只增不维护：已存在的 URL 不改动；
                   按 workspace_groups 分组解析，组 workspace_repos 覆盖顶层默认）
@@ -325,7 +325,7 @@ def sync_workspace(
     if skip_rondo_env:
         print("[SKIP] 补齐 Agent Rondo 环境变量：按 --skip-rondo-env 跳过", flush=True)
     else:
-        # 只增不改：仅对 Workitem Analyst / Engineer / Wayfinder Agent 补
+        # 只增不改：仅对 Workitem Analyst / Engineer 补
         # RONDO_WORKSPACE_PATH / RONDO_WORKSPACE_BRANCH，已存在的键一律保留。
         rondo_command = [sys.executable, str(rondo_script), name]
         if dry_run:

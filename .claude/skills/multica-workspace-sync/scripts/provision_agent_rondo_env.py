@@ -3,14 +3,14 @@
 （RONDO_WORKSPACE_PATH / RONDO_WORKSPACE_BRANCH）。
 
 语义：
-  - 只作用于 TARGET_AGENTS（Workitem Analyst / Engineer / Wayfinder Agent）；
+  - 只作用于 TARGET_AGENTS（Workitem Analyst / Engineer）；
     目标 Agent 在 workspace 中缺失时打印 [WARN]，不计入失败（由 provision 负责供给）。
   - 只增不改：Agent custom_env 中键一旦存在（无论值是什么，包括空字符串），
     即视为用户已配置，一律保留原值不改动；仅补不存在的键；两键都存在的 Agent
     直接跳过。既有非 Rondo 键不受影响。
   - 取值全局固定（参考 TFS_URL 的固定常量方式）：
       RONDO_WORKSPACE_PATH   = /tmp
-      RONDO_WORKSPACE_BRANCH = dev
+      RONDO_WORKSPACE_BRANCH = master
 
 用法：
   python provision_agent_rondo_env.py                    # 默认 winning-admin
@@ -31,12 +31,12 @@ from cli_retry import run_cli
 
 DEFAULT_WORKSPACE_SLUG = "winning-admin"
 
-# 只补这三个 Agent（按用户指定）；其余 Agent 不注入 Rondo 工作区变量
-TARGET_AGENTS = ("Workitem Analyst", "Engineer", "Wayfinder Agent")
+# 只补这两个 Agent（按用户指定）；其余 Agent 不注入 Rondo 工作区变量
+TARGET_AGENTS = ("Workitem Analyst", "Engineer")
 
 # 全局固定默认值（只增不改：已存在的键不会被覆盖）
 RONDO_WORKSPACE_PATH = "/tmp"
-RONDO_WORKSPACE_BRANCH = "dev"
+RONDO_WORKSPACE_BRANCH = "master"
 RONDO_KEYS = ("RONDO_WORKSPACE_PATH", "RONDO_WORKSPACE_BRANCH")
 
 
