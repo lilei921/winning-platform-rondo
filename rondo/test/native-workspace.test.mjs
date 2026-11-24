@@ -38,7 +38,7 @@ test("Native linked worktree: committed mapping, first checkout, Kept, dirty pro
     git(src, "add", ".");
     git(src, "-c", "user.name=Test", "-c", "user.email=test@example.test", "commit", "-m", "seed");
     git(temp, "clone", "--bare", src, bare);
-    git(bare, "remote", "add", "origin", origin);
+    git(bare, "remote", "set-url", "origin", origin);
     return { bare, sha: git(src, "rev-parse", "HEAD") };
   };
   try {
@@ -52,7 +52,7 @@ test("Native linked worktree: committed mapping, first checkout, Kept, dirty pro
     const mapping = readNativeRepoMapping(root, "HEAD", url);
     assert.equal(mapping.frame.default_target_branch, "dev");
     const repo = mapping.frame;
-    const runtime = { multica: "multica", workspace_id: "workspace" };
+    const runtime = { multica_cli: "multica", workspace_id: "workspace" };
     let candidate = null, count = 0;
     const remote = () => ({ status: 0, stderr: "", stdout: child.sha + "\trefs/heads/dev\n" + (candidate ? candidate + "\trefs/heads/feature/42\n" : "") });
     const checkout = (argv, cwd) => {
