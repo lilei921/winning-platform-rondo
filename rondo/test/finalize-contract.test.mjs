@@ -347,7 +347,7 @@ async function fixture(t, opts = {}) {
         candidate_commit: git(seed, "rev-parse", "HEAD"), title: "Requirement delivery",
         description: "Implementation and verification completed",
         local_validation: { result: "PASS", summary: "Verified", command: ["node", "--test"], exit_code: 0,
-          candidate_commit: git(seed, "rev-parse", "HEAD"), source: "rondo dev pr-prepare" },
+          candidate_commit: git(seed, "rev-parse", "HEAD"), source: "rondo pr prepare" },
         code_review: { result: "PASS", summary: "Reviewed", findings: [],
           candidate_commit: git(seed, "rev-parse", "HEAD") },
         blockers: [],
