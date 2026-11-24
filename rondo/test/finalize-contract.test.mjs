@@ -367,7 +367,7 @@ async function fixture(t, opts = {}) {
     const entry = {repo_key:"repo1", tfs_id:999, source_branch:"feat/999", target_branch:"main", candidate_commit:tfsControl.candidate,
       expected_behavior:"success", actual_behavior:"failure", fix_summary:"fix", root_cause:{confidence:"confirmed", summary:"cause", evidence_refs:["trace:1"]},
       regression:fact, local_validation:fact, code_review:{...fact, findings:[]}};
-    metadata = {"tfs.id":"999", "tfs.type":"Bug", "analysis.change_kind":"corrective", "bug.required_repos":JSON.stringify(["repo1"]),
+    metadata = {"tfs.id":"999", "tfs.type":"Bug", "bug.required_repos":JSON.stringify(["repo1"]),
       "bug.delivery":JSON.stringify([entry]),
       pr_prep:JSON.stringify([{repo_key:"repo1", repo_url:tfsUrl + "/Proj1/_git/repo1", source_branch:"feat/999", target_branch:"main", candidate_commit:tfsControl.candidate, title:"fix"}]),
       current_pr:JSON.stringify([{repo_key:"repo1", pr_id:1, pr_url:tfsUrl + "/Proj1/_git/repo1/pullrequest/1", source_branch:"feat/999", target_branch:"main"}]), ...opts.metadata};

@@ -256,12 +256,10 @@ async function main(argv: string[]): Promise<number> {
     if (!persisted) client.setMetadata(issue.id, "bug.required_repos", JSON.stringify(required));
     client.setMetadata(issue.id, "bug.delivery", JSON.stringify(preparedDelivery));
     client.setMetadata(issue.id, "pr_prep", JSON.stringify(preparedPr));
-    client.setMetadata(issue.id, "analysis.change_kind", "corrective");
     const check = client.getIssue(issueRef).metadata ?? {};
     if (check["bug.required_repos"] !== JSON.stringify(required) ||
         check["bug.delivery"] !== JSON.stringify(preparedDelivery) ||
-        check.pr_prep !== JSON.stringify(preparedPr) ||
-        check["analysis.change_kind"] !== "corrective") {
+        check.pr_prep !== JSON.stringify(preparedPr)) {
       throw new UnknownError("Bug 准备事实回读不一致；请核对并幂等重试");
     }
     let readyForPr = false;

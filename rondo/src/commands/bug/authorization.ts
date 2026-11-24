@@ -71,7 +71,7 @@ export function assertBugStart(client: MulticaClient, issue: IssueRecord, repoKe
   assertBugAgentAssignment(issue.assignee_id, client.run(["agent", "list", ...client.ws(), "--output", "json"], "核验 Bug Fix 指派", { transient: true }));
   if (!["todo", "in_progress"].includes(issue.status ?? "")) throw new FailError("Bug 当前状态不允许开工");
   if (md["analysis.change_ref"] || md["analysis.gate.result"] === "PASS" ||
-      md["analysis.change_kind"] && md["analysis.change_kind"] !== "corrective" || md["finalize.pending"] || md["delivery.tfs_written"] === "true") {
+      md["finalize.pending"] || md["delivery.tfs_written"] === "true") {
     throw new FailError("存在冲突的交付或收口事实，不能准备业务仓");
   }
   let prs: unknown;

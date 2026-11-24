@@ -68,9 +68,6 @@ export function assertBugFinalizationFacts(
   prs: BugCurrentPr[],
 ): void {
   if (!isDirectBugDelivery(md)) throw new FailError("当前 Issue 不属于独立 Bug Delivery");
-  if (md["analysis.change_kind"] !== "corrective") {
-    throw new FailError("独立 Bug Delivery 要求 analysis.change_kind=corrective");
-  }
   if (md["analysis.gate.result"]) {
     throw new FailError("独立 Bug Delivery 不得混入 OpenSpec Analysis Gate");
   }
@@ -152,7 +149,6 @@ export function assertMergedBugSource(
 export function bugDeliveryDigest(md: Record<string, string>): string {
   return createHash("sha256").update(JSON.stringify({
     tfs_id: md["tfs.id"] ?? "",
-    change_kind: md["analysis.change_kind"] ?? "",
     required_repos: md["bug.required_repos"] ?? "",
     delivery: md["bug.delivery"] ?? "",
     pr_prep: md.pr_prep ?? "",

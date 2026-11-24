@@ -22,7 +22,7 @@ function fixture() {
     source_branch: "feat/123", target_branch: "main", description_ref: "file:/tmp/pr.md",
   }];
   const md = {
-    "tfs.type": "Bug", "tfs.id": "123", "analysis.change_kind": "corrective",
+    "tfs.type": "Bug", "tfs.id": "123",
     "bug.required_repos": JSON.stringify(["frame-web"]),
     "bug.delivery": JSON.stringify(bug),
     "pr_prep": JSON.stringify(prep),
@@ -36,6 +36,7 @@ test("direct Bug delivery has no OpenSpec dependency", () => {
   assert.equal(isDirectBugDelivery(md), true);
   assert.doesNotThrow(() => assertBugFinalizationFacts(md, "in_review", prs));
   assert.match(bugDeliveryDigest(md), /^[a-f0-9]{64}$/);
+  assert.equal(bugDeliveryDigest(md), bugDeliveryDigest({ ...md, "analysis.change_kind": "corrective" }));
 });
 
 test("Bug delivery fails when a PR is not covered or candidate differs", () => {
