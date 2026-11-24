@@ -1,4 +1,5 @@
-/** Explicit new-flow identity from the existing PR branch contract; no dev.dispatch or extra mode metadata. */
+import { candidateBranch } from "../pr/candidate-branch.js";
+/** Requirement delivery identity derives from its TFS type and engineering facts. */
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { checkedTaskProgress } from "../dev/change-completion.js";
 import { readAnalysisSource } from "../analysis/source.js";
@@ -16,13 +17,14 @@ export function isRequirementChangeDelivery(md: Record<string, string>): boolean
   if (!Array.isArray(prep) || !prep.length) return false;
   const tfsId = Number(md["tfs.id"]);
   if (!Number.isSafeInteger(tfsId) || tfsId <= 0) throw new FailError("TFS Requirement ID 非法");
-  const match = prep.map(v => v && typeof v === "object" && (v as {source_branch?: string}).source_branch === "feature/" + tfsId);
-  if (match.some(Boolean) && !match.every(Boolean)) throw new FailError("同一 Issue 混合新旧 PR 分支，无法安全判断 Delivery 模式");
-  if (match.every(Boolean) && md["dev.dispatch"]) {
+  if (!prep.every(v => v && typeof v === "object" && (v as {source_branch?: string}).source_branch === candidateBranch(tfsId))) {
+    throw new FailError("Requirement Candidate Branch 与 TFS ID 不一致");
+  }
+  if (md["dev.dispatch"]) {
     // Existing dispatch is a different delivery authority. No implicit downgrade or mixed settlement.
     throw new FailError("Requirement Change 不能同时使用旧 dev.dispatch 派发事实");
   }
-  return match.every(Boolean);
+  return true;
 }
 
 /** Scope is authoritative at the approved Commit, not the latest working or archived file. */

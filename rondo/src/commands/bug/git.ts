@@ -1,3 +1,4 @@
+import { candidateBranch } from "../pr/candidate-branch.js";
 /** 后续 fetch/push 复用准备阶段的受控工具与认证，不接受任意 Git argv。 */
 import { dirname } from "node:path";
 import { Command } from "commander";
@@ -25,7 +26,7 @@ export function registerBugGit(group: Command): void {
         assertBugExecution(client, issue);
         await assertBugSource(issue, loadTfsConfig().serverUrl);
         const paths = validateNativeCheckout(opts.rootRepo);
-        const id = assertBugStart(client, issue, opts.repo), branch = `feat/${id}`;
+        const id = assertBugStart(client, issue, opts.repo), branch = candidateBranch(id);
         const repo = validatePrepareRepo(cfg.registry[opts.repo], loadTfsConfig().serverUrl);
         const path = validateBusinessPath(paths.rootRepo, repo);
         const workdir = dirname(paths.rootRepo);

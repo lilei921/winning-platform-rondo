@@ -1,3 +1,4 @@
+import { candidateBranch } from "../pr/candidate-branch.js";
 /** 单个业务仓安全准备主体；不修改根仓、不覆盖已有工作树、不自动 push。 */
 import { existsSync, lstatSync, realpathSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -60,7 +61,7 @@ export function validateBusinessCheckout(path: string, repo: PrepareRepo, branch
 
 export function prepareBusinessWorkspace(root: string, repo: PrepareRepo, tfsId: number, remote: RemoteGit = runAuthenticatedGit): Record<string, unknown> {
   if (!Number.isSafeInteger(tfsId) || tfsId <= 0) throw new FailError("TFS Bug ID 无效");
-  const branch = `feat/${tfsId}`;
+  const branch = candidateBranch(tfsId);
   for (const ref of [branch, repo.default_target_branch]) {
     if (!ref || ref.startsWith("-") || ref.startsWith("refs/") || git(root, ["check-ref-format", `refs/heads/${ref}`]).status !== 0) throw new FailError("候选 / 目标分支名非法");
   }

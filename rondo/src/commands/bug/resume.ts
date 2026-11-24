@@ -1,3 +1,4 @@
+import { candidateBranch } from "../pr/candidate-branch.js";
 /**
  * Explicit Human-directed recovery from a rejected TFS Bug PR.
  * No autonomous reinterpretation of a Human comment; one Issue, no OpenSpec.
@@ -95,6 +96,7 @@ async function main(argv:string[]):Promise<number>{
     }
     const tfs=new TfsClient();
     for(const p of prs){
+      if (p.source_branch !== candidateBranch(md["tfs.id"])) throw new FailError("Bug 恢复 Candidate Branch 不一致");
       const repo=cfg.registry[p.repo_key];
       if(!repo?.tfs_repo||!repo.tfs_project)throw new FailError("Repository 的 TFS PR 配置缺失: "+p.repo_key);
       const found=await tfs.run(["pr","get","--repo",repo.tfs_repo,"--id",String(p.pr_id),

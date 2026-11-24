@@ -1,3 +1,4 @@
+import { candidateBranch } from "../pr/candidate-branch.js";
 /** Change-level PR admission: approved contract, recorded delivery progress and per-repo evidence. */
 import { FailError, UnknownError } from "../../cli/errors.js";
 import type { BaseRegistryConfig } from "../../clients/config.js";
@@ -55,7 +56,7 @@ export function validateChangeDelivery(prep: PrPrep[], scope: string[], tfsId: n
     const repo = registry[key];
     if (!scope.includes(key) || !repo?.repo_url) throw new FailError("PR Candidate 的 repo_key 不在批准 Repository Scope: " + key);
     if (key in candidates) throw new FailError("PR Preparation 仓库重复: " + key);
-    if (entry.source_branch !== "feature/" + tfsId ||
+    if (entry.source_branch !== candidateBranch(tfsId) ||
         !/^[0-9a-f]{40}$/.test(entry.candidate_commit ?? "") ||
         !entry.title?.trim() || !entry.description?.trim() ||
         entry.description.includes("补 TFS 工作项 id") ||

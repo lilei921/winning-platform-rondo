@@ -1,3 +1,4 @@
+import { candidateBranch } from "../pr/candidate-branch.js";
 /**
  * dev pr-prepare —— PR Preparation Facts 一段写入（engineer-run-efficiency-optimization-plan P1-1）。
  *
@@ -259,8 +260,8 @@ async function main(rawArgs: string[]): Promise<number> {
     const multica = new MulticaClient(cfg.runtime);
     const issue = multica.getIssue(args.issue);
     const tfsId = issue.metadata?.["tfs.id"] ?? "";
-    const sourceBranch = args.sourceBranch ?? (tfsId ? `${args.mode === "requirement" ? "feature" : "feat"}/${tfsId}` : "");
-    if (args.mode === "requirement" && sourceBranch !== `feature/${tfsId}`) return fail(args.issue, "source_branch_not_found", ["Requirement Branch 必须为 feature/<tfs.id>"]);
+    const sourceBranch = args.sourceBranch ?? (tfsId ? candidateBranch(tfsId) : "");
+    if (args.mode === "requirement" && sourceBranch !== candidateBranch(tfsId)) return fail(args.issue, "source_branch_not_found", ["Requirement Branch 必须为 feature/<tfs.id>"]);
     if (!sourceBranch) {
       throw new UnknownError(`Issue ${args.issue} 缺少 metadata tfs.id 且未显式传 --source-branch——分支身份不可确认`);
     }

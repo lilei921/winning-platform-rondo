@@ -1,3 +1,4 @@
+import { candidateBranch } from "../pr/candidate-branch.js";
 /** 薄入口：先核验当前 Task 与 Bug 授权，再调用安全准备主体。 */
 import { dirname } from "node:path";
 import { Command } from "commander";
@@ -45,7 +46,7 @@ export function registerDevPrepare(group: Command): void {
             if (opts.changeRef) throw new FailError("Bug 不使用 --change-ref");
             const mapping = readNativeRepoMapping(root, "HEAD", server);
             const repo = validatePrepareRepo(mapping[opts.repo], server);
-            result = prepareNativeBusiness(root, repo, "feat/" + id, runtime, opts.resourceRef);
+            result = prepareNativeBusiness(root, repo, candidateBranch(id), runtime, opts.resourceRef);
           } else if (issue.metadata?.["tfs.type"] === "需求") {
             if (!opts.changeRef) throw new FailError("Requirement prepare 需要 --change-ref");
             const source = readAnalysisSource(issue.metadata);
@@ -66,7 +67,7 @@ export function registerDevPrepare(group: Command): void {
             if (approved.source.commit !== source.commit || approved.source.repo_url !== source.repo_url || approved.source.branch !== source.branch)
               throw new UnknownError("批准来源在准备期间变化");
             const repo = validatePrepareRepo(registry[opts.repo], server);
-            result = prepareNativeBusiness(root, repo, "feature/" + approved.tfsId, runtime, opts.resourceRef);
+            result = prepareNativeBusiness(root, repo, candidateBranch(approved.tfsId), runtime, opts.resourceRef);
             if (approved.issue.metadata?.["verify_agent.required"] === undefined) {
               client.setMetadata(approved.issue.id, "verify_agent.required", String(approved.verifyRequired));
             }
