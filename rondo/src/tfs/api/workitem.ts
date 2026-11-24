@@ -145,8 +145,8 @@ function defaultDateForField(fieldPath: string): string {
 /** 各工作项类型的有序状态链（2026-10-30 裁定）：跨态直连 TFS 工作流拒绝（HTTP 400），沿链逐跳中转。 */
 const STATE_CHAINS: Record<string, string[]> = {
   '需求': ['已建议', '活动', '已分析', '已解决'],
-  Bug: ['已建议', '活动', '已解决'],
-  '任务': ['已建议', '活动', '已解决'],
+  Bug: ['已建议', '活动'],
+  '任务': ['已建议', '活动', '已解决', '已关闭'],
 };
 
 export async function cmdWorkItemSetState(opts: { id: number; state: string; project?: string; completeWithEstimate?: boolean }): Promise<unknown> {
