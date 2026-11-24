@@ -167,6 +167,7 @@ function renderRegistry(base: any): Record<string, Record<string, string>> {
         throw new UnknownError(`delivery overlay ${repoId}.${key} 不允许覆盖 repo-context 字段或引入未登记配置`);
       }
     }
+    if (!repos.get(repoId)?.default_target_branch) throw new UnknownError(`repo-context ${repoId} 缺少交付目标 default_target_branch`);
     for (const key of ["tfs_repo"]) {
       if (raw[key] !== undefined) requiredString(raw[key], `delivery overlay ${repoId}.${key}`);
     }
