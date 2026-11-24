@@ -1,0 +1,229 @@
+{
+  "collected_at": "2026-11-24T18:56:16+08:00",
+  "profile": "",
+  "server_url": null,
+  "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+  "issue_id": "01a20d23-13f4-7a6b-89df-a88c0193a6d3",
+  "read_only_commands": [
+    [
+      "multica",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "issue",
+      "get",
+      "LEI-57",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "issue",
+      "runs",
+      "01a20d23-13f4-7a6b-89df-a88c0193a6d3",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "agent",
+      "get",
+      "3068117f-163c-4ba9-86bf-fae3bfc1f6bf",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "agent",
+      "get",
+      "3c1c3ac1-a922-4e7b-abdf-07a6268398a3",
+      "--output",
+      "json"
+    ]
+  ],
+  "sessions": [
+    {
+      "session_id": "01a20d24-fb93-7ca2-a27f-e6826b0ee11f",
+      "verification_schema": "item_completed",
+      "source_public_tool_count": 36,
+      "exported_tool_count": 36,
+      "source_user_messages": 1,
+      "source_assistant_messages": 5,
+      "messages_match": true,
+      "missing_tool_ids": [],
+      "extra_tool_ids": [],
+      "tool_order_matches": true,
+      "invalid_jsonl_lines": 0,
+      "unsupported_events": {},
+      "task_boundaries": [
+        {
+          "timestamp": "2026-11-24T10:40:57.497Z",
+          "type": "task_started"
+        },
+        {
+          "timestamp": "2026-11-24T10:43:16.017Z",
+          "type": "task_complete"
+        }
+      ],
+      "subagents": [],
+      "coverage_granularity": "item_completed (exec envelopes and injected response context excluded)",
+      "response_exec_envelopes": 13,
+      "unmatched_response_items": [],
+      "legacy_only_files": [],
+      "complete": true,
+      "provider": "codex",
+      "sources": [
+        {
+          "path": "D:\\Multica\\default\\winning-lil-b39bad65de56\\lei-57-0b19bfc9678d\\codex-home\\sessions\\2026\\11\\24\\rollout-2026-11-24T18-40-57-01a20d24-fb93-7ca2-a27f-e6826b0ee11f.jsonl",
+          "size_bytes": 819812,
+          "sha256": "1683e68fff60e1862beebc4ccd064fd2e94b917ab22c03a85150995cf4762e14"
+        }
+      ],
+      "run_coverage": {
+        "complete": true,
+        "run_intervals": {
+          "01a20d25-0334-7ae3-b008-0b19bfc9678d": [
+            {
+              "started_at": "2026-11-24T10:40:57.497000+00:00",
+              "completed_at": "2026-11-24T10:43:16.017000+00:00"
+            }
+          ]
+        },
+        "uncovered_run_ids": [],
+        "ambiguous_intervals": [],
+        "invalid_boundaries": false,
+        "open_task": false
+      },
+      "sources_stable": true
+    },
+    {
+      "session_id": "01a20d26-de6b-7f20-90ff-089100c0f7ec",
+      "verification_schema": "item_completed",
+      "source_public_tool_count": 8,
+      "exported_tool_count": 8,
+      "source_user_messages": 2,
+      "source_assistant_messages": 3,
+      "messages_match": true,
+      "missing_tool_ids": [],
+      "extra_tool_ids": [],
+      "tool_order_matches": true,
+      "invalid_jsonl_lines": 0,
+      "unsupported_events": {},
+      "task_boundaries": [
+        {
+          "timestamp": "2026-11-24T10:43:03.054Z",
+          "type": "task_started"
+        },
+        {
+          "timestamp": "2026-11-24T10:43:36.561Z",
+          "type": "task_complete"
+        },
+        {
+          "timestamp": "2026-11-24T10:50:39.397Z",
+          "type": "task_started"
+        },
+        {
+          "timestamp": "2026-11-24T10:50:52.640Z",
+          "type": "task_complete"
+        }
+      ],
+      "subagents": [],
+      "coverage_granularity": "item_completed (exec envelopes and injected response context excluded)",
+      "response_exec_envelopes": 4,
+      "unmatched_response_items": [],
+      "legacy_only_files": [],
+      "complete": true,
+      "provider": "codex",
+      "sources": [
+        {
+          "path": "D:\\Multica\\default\\winning-lil-b39bad65de56\\lei-57-3e8961403188\\codex-home\\sessions\\2026\\11\\24\\rollout-2026-11-24T18-43-02-01a20d26-de6b-7f20-90ff-089100c0f7ec.jsonl",
+          "size_bytes": 262411,
+          "sha256": "751d88918b43a1d066badf75dec9b06dd5bc621c328704a99cde3d02cf5ffa5b"
+        }
+      ],
+      "run_coverage": {
+        "complete": true,
+        "run_intervals": {
+          "01a20d2d-dd89-7ac2-b03a-b0001da3ed87": [
+            {
+              "started_at": "2026-11-24T10:50:39.397000+00:00",
+              "completed_at": "2026-11-24T10:50:52.640000+00:00"
+            }
+          ],
+          "01a20d26-e52f-7329-ab6f-3e8961403188": [
+            {
+              "started_at": "2026-11-24T10:43:03.054000+00:00",
+              "completed_at": "2026-11-24T10:43:36.561000+00:00"
+            }
+          ]
+        },
+        "uncovered_run_ids": [],
+        "ambiguous_intervals": [],
+        "invalid_boundaries": false,
+        "open_task": false
+      },
+      "sources_stable": true
+    },
+    {
+      "session_id": "01a20d27-5bd5-7d80-a412-b0322eb16c05",
+      "verification_schema": "item_completed",
+      "source_public_tool_count": 48,
+      "exported_tool_count": 48,
+      "source_user_messages": 1,
+      "source_assistant_messages": 7,
+      "messages_match": true,
+      "missing_tool_ids": [],
+      "extra_tool_ids": [],
+      "tool_order_matches": true,
+      "invalid_jsonl_lines": 0,
+      "unsupported_events": {},
+      "task_boundaries": [
+        {
+          "timestamp": "2026-11-24T10:43:35.353Z",
+          "type": "task_started"
+        },
+        {
+          "timestamp": "2026-11-24T10:50:40.838Z",
+          "type": "task_complete"
+        }
+      ],
+      "subagents": [],
+      "coverage_granularity": "item_completed (exec envelopes and injected response context excluded)",
+      "response_exec_envelopes": 21,
+      "unmatched_response_items": [],
+      "legacy_only_files": [],
+      "complete": true,
+      "provider": "codex",
+      "sources": [
+        {
+          "path": "D:\\Multica\\default\\winning-lil-b39bad65de56\\lei-57-488a38eb77b6\\codex-home\\sessions\\2026\\11\\24\\rollout-2026-11-24T18-43-34-01a20d27-5bd5-7d80-a412-b0322eb16c05.jsonl",
+          "size_bytes": 1166815,
+          "sha256": "66e533db96510e1539dd96fed092bbb852f84ca8f51be7ae662e0eccf263cae5"
+        }
+      ],
+      "run_coverage": {
+        "complete": true,
+        "run_intervals": {
+          "01a20d27-6332-7a6e-90b0-488a38eb77b6": [
+            {
+              "started_at": "2026-11-24T10:43:35.353000+00:00",
+              "completed_at": "2026-11-24T10:50:40.838000+00:00"
+            }
+          ]
+        },
+        "uncovered_run_ids": [],
+        "ambiguous_intervals": [],
+        "invalid_boundaries": false,
+        "open_task": false
+      },
+      "sources_stable": true
+    }
+  ],
+  "coverage": "complete",
+  "verified_at": "2026-11-24T18:56:38+08:00"
+}
