@@ -31,12 +31,13 @@ interface CurrentPrEntry {
   repo_key: string; pr_id: number; pr_url: string; source_branch: string; target_branch: string;
 }
 export function registerCurrentPr(
-  multica: Pick<MulticaClient, "setMetadata" | "getIssue" | "setStatus">, issueId: string, currentPr: string,
+  multica: Pick<MulticaClient, "setMetadata" | "getIssue" | "setStatus">, issueId: string, currentPr: string, beforeStatus?: () => void,
 ): ReturnType<MulticaClient["getIssue"]> {
   multica.setMetadata(issueId, "current_pr", currentPr);
   if (multica.getIssue(issueId).metadata?.current_pr !== currentPr) {
     throw new UnknownError("current_pr 登记未确认，禁止进入 in_review");
   }
+  beforeStatus?.();
   multica.setStatus(issueId, "in_review");
   const confirmed = multica.getIssue(issueId);
   if (confirmed.status !== "in_review" || confirmed.metadata?.current_pr !== currentPr) {
@@ -100,6 +101,7 @@ export async function materializeOne(tfs: Pick<TfsClient, "run">, api: Pick<ApiT
   const dir=mkdtempSync(join(tmpdir(),"rondo-pr-"));
   try {
     const file=join(dir,"description.md"); writeFileSync(file,entry.description,"utf8");
+    await checkHead();
     authorize();
     const created=await tfs.run(["pr","create",...args,"--source",entry.source_branch,"--target",entry.target_branch,
       "--title",entry.title,"--description-file",file], "创建 PR") as {created?:boolean;pr?:{id:number;url:string};existing?:{id:number;url:string}};
@@ -121,12 +123,12 @@ export function registerPrMaterialize(group: Command): void {
         if(!bug&&md["tfs.type"]!=="需求") throw new FailError("不支持当前 TFS Type");
         if(bug&&(md["analysis.change_ref"]||md["analysis.gate.result"])) throw new FailError("Bug 不能混入 OpenSpec Gate");
         const branch=candidateBranch(md["tfs.id"]);
-        const authorize=()=>{
+        const authorize=(expectedCurrentPr=md.current_pr)=>{
           const fresh=multica.getIssue(issue.id), facts=fresh.metadata??{};
           if(fresh.status!==issue.status||fresh.assignee_id!==issue.assignee_id||
             ["tfs.id","tfs.type","tfs.url","analysis.source","analysis.human_approval","analysis.change_ref","analysis.gate.result",
-              "dev.publication","pr_prep","bug.delivery","bug.required_repos","current_pr","finalize.pending","delivery.tfs_written","dev.dispatch","verify_agent.required"]
-              .some(k=>facts[k]!==md[k])) throw new UnknownError("PR 物化期间授权或准备事实变化");
+              "dev.publication","pr_prep","bug.delivery","bug.required_repos","finalize.pending","delivery.tfs_written","dev.dispatch","verify_agent.required"]
+              .some(k=>facts[k]!==md[k]) || facts.current_pr!==expectedCurrentPr) throw new UnknownError("PR 物化期间授权或准备事实变化");
           if(!["todo","in_progress","in_review"].includes(fresh.status??"")||facts["finalize.pending"]||facts["delivery.tfs_written"]==="true")
             throw new FailError("当前 Issue 状态不允许 PR 物化");
           if(readOnly) return;
@@ -176,7 +178,10 @@ export function registerPrMaterialize(group: Command): void {
         for(const entry of prep) prs.push(await materializeOne(tfs,api,tfsId,entry,identities.get(entry.repo_key)!,
           prior.find(p=>p.repo_key===entry.repo_key),readOnly,authorize));
         authorize();
-        if(!readOnly) registerCurrentPr(multica,issue.id,JSON.stringify(prs.map(({reused:_,...rest})=>rest)));
+        if(!readOnly) {
+          const currentPr=JSON.stringify(prs.map(({reused:_,...rest})=>rest));
+          registerCurrentPr(multica,issue.id,currentPr,()=>authorize(currentPr));
+        }
         process.stdout.write(JSON.stringify({result:"PASS",issue:issue.identifier??issue.id,status:"in_review",prs},null,2)+"\n");
       } catch(e) {
         if(!(e instanceof FailError||e instanceof UnknownError)) throw e;

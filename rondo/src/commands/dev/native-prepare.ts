@@ -17,7 +17,9 @@ import { validatePrepareRepo, validateBusinessPath, validateBusinessCheckout, ty
 /** Read committed engineering mappings, not mutable working files or a second registry. */
 export function readNativeRepoMapping(root: string, revision: string, serverUrl: string): Record<string, PrepareRepo> {
   if (revision !== "HEAD" && !/^[0-9a-f]{40}$/.test(revision)) throw new FailError("无效的仓库映射版本");
-  const content = gitOk(root, ["show", revision + ":docs/config/repo-context.yaml"], "读取已提交仓库映射");
+  let content:string;
+  try {content=gitOk(root, ["show", revision + ":docs/config/repo-context.yaml"], "读取已提交仓库映射");}
+  catch {throw new UnknownError("无法读取指定版本的 repo-context.yaml；不得回退其他版本");}
   const origin = gitOk(root, ["remote", "get-url", "--all", "origin"], "核对根仓 Origin");
   const push = gitOk(root, ["remote", "get-url", "--push", "--all", "origin"], "核对根仓 Push URL");
   if (canonicalRepositoryIdentity(origin) !== canonicalRepositoryIdentity(push)) throw new FailError("根仓 Origin 与 Push URL 不一致");

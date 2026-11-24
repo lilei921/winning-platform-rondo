@@ -56,7 +56,13 @@ export function registerPrPrepare(group: Command): void {
         if (!/^[0-9a-f]{40}$/.test(sha) || !filled(opts.title)) throw new FailError("Candidate SHA 或标题非法");
         const current = await authorizedCheckout(opts.issue, opts.repo, opts.rootRepo);
         const {client, issue, md, repo, path, branch, tfsId, bug, registry} = current;
-        const facts = validatePrFacts(readBugEvidenceInput(opts.facts), bug);
+        const rawInput = readBugEvidenceInput(opts.facts);
+        const facts = validatePrFacts(rawInput, bug);
+        const suppliedIdentity = rawInput as Record<string,unknown>;
+        for (const [key, expected] of Object.entries({issue:issue.identifier??issue.id,tfs_id:tfsId,repo_key:opts.repo,candidate_commit:sha})) {
+          if (suppliedIdentity[key] !== undefined && (key === "tfs_id" ? Number(suppliedIdentity[key]) !== expected : suppliedIdentity[key] !== expected))
+            throw new FailError("Facts "+key+" 与当前 Candidate 身份不一致");
+        }
         if (!bug && opts.requiredRepos !== undefined) throw new FailError("Requirement 使用已批准 Scope，不接受 --required-repos");
         let required: string[] = [];
         const review = {result:"PASS", summary:facts.code_review.summary, findings:facts.code_review.findings,
@@ -64,6 +70,7 @@ export function registerPrPrepare(group: Command): void {
         const validation = {result:"PASS", summary:facts.validation.summary, ...(bug && {evidence_refs:facts.validation.evidence_refs}),
           ...(facts.validation.command && {command:facts.validation.command, exit_code:0, candidate_commit:sha, source:"rondo pr prepare"})};
         let delivery: Record<string, unknown> | undefined;
+        checkLocalCandidate(current.head);
         if (bug) {
           const raw = {expected_behavior:facts.expected_behavior, actual_behavior:facts.actual_behavior, root_cause:facts.root_cause,
             fix_summary:facts.fix_summary, regression:facts.regression, local_validation:validation, code_review:review, blockers:facts.blockers};
@@ -79,9 +86,12 @@ export function registerPrPrepare(group: Command): void {
           const {blockers:_, ...professional} = raw;
           delivery = {...professional,repo_key:opts.repo,source_branch:branch,target_branch:repo.default_target_branch,candidate_commit:sha,tfs_id:tfsId};
         }
-        const checkCandidate = (head:string) => {
+        function checkLocalCandidate(head:string) {
           if(head!==sha || gitOk(path,["status","--porcelain","--untracked-files=no"],"核对 Candidate 工作树"))
             throw new FailError("Candidate HEAD 不一致或存在未提交修改");
+        }
+        const checkCandidate = (head:string) => {
+          checkLocalCandidate(head);
           const ref="refs/heads/"+branch, remote=runAuthenticatedGit(repo.repo_url,["ls-remote",repo.repo_url,ref],path);
           if(remote.status!==0 || remote.stdout.trim()!==sha+"\t"+ref) throw new UnknownError("远端 Candidate SHA 未确认");
         };
