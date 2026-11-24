@@ -1,3 +1,4 @@
+import { candidateBranch } from "../pr/candidate-branch.js";
 /**
  * Independent Bug delivery repository scope and preparation consistency checks.
  * Only a subset of common PR Facts is validated here; provider state is checked
@@ -57,7 +58,7 @@ export function assertBugReadyForPr(md: Record<string,string>): string[] {
   for (const key of required) {
     const p = prep.find(x=>x.repo_key === key)!;
     const d = delivery.find(x=>x.repo_key === key)!;
-    if (!p.source_branch || !p.target_branch ||
+    if (p.source_branch !== candidateBranch(tfsId) || !p.target_branch ||
         !d.source_branch || !d.target_branch ||
         !/^[0-9a-f]{40}$/i.test(p.candidate_commit ?? "") ||
         p.candidate_commit !== d.candidate_commit ||

@@ -267,7 +267,7 @@ Engineer 对获批 `tasks.md` 的全部 Implementation Tasks 和 PR 前必要的
 | Analysis Workspace / 规范基线 | Analyst 与 Engineer 复用 `runtime prepare-root`。项目级 Schema / Specs 基线按 08-B 核对，根仓不按 Issue 建 Worktree。 |
 | Analysis / Change Git 发布 | Requirement 分析通过 `analysis complete --mode requirement` 发布当前 Change 差异。分析来源记录实际远端分支及该次发布 SHA，获批后供 Engineer 跨 Runtime 读取。 |
 | Analysis 专业执行资产 | 保留 Workitem Analyst，聚焦需求分析与可实施的 OpenSpec；定向优化 `requirement-analysis`、`spec-preparation` 和 `analysis-completion`，不参与 TFS 子任务拆分与数量控制 |
-| Requirement `dev prepare` / `dev pr-prepare` | 按 08-B 使用 `feature/<tfs.id>` Worktree 及授权 Repository；旧 Bug Clone / 分支与原有 `feat/` 路线不变 |
+| Requirement `dev prepare` / `dev pr-prepare` | 按 08-B 使用 `feature/<tfs.id>` Worktree 及授权 Repository；Bug 与 Requirement 均采用同一 Candidate Branch 规则 |
 | Change 级 Completion / Progress / Evidence | 从当前获批 `tasks.md` 核验应由研发完成的任务、Candidate 和 Evidence；原生编号仅定位 checkbox，不要求新 Evidence 携带派发任务数组；发布后可跨 Runtime 回读 |
 | `rondo pr materialize` 的新入口 | 创建任何 PR 前校验 Change 级完成、Human Approval、当前 Engineer Run 与实际修改仓库的完整 Candidate / PR Preparation；保留幂等恢复及旧入口行为 |
 | PR 描述与跨 Runtime | 从已 Push 的 Change 读取 PR 描述，不能仅依赖上一个 Runtime 的本机 `file:` 路径；保持已有远端 Finalize 机制 |

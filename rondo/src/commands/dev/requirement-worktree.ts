@@ -1,3 +1,4 @@
+import { candidateBranch } from "../pr/candidate-branch.js";
 /** Requirement branch worktree: shared base clone; never reset/clean or change Bug checkout semantics. */
 import { existsSync, lstatSync, realpathSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -46,7 +47,7 @@ export function verifiedRequirementWorktree(
       !samePath(checked(hub, ["rev-parse", "--path-format=absolute", "--git-common-dir"], "检查基础仓归属"), join(hub, ".git")))
     throw new FailError("当前基础仓不是旧 Requirement 独立 Git checkout");
   const worktree = validateBusinessPath(root, { repo_path: repo.repo_path + "-" + tfsId });
-  verifyWorktree(worktree, hub, "feature/" + tfsId, repo.repo_url);
+  verifyWorktree(worktree, hub, candidateBranch(tfsId), repo.repo_url);
   return worktree;
 }
 
@@ -80,7 +81,7 @@ export function prepareRequirementWorktree(
 ): Record<string, unknown> {
   validatePrepareRepo(repo, serverUrl);
   if (!Number.isSafeInteger(tfsId) || tfsId <= 0) throw new FailError("TFS Requirement ID 非法");
-  const branch = "feature/" + tfsId;
+  const branch = candidateBranch(tfsId);
   const hub = validateBusinessPath(root, repo);
   const worktreeName = repo.repo_path + "-" + tfsId;
   if (git(root, ["check-ignore", "--no-index", "-q", "--", worktreeName + "/"]).status !== 0 ||

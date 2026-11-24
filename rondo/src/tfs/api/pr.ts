@@ -11,6 +11,7 @@
 import * as fs from 'node:fs';
 import { TfsClient, FailError, UnknownError } from '../client.js';
 import { isTransientTfsError, withTransientRetry } from '../retry.js';
+import { ensurePrWorkItemLink } from './pr-link.js';
 
 export interface TfsPrLocation {
   project: string;
@@ -142,9 +143,21 @@ export async function cmdPrCreate(opts: {
   const sourceRef = normalizeRef(opts.source);
   const targetRef = normalizeRef(opts.target);
   const preExisting = await findActivePr(client, repo.id, sourceRef, targetRef, proj);
-  if (preExisting) {
-    return { created: false, existing: prShape(client, preExisting, repo.name, proj) };
-  }
+  const link = async (pr: any) => {
+    const out = prShape(client, pr, repo.name, proj);
+    if (!opts.workItems?.length) return out;
+    const projObj = await withTransientRetry(async () => (await client.getCoreApi()).getProject(proj),
+      { onBeforeRetry: () => client.rebuildTransport(), what: `读取项目 ${proj}` });
+    const linked:number[] = [], failures:number[] = [];
+    for (const wid of opts.workItems) {
+      try { await ensurePrWorkItemLink(client, {projectId:projObj.id, repoId:repo.id}, pr.pullRequestId, wid, true); linked.push(wid); }
+      catch { failures.push(wid); }
+    }
+    out.workItems=linked;
+    if(failures.length) out.workItemLinkFailures=failures;
+    return out;
+  };
+  if (preExisting) return { created: false, existing: await link(preExisting) };
 
   const description = opts.descriptionFile ? fs.readFileSync(opts.descriptionFile, 'utf-8') : '';
   // M3.3：POST 不自动重试；瞬态失败后按 source/target ref 认领可能已落库的 PR（防断连重复建 PR）
@@ -166,35 +179,7 @@ export async function cmdPrCreate(opts: {
     pr = claimed;
   }
 
-  // 关联工作项：实测（2026-10-14）本实例 PR 侧 workitems 端点 404（tfs-mcp 未验证、吞错未暴露），
-  // 改走工作项侧 ArtifactLink：PATCH workitem 加 vstfs:///Git/PullRequestId/{projGuid}%2F{repoGuid}%2F{prId}
-  const linked: number[] = [];
-  const linkFailures: number[] = [];
-  if (opts.workItems && opts.workItems.length > 0) {
-    const projObj = await withTransientRetry(
-      async () => (await client.getCoreApi()).getProject(proj),
-      { onBeforeRetry: () => client.rebuildTransport(), what: `读取项目 ${proj}` },
-    );
-    const artifactUrl = `vstfs:///Git/PullRequestId/${projObj.id}%2F${repo.id}%2F${pr.pullRequestId}`;
-    for (const wid of opts.workItems) {
-      const url = `${client.config.serverUrl}/_apis/wit/workitems/${wid}?api-version=4.1`;
-      const res = await client.rawRequest(
-        url,
-        'PATCH',
-        JSON.stringify([
-          { op: 'add', path: '/relations/-', value: { rel: 'ArtifactLink', url: artifactUrl, attributes: { name: 'Pull Request' } } },
-        ]),
-        { 'Content-Type': 'application/json-patch+json' }
-      );
-      if (res.statusCode >= 200 && res.statusCode < 300) linked.push(wid);
-      else linkFailures.push(wid);
-    }
-  }
-
-  const out = prShape(client, pr, repo.name, proj);
-  out.workItems = linked;
-  if (linkFailures.length > 0) out.workItemLinkFailures = linkFailures;
-  return { created: true, pr: out };
+  return { created: true, pr: await link(pr) };
 }
 
 export async function cmdPrGet(opts: { id: number; repo: string; project?: string }): Promise<unknown> {

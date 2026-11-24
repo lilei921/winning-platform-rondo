@@ -2,12 +2,14 @@
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
-import { loadConfig, type BaseRegistryConfig } from "../../clients/config.js";
+import { resolveMulticaRuntime } from "../../clients/runtime-context.js";
+import { readApprovedRepoMapping } from "./native-prepare.js";
+import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
 import { git, gitOk } from "../../clients/git.js";
 import { readGitTree, readGitBlob } from "../../clients/git-tree.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { normalizeContractText } from "../delivery/contract-files.js";
-import { readAnalysisArtifact, type AnalysisSource } from "../analysis/source.js";
+import { readAnalysisArtifact, readAnalysisSource, type AnalysisSource } from "../analysis/source.js";
 import { approvedChange, developmentPublication } from "./requirement-guard.js";
 import { publishChange, requirementRoot } from "../runtime/root-git.js";
 
@@ -45,15 +47,18 @@ export function checkPublishContract(root: string, source: AnalysisSource, candi
 
 export function registerDevPublish(group: Command): void {
   group.command("publish").description("发布当前 Change 已提交的研发工件，登记远端交付 SHA")
-    .requiredOption("--config <file>").requiredOption("--issue <key>").requiredOption("--change-ref <ref>")
+    .requiredOption("--issue <key>").requiredOption("--change-ref <ref>")
     .option("--root-repo <path>").option("--minor-design", "确认仅细化非实质性 Design")
-    .action(async (opts: { config: string; issue: string; changeRef: string; rootRepo?: string; minorDesign?: boolean }) => {
+    .action(async (opts: { issue: string; changeRef: string; rootRepo?: string; minorDesign?: boolean }) => {
       markLeafExecuted();
       try {
-        const cfg = loadConfig<BaseRegistryConfig>(opts.config);
-        const multica = new MulticaClient(cfg.runtime);
+        const runtime = resolveMulticaRuntime(), client = new MulticaClient(runtime);
+        const sourceForMapping = readAnalysisSource(client.getIssue(opts.issue).metadata ?? {});
+        const cfg = { runtime, registry: await readApprovedRepoMapping(sourceForMapping, loadTfsConfig().serverUrl) };
+        const multica = client;
         const approved = await approvedChange(cfg, multica, opts.issue, opts.changeRef);
         const source = approved.source;
+        if (source.commit !== sourceForMapping.commit || source.repo_url !== sourceForMapping.repo_url || source.branch !== sourceForMapping.branch || source.change_ref !== sourceForMapping.change_ref) throw new UnknownError("批准来源在读取映射期间变化");
         const root = requirementRoot(opts.rootRepo);
         const branch = source.branch;
         const original = approved.issue.metadata ?? {};
@@ -67,7 +72,9 @@ export function registerDevPublish(group: Command): void {
         if (tasks.object_id !== blob) throw new UnknownError("远端 tasks.md 与发布版本不一致");
 
         const receipt = JSON.stringify({ analysis_commit: source.commit, commit: published.commit });
-        const current = multica.listMetadata(approved.issue.id);
+        const rechecked = await approvedChange(cfg, multica, opts.issue, opts.changeRef);
+        if (rechecked.issue.status !== approved.issue.status) throw new UnknownError("发布期间 Issue 状态变化");
+        const current = rechecked.issue.metadata ?? {};
         if (current["analysis.source"] !== original["analysis.source"] ||
             current["analysis.human_approval"] !== original["analysis.human_approval"]) {
           throw new UnknownError("发布期间批准来源发生变化，停止登记交付");

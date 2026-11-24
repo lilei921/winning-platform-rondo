@@ -33,7 +33,7 @@ function fixture(t) {
     change_ref: "sample", task_refs: ["1.1"],
     local_validation: { result: "PASS", summary: "focused test exit 0", evidence_refs: ["logs/test.log"] },
     code_review: { result: "PASS", findings: [] },
-    commits: [{ repo_path: root, branch: "feat/123", sha: SHA }],
+    commits: [{ repo_path: root, branch: "feature/123", sha: SHA }],
     pr_preparation: { required: false, reason_if_not_required: "test fixture" }, blockers: [],
     contract_files: computeContractFiles(change),
   };

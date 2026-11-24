@@ -64,7 +64,7 @@ rondo change update-progress --openspec-root <path> --change-ref <ref> --check <
 rondo analysis stage --issue <id> --facts <facts.json> --workspace-id <id> [--registry-config <repo-registry.json>] [--multica <cli>] [--profile <name>]
 rondo analysis validate --issue <id> --openspec-root <path> --workspace-id <id> [--out <path>] [--registry-config <repo-registry.json>] [--multica <cli>] [--profile <name>]
 rondo analysis complete [--mode requirement] --issue <id> --facts <facts.json> --registry-config <repo-registry.json> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>] [--profile <name>]
-rondo analysis read --config <repo-registry.json> --issue <KEY> --file <Change内相对路径>
+rondo analysis read --issue <KEY> --file <Change内相对路径>
 ```
 
 | 命令 | 功能 |
@@ -88,12 +88,12 @@ Requirement 的 `analysis complete` 和 `dev publish` 使用 Git 2.45 或更高�
 rondo dev materialize --config <repo-registry.json> --issue <KEY> --change-ref <ref> --task-refs <1.1,1.2> --engineer-id <uuid> --approved-comment-ref <uuid> [--projection parent|sub-issue] [--depends-on <issue-key>] [--activate] [--root-repo <path>]
 rondo dev check-dispatch --config <repo-registry.json> --issue <KEY> --task-refs <1.1,1.2> [--change-ref <ref>] [--engineer-id <uuid>]
 rondo dev check-completion --openspec-root <path> --change-ref <ref> --task-refs <1.1,1.2> --evidence <evidence.json> [--verify-commits] [--issue <KEY> --registry-config <repo-registry.json> [--root-repo <path>]]
-rondo dev pr-prepare --config <repo-registry.json> --issue <KEY> --repo <repo_key> --change-ref <ref> --candidate-commit <sha> --title <title> [--target-branch <branch>] [--source-branch <branch>] [--description <path>]
+rondo dev git --operation fetch|push --issue <KEY> --repo <repo_id> --root-repo <path>
 rondo dev contract-hash --openspec-root <path> --change-ref <ref>
 rondo dev prepare --workspace native --issue <KEY> --repo <repo_id> --root-repo <path> [--resource-ref <branch>] [--change-ref <ref>]
 rondo dev prepare --mode requirement --config <repo-registry.json> --issue <KEY> --change-ref <ref> --repo <repo_key> [--root-repo <path>]
-rondo dev publish --config <repo-registry.json> --issue <KEY> --change-ref <ref> [--root-repo <path>] [--minor-design]
-rondo dev check-change --config <repo-registry.json> --issue <KEY> --change-ref <ref>
+rondo dev publish --issue <KEY> --change-ref <ref> [--root-repo <path>] [--minor-design]
+rondo dev check-change --issue <KEY> --change-ref <ref>
 ```
 
 | 命令 | 功能 |
@@ -101,7 +101,7 @@ rondo dev check-change --config <repo-registry.json> --issue <KEY> --change-ref 
 | `dev materialize` | 将已确定的 Task Set、Engineer 和依赖关系物化为研发派发事实，可选 Parent / Sub-Issue 投影 |
 | `dev check-dispatch` | 只读核对任务分工、当前有效派发和工程师身份 |
 | `dev check-completion` | 检查任务完成、验证 Evidence 和可选 Commit 关联 |
-| `dev pr-prepare` | 核对候选 Commit，写入 PR 准备事实；不直接创建 PR |
+| `dev git` | 受控 Fetch / 非强制 Push 当前授权 Candidate |
 | `dev contract-hash` | 计算当前 Change 契约文件的 SHA-256 摘要，供工程验证引用 |
 | `dev prepare` | Native 使用 Multica Checkout；Requirement 必须提供 `--change-ref`，无远端 Candidate 时须提供已核实的 `--resource-ref`。旧入口仅保留兼容 |
 | `dev publish` | 按已批准的 `analysis.source.branch` 发布当前 Change 已提交的 Tasks / Design，回读远端 SHA 并登记 `dev.publication`。非实质性 Design 细化使用 `--minor-design` |
@@ -110,18 +110,14 @@ rondo dev check-change --config <repo-registry.json> --issue <KEY> --change-ref 
 ### 4.2 `rondo bug`
 
 ```bash
-rondo bug pr-prepare --config <repo-registry.json> --issue <KEY> --repo <repo_key> --candidate-commit <40-SHA> --evidence <evidence.json|-> --title <title> [--description <path>] [--required-repos <repo1,repo2>] [--source-branch <branch>] [--target-branch <branch>] [--root-repo <path>]
-rondo bug git --config <repo-registry.json> --issue <KEY> --repo <repo_key> --root-repo <path> --operation fetch|push
-rondo bug resume --config <repo-registry.json> --issue <KEY> --human-comment-id <id> --next REWORK|RECREATE_PR
+rondo bug resume --issue <KEY> --human-comment-id <id> --next REWORK|RECREATE_PR
 ```
 
 | 命令 | 功能 |
 | --- | --- |
-| `bug pr-prepare` | 核验 Bug 交付范围、Root Cause、回归验证、本地验证、Code Review 和 Commit，写入 `bug.delivery` 与 `pr_prep` |
 | `bug resume` | 根据 Human Comment，对处于 `blocked` 且 PR 已确认 `abandoned` 的 Bug Issue 进行受控恢复 |
-| `bug git` | 在当前 Bug Run 授权下受控 Fetch 或非强制 Push 候选分支 |
 
-`bug pr-prepare` 支持从 stdin 读取 JSON（`--evidence -`）或现有本地文件；Issue / TFS ID / Repository / Candidate SHA 由 CLI 核实，可从输入 JSON 省略，显式冲突时拒绝。必要验证 Gate 不变。`bug pr-prepare` 不创建 PR；准备条件满足后使用 `rondo pr materialize`。`bug resume` 的 `REWORK` 表示重新修复，`RECREATE_PR` 表示重建 PR；恢复状态本身不等于启动新 Run。
+`bug resume` 的 REWORK 表示重新修复，RECREATE_PR 仅复用未变 Candidate 与有效 Evidence。恢复状态不等于启动新 Run。
 
 ## 5. Delivery 与 PR
 
@@ -157,7 +153,8 @@ rondo delivery root-prepare --issue <KEY>
 ### 5.2 `rondo pr`
 
 ```bash
-rondo pr materialize [--mode requirement --change-ref <ref> [--root-repo <path>]] --issue <KEY> --config <repo-registry.json>
+rondo pr prepare --issue <KEY> --repo <repo_id> --root-repo <path> --candidate-commit <sha> --facts <json|-> --title <title> [--validation-cwd <path>] [--required-repos <repo1,repo2>]
+rondo pr materialize --issue <KEY>
 rondo pr worktree create --config <repo-registry.json> --issue <KEY> --repo <repo_key> --branch <branch> [--base <target>] [--root-repo <path>]
 rondo pr worktree remove --config <repo-registry.json> --issue <KEY> --repo <repo_key> [--root-repo <path>]
 rondo pr worktree prune --config <repo-registry.json> (--project-id <id> | --root-repo <path>)
@@ -169,7 +166,8 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 
 | 命令 | 功能 |
 | --- | --- |
-| `pr materialize` | 创建/复用 PR。Requirement 通过 Change 级 Completion，确认 PR 登记后，在 `--root-repo` 或 `RONDO_WORKSPACE_PATH` 对应根仓仅清理归属于独立基础 Clone 的本次 Requirement Worktree；Native 工作区由 Multica 管理 |
+| `pr prepare` | 核对授权、Candidate、验证与专业 Facts，登记 PR Preparation |
+| `pr materialize` | 核验适用 Gate，创建或复用 PR 并确认 Work Item 关联；in_review 仅核验已登记事实 |
 | `pr worktree` | 使用 `create`、`remove`、`prune` 管理本地 Git Worktree |
 | `pr reconcile-status` | 从当前 Run Workspace 扫描 Issue 的 `current_pr`，核实 `completed` / `abandoned` 等外部状态，不使用 Registry |
 
@@ -260,7 +258,7 @@ rondo workspace check-daemon --workspace-id <id> [--project-id <id>]
 
 `workspace provision` 的 `--dry-run` 只预览；`workspace sync --local-only` 只生成本地配置，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。只有绑定 `workspace-preparation` 的 Workitem Analyst / Engineer 才接收 `project.workspace_branch` 对应的 `RONDO_WORKSPACE_BRANCH`；不修改其他 Agent 的既有环境变量。
 
-默认绑定 `native-workspace`。执行 provision 前，核实 CLI、实际 TFS 根仓映射及批准版本；供给并同步 Skill 后验证实际交付。尚不满足 Native 前置条件的 Workspace 可在既有 Overlay（`workspace-config/workspaces/<name>.json`）显式设置 `"workspace_preparation_skill": "workspace-preparation"`，重新 provision 保留旧绑定。该字段只控制 Agent Skill 绑定，不参与运行时决策。
+研发 Agent（Engineer / Bug Fix Agent）绑定 `native-workspace`。执行 provision 前核实 CLI、实际 TFS 根仓映射及批准版本；供给并同步 Skill 后验证实际交付。其他仍支持旧准备方式的 Agent 可按实际情况使用既有 Overlay。
 
 ### 7.2 `rondo runtime`
 

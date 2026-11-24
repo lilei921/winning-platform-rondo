@@ -1,13 +1,15 @@
+import { candidateBranch } from "../pr/candidate-branch.js";
 /** Change-level PR admission: approved contract, recorded delivery progress and per-repo evidence. */
 import { FailError, UnknownError } from "../../cli/errors.js";
 import type { BaseRegistryConfig } from "../../clients/config.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { RemoteArtifactReader } from "../delivery/remote-artifacts.js";
 import { normalizeContractText } from "../delivery/contract-files.js";
+import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 import { approvedChange, readDevelopmentCommit } from "./requirement-guard.js";
 
 export interface PrPrep {
-  repo_key: string; source_branch: string; target_branch?: string;
+  repo_key: string; repo_url?: string; source_branch: string; target_branch?: string;
   candidate_commit: string; title: string; description?: string;
   local_validation?: { result?: string; summary?: string; command?: string[]; exit_code?: number; candidate_commit?: string; source?: string };
   code_review?: { result?: string; candidate_commit?: string; summary?: string; findings?: Array<{ resolved?: boolean; blocking?: boolean; risk_note?: string; risk_ref?: string }> };
@@ -55,17 +57,18 @@ export function validateChangeDelivery(prep: PrPrep[], scope: string[], tfsId: n
     const repo = registry[key];
     if (!scope.includes(key) || !repo?.repo_url) throw new FailError("PR Candidate 的 repo_key 不在批准 Repository Scope: " + key);
     if (key in candidates) throw new FailError("PR Preparation 仓库重复: " + key);
-    if (entry.source_branch !== "feature/" + tfsId ||
+    if (entry.source_branch !== candidateBranch(tfsId) ||
         !/^[0-9a-f]{40}$/.test(entry.candidate_commit ?? "") ||
         !entry.title?.trim() || !entry.description?.trim() ||
         entry.description.includes("补 TFS 工作项 id") ||
-        (entry.target_branch && entry.target_branch !== repo.default_target_branch)) {
+        !entry.repo_url || canonicalRepositoryIdentity(entry.repo_url) !== canonicalRepositoryIdentity(repo.repo_url) ||
+        entry.target_branch !== repo.default_target_branch) {
       throw new FailError("PR Preparation 缺少真实 Candidate 或 Engineer 专业描述: " + key);
     }
     const validation = entry.local_validation;
-    if (validation?.result !== "PASS" || validation.source !== "rondo dev pr-prepare" ||
+    if (validation?.result !== "PASS" || validation.source !== "rondo pr prepare" ||
         validation.exit_code !== 0 || validation.candidate_commit !== entry.candidate_commit ||
-        !validation.summary?.trim() || !Array.isArray(validation.command) || validation.command.length === 0) {
+        !validation.summary?.trim() || !Array.isArray(validation.command) || validation.command.length === 0 || validation.command.some(x=>typeof x!=="string"||!x.trim())) {
       throw new FailError("缺少与 Candidate 一致的 Rondo 实际执行验证结果: " + key);
     }
     const review = entry.code_review;

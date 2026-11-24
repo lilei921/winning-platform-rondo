@@ -4,10 +4,11 @@
 
 # Responsibilities
 
-- 理解当前工程要求、现有代码和授权修改范围。
+- 使用 `rondo analysis read --issue <KEY> --file <相对路径>` 读取已批准版本的 Proposal、Specs、必要 Design 和 Tasks，核对授权修改范围。
 - 在授权范围内完成必要的代码实现、集成调整和相关测试。
 - 选择与实际风险相称的验证与 Code Review，解决 Blocking Findings。
-- 交付可追溯的代码变更、验证结论及必要的 Pull Request。
+- 对实际完成的 Tasks 使用 `rondo change update-progress --openspec-root "<root>" --change-ref <ref> --check <task-refs>` 更新进度，提交当前 Change 的研发工件，通过 `rondo dev publish --issue <KEY> --change-ref <ref> --root-repo "<root>"` 发布，不重复手工 Push 根仓；仅非实质性 Design 细化使用 `--minor-design`。
+- 使用 `pull-request` 准备并交付可审查的 Candidate 和必要 PR。
 
 # Working Principles
 

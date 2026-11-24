@@ -24,10 +24,10 @@ function fixture(t) {
   write(source);
   const run = (file = "tasks.md", extraEnv = {}) => {
     const before = readFileSync(stateFile, "utf8");
-    const r = spawnSync(process.execPath, [CLI, "analysis", "read", "--config", config, "--issue", "WNDF-T", "--file", file], {
+    const r = spawnSync(process.execPath, [CLI, "analysis", "read", "--issue", "WNDF-T", "--file", file], {
       encoding: "utf8", timeout: 15000,
       env: { ...Object.fromEntries(Object.entries(process.env).filter(([k]) => k.toLowerCase() !== "path")), ...tfs.env,
-        MOCK_STATE: stateFile, MOCK_EXPECT_PROFILE: "private", MOCK_EXPECT_SERVER: "https://private.example", ...extraEnv },
+        MOCK_STATE: stateFile, MULTICA_CLI_PATH: MOCK, MULTICA_WORKSPACE_ID: "ws-test", MULTICA_SERVER_URL: "https://private.example", MOCK_EXPECT_SERVER: "https://private.example", ...extraEnv },
     });
     assert.equal(r.error, undefined, r.error?.message);
     assert.equal(readFileSync(stateFile, "utf8"), before, "读取不得写 Issue");
@@ -92,12 +92,9 @@ test("错误 commit、路径、正文或无效 JSON 不能伪装成功", t => {
 
 test("缺少显式 Workspace 时不能落入默认工作区", t => {
   const f = fixture(t);
-  const config = JSON.parse(readFileSync(f.config, "utf8"));
-  delete config.runtime.workspace_id;
-  writeFileSync(f.config, JSON.stringify(config));
-  const result = f.run();
+  const result = f.run("tasks.md", {MULTICA_WORKSPACE_ID:""});
   assert.equal(result.code, 3);
-  assert.match(result.body.reason, /workspace_id/);
+  assert.match(result.body.reason, /MULTICA_WORKSPACE_ID/);
   assert.equal(f.tfs.state().requests, undefined);
 });
 

@@ -17,12 +17,13 @@ function runCli(args, env = {}) {
 const TREE = {
   change: ["resolve-identity", "update-progress"],
   analysis: ["stage", "validate", "complete", "read"],
-  dev: ["check-dispatch", "materialize", "pr-prepare", "check-completion", "contract-hash"],
+  dev: ["check-dispatch", "materialize", "git", "prepare", "check-completion", "check-change", "publish", "contract-hash"],
+  bug: ["resume"],
   tfs: ["writeback", "materialize-tasks", "resolve-tasks", "reconcile-workitem"],
-  pr: ["materialize", "worktree", "reconcile-status", "create", "get", "list"],
-  delivery: ["route-decision", "finalize"],
+  pr: ["prepare", "materialize", "worktree", "reconcile-status", "create", "get", "list"],
+  delivery: ["route-decision", "finalize", "root-prepare", "handoff"],
   workspace: ["provision", "sync", "migrate-repo-keys", "check-daemon"],
-  runtime: ["resolve-root-repo"],
+  runtime: ["resolve-root-repo","prepare-root","get-context","check-checkout"],
   repo: ["get"],
   branch: ["get"],
   workitem: ["set-state", "comment", "create", "link-commits", "download-attachment"],
@@ -45,9 +46,9 @@ test("顶层叶子 query:缺 --wiql exit 64,用法走 stderr,stdout 纯净", () 
   assert.ok(r.stderr.includes("--wiql"));
 });
 
-test("命令总数 = 37（analysis read 新增只读入口）", () => {
+test("命令总数 = 47", () => {
   const total = Object.values(TREE).reduce((n, leaves) => n + leaves.length, 0) + 2 /* query + doctor */;
-  assert.equal(total, 37);
+  assert.equal(total, 47);
 });
 
 test("--version 输出 JSON:name/version/node/sea,exit 0", () => {
@@ -92,10 +93,10 @@ test("delivery root-prepare 不要求 --config，从当前 Runtime 解析环境"
 test("PR Preparation 命名统一，Closeout 拒绝旧配置参数", () => {
   for (const group of ["dev", "bug"]) {
     const help = runCli([group]);
-    assert.match(help.stderr, /\bpr-prepare\b/);
+    assert.doesNotMatch(help.stderr, /\bpr-prepare\b/);
     assert.doesNotMatch(help.stderr, /(?:^|\s)(?:pr-prep|prepare-pr)(?=\s|$)/m);
   }
-  for (const args of [["dev", "pr-prep"], ["bug", "prepare-pr"], ["delivery", "finalize", "--phase", "prepare", "--issue", "X", "--config", "unused"], ["tfs", "writeback", "--issue", "X", "--config", "unused"]]) {
+  for (const args of [["dev", "pr-prepare"], ["bug", "pr-prepare"], ["bug", "git"], ["dev", "pr-prep"], ["bug", "prepare-pr"], ["pr","materialize","--issue","X","--config","unused"], ["delivery", "finalize", "--phase", "prepare", "--issue", "X", "--config", "unused"], ["tfs", "writeback", "--issue", "X", "--config", "unused"]]) {
     assert.notEqual(runCli(args).status, 0, args.join(" "));
   }
 });

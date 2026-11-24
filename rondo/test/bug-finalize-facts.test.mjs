@@ -7,9 +7,9 @@ import {
 function fixture() {
   const sha = "a".repeat(40);
   const prs = [{ repo_key: "frame-web", pr_id: 12, pr_url: "https://example.test/pr/12",
-                 source_branch: "feat/123", target_branch: "main" }];
+                 source_branch: "feature/123", target_branch: "main" }];
   const bug = [{
-    repo_key: "frame-web", tfs_id: 123, source_branch: "feat/123", target_branch: "main",
+    repo_key: "frame-web", tfs_id: 123, source_branch: "feature/123", target_branch: "main",
     candidate_commit: sha, expected_behavior: "返回列表", actual_behavior: "请求失败",
     fix_summary: "修复空值分支",
     root_cause: { confidence: "confirmed", summary: "空指针", evidence_refs: ["trace:1"] },
@@ -19,10 +19,10 @@ function fixture() {
   }];
   const prep = [{
     repo_key: "frame-web", candidate_commit: sha, title: "fix: null case",
-    source_branch: "feat/123", target_branch: "main", description_ref: "file:/tmp/pr.md",
+    source_branch: "feature/123", target_branch: "main", description_ref: "file:/tmp/pr.md",
   }];
   const md = {
-    "tfs.type": "Bug", "tfs.id": "123", "analysis.change_kind": "corrective",
+    "tfs.type": "Bug", "tfs.id": "123",
     "bug.required_repos": JSON.stringify(["frame-web"]),
     "bug.delivery": JSON.stringify(bug),
     "pr_prep": JSON.stringify(prep),
@@ -36,6 +36,7 @@ test("direct Bug delivery has no OpenSpec dependency", () => {
   assert.equal(isDirectBugDelivery(md), true);
   assert.doesNotThrow(() => assertBugFinalizationFacts(md, "in_review", prs));
   assert.match(bugDeliveryDigest(md), /^[a-f0-9]{64}$/);
+  assert.equal(bugDeliveryDigest(md), bugDeliveryDigest({ ...md, "analysis.change_kind": "corrective" }));
 });
 
 test("Bug delivery fails when a PR is not covered or candidate differs", () => {

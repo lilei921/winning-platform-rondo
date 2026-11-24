@@ -10,14 +10,25 @@ import { multicaPrefix } from "../../clients/multica-environment.js";
 import type { MulticaRuntime } from "../../clients/runtime-context.js";
 import { parsePlatformCheckoutOutput, assertNativeCheckoutBaseline } from "../../clients/native-checkout.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
+import { RemoteArtifactReader } from "../delivery/remote-artifacts.js";
+import type { AnalysisSource } from "../analysis/source.js";
 import { validatePrepareRepo, validateBusinessPath, validateBusinessCheckout, type PrepareRepo } from "./prepare-workspace.js";
 
 /** Read committed engineering mappings, not mutable working files or a second registry. */
 export function readNativeRepoMapping(root: string, revision: string, serverUrl: string): Record<string, PrepareRepo> {
   if (revision !== "HEAD" && !/^[0-9a-f]{40}$/.test(revision)) throw new FailError("无效的仓库映射版本");
+  let content:string;
+  try {content=gitOk(root, ["show", revision + ":docs/config/repo-context.yaml"], "读取已提交仓库映射");}
+  catch {throw new UnknownError("无法读取指定版本的 repo-context.yaml；不得回退其他版本");}
+  const origin = gitOk(root, ["remote", "get-url", "--all", "origin"], "核对根仓 Origin");
+  const push = gitOk(root, ["remote", "get-url", "--push", "--all", "origin"], "核对根仓 Push URL");
+  if (canonicalRepositoryIdentity(origin) !== canonicalRepositoryIdentity(push)) throw new FailError("根仓 Origin 与 Push URL 不一致");
+  return parseRepoMapping(content, origin, serverUrl);
+}
+
+export function parseRepoMapping(content: string, rootUrl: string, serverUrl: string): Record<string, PrepareRepo> {
   let mapping: unknown;
-  try { mapping = parse(gitOk(root, ["show", revision + ":docs/config/repo-context.yaml"], "读取已提交仓库映射")); }
-  catch { throw new UnknownError("无法读取指定版本的 repo-context.yaml；不得回退其他版本"); }
+  try { mapping = parse(content); } catch { throw new FailError("repo-context.yaml 格式非法"); }
   const rows = (mapping as { repos?: unknown })?.repos;
   if (!Array.isArray(rows)) throw new FailError("repo-context.yaml 缺少 repos");
   const result: Record<string, PrepareRepo> = Object.create(null);
@@ -41,9 +52,7 @@ export function readNativeRepoMapping(root: string, revision: string, serverUrl:
       repo_url: url, tfs_project: typeof raw.tfs_project === "string" ? raw.tfs_project : "",
       tfs_repo: name, default_target_branch: typeof raw.default_target_branch === "string" ? raw.default_target_branch : "" };
   }
-  const origin = gitOk(root, ["remote", "get-url", "--all", "origin"], "核对根仓 Origin");
-  const push = gitOk(root, ["remote", "get-url", "--push", "--all", "origin"], "核对根仓 Push URL");
-  if (!rootIdentity || canonicalRepositoryIdentity(origin) !== rootIdentity || canonicalRepositoryIdentity(push) !== rootIdentity)
+  if (!rootIdentity || canonicalRepositoryIdentity(rootUrl) !== rootIdentity)
     throw new FailError("根仓与已提交仓库映射不一致");
   return result;
 }
@@ -107,4 +116,11 @@ export function assertNativeDeliveryMapping(root: string, revision: string, key:
       canonicalRepositoryIdentity(selected.repo_url) !== canonicalRepositoryIdentity(configured.repo_url ?? "") ||
       selected.default_target_branch !== configured.default_target_branch)
     throw new FailError("Native 准备与交付的仓库身份或目标分支不一致");
+}
+
+/** Read the same mapping from the immutable approved root Commit. */
+export async function readApprovedRepoMapping(source: AnalysisSource, serverUrl: string): Promise<Record<string, PrepareRepo>> {
+  assertTfsRepository(source.repo_url, serverUrl);
+  const content = await new RemoteArtifactReader(source.repo_url).read(source.commit, "/docs/config/repo-context.yaml");
+  return parseRepoMapping(content, source.repo_url, serverUrl);
 }

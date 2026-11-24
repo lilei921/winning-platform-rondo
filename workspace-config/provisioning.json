@@ -7,9 +7,8 @@
   "managed_skills": [
     "analysis-completion",
     "bug-analysis",
-    "bug-delivery",
+    "pull-request",
     "change-handoff",
-    "change-development",
     "codebase-explorer",
     "diagnosing-bugs",
     "delivery-closeout",
@@ -46,7 +45,7 @@
       "skills": [
         "codebase-explorer",
         "diagnosing-bugs",
-        "bug-delivery",
+        "pull-request",
         "native-workspace"
       ]
     },
@@ -71,7 +70,7 @@
       "mcp_servers": ["remote-codegraph", "remote-filesystem", "remote-ripgrep"],
       "mcp_phase": "08-b",
       "visibility": "workspace",
-      "skills": ["change-development", "native-workspace"]
+      "skills": ["pull-request", "native-workspace"]
     },
     {
       "dir": "tfs-sync-agent",

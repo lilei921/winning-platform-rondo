@@ -219,7 +219,7 @@ git -C $hub fetch origin
 git -C $hub worktree add -b feature/12345 $worktree origin/<target-branch>
 ~~~
 
-Worktree 的 `.git` 通常是**文件**，不是独立 Clone 的 `.git` 目录；用 Git Common Dir、Branch、Origin 和 Worktree List 核对归属。现有 `rondo dev prepare` 主要是 Bug 独立 Clone，Requirement Worktree 已实现；`dev pr-prepare --mode requirement` 使用 `feature/`，旧 Bug 的 `feat/` 不变，不误影响 08-A Bug。
+Worktree 的 `.git` 通常是**文件**，不是独立 Clone 的 `.git` 目录；用 Git Common Dir、Branch、Origin 和 Worktree List 核对归属。现有 `rondo dev prepare` 主要是 Bug 独立 Clone，Requirement Worktree 已实现；Bug 与 Requirement 均使用 `feature/<tfs.id>`。
 
 新 Engineer 通过独立 `change-development` Skill，在同一个正常 Run 对实际需要修改的授权仓完成实现、Local Validation、Review、Commit / Push；再由 Rondo 按 §3.1 发布 `tasks.md` checkbox、合法 Design 细化、`evidence*.json`、`pr-description-<repo_key>.md`，回读并执行 Change 级 Completion Check，最后 `rondo pr materialize` 创建或复用所需 PR。创建前整体核对实际代码变更仓库的 Candidate / PR Preparation，无修改仓库不制造空 Commit / PR。发布无法确认时停止，不增加 Lead 二次派发。Evidence 以稳定的 `repo_key + repo_url + commit SHA` 识别，PR 描述从已 Push Change 恢复，不依赖原 Runtime 本地路径。Skill 不依赖旧 `development-execution`、`pull-request` 或领域 Skills。
 
