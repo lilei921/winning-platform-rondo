@@ -425,8 +425,7 @@ async function main(rawArgs: string[]): Promise<number> {
 
     const rootArg = args["root-repo"] || process.env.RONDO_WORKSPACE_PATH;
     // A Native caller supplies the actual root. Never fall back to a persistent root for cleanup.
-    if (args.mode === "requirement" && args.workspace !== "native" && rootArg &&
-        !isDaemonCacheWorktree(rootArg, process.env.MULTICA_WORKSPACE_ID)) {
+    if (args.mode === "requirement" && args.workspace !== "native" && rootArg) {
       // 清理只使用本次已确认交付的候选，失败时保留 PR 的成功结果。
       try {
         const facts = confirmed.metadata ?? {};
@@ -434,7 +433,7 @@ async function main(rawArgs: string[]): Promise<number> {
           throw new UnknownError("本次 PR 登记、候选或 Issue 状态未确认");
         }
         const root = requirementRoot(rootArg);
-        for (const { repo_key, candidate_commit } of prep) {
+        for (const { repo_key, candidate_commit } of isDaemonCacheWorktree(root, process.env.MULTICA_WORKSPACE_ID) ? [] : prep) {
           const repo = cfg.registry[repo_key];
           try {
             const name = removePublishedRequirementWorktree(root, repo, Number(tfsId), candidate_commit);
