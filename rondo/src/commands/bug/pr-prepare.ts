@@ -17,6 +17,7 @@ import { validateNativeCheckout } from "../../clients/native-checkout.js";
 import { assertTfsRepository, runAuthenticatedGit } from "../../clients/authenticated-git.js";
 import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
 import { assertBugExecution, assertBugStart, assertBugSource } from "./authorization.js";
+import { assertNativeDeliveryMapping } from "../dev/native-prepare.js";
 import { validatePrepareRepo, validateBusinessPath, validateBusinessCheckout, type PrepareRepo } from "../dev/prepare-workspace.js";
 import { assertBugAgentAssignment, requiredBugRepos, assertBugReadyForPr } from "./scope.js";
 
@@ -208,7 +209,12 @@ async function main(argv: string[]): Promise<number> {
     validatePrepareRepo(repo, loadTfsConfig().serverUrl);
     const repoUrl = assertTfsRepository(repo.repo_url, loadTfsConfig().serverUrl).href;
     const hub = validateBusinessPath(paths.rootRepo, repo);
-    validateBusinessCheckout(hub, repo, sourceBranch);
+    const localHead = validateBusinessCheckout(hub, repo, sourceBranch);
+    if (statSync(join(hub, ".git")).isFile()) {
+      assertNativeDeliveryMapping(paths.rootRepo, "HEAD", repoKey, repo, loadTfsConfig().serverUrl);
+      if (localHead !== sha) throw new FailError("Native 工作树 HEAD 与 Candidate 不一致");
+      if (targetBranch !== repo.default_target_branch) throw new FailError("Native 交付目标分支与已核实映射不一致");
+    }
     const remote = runAuthenticatedGit(repo.repo_url, ["ls-remote", repo.repo_url, "refs/heads/" + sourceBranch], hub);
     if (remote.status !== 0) throw new UnknownError("远端候选分支读取失败");
     const head = remote.stdout.trim().split(/\s+/)[0];
