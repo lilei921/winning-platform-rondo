@@ -47,6 +47,7 @@ import { registerTfsResolveTasks } from "./commands/tfs/resolve-tasks.js";
 import { registerTfsReconcileWorkitem } from "./commands/tfs/reconcile-workitem.js";
 import { registerTfsWriteback } from "./commands/tfs/writeback.js";
 import { registerPrMaterialize } from "./commands/pr/materialize.js";
+import { registerPrPrepare } from "./commands/pr/prepare.js";
 import { registerPrWorktree } from "./commands/pr/worktree.js";
 import { registerPrReconcileStatus } from "./commands/pr/reconcile-status.js";
 import { registerDeliveryRouteDecision } from "./commands/delivery/route-decision.js";
@@ -115,6 +116,7 @@ registerTfsReconcileWorkitem(tfs);
 // pr 组:flow(materialize/worktree/reconcile-status)+ TFS API(create/get/list)合并,子命令名不交叠(方案 §3.1)
 const pr = bareGroup(program.command("pr").description("PR 物化 / worktree / 状态对账 / TFS PR 事实(create|get|list)"));
 registerPrMaterialize(pr);
+registerPrPrepare(pr);
 registerPrWorktree(pr);
 registerPrReconcileStatus(pr);
 registerTfsApiLeaf(pr, "create", ["pr", "create"], "创建 TFS PR(幂等核对:重复返回 created:false + existing)");
