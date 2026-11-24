@@ -382,6 +382,8 @@ async function publishCommittedChange(
     if (options.recoverCommit) {
       if (!shaPattern.test(options.recoverCommit) || !isAncestor(options.recoverCommit, remoteTip))
         throw new UnknownError("已固定的分析发布 Commit 不在原目标分支，停止恢复");
+      if (changeTree(root, remoteTip, path) !== changeTree(root, options.recoverCommit, path))
+        throw new UnknownError("原目标分支的 Change 已变化，不能复用旧审核版本");
       await options.validateTree?.(options.recoverCommit);
       return result(options.recoverCommit);
     }
@@ -392,6 +394,8 @@ async function publishCommittedChange(
       (sourceIsRemote && isAncestor(source, r.commit) && isAncestor(r.commit, head)));
     const prior = known?.commit ?? (sourceIsRemote ? source : undefined);
     if (prior && descendsFromApproval(prior)) {
+      if (!approved && changeTree(root, remoteTip, path) !== changeTree(root, prior, path))
+        throw new UnknownError("原目标分支的 Change 已变化，不能复用旧发布记录");
       await options.validateTree?.(prior);
       return result(prior);
     }

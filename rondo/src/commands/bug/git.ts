@@ -32,7 +32,7 @@ export function registerBugGit(group: Command): void {
         const native = nativeCheckoutExpected(path, workdir, branch);
         const head = validateBusinessCheckout(path, repo, branch, native ? workdir : undefined);
         if (native) {
-          assertNativeTaskCheckout(paths.rootRepo, workdir);
+          assertNativeTaskCheckout(paths.rootRepo, workdir, undefined, issue.id);
           assertNativeDeliveryMapping(paths.rootRepo, "HEAD", opts.repo, repo, loadTfsConfig().serverUrl);
         }
         const args = opts.operation === "fetch"

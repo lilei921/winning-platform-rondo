@@ -172,6 +172,7 @@ export function assertPlatformCheckoutIdentity(evidence: PlatformCheckoutIdentit
   }
   const suffix = platformTaskSuffix(live.taskId);
   // 平台在分支名冲突时为同一 Task 追加 `-<时间戳>`，仍属本 Task 的 checkout。
+  if (!evidence.checkout_branch.startsWith("agent/")) throw new FailError("平台 Checkout 分支身份不一致");
   const tail = evidence.checkout_branch.split("/").at(-1) ?? "";
   if (tail !== suffix && !new RegExp("^" + suffix + "-\\d+$").test(tail)) {
     throw new FailError("平台 checkout 分支尾号与当前 Task 不一致，拒绝使用该根仓");
@@ -199,12 +200,13 @@ const samePath = (a: string, b: string): boolean => process.platform === "win32"
   ? resolve(a).toLowerCase() === resolve(b).toLowerCase() : resolve(a) === resolve(b);
 
 /** Require the current daemon Task checkout, independently of Git storage layout. */
-export function assertNativeTaskCheckout(path: string, workdir: string, reportedBranch?: string): string {
+export function assertNativeTaskCheckout(path: string, workdir: string, reportedBranch?: string, issueId?: string): string {
   const taskId = process.env.MULTICA_TASK_ID, workspaceId = process.env.MULTICA_WORKSPACE_ID;
   const agentId = process.env.MULTICA_AGENT_ID;
   const context = readDaemonTaskContext(workdir);
   if (!taskId || !workspaceId || !agentId || context?.managed_by !== "multica-daemon-task" || context.agent_id !== agentId)
     throw new UnknownError("无法确认当前 daemon Task 上下文");
+  if (issueId && context.issue_id !== issueId) throw new FailError("当前 daemon Task 不属于此 Issue");
   const canonical = realpathSync(path), parent = realpathSync(workdir);
   const immediate = dirname(canonical);
   if (!samePath(canonical, path) || lstatSync(path).isSymbolicLink() ||

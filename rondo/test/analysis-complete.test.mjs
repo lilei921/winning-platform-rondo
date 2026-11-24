@@ -6,6 +6,7 @@ import { join, dirname, delimiter } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { analysisTfsFixture } from "./analysis-tfs-fixture.mjs";
+import { sameAnalysisSource } from "../dist/commands/analysis/source.js";
 import { changeEvidenceDigest, metadataEvidenceDigest } from "../dist/commands/analysis/gate-evidence.js";
 
 const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
@@ -341,5 +342,24 @@ test("Native Analysis Push succeeded but source write failed: recover on same br
   writeFileSync(f.resourcePath, JSON.stringify(project));
   const recovered = f.complete();
   assert.equal(recovered.exit, 0, JSON.stringify(recovered));
+  assert.equal(JSON.parse(f.state().metadata["analysis.source"]).commit, published);
+});
+
+test("Human approval source identity includes the fixed publication branch", () => {
+  const source = { repo_url: "http://tfs.test/tfs/C/P/_git/root", branch: "master", commit: "a".repeat(40), change_ref: CHANGE };
+  assert.equal(sameAnalysisSource(source, { ...source }), true);
+  assert.equal(sameAnalysisSource(source, { ...source, branch: "release" }), false);
+});
+
+test("Native Analysis recovers a lost source write on the original Resource without another push", t => {
+  const f = fixture(t, true, true);
+  f.env.MOCK_FAIL_METADATA_KEY = "analysis.source";
+  assert.equal(f.complete().exit, 3);
+  const published = git(f.remote, "rev-parse", "dev");
+  assert.equal(f.state().metadata["analysis.source"], undefined);
+  delete f.env.MOCK_FAIL_METADATA_KEY;
+  const recovered = f.complete();
+  assert.equal(recovered.exit, 0, JSON.stringify(recovered));
+  assert.equal(git(f.remote, "rev-parse", "dev"), published);
   assert.equal(JSON.parse(f.state().metadata["analysis.source"]).commit, published);
 });

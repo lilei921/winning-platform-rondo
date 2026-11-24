@@ -213,7 +213,9 @@ async function main(argv: string[]): Promise<number> {
     const native = nativeCheckoutExpected(hub, workdir, sourceBranch);
     const localHead = validateBusinessCheckout(hub, repo, sourceBranch, native ? workdir : undefined);
     if (native) {
-      assertNativeTaskCheckout(paths.rootRepo, workdir);
+      assertNativeTaskCheckout(paths.rootRepo, workdir, undefined, issue.id);
+      if (sourceBranch !== 'feat/' + tfsId || targetBranch !== repo.default_target_branch)
+        throw new FailError("Native PR 分支与候选 / 已登记目标不一致");
       assertNativeDeliveryMapping(paths.rootRepo, "HEAD", repoKey, repo, loadTfsConfig().serverUrl);
       if (localHead !== sha) throw new FailError("Native 工作树 HEAD 与 Candidate 不一致");
     }

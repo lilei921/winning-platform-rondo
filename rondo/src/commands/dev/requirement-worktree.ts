@@ -36,6 +36,20 @@ function verifyWorktree(worktree: string, hub: string, branch: string, url: stri
   verifyOrigin(worktree, url);
 }
 
+/** Verify the existing Rondo-owned legacy candidate, never infer it from a branch name alone. */
+export function verifiedRequirementWorktree(
+  root: string, repo: { repo_path: string; repo_url?: string }, tfsId: number,
+): string {
+  if (!Number.isSafeInteger(tfsId) || tfsId <= 0 || !repo.repo_url) throw new FailError("缺少有效 TFS ID 或仓库 URL");
+  const hub = validateBusinessPath(root, repo);
+  if (nativeCheckoutExpected(hub) || !lstatSync(join(hub, ".git"), { throwIfNoEntry: false })?.isDirectory() ||
+      !samePath(checked(hub, ["rev-parse", "--path-format=absolute", "--git-common-dir"], "检查基础仓归属"), join(hub, ".git")))
+    throw new FailError("当前基础仓不是旧 Requirement 独立 Git checkout");
+  const worktree = validateBusinessPath(root, { repo_path: repo.repo_path + "-" + tfsId });
+  verifyWorktree(worktree, hub, "feature/" + tfsId, repo.repo_url);
+  return worktree;
+}
+
 /** 仅回收已通过 PR 校验的候选 Worktree，保留分支供评审返工。 */
 export function removePublishedRequirementWorktree(
   root: string, repo: { repo_path: string; repo_url?: string }, tfsId: number, candidate: string,
@@ -47,7 +61,7 @@ export function removePublishedRequirementWorktree(
   const name = `${repo.repo_path}-${tfsId}`;
   const worktree = validateBusinessPath(root, { repo_path: name });
   if (!existsSync(worktree)) return;
-  verifyWorktree(worktree, hub, `feature/${tfsId}`, repo.repo_url);
+  verifiedRequirementWorktree(root, repo, tfsId);
   if (checked(worktree, ["rev-parse", "HEAD"], "核对候选 HEAD") !== candidate) {
     throw new FailError("本地 HEAD 与已发布候选不一致");
   }

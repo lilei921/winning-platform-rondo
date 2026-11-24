@@ -5,7 +5,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, realpathSy
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parsePlatformCheckoutOutput, assertNativeTaskCheckout, assertNativeCheckoutBaseline } from "../dist/clients/native-checkout.js";
-import { removePublishedRequirementWorktree } from "../dist/commands/dev/requirement-worktree.js";
+import { removePublishedRequirementWorktree, verifiedRequirementWorktree } from "../dist/commands/dev/requirement-worktree.js";
 import { readNativeRepoMapping, prepareNativeBusiness } from "../dist/commands/dev/native-prepare.js";
 
 const branch = "agent/engineer/abcdef123456";
@@ -103,6 +103,8 @@ for (const linked of [true, false]) test(`Native ${linked ? "linked worktree" : 
     git(root, "clone", child.bare, legacy);
     git(legacy, "remote", "set-url", "origin", repoUrl);
     git(legacy, "worktree", "add", "-b", "feature/42", legacyWorktree, child.sha);
+    assert.equal(verifiedRequirementWorktree(root, { repo_path: "legacy", repo_url: repoUrl }, 42), legacyWorktree);
+    assert.throws(() => verifiedRequirementWorktree(root, repo, 42));
     assert.equal(removePublishedRequirementWorktree(root, { repo_path: "legacy", repo_url: repoUrl }, 42, child.sha), "legacy-42");
     assert.equal(existsSync(legacyWorktree), false);
     assert.equal(removePublishedRequirementWorktree(root, repo, 42, child.sha), undefined);

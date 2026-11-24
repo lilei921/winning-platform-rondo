@@ -121,11 +121,12 @@ function verifyPlatformCheckout(root: string, workdir: string, reportedBranch?: 
   const commonDir = local(root, ["rev-parse", "--path-format=absolute", "--git-common-dir"], "定位 Git 公共目录");
   const manifest = readPlatformCheckoutManifest(gitDir) ??
     (commonDir !== gitDir ? readPlatformCheckoutManifest(commonDir) : null);
+  const liveMode = platformIsolatedMode(root, workdir);
+  if (liveMode !== "isolated") throw new UnknownError("当前不是 Multica isolated checkout 任务，禁止使用收口根仓");
   const branch = manifest?.checkout_branch ?? reportedBranch ?? checkoutBranch(root);
   if (runCommand(["git", "show-ref", "--verify", "--quiet", "refs/heads/" + branch], root).status !== 0) {
     throw new UnknownError("平台分配的 Checkout 分支不存在，拒绝使用");
   }
-  const liveMode = platformIsolatedMode(root, workdir);
   const evidence: PlatformCheckoutIdentity = manifest ?? {
     checkout_branch: branch,
     task_id: taskId ?? "",

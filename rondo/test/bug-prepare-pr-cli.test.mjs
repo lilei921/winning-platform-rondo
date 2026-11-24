@@ -17,7 +17,7 @@ function git(cwd, ...args) {
   return r.stdout.trim();
 }
 
-test('Bug pr-prepare CLI: stdin/file, Git identity, quality Gate and Metadata readback', t => {
+for (const native of [false, true]) test(`Bug pr-prepare CLI (${native ? 'Native isolated' : 'legacy clone'}): stdin/file, Git identity, quality Gate and Metadata readback`, t => {
   const dir = realpathSync(mkdtempSync(join(tmpdir(), 'rondo-bug-cli-')));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const root = join(dir, 'winning-platform-monorepo'), hub = join(root, 'biz'), remote = join(dir, 'remote.git');
@@ -25,20 +25,36 @@ test('Bug pr-prepare CLI: stdin/file, Git identity, quality Gate and Metadata re
   git(root, 'init', '-b', 'main'); git(root, 'remote', 'add', 'origin', rootUrl);
   writeFileSync(join(root, '.gitignore'), 'biz/\n');
   writeFileSync(join(root, 'AGENTS.md'), '规则\n');
+  const taskId = native ? '01234567-abcd-ef12-3456-abcdef123456' : 'run';
+  const taskBranch = 'agent/bug-fix-agent/abcdef123456';
+  if (native) {
+    mkdirSync(join(root, 'docs', 'config'), { recursive: true });
+    writeFileSync(join(root, 'docs', 'config', 'repo-context.yaml'), JSON.stringify({ repos: [
+      { repo_id: 'root', repo_path: '.', repo_url: rootUrl },
+      { repo_id: 'biz', repo_path: 'biz', repo_url: repoUrl, tfs_project: 'P', default_target_branch: 'main' },
+    ] }));
+    git(root, 'add', 'docs/config/repo-context.yaml');
+    git(root, 'config', 'multica.checkout-mode', 'isolated');
+    git(root, 'branch', '-m', taskBranch);
+  }
   git(root, 'add', '.gitignore', 'AGENTS.md');
   git(root, '-c', 'user.name=test', '-c', 'user.email=test@example.test', 'commit', '-m', 'fixture');
   git(hub, 'init', '-b', 'feat/12'); git(hub, 'remote', 'add', 'origin', repoUrl);
   writeFileSync(join(hub, 'fix.txt'), '修复'); git(hub, 'add', 'fix.txt');
   git(hub, '-c', 'user.name=test', '-c', 'user.email=test@example.test', 'commit', '-m', 'fix', '-m', 'Refs: #12');
+  if (native) {
+    git(hub, 'config', 'multica.checkout-mode', 'isolated');
+    git(hub, 'branch', '-m', taskBranch);
+  }
   const sha = git(hub, 'rev-parse', 'HEAD');
-  git(remote, 'init', '--bare'); git(hub, 'push', remote, 'HEAD:refs/heads/feat/12');
+  git(remote, 'init', '--bare'); git(hub, 'push', remote, 'HEAD:refs/heads/feat/12', 'HEAD:refs/heads/main');
 
   // 仅把远端传输转向本地 bare 仓；身份检查与 Git 命令仍执行真实代码。
   const transport = join(dir, 'git-transport.cjs');
   writeFileSync(transport, `#!/usr/bin/env node
 const { spawnSync } = require('node:child_process');
 const args = process.argv.slice(2);
-if (args[0] === 'ls-remote' && args[1] === ${JSON.stringify(repoUrl)}) args[1] = ${JSON.stringify(remote)};
+if (['ls-remote','push','fetch'].includes(args[0])) { const i = args.indexOf(${JSON.stringify(repoUrl)}); if (i >= 0) args[i] = ${JSON.stringify(remote)}; }
 const r = spawnSync('git', args, { stdio: 'inherit' });
 process.exit(r.status ?? 1);
 `, { mode: 0o755 });
@@ -52,7 +68,7 @@ process.exit(r.status ?? 1);
       'tfs.type': 'Bug', 'tfs.id': '12', 'tfs.url': 'http://tfs.test/tfs/C/P/_workitems?id=12',
     } } },
     agents_list: [{ name: 'Bug Fix Agent', id: 'agent' }], project_resources: [resource],
-    runs: { i: [{ id: 'run', issue_id: 'i', agent_id: 'agent', workspace_id: 'ws', status: 'running', work_dir: dir }] },
+    runs: { i: [{ id: taskId, issue_id: 'i', agent_id: 'agent', workspace_id: 'ws', status: 'running', work_dir: dir }] },
   };
   const statePath = join(dir, 'state.json'), config = join(dir, 'config.json'), callsPath = join(dir, 'calls.jsonl');
   writeFileSync(statePath, JSON.stringify(initial));
@@ -60,7 +76,7 @@ process.exit(r.status ?? 1);
     biz: { repo_path: 'biz', repo_url: repoUrl, tfs_repo: 'biz', tfs_project: 'P', default_target_branch: 'main' },
   } }));
   const env = { ...process.env, MOCK_STATE: statePath, MOCK_SYNC_CALLS_FILE: callsPath,
-    MULTICA_TASK_ID: 'run', MULTICA_AGENT_ID: 'agent', MULTICA_WORKSPACE_ID: 'ws', MULTICA_TOKEN: 'fixture', MULTICA_DAEMON_PORT: '1',
+    MULTICA_TASK_ID: taskId, MULTICA_AGENT_ID: 'agent', MULTICA_WORKSPACE_ID: 'ws', MULTICA_TOKEN: 'fixture', MULTICA_DAEMON_PORT: '1',
     TFS_SERVER_URL: 'http://tfs.test/tfs/C', TFS_PAT: 'fixture', RONDO_GIT_EXECUTABLE: transport };
   const evidence = {
     expected_behavior: '返回列表', actual_behavior: '空数据时失败', fix_summary: '处理空数据',
@@ -82,6 +98,13 @@ process.exit(r.status ?? 1);
   };
   const state = () => JSON.parse(readFileSync(statePath, 'utf8'));
 
+  if (native) {
+    for (const operation of ['fetch', 'push']) {
+      const gitResult = spawnSync(process.execPath, [cli, 'bug', 'git', '--config', config, '--issue', 'I-1', '--repo', 'biz', '--root-repo', root, '--operation', operation], { encoding: 'utf8', env, timeout: 30_000 });
+      assert.equal(result(gitResult, 0).head, sha);
+    }
+    assert.equal(git(hub, 'branch', '--show-current'), taskBranch);
+  }
   for (const input of ['', '  ', '{', JSON.stringify({ ...evidence, candidate_commit: 'b'.repeat(40) }),
     JSON.stringify({ ...evidence, regression: { ...evidence.regression, result: 'FAIL' } }),
     JSON.stringify({ ...evidence, local_validation: { ...evidence.local_validation, evidence_refs: [] } })]) {

@@ -10,7 +10,7 @@ import { runCommand, runJson } from "../../clients/spawn.js";
 import { loadConfig, type BaseRegistryConfig } from "../../clients/config.js";
 import { resolveRuntimePaths } from "../../clients/runtime-paths.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
-import { assertNativeTaskCheckout, nativeCheckoutExpected, readDaemonTaskContext } from "../../clients/native-checkout.js";
+import { assertNativeTaskCheckout, nativeCheckoutExpected } from "../../clients/native-checkout.js";
 import { gitOk } from "../../clients/git.js";
 import { publishChange, requirementBranch, requirementRoot, rootRepositoryUrl, resolveProjectRootBranch } from "../runtime/root-git.js";
 import { assertAnalysisWritable } from "./guard.js";
@@ -147,10 +147,7 @@ async function main(rawArgs: string[]): Promise<number> {
       if (!args.rootRepo || process.env.MULTICA_WORKSPACE_ID !== args.workspaceId)
         throw new UnknownError("Native 分析发布需要当前 Workspace 和显式根仓路径");
       const workdir = dirname(root);
-      assertNativeTaskCheckout(root, workdir);
-      const context = readDaemonTaskContext(workdir);
-      if (context?.issue_id && context.issue_id !== before.id)
-        throw new FailError("当前 daemon Task 不属于此 Issue");
+      assertNativeTaskCheckout(root, workdir, undefined, String(before.id));
       const runs = runJson([...MC, "issue", "runs", String(before.id), "--active", ...ws, "--output", "json"],
         "核验当前 Analysis Run", undefined, { transient: true });
       const matches = Array.isArray(runs) ? runs.filter(r => r?.id === process.env.MULTICA_TASK_ID) : [];

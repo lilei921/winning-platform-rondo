@@ -39,6 +39,7 @@ import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
 import { assertNativeTaskCheckout, nativeCheckoutExpected } from "../../clients/native-checkout.js";
 import { assertNativeDeliveryMapping } from "./native-prepare.js";
 import { validateBusinessPath } from "./prepare-workspace.js";
+import { verifiedRequirementWorktree } from "./requirement-worktree.js";
 import { readAnalysisSource } from "../analysis/source.js";
 import { guardRepository } from "./requirement-guard.js";
 
@@ -278,13 +279,15 @@ async function main(rawArgs: string[]): Promise<number> {
     const repoUrl = assertTfsRepository(repo.repo_url ?? "", loadTfsConfig().serverUrl).href;
     const targetBranch = args.targetBranch || repo.default_target_branch;
     if (!targetBranch) throw new FailError("PR Preparation 缺少目标分支");
+    let validationRepo = hub;
     if (args.mode === "requirement" && nativeCheckoutExpected(hub, dirname(paths.rootRepo), repo.default_target_branch)) {
       const workdir = dirname(paths.rootRepo);
-      assertNativeTaskCheckout(paths.rootRepo, workdir);
+      assertNativeTaskCheckout(paths.rootRepo, workdir, undefined, issue.id);
       const nativePath = validateBusinessPath(paths.rootRepo, repo);
       assertNativeTaskCheckout(nativePath, workdir);
       assertNativeDeliveryMapping(paths.rootRepo, readAnalysisSource(issue.metadata ?? {}).commit, args.repo, repo, loadTfsConfig().serverUrl);
-      const validationDir = realpathSync(args.validationCwd || hub);
+      validationRepo = nativePath;
+      const validationDir = realpathSync(args.validationCwd || validationRepo);
       const validationRelative = relative(realpathSync(nativePath), validationDir);
       if (targetBranch !== repo.default_target_branch || isAbsolute(validationRelative) ||
           validationRelative === ".." || validationRelative.startsWith(".." + (process.platform === "win32" ? "\\" : "/")) ||
@@ -295,6 +298,11 @@ async function main(rawArgs: string[]): Promise<number> {
       if (canonicalRepositoryIdentity(origin) !== canonicalRepositoryIdentity(repoUrl) ||
           canonicalRepositoryIdentity(push) !== canonicalRepositoryIdentity(repoUrl))
         throw new FailError("Native 工作树与批准仓库身份不一致");
+    } else if (args.mode === "requirement") {
+      // Legacy is a positive ownership contract, not the fallback for an unknown Native checkout.
+      validationRepo = verifiedRequirementWorktree(paths.rootRepo, repo, Number(tfsId));
+      if (realpathSync(gitOk(args.validationCwd || validationRepo, ["rev-parse", "--show-toplevel"], "核对旧 Worktree Git 根")) !== realpathSync(validationRepo))
+        throw new FailError("Validation 不属于当前 Requirement Worktree");
     }
     if (args.mode !== "requirement" && canonicalRepositoryIdentity(gitOk(hub, ["remote", "get-url", "origin"], "核对业务仓来源")) !== canonicalRepositoryIdentity(repoUrl)) {
       throw new FailError("业务仓 origin 与 Registry 不一致");
@@ -324,7 +332,7 @@ async function main(rawArgs: string[]): Promise<number> {
       if (delivery.code_review?.candidate_commit !== args.candidateCommit) {
         throw new FailError("Code Review 审核的 Candidate 与实际待发布 Commit 不一致");
       }
-      verifyAndExecuteValidation(paths.rootRepo, args.validationCwd || hub, repoUrl,
+      verifyAndExecuteValidation(paths.rootRepo, args.validationCwd || validationRepo, repoUrl,
         args.candidateCommit, delivery.validation!.command!);
     } else {
       const desc = resolveLegacyDescription(args, paths.openspecRoot);
