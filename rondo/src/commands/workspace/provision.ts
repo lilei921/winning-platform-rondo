@@ -240,9 +240,9 @@ function main(rawArgs: string[]): number {
     if (preparationSkill !== undefined && preparationSkill !== "native-workspace" && preparationSkill !== "workspace-preparation") {
       throw new UnknownError("workspace_preparation_skill 必须是已支持的工作区准备 Skill");
     }
-    if (preparationSkill === "native-workspace") {
+    if (preparationSkill !== undefined) {
       for (const agent of manifest.agents) {
-        agent.skills = agent.skills?.map(skill => skill === "workspace-preparation" ? preparationSkill : skill);
+        agent.skills = agent.skills?.map(skill => skill === "native-workspace" || skill === "workspace-preparation" ? preparationSkill : skill);
       }
     }
     const branch = manifest.project?.workspace_branch;

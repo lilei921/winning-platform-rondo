@@ -260,7 +260,7 @@ rondo workspace check-daemon --workspace-id <id> [--project-id <id>]
 
 `workspace provision` 的 `--dry-run` 只预览；`workspace sync --local-only` 只生成本地配置，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。完整 provision 将 `workspace-config/provisioning.json` 中的 `project.workspace_branch` 仅下发为 Workitem Analyst / Engineer 的 `RONDO_WORKSPACE_BRANCH`，其他 Agent 不注入也不改既有值。
 
-Native 迁移仅修改已验收目标 Workspace 的既有 Overlay（`workspace-config/workspaces/<name>.json`）：先供给并同步 `native-workspace`，核实 CLI、实际 TFS 根仓映射、批准版本及交付验收，再设置 `"workspace_preparation_skill": "native-workspace"` 并重新 provision。未设置时保留旧绑定；该字段只控制 Agent Skill 绑定，不参与运行时决策。
+默认绑定 `native-workspace`。执行 provision 前，核实 CLI、实际 TFS 根仓映射及批准版本；供给并同步 Skill 后验证实际交付。尚不满足 Native 前置条件的 Workspace 可在既有 Overlay（`workspace-config/workspaces/<name>.json`）显式设置 `"workspace_preparation_skill": "workspace-preparation"`，重新 provision 保留旧绑定。该字段只控制 Agent Skill 绑定，不参与运行时决策。
 
 ### 7.2 `rondo runtime`
 
