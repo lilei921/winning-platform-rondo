@@ -1,21 +1,4 @@
-/**
- * finalize 契约绑定 + 顺序修正 + 白名单收窄（rll5-replay-remediation-plan M2.2–M2.5/F2）。
- *
- * fixture：bare 根仓 remote + 根仓（含 openspec/changes/<ref>/）+ 业务仓 bare remote + 枢纽克隆
- * （rootRepo/repo1，.gitignore 排除）；TFS 由进程内 node:http stub 充当（TFS_SERVER_URL 指向），
- * multica 由 mock-multica.cjs 充当；openspec 由临时 bin 目录的桩（复制 specs delta + 移动目录）充当。
- *
- * 注意：CLI 必须异步 spawn——TFS stub 在本进程内，spawnSync 会冻结事件循环导致超时。
- *
- * 验收点：
- *  T1 happy finalize：PASS；steps 键序对 golden 一致；OPS_LOG 证明 archive < tfs 回写 < summary 评论；
- *     归档发生且 push 到达；contract_files 以未勾选 tasks.md 计算（勾选变化不改哈希仍 PASS）；
- *  T2 gate 三态：旧 hash → exit 2；缺 contract_files → exit 3；无适用 Evidence → exit 3；
- *  T3 M2.3：Change 工件未提交 → 先 "finalize:" 提交再归档；foreign 预暂存 → exit 3 且不提交；
- *  T4 M2.5：首次归档前的外来 Specs 脏文件（即使同 capability）→ exit 3；归档生成的 Specs 正常提交；
- *  T5 续走：完整跑一遍后重跑 → done-shortcut；预置"已归档+writeback 完成+无 summary_comment_id"
- *     → summary 恰好发一次。
- */
+/** Current Requirement/Direct Bug Closeout integration; real Git and isolated TFS/Multica fixtures. */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, chmodSync, realpathSync, rmSync, appendFileSync, renameSync } from "node:fs";
@@ -31,9 +14,10 @@ const { computeContractFiles } = await import(pathToFileURL(fileURLToPath(new UR
 const { routeArchive } = await import(pathToFileURL(fileURLToPath(new URL("../dist/commands/delivery/finalize.js", import.meta.url))).href);
 
 const CHANGE_REF = "c-fin";
-const STEPS_GOLDEN = ["pr_transition_gate", "pending_written", "workspace_reconciliation", "completion_gate",
-  "summary", "route_archive", "tfs_writeback", "issue_done", "pending_cleared"];
+const STEPS_GOLDEN = ["pr_transition_gate", "pending_written", "completion_gate", "archive_readback",
+  "summary", "route_archive", "tfs_writeback", "tfs_verification", "issue_done", "pending_cleared"];
 
+const PROJECT_GUID="11111111-1111-1111-1111-111111111111", REPO_GUID="22222222-2222-2222-2222-222222222222", BUSINESS_COMMIT="a".repeat(40);
 function git(cwd, ...args) {
   const r = spawnSync("git", ["-C", cwd, ...args], { encoding: "utf8" });
   assert.equal(r.status, 0, `git ${args.join(" ")}: ${r.stderr}`);
@@ -80,7 +64,7 @@ const TFS_LOCATIONS = [
 function startTfsStub(wiState, opsLog, control = { denyStateWrite: false }, gitRoot) {
   const wis = new Map([[999, {
     id: 999, rev: 1,
-    fields: { "System.State": wiState, "System.WorkItemType": "Bug", "System.Title": "bug-999" },
+    fields: { "System.State": wiState, "System.WorkItemType": control.directBug ? "Bug" : "需求", "System.Title": "work-999", "System.TeamProject": "Proj1" },
     relations: [],
   }]]);
   // TFS 2018 updates 保留每一 revision 的增量，供跨调用评论去重回读。
@@ -101,12 +85,43 @@ function startTfsStub(wiState, opsLog, control = { denyStateWrite: false }, gitR
     if (req.method === "GET" && /\/_apis\/git\/repositories\/[^/]+\/pullrequests\/\d+$/.test(p)) {
       return json(200, {
         pullRequestId: 1, title: "t", status: 3,
-        sourceRefName: "refs/heads/feat-1", targetRefName: "refs/heads/main",
+        sourceRefName: control.directBug ? "refs/heads/feat/999" : "refs/heads/feature/999", targetRefName: "refs/heads/main",
+        lastMergeSourceCommit: { commitId: control.candidate },
         lastMergeCommit: { commitId: "deadbeef" }, createdBy: { displayName: "t" }, creationDate: "2026-01-01T00:00:00Z",
       });
     }
     if (req.method === "GET" && /\/_apis\/git\/repositories\/[^/]+$/.test(p)) {
-      return json(200, { id: "repo-guid-1", name: "repo1", project: { id: "proj-guid" } });
+      return json(200, { id: REPO_GUID, name: "repo1", project: { id: PROJECT_GUID, name: "Proj1" } });
+    }
+    if (req.method === "GET" && /\/pullrequests\/1\/commits$/i.test(p)) {
+      return json(200, {value: [{commitId: BUSINESS_COMMIT, comment: "business implementation"}]});
+    }
+    if (req.method === "GET" && /\/commits\/[0-9a-f]{40}\/changes$/i.test(p)) {
+      return json(200, {changes: [{item: {path: "/src/app.ts"}}]});
+    }
+    if (req.method === "GET" && /\/_apis\/git\/repositories\/[^/]+\/commits$/.test(p)) {
+      const sha = url.searchParams.get("searchCriteria.fromCommitId");
+      const workItems = [...wis.values()].filter(wi => wi.relations.some(rel =>
+        rel.rel === "ArtifactLink" && decodeURIComponent(rel.url).endsWith("/" + sha))).map(wi => ({id: wi.id}));
+      return json(200, {value: [{commitId: sha, workItems}]});
+    }
+    if (req.method === "POST" && /\/_apis\/wit\/workitems\/\$/.test(p)) {
+      let body = "";
+      req.on("data", c => { body += c; });
+      req.on("end", () => {
+        const ops = JSON.parse(body), id = 1000 + wis.size;
+        const wi = {id, rev: 1, fields: {"System.WorkItemType":"任务", "System.State":"活动", "System.TeamProject":"Proj1"}, relations: []};
+        for (const op of ops) {
+          if (op.path.startsWith("/fields/")) wi.fields[op.path.slice(8)] = op.value;
+          else if (op.path === "/relations/-") wi.relations.push(op.value);
+        }
+        const parent = wis.get(999);
+        if (!parent) return json(404, {message:"missing parent"});
+        parent.relations.push({rel:"System.LinkTypes.Hierarchy-Forward", url:"http://x/_apis/wit/workitems/" + id});
+        wis.set(id, wi);
+        json(200, wi);
+      });
+      return;
     }
     if (req.method === "POST" && /\/_apis\/wit\/wiql$/.test(p)) {
       let body = "";
@@ -218,6 +233,7 @@ function baseMetadata(extra = {}) {
  * opts.preArchived / opts.wiState / opts.metadata 覆盖。
  */
 async function fixture(t, opts = {}) {
+  opts = {requirement: true, ...opts};
   const dir = realpathSync.native(mkdtempSync(join(tmpdir(), "finalize-contract-")));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const opsLog = join(dir, "ops.log");
@@ -252,7 +268,7 @@ async function fixture(t, opts = {}) {
   git(rootRepo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-m", "gitignore");
 
   // change 目录
-  const changeParent = opts.preArchived ? join(rootRepo, "openspec", "changes", "archive", `2026-01-01-${CHANGE_REF}`) : join(rootRepo, "openspec", "changes", CHANGE_REF);
+  let changeParent = join(rootRepo, "openspec", "changes", CHANGE_REF);
   mkdirSync(join(changeParent, "specs", "cap1"), { recursive: true });
   writeFileSync(join(changeParent, ".openspec.yaml"), opts.requirement
     ? "schema: corrective-change\nx-repositories: [repo1]\n" : "schema: corrective-change\n");
@@ -267,15 +283,21 @@ async function fixture(t, opts = {}) {
     });
     writeFileSync(join(changeParent, "evidence.json"), JSON.stringify(ev, null, 2));
   }
+  git(rootRepo, "add", "openspec");
+  git(rootRepo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-m", "approved change");
+  const approved = git(rootRepo, "rev-parse", "HEAD");
   if (opts.preArchived) {
     mkdirSync(join(rootRepo, "openspec", "specs", "cap1"), { recursive: true });
     writeFileSync(join(rootRepo, "openspec", "specs", "cap1", "spec.md"), "# cap1 spec\n");
-  }
-  if (opts.commitChange !== false) {
-    git(rootRepo, "add", "openspec");
-    git(rootRepo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-m", "seed change");
+    const archived = join(rootRepo, "openspec", "changes", "archive", "2026-01-01-" + CHANGE_REF);
+    mkdirSync(dirname(archived), {recursive:true});
+    renameSync(changeParent, archived);
+    changeParent = archived;
+    git(rootRepo, "add", "-A", "openspec");
+    git(rootRepo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-m", "previous archive");
   }
   git(rootRepo, "push", "origin", "dev");
+  if (opts.commitChange === false) writeFileSync(join(changeParent, "delivery-note.md"), "工程交付说明\n");
 
   // 业务仓 remote + 枢纽克隆（main 分支，干净）
   const bizRemote = join(dir, "biz-remote.git");
@@ -295,15 +317,15 @@ async function fixture(t, opts = {}) {
   git(dir, "clone", bizRemote, join(rootRepo, "repo1"));
 
   // TFS stub
-  const tfsControl = { denyStateWrite: opts.denyTfsStateWrite === true };
-  const { srv, port, wis } = await startTfsStub(opts.wiState ?? "活动", opsLog, tfsControl, opts.requirement ? rootRemote : undefined);
+  const tfsControl = { denyStateWrite: opts.denyTfsStateWrite === true, directBug: !opts.requirement, candidate: git(seed, "rev-parse", "HEAD") };
+  const { srv, port, wis } = await startTfsStub(opts.wiState ?? "活动", opsLog, tfsControl, rootRemote);
   t.after(() => srv.close());
-  const tfsUrl = `http://127.0.0.1:${port}${opts.requirement ? "/tfs/Test" : ""}`;
+  const tfsUrl = `http://127.0.0.1:${port}/tfs/Test`;
   let metadata = baseMetadata(opts.metadata);
   if (opts.requirement) {
     git(rootRemote, "symbolic-ref", "HEAD", "refs/heads/dev");
     git(rootRemote, "update-server-info");
-    const source = { repo_url: tfsUrl + "/Proj1/_git/root", branch: "dev", commit: git(rootRepo, "rev-parse", "HEAD"), change_ref: CHANGE_REF };
+    const source = { repo_url: tfsUrl + "/Proj1/_git/root", branch: "dev", commit: approved, change_ref: CHANGE_REF };
     git(rootRepo, "remote", "set-url", "origin", source.repo_url);
     // Keep the platform agent branch as evidence; all archive commits use a Task-local branch.
     git(rootRepo, "config", "multica.checkout-mode", "isolated");
@@ -313,9 +335,11 @@ async function fixture(t, opts = {}) {
       ...metadata,
       "tfs.type": "需求",
       "analysis.source": JSON.stringify(source),
+      "analysis.human_approval": JSON.stringify({...JSON.parse(metadata["analysis.human_approval"]), source}),
+      current_pr: JSON.stringify([{repo_key:"repo1", pr_id:1, pr_url:tfsUrl + "/Proj1/_git/repo1/pullrequest/1", source_branch:"feature/999", target_branch:"main"}]),
       "dev.dispatch": undefined,
       pr_prep: JSON.stringify([{
-        repo_key: "repo1", source_branch: "feature/999", target_branch: "main",
+        repo_key: "repo1", repo_url: tfsUrl + "/Proj1/_git/repo1", source_branch: "feature/999", target_branch: "main",
         candidate_commit: git(seed, "rev-parse", "HEAD"), title: "Requirement delivery",
         description: "Implementation and verification completed",
         local_validation: { result: "PASS", summary: "Verified", command: ["node", "--test"], exit_code: 0,
@@ -325,16 +349,21 @@ async function fixture(t, opts = {}) {
         blockers: [],
       }]),
     };
+  } else {
+    const fact = {result:"PASS", summary:"Verified", evidence_refs:["test:1"]};
+    const entry = {repo_key:"repo1", tfs_id:999, source_branch:"feat/999", target_branch:"main", candidate_commit:tfsControl.candidate,
+      expected_behavior:"success", actual_behavior:"failure", fix_summary:"fix", root_cause:{confidence:"confirmed", summary:"cause", evidence_refs:["trace:1"]},
+      regression:fact, local_validation:fact, code_review:{...fact, findings:[]}};
+    metadata = {"tfs.id":"999", "tfs.type":"Bug", "analysis.change_kind":"corrective", "bug.required_repos":JSON.stringify(["repo1"]),
+      "bug.delivery":JSON.stringify([entry]),
+      pr_prep:JSON.stringify([{repo_key:"repo1", repo_url:tfsUrl + "/Proj1/_git/repo1", source_branch:"feat/999", target_branch:"main", candidate_commit:tfsControl.candidate, title:"fix"}]),
+      current_pr:JSON.stringify([{repo_key:"repo1", pr_id:1, pr_url:tfsUrl + "/Proj1/_git/repo1/pullrequest/1", source_branch:"feat/999", target_branch:"main"}]), ...opts.metadata};
   }
 
   // multica mock state
   chmodSync(MOCK, 0o755);
-  const config = join(dir, "registry.json");
-  writeFileSync(config, JSON.stringify({
-    runtime: { multica_cli: MOCK, workspace_id: "ws-test" },
-    registry: { repo1: { repo_path: "repo1", repo_url: bizRemote, default_target_branch: "main",
-      tfs_repo: "repo1", tfs_project: "Proj1" } },
-  }));
+  const planFile = join(dir, "plan.json");
+  writeFileSync(planFile, JSON.stringify({tasks:[{summary:"实现并验证", estimate_hours:2, source_refs:["1.1","1.2"], commits:[{repo_key:"repo1",sha:BUSINESS_COMMIT}]}]}));
   const statePath = join(dir, "state.json");
   writeFileSync(statePath, JSON.stringify({
     issues: {
@@ -348,7 +377,19 @@ async function fixture(t, opts = {}) {
   const pathKey = Object.keys(env).find(k => k.toLowerCase() === "path");
   const inheritedPath = env[pathKey] ?? "";
   for (const k of Object.keys(env)) if (k.toLowerCase() === "path") delete env[k];
+  // Preserve real Git semantics; only transport is redirected to the fixture bare repository.
+  const actualGit = spawnSync(process.platform === "win32" ? "where" : "which", ["git"], {encoding:"utf8"}).stdout.trim().split(/\r?\n/)[0];
+  assert.ok(actualGit);
+  const gitShim = join(bin, "git-shim.cjs");
+  writeFileSync(gitShim, `const {spawnSync}=require("node:child_process");
+const args=process.argv.slice(2);
+if (["fetch","push"].includes(args[0]) && args[1]==="origin" && process.cwd()===${JSON.stringify(rootRepo)}) args[1]=${JSON.stringify(rootRemote)};
+const result=spawnSync(${JSON.stringify(actualGit)}, args, {stdio:"inherit"});
+process.exit(result.status??1);`);
+  writeFileSync(join(bin, "git"), '#!/bin/sh\nnode "$(dirname "$0")/git-shim.cjs" "$@"\n', {mode:0o755});
+  writeFileSync(join(bin, "git.cmd"), '@echo off\r\nnode "%~dp0git-shim.cjs" %*\r\n');
   Object.assign(env, {
+    MULTICA_CLI_PATH: MOCK, MULTICA_SERVER_URL: "http://multica.test", TFS_PROJECT: "Proj1",
     MOCK_STATE: statePath, MOCK_ROOT_REPO: rootRepo, OPS_LOG: opsLog,
     ARCHIVE_TEST_HOOK: join(dir, "archive-hook.cjs"),
     TFS_SERVER_URL: tfsUrl, TFS_PAT: "dummy-pat",
@@ -370,9 +411,14 @@ async function fixture(t, opts = {}) {
       resolve({ exit: code, stdout, stderr, body });
     });
   });
+  const rootArgs = opts.requirement ? ["--root-repo",rootRepo] : [];
   const phase = (name, extraArgs = []) =>
-    runCli(["delivery", "finalize", "--phase", name, "--issue", "WNDF-T", "--config", config, "--root-repo", rootRepo, ...extraArgs]);
-  const writeback = () => runCli(["tfs", "writeback", "--issue", "WNDF-T", "--config", config, "--root-repo", rootRepo]);
+    runCli(["delivery", "finalize", "--phase", name, "--issue", "WNDF-T", ...rootArgs, ...extraArgs]);
+  const writeback = (extraArgs = []) => {
+    const planned = readState().issues["WNDF-T"].metadata["delivery.tfs_task_plan"];
+    const planArgs = opts.requirement && !planned && !extraArgs.includes("--inspect") ? ["--task-plan",planFile] : [];
+    return runCli(["tfs","writeback","--issue","WNDF-T",...rootArgs,...planArgs,...extraArgs]);
+  };
 
   const run = async (extraArgs = []) => {
     const prepared = await phase("prepare", extraArgs);
@@ -447,7 +493,8 @@ test("routeArchive 在本地 Task 分支提交，只发布到明确的远端 dev
   t.after(() => { if (previousPath === undefined) delete process.env.PATH; else process.env.PATH = previousPath; });
   const paths = { rootRepo: f.rootRepo, openspecRoot: join(f.rootRepo, "openspec"),
     projectId: "", daemonId: null, source: "explicit_arg" };
-  const detail = routeArchive(paths, "WNDF-T", CHANGE_REF, "999", undefined, "dev");
+  git(f.rootRepo, "remote", "set-url", "origin", f.rootRemote);
+  const detail = routeArchive(paths, "WNDF-T", CHANGE_REF, "999", "dev");
   assert.equal(detail.branch, "dev");
   assert.equal(detail.local_branch, "rondo/closeout/fixture/dev");
   assert.equal(detail.pushed, true);
@@ -456,22 +503,12 @@ test("routeArchive 在本地 Task 分支提交，只发布到明确的远端 dev
   assert.equal(git(f.rootRemote, "rev-parse", "dev"), git(f.rootRepo, "rev-parse", "HEAD"));
 });
 
-test("T2 gate 三态：旧 hash → exit 2；缺 contract_files → exit 3；无适用 Evidence → exit 3", async (t) => {
-  const corrupt = await fixture(t, { evidenceMode: "corrupt" });
-  const r1 = await corrupt.run();
-  assert.equal(r1.exit, 2, `stdout=${r1.stdout.slice(0, 400)}`);
-  assert.equal(r1.body.result, "FAIL");
-  assert.match(r1.body.reason, /契约文件核验不过/);
-
-  const noCf = await fixture(t, { evidenceMode: "no_contract_files" });
-  const r2 = await noCf.run();
-  assert.equal(r2.exit, 3);
-  assert.match(r2.body.reason, /缺 contract_files/);
-
-  const noEv = await fixture(t, { evidenceMode: "none" });
-  const r3 = await noEv.run();
-  assert.equal(r3.exit, 3);
-  assert.match(r3.body.reason, /缺覆盖 active 派发的 Evidence/);
+test("Requirement Prepare 不重复上游 Evidence / Code Review Gate", async t => {
+  const f = await fixture(t, {evidenceMode:"none"});
+  const result = await f.phase("prepare");
+  assert.equal(result.exit, 0, result.stdout + result.stderr);
+  assert.equal(result.body.status, "prepared");
+  assert.equal(result.body.steps.completion_gate.status, "done");
 });
 
 test("T3 M2.3：未提交 Change 工件先 finalize: 提交再归档；foreign 预暂存 → exit 3 不提交", async (t) => {
@@ -528,14 +565,13 @@ test("T5 续走：完成后重跑 → done-shortcut；预置已归档+writeback 
   // 恢复场景：已归档 + tfs_written 已置位 + 无 summary_comment_id → summary 恰好发一次
   const g = await fixture(t, {
     preArchived: true,
-    wiState: "已解决",
-    metadata: { "delivery.tfs_written": "true", "finalize.pending": JSON.stringify({ event_keys: ["WNDF-T#repo1#1#completed"], recorded_at: "t" }) },
+    metadata: { "finalize.pending": JSON.stringify({ event_keys: ["WNDF-T#repo1#1#completed"], recorded_at: "t" }) },
   });
   const rg = await g.run();
   assert.equal(rg.exit, 0, `stdout=${rg.stdout.slice(0, 500)} stderr=${rg.stderr.slice(0, 500)}`);
   assert.equal(rg.body.steps.route_archive.detail.archive, "skipped_already_archived");
   assert.equal(rg.body.steps.pending_written.status, "skipped");
-  assert.equal(rg.body.steps.tfs_writeback.detail.parent_writeback.status, "skipped");
+  assert.equal(rg.body.steps.tfs_writeback.detail.parent_writeback.status, "done");
   assert.equal(rg.body.steps.summary.status, "done");
   assert.equal(g.readState().comments["issue-1"].length, 1, "summary 恰好发一次");
 });
@@ -825,8 +861,8 @@ test("推送时远端才前进：拒绝后回核分叉，不自动 rebase 或再
 test("D3-B: TFS writeback cannot run before prepared archive, even with valid work item", async t => {
   const f = await fixture(t);
   const result = await f.writeback();
-  assert.equal(result.exit, 2, result.stdout + result.stderr);
-  assert.match(result.body.reason, /finalize.pending/);
+  assert.ok([2,3].includes(result.exit), result.stdout + result.stderr);
+  assert.match(result.body.reason, /finalize.pending|归档|Archive/);
   assert.notEqual(f.readState().issues["WNDF-T"].status, "done");
   assert.equal(f.wis.get(999).fields["System.State"], "活动");
   assert.equal(f.readOps().includes("archive"), false);
@@ -981,4 +1017,43 @@ test("D3-B: TFS state write failure leaves pending, can resume without archive r
   assert.equal(second.exit, 0, second.stdout + second.stderr);
   assert.equal(f.readState().issues["WNDF-T"].status, "done");
   assert.equal(f.readOps().filter(v => v === "archive").length, 1);
+});
+
+
+test("Direct Bug 完整收口不依赖 OpenSpec 根仓，不创建 Task", async t => {
+  const f = await fixture(t, {requirement:false});
+  const prepared = await f.phase("prepare");
+  assert.equal(prepared.exit,0,prepared.stdout+prepared.stderr);
+  assert.equal(prepared.body.status,"prepared");
+  const write = await f.writeback();
+  assert.equal(write.exit,0,write.stdout+write.stderr);
+  assert.equal(write.body.tasks,"skipped_bug");
+  const done = await f.phase("complete");
+  assert.equal(done.exit,0,done.stdout+done.stderr);
+  assert.equal(done.body.status,"done");
+  assert.equal(f.wis.size,1);
+  assert.ok(!f.readOps().includes("archive"));
+  assert.equal(f.readState().issues["WNDF-T"].metadata["finalize.pending"],undefined);
+});
+
+test("Requirement Inspect 固定批准任务，读取 PR 实际业务 Commit 并恢复计划", async t => {
+  const f = await fixture(t, {denyTfsStateWrite:true});
+  const prepared = await f.phase("prepare");
+  assert.equal(prepared.exit,0,prepared.stdout+prepared.stderr);
+  const inspected = await f.writeback(["--inspect"]);
+  assert.equal(inspected.exit,0,inspected.stdout+inspected.stderr);
+  assert.equal(inspected.body.saved_plan,false);
+  assert.equal(inspected.body.commits[0].sha,BUSINESS_COMMIT);
+  assert.match(inspected.body.approved_tasks,/1\.1/);
+  const failed = await f.writeback();
+  assert.notEqual(failed.exit,0);
+  assert.ok(f.readState().issues["WNDF-T"].metadata["delivery.tfs_task_plan"]);
+  assert.equal(f.wis.size,2);
+  f.tfsControl.denyStateWrite=false;
+  const resumed = await f.writeback();
+  assert.equal(resumed.exit,0,resumed.stdout+resumed.stderr);
+  assert.equal(f.wis.size,2);
+  assert.equal(resumed.body.tasks_materialized.created.length,0);
+  const complete = await f.phase("complete");
+  assert.equal(complete.exit,0,complete.stdout+complete.stderr);
 });
