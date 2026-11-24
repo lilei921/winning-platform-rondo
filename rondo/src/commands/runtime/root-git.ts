@@ -1,6 +1,7 @@
 /** Non-destructive persistent root synchronization and per-Change Git publishing. */
 import { existsSync, lstatSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { assertNativeTaskCheckout, isDaemonCacheWorktree } from "../../clients/native-checkout.js";
 import { randomUUID } from "node:crypto";
 import { changeTree, developmentTree, mergeChangeTrees, publishedTree } from "./change-tree.js";
 import { FailError, UnknownError } from "../../cli/errors.js";
@@ -317,10 +318,14 @@ async function publishCommittedChange(
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(changeRef)) throw new FailError("Change 名称非法");
   const path = "openspec/changes/" + changeRef;
   const { expectedBranch: branch, repoUrl, remote = runAuthenticatedGit } = options;
+  const native = isDaemonCacheWorktree(root, process.env.MULTICA_WORKSPACE_ID);
+  if (git(root, ["check-ref-format", "refs/heads/" + branch]).status !== 0 || branch.startsWith("-") || branch.startsWith("refs/"))
+    throw new FailError("根仓发布目标分支非法");
   const checkTarget = () => {
     const target = rootGitUrls(root);
+    if (native) assertNativeTaskCheckout(root, dirname(root));
     if (target.pushUrls.length !== 1 || canonicalRepositoryIdentity(target.repoUrl) !== canonicalRepositoryIdentity(repoUrl) ||
-        run(root, ["symbolic-ref", "--short", "HEAD"], "核对根仓分支") !== branch) {
+        (!native && run(root, ["symbolic-ref", "--short", "HEAD"], "核对根仓分支") !== branch)) {
       throw new FailError("根仓 Origin / Branch 与批准的发布目标不一致");
     }
     return target;
