@@ -4,7 +4,7 @@ import { assertAbandonedBugSet } from "../dist/commands/bug/resume.js";
 
 const prs = [{
   repo_key: "frame", pr_id: 1001, pr_url: "https://example.test/1001",
-  source_branch: "feat/123", target_branch: "main",
+  source_branch: "feature/123", target_branch: "main",
 }];
 const abandoned = [{repo_key: "frame", pr_id: 1001, event_key: "MUL-123#frame#1001#abandoned"}];
 

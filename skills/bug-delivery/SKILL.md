@@ -42,7 +42,7 @@ fetch 仅更新远端事实、不整合；push 仅非强制推送已核验 HEAD�
 
    无可靠 UTF-8 管道时，使用系统临时目录中的 UTF-8 JSON 文件，改传 `--evidence "<绝对路径>"`；不放入 Task 工作目录或 Git。
 
-   自定义分支须确认归属后指定 `--source-branch` / `--target-branch`。PR 描述默认由命令生成；确需补充审核信息时才用 `--description <可访问的PR描述文件>`。
+   Candidate Branch 使用 `feature/<tfs.id>`，PR 目标使用已授权仓库的 `default_target_branch`。PR 描述默认由命令生成；确需补充审核信息时才用 `--description <可访问的PR描述文件>`。
 3. **所有 Repository 均准备完成且最终 `ready_for_pr=true`** 后执行：
 
    ```bash

@@ -164,8 +164,8 @@ Runtime 前置条件来自真实验证：[M02](validation/new/08-mechanism-resul
 | --- | --- |
 | Task / Actor 绑定从哪里取得 | 来源字段已由历史 Task 文件及在线 Run / Resource 只读核实；当前新实现的真实 Runtime 接入仍待验，未确认绑定时 UNKNOWN |
 | 兼容 Git 配置如何提供 | 已支持受控 RONDO_GIT_EXECUTABLE / RONDO_GIT_PATH_PREFIX 与现有 TFS 配置；不新增机器路径到共享 Registry，真实 Task 注入待验 |
-| 候选分支命名与覆盖方式 | `bug prepare-pr` 当前默认 `feat/<tfs.id>`，允许 `--source-branch`；prepare / bug git 当前仅使用默认 feat/<tfs.id>，prepare-pr 保留显式覆盖与候选归属检查；不静默生成不同分支 |
-| 同 Issue 跨 Task 的续接 | 已按 feat/<tfs.id> 识别远端候选分支；未 Push Commit 与未提交修改仅保留在原工作区，不宣称自动迁移 |
+| 候选分支命名 | `feature/<tfs.id>`，PR 目标使用已登记仓库的 `default_target_branch` |
+| 同 Issue 跨 Task 的续接 | 已按 feature/<tfs.id> 识别远端候选分支；未 Push Commit 与未提交修改仅保留在原工作区，不宣称自动迁移 |
 | 不完整 clone / 已有目录的恢复 | 根据实际目录和 Git 身份判断可复用范围；归属不明返回 `UNKNOWN`，不自动清理或覆盖用户内容 |
 
 验证覆盖：参数 / 身份 / URL 不匹配、路径及链接越界、首次 clone、已有同 Issue 安全复用、dirty / unpushed 保留、错误 origin / 分支、clone 中断与重试，以及真实业务仓认证。单测 / 隔离 Git fixture 证明局部行为，真实 Task 验证平台归属与兼容工具；后续 fetch / push / PR 链另行验证。对应 [08A-V04](validation/new/08-multica-mechanism-validation-acceptance-plan-2026-11-13.md)仍为 `NOT_RUN`，不能用 M02 / M06 的历史 PASS 代替。

@@ -196,9 +196,9 @@ test("Requirement 和旧 Task Set 明确分开，不隐式从缺少 dispatch 推
     pr_prep:JSON.stringify([prep("frame",sha1)])};
   assert.equal(isRequirementChangeDelivery(newMd),true);
   const legacy={...newMd,pr_prep:JSON.stringify([{...prep("frame",sha1),source_branch:"feat/42"}])};
-  assert.equal(isRequirementChangeDelivery(legacy),false);
+  assert.throws(()=>isRequirementChangeDelivery(legacy),/Candidate Branch/);
   assert.throws(()=>isRequirementChangeDelivery({...newMd,"dev.dispatch":"[]"}),/dev.dispatch/);
-  assert.throws(()=>isRequirementChangeDelivery({...newMd,pr_prep:JSON.stringify([prep("frame",sha1),{...prep("web",sha2),source_branch:"feat/42"}])}),/混合/);
+  assert.throws(()=>isRequirementChangeDelivery({...newMd,pr_prep:JSON.stringify([prep("frame",sha1),{...prep("web",sha2),source_branch:"feat/42"}])}),/Candidate Branch/);
 });
 
 test("识别旧 Delivery Task 标题以阻止与现行计划混用",()=>{

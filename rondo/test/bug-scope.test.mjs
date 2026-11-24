@@ -6,7 +6,7 @@ function valid() {
   const id = 123, sha = "a".repeat(40);
   const mk = (repo_key) => ({
     repo_key, tfs_id: id, candidate_commit: sha,
-    source_branch: "feat/" + id, target_branch: "main",
+    source_branch: "feature/" + id, target_branch: "main",
   });
   return {
     "tfs.type": "Bug", "tfs.id": String(id),
@@ -42,4 +42,13 @@ test("Direct Bug preparation must verify native Agent assignment", () => {
   assert.throws(()=>assertBugAgentAssignment(null,agents),/未有效指派/);
   assert.throws(()=>assertBugAgentAssignment("bug-uuid",[]),/缺少唯一/);
   assert.throws(()=>assertBugAgentAssignment("bug-uuid",[...agents,agents[0]]),/缺少唯一/);
+});
+
+
+test("Bug gate rejects the retired candidate branch even when all facts match", () => {
+  const md = valid();
+  for (const key of ["pr_prep", "bug.delivery"]) {
+    md[key] = JSON.stringify(JSON.parse(md[key]).map(entry => ({ ...entry, source_branch: "feat/123" })));
+  }
+  assert.throws(() => assertBugReadyForPr(md), /候选身份不一致/);
 });

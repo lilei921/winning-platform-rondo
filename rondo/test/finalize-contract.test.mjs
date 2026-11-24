@@ -87,7 +87,7 @@ function startTfsStub(wiState, opsLog, control = { denyStateWrite: false }, gitR
     if (req.method === "GET" && /\/_apis\/git\/repositories\/[^/]+\/pullrequests\/\d+$/.test(p)) {
       return json(200, {
         pullRequestId: project2 ? 2 : 1, title: "t", status: 3,
-        sourceRefName: control.directBug ? "refs/heads/feat/999" : "refs/heads/feature/999", targetRefName: "refs/heads/main",
+        sourceRefName: control.directBug ? "refs/heads/feature/999" : "refs/heads/feature/999", targetRefName: "refs/heads/main",
         lastMergeSourceCommit: { commitId: control.candidate },
         lastMergeCommit: { commitId: "deadbeef" }, createdBy: { displayName: "t" }, creationDate: "2026-01-01T00:00:00Z",
       });
@@ -364,13 +364,13 @@ async function fixture(t, opts = {}) {
     }
   } else {
     const fact = {result:"PASS", summary:"Verified", evidence_refs:["test:1"]};
-    const entry = {repo_key:"repo1", tfs_id:999, source_branch:"feat/999", target_branch:"main", candidate_commit:tfsControl.candidate,
+    const entry = {repo_key:"repo1", tfs_id:999, source_branch:"feature/999", target_branch:"main", candidate_commit:tfsControl.candidate,
       expected_behavior:"success", actual_behavior:"failure", fix_summary:"fix", root_cause:{confidence:"confirmed", summary:"cause", evidence_refs:["trace:1"]},
       regression:fact, local_validation:fact, code_review:{...fact, findings:[]}};
     metadata = {"tfs.id":"999", "tfs.type":"Bug", "bug.required_repos":JSON.stringify(["repo1"]),
       "bug.delivery":JSON.stringify([entry]),
-      pr_prep:JSON.stringify([{repo_key:"repo1", repo_url:tfsUrl + "/Proj1/_git/repo1", source_branch:"feat/999", target_branch:"main", candidate_commit:tfsControl.candidate, title:"fix"}]),
-      current_pr:JSON.stringify([{repo_key:"repo1", pr_id:1, pr_url:tfsUrl + "/Proj1/_git/repo1/pullrequest/1", source_branch:"feat/999", target_branch:"main"}]), ...opts.metadata};
+      pr_prep:JSON.stringify([{repo_key:"repo1", repo_url:tfsUrl + "/Proj1/_git/repo1", source_branch:"feature/999", target_branch:"main", candidate_commit:tfsControl.candidate, title:"fix"}]),
+      current_pr:JSON.stringify([{repo_key:"repo1", pr_id:1, pr_url:tfsUrl + "/Proj1/_git/repo1/pullrequest/1", source_branch:"feature/999", target_branch:"main"}]), ...opts.metadata};
   }
 
   // multica mock state

@@ -41,7 +41,7 @@ function fixture(t, { rootName = 'winning-platform-monorepo', rootOrigin = rootU
 
 test('首次 clone；dirty 与未 push Commit 重入逐字保留', t => {
   const f = fixture(t); const first = prepareBusinessWorkspace(f.root, repo, 12, f.transport);
-  assert.equal(first.changed, true); assert.equal(first.branch, 'feat/12');
+  assert.equal(first.changed, true); assert.equal(first.branch, 'feature/12');
   writeFileSync(join(first.path, 'fix.txt'), '修复'); git(first.path, 'add', 'fix.txt');
   git(first.path, '-c', 'user.name=test', '-c', 'user.email=test@example.test', 'commit', '-m', 'fix');
   writeFileSync(join(first.path, 'fix.txt'), '保留未提交修改');
@@ -55,9 +55,9 @@ test('首次 clone；dirty 与未 push Commit 重入逐字保留', t => {
 });
 
 test('跨 Task 从远端同 Bug 候选续接，不从目标分支重新开始', t => {
-  const f = fixture(t); git(f.root, 'push', f.remote, 'HEAD:refs/heads/feat/12');
+  const f = fixture(t); git(f.root, 'push', f.remote, 'HEAD:refs/heads/feature/12');
   const r = prepareBusinessWorkspace(f.root, repo, 12, f.transport);
-  assert.equal(r.branch, 'feat/12'); assert.equal(r.head, git(f.root, 'rev-parse', 'HEAD'));
+  assert.equal(r.branch, 'feature/12'); assert.equal(r.head, git(f.root, 'rev-parse', 'HEAD'));
 });
 
 test('越界、junction、未忽略目录和不完整 clone 保留现场且拒绝', t => {

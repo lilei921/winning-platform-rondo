@@ -39,7 +39,7 @@ for (const native of [false, true]) test(`Bug pr-prepare CLI (${native ? 'Native
   }
   git(root, 'add', '.gitignore', 'AGENTS.md');
   git(root, '-c', 'user.name=test', '-c', 'user.email=test@example.test', 'commit', '-m', 'fixture');
-  git(hub, 'init', '-b', 'feat/12'); git(hub, 'remote', 'add', 'origin', repoUrl);
+  git(hub, 'init', '-b', 'feature/12'); git(hub, 'remote', 'add', 'origin', repoUrl);
   writeFileSync(join(hub, 'fix.txt'), '修复'); git(hub, 'add', 'fix.txt');
   git(hub, '-c', 'user.name=test', '-c', 'user.email=test@example.test', 'commit', '-m', 'fix', '-m', 'Refs: #12');
   if (native) {
@@ -47,7 +47,7 @@ for (const native of [false, true]) test(`Bug pr-prepare CLI (${native ? 'Native
     git(hub, 'branch', '-m', taskBranch);
   }
   const sha = git(hub, 'rev-parse', 'HEAD');
-  git(remote, 'init', '--bare'); git(hub, 'push', remote, 'HEAD:refs/heads/feat/12', 'HEAD:refs/heads/main');
+  git(remote, 'init', '--bare'); git(hub, 'push', remote, 'HEAD:refs/heads/feature/12', 'HEAD:refs/heads/main');
 
   // 仅把远端传输转向本地 bare 仓；身份检查与 Git 命令仍执行真实代码。
   const transport = join(dir, 'git-transport.cjs');
@@ -128,7 +128,7 @@ process.exit(r.status ?? 1);
   const md = state().issues['I-1'].metadata;
   assert.deepEqual(JSON.parse(md['bug.required_repos']), ['biz']);
   assert.deepEqual(JSON.parse(md['bug.delivery']), [{
-    repo_key: 'biz', source_branch: 'feat/12', target_branch: 'main', candidate_commit: sha, tfs_id: 12,
+    repo_key: 'biz', source_branch: 'feature/12', target_branch: 'main', candidate_commit: sha, tfs_id: 12,
     root_cause: evidence.root_cause, expected_behavior: evidence.expected_behavior, actual_behavior: evidence.actual_behavior,
     fix_summary: evidence.fix_summary, regression: evidence.regression, local_validation: evidence.local_validation, code_review: evidence.code_review,
   }]);

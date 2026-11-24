@@ -48,7 +48,7 @@ test("Bug PR description blocks missing evidence, FAIL validation and unresolved
 });
 
 test("default Bug PR description is generated on the materialization host; explicit file stays unchanged", () => {
-  const entry = { repo_key: "datamodel", source_branch: "feat/264104", candidate_commit: "a".repeat(40), title: "Bug Fix" };
+  const entry = { repo_key: "datamodel", source_branch: "feature/264104", candidate_commit: "a".repeat(40), title: "Bug Fix" };
   const generated = resolveDescription(entry, delivery());
   try {
     assert.equal(generated.cleanup, true);
