@@ -17,7 +17,8 @@ function git(cwd, ...args) {
   return r.stdout.trim();
 }
 
-for (const native of [false, true]) test(`Bug pr-prepare CLI (${native ? 'Native isolated' : 'legacy clone'}): stdin/file, Git identity, quality Gate and Metadata readback`, t => {
+test('Bug pr prepare CLI (Native): stdin/file, Git identity, quality Gate and Metadata readback', t => {
+  const native = true;
   const dir = realpathSync(mkdtempSync(join(tmpdir(), 'rondo-bug-cli-')));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const root = join(dir, 'winning-platform-monorepo'), hub = join(root, 'biz'), remote = join(dir, 'remote.git');
@@ -76,18 +77,18 @@ process.exit(r.status ?? 1);
     biz: { repo_path: 'biz', repo_url: repoUrl, tfs_repo: 'biz', tfs_project: 'P', default_target_branch: 'main' },
   } }));
   const env = { ...process.env, MOCK_STATE: statePath, MOCK_SYNC_CALLS_FILE: callsPath,
-    MULTICA_TASK_ID: taskId, MULTICA_AGENT_ID: 'agent', MULTICA_WORKSPACE_ID: 'ws', MULTICA_TOKEN: 'fixture', MULTICA_DAEMON_PORT: '1',
+    MULTICA_CLI_PATH: mock, MULTICA_SERVER_URL: 'http://multica.test', MULTICA_TASK_ID: taskId, MULTICA_AGENT_ID: 'agent', MULTICA_WORKSPACE_ID: 'ws', MULTICA_TOKEN: 'fixture', MULTICA_DAEMON_PORT: '1',
     TFS_SERVER_URL: 'http://tfs.test/tfs/C', TFS_PAT: 'fixture', RONDO_GIT_EXECUTABLE: transport };
   const evidence = {
     expected_behavior: '返回列表', actual_behavior: '空数据时失败', fix_summary: '处理空数据',
     root_cause: { confidence: 'confirmed', summary: '未处理空值', evidence_refs: ['run:fixture/diagnosis'] },
     regression: { result: 'PASS', summary: '故障回归通过', evidence_refs: ['run:fixture/regression'] },
-    local_validation: { result: 'PASS', summary: '定向测试通过', evidence_refs: ['run:fixture/test'] },
-    code_review: { result: 'PASS', summary: '修改范围已审查', evidence_refs: ['run:fixture/review'], findings: [] }, blockers: [],
+    validation: { result: 'PASS', summary: '定向测试通过', evidence_refs: ['run:fixture/test'] },
+    code_review: { result: 'PASS', summary: '修改范围已审查', evidence_refs: ['run:fixture/review'], findings: [] }, blockers: [], description:'修复空数据；已完成回归。',
   };
-  const args = ['bug', 'pr-prepare', '--config', config, '--issue', 'I-1', '--repo', 'biz', '--candidate-commit', sha,
+  const args = ['pr', 'prepare', '--issue', 'I-1', '--repo', 'biz', '--candidate-commit', sha,
     '--title', '修复空数据', '--root-repo', root];
-  const run = (input, extraEnv = {}, source = '-') => spawnSync(process.execPath, [cli, ...args, '--evidence', source], {
+  const run = (input, extraEnv = {}, source = '-') => spawnSync(process.execPath, [cli, ...args, '--facts', source], {
     input, encoding: 'utf8', env: { ...env, ...extraEnv }, timeout: 30_000,
   });
   const result = (r, status) => {
@@ -100,14 +101,14 @@ process.exit(r.status ?? 1);
 
   if (native) {
     for (const operation of ['fetch', 'push']) {
-      const gitResult = spawnSync(process.execPath, [cli, 'bug', 'git', '--config', config, '--issue', 'I-1', '--repo', 'biz', '--root-repo', root, '--operation', operation], { encoding: 'utf8', env, timeout: 30_000 });
+      const gitResult = spawnSync(process.execPath, [cli, 'dev', 'git', '--issue', 'I-1', '--repo', 'biz', '--root-repo', root, '--operation', operation], { encoding: 'utf8', env, timeout: 30_000 });
       assert.equal(result(gitResult, 0).head, sha);
     }
     assert.equal(git(hub, 'branch', '--show-current'), taskBranch);
   }
   for (const input of ['', '  ', '{', JSON.stringify({ ...evidence, candidate_commit: 'b'.repeat(40) }),
     JSON.stringify({ ...evidence, regression: { ...evidence.regression, result: 'FAIL' } }),
-    JSON.stringify({ ...evidence, local_validation: { ...evidence.local_validation, evidence_refs: [] } })]) {
+    JSON.stringify({ ...evidence, validation: { ...evidence.validation, evidence_refs: [] } })]) {
     result(run(input), 2);
     assert.deepEqual(state(), initial);
   }
@@ -123,6 +124,8 @@ process.exit(r.status ?? 1);
   assert.equal(state().issues['I-1'].metadata.pr_prep, undefined);
   writeFileSync(callsPath, '');
   const before = readdirSync(hub).sort();
+  result(run(JSON.stringify({...evidence,validation:{...evidence.validation,command:[process.execPath,'-e','process.exit(9)']}})),2);
+  assert.equal(state().issues['I-1'].metadata.pr_prep,undefined);
   const completed = result(run(JSON.stringify(evidence)), 0);
   assert.equal(completed.ready_for_pr, true);
   const md = state().issues['I-1'].metadata;
@@ -130,11 +133,12 @@ process.exit(r.status ?? 1);
   assert.deepEqual(JSON.parse(md['bug.delivery']), [{
     repo_key: 'biz', source_branch: 'feature/12', target_branch: 'main', candidate_commit: sha, tfs_id: 12,
     root_cause: evidence.root_cause, expected_behavior: evidence.expected_behavior, actual_behavior: evidence.actual_behavior,
-    fix_summary: evidence.fix_summary, regression: evidence.regression, local_validation: evidence.local_validation, code_review: evidence.code_review,
+    fix_summary: evidence.fix_summary, regression: evidence.regression, local_validation: evidence.validation, code_review: {...evidence.code_review, candidate_commit:sha},
   }]);
   assert.equal(JSON.parse(md.pr_prep)[0].candidate_commit, sha);
   assert.equal(JSON.parse(md.pr_prep)[0].repo_url, repoUrl);
   assert.equal(JSON.parse(md.pr_prep)[0].target_branch, 'main');
+  assert.equal(JSON.parse(md.pr_prep)[0].description, evidence.description);
   assert.equal(md['analysis.change_kind'], undefined);
   const calls = readFileSync(callsPath, 'utf8').trim().split('\n').map(line => JSON.parse(line));
   assert.deepEqual(calls.at(-1).slice(0, 3), ['issue', 'get', 'I-1']);
@@ -145,7 +149,7 @@ process.exit(r.status ?? 1);
 
   // 验证 Skill 中的 Bash stdin 调用形态，不通过 Shell 拼接 JSON。
   if (process.platform !== 'win32') {
-    const piped = spawnSync('bash', ['-c', 'printf "%s" "$evidence_json" | "$node_binary" "$rondo_entry" "$@"', 'rondo', ...args, '--evidence', '-'], {
+    const piped = spawnSync('bash', ['-c', 'printf "%s" "$evidence_json" | "$node_binary" "$rondo_entry" "$@"', 'rondo', ...args, '--facts', '-'], {
       encoding: 'utf8', timeout: 30_000, env: { ...env, evidence_json: JSON.stringify(evidence), node_binary: process.execPath, rondo_entry: cli },
     });
     result(piped, 0);

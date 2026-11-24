@@ -16,12 +16,12 @@ test("Bug Fix Agent is managed independently of Delivery Squad", () => {
   assert.notEqual(manifest.squad.leader, agent.name);
   assert.ok(agent.skills.includes("codebase-explorer"));
   assert.ok(agent.skills.includes("diagnosing-bugs"));
-  assert.ok(agent.skills.includes("bug-delivery"));
+  assert.ok(agent.skills.includes("pull-request"));
   assert.ok(agent.skills.includes("native-workspace"));
   for (const skill of ["bug-analysis", "backend-engineering", "frontend-engineering", "development-execution"]) {
     assert.ok(!agent.skills.includes(skill), `Bug Fix Agent must not bind legacy ${skill}`);
   }
-  assert.ok(agent.skills.every((skill) => ["codebase-explorer", "diagnosing-bugs", "bug-delivery", "native-workspace"].includes(skill)));
+  assert.ok(agent.skills.every((skill) => ["codebase-explorer", "diagnosing-bugs", "pull-request", "native-workspace"].includes(skill)));
   assert.match(readFileSync(resolve(multica, "skills/diagnosing-bugs/SKILL.md"), "utf8"), /name: diagnosing-bugs/);
   assert.match(readFileSync(resolve(multica, "skills/diagnosing-bugs/LICENSE.md"), "utf8"), /Matt Pocock/);
   for (const skill of agent.skills) assert.ok(manifest.managed_skills.includes(skill));

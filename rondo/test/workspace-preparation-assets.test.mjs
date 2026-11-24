@@ -28,20 +28,22 @@ test("workspace preparation is owned by one Skill; delivery contracts remain in 
   assert.ok(bugAgent.includes("native-workspace"));
   assert.ok(!bugAgent.includes("multica repo checkout"));
 
-  const bug = read("skills/bug-delivery/SKILL.md");
+  const bug = read("skills/pull-request/SKILL.md");
   // Sync 会发布包内附带的 Markdown，历史副本也可能把旧准备命令带回运行环境。
-  const bugDir = join(multica, "skills", "bug-delivery");
+  const bugDir = join(multica, "skills", "pull-request");
   for (const file of readdirSync(bugDir, { recursive: true }).filter(path => path.endsWith(".md"))) {
     assert.doesNotMatch(readFileSync(join(bugDir, file), "utf8"), /rondo dev prepare/, file);
   }
-  assert.ok(bug.includes("rondo bug git --operation fetch"));
-  assert.ok(bug.includes("rondo bug git --operation push"));
-  assert.ok(bug.includes("rondo bug pr-prepare"));
+  assert.ok(bug.includes("rondo dev git --operation fetch"));
+  assert.ok(bug.includes("rondo dev git --operation push"));
+  assert.ok(bug.includes("rondo pr prepare"));
 
   const spec = read("skills/spec-preparation/SKILL.md");
   assert.ok(spec.includes("openspec schema which") && spec.includes("cwd"));
   const analysis = read("skills/analysis-completion/SKILL.md");
   assert.ok(analysis.includes("rondo analysis validate") && analysis.includes("rondo analysis complete"));
-  const dev = read("skills/change-development/SKILL.md");
-  assert.ok(dev.includes("rondo dev publish") && dev.includes("rondo pr materialize"));
+  const dev = read("agents/engineer/instructions.md");
+  assert.ok(dev.includes("rondo dev publish") && bug.includes("rondo pr materialize"));
+  assert.ok(!skills.managed_skills.includes("bug-delivery") && !skills.managed_skills.includes("change-development"));
+  assert.ok(!readdirSync(bugDir,{recursive:true}).includes("config/repo-registry.json"));
 });

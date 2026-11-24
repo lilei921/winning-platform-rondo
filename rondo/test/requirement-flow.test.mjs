@@ -27,7 +27,7 @@ function prep(key, sha) {
     candidate_commit: sha, title: "Change",
     description: "实现修复；已完成验证；风险已评估。",
     local_validation: { result: "PASS", summary: "Tests passed", command: ["node", "--test"],
-      exit_code: 0, candidate_commit: sha, source: "rondo dev pr-prepare" },
+      exit_code: 0, candidate_commit: sha, source: "rondo pr prepare" },
     code_review: { result: "PASS", candidate_commit: sha, summary: "Reviewed", findings: [] }, blockers: [] };
 }
 
@@ -48,7 +48,12 @@ test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专
   process.env.TFS_SERVER_URL = "http://tfs.test/tfs/C"; process.env.TFS_PAT = "fixture";
   t.after(() => { for (const [k,v] of Object.entries(previous)) { if (v === undefined) delete process.env[k]; else process.env[k]=v; } });
   const entry = prep("frame", sha1);
-  const cfg = { registry: { frame: { ...registry.frame, tfs_repo: "biz", tfs_project: "P" } } };
+  const repo = {project:"P",repo:"biz",projectId:"11111111-1111-1111-1111-111111111111",repoId:"22222222-2222-2222-2222-222222222222"};
+  const api = {config:{serverUrl:"http://tfs.test/tfs/C"},rawRequest:async (url,method)=>{
+    assert.equal(method,"GET");
+    return {statusCode:200,body:JSON.stringify({id:42,rev:1,relations:[{rel:"ArtifactLink",url:"vstfs:///Git/PullRequestId/"+repo.projectId+"%2F"+repo.repoId+"%2F17"}]})};
+  }};
+  const authorize=()=>{};
   let remoteHead = sha1;
   let description = "Engineer 已验证的专业 PR 描述";
   let prStatus = "active";
@@ -69,26 +74,27 @@ test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专
   } };
   const prior = { repo_key: "frame", pr_id: 17, pr_url: "http://tfs.test/tfs/C/P/_git/biz/pullrequest/17",
     source_branch: "feature/42", target_branch: "dev" };
-  await assert.rejects(materializeOne(tfs, cfg, "42", {...entry, repo_url: registry.web.repo_url}, prior, undefined, entry.description), /identity_mismatch/);
-  await assert.rejects(materializeOne(tfs, cfg, "42", {...entry, target_branch: "main"}, prior, undefined, entry.description), /target_branch_mismatch/);
+  await assert.rejects(materializeOne(tfs, api, 42, entry, repo, {...prior,pr_url:prior.pr_url.replace("/biz/","/web/")}, false, authorize), /身份不一致/);
+  await assert.rejects(materializeOne(tfs, api, 42, {...entry, target_branch: "main"}, repo, prior, false, authorize), /身份不一致/);
   assert.deepEqual(calls, [], "身份不一致不得产生外部 PR 操作");
-  const reused = await materializeOne(tfs, cfg, "42", entry, prior, undefined, entry.description);
+  const reused = await materializeOne(tfs, api, 42, entry, repo, prior, false, authorize);
   assert.equal(reused.pr_id, 17);
   assert.equal(reused.reused, true);
   assert.equal(listed, false, "已登记 PR 必须先按 ID 回读而不是凭分支查找");
-  assert.deepEqual(calls, ["branch get", "pr get"]);
+  assert.deepEqual(calls, ["branch get", "pr get", "branch get"]);
   remoteHead = sha2;
-  await assert.rejects(materializeOne(tfs, cfg, "42", entry, prior, undefined, entry.description), /HEAD/);
+  await assert.rejects(materializeOne(tfs, api, 42, entry, repo, prior, false, authorize), /HEAD/);
   remoteHead = sha1;
   description = "";
-  await assert.rejects(materializeOne(tfs, cfg, "42", entry, prior, undefined, entry.description), /existing_pr_description_missing/);
+  await assert.rejects(materializeOne(tfs, api, 42, entry, repo, prior, false, authorize), /专业描述/);
   description = "专业内容";
   prStatus = "abandoned";
-  await assert.rejects(materializeOne(tfs, cfg, "42", entry, prior, undefined, entry.description), /状态不匹配|外部身份/);
+  await assert.rejects(materializeOne(tfs, api, 42, entry, repo, prior, false, authorize), /状态不匹配|外部身份/);
   prStatus = "active";
   listed = false;
-  assert.equal((await materializeOne(tfs, cfg, "42", entry, undefined, undefined, entry.description)).pr_id, 17);
+  assert.equal((await materializeOne(tfs, api, 42, entry, repo, undefined, false, authorize)).pr_id, 17);
   assert.equal(listed, true, "未登记 PR 可通过外部 Active PR 发现后复用");
+  await assert.rejects(materializeOne(tfs,api,42,entry,repo,undefined,true,authorize),/in_review/);
 });
 
 test("Requirement Closeout 读取批准 Commit 的范围而非当前工作树", t => {

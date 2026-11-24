@@ -25,7 +25,7 @@ function fixture(t, { previousTasks, approvedTasks = "- [ ] 1.1 Verify\n", desig
   };
   identify(root);
   mkdirSync(join(root, "docs", "config"), { recursive: true });
-  writeFileSync(join(root, "docs/config/repo-context.yaml"), "repos:\n  - repo_id: root\n    repo_url: " + tfs.repoUrl + "\n");
+  writeFileSync(join(root, "docs/config/repo-context.yaml"), JSON.stringify({repos:[{repo_id:"root",repo_path:".",repo_url:tfs.repoUrl},{repo_id:"biz",repo_path:"biz",repo_url:tfs.repoUrl.replace(/[^/]+$/,"biz"),tfs_project:"P",default_target_branch:"integration"}]}));
   mkdirSync(join(root, "openspec", "schemas"), { recursive: true });
   writeFileSync(join(root, "openspec/schemas/.keep"), "");
   if (previousTasks) {
@@ -60,10 +60,10 @@ function fixture(t, { previousTasks, approvedTasks = "- [ ] 1.1 Verify\n", desig
         by: "reviewer", at: "2026-11-19T00:00:00Z", comment_ref: "ok", verify_agent_required: false, source }) },
   }));
   const env = { ...process.env, ...tfs.env, MOCK_STATE: state, MULTICA_TASK_ID: "run", MULTICA_AGENT_ID: "engineer",
-    MULTICA_WORKSPACE_ID: "ws", MULTICA_TOKEN: "fixture", MULTICA_DAEMON_PORT: "1234",
+    MULTICA_CLI_PATH: multica, MULTICA_SERVER_URL: "http://multica.test", MULTICA_WORKSPACE_ID: "ws", MULTICA_TOKEN: "fixture", MULTICA_DAEMON_PORT: "1234",
     RONDO_WORKSPACE_PATH: root, RONDO_WORKSPACE_BRANCH: "integration" };
   function run(expected, ...args) {
-    const proc = spawnSync(process.execPath, [cli, ...args, "--config", config, "--issue", "WNDF-T"], { cwd: dir, env, encoding: "utf8" });
+    const proc = spawnSync(process.execPath, [cli, ...args, "--issue", "WNDF-T"], { cwd: dir, env, encoding: "utf8" });
     assert.equal(proc.status, expected, proc.stdout + "\n" + proc.stderr);
     return JSON.parse(proc.stdout);
   }
