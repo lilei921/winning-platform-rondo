@@ -92,3 +92,14 @@ export function prepareNativeBusiness(root: string, repo: PrepareRepo, branch: s
     throw new UnknownError("当前工作树未包含已发布 Candidate，保留现场");
   return { result: "PASS", path, repo_url: repo.repo_url, branch, local_branch: localBranch, head, changed: !existing };
 }
+
+
+/** Ensure remaining delivery commands consume the same repository and target as Native prepare. */
+export function assertNativeDeliveryMapping(root: string, revision: string, key: string,
+  configured: { repo_path: string; repo_url?: string; default_target_branch?: string }, server: string): void {
+  const selected = validatePrepareRepo(readNativeRepoMapping(root, revision, server)[key], server);
+  if (selected.repo_path !== configured.repo_path ||
+      canonicalRepositoryIdentity(selected.repo_url) !== canonicalRepositoryIdentity(configured.repo_url ?? "") ||
+      selected.default_target_branch !== configured.default_target_branch)
+    throw new FailError("Native 准备与交付的仓库身份或目标分支不一致");
+}
