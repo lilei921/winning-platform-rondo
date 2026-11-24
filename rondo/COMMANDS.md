@@ -90,6 +90,7 @@ rondo dev check-dispatch --config <repo-registry.json> --issue <KEY> --task-refs
 rondo dev check-completion --openspec-root <path> --change-ref <ref> --task-refs <1.1,1.2> --evidence <evidence.json> [--verify-commits] [--issue <KEY> --registry-config <repo-registry.json> [--root-repo <path>]]
 rondo dev pr-prepare --config <repo-registry.json> --issue <KEY> --repo <repo_key> --change-ref <ref> --candidate-commit <sha> --title <title> [--target-branch <branch>] [--source-branch <branch>] [--description <path>]
 rondo dev contract-hash --openspec-root <path> --change-ref <ref>
+rondo dev prepare --workspace native --issue <KEY> --repo <repo_id> --root-repo <path> [--resource-ref <branch>] [--change-ref <ref>]
 rondo dev prepare --mode requirement --config <repo-registry.json> --issue <KEY> --change-ref <ref> --repo <repo_key> [--root-repo <path>]
 rondo dev publish --config <repo-registry.json> --issue <KEY> --change-ref <ref> [--root-repo <path>] [--minor-design]
 rondo dev check-change --config <repo-registry.json> --issue <KEY> --change-ref <ref>
@@ -102,7 +103,7 @@ rondo dev check-change --config <repo-registry.json> --issue <KEY> --change-ref 
 | `dev check-completion` | 检查任务完成、验证 Evidence 和可选 Commit 关联 |
 | `dev pr-prepare` | 核对候选 Commit，写入 PR 准备事实；不直接创建 PR |
 | `dev contract-hash` | 计算当前 Change 契约文件的 SHA-256 摘要，供工程验证引用 |
-| `dev prepare` | 新 Requirement 用持久根仓和 `feature/<tfs.id>` Worktree；旧 Bug 使用原有默认模式 |
+| `dev prepare` | Native 使用 Multica Checkout；Requirement 必须提供 `--change-ref`，无远端 Candidate 时须提供已核实的 `--resource-ref`。旧入口仅保留兼容 |
 | `dev publish` | 发布当前 Change 已提交的 Tasks / Evidence / PR 描述，回读远端 SHA 并登记 `dev.publication`。非实质性 Design 细化使用 `--minor-design` |
 | `dev check-change` | 按批准版本与登记的研发交付版本核验 Change 全部 Tasks、Candidate、Review 与 Evidence |
 
@@ -156,7 +157,7 @@ rondo delivery root-prepare --issue <KEY>
 ### 5.2 `rondo pr`
 
 ```bash
-rondo pr materialize [--mode requirement --change-ref <ref> [--root-repo <path>]] --issue <KEY> --config <repo-registry.json>
+rondo pr materialize [--workspace native] [--mode requirement --change-ref <ref> [--root-repo <path>]] --issue <KEY> --config <repo-registry.json>
 rondo pr worktree create --config <repo-registry.json> --issue <KEY> --repo <repo_key> --branch <branch> [--base <target>] [--root-repo <path>]
 rondo pr worktree remove --config <repo-registry.json> --issue <KEY> --repo <repo_key> [--root-repo <path>]
 rondo pr worktree prune --config <repo-registry.json> (--project-id <id> | --root-repo <path>)
@@ -168,7 +169,7 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 
 | 命令 | 功能 |
 | --- | --- |
-| `pr materialize` | 创建/复用 PR。Requirement 通过 Change 级 Completion，确认 PR 登记后，在 `--root-repo` 或 `RONDO_WORKSPACE_PATH` 对应的持久根仓清理本次业务 Worktree |
+| `pr materialize` | 创建/复用 PR。Requirement 通过 Change 级 Completion，确认 PR 登记后，在 `--root-repo` 或 `RONDO_WORKSPACE_PATH` 对应的持久根仓清理本次业务 Worktree；Native 工作区由 Multica 管理，不执行清理 |
 | `pr worktree` | 使用 `create`、`remove`、`prune` 管理本地 Git Worktree |
 | `pr reconcile-status` | 从当前 Run Workspace 扫描 Issue 的 `current_pr`，核实 `completed` / `abandoned` 等外部状态，不使用 Registry |
 
