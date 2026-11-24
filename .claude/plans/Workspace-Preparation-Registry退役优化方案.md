@@ -42,6 +42,17 @@
 
 当前 Multica Project Resource 默认主要登记根仓，不要求重新登记全部业务仓或建立新映射。Native Checkout 模式与现有持久根仓/Worktree 模式均保留。
 
+### 根仓准备统一（已确认）
+
+Bug 与 Requirement 的根仓准备具有相同目标：获取可使用的工程根仓，不因 Issue 类型而建立不同的 Native Checkout 方法。
+
+- 两者统一优先复用当前 Task 的 Native Checkout；首次准备在 Task workdir 执行 `multica repo checkout <root-url> --ref <resource-ref>`。URL 与 ref 来自当前 Project Resource，未指定 ref 时省略参数。
+- Checkout 的起点 ref 不等于本地 Task Branch，也不等于 OpenSpec 远端发布目标。保留现有 Requirement 发布分支契约，不改变 `RONDO_WORKSPACE_BRANCH` 或 `analysis.source` 语义。
+- 使用实际返回的根仓路径执行 `rondo runtime check-checkout --root-repo "<root>"`。该命令只检查 Git 工作树根目录与 AGENTS.md 就绪情况，不查询 Multica、不验证 Task / Actor / Workspace 身份。Skill 按实际能力描述；不为匹配旧描述而增加身份校验。现有业务命令的授权检查继续保留。
+- Requirement 常驻根仓模式继续使用 `rondo runtime prepare-root`；该命令依赖已存在的本地根仓及 RONDO_WORKSPACE_BRANCH，不负责首次 Clone。本次不退役该模式、不修改根仓准备算法。
+- Workitem Analyst 仅需按需准备根仓；Bug Fix Agent 和 Engineer 在需要本地业务源码时分别准备独立 Clone 与 Worktree。根仓准备本身不依赖 Registry。
+- §5 的统一根仓章节作为目标态 Skill 内容，不在 Bug 与 Requirement 章节重复描述 Checkout 步骤。
+
 ### 实施前提
 
 Rondo GitHub 配置仓与实际内网 TFS 业务根仓不是同一事实域。实施前核实实际业务根仓已提交的 docs/config/repo-context.yaml 覆盖所需业务仓、URL、路径和目标分支，并验证批准版本的映射可读取。不能将 Rondo 仓库配置存在视作所有 Runtime 已具备条件。
@@ -137,6 +148,7 @@ Skill 不承担 Runtime 解析、Workspace 身份核验、映射解析、配置�
 
 ## 7. 验收
 
+- Bug / Requirement 共用 Native Checkout 指引，Resource ref 缺省时可省略；保留 Requirement 常驻根仓模式和原有发布分支语义，check-checkout 仅描述本地就绪检查。
 - 实际业务根仓与批准版本的仓库映射完整、可读取，目标分支明确。
 - Bug / Requirement 无 --config 正常准备及重入；返回实际路径。
 - 无效身份、未批准仓库、未登记映射、错误 URL / 路径 / 分支等仍按现有契约拒绝或报告 UNKNOWN，且不覆盖已有成果。
