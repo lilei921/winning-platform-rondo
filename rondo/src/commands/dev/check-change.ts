@@ -14,10 +14,11 @@ export function registerDevCheckChange(group: Command): void {
       markLeafExecuted();
       try {
         const runtime = resolveMulticaRuntime(), client = new MulticaClient(runtime);
-        const sourceForMapping = readAnalysisSource(client.getIssue(opts.issue).metadata ?? {});
+        const original = client.getIssue(opts.issue).metadata ?? {};
+        const sourceForMapping = readAnalysisSource(original);
         const cfg = { runtime, registry: await readApprovedRepoMapping(sourceForMapping, loadTfsConfig().serverUrl) };
         const check = await checkPublishedChange(cfg, client, opts.issue, opts.changeRef);
-        if (client.getIssue(opts.issue).metadata?.["analysis.source"] !== JSON.stringify(sourceForMapping) && readAnalysisSource(client.getIssue(opts.issue).metadata??{}).commit !== sourceForMapping.commit) throw new UnknownError("批准来源在检查期间变化");
+        if (client.getIssue(opts.issue).metadata?.["analysis.source"] !== original["analysis.source"]) throw new UnknownError("批准来源在检查期间变化");
         process.stdout.write(JSON.stringify({ result: "PASS", ...check }, null, 2) + "\n");
       } catch (e) {
         if (!(e instanceof FailError || e instanceof UnknownError)) throw e;

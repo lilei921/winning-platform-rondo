@@ -8,16 +8,19 @@ import { candidateBranch } from "../pr/candidate-branch.js";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
-import { loadConfig, type BaseRegistryConfig } from "../../clients/config.js";
+import { resolveMulticaRuntime } from "../../clients/runtime-context.js";
+import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
+import { parseTfsPrWebUrl } from "../../tfs/api/pr.js";
+import { assertTfsRepository } from "../../clients/authenticated-git.js";
+import { assertBugReadyForPr } from "./scope.js";
+import { validateBugEvidence } from "./evidence.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { TfsClient } from "../../clients/tfs.js";
 import { isDirectBugDelivery, type BugCurrentPr } from "./finalize-facts.js";
 
-interface RepoEntry { tfs_repo?: string; tfs_project?: string; }
-interface RegistryConfig extends BaseRegistryConfig { registry: Record<string,RepoEntry>; }
 interface Abandoned { repo_key: string; pr_id: number; event_key: string; }
 interface Decision { comment_id:string; next:"REWORK"|"RECREATE_PR"; abandoned_prs:string[]; original_prs:BugCurrentPr[]; decided_at:string; }
-const USAGE = "用法: rondo bug resume --config <repo-registry.json> --issue <KEY> " +
+const USAGE = "用法: rondo bug resume --issue <KEY> " +
   "--human-comment-id <id> --next REWORK|RECREATE_PR\n";
 
 function readList<T>(raw:string|undefined,key:string):T[] {
@@ -45,16 +48,17 @@ export function assertAbandonedBugSet(prs:BugCurrentPr[],abandoned:Abandoned[]):
 }
 async function main(argv:string[]):Promise<number>{
   if(argv.includes("--help")||argv.includes("-h")){process.stdout.write(USAGE);return 0;}
-  const config=arg(argv,"--config"),issueRef=arg(argv,"--issue");
+  const issueRef=arg(argv,"--issue");
   const commentId=arg(argv,"--human-comment-id"),next=arg(argv,"--next");
-  if(!config||!issueRef||!commentId||!["REWORK","RECREATE_PR"].includes(next)){
+  if(argv.some((v,j)=>j%2===0&&!["--issue","--human-comment-id","--next"].includes(v))||!issueRef||!commentId||!["REWORK","RECREATE_PR"].includes(next)){
     process.stderr.write(USAGE);return 64;
   }
   try{
-    const cfg=loadConfig<RegistryConfig>(config);
-    const client=new MulticaClient(cfg.runtime);
+    const client=new MulticaClient(resolveMulticaRuntime());
     const issue=client.getIssue(issueRef),md=issue.metadata??{};
     const issueKey=issue.identifier??issue.id;
+    const comment=client.listComments(issueKey).find(c=>c.id===commentId);
+    if(!comment || !comment.content?.trim() || comment.author_type!=="member" || !comment.author_id) throw new FailError("Human 决定须来自当前 Issue 的真实成员评论");
     const rawDecision=md["bug.resume"];
     let decision:Decision|undefined;
     if(rawDecision) {
@@ -68,7 +72,8 @@ async function main(argv:string[]):Promise<number>{
       }
       if(decision.comment_id===commentId && issue.status==="in_progress"){
         const current=readList<BugCurrentPr>(md.current_pr??"[]","current_pr");
-        if(current.length!==0)throw new UnknownError("旧 PR 尚未清除，不能将历史 Decision 视为完成");
+        if(current.length!==0 || (next==="REWORK" && (md["bug.delivery"]!=="[]" || md.pr_prep!=="[]")))throw new UnknownError("当前恢复事实与已记录 Decision 不一致");
+        if(next==="RECREATE_PR") assertBugReadyForPr(md);
         process.stdout.write(JSON.stringify({result:"NOOP",issue:issueKey,next,comment_id:commentId})+"\n");
         return 0;
       }
@@ -79,9 +84,6 @@ async function main(argv:string[]):Promise<number>{
     if(md["finalize.pending"] || md["delivery.tfs_written"]==="true"){
       throw new FailError("已有收口或 TFS 写回事实，禁止 Bug PR 恢复覆盖");
     }
-    const comments=client.listComments(issueKey);
-    const comment=comments.find(c=>c.id===commentId);
-    if(!comment || !comment.content?.trim())throw new FailError("真实 Human 决定评论不存在或为空");
     const observedPrs=readList<BugCurrentPr>(md.current_pr??"[]","current_pr");
     // A previous interrupted run may already have cleared current_pr. The
     // persist-before-act Decision retains its original immutable PR snapshot.
@@ -94,24 +96,45 @@ async function main(argv:string[]):Promise<number>{
         throw new FailError("PR Abandoned 事件在 Human 决策后改变，拒绝重放");
       }
     }
-    const tfs=new TfsClient();
+    const tfs=new TfsClient(), server=loadTfsConfig().serverUrl;
+    const prepared=readList<{repo_key:string;repo_url:string;candidate_commit:string;source_branch:string;target_branch:string}>(md.pr_prep??"[]","pr_prep");
+    if(next==="RECREATE_PR") {
+      assertBugReadyForPr(md);
+      const evidence=readList<Record<string,unknown>&{repo_key:string}>(md["bug.delivery"],"bug.delivery");
+      for(const d of evidence) {
+        const errors=validateBugEvidence({...d,blockers:[]},{issue:issueKey,tfsId:Number(md["tfs.id"]),repoKey:d.repo_key,sha:String(d.candidate_commit)});
+        if(errors.length) throw new FailError(errors.join("；"));
+      }
+    }
+    if(decision?.comment_id===commentId && JSON.stringify(prs)!==JSON.stringify(decision.original_prs)) throw new FailError("原始 PR 事实与已登记 Decision 不一致");
     for(const p of prs){
       if (p.source_branch !== candidateBranch(md["tfs.id"])) throw new FailError("Bug 恢复 Candidate Branch 不一致");
-      const repo=cfg.registry[p.repo_key];
-      if(!repo?.tfs_repo||!repo.tfs_project)throw new FailError("Repository 的 TFS PR 配置缺失: "+p.repo_key);
-      const found=await tfs.run(["pr","get","--repo",repo.tfs_repo,"--id",String(p.pr_id),
-        "--project",repo.tfs_project],"核实 abandoned PR") as {
-        found?:boolean;status?:string;sourceBranch?:string;targetBranch?:string;
+      const location=parseTfsPrWebUrl(p.pr_url,server);
+      if(!location || location.prId!==p.pr_id)throw new FailError("原 PR URL 身份不一致");
+      const prep=prepared.find(x=>x.repo_key===p.repo_key);
+      if(prep){const parts=assertTfsRepository(prep.repo_url,server).pathname.split("/").map(decodeURIComponent);
+        if(parts.at(-3)?.toLowerCase()!==location.project.toLowerCase()||parts.at(-1)?.toLowerCase()!==location.repository.toLowerCase()||
+          prep.source_branch!==p.source_branch||prep.target_branch!==p.target_branch)throw new FailError("原 PR 与准备事实不一致");}
+      else if(next==="RECREATE_PR") throw new FailError("RECREATE_PR 缺少原 Candidate");
+      const found=await tfs.run(["pr","get","--repo",location.repository,"--id",String(p.pr_id),
+        "--project",location.project],"核实 abandoned PR") as {
+        found?:boolean;id?:number;status?:string;sourceBranch?:string;targetBranch?:string;
       };
-      if(found.found===false||found.status!=="abandoned" ||
+      if(found.found===false||found.id!==p.pr_id||found.status!=="abandoned" ||
          found.sourceBranch!==p.source_branch||found.targetBranch!==p.target_branch){
         throw new UnknownError("外部 PR 未确认为 abandoned 或身份冲突: "+p.repo_key+"#"+p.pr_id);
+      }
+      if(next==="RECREATE_PR" && prep) {
+        const branch=await tfs.run(["branch","get","--repo",location.repository,"--project",location.project,"--name",p.source_branch],"核验原 Candidate") as {found?:boolean;branch?:{commit:string}};
+        if(!branch.found||branch.branch?.commit!==prep.candidate_commit)throw new FailError("Candidate 已改变，需要重新授权 REWORK");
       }
     }
     const saved=decision&&decision.comment_id===commentId?rawDecision!:JSON.stringify({
       comment_id:commentId,next:next as "REWORK"|"RECREATE_PR",abandoned_prs:eventKeys,
       original_prs:prs,decided_at:new Date().toISOString(),
     } satisfies Decision);
+    const latest=client.getIssue(issueRef);
+    if(latest.status!==issue.status || ["tfs.id","tfs.type","pr_prep","bug.delivery","bug.required_repos","current_pr","pr.abandoned","bug.resume","finalize.pending","delivery.tfs_written"].some(k=>latest.metadata?.[k]!==md[k])) throw new UnknownError("恢复期间 Issue 事实变化");
     // Persist decision first. Subsequent writes are idempotent and recoverable.
     if(md["bug.resume"]!==saved)client.setMetadata(issue.id,"bug.resume",saved);
     // Remove only the current PR materialization, never the historical abandoned events.

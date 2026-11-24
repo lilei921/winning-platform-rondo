@@ -55,10 +55,10 @@ export function registerDevPublish(group: Command): void {
         const runtime = resolveMulticaRuntime(), client = new MulticaClient(runtime);
         const sourceForMapping = readAnalysisSource(client.getIssue(opts.issue).metadata ?? {});
         const cfg = { runtime, registry: await readApprovedRepoMapping(sourceForMapping, loadTfsConfig().serverUrl) };
-        const multica = new MulticaClient(cfg.runtime);
+        const multica = client;
         const approved = await approvedChange(cfg, multica, opts.issue, opts.changeRef);
         const source = approved.source;
-        if (source.commit !== sourceForMapping.commit || source.repo_url !== sourceForMapping.repo_url) throw new UnknownError("批准来源在读取映射期间变化");
+        if (source.commit !== sourceForMapping.commit || source.repo_url !== sourceForMapping.repo_url || source.branch !== sourceForMapping.branch || source.change_ref !== sourceForMapping.change_ref) throw new UnknownError("批准来源在读取映射期间变化");
         const root = requirementRoot(opts.rootRepo);
         const branch = source.branch;
         const original = approved.issue.metadata ?? {};

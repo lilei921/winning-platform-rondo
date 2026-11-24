@@ -6,7 +6,7 @@ import { runAuthenticatedGit } from "../../clients/authenticated-git.js";
 import { authorizedCheckout } from "../dev/authorized-checkout.js";
 import { validatePrepareRepo } from "../dev/prepare-workspace.js";
 import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
-import { readBugEvidenceInput, validateBugEvidence } from "../bug/pr-prepare.js";
+import { readBugEvidenceInput, validateBugEvidence } from "../bug/evidence.js";
 import { requiredBugRepos, assertBugReadyForPr } from "../bug/scope.js";
 import { verifyAndExecuteValidation } from "./validation.js";
 

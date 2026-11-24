@@ -32,10 +32,7 @@ import { registerDevCheckCompletion } from "./commands/dev/check-completion.js";
 import { registerDevCheckChange } from "./commands/dev/check-change.js";
 import { registerDevPublish } from "./commands/dev/publish.js";
 import { registerDevCheckDispatch } from "./commands/dev/check-dispatch.js";
-import { registerDevPrPrepare } from "./commands/dev/pr-prepare.js";
 import { registerDevContractHash } from "./commands/dev/contract-hash.js";
-import { registerBugPrPrepare } from "./commands/bug/pr-prepare.js";
-import { registerBugGit } from "./commands/bug/git.js";
 import { registerDevGit } from "./commands/dev/git.js";
 import { registerRuntimeCheckCheckout } from "./commands/runtime/check-checkout.js";
 import { registerRuntimePrepareRoot } from "./commands/runtime/prepare-root.js";
@@ -99,12 +96,9 @@ registerDevCheckDispatch(dev);
 registerDevCheckCompletion(dev);
 registerDevCheckChange(dev);
 registerDevPublish(dev);
-registerDevPrPrepare(dev);
 registerDevContractHash(dev);
 
 const bug = bareGroup(program.command("bug").description("无 OpenSpec 的 TFS Bug 修复交付入口"));
-registerBugPrPrepare(bug);
-registerBugGit(bug);
 registerBugResume(bug);
 
 const tfs = bareGroup(program.command("tfs").description("TFS 统一回写(writeback)/ 对账;旧物化与置态命令仅作在途恢复入口"));

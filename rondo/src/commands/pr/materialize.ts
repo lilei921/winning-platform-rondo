@@ -18,7 +18,7 @@ import { readApprovedRepoMapping } from "../dev/native-prepare.js";
 import { readAnalysisSource } from "../analysis/source.js";
 import { assertBugReadyForPr, assertBugAgentAssignment } from "../bug/scope.js";
 import { assertBugExecution, assertBugSource } from "../bug/authorization.js";
-import { validateBugEvidence } from "../bug/pr-prepare.js";
+import { validateBugEvidence } from "../bug/evidence.js";
 import { assertEngineerExecution } from "../dev/requirement-guard.js";
 import { checkPublishedChange } from "../dev/change-completion.js";
 import { candidateBranch } from "./candidate-branch.js";
