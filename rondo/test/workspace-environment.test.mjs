@@ -18,25 +18,24 @@ function fixture(t, scenario = "normal", extraEnv = {}) {
   };
   const shared = "workspace-config/";
   const overlay = write(shared + "workspaces/pilot.json", { workspace_id: "ws-1" });
-  const agents = [{ dir: "analyst", name: "Workitem Analyst", skills: ["spec-preparation"] }];
-  if (scenario === "branch") agents.push(
-    { dir: "engineer", name: "Engineer", skills: [] },
+  const branchScenario = ["branch", "group", "native-branch"].includes(scenario);
+  const preparation = scenario === "native-branch" ? "native-workspace" : "workspace-preparation";
+  const agents = [{ dir: "analyst", name: "Workitem Analyst", skills: ["spec-preparation", ...(branchScenario ? [preparation] : [])] }];
+  if (["branch", "native-branch"].includes(scenario)) agents.push(
+    { dir: "engineer", name: "Engineer", skills: [preparation] },
     { dir: "delivery-lead", name: "Delivery Lead", skills: [] },
   );
   write(shared + "provisioning.json", {
-    managed_skills: ["spec-preparation"], agents,
-    squad: { name: "Delivery", leader: "Workitem Analyst", members: [] }, project: {
-      title: "Project",
-      workspace_branch: ["branch", "group"].includes(scenario) ? "release" : undefined,
-      description: ["project-create", "project-description"].includes(scenario) ? "项目描述" : undefined,
-    }, autopilots: [],
+    managed_skills: ["spec-preparation", ...(branchScenario ? [preparation] : [])], agents,
+    squad: { name: "Delivery", leader: "Workitem Analyst", members: [] }, project: { title: "Project", workspace_branch: branchScenario ? "release" : undefined, description: ["project-create", "project-description"].includes(scenario) ? "项目描述" : undefined }, autopilots: [],
     workspace_groups: { bi: { workspaces: ["pilot"], project: scenario === "group" ? { title: "BI Project" } : {} } },
     workflow: { statuses: [{ key: "analysis_review", name: "Analysis Review", category: "started" }] },
   });
   write("skills/spec-preparation/SKILL.md", "---\nname: spec-preparation\ndescription: fixture\n---\n");
   write("agents/analyst/instructions.md", "instructions");
   write("agents/analyst/description.md", "description");
-  if (scenario === "branch") {
+  if (branchScenario) write(`skills/${preparation}/SKILL.md`, `---\nname: ${preparation}\ndescription: fixture\n---\n`);
+  if (["branch", "native-branch"].includes(scenario)) {
     for (const dir of ["engineer", "delivery-lead"]) {
       write(`agents/${dir}/instructions.md`, "instructions");
       write(`agents/${dir}/description.md`, "description");
@@ -58,7 +57,7 @@ if(key==='workspace list') out=[];
 else if(key==='workspace create') out={id:'new-ws'};
 else if(key==='workflow get') out=['bad','new-bad'].includes(process.env.MC_SCENARIO)?{}:{steps:[{status_key:'todo'},{status_key:'analysis_review'},{status_key:'done'}]};
 else if(key==='runtime list') out=process.env.MC_SCENARIO==='no-runtime'?[]:[{id:'runtime-1'}];
-else if(key==='skill list') out=process.env.MC_SCENARIO==='skill-create'?[]:[{id:'skill-1',name:'spec-preparation'}];
+else if(key==='skill list') out=process.env.MC_SCENARIO==='skill-create'?[]:[{id:'skill-1',name:'spec-preparation'}, ...(['branch','group','native-branch'].includes(process.env.MC_SCENARIO)?[{id:'skill-2',name:process.env.MC_SCENARIO==='native-branch'?'native-workspace':'workspace-preparation'}]:[])];
 else if(key==='skill create') {
   if(!args.includes('--content-stdin')) throw new Error('expected UTF-8 stdin');
   fs.writeFileSync(process.env.MC_TRACE+'.skill',fs.readFileSync(0)); out={id:'skill-1'};
@@ -94,14 +93,16 @@ else if(key==='skill files') {
   } else throw new Error('unexpected skill files operation');
 }
 else if(key==='agent list') {
-  out=[{id:'agent-1',name:'Workitem Analyst',instructions:'instructions',description:'description',visibility:'workspace',skills:[{name:'spec-preparation'}]}];
-  if(fs.existsSync(process.env.MC_TRACE+'.agent-2')) out.push({...out[0],id:'agent-2',name:'Engineer',skills:[]});
-  if(process.env.MC_SCENARIO==='branch') out.push({...out[0],id:'agent-3',name:'Delivery Lead',skills:[]});
+  const preparation=['branch','group','native-branch'].includes(process.env.MC_SCENARIO)?[{name:process.env.MC_SCENARIO==='native-branch'?'native-workspace':'workspace-preparation'}]:[];
+  out=[{id:'agent-1',name:'Workitem Analyst',instructions:'instructions',description:'description',visibility:'workspace',skills:[{name:'spec-preparation'},...preparation]}];
+  if(fs.existsSync(process.env.MC_TRACE+'.agent-2')) out.push({...out[0],id:'agent-2',name:'Engineer',skills:preparation});
+  if(['branch','native-branch'].includes(process.env.MC_SCENARIO)) out.push({...out[0],id:'agent-3',name:'Delivery Lead',skills:[]});
 }
 else if(key==='agent create') {
-  const env=JSON.parse(args[args.indexOf('--custom-env')+1]);
+  const env=args.includes('--custom-env')?JSON.parse(args[args.indexOf('--custom-env')+1]):{};
   fs.writeFileSync(process.env.MC_TRACE+'.agent-2',JSON.stringify(env)); out={id:'agent-2'};
 }
+else if(key==='agent skills') out={};
 else if(key==='agent env') {
   const id=args[3], path=process.env.MC_TRACE+'.'+id;
   const env=fs.existsSync(path)?JSON.parse(fs.readFileSync(path)): {RONDO_WORKSPACE_BRANCH:'dev',OTHER:'fixture-private-value'};
@@ -398,7 +399,7 @@ test("pr-status-sync no longer renders Repository Registry", t => {
     workspace_id: "ws-1", skills: { "pr-status-sync": "skill-1" },
   });
   f.write("skills/pr-status-sync/SKILL.md", "---\nname: pr-status-sync\ndescription: fixture\n---\n");
-  const result = f.run("workspace", "sync", "--workspace", "pilot", "--local-only");
+  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "pr-status-sync", "--local-only");
   assert.equal(result.code, 0, JSON.stringify(result.body));
   assert.deepEqual(result.body.rendered, []);
   assert.equal(existsSync(join(dirname(f.overlay), "..", "..", "skills", "pr-status-sync", "config", "repo-registry.json")), false);
@@ -417,7 +418,7 @@ test("pr-status-sync sync deletes a stale remote Repository Registry attachment"
   assert.equal(result.code, 0, JSON.stringify(result.body));
   assert.deepEqual(result.body.deleted_remote, ["pr-status-sync/config/repo-registry.json"]);
   assert.ok(f.calls().some(args =>
-    args[0] === "skill" && args[1] === "files" && args[2] === "delete" && args.at(-1) === "stale-registry"));
+    args.includes("skill") && args[args.indexOf("skill") + 1] === "files" && args[args.indexOf("skill") + 2] === "delete" && args.at(-1) === "stale-registry"));
   assert.equal(existsSync(f.trace + ".stale"), false);
 
   const check = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "pr-status-sync", "--check");
@@ -430,7 +431,7 @@ test("delivery-closeout no longer renders Repository Registry", t => {
     workspace_id: "ws-1", skills: { "delivery-closeout": "skill-1" },
   });
   f.write("skills/delivery-closeout/SKILL.md", "---\nname: delivery-closeout\ndescription: fixture\n---\n");
-  const result = f.run("workspace", "sync", "--workspace", "pilot", "--local-only");
+  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "delivery-closeout", "--local-only");
   assert.equal(result.code, 0, JSON.stringify(result.body));
   assert.deepEqual(result.body.rendered, []);
   assert.equal(existsSync(join(dirname(f.overlay), "..", "..", "skills", "delivery-closeout", "config", "repo-registry.json")), false);
@@ -449,10 +450,17 @@ test("delivery-closeout sync deletes a stale remote Repository Registry attachme
   assert.equal(result.code, 0, JSON.stringify(result.body));
   assert.deepEqual(result.body.deleted_remote, ["delivery-closeout/config/repo-registry.json"]);
   assert.ok(f.calls().some(args =>
-    args[0] === "skill" && args[1] === "files" && args[2] === "delete" && args.at(-1) === "stale-registry"));
+    args.includes("skill") && args[args.indexOf("skill") + 1] === "files" && args[args.indexOf("skill") + 2] === "delete" && args.at(-1) === "stale-registry"));
   assert.equal(existsSync(f.trace + ".stale"), false);
 
   const check = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "delivery-closeout", "--check");
   assert.equal(check.code, 0, JSON.stringify(check.body));
   assert.equal(check.body.result, "PASS");
+});
+
+test("Native Workspace provision does not read or inject the historical root branch variable", t => {
+  const f = fixture(t, "native-branch");
+  const result = f.run("workspace", "provision", "--workspace", "pilot", "--skip-workflow");
+  assert.equal(result.code, 0, result.stderr);
+  assert.ok(!f.calls().some(args => args.includes("env") || args.some(arg => arg.includes("RONDO_WORKSPACE_BRANCH"))));
 });

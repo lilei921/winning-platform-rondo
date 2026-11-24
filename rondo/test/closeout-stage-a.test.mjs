@@ -68,7 +68,11 @@ function fixture(t, { checkoutSuffix = taskSuffix, checkoutThrows = false, stale
   const releaseApproved = git(work, 'rev-parse', 'HEAD');
   git(work, 'push', 'origin', 'release');
   git(bare, 'symbolic-ref', 'HEAD', 'refs/heads/dev');
-  if (linked) git(bare, 'remote', 'add', 'origin', repoUrl);
+  const cache = join(dir, 'cache.git');
+  if (linked) {
+    git(dir, 'clone', '--bare', bare, cache);
+    git(cache, 'remote', 'set-url', 'origin', repoUrl);
+  }
 
   let lastRoot, checkoutCount = 0;
   const remote = (url, args, cwd) => {
@@ -87,7 +91,7 @@ function fixture(t, { checkoutSuffix = taskSuffix, checkoutThrows = false, stale
     const root = join(workdir, 'root');
     const agentBranch = 'agent/pr-status-sync-agent/' + checkoutSuffix;
     if (linked) {
-      git(bare, 'worktree', 'add', '-b', agentBranch, root, 'dev');
+      git(cache, 'worktree', 'add', '-b', agentBranch, root, 'dev');
     } else {
       git(workdir, 'clone', bare, root);
       if (staleLocal) git(root, 'reset', '--hard', 'HEAD~1');
@@ -110,7 +114,7 @@ function fixture(t, { checkoutSuffix = taskSuffix, checkoutThrows = false, stale
   const paths = root => ({
     rootRepo: root, openspecRoot: join(root, 'openspec'), projectId: '', daemonId: null, source: 'explicit_arg',
   });
-  return { bare, source, paths, remote, prepare, checkout,
+  return { bare, cache, source, paths, remote, prepare, checkout,
     get lastRoot() { return lastRoot; }, get checkoutCount() { return checkoutCount; } };
 }
 
@@ -181,7 +185,7 @@ test('批准 tasks 始终按不可变 Commit 读取，每个 Issue 独立检查 
 test('main 与 master 各自 Fetch、Push、Readback，且不占用共享本地 main/master', t => {
   const f = fixture(t, { linked: true });
   const shared = join(dirname(f.bare), 'other-worktree');
-  git(f.bare, 'worktree', 'add', shared, 'main');
+  git(f.cache, 'worktree', 'add', shared, 'main');
   let root;
   for (const branch of ['main', 'master']) {
     const issue = f.source('change-a', branch);
@@ -227,7 +231,7 @@ test('linked worktree 的 Git common-dir manifest 必须校验当前 Task 身份
   const f = fixture(t, { linked: true });
   const source = f.source('change-a');
   const root = f.prepare(source).root_repo;
-  const manifest = join(f.bare, 'multica-checkout.json');
+  const manifest = join(f.cache, 'multica-checkout.json');
   writeFileSync(manifest, JSON.stringify({
     checkout_branch: 'agent/pr-status-sync-agent/' + taskSuffix,
     task_id: 'another-task', workspace_id: workspaceId, checkout_mode: 'isolated',
@@ -328,7 +332,7 @@ test('拒绝复用没有 Multica isolated 身份的用户目录', t => {
   const root = join(process.cwd(), 'root');
   git(process.cwd(), 'clone', '--single-branch', '--branch', 'dev', f.bare, root);
   git(root, 'remote', 'set-url', 'origin', repoUrl);
-  assert.throws(() => verifyCloseoutRoot(f.paths(root), f.source('change-a')), /isolated/);
+  assert.throws(() => verifyCloseoutRoot(f.paths(root), f.source('change-a')), /isolated|平台 Checkout 分支不存在/);
 });
 
 test('Root 验证必须在当前 Task workdir 内运行', t => {

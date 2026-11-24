@@ -71,7 +71,7 @@ rondo analysis read --config <repo-registry.json> --issue <KEY> --file <Change�
 | --- | --- |
 | `analysis stage` | 将分析结果暂存到 Issue Metadata，不直接推进审核状态 |
 | `analysis validate` | 核对 Analysis Facts，在指定根仓对当前 Change 运行 OpenSpec 严格校验，并核实返回的根仓和 Change 身份 |
-| `analysis complete` | Requirement 使用 `--mode requirement` 核验 Gate，向已确认的项目根仓分支发布当前 Change 已提交的审核工件（Native 可显式提供 `--target-branch`），并登记可回读的 `analysis.source` |
+| `analysis complete` | Requirement 使用 `--mode requirement` 核验 Gate，向已确认的项目根仓分支发布当前 Change 已提交的审核工件（Native 首次发布取当前根仓 Project Resource ref；已有同 Change 来源使用固定分支，`--target-branch` 不得覆盖），并登记可回读的 `analysis.source` |
 | `analysis read` | 按 Issue 中的 `analysis.source` 读取指定版本的 `tasks.md`、`proposal.md`、`design.md` 或 Spec，属于只读操作 |
 
 `stage`、`validate`、`complete` 面向当前分析事实；涉及 `--workspace-id` 的命令需保证其与配置中的 Workspace 身份一致。
@@ -104,7 +104,7 @@ rondo dev check-change --config <repo-registry.json> --issue <KEY> --change-ref 
 | `dev pr-prepare` | 核对候选 Commit，写入 PR 准备事实；不直接创建 PR |
 | `dev contract-hash` | 计算当前 Change 契约文件的 SHA-256 摘要，供工程验证引用 |
 | `dev prepare` | Native 使用 Multica Checkout；Requirement 必须提供 `--change-ref`，无远端 Candidate 时须提供已核实的 `--resource-ref`。旧入口仅保留兼容 |
-| `dev publish` | 发布当前 Change 已提交的 Tasks / Evidence / PR 描述，回读远端 SHA 并登记 `dev.publication`。非实质性 Design 细化使用 `--minor-design` |
+| `dev publish` | 按已批准的 `analysis.source.branch` 发布当前 Change 已提交的 Tasks / Design，回读远端 SHA 并登记 `dev.publication`。非实质性 Design 细化使用 `--minor-design` |
 | `dev check-change` | 按批准版本与登记的研发交付版本核验 Change 全部 Tasks、Candidate、Review 与 Evidence |
 
 ### 4.2 `rondo bug`
@@ -258,7 +258,7 @@ rondo workspace check-daemon --workspace-id <id> [--project-id <id>]
 | `workspace migrate-repo-keys` | 预览或实施 Workspace Issue 中的 Repository Key Metadata 变更；`--apply` 才写入 |
 | `workspace check-daemon` | 检查 Daemon 环境变量、Runtime 注册、挂载唯一性和交付亲和条件 |
 
-`workspace provision` 的 `--dry-run` 只预览；`workspace sync --local-only` 只生成本地配置，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。完整 provision 将 `workspace-config/provisioning.json` 中的 `project.workspace_branch` 仅下发为 Workitem Analyst / Engineer 的 `RONDO_WORKSPACE_BRANCH`，其他 Agent 不注入也不改既有值。
+`workspace provision` 的 `--dry-run` 只预览；`workspace sync --local-only` 只生成本地配置，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。只有绑定 `workspace-preparation` 的 Workitem Analyst / Engineer 才接收 `project.workspace_branch` 对应的 `RONDO_WORKSPACE_BRANCH`；不修改其他 Agent 的既有环境变量。
 
 默认绑定 `native-workspace`。执行 provision 前，核实 CLI、实际 TFS 根仓映射及批准版本；供给并同步 Skill 后验证实际交付。尚不满足 Native 前置条件的 Workspace 可在既有 Overlay（`workspace-config/workspaces/<name>.json`）显式设置 `"workspace_preparation_skill": "workspace-preparation"`，重新 provision 保留旧绑定。该字段只控制 Agent Skill 绑定，不参与运行时决策。
 

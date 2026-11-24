@@ -1,5 +1,4 @@
 /** Publish committed execution artifacts and bind their remote SHA to the approved Analysis. */
-import { isDaemonCacheWorktree } from "../../clients/native-checkout.js";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
@@ -10,7 +9,7 @@ import { MulticaClient } from "../../clients/multica.js";
 import { normalizeContractText } from "../delivery/contract-files.js";
 import { readAnalysisArtifact, type AnalysisSource } from "../analysis/source.js";
 import { approvedChange, developmentPublication } from "./requirement-guard.js";
-import { publishChange, requirementBranch, requirementRoot } from "../runtime/root-git.js";
+import { publishChange, requirementRoot } from "../runtime/root-git.js";
 
 export const executionArtifact = /^(?:tasks\.md|design\.md)$/;
 const contractFile = /^(?:\.openspec\.yaml|proposal\.md|tasks\.md|design\.md|specs\/.+\.md)$/;
@@ -56,8 +55,7 @@ export function registerDevPublish(group: Command): void {
         const approved = await approvedChange(cfg, multica, opts.issue, opts.changeRef);
         const source = approved.source;
         const root = requirementRoot(opts.rootRepo);
-        const branch = isDaemonCacheWorktree(root, process.env.MULTICA_WORKSPACE_ID) ? source.branch : requirementBranch();
-        if (branch !== source.branch) throw new FailError("项目根仓分支与已批准的 analysis.source.branch 不一致");
+        const branch = source.branch;
         const original = approved.issue.metadata ?? {};
         const previous = developmentPublication(original);
         const previousCommit = previous?.analysis_commit === source.commit ? previous.commit : undefined;

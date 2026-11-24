@@ -8,7 +8,7 @@ import { runAuthenticatedGit, assertTfsRepository } from "../../clients/authenti
 import { runCommand } from "../../clients/spawn.js";
 import { multicaPrefix } from "../../clients/multica-environment.js";
 import type { MulticaRuntime } from "../../clients/runtime-context.js";
-import { parsePlatformCheckoutOutput } from "../../clients/native-checkout.js";
+import { parsePlatformCheckoutOutput, assertNativeCheckoutBaseline } from "../../clients/native-checkout.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 import { validatePrepareRepo, validateBusinessPath, validateBusinessCheckout, type PrepareRepo } from "./prepare-workspace.js";
 
@@ -91,10 +91,7 @@ export function prepareNativeBusiness(root: string, repo: PrepareRepo, branch: s
     throw new UnknownError("首次 Checkout HEAD 与已确认基线不一致，保留现场");
   if (existing && !candidate) {
     // Kept does not switch refs. Verify the original upstream rather than requiring the latest remote tip.
-    const upstream = git(path, ["rev-parse", "--symbolic-full-name", "@{upstream}"]);
-    if (upstream.status !== 0 || upstream.stdout.trim() !== "refs/remotes/origin/" + resourceRef ||
-        git(path, ["merge-base", head, upstream.stdout.trim()]).status !== 0)
-      throw new UnknownError("已有工作树的初始基线无法确认，保留现场");
+    assertNativeCheckoutBaseline(path, resourceRef!);
   }
   if (candidate && git(path, ["merge-base", "--is-ancestor", candidate, head]).status !== 0)
     throw new UnknownError("当前工作树未包含已发布 Candidate，保留现场");

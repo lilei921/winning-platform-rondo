@@ -6,14 +6,14 @@
  * PR creation is still delegated to rondo pr materialize.
  */
 import { existsSync, readFileSync, statSync } from "node:fs";
-import { isAbsolute, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
 import { loadConfig, type BaseRegistryConfig } from "../../clients/config.js";
 import { git, gitOk } from "../../clients/git.js";
 import { MulticaClient } from "../../clients/multica.js";
-import { validateNativeCheckout } from "../../clients/native-checkout.js";
+import { validateNativeCheckout, nativeCheckoutExpected, assertNativeTaskCheckout } from "../../clients/native-checkout.js";
 import { assertTfsRepository, runAuthenticatedGit } from "../../clients/authenticated-git.js";
 import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
 import { assertBugExecution, assertBugStart, assertBugSource } from "./authorization.js";
@@ -209,8 +209,13 @@ async function main(argv: string[]): Promise<number> {
     validatePrepareRepo(repo, loadTfsConfig().serverUrl);
     const repoUrl = assertTfsRepository(repo.repo_url, loadTfsConfig().serverUrl).href;
     const hub = validateBusinessPath(paths.rootRepo, repo);
-    const localHead = validateBusinessCheckout(hub, repo, sourceBranch);
-    if (statSync(join(hub, ".git")).isFile()) {
+    const workdir = dirname(paths.rootRepo);
+    const native = nativeCheckoutExpected(hub, workdir, sourceBranch);
+    const localHead = validateBusinessCheckout(hub, repo, sourceBranch, native ? workdir : undefined);
+    if (native) {
+      assertNativeTaskCheckout(paths.rootRepo, workdir, undefined, issue.id);
+      if (sourceBranch !== 'feat/' + tfsId || targetBranch !== repo.default_target_branch)
+        throw new FailError("Native PR 分支与候选 / 已登记目标不一致");
       assertNativeDeliveryMapping(paths.rootRepo, "HEAD", repoKey, repo, loadTfsConfig().serverUrl);
       if (localHead !== sha) throw new FailError("Native 工作树 HEAD 与 Candidate 不一致");
     }

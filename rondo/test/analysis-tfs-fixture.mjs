@@ -85,7 +85,7 @@ const args=process.argv.slice(2);
 const query=args.join(' '), fetchUrl=process.env.MOCK_GIT_FETCH_URL, pushUrl=process.env.MOCK_GIT_PUSH_URL;
 if (query === 'remote get-url --push --all origin' || (${JSON.stringify(requirementOrigin)} && query === 'remote get-url --push origin')) {
   process.stdout.write((pushUrl || ${JSON.stringify(repoUrl)})+'\\n');
-} else if (${JSON.stringify(requirementOrigin)} && query === 'remote get-url origin') {
+} else if (${JSON.stringify(requirementOrigin)} && (query === 'remote get-url origin' || query === 'remote get-url --all origin')) {
   process.stdout.write((fetchUrl || ${JSON.stringify(repoUrl)})+'\\n');
 } else {
   const url = args[0] === 'push' ? pushUrl : ['fetch','ls-remote'].includes(args[0]) ? fetchUrl : undefined;

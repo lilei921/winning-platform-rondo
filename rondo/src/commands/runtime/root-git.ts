@@ -1,7 +1,7 @@
 /** Non-destructive persistent root synchronization and per-Change Git publishing. */
-import { existsSync, lstatSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { assertNativeTaskCheckout, isDaemonCacheWorktree } from "../../clients/native-checkout.js";
+import { assertNativeTaskCheckout, assertNativeCheckoutBaseline, nativeCheckoutExpected, readDaemonTaskContext } from "../../clients/native-checkout.js";
 import { randomUUID } from "node:crypto";
 import { changeTree, developmentTree, mergeChangeTrees, publishedTree } from "./change-tree.js";
 import { FailError, UnknownError } from "../../cli/errors.js";
@@ -19,6 +19,8 @@ interface PublishOptions {
   repoUrl: string;
   expectedBranch: string;
   approvedCommit?: string;
+  recoverCommit?: string;
+  fixedSourceCommit?: string;
   remote?: RootRemote;
   validateTree?: (commit: string) => void | Promise<void>;
 }
@@ -53,6 +55,8 @@ function assertRootLayout(root: string, preserveChangeDeletion = false): void {
 
 export function requirementRoot(arg?: string | null): string {
   const root = rootPath(arg);
+  if (!arg && (nativeCheckoutExpected(root) || nativeCheckoutExpected(process.cwd()) ||
+      readDaemonTaskContext(process.cwd()))) throw new UnknownError("Native Checkout 必须显式提供 --root-repo");
   assertRootLayout(root);
   return root;
 }
@@ -63,10 +67,12 @@ function rootGitUrls(root: string, revision = "HEAD"): { repoUrl: string; fetchU
   const match = yaml.match(/^[ \t]*-[ \t]+repo_id:[ \t]*root[ \t]*\r?\n([\s\S]*?)(?=^[ \t]*-[ \t]+repo_id:|$(?![\s\S]))/m);
   const raw = match?.[1].match(/^[ \t]*repo_url:[ \t]*(\S+)[ \t]*$/m)?.[1];
   if (!raw) throw new UnknownError("根仓 repo-context.yaml 缺少 root.repo_url");
-  const origin = run(root, ["remote", "get-url", "origin"], "读取根仓 origin");
+  const origins = run(root, ["remote", "get-url", "--all", "origin"], "读取根仓 origin").split(/\r?\n/);
+  if (origins.length !== 1) throw new UnknownError("根仓 Origin 非唯一");
+  const origin = origins[0];
   const pushUrls = run(root, ["remote", "get-url", "--push", "--all", "origin"], "读取根仓 push origin").split(/\r?\n/);
   const identity = canonicalRepositoryIdentity(raw);
-  if (identity !== canonicalRepositoryIdentity(origin) || identity !== canonicalRepositoryIdentity(pushUrls[0])) {
+  if (pushUrls.length !== 1 || identity !== canonicalRepositoryIdentity(origin) || identity !== canonicalRepositoryIdentity(pushUrls[0])) {
     throw new FailError("根仓 Origin 与 repo-context.yaml 的 root.repo_url 不一致");
   }
   return { repoUrl: repositoryUrl(raw).href, fetchUrl: origin, pushUrls };
@@ -74,6 +80,27 @@ function rootGitUrls(root: string, revision = "HEAD"): { repoUrl: string; fetchU
 
 export function rootRepositoryUrl(root: string, revision = "HEAD"): string {
   return rootGitUrls(root, revision).repoUrl;
+}
+
+/** Resolve the first Native publication from the current Issue's injected Project Resource. */
+export function resolveProjectRootBranch(root: string, projectId: unknown): string {
+  const repo = canonicalRepositoryIdentity(rootRepositoryUrl(root));
+  let project: { project_id?: unknown; resources?: Array<{ resource_type?: unknown; resource_ref?: { url?: unknown; ref?: unknown } }> };
+  try { project = JSON.parse(readFileSync(join(dirname(root), ".multica", "project", "resources.json"), "utf8")); }
+  catch { throw new UnknownError("无法读取当前 Task 的 Project Resource"); }
+  if (!project || typeof projectId !== "string" || !projectId || project.project_id !== projectId || !Array.isArray(project.resources))
+    throw new UnknownError("Project Resource 与当前 Issue 的 Project 身份不一致");
+  const matches = project.resources.filter(row => {
+    if (row?.resource_type !== "github_repo" || typeof row.resource_ref?.url !== "string") return false;
+    try { return canonicalRepositoryIdentity(row.resource_ref.url) === repo; }
+    catch { return false; }
+  });
+  if (matches.length !== 1) throw new UnknownError("根仓 URL 对应的 Project Resource 缺失或不唯一");
+  const branch = matches[0].resource_ref?.ref;
+  if (typeof branch !== "string" || !branch || branch.startsWith("-") || branch.startsWith("refs/") ||
+      git(root, ["check-ref-format", "refs/heads/" + branch]).status !== 0)
+    throw new FailError("根仓 Project Resource ref 必须是有效分支");
+  return branch;
 }
 
 export function requirementBranch(): string {
@@ -318,7 +345,7 @@ async function publishCommittedChange(
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(changeRef)) throw new FailError("Change 名称非法");
   const path = "openspec/changes/" + changeRef;
   const { expectedBranch: branch, repoUrl, remote = runAuthenticatedGit } = options;
-  const native = isDaemonCacheWorktree(root, process.env.MULTICA_WORKSPACE_ID);
+  const native = nativeCheckoutExpected(root);
   if (git(root, ["check-ref-format", "refs/heads/" + branch]).status !== 0 || branch.startsWith("-") || branch.startsWith("refs/"))
     throw new FailError("根仓发布目标分支非法");
   const checkTarget = () => {
@@ -342,11 +369,24 @@ async function publishCommittedChange(
   const isAncestor = (older: string, newer: string): boolean =>
     git(root, ["merge-base", "--is-ancestor", older, newer]).status === 0;
   let remoteTip = fetch();
+  // A fixed published source is verified against the original remote branch.
+  // Exact recovery needs no proof of the checkout's historical starting ref.
+  if (native && !options.approvedCommit && !options.recoverCommit) assertNativeCheckoutBaseline(root, branch);
   for (let attempt = 0; attempt < 3; attempt++) {
+    if (options.fixedSourceCommit && !isAncestor(options.fixedSourceCommit, remoteTip))
+      throw new UnknownError("已有 analysis.source.commit 不在原目标分支，停止发布");
     const approved = options.approvedCommit;
     const descendsFromApproval = (commit: string): boolean =>
       !approved || isAncestor(approved, commit);
     if (!descendsFromApproval(remoteTip)) throw new FailError("目标分支不含批准的 Analysis SHA: " + approved);
+    if (options.recoverCommit) {
+      if (!shaPattern.test(options.recoverCommit) || !isAncestor(options.recoverCommit, remoteTip))
+        throw new UnknownError("已固定的分析发布 Commit 不在原目标分支，停止恢复");
+      if (changeTree(root, remoteTip, path) !== changeTree(root, options.recoverCommit, path))
+        throw new UnknownError("原目标分支的 Change 已变化，不能复用旧审核版本");
+      await options.validateTree?.(options.recoverCommit);
+      return result(options.recoverCommit);
+    }
     const receipts = remoteReceipts(root, remoteTip, changeRef);
     const sourceIsRemote = isAncestor(source, remoteTip);
     // A fresh clone can contain a zero-diff receipt after its last path-changing commit.
@@ -354,6 +394,8 @@ async function publishCommittedChange(
       (sourceIsRemote && isAncestor(source, r.commit) && isAncestor(r.commit, head)));
     const prior = known?.commit ?? (sourceIsRemote ? source : undefined);
     if (prior && descendsFromApproval(prior)) {
+      if (!approved && changeTree(root, remoteTip, path) !== changeTree(root, prior, path))
+        throw new UnknownError("原目标分支的 Change 已变化，不能复用旧发布记录");
       await options.validateTree?.(prior);
       return result(prior);
     }

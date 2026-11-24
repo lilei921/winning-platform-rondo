@@ -7,20 +7,28 @@ description: 按需准备 Multica 原生根仓和业务仓工作区，供当前 
 
 ## 根仓
 
-需要本地工程根仓时，在当前 Task workdir 使用已登记 Project Resource 的 URL 和初始 ref：
+根据当前 Project 上下文确定工程根仓，从对应 Project Resource 核实 URL 和初始 ref。需要本地根仓时，在当前 Task workdir 执行：
 
 ```text
 multica repo checkout <root-url> --ref <resource-ref>
 rondo runtime check-checkout --root-repo "<实际返回的根仓路径>"
 ```
 
-Resource 未指定 ref 时省略 `--ref`。Engineer 准备已批准 Change 时，核实根仓包含 `analysis.source.commit`；需要从已发布版本开始时，以已批准的来源分支为起点。
+使用原生命令返回的实际根仓路径。首次 Requirement 分析必须有明确的 Resource 分支；其他场景 Resource 未指定 ref 时可省略 `--ref`。已有同一 Change 的 `analysis.source` 时，按 `analysis.source.repo_url` 和 `analysis.source.branch` 准备根仓；Engineer 还需核实根仓包含已批准的 `commit`。
 
-复用当前 Task 的已有 Checkout。Workitem Analyst 仅需本地 OpenSpec 工件时准备根仓即可；只读调查不强制 Checkout。
+优先复用当前 Task 的已有 Checkout。根仓与业务仓分别按需准备，不自动检出其他仓库；只读 MCP 已满足调查需要时，不强制本地 Checkout。
 
 ## 业务仓
 
-从已登记 Project Resource 核实 URL 和初始分支，并与根仓已提交的 `docs/config/repo-context.yaml` 仓库身份对应。需要本地业务仓时执行：
+从已登记 Project Resource 核实 URL 和初始 ref，并与根仓已提交的 `docs/config/repo-context.yaml` 仓库身份对应。只读调查确实需要本地业务仓时，在实际根仓目录执行：
+
+```text
+multica repo checkout <business-url> --ref <resource-ref>
+```
+
+使用原生命令返回的实际业务仓路径。无 ref 时可省略 `--ref`。
+
+获授权的 Bug 修复或 Requirement 研发使用：
 
 ```text
 rondo dev prepare --workspace native --issue <KEY> --repo <repo_id> --root-repo "<root>" --resource-ref <resource-ref>

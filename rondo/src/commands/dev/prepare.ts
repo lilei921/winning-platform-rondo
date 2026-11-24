@@ -35,7 +35,7 @@ export function registerDevPrepare(group: Command): void {
           const runtime = resolveMulticaRuntime(), client = new MulticaClient(runtime);
           const issue = client.getIssue(opts.issue);
           const root = validateNativeCheckout(opts.rootRepo).rootRepo;
-          assertNativeTaskCheckout(root, dirname(root));
+          assertNativeTaskCheckout(root, dirname(root), undefined, issue.id);
           const server = loadTfsConfig().serverUrl;
           let result: Record<string, unknown>;
           if (issue.metadata?.["tfs.type"] === "Bug") {

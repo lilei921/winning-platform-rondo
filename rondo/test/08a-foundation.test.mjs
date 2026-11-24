@@ -6,7 +6,7 @@ import { join, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { prepareBusinessWorkspace, validatePrepareRepo } from '../dist/commands/dev/prepare-workspace.js';
-import { validateNativeCheckout, platformCheckoutMode, platformTaskSuffix, assertPlatformCheckoutIdentity, readPlatformCheckoutManifest, isDaemonCacheWorktree, readDaemonTaskContext } from '../dist/clients/native-checkout.js';
+import { validateNativeCheckout, platformCheckoutMode, platformTaskSuffix, assertPlatformCheckoutIdentity, readPlatformCheckoutManifest, nativeCheckoutExpected, readDaemonTaskContext } from '../dist/clients/native-checkout.js';
 import { assertBugExecution, assertBugStart, assertBugSource } from '../dist/commands/bug/authorization.js';
 import { ensureDeliverySummary } from '../dist/commands/delivery/summary.js';
 import { deliveryCommentReference, readTfsHistory } from '../dist/commands/tfs/delivery-comment.js';
@@ -69,7 +69,7 @@ test('越界、junction、未忽略目录和不完整 clone 保留现场且拒�
   assert.throws(() => prepareBusinessWorkspace(f.root, repo, 12, f.transport), /链接/);
   unlinkSync(join(f.root, 'biz')); mkdirSync(join(f.root, 'biz'));
   writeFileSync(join(f.root, 'biz', 'partial'), 'keep');
-  assert.throws(() => prepareBusinessWorkspace(f.root, repo, 12, f.transport), /完整独立/);
+  assert.throws(() => prepareBusinessWorkspace(f.root, repo, 12, f.transport), /不是有效业务仓/);
   assert.equal(readFileSync(join(f.root, 'biz', 'partial'), 'utf8'), 'keep');
 });
 
@@ -81,7 +81,7 @@ test('clone 中断重试不删除现场或重复 clone', t => {
     return { status: 128, stdout: '', stderr: 'network' };
   };
   assert.throws(() => prepareBusinessWorkspace(f.root, repo, 12, broken), /clone/);
-  assert.throws(() => prepareBusinessWorkspace(f.root, repo, 12, broken), /完整独立/);
+  assert.throws(() => prepareBusinessWorkspace(f.root, repo, 12, broken), /不是有效业务仓/);
   assert.equal(clones, 1);
 });
 
@@ -155,7 +155,7 @@ test('平台 checkout 形态：isolated 标记、任务分支尾号与 manifest 
   assert.throws(() => readPlatformCheckoutManifest(join(f.root, '.git')), /合法 JSON/);
 });
 
-test('daemon 缓存 linked worktree 与任务上下文可作为 isolated 证据', t => {
+test('linked worktree 的存储路径不作为 Native 身份，读取 daemon Task 上下文', t => {
   const f = fixture(t);
   const reposDir = join(f.dir, '.repos', 'ws');
   mkdirSync(reposDir, { recursive: true });
@@ -165,9 +165,8 @@ test('daemon 缓存 linked worktree 与任务上下文可作为 isolated 证据'
   mkdirSync(dirname(worktree), { recursive: true });
   git(cache, 'worktree', 'add', '--detach', worktree, 'main');
   assert.ok(readFileSync(join(worktree, '.git'), 'utf8').startsWith('gitdir:'));
-  // 公共 Git 目录位于 .repos/<workspace-id>/ 才被认定为 daemon cache worktree。
-  assert.equal(isDaemonCacheWorktree(worktree, 'ws'), true);
-  assert.equal(isDaemonCacheWorktree(worktree, 'other'), false);
+  // cache 目录本身不证明 Native Checkout；没有 Task Branch 或上下文时不认定。
+  assert.equal(nativeCheckoutExpected(worktree), false);
   // 任务上下文由 daemon 写入；缺失返回 null，由调用方拒绝。
   const workdir = join(f.dir, 'workdir');
   mkdirSync(join(workdir, '.multica'), { recursive: true });

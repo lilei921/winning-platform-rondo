@@ -6,6 +6,7 @@ import { join, dirname, delimiter } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { analysisTfsFixture } from "./analysis-tfs-fixture.mjs";
+import { sameAnalysisSource } from "../dist/commands/analysis/source.js";
 import { changeEvidenceDigest, metadataEvidenceDigest } from "../dist/commands/analysis/gate-evidence.js";
 
 const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
@@ -33,7 +34,7 @@ function runCli(args, env = {}, cwd) {
   catch { assert.fail("CLI did not return JSON: " + cp.stdout + "\n" + cp.stderr); }
   return { exit: cp.status, body, stderr: cp.stderr };
 }
-function fixture(t, requirement = true) {
+function fixture(t, requirement = true, native = false) {
   const home = realpathSync.native(mkdtempSync(join(tmpdir(), "rondo-fileless-gate-")));
   t.after(() => rmSync(home, { recursive: true, force: true }));
   const remote = join(home, "remote.git"); mkdirSync(remote);
@@ -45,6 +46,8 @@ function fixture(t, requirement = true) {
   writeFileSync(join(change, "proposal.md"), PROPOSAL);
   writeFileSync(join(change, "tasks.md"), "- [ ] 1.1 Fix and 验证 regression\n");
   git(root, "init"); git(root, "branch", "-M", "dev");
+  git(root, "config", "user.name", "Rondo Test");
+  git(root, "config", "user.email", "test@example.invalid");
   git(root, "-c", "user.email=test@example.invalid", "-c", "user.name=Test", "commit", "--allow-empty", "-m", "init");
   git(root, "remote", "add", "origin", remote);
   git(root, "push", "-u", "origin", "dev");
@@ -79,6 +82,24 @@ function fixture(t, requirement = true) {
     git(root, "push", "origin", "dev");
   }
 
+  const taskId = "01234567-abcd-ef12-3456-abcdef123456";
+  const taskBranch = "agent/workitem-analyst/abcdef123456";
+  const resourcePath = join(home, ".multica", "project", "resources.json");
+  if (native) {
+    mkdirSync(dirname(resourcePath), { recursive: true });
+    writeFileSync(resourcePath, JSON.stringify({ project_id: "project1", resources: [
+      { resource_type: "github_repo", resource_ref: { url: tfs.repoUrl, ref: "dev" } },
+    ] }));
+    writeFileSync(join(home, ".multica", "daemon_task_context.json"), JSON.stringify({
+      managed_by: "multica-daemon-task", issue_id: "issue-1", agent_id: "analyst",
+    }));
+    git(root, "config", "multica.checkout-mode", "isolated");
+    // Match Multica isolated Checkout: branch created from raw SHA, without upstream.
+    git(root, "checkout", "-b", taskBranch, git(root, "rev-parse", "HEAD"));
+    writeFileSync(statePath, JSON.stringify({ status: "in_progress", metadata, runs: {
+      "issue-1": [{ id: taskId, issue_id: "issue-1", agent_id: "analyst", workspace_id: "ws-test", status: "running" }],
+    } }));
+  }
   git(root, "add", "openspec/changes/" + CHANGE);
   git(root, "-c", "user.email=test@example.invalid", "-c", "user.name=Test", "commit", "-m", "reviewed Change contract");
 
@@ -95,19 +116,21 @@ function fixture(t, requirement = true) {
   const env = { ...tfs.env, PATH: bin + delimiter + tfs.env.PATH,
     MOCK_STATE: statePath, MOCK_ROOT_REPO: root,
     MOCK_EXPECT_PROFILE: "private", MOCK_EXPECT_SERVER: "https://private.example",
-    ...(requirement ? { RONDO_WORKSPACE_BRANCH: "dev" } : {}) };
+    ...(requirement ? { RONDO_WORKSPACE_BRANCH: "dev" } : {}),
+    ...(native ? { RONDO_WORKSPACE_BRANCH: "", RONDO_WORKSPACE_PATH: "", MULTICA_TASK_ID: taskId,
+      MULTICA_WORKSPACE_ID: "ws-test", MULTICA_AGENT_ID: "analyst" } : {}) };
   const args = ["--issue", "issue-1", "--openspec-root", root,
     "--workspace-id", "ws-test", "--registry-config", config, "--multica", MOCK];
   const gate = () => runCli(["analysis", "validate", ...args], env);
-  const complete = () => runCli(["analysis", "complete",
+  const complete = (...extra) => runCli(["analysis", "complete",
     "--issue", "issue-1", "--facts", factsPath,
     "--workspace-id", "ws-test", "--registry-config", config, "--multica", MOCK,
-    "--root-repo", root, ...(requirement ? ["--mode", "requirement"] : [])], env);
+    "--root-repo", root, ...(requirement ? ["--mode", "requirement"] : []), ...extra], env);
   const stage = () => runCli(["analysis", "stage", "--issue", "issue-1", "--facts", factsPath,
     "--workspace-id", "ws-test", "--registry-config", config, "--multica", MOCK], env);
   const state = () => JSON.parse(readFileSync(statePath, "utf8"));
   const setState = data => writeFileSync(statePath, JSON.stringify(data));
-  return { home, root, change, remote, report, tfs, env, gate, complete, stage, state, setState, factsPath, metadata };
+  return { home, root, change, remote, report, tfs, env, gate, complete, stage, state, setState, factsPath, metadata, taskBranch, resourcePath };
 }
 
 test("Stage → Preview → Complete: final Gate and fixed Git Contract; no automatic Comment or Gate file", t => {
@@ -212,9 +235,131 @@ test("Status 成功但响应丢失，重放校验固定来源且不自动新增 
 
 test("Requirement 必须使用 requirement 模式，禁止误选 legacy", t => {
   const f = fixture(t);
+  f.env.RONDO_WORKSPACE_BRANCH = "";
+  f.env.RONDO_WORKSPACE_PATH = "";
   const result = runCli(["analysis", "complete", "--issue", "issue-1",
     "--facts", f.factsPath, "--workspace-id", "ws-test", "--registry-config", join(f.home, "registry.json"),
     "--multica", MOCK, "--root-repo", f.root], f.env);
   assert.equal(result.exit, 2);
   assert.match(result.body.reason, /--mode requirement/);
+});
+
+test("Native Analysis without Workspace variables: raw-SHA Task branch, remote advance and single Change publish", t => {
+  const f = fixture(t, true, true);
+  const peer = join(f.home, "peer");
+  git(f.home, "clone", "-b", "dev", f.remote, peer);
+  writeFileSync(join(peer, "peer.txt"), "remote advance");
+  git(peer, "add", "peer.txt");
+  git(peer, "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", "peer");
+  git(peer, "push", "origin", "dev");
+  writeFileSync(join(f.root, "local.txt"), "not part of Change");
+  git(f.root, "add", "local.txt");
+  git(f.root, "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", "unrelated");
+  const result = f.complete();
+  assert.equal(result.exit, 0, JSON.stringify(result));
+  const source = JSON.parse(f.state().metadata["analysis.source"]);
+  assert.equal(source.branch, "dev");
+  assert.equal(source.commit, git(f.remote, "rev-parse", "dev"));
+  assert.equal(git(f.root, "branch", "--show-current"), f.taskBranch);
+  assert.equal(git(f.remote, "show", "dev:peer.txt"), "remote advance");
+  assert.equal(git(f.remote, "ls-tree", "--name-only", "dev", "local.txt"), "");
+});
+
+test("Native Analysis refuses Project/Resource/Task mismatch and conflicting target without publication", t => {
+  const f = fixture(t, true, true);
+  const before = git(f.remote, "rev-parse", "dev");
+  const good = JSON.parse(readFileSync(f.resourcePath, "utf8"));
+  for (const resource of [
+    { ...good, project_id: "other" },
+    { ...good, resources: [] },
+    { ...good, resources: [...good.resources, ...good.resources] },
+  ]) {
+    writeFileSync(f.resourcePath, JSON.stringify(resource));
+    assert.notEqual(f.complete().exit, 0);
+    assert.equal(f.state().metadata["analysis.source"], undefined);
+  }
+  writeFileSync(f.resourcePath, JSON.stringify(good));
+  assert.notEqual(f.complete("--target-branch", "other").exit, 0);
+  const saved = f.env.MULTICA_TASK_ID;
+  f.env.MULTICA_TASK_ID = "01234567-abcd-ef12-3456-000000000000";
+  assert.notEqual(f.complete().exit, 0);
+  f.env.MULTICA_TASK_ID = saved;
+  // Another branch with the same commit is ambiguous for a raw-SHA checkout.
+  git(f.root, "push", "origin", "dev:other");
+  good.resources[0].resource_ref.ref = "other";
+  writeFileSync(f.resourcePath, JSON.stringify(good));
+  assert.notEqual(f.complete().exit, 0);
+  assert.equal(git(f.remote, "rev-parse", "dev"), before);
+  assert.equal(git(f.remote, "rev-parse", "other"), before);
+  assert.equal(f.state().metadata["analysis.source"], undefined);
+});
+
+test("Native Analysis status failure and authorized rework keep the original publication branch", t => {
+  const f = fixture(t, true, true);
+  f.env.MOCK_FAIL_STATUS = "1";
+  assert.equal(f.complete().exit, 3);
+  const source = f.state().metadata["analysis.source"];
+  assert.ok(source);
+  const project = JSON.parse(readFileSync(f.resourcePath, "utf8"));
+  project.resources[0].resource_ref.ref = "new-resource-branch";
+  writeFileSync(f.resourcePath, JSON.stringify(project));
+  delete f.env.MOCK_FAIL_STATUS;
+  rmSync(f.resourcePath);
+  const resumed = f.complete();
+  assert.equal(resumed.exit, 0, JSON.stringify(resumed));
+  assert.equal(f.state().metadata["analysis.source"], source);
+  const state = f.state();
+  state.status = "in_progress";
+  f.setState(state);
+  writeFileSync(join(f.change, "proposal.md"), PROPOSAL.replace("restore behavior", "restore validated behavior"));
+  git(f.root, "add", "openspec/changes/" + CHANGE);
+  git(f.root, "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", "authorized rework");
+  const reworked = f.complete();
+  assert.equal(reworked.exit, 0, JSON.stringify(reworked));
+  const next = JSON.parse(f.state().metadata["analysis.source"]);
+  assert.equal(next.branch, "dev");
+  assert.notEqual(next.commit, JSON.parse(source).commit);
+});
+
+test("Native Analysis Push succeeded but source write failed: recover on same branch and refuse changed Resource", t => {
+  const f = fixture(t, true, true);
+  f.env.MOCK_FAIL_METADATA_KEY = "analysis.source";
+  assert.equal(f.complete().exit, 3);
+  const published = git(f.remote, "rev-parse", "dev");
+  assert.equal(f.state().metadata["analysis.source"], undefined);
+  const project = JSON.parse(readFileSync(f.resourcePath, "utf8"));
+  const before = git(f.root, "rev-parse", "dev");
+  git(f.root, "push", "origin", "dev:other");
+  project.resources[0].resource_ref.ref = "other";
+  writeFileSync(f.resourcePath, JSON.stringify(project));
+  delete f.env.MOCK_FAIL_METADATA_KEY;
+  assert.notEqual(f.complete().exit, 0);
+  assert.equal(git(f.remote, "rev-parse", "other"), before);
+  assert.equal(git(f.remote, "rev-parse", "dev"), published);
+  // Restore the original named baseline (as provided by linked platform checkout).
+  git(f.root, "branch", "--set-upstream-to=origin/dev", f.taskBranch);
+  project.resources[0].resource_ref.ref = "dev";
+  writeFileSync(f.resourcePath, JSON.stringify(project));
+  const recovered = f.complete();
+  assert.equal(recovered.exit, 0, JSON.stringify(recovered));
+  assert.equal(JSON.parse(f.state().metadata["analysis.source"]).commit, published);
+});
+
+test("Human approval source identity includes the fixed publication branch", () => {
+  const source = { repo_url: "http://tfs.test/tfs/C/P/_git/root", branch: "master", commit: "a".repeat(40), change_ref: CHANGE };
+  assert.equal(sameAnalysisSource(source, { ...source }), true);
+  assert.equal(sameAnalysisSource(source, { ...source, branch: "release" }), false);
+});
+
+test("Native Analysis recovers a lost source write on the original Resource without another push", t => {
+  const f = fixture(t, true, true);
+  f.env.MOCK_FAIL_METADATA_KEY = "analysis.source";
+  assert.equal(f.complete().exit, 3);
+  const published = git(f.remote, "rev-parse", "dev");
+  assert.equal(f.state().metadata["analysis.source"], undefined);
+  delete f.env.MOCK_FAIL_METADATA_KEY;
+  const recovered = f.complete();
+  assert.equal(recovered.exit, 0, JSON.stringify(recovered));
+  assert.equal(git(f.remote, "rev-parse", "dev"), published);
+  assert.equal(JSON.parse(f.state().metadata["analysis.source"]).commit, published);
 });

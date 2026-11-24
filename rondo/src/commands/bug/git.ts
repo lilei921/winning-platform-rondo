@@ -1,10 +1,9 @@
 /** 后续 fetch/push 复用准备阶段的受控工具与认证，不接受任意 Git argv。 */
-import { join } from "node:path";
-import { lstatSync } from "node:fs";
+import { dirname } from "node:path";
 import { Command } from "commander";
 import { loadConfig, type BaseRegistryConfig } from "../../clients/config.js";
 import { MulticaClient } from "../../clients/multica.js";
-import { validateNativeCheckout } from "../../clients/native-checkout.js";
+import { validateNativeCheckout, nativeCheckoutExpected, assertNativeTaskCheckout } from "../../clients/native-checkout.js";
 import { runAuthenticatedGit } from "../../clients/authenticated-git.js";
 import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
 import { FailError, UnknownError } from "../../cli/errors.js";
@@ -29,9 +28,13 @@ export function registerBugGit(group: Command): void {
         const id = assertBugStart(client, issue, opts.repo), branch = `feat/${id}`;
         const repo = validatePrepareRepo(cfg.registry[opts.repo], loadTfsConfig().serverUrl);
         const path = validateBusinessPath(paths.rootRepo, repo);
-        const head = validateBusinessCheckout(path, repo, branch);
-        if (lstatSync(join(path, ".git")).isFile())
+        const workdir = dirname(paths.rootRepo);
+        const native = nativeCheckoutExpected(path, workdir, branch);
+        const head = validateBusinessCheckout(path, repo, branch, native ? workdir : undefined);
+        if (native) {
+          assertNativeTaskCheckout(paths.rootRepo, workdir, undefined, issue.id);
           assertNativeDeliveryMapping(paths.rootRepo, "HEAD", opts.repo, repo, loadTfsConfig().serverUrl);
+        }
         const args = opts.operation === "fetch"
           ? ["fetch", "--no-tags", repo.repo_url, `refs/heads/${repo.default_target_branch}:refs/remotes/origin/${repo.default_target_branch}`]
           : ["push", repo.repo_url, `${head}:refs/heads/${branch}`];

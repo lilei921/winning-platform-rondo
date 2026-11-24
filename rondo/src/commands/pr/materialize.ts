@@ -421,7 +421,7 @@ async function main(rawArgs: string[]): Promise<number> {
     const currentPr = JSON.stringify(prs.map(({ reused: _, ...rest }) => rest));
     const confirmed = registerCurrentPr(multica, issue.id, currentPr);
 
-    const rootArg = args["root-repo"] || process.env.RONDO_WORKSPACE_PATH;
+    const rootArg = args["root-repo"];
     if (args.mode === "requirement" && rootArg) {
       // 清理只使用本次已确认交付的候选，失败时保留 PR 的成功结果。
       try {

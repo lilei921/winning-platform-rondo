@@ -12,11 +12,11 @@ import { runCommand } from "../../clients/spawn.js";
 import { validateRootRepo, type RuntimePaths } from "../../clients/runtime-paths.js";
 import {
   assertPlatformCheckoutIdentity,
-  isDaemonCacheWorktree,
   platformCheckoutMode,
   platformTaskSuffix,
   parsePlatformCheckoutOutput,
   readDaemonTaskContext,
+  DAEMON_TASK_CONTEXT,
   readPlatformCheckoutManifest,
   type PlatformCheckoutIdentity,
 } from "../../clients/native-checkout.js";
@@ -25,7 +25,7 @@ import { canonicalRepositoryIdentity } from "./evidence-repository.js";
 import { touchedCapabilities } from "./contract-files.js";
 import { isRequirementChangeDelivery } from "./requirement-mode.js";
 
-export type CloseoutCheckout = (workdir: string, repoUrl: string) => { root: string; branch: string };
+export type CloseoutCheckout = (workdir: string, repoUrl: string, ref: string) => { root: string; branch: string };
 
 export interface PrepareRootOptions {
   checkout: CloseoutCheckout;
@@ -103,15 +103,15 @@ function checkoutBranch(root: string): string {
   return matching[0];
 }
 
-function platformIsolatedMode(root: string, workdir: string, workspaceId: string | undefined): string | null {
+function platformIsolatedMode(root: string, workdir: string): string | null {
   const configured = platformCheckoutMode(root);
-  if (configured) return configured;
-  if (isDaemonCacheWorktree(root, workspaceId)) {
-    const context = readDaemonTaskContext(workdir);
-    const agentId = process.env.MULTICA_AGENT_ID;
-    if (context?.managed_by === "multica-daemon-task" && (!agentId || context.agent_id === agentId)) return "isolated";
-  }
-  return null;
+  const context = readDaemonTaskContext(workdir);
+  const agentId = process.env.MULTICA_AGENT_ID;
+  if (existsSync(join(workdir, DAEMON_TASK_CONTEXT)) &&
+      (!context || context.managed_by !== "multica-daemon-task" || !agentId || context.agent_id !== agentId))
+    throw new FailError("Closeout daemon Task / Agent 上下文不一致");
+  // The Task's original branch is checked separately, including after Archive branch switches.
+  return configured ?? (context ? "isolated" : null);
 }
 
 function verifyPlatformCheckout(root: string, workdir: string, reportedBranch?: string): void {
@@ -121,11 +121,12 @@ function verifyPlatformCheckout(root: string, workdir: string, reportedBranch?: 
   const commonDir = local(root, ["rev-parse", "--path-format=absolute", "--git-common-dir"], "定位 Git 公共目录");
   const manifest = readPlatformCheckoutManifest(gitDir) ??
     (commonDir !== gitDir ? readPlatformCheckoutManifest(commonDir) : null);
+  const liveMode = platformIsolatedMode(root, workdir);
+  if (liveMode !== "isolated") throw new UnknownError("当前不是 Multica isolated checkout 任务，禁止使用收口根仓");
   const branch = manifest?.checkout_branch ?? reportedBranch ?? checkoutBranch(root);
   if (runCommand(["git", "show-ref", "--verify", "--quiet", "refs/heads/" + branch], root).status !== 0) {
     throw new UnknownError("平台分配的 Checkout 分支不存在，拒绝使用");
   }
-  const liveMode = platformIsolatedMode(root, workdir, workspaceId);
   const evidence: PlatformCheckoutIdentity = manifest ?? {
     checkout_branch: branch,
     task_id: taskId ?? "",
@@ -136,6 +137,9 @@ function verifyPlatformCheckout(root: string, workdir: string, reportedBranch?: 
   if (reportedBranch && reportedBranch !== evidence.checkout_branch) {
     throw new UnknownError("平台 Checkout 返回分支与身份事实不一致");
   }
+  const current = local(root, ["symbolic-ref", "--short", "HEAD"], "核对当前 Task 本地分支");
+  if (current !== branch && (reportedBranch || !current.startsWith("rondo/closeout/" + platformTaskSuffix(taskId!) + "/")))
+    throw new UnknownError("当前分支不属于本 Task 的 Checkout 或归档分支");
 }
 
 function locateChange(root: string, ref: string): { archived: boolean; folder: string } {
@@ -240,7 +244,7 @@ export function prepareRoot(source: AnalysisSource, options: PrepareRootOptions)
   let root: string;
   try {
     if (!existsSync(expected)) {
-      const platform = options.checkout(workdir, source.repo_url);
+      const platform = options.checkout(workdir, source.repo_url, source.branch);
       if (!platform || !platform.root || !isAbsolute(platform.root)) {
         throw new UnknownError("平台 repo checkout 未返回绝对根仓路径");
       }
@@ -319,9 +323,9 @@ function argsOf(argv: string[]): Record<string, string> {
 }
 
 function platformCheckout(runtime: MulticaRuntime): CloseoutCheckout {
-  return (workdir, repoUrl) => {
-    const r = runCommand([...multicaPrefix(runtime), "repo", "checkout", repoUrl], workdir, undefined, 600_000);
-    if (r.status !== 0) throw new UnknownError("平台 repo checkout 失败: " + (r.stderr || r.stdout).trim().slice(0, 400));
+  return (workdir, repoUrl, ref) => {
+    const r = runCommand([...multicaPrefix(runtime), "repo", "checkout", repoUrl, "--ref", ref], workdir, undefined, 600_000);
+    if (r.status !== 0 || /fetch[_ -]error|fetch (?:failed|failure)/i.test(r.stdout + "\n" + r.stderr)) throw new UnknownError("平台 repo checkout 失败: " + (r.stderr || r.stdout).trim().slice(0, 400));
     return parsePlatformCheckoutOutput(r.stdout, r.stderr);
   };
 }

@@ -8,23 +8,24 @@ const multica = fileURLToPath(new URL("../../", import.meta.url));
 const read = (path) => readFileSync(join(multica, path), "utf8");
 const skills = JSON.parse(read("workspace-config/provisioning.json"));
 
-test("workspace-preparation is managed and bound only to its three consumers", () => {
+test("native-workspace is the default for its three consumers; legacy preparation remains managed", () => {
   assert.ok(skills.managed_skills.includes("workspace-preparation"));
+  assert.ok(skills.managed_skills.includes("native-workspace"));
   assert.deepEqual(
-    skills.agents.filter(agent => agent.skills?.includes("workspace-preparation")).map(agent => agent.name).sort(),
+    skills.agents.filter(agent => agent.skills?.includes("native-workspace")).map(agent => agent.name).sort(),
     ["Bug Fix Agent", "Engineer", "Workitem Analyst"],
   );
-  const skill = read("skills/workspace-preparation/SKILL.md");
-  assert.match(skill, /^---\r?\nname: workspace-preparation\r?\n/);
+  const skill = read("skills/native-workspace/SKILL.md");
+  assert.match(skill, /^---\r?\nname: native-workspace\r?\n/);
   for (const operation of [
-    "multica repo checkout <root-url> --ref <resource-ref>", "rondo runtime check-checkout", "rondo dev prepare --mode bug",
-    "rondo runtime prepare-root", "rondo dev prepare --mode requirement", "FAIL", "UNKNOWN",
+    "multica repo checkout <root-url> --ref <resource-ref>", "rondo runtime check-checkout",
+    "multica repo checkout <business-url> --ref <resource-ref>", "rondo dev prepare --workspace native", "analysis.source.branch",
   ]) assert.ok(skill.includes(operation), operation);
 });
 
 test("workspace preparation is owned by one Skill; delivery contracts remain in their owners", () => {
   const bugAgent = read("agents/bug-fix-agent/instructions.md");
-  assert.ok(bugAgent.includes("workspace-preparation"));
+  assert.ok(bugAgent.includes("native-workspace"));
   assert.ok(!bugAgent.includes("multica repo checkout"));
 
   const bug = read("skills/bug-delivery/SKILL.md");
@@ -35,7 +36,7 @@ test("workspace preparation is owned by one Skill; delivery contracts remain in 
   }
   assert.ok(bug.includes("rondo bug git --operation fetch"));
   assert.ok(bug.includes("rondo bug git --operation push"));
-  assert.ok(bug.includes("rondo bug prepare-pr"));
+  assert.ok(bug.includes("rondo bug pr-prepare"));
 
   const spec = read("skills/spec-preparation/SKILL.md");
   assert.ok(spec.includes("openspec schema which") && spec.includes("cwd"));
