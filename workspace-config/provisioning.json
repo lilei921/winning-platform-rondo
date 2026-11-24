@@ -47,7 +47,7 @@
         "codebase-explorer",
         "diagnosing-bugs",
         "bug-delivery",
-        "workspace-preparation"
+        "native-workspace"
       ]
     },
     {
@@ -62,7 +62,7 @@
         "requirement-analysis",
         "spec-preparation",
         "analysis-completion",
-        "workspace-preparation"
+        "native-workspace"
       ]
     },
     {
@@ -71,7 +71,7 @@
       "mcp_servers": ["remote-codegraph", "remote-filesystem", "remote-ripgrep"],
       "mcp_phase": "08-b",
       "visibility": "workspace",
-      "skills": ["change-development", "workspace-preparation"]
+      "skills": ["change-development", "native-workspace"]
     },
     {
       "dir": "tfs-sync-agent",
