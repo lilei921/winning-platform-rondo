@@ -31,7 +31,7 @@ test("delivery-closeout 分别保留 Bug 与 Requirement 的收口命令及结�
   assert.ok(!skill.includes("--config"));
   const bug = skill.split("## Bug 收口\n")[1]?.split("## Requirement 收口\n")[0];
   const requirement = skill.split("## Requirement 收口\n")[1]?.split("## 已完成 Issue 恢复\n")[0];
-  const recovery = skill.split("## 已完成 Issue 恢复\n")[1]?.split("## 异常处理\n")[0];
+  const recovery = skill.split("## 已完成 Issue 恢复\n")[1]?.split("## 结果处理\n")[0];
   const commands = (section) => (section ?? "").split("\n").filter(line => line.startsWith("rondo "));
   assert.deepEqual(commands(bug), [
     "rondo delivery finalize --phase prepare --issue <KEY>",
