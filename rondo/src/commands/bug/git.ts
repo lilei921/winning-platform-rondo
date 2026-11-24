@@ -35,9 +35,13 @@ export function registerBugGit(group: Command): void {
         const args = opts.operation === "fetch"
           ? ["fetch", "--no-tags", repo.repo_url, `refs/heads/${repo.default_target_branch}:refs/remotes/origin/${repo.default_target_branch}`]
           : ["push", repo.repo_url, `${head}:refs/heads/${branch}`];
-        const result = runAuthenticatedGit(repo.repo_url, args, path);
-        if (result.status !== 0) throw new UnknownError("Git 操作未确认成功；保留现场并回读远端，禁止强推");
-        if (opts.operation === "push") {
+        if (opts.operation === "fetch") {
+          const result = runAuthenticatedGit(repo.repo_url, args, path);
+          if (result.status !== 0) throw new UnknownError("Git Fetch 未确认成功，保留现场");
+        } else {
+          try { runAuthenticatedGit(repo.repo_url, args, path); }
+          catch (e) { if (!(e instanceof UnknownError)) throw e; }
+          // A transport failure can follow a successful push; the exact remote SHA is authoritative.
           const ref = "refs/heads/" + branch;
           const observed = runAuthenticatedGit(repo.repo_url, ["ls-remote", repo.repo_url, ref], path);
           if (observed.status !== 0 || observed.stdout.trim() !== head + "\t" + ref)
