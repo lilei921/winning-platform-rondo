@@ -79,7 +79,8 @@ export function prepareNativeBusiness(root: string, repo: PrepareRepo, branch: s
   if (!candidate && (!initialRef || !observed.has(initialRef))) throw new UnknownError("缺少已确认的 Project Resource 初始分支");
   const ref = candidate ? branch : resourceRef!;
   const result = checkout([...multicaPrefix(runtime), "repo", "checkout", repo.repo_url, "--ref", ref], root, undefined, 600_000);
-  if (result.status !== 0) throw new UnknownError("Multica Native Checkout 未确认成功，保留现场");
+  if (result.status !== 0 || /fetch[_ -]error|fetch (?:failed|failure)/i.test(result.stdout + "\n" + result.stderr))
+    throw new UnknownError("Multica Native Checkout 或 Fetch 未确认成功，保留现场");
   const reported = parsePlatformCheckoutOutput(result.stdout, result.stderr);
   const same = (a: string, b: string) => process.platform === "win32"
     ? resolve(a).toLowerCase() === resolve(b).toLowerCase() : resolve(a) === resolve(b);
@@ -88,6 +89,13 @@ export function prepareNativeBusiness(root: string, repo: PrepareRepo, branch: s
   const head = validateBusinessCheckout(path, repo, branch, workdir);
   if (!existing && head !== (candidate ?? observed.get(initialRef!)))
     throw new UnknownError("首次 Checkout HEAD 与已确认基线不一致，保留现场");
+  if (existing && !candidate) {
+    // Kept does not switch refs. Verify the original upstream rather than requiring the latest remote tip.
+    const upstream = git(path, ["rev-parse", "--symbolic-full-name", "@{upstream}"]);
+    if (upstream.status !== 0 || upstream.stdout.trim() !== "refs/remotes/origin/" + resourceRef ||
+        git(path, ["merge-base", head, upstream.stdout.trim()]).status !== 0)
+      throw new UnknownError("已有工作树的初始基线无法确认，保留现场");
+  }
   if (candidate && git(path, ["merge-base", "--is-ancestor", candidate, head]).status !== 0)
     throw new UnknownError("当前工作树未包含已发布 Candidate，保留现场");
   return { result: "PASS", path, repo_url: repo.repo_url, branch, local_branch: localBranch, head, changed: !existing };
