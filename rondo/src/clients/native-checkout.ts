@@ -1,5 +1,5 @@
 /** 只读检查调用方明确传入的根仓；执行者授权由具体写操作负责。 */
-import { lstatSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve, win32 } from "node:path";
 import { FailError, UnknownError } from "../cli/errors.js";
 import { runCommand } from "./spawn.js";
@@ -75,16 +75,55 @@ export function readDaemonTaskContext(workdir: string): DaemonTaskContext | null
   }
 }
 
+/** Native intent must not silently fall back to a legacy Git workflow when identity is incomplete. */
+export function nativeCheckoutExpected(path: string, workdir = dirname(path)): boolean {
+  if (existsSync(join(workdir, DAEMON_TASK_CONTEXT)) || platformCheckoutMode(path) !== null) return true;
+  const branch = runCommand(["git", "symbolic-ref", "--short", "HEAD"], path);
+  return branch.status === 0 && branch.stdout.trim().startsWith("agent/");
+}
+
 /**
- * linked worktree 的 Git 公共目录是否位于 daemon 的 `<workspaces-root>/.repos/<workspace-id>/` 缓存下。
- * 这是平台从 bare cache 创建隔离 worktree 的直接形态证据（新版 daemon 不写 `[multica] checkout-mode`）。
+ * Kept does not switch refs. An explicit upstream or a recorded branch creation
+ * from a named remote ref is stronger than a shared ancestor. Multica's
+ * isolated clone can instead create the Task branch from a raw commit SHA:
+ * require an exact, unambiguous observed remote tip in that case.
  */
-export function isDaemonCacheWorktree(rootRepo: string, workspaceId: string | undefined): boolean {
-  if (!workspaceId) return false;
-  const r = runCommand(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], rootRepo);
-  if (r.status !== 0) return false;
-  const parts = r.stdout.trim().replace(/\\/g, "/").split("/");
-  return parts.some((part, i) => part === ".repos" && parts[i + 1] === workspaceId);
+export function assertNativeCheckoutBaseline(path: string, branch: string): void {
+  const read = (args: string[]) => runCommand(["git", ...args], path);
+  const target = "refs/remotes/origin/" + branch;
+  const fail = () => { throw new UnknownError("Native Checkout 初始基线无法确认或与目标分支不一致: " + branch); };
+  const local = read(["symbolic-ref", "--short", "HEAD"]);
+  if (local.status !== 0) return fail();
+  const name = local.stdout.trim();
+  const remote = read(["config", "--get", "branch." + name + ".remote"]);
+  const merge = read(["config", "--get", "branch." + name + ".merge"]);
+  if (read(["rev-parse", "--verify", target + "^{commit}"]).status !== 0) return fail();
+  if (remote.status === 0 || merge.status === 0) {
+    if (remote.stdout.trim() !== "origin" || merge.stdout.trim() !== "refs/heads/" + branch ||
+        read(["merge-base", "HEAD", target]).status !== 0) return fail();
+    return;
+  }
+  const history = read(["reflog", "show", "--format=%H%x09%gs", "refs/heads/" + name]);
+  if (history.status !== 0) return fail();
+  const first = history.stdout.trim().split(/\r?\n/).at(-1) ?? "";
+  const creation = /^([0-9a-f]{40})\tbranch: Created from (.+)$/.exec(first);
+  if (!creation) return fail();
+  const [, base, from] = creation;
+  if (read(["merge-base", "--is-ancestor", base, "HEAD"]).status !== 0 ||
+      read(["merge-base", "--is-ancestor", base, target]).status !== 0) return fail();
+  if (from === target || from === "origin/" + branch) return;
+  if (from !== base) return fail();
+  const refs = read(["for-each-ref", "--format=%(refname) %(objectname)", "refs/remotes/origin/"]);
+  if (refs.status !== 0) return fail();
+  const matches: string[] = [];
+  for (const row of refs.stdout.trim().split(/\r?\n/).filter(Boolean)) {
+    const [ref, tip] = row.split(" ");
+    if (ref === "refs/remotes/origin/HEAD") continue;
+    const log = read(["reflog", "show", "--format=%H", ref]);
+    if (log.status !== 0) return fail();
+    if (tip === base || log.stdout.split(/\r?\n/).includes(base)) matches.push(ref);
+  }
+  if (matches.length !== 1 || matches[0] !== target) return fail();
 }
 
 /**
@@ -160,7 +199,7 @@ export function parsePlatformCheckoutOutput(stdout: string, stderr = ""): { root
 const samePath = (a: string, b: string): boolean => process.platform === "win32"
   ? resolve(a).toLowerCase() === resolve(b).toLowerCase() : resolve(a) === resolve(b);
 
-/** Require a real Native linked worktree, anchored in the current daemon Task's workdir. */
+/** Require the current daemon Task checkout, independently of Git storage layout. */
 export function assertNativeTaskCheckout(path: string, workdir: string, reportedBranch?: string): string {
   const taskId = process.env.MULTICA_TASK_ID, workspaceId = process.env.MULTICA_WORKSPACE_ID;
   const agentId = process.env.MULTICA_AGENT_ID;
@@ -171,8 +210,8 @@ export function assertNativeTaskCheckout(path: string, workdir: string, reported
   const immediate = dirname(canonical);
   if (!samePath(canonical, path) || lstatSync(path).isSymbolicLink() ||
       !(samePath(immediate, parent) || samePath(dirname(immediate), parent)) ||
-      !lstatSync(join(path, ".git"), { throwIfNoEntry: false })?.isFile() ||
-      !isDaemonCacheWorktree(path, workspaceId)) throw new FailError("工作树不属于当前 Task 的 Native Checkout");
+      !existsSync(join(path, ".git")) ||
+      lstatSync(join(path, ".git")).isSymbolicLink()) throw new FailError("工作树不属于当前 Task 的 Native Checkout");
   const read = (args: string[]) => {
     const r = runCommand(["git", ...args], path);
     if (r.status !== 0 || !r.stdout.trim()) throw new UnknownError("Native Checkout Git 身份无法确认");

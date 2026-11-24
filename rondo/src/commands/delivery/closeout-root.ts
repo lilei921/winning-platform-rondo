@@ -12,7 +12,6 @@ import { runCommand } from "../../clients/spawn.js";
 import { validateRootRepo, type RuntimePaths } from "../../clients/runtime-paths.js";
 import {
   assertPlatformCheckoutIdentity,
-  isDaemonCacheWorktree,
   platformCheckoutMode,
   platformTaskSuffix,
   parsePlatformCheckoutOutput,
@@ -103,15 +102,14 @@ function checkoutBranch(root: string): string {
   return matching[0];
 }
 
-function platformIsolatedMode(root: string, workdir: string, workspaceId: string | undefined): string | null {
+function platformIsolatedMode(root: string, workdir: string): string | null {
   const configured = platformCheckoutMode(root);
-  if (configured) return configured;
-  if (isDaemonCacheWorktree(root, workspaceId)) {
-    const context = readDaemonTaskContext(workdir);
-    const agentId = process.env.MULTICA_AGENT_ID;
-    if (context?.managed_by === "multica-daemon-task" && (!agentId || context.agent_id === agentId)) return "isolated";
-  }
-  return null;
+  const context = readDaemonTaskContext(workdir);
+  const agentId = process.env.MULTICA_AGENT_ID;
+  if (context && (context.managed_by !== "multica-daemon-task" || !agentId || context.agent_id !== agentId))
+    throw new FailError("Closeout daemon Task / Agent 上下文不一致");
+  // The Task's original branch is checked separately, including after Archive branch switches.
+  return configured ?? (context ? "isolated" : null);
 }
 
 function verifyPlatformCheckout(root: string, workdir: string, reportedBranch?: string): void {
@@ -125,7 +123,7 @@ function verifyPlatformCheckout(root: string, workdir: string, reportedBranch?: 
   if (runCommand(["git", "show-ref", "--verify", "--quiet", "refs/heads/" + branch], root).status !== 0) {
     throw new UnknownError("平台分配的 Checkout 分支不存在，拒绝使用");
   }
-  const liveMode = platformIsolatedMode(root, workdir, workspaceId);
+  const liveMode = platformIsolatedMode(root, workdir);
   const evidence: PlatformCheckoutIdentity = manifest ?? {
     checkout_branch: branch,
     task_id: taskId ?? "",

@@ -4,7 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { git, gitOk } from "../../clients/git.js";
 import { runAuthenticatedGit, assertTfsRepository } from "../../clients/authenticated-git.js";
-import { assertNativeTaskCheckout } from "../../clients/native-checkout.js";
+import { assertNativeTaskCheckout, nativeCheckoutExpected } from "../../clients/native-checkout.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 
 export interface PrepareRepo { repo_path: string; repo_url: string; tfs_repo?: string; tfs_project?: string; default_target_branch: string }
@@ -42,10 +42,10 @@ export function validateBusinessCheckout(path: string, repo: PrepareRepo, branch
   const dot = lstatSync(dotgit, { throwIfNoEntry: false });
   if (!dot || dot.isSymbolicLink() || (!dot.isDirectory() && !dot.isFile())) throw new UnknownError("已有目录不是有效业务仓，保留现场");
   if (!same(gitOk(path, ["rev-parse", "--show-toplevel"], "核验业务仓根"), path)) throw new FailError("业务仓 Git 根目录不一致");
-  if (dot.isFile()) {
-    assertNativeTaskCheckout(path, nativeWorkdir ?? dirname(dirname(path)));
+  const workdir = nativeWorkdir ?? dirname(dirname(path));
+  if (nativeWorkdir || nativeCheckoutExpected(path, workdir)) {
+    assertNativeTaskCheckout(path, workdir);
   } else {
-    if (nativeWorkdir) throw new FailError("已有目录不是 Native 工作树，保留现场");
     if (!same(gitOk(path, ["rev-parse", "--path-format=absolute", "--git-common-dir"], "核验业务仓 Git 目录"), dotgit))
       throw new FailError("业务仓不是独立 Git checkout");
     if (gitOk(path, ["symbolic-ref", "--short", "HEAD"], "核验候选分支") !== branch)

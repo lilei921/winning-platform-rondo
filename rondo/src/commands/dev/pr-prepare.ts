@@ -36,7 +36,7 @@ import { resolveRuntimePaths } from "../../clients/runtime-paths.js";
 import { requirementRoot } from "../runtime/root-git.js";
 import { assertTfsRepository, runAuthenticatedGit } from "../../clients/authenticated-git.js";
 import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
-import { assertNativeTaskCheckout } from "../../clients/native-checkout.js";
+import { assertNativeTaskCheckout, nativeCheckoutExpected } from "../../clients/native-checkout.js";
 import { assertNativeDeliveryMapping } from "./native-prepare.js";
 import { validateBusinessPath } from "./prepare-workspace.js";
 import { readAnalysisSource } from "../analysis/source.js";
@@ -278,7 +278,7 @@ async function main(rawArgs: string[]): Promise<number> {
     const repoUrl = assertTfsRepository(repo.repo_url ?? "", loadTfsConfig().serverUrl).href;
     const targetBranch = args.targetBranch || repo.default_target_branch;
     if (!targetBranch) throw new FailError("PR Preparation 缺少目标分支");
-    if (args.mode === "requirement" && statSync(join(hub, ".git")).isFile()) {
+    if (args.mode === "requirement" && (nativeCheckoutExpected(paths.rootRepo) || nativeCheckoutExpected(hub, dirname(paths.rootRepo)))) {
       const workdir = dirname(paths.rootRepo);
       assertNativeTaskCheckout(paths.rootRepo, workdir);
       const nativePath = validateBusinessPath(paths.rootRepo, repo);

@@ -2,7 +2,7 @@
 import { analysisRuntime } from "./runtime.js";
 import { multicaPrefix } from "../../clients/multica-environment.js";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { logLine as log, markLeafExecuted } from "../../cli/output.js";
@@ -10,9 +10,9 @@ import { runCommand, runJson } from "../../clients/spawn.js";
 import { loadConfig, type BaseRegistryConfig } from "../../clients/config.js";
 import { resolveRuntimePaths } from "../../clients/runtime-paths.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
-import { isDaemonCacheWorktree } from "../../clients/native-checkout.js";
+import { assertNativeTaskCheckout, nativeCheckoutExpected, readDaemonTaskContext } from "../../clients/native-checkout.js";
 import { gitOk } from "../../clients/git.js";
-import { publishChange, requirementBranch, requirementRoot, rootRepositoryUrl } from "../runtime/root-git.js";
+import { publishChange, requirementBranch, requirementRoot, rootRepositoryUrl, resolveProjectRootBranch } from "../runtime/root-git.js";
 import { assertAnalysisWritable } from "./guard.js";
 import { readChangeSchema, sourceSchemaViolation } from "./change-schema.js";
 import { changeEvidenceDigest, metadataEvidenceDigest } from "./gate-evidence.js";
@@ -98,8 +98,8 @@ async function main(rawArgs: string[]): Promise<number> {
     if (!["legacy", "requirement"].includes(args.mode)) throw new PreconditionError("analysis complete --mode 仅支持 requirement 或省略");
     const tfsKind = classifyTfsType(priorMeta["tfs.type"]);
     if (args.mode === "requirement" && tfsKind !== "requirement") throw new PreconditionError("Requirement 模式仅适用于 TFS 需求");
-    if (tfsKind === "requirement" && (process.env.RONDO_WORKSPACE_PATH || process.env.RONDO_WORKSPACE_BRANCH) && args.mode !== "requirement") {
-      throw new PreconditionError("已配置 08-B 持久根仓的 Requirement 必须显式使用 --mode requirement，禁止绕过发布身份核验");
+    if (tfsKind === "requirement" && args.mode !== "requirement") {
+      throw new PreconditionError("Requirement 必须显式使用 --mode requirement，禁止绕过发布身份核验");
     }
     if (!tfsKind) throw new UnknownError(`tfs.type 缺失或不支持: ${String(priorMeta["tfs.type"] ?? "")}`);
     assertRegistryWorkspace(args.registryConfig!, args.workspaceId!);
@@ -121,7 +121,7 @@ async function main(rawArgs: string[]): Promise<number> {
       const latest = runJson([...MC, "issue", "get", args.issue, ...ws, "--output", "json"], "重放后核对审核状态") as Record<string, unknown>;
       const current = runJson([...MC, "issue", "metadata", "list", args.issue, ...ws, "--output", "json"], "重放后核对来源") as Record<string, unknown>;
       if (String(latest.status ?? latest.status_name ?? "") !== TARGET_STATUS ||
-          !sameAnalysisSource(source, readAnalysisSource(current)) || metadataEvidenceDigest(current) !== metadataEvidenceDigest(priorMeta) ||
+          !sameAnalysisSource(source, readAnalysisSource(current)) || source.branch !== readAnalysisSource(current).branch || metadataEvidenceDigest(current) !== metadataEvidenceDigest(priorMeta) ||
           Object.entries(entries).some(([k, v]) => current[k] !== v)) throw new UnknownError("审核重放期间状态或来源已变化，停止放行");
       process.stdout.write(JSON.stringify({ result: "PASS", issue: args.issue, status: TARGET_STATUS,
         replayed: true, gate_reexecuted: false,
@@ -136,10 +136,35 @@ async function main(rawArgs: string[]): Promise<number> {
       issue: before as { project_id?: string | null }, rootRepoArg: args.rootRepo || process.env.RONDO_WORKSPACE_PATH,
       need: ["openspec"],
     }).rootRepo;
-    if (args.targetBranch && (!requirement || !isDaemonCacheWorktree(root, process.env.MULTICA_WORKSPACE_ID))) {
-      throw new PreconditionError("--target-branch 仅用于 Native Requirement 分析发布");
+    const native = requirement && nativeCheckoutExpected(root);
+    const saved = requirement && priorMeta["analysis.source"] !== undefined
+      ? parseAnalysisSource(priorMeta["analysis.source"]) : undefined;
+    const pinned = saved?.change_ref === facts.change_ref ? saved : undefined;
+    if (pinned && canonicalRepositoryIdentity(rootRepositoryUrl(root)) !== canonicalRepositoryIdentity(pinned.repo_url))
+      throw new FailError("根仓与已有 analysis.source 仓库不一致");
+    let publicationBranch: string | undefined;
+    if (native) {
+      if (!args.rootRepo || process.env.MULTICA_WORKSPACE_ID !== args.workspaceId)
+        throw new UnknownError("Native 分析发布需要当前 Workspace 和显式根仓路径");
+      const workdir = dirname(root);
+      assertNativeTaskCheckout(root, workdir);
+      const context = readDaemonTaskContext(workdir);
+      if (context?.issue_id && context.issue_id !== before.id)
+        throw new FailError("当前 daemon Task 不属于此 Issue");
+      const runs = runJson([...MC, "issue", "runs", String(before.id), "--active", ...ws, "--output", "json"],
+        "核验当前 Analysis Run", undefined, { transient: true });
+      const matches = Array.isArray(runs) ? runs.filter(r => r?.id === process.env.MULTICA_TASK_ID) : [];
+      if (matches.length !== 1 || matches[0].issue_id !== before.id ||
+          matches[0].agent_id !== process.env.MULTICA_AGENT_ID ||
+          matches[0].workspace_id !== args.workspaceId || matches[0].status !== "running")
+        throw new UnknownError("当前 Analysis Task / Issue / Agent / Workspace 身份无法确认");
+      publicationBranch = resolveProjectRootBranch(root, before.project_id, pinned?.branch);
+      if (args.targetBranch && args.targetBranch !== publicationBranch)
+        throw new PreconditionError("--target-branch 与固定发布来源或 Project Resource ref 冲突");
+    } else {
+      if (args.targetBranch) throw new PreconditionError("--target-branch 仅用于 Native Requirement 分析发布");
+      publicationBranch = requirement ? pinned?.branch ?? requirementBranch() : undefined;
     }
-    const publicationBranch = requirement ? args.targetBranch || requirementBranch() : undefined;
     const changeDir = join(root, "openspec", "changes", facts.change_ref);
     const readContractAt = (commit: string) => committedContract(root, commit, facts, priorMeta);
     const schema = readChangeSchema(changeDir);
