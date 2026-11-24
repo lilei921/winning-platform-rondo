@@ -1,7 +1,8 @@
 # Workspace 管理机制解耦与 Registry 退役优化方案
 
-> 状态：已确认 Native 优先实施；第一阶段完成 native-workspace，第二阶段再完成 persistent-workspace。待 Native 最小 Spike 与研发。2026-11-24。
+> 状态：已确认 Native 优先实施；第一阶段完成 native-workspace，第二阶段再完成 persistent-workspace。Native 基础 Spike 已完成（PASS 9、PARTIAL 2、FAIL 1，未登记仓库为非目标）；第一阶段待研发和端到端验证。2026-11-24。
 > 依据：[01 统一设计规范](../../01-multica-openspec-design-guideline.md) v1.16.13；原始分析基线 main Tree `0fb95275b6ffc6bcfb086fe797ac2a2790222740`。
+> 验证依据：[Native Workspace Spike 实测报告（2026-11-24）](../../validation/native-workspace-spike-20261124.md)，Multica 0.11.1（e1fe10d66）、Rondo 1.2.37，LEI-54 / LEI-55。
 > 本方案整合此前 Registry 退役、根仓准备统一及完整仓库管理机制解耦设计。未修改生产代码。
 
 ## 1. 目标及原则
@@ -52,9 +53,23 @@ skills/
 
 ## 3. Native Workspace（第一阶段实施）
 
-已知部署前提：目标 Project Resources 已登记全部需要的根仓及业务子仓。不验证未登记仓库的 Checkout，不新增资源登记机制。Native 的 Checkout URL 与首次起始 ref 取自已登记 Resource；repo-context.yaml 提供 Repository ID、工程语义及路径映射，核对所选 Resource 的仓库身份。Resource ref 是 Checkout 起点，不自动等同于 PR Target Branch；现有交付分支策略继续有效。具体 Resource 读取方式以实际 Runtime 能力为准，优先复用原生上下文与现有能力，不引入新的配置副本。
+已知部署前提：目标 Project Resources 已登记全部需要的根仓及业务子仓。不验证未登记仓库的 Checkout，不新增资源登记机制。Native 的 Checkout URL 与首次起始 ref 取自已登记 Resource；repo-context.yaml 提供 Repository ID、工程语义及路径映射，核对所选 Resource 的仓库身份。Resource ref 是 Checkout 起点，不自动等同于 PR Target Branch；现有交付分支策略继续有效。Resource URL/ref 的完整机器读取接口尚未实测；实现时检查当前 CLI/API/原生上下文及已有 Rondo 能力，不能用 repo list 代替，也不假定未知接口。若 CLI 不能直接读取，优先复用已核实的原生上下文作为明确输入（只在实际必要时补最小参数，并保持 URL 与批准映射/授权一致）；不新增 Resource 查询服务或配置副本。不能确认输入时报告真实阻塞。
 
-### 3.1 根仓
+### 3.1 已验证事实与实施边界
+
+| 实测项 | 结果及设计影响 |
+| --- | --- |
+| 已登记 TFS 根仓、frame、frame-web | PASS；根仓在 Task workdir 下，业务仓在根仓 cwd 下形成直属子目录，沿用 repo_path；根仓忽略且不跟踪业务仓 |
+| Git 形态与隔离 | PASS；每仓 .git 为文件，linked worktree 共享对应仓的 daemon bare cache，Task Branch 与工作树隔离；不硬编码实际 D 盘路径 |
+| Checkout CLI | 仅支持 `<url> [--ref <branch, tag, or commit>] [--fresh]`，无 --output json 或目标目录参数；必须在 daemon Task 内显式控制 cwd |
+| 首次 ref 与 Candidate 跨 Task 续接 | PASS；新工作树 HEAD 与指定远端 ref 一致，发布不同名远端分支及 SHA 回读已实测成功 |
+| 同 Task 重复 Checkout | PASS（复用语义）；Kept 保持工作树/分支/HEAD，仅 Fetch remote refs，不切换 ref；untracked 临时文件保护已实测，未发布 Commit 保护及 fetch_error 等仍纳入回归 |
+| 仓库可用范围 | common 未登记时 FAIL；repo list 仅列根仓但已登记子仓可成功 Checkout，不作为完整 Resource 清单；不另建可用性预检或 Clone 兜底 |
+| Rondo 兼容性 | PARTIAL；check-checkout 实测 PASS，Bug Git/PR Preparation 的独立 Clone 和同名分支约束不兼容；Requirement PR Preparation 仅静态判断基本兼容，正式交付尚未验证 |
+
+上述基础证据足够进入第一阶段开发；不再开展广泛 Spike。未验证的 Resource URL/ref 获取接口、实际业务根仓映射/交付目标策略、已批准版本可读取性、重入分歧及正式交付写操作，在实现与回归中核实。Spike 不是端到端交付 PASS。
+
+### 3.2 根仓
 
 复用当前 Task 的 Native Checkout；首次在 Task workdir 执行：
 
@@ -65,7 +80,7 @@ rondo runtime check-checkout --root-repo "<actual-root>"
 
 URL 与 ref 来自 Project Resource；未指定 ref 时省略参数。使用实际返回路径。check-checkout 仅描述本地就绪检查，不增加额外身份机制。根仓 Checkout 起点、本地 Task Branch、OpenSpec 远端发布目标是不同概念，保留现有发布契约。
 
-### 3.2 业务子仓
+### 3.3 业务子仓
 
 使用已授权 Repository 的 URL 和已核实的基线：
 
@@ -73,13 +88,13 @@ URL 与 ref 来自 Project Resource；未指定 ref 时省略参数。使用实�
 multica repo checkout <business-repo-url> --ref <base-ref>
 ```
 
-业务仓通过 `rondo dev prepare --workspace native` 执行：复用已有业务授权，解析仓库映射及候选分支，确定 Checkout 起点，在已就绪根仓目录下调用 Multica 原生 Checkout，并核验实际返回路径。上面的 multica 命令仅说明内部原生机制，不要求 LLM 自行拼接查询或绕过授权。实际路径以平台返回为准，不推测目录，不由 Rondo 额外创建 Clone 或 Worktree。具体调用与返回解析以真实 Runtime Spike 为依据。
+业务仓通过 `rondo dev prepare --workspace native` 执行：复用已有业务授权，解析仓库映射及候选分支，确定 Checkout 起点，在已就绪根仓目录下调用 Multica 原生 Checkout，并核验实际返回路径。上面的 multica 命令仅说明内部原生机制，不要求 LLM 自行拼接查询或绕过授权。实际路径以平台返回为准，不推测目录，不由 Rondo 额外创建 Clone 或 Worktree。调用使用现有 Multica CLI 前缀与 Task 环境，显式设置子进程 cwd 为已核验根仓。复用 `delivery/closeout-root.ts` 的 `parsePlatformCheckoutOutput` 等已有能力（按实际首次/Kept 输出补齐解析和测试）；无 JSON 输出、无目标目录参数；不复制 Closeout 专用归档逻辑。返回路径必须与 `validateBusinessPath` 核验的直属业务仓路径一致，不需新建路径映射或普遍新增 `--repo-dir`。
 
-远端 Candidate 已存在时从已核实 Candidate 继续；确认不存在时从明确的目标分支开始。查询失败不能视作不存在。Native Task Branch 不必与远端 Candidate 同名。重入时确认实际工作树属于当前授权任务且与所需 Candidate 基线相容；不要求有合法本地新提交的 HEAD 恒等于远端 SHA，不覆盖 dirty/unpushed 工作。保留候选续接、实际 HEAD、Origin、授权、非强制发布、远端 SHA 回读等已有交付要求。
+远端 Candidate 已存在时从已核实 Candidate 继续；确认不存在时使用已登记 Resource 的明确初始 ref（核对现有交付目标策略，不把 ref 自动等同 PR Target）。查询失败不能视作不存在。Native Task Branch 不必与远端 Candidate 同名。首次 Checkout 核验 HEAD 与所选远端基线一致；重入时 `Kept` 不是 ref 切换，核验当前 Task 归属及实际 HEAD。已有 Candidate 时以 `git merge-base --is-ancestor <candidate-sha> HEAD` 等 Git 证据判断是否包含必需的远端 Candidate，允许合法本地新提交，不要求 HEAD 恒等于远端 SHA。无 Candidate 的重入保护原有效基线及本地成果，不强制追平新目标分支；若基线不明、远端事实无法确认或历史不相容，则保留现场并明确差异，根据已有安全方式处理，必要时由 Agent/Human 协调新 Task 从已发布 Candidate 续接，不自动切换 Task 或丢弃未发布成果。保留实际 HEAD、Origin、授权、非强制发布及远端 SHA 回读。
 
-Multica 管理本地工作区及其生命周期，Rondo 负责必要的确定性校验和正式 Candidate 发布，不重建平台 Checkout / Cache / 清理机制。已有 Checkout 的 kept / fetch_error 等结果不能直接等同于最新基线，不覆盖本地 WIP。
+Multica 管理本地工作区及其生命周期，Rondo 负责必要的确定性校验和正式 Candidate 发布，不重建平台 Checkout / Cache / 清理机制。已有 Checkout 的 kept / fetch_error 等结果不能直接等同于最新基线，不覆盖本地 WIP。不得默认使用 --fresh、reset、clean、自动 rebase、force push；不为同 Task ref 切换开发独立机制。
 
-真实 Runtime 必须验证已登记 TFS 仓库 Checkout、嵌套及多仓 Checkout、重复 Checkout 与 WIP 保护、指定 Candidate ref、跨 Task 隔离、Candidate 发布及 Native 本地工作树与交付兼容。先做最小 Spike，再确定正式适配边界；未验证前不得认定完整 Native 路径已可用。无需测试未登记仓库或重新验证 Resource 登记要求。
+已登记 TFS 仓库 Checkout、嵌套、多仓、重复 Checkout、untracked 保护、首次 Candidate ref、跨 Task 隔离及测试分支发布均有 Spike 证据。第一阶段只补足真实交付及边界回归，不重复无关验证。
 
 ## 4. Persistent Workspace（第二阶段设计，暂不实施）
 
@@ -172,16 +187,16 @@ Requirement 成功准备业务工作树后，沿用现有 verify_agent.required 
 
 | 命令 | 最小改造 |
 | --- | --- |
-| bug git | 消费实际业务工作树路径；支持 linked worktree 或 Native checkout；保留受控 fetch / 非强制 push |
-| bug pr-prepare | 核验实际业务工作树、仓库身份、当前授权、候选及远端 SHA，不强制独立 .git 目录 |
-| dev pr-prepare | 复用 --validation-cwd 作为实际业务验证路径，消除 Native 下必须存在固定基础 Clone 的前提；保留真实候选验证 |
+| bug git | 沿用已核实 root/repo_path，接受当前 Task Native linked worktree；本地 Task Branch 与远端 Candidate 解耦，保留受控 fetch / 非强制 push |
+| bug pr-prepare | 沿用直属子仓路径；核验实际 Native 工作树、仓库身份、当前授权、候选及远端 SHA，不强制独立 .git 目录或本地与远端分支同名 |
+| dev pr-prepare | Spike 证明 Native 目录满足现有 hub/.git 存在约束，静态判断与 Candidate Validation 兼容；先实际验证现有命令，复用 --validation-cwd，只修真实不兼容点，不预先重构 |
 | pr materialize | 第一阶段确保 Native 不触发 Rondo Worktree 回收，保留现有 Requirement 回收路径；第二阶段再将回收通用化为 Bug / Requirement 的 Persistent Worktree 回收 |
 
-Bug 命令确有路径输入缺口时新增 `--repo-dir "<actual-business-path>"`；Requirement 优先复用 `--validation-cwd`，不为统一命名而增加重复参数。路径仅在当前 Run 中消费，不写路径 Metadata，不新增 Checkout Manifest。
+Spike 已验证现有 root/repo_path 目录契约，第一阶段默认不新增 --repo-dir 等路径参数。Requirement 复用 --validation-cwd；只有实际路径缺口有证据时才补充最小输入。路径仅在当前 Run 中消费，不写路径 Metadata，不新增 Checkout Manifest。命令名以最新源码注册及实际 --help 为准：Spike 安装版 1.2.37 中 bug prepare-pr / dev pr-prep 与仓内命名有差异；核实后统一本次受影响调用，不借此重构命令体系。
 
-保留实际 Git top-level、路径边界、Origin/Push URL、授权、候选身份和 SHA 校验；不得把仅凭 Origin 相同的其他 Issue 工作树当成本次工作树。Native 校验当前 Task 的工作树归属，优先复用已有平台证据；Persistent 校验本次 Issue 的 Worktree 与基础仓归属。具体实现依据 Spike 和既有安全检查，不额外建设身份系统。移除不适用的独立 .git 目录及本地分支等于远端 Candidate 的条件，不删除必要校验。
+保留实际 Git top-level、路径边界、Origin/Push URL、授权、候选身份和 SHA 校验；不得把仅凭 Origin 相同的其他 Issue 工作树当成本次工作树。Native 复用 `clients/native-checkout.ts` 中的 `platformTaskSuffix`、`isDaemonCacheWorktree`、`readDaemonTaskContext`、`assertPlatformCheckoutIdentity` 等适用能力，以及 Closeout 已有平台身份验证思路；核验当前 Task/Workspace、实际根仓与直属业务路径、Task Branch 和 cache 归属，不能仅凭 .git 文件或共用 cache 判定任务所有权。保持 `validateBusinessPath` 的路径/链接、根仓忽略与未跟踪检查；保留唯一 Origin/Push URL、实际 Git top-level 和授权校验。不新增身份系统。Persistent 的 Worktree 归属适配留第二阶段。移除不适用的独立 .git 目录及本地分支等于远端 Candidate 的条件，不删除必要校验。
 
-保留 Bug feat/<tfs.id>、Requirement feature/<tfs.id> 及现有明确允许的 Bug 分支覆盖语义；不统一分支命名。Native 正式 Candidate 发布使用实际候选 SHA、安全非强制 Push 和远端回读；本地 Task Branch 不作为 PR Source Branch。
+保留 Bug feat/<tfs.id>、Requirement feature/<tfs.id> 及现有明确允许的 Bug 分支覆盖语义；不统一分支命名。Native 正式 Candidate 发布使用实际候选 SHA、安全非强制 Push（例如 HEAD:refs/heads/<candidate>）和远端回读；本地 Task Branch 不作为 PR Source Branch。保留现有 Commit Refs 尾注、Code Review、Regression、Blocking Findings、真实 Candidate Validation 及 Metadata 回读。
 
 ### 6.3 生命周期与恢复
 
@@ -228,9 +243,9 @@ Bug 命令确有路径输入缺口时新增 `--repo-dir "<actual-business-path>"
 
 | 步骤 | 实施内容 |
 | --- | --- |
-| 1.1 Native 最小 Spike | 使用已登记的 TFS 根仓和业务仓验证嵌套及多仓 Checkout、指定 Candidate ref、重复 Checkout/WIP、跨 Task 隔离、Task Branch 发布 Candidate、实际路径与 Rondo 兼容边界；不验证未登记仓库 |
+| 1.1 Native 最小 Spike（已完成） | 见 validation/native-workspace-spike-20261124.md；基础能力通过，明确 Kept 不切换 ref 与 Bug 结构性不兼容；无需再次大范围 Spike |
 | 1.2 Native 准备入口 | 复用现有 Runtime、Resource 信息、Repository Mapping 和业务授权；实现 dev prepare --workspace native，不需要 Skill Registry JSON；保留 Requirement verify_agent.required 投影 |
-| 1.3 交付最小适配 | 按实际路径核验仓库身份与 Candidate，适配 Bug Git、Bug/Requirement PR Preparation、OpenSpec 发布及 PR Materialize；Native 不执行 Rondo Worktree 清理；不改原有 Worktree 算法及回收机制 |
+| 1.3 交付最小适配 | 重点修复 Bug Git/PR Preparation；Requirement PR Preparation、根仓 OpenSpec 发布先验证现行实现，仅修真实不兼容点；Native 不执行 Rondo Worktree 清理；不改原有 Worktree 算法及回收机制 |
 | 1.4 Skill 与部署 | 新增 native-workspace/SKILL.md；更新实际受影响的 Agent Instructions、bug-delivery、change-development、Provisioning 及 Sync；在目标部署完成原生绑定替换 |
 | 1.5 回归与真实验证 | 验证 Native Bug、Native Requirement 两条完整交付链及 Workitem Analyst 根仓/OpenSpec 链；确认旧部署未被破坏，满足验收后独立交付第一阶段 |
 
@@ -238,7 +253,7 @@ Bug 命令确有路径输入缺口时新增 `--repo-dir "<actual-business-path>"
 
 第一阶段明确不实施：persistent-workspace Skill、--workspace persistent、通用化 Worktree 准备算法、Bug Worktree、通用 Worktree 回收、双新 Skill 动态绑定机制。保留尚有消费者的旧入口、旧 Skill、JSON 及 Worktree 行为；若旧路径已无消费者，按实际情况退役，不为历史兼容长期保留。
 
-未通过 Spike 的事项应记录原生限制及实际阻塞；根据事实决定最小适配，不默认增加 Clone/Worktree 兜底。未完成真实交付验证，不宣称 Native 已完成或切换未经验证的部署。
+剩余未验证项直接纳入第一阶段研发和回归，按实际事实处理；不默认增加 Clone/Worktree 兜底。未完成真实交付验证，不宣称 Native 已完成或切换未经验证的部署。无真实 Runtime/测试写入授权时，先完成代码及可运行测试，记录实际阻塞与待执行验证，不虚构 PASS 或修改正式 Issue。
 
 ### 第二阶段：完成 persistent-workspace
 
@@ -257,7 +272,7 @@ Bug 命令确有路径输入缺口时新增 `--repo-dir "<actual-business-path>"
 
 ### 第一阶段 Native
 
-- 已登记根仓与多个业务子仓使用 Multica Native Checkout，真实路径、Task 隔离、Candidate 续接和 WIP 保护获得实际证据。
+- 复用 Spike 的已登记根仓、多业务仓、Task 隔离、首次 Candidate 续接、untracked 保护及测试分支发布证据；补足改造后原生输出解析（首次、Kept、失败/不明）、同 Task Candidate 基线相容/不相容、未发布 Commit 保护和 fetch_error 等回归。没有真实证据的场景不标记实测 PASS。
 - Native Bug 与 Native Requirement 两条交付链通过首次准备、重入、多仓及部分失败、Candidate 发布、真实验证、PR Preparation、PR Materialize、返工恢复；Bug RECREATE_PR 不强制 Checkout。
 - Workitem Analyst 可独立准备根仓和发布 OpenSpec；Requirement 保留批准源 SHA、原发布目标及 verify_agent.required 投影。
 - native-workspace 无 Registry JSON，新 Native prepare 无 --config；实际参与仓库的映射、授权、目标分支、Origin、Push URL、候选 SHA 及路径边界正确。
