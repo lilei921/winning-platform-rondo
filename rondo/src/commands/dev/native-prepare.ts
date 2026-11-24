@@ -8,7 +8,7 @@ import { runAuthenticatedGit, assertTfsRepository } from "../../clients/authenti
 import { runCommand } from "../../clients/spawn.js";
 import { multicaPrefix } from "../../clients/multica-environment.js";
 import type { MulticaRuntime } from "../../clients/runtime-context.js";
-import { assertNativeTaskCheckout, parsePlatformCheckoutOutput } from "../../clients/native-checkout.js";
+import { parsePlatformCheckoutOutput } from "../../clients/native-checkout.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 import { validatePrepareRepo, validateBusinessPath, validateBusinessCheckout, type PrepareRepo } from "./prepare-workspace.js";
 
@@ -51,7 +51,6 @@ export function readNativeRepoMapping(root: string, revision: string, serverUrl:
 export function prepareNativeBusiness(root: string, repo: PrepareRepo, branch: string, runtime: MulticaRuntime,
   resourceRef?: string, remote = runAuthenticatedGit, checkout = runCommand): Record<string, unknown> {
   const workdir = dirname(root);
-  assertNativeTaskCheckout(root, workdir);
   const path = validateBusinessPath(root, repo);
   const existing = existsSync(path);
   if (existing) validateBusinessCheckout(path, repo, branch, workdir);
@@ -85,8 +84,9 @@ export function prepareNativeBusiness(root: string, repo: PrepareRepo, branch: s
   const same = (a: string, b: string) => process.platform === "win32"
     ? resolve(a).toLowerCase() === resolve(b).toLowerCase() : resolve(a) === resolve(b);
   if (!same(reported.root, path) || !same(validateBusinessPath(root, repo), path)) throw new FailError("Native Checkout 实际路径与仓库映射不一致");
-  const localBranch = assertNativeTaskCheckout(path, workdir, reported.branch);
   const head = validateBusinessCheckout(path, repo, branch, workdir);
+  const localBranch = gitOk(path, ["symbolic-ref", "--short", "HEAD"], "核对 Task Branch");
+  if (localBranch !== reported.branch) throw new FailError("Native 当前分支与平台返回不一致");
   if (!existing && head !== (candidate ?? observed.get(initialRef!)))
     throw new UnknownError("首次 Checkout HEAD 与已确认基线不一致，保留现场");
   if (existing && !candidate) {
