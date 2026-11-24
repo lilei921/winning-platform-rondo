@@ -10,10 +10,7 @@
   2. sync      —— 渲染仓库映射配置并 upsert Skill 文件
   3. disable   —— 关闭 Agent 继承自 runtime 的本地 Skill
   4. tfs-env   —— 为 Agent 补齐 TFS_URL / TFS_COLLECTION / TFS_PAT（只增不改）
-  5. rondo-env —— 仅为 Workitem Analyst / Engineer 补齐
-                  RONDO_WORKSPACE_PATH（默认 /tmp）/ RONDO_WORKSPACE_BRANCH（默认 master）
-                  （只增不改）
-  6. repos     —— 供给 workspace 级仓库注册表（只增不维护：已存在的 URL 不改动；
+  5. repos     —— 供给 workspace 级仓库注册表（只增不维护：已存在的 URL 不改动；
                   按 workspace_groups 分组解析，组 workspace_repos 覆盖顶层默认）
 
 用法：
@@ -23,7 +20,6 @@
   python sync_workspace.py --runtime-id <uuid>
   python sync_workspace.py --with-workflow      # 服务端支持 workflow API 时恢复检查与状态供给
   python sync_workspace.py --skip-tfs-env       # 跳过默认的 TFS 环境变量补齐
-  python sync_workspace.py --skip-rondo-env     # 跳过默认的 Rondo 工作区环境变量补齐
   python sync_workspace.py --skip-repos         # 跳过默认的 workspace 仓库注册表供给
   python sync_workspace.py --dry-run
 
@@ -272,8 +268,6 @@ def sync_workspace(
     skip_workflow: bool,
     tfs_script: Path,
     skip_tfs_env: bool,
-    rondo_script: Path,
-    skip_rondo_env: bool,
     repos_script: Path,
     skip_repos: bool,
 ) -> int:
@@ -322,15 +316,6 @@ def sync_workspace(
         if dry_run:
             tfs_command.append("--dry-run")
         steps.append(("补齐 Agent TFS 环境变量", None, tfs_command))
-    if skip_rondo_env:
-        print("[SKIP] 补齐 Agent Rondo 环境变量：按 --skip-rondo-env 跳过", flush=True)
-    else:
-        # 只增不改：仅对 Workitem Analyst / Engineer 补
-        # RONDO_WORKSPACE_PATH / RONDO_WORKSPACE_BRANCH，已存在的键一律保留。
-        rondo_command = [sys.executable, str(rondo_script), name]
-        if dry_run:
-            rondo_command.append("--dry-run")
-        steps.append(("补齐 Agent Rondo 环境变量", None, rondo_command))
     if skip_repos:
         print("[SKIP] 供给 workspace 仓库注册表：按 --skip-repos 跳过", flush=True)
     else:
@@ -401,10 +386,6 @@ def main() -> int:
         help="跳过默认的 Agent TFS 环境变量补齐（TFS_URL / TFS_COLLECTION / TFS_PAT）",
     )
     parser.add_argument(
-        "--skip-rondo-env", action="store_true",
-        help="跳过默认的 Agent Rondo 环境变量补齐（RONDO_WORKSPACE_PATH / RONDO_WORKSPACE_BRANCH）",
-    )
-    parser.add_argument(
         "--skip-repos", action="store_true",
         help="跳过默认的 workspace 仓库注册表供给（只增不维护）",
     )
@@ -422,10 +403,6 @@ def main() -> int:
     tfs_script = Path(__file__).resolve().parent / "provision_agent_tfs_env.py"
     if not args.skip_tfs_env and not tfs_script.is_file():
         print(f"未找到脚本：{tfs_script}", file=sys.stderr)
-        return 1
-    rondo_script = Path(__file__).resolve().parent / "provision_agent_rondo_env.py"
-    if not args.skip_rondo_env and not rondo_script.is_file():
-        print(f"未找到脚本：{rondo_script}", file=sys.stderr)
         return 1
     repos_script = Path(__file__).resolve().parent / "provision_workspace_repos.py"
     if not args.skip_repos and not repos_script.is_file():
@@ -483,7 +460,6 @@ def main() -> int:
             disable_runtime_skills=disable_allowed, disable_skip_reason=disable_reason,
             skip_workflow=args.skip_workflow,
             tfs_script=tfs_script, skip_tfs_env=args.skip_tfs_env,
-            rondo_script=rondo_script, skip_rondo_env=args.skip_rondo_env,
             repos_script=repos_script, skip_repos=args.skip_repos,
         )
         if code:

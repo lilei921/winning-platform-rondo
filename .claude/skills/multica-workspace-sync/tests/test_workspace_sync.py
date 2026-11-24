@@ -123,7 +123,7 @@ class WorkspaceSyncTests(unittest.TestCase):
             code = sync.sync_workspace(
                 "winning-bi", "ws-bi", "runtime", self.root, ["node", "local-cli"],
                 Path("disable.py"), dry_run, False, 1, False, "测试跳过", True,
-                Path("tfs.py"), True, Path("rondo.py"), True, Path("repos.py"), True,
+                Path("tfs.py"), True, Path("repos.py"), True,
             )
         return code, calls
 

@@ -84,7 +84,6 @@ python .claude/skills/multica-workspace-sync/scripts/sync_workspace.py winning-l
 | `--skip-workflow` | （默认开启）provision 跳过 workflow 检查与状态供给；97 服务端无 workflow API，必须保持跳过 |
 | `--with-workflow` | 恢复 workflow 检查与状态供给；仅在服务端支持 workflow API 时使用 |
 | `--skip-tfs-env` | 跳过默认的 Agent TFS 环境变量补齐步骤 |
-| `--skip-rondo-env` | 跳过默认的 Agent Rondo 环境变量补齐步骤 |
 | `--skip-repos` | 跳过默认的 workspace 仓库注册表供给步骤 |
 | `--dry-run` | 只预演，不写平台与仓内 overlay |
 
@@ -95,8 +94,9 @@ python .claude/skills/multica-workspace-sync/scripts/sync_workspace.py winning-l
 3. **绑定 Agent runtime**（仅当显式传入 `--runtime-id`）— provision 只在**新建** Agent 时使用 `--runtime-id`，已存在的 Agent 保留原 runtime；显式指定 runtime 时必须额外改绑，否则该参数对已供给的 workspace 无效。
 4. **禁用 runtime skills** — 关闭 Agent 从 runtime 继承的本地 Skill，避免与仓内 Skill 重复暴露；先预览再落盘。是否执行见下节。
 5. **补齐 Agent TFS 环境变量**（`provision_agent_tfs_env.py`）— 为全部 Agent 补齐 `TFS_URL` / `TFS_COLLECTION` / `TFS_PAT`，只增不改；规则与凭据红线见下节。`--dry-run` 会透传给该步骤；`--skip-tfs-env` 可整体跳过。
-6. **补齐 Agent Rondo 环境变量**（`provision_agent_rondo_env.py`）— 仅为 Workitem Analyst / Engineer 补齐 `RONDO_WORKSPACE_PATH`（默认 `/tmp`）/ `RONDO_WORKSPACE_BRANCH`（独立补齐脚本兜底 `master`；完整 provision 按 manifest `project.workspace_branch` 下发，当前为 `master`，同样只作用于这两个 Agent），只增不改；`--dry-run` 透传；`--skip-rondo-env` 可整体跳过。
-7. **供给 workspace 仓库注册表**（`provision_workspace_repos.py`）— 按 manifest 的 `workspace_repos` 段执行 `multica repo add`，只增不维护；`--dry-run` 会透传；`--skip-repos` 可整体跳过。
+6. **供给 workspace 仓库注册表**（`provision_workspace_repos.py`）— 按 manifest 的 `workspace_repos` 段执行 `multica repo add`，只增不维护；`--dry-run` 会透传；`--skip-repos` 可整体跳过。
+
+同步不再设置 `RONDO_WORKSPACE_PATH` 和 `RONDO_WORKSPACE_BRANCH`，也不主动删除 Agent 已有的这两个配置。
 
 ## workspace 分组
 
