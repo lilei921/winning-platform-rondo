@@ -334,7 +334,7 @@ test("根仓 Push 历史允许单 Change Commit，拒绝未核验 Merge Commit",
 
 test("Proposal 不保存仓库清单；Change 元数据由 spec-preparation Skill 维护", () => {
   for (const schema of ["corrective-change", "intentional-change"]) {
-    const proposal = readFileSync(new URL("../../../openspec/schemas/" + schema + "/templates/proposal.md", import.meta.url), "utf8");
+    const proposal = readFileSync(new URL("../../openspec/schemas/" + schema + "/templates/proposal.md", import.meta.url), "utf8");
     assert.doesNotMatch(proposal, /^## Repository Scope$/m);
   }
   const skill = readFileSync(new URL("../../skills/spec-preparation/SKILL.md", import.meta.url), "utf8");

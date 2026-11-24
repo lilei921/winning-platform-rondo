@@ -93,15 +93,15 @@ test("D1 workspace sync renders spec-preparation config in dry-run and local-onl
   // 使用真实的 registry 查询工具，验证独立仓库的 Python → Rondo 渲染链路。
   writeFileSync(join(docs, "repo-context.yaml"), JSON.stringify({ repos: [
     { repo_id: "root", repo_type: "root-workspace", repo_path: ".", responsibility: "root", keywords: [], not_responsible_for: [] },
-    { repo_id: "app", repo_type: "backend", repo_path: "业务 应用", repo_url: "http://tfs.test/tfs/C/P/_git/app", responsibility: "业务应用", keywords: [], not_responsible_for: [] },
+    { repo_id: "app", repo_type: "backend", repo_path: "业务 应用", repo_url: "http://tfs.test/tfs/C/P/_git/app", default_target_branch: "main", responsibility: "业务应用", keywords: [], not_responsible_for: [] },
   ] }));
   copyFileSync(new URL("../../tools/repo_registry.py", import.meta.url), join(tools, "repo_registry.py"));
   writeFileSync(join(shared, "repo-registry.base.json"), JSON.stringify({
     runtime: { multica_cli: "multica", rondo: "rondo" },
-    delivery: { app: { tfs_repo: "app", default_target_branch: "main" } },
+    delivery: { app: { tfs_repo: "app" } },
   }));
   writeFileSync(join(shared, "workspaces", "d1pilot.json"), JSON.stringify({
-    workspace_id: "ws-pilot", delivery_squad_id: "squad-pilot",
+    workspace_id: "ws-pilot",
     multica_profile: "private", multica_server_url: "https://private.example",
     skills: { "spec-preparation": "skill-id", "workspace-preparation": "workspace-skill-id" },
   }));
@@ -117,7 +117,8 @@ test("D1 workspace sync renders spec-preparation config in dry-run and local-onl
   assert.equal(rendered.code, 0, rendered.stderr);
   const cfg = JSON.parse(readFileSync(localConfig, "utf8"));
   assert.equal(cfg.runtime.workspace_id, "ws-pilot");
-  assert.equal(cfg.runtime.delivery_squad_id, "squad-pilot");
+  assert.equal(cfg.runtime.delivery_squad_id, undefined);
+  assert.equal(cfg.registry.app.default_target_branch, "main");
   assert.equal(cfg.runtime.multica_profile, "private");
   assert.equal(cfg.runtime.multica_server_url, "https://private.example");
   assert.equal(cfg.registry.app.repo_path, "业务 应用");
@@ -129,7 +130,7 @@ test("D1 workspace sync renders spec-preparation config in dry-run and local-onl
   assert.deepEqual(JSON.parse(readFileSync(join(workspaceSkill, "config", "repo-registry.json"), "utf8")), cfg);
 });
 
-test("D1 workspace sync refuses missing squad identity rather than writing fallback registry", (t) => {
+test("D1 workspace sync refuses missing registry base rather than guessing a registry", (t) => {
   const root = fixture(t);
   const shared = join(root, "workspace-config");
   mkdirSync(join(shared, "workspaces"), { recursive: true });
@@ -141,7 +142,7 @@ test("D1 workspace sync refuses missing squad identity rather than writing fallb
     { MULTICA_REPO_ROOT: root });
   assert.equal(r.code, 3);
   assert.equal(r.body.result, "UNKNOWN");
-  assert.match(r.body.reason, /delivery_squad_id/);
+  assert.match(r.body.reason, /repo-registry base 不存在/);
 });
 
 test("D2 skill contracts: archive legacy and bind composable Analyst methods", () => {
@@ -149,7 +150,7 @@ test("D2 skill contracts: archive legacy and bind composable Analyst methods", (
   const analyst = manifest.agents.find((a) => a.name === "Workitem Analyst");
   assert.deepEqual(analyst.skills, [
     "codebase-explorer", "bug-analysis", "requirement-analysis", "spec-preparation",
-    "analysis-completion", "workspace-preparation",
+    "analysis-completion", "native-workspace",
   ]);
   assert.equal(manifest.managed_skills.includes("workitem-analysis"), false);
   assert.ok(manifest.agents.every((agent) => !(agent.skills ?? []).includes("workitem-analysis")));
@@ -166,23 +167,15 @@ test("D2 skill contracts: archive legacy and bind composable Analyst methods", (
   );
   const spec = FRONT("spec-preparation");
   for (const expected of [
-    "config/repo-registry.json", "runtime.workspace_id", "workspace-preparation", "root_repo",
+    "config/repo-registry.json", "runtime.workspace_id", "root_repo",
     "--tfs-id <tfs.id>", "--change-ref <stable-id>", "同时传入",
-    "cwd", "openspec schema which", "implicit", "Root",
+    "cwd", "openspec schema which", "implicit",
     "--type change --strict --no-interactive --json", "Conditional Design", "skip_specs", "specs/**/*.md",
   ]) assert.ok(spec.includes(expected), "spec-preparation missing: " + expected);
   assert.ok(!spec.includes("新建并绑定 Agent"));
-  const canonical = readFileSync(join(SKILLS, "spec-preparation", "references", "tasks-md-authoring-contract.md"), "utf8");
-  const legacy = readFileSync(join(ARCHIVED_SKILLS, "workitem-analysis", "references", "tasks-md-authoring-contract.md"), "utf8");
-  // D3-B：现行工程 Task 写法已不包含 TFS 工时约束；Retired 历史契约只用于追溯，
-  // 不允许因修改权威 Reference 而同步覆写旧快照。
-  assert.match(canonical, /工程 Task/);
-  assert.match(canonical, /不强制.*预估/);
-  assert.match(canonical, /不因 TFS 任务数量、6h 上限/);
-  assert.match(legacy, /任务预估时长/);
-  assert.notEqual(canonical, legacy);
-  const review = readFileSync(join(SKILLS, "spec-preparation", "references", "contract-consistency-review.md"), "utf8");
-  assert.ok(!review.includes("Workitem Analyst"));
-  assert.ok(!review.includes("ai_review.verdict"));
+  // Current Schema / Artifact Instructions own authoring rules, not an archived Skill reference.
+  assert.ok(!existsSync(join(SKILLS, "spec-preparation", "references", "tasks-md-authoring-contract.md")));
+  assert.ok(existsSync(join(ARCHIVED_SKILLS, "workitem-analysis", "references", "tasks-md-authoring-contract.md")));
+  assert.match(spec, /当前 Artifact Instruction \/ Template/);
   assert.match(FRONT("bug-analysis"), /替代根因/);
 });

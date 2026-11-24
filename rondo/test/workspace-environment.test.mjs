@@ -399,7 +399,7 @@ test("pr-status-sync no longer renders Repository Registry", t => {
     workspace_id: "ws-1", skills: { "pr-status-sync": "skill-1" },
   });
   f.write("skills/pr-status-sync/SKILL.md", "---\nname: pr-status-sync\ndescription: fixture\n---\n");
-  const result = f.run("workspace", "sync", "--workspace", "pilot", "--local-only");
+  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "pr-status-sync", "--local-only");
   assert.equal(result.code, 0, JSON.stringify(result.body));
   assert.deepEqual(result.body.rendered, []);
   assert.equal(existsSync(join(dirname(f.overlay), "..", "..", "skills", "pr-status-sync", "config", "repo-registry.json")), false);
@@ -418,7 +418,7 @@ test("pr-status-sync sync deletes a stale remote Repository Registry attachment"
   assert.equal(result.code, 0, JSON.stringify(result.body));
   assert.deepEqual(result.body.deleted_remote, ["pr-status-sync/config/repo-registry.json"]);
   assert.ok(f.calls().some(args =>
-    args[0] === "skill" && args[1] === "files" && args[2] === "delete" && args.at(-1) === "stale-registry"));
+    args.includes("skill") && args[args.indexOf("skill") + 1] === "files" && args[args.indexOf("skill") + 2] === "delete" && args.at(-1) === "stale-registry"));
   assert.equal(existsSync(f.trace + ".stale"), false);
 
   const check = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "pr-status-sync", "--check");
@@ -431,7 +431,7 @@ test("delivery-closeout no longer renders Repository Registry", t => {
     workspace_id: "ws-1", skills: { "delivery-closeout": "skill-1" },
   });
   f.write("skills/delivery-closeout/SKILL.md", "---\nname: delivery-closeout\ndescription: fixture\n---\n");
-  const result = f.run("workspace", "sync", "--workspace", "pilot", "--local-only");
+  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "delivery-closeout", "--local-only");
   assert.equal(result.code, 0, JSON.stringify(result.body));
   assert.deepEqual(result.body.rendered, []);
   assert.equal(existsSync(join(dirname(f.overlay), "..", "..", "skills", "delivery-closeout", "config", "repo-registry.json")), false);
@@ -450,7 +450,7 @@ test("delivery-closeout sync deletes a stale remote Repository Registry attachme
   assert.equal(result.code, 0, JSON.stringify(result.body));
   assert.deepEqual(result.body.deleted_remote, ["delivery-closeout/config/repo-registry.json"]);
   assert.ok(f.calls().some(args =>
-    args[0] === "skill" && args[1] === "files" && args[2] === "delete" && args.at(-1) === "stale-registry"));
+    args.includes("skill") && args[args.indexOf("skill") + 1] === "files" && args[args.indexOf("skill") + 2] === "delete" && args.at(-1) === "stale-registry"));
   assert.equal(existsSync(f.trace + ".stale"), false);
 
   const check = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "delivery-closeout", "--check");

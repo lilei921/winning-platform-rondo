@@ -174,6 +174,9 @@ test("Design 细化仍受批准版本约束，Evidence JSON 不再参与发布",
   assert.match(rejected.reason, /evidence-biz\.json|研发工件|允许/);
   const second = first;
   assert.deepEqual(JSON.parse(metadata()["dev.publication"]), { analysis_commit: approved, commit: first });
+  // Isolate the next rejection from the previously rejected Evidence file.
+  git(root, "rm", work + "/evidence-biz.json");
+  git(root, "commit", "-m", "remove forbidden evidence");
 
   writeFileSync(join(root, work, "design.md"), refined + "Additional unconfirmed detail.\n");
   git(root, "commit", "-am", "different design");
