@@ -66,6 +66,7 @@ class RepoRecord:
     tfs_project: str | None = None
     tfs_collection: str | None = None
     repo_url: str | None = None
+    default_target_branch: str | None = None
 
     def status(self, workspace_root: Path) -> str:
         path = Path(self.repo_path)
@@ -77,6 +78,7 @@ class RepoRecord:
             "repo_id": self.repo_id,
             "repo_path": self.repo_path,
             "repo_url": self.repo_url,
+            **({"default_target_branch": self.default_target_branch} if self.default_target_branch is not None else {}),
             "repo_type": self.repo_type,
             "repo_status": self.status(workspace_root),
             "responsibility": self.responsibility,
@@ -119,6 +121,7 @@ class RepoRegistry:
         for item in data.get("repos") or []:
             records.append(RepoRecord(
                 repo_id=item["repo_id"], repo_path=item["repo_path"], repo_type=item["repo_type"], repo_url=item.get("repo_url"),
+                default_target_branch=item.get("default_target_branch"),
                 responsibility=item.get("responsibility", ""),
                 keywords=tuple(item.get("keywords") or ()),
                 not_responsible_for=tuple(item.get("not_responsible_for") or ()),
