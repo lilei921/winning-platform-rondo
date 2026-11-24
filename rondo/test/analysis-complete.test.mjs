@@ -45,6 +45,8 @@ function fixture(t, requirement = true, native = false) {
   writeFileSync(join(change, "proposal.md"), PROPOSAL);
   writeFileSync(join(change, "tasks.md"), "- [ ] 1.1 Fix and 验证 regression\n");
   git(root, "init"); git(root, "branch", "-M", "dev");
+  git(root, "config", "user.name", "Rondo Test");
+  git(root, "config", "user.email", "test@example.invalid");
   git(root, "-c", "user.email=test@example.invalid", "-c", "user.name=Test", "commit", "--allow-empty", "-m", "init");
   git(root, "remote", "add", "origin", remote);
   git(root, "push", "-u", "origin", "dev");
@@ -301,6 +303,7 @@ test("Native Analysis status failure and authorized rework keep the original pub
   project.resources[0].resource_ref.ref = "new-resource-branch";
   writeFileSync(f.resourcePath, JSON.stringify(project));
   delete f.env.MOCK_FAIL_STATUS;
+  rmSync(f.resourcePath);
   const resumed = f.complete();
   assert.equal(resumed.exit, 0, JSON.stringify(resumed));
   assert.equal(f.state().metadata["analysis.source"], source);
@@ -315,4 +318,28 @@ test("Native Analysis status failure and authorized rework keep the original pub
   const next = JSON.parse(f.state().metadata["analysis.source"]);
   assert.equal(next.branch, "dev");
   assert.notEqual(next.commit, JSON.parse(source).commit);
+});
+
+test("Native Analysis Push succeeded but source write failed: recover on same branch and refuse changed Resource", t => {
+  const f = fixture(t, true, true);
+  f.env.MOCK_FAIL_METADATA_KEY = "analysis.source";
+  assert.equal(f.complete().exit, 3);
+  const published = git(f.remote, "rev-parse", "dev");
+  assert.equal(f.state().metadata["analysis.source"], undefined);
+  const project = JSON.parse(readFileSync(f.resourcePath, "utf8"));
+  const before = git(f.root, "rev-parse", "dev");
+  git(f.root, "push", "origin", "dev:other");
+  project.resources[0].resource_ref.ref = "other";
+  writeFileSync(f.resourcePath, JSON.stringify(project));
+  delete f.env.MOCK_FAIL_METADATA_KEY;
+  assert.notEqual(f.complete().exit, 0);
+  assert.equal(git(f.remote, "rev-parse", "other"), before);
+  assert.equal(git(f.remote, "rev-parse", "dev"), published);
+  // Restore the original named baseline (as provided by linked platform checkout).
+  git(f.root, "branch", "--set-upstream-to=origin/dev", f.taskBranch);
+  project.resources[0].resource_ref.ref = "dev";
+  writeFileSync(f.resourcePath, JSON.stringify(project));
+  const recovered = f.complete();
+  assert.equal(recovered.exit, 0, JSON.stringify(recovered));
+  assert.equal(JSON.parse(f.state().metadata["analysis.source"]).commit, published);
 });

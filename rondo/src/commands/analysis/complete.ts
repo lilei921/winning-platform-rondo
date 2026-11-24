@@ -121,7 +121,7 @@ async function main(rawArgs: string[]): Promise<number> {
       const latest = runJson([...MC, "issue", "get", args.issue, ...ws, "--output", "json"], "重放后核对审核状态") as Record<string, unknown>;
       const current = runJson([...MC, "issue", "metadata", "list", args.issue, ...ws, "--output", "json"], "重放后核对来源") as Record<string, unknown>;
       if (String(latest.status ?? latest.status_name ?? "") !== TARGET_STATUS ||
-          !sameAnalysisSource(source, readAnalysisSource(current)) || source.branch !== readAnalysisSource(current).branch || metadataEvidenceDigest(current) !== metadataEvidenceDigest(priorMeta) ||
+          !sameAnalysisSource(source, readAnalysisSource(current)) || metadataEvidenceDigest(current) !== metadataEvidenceDigest(priorMeta) ||
           Object.entries(entries).some(([k, v]) => current[k] !== v)) throw new UnknownError("审核重放期间状态或来源已变化，停止放行");
       process.stdout.write(JSON.stringify({ result: "PASS", issue: args.issue, status: TARGET_STATUS,
         replayed: true, gate_reexecuted: false,
@@ -158,7 +158,7 @@ async function main(rawArgs: string[]): Promise<number> {
           matches[0].agent_id !== process.env.MULTICA_AGENT_ID ||
           matches[0].workspace_id !== args.workspaceId || matches[0].status !== "running")
         throw new UnknownError("当前 Analysis Task / Issue / Agent / Workspace 身份无法确认");
-      publicationBranch = resolveProjectRootBranch(root, before.project_id, pinned?.branch);
+      publicationBranch = pinned?.branch ?? resolveProjectRootBranch(root, before.project_id);
       if (args.targetBranch && args.targetBranch !== publicationBranch)
         throw new PreconditionError("--target-branch 与固定发布来源或 Project Resource ref 冲突");
     } else {
@@ -225,7 +225,7 @@ async function main(rawArgs: string[]): Promise<number> {
         const tfsId = String(priorMeta["tfs.id"] ?? "").trim();
         const subject = `analysis: ${facts.change_ref} (${args.issue}${tfsId ? ` / tfs ${tfsId}` : ""})`;
         const result = requirement ? await publishChange(root, facts.change_ref, args.issue, ANALYSIS_CONTRACT_FILE, subject, {
-          repoUrl: rootRepositoryUrl(root), expectedBranch: publicationBranch!, recoverCommit,
+          repoUrl: rootRepositoryUrl(root), expectedBranch: publicationBranch!, recoverCommit, fixedSourceCommit: pinned?.commit,
           validateTree: (commit: string) => {
             const candidate = readContractAt(commit);
             if (candidate.schema !== schema || candidate.digest !== gateEvidence.change_digest) {

@@ -1,7 +1,7 @@
 /** Non-destructive persistent root synchronization and per-Change Git publishing. */
 import { existsSync, lstatSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { assertNativeTaskCheckout, assertNativeCheckoutBaseline, nativeCheckoutExpected } from "../../clients/native-checkout.js";
+import { assertNativeTaskCheckout, assertNativeCheckoutBaseline, nativeCheckoutExpected, readDaemonTaskContext } from "../../clients/native-checkout.js";
 import { randomUUID } from "node:crypto";
 import { changeTree, developmentTree, mergeChangeTrees, publishedTree } from "./change-tree.js";
 import { FailError, UnknownError } from "../../cli/errors.js";
@@ -20,6 +20,7 @@ interface PublishOptions {
   expectedBranch: string;
   approvedCommit?: string;
   recoverCommit?: string;
+  fixedSourceCommit?: string;
   remote?: RootRemote;
   validateTree?: (commit: string) => void | Promise<void>;
 }
@@ -54,7 +55,8 @@ function assertRootLayout(root: string, preserveChangeDeletion = false): void {
 
 export function requirementRoot(arg?: string | null): string {
   const root = rootPath(arg);
-  if (!arg && nativeCheckoutExpected(root)) throw new UnknownError("Native Checkout 必须显式提供 --root-repo");
+  if (!arg && (nativeCheckoutExpected(root) || nativeCheckoutExpected(process.cwd()) ||
+      readDaemonTaskContext(process.cwd()))) throw new UnknownError("Native Checkout 必须显式提供 --root-repo");
   assertRootLayout(root);
   return root;
 }
@@ -81,7 +83,7 @@ export function rootRepositoryUrl(root: string, revision = "HEAD"): string {
 }
 
 /** Resolve the first Native publication from the current Issue's injected Project Resource. */
-export function resolveProjectRootBranch(root: string, projectId: unknown, fixedBranch?: string): string {
+export function resolveProjectRootBranch(root: string, projectId: unknown): string {
   const repo = canonicalRepositoryIdentity(rootRepositoryUrl(root));
   let project: { project_id?: unknown; resources?: Array<{ resource_type?: unknown; resource_ref?: { url?: unknown; ref?: unknown } }> };
   try { project = JSON.parse(readFileSync(join(dirname(root), ".multica", "project", "resources.json"), "utf8")); }
@@ -94,7 +96,7 @@ export function resolveProjectRootBranch(root: string, projectId: unknown, fixed
     catch { return false; }
   });
   if (matches.length !== 1) throw new UnknownError("根仓 URL 对应的 Project Resource 缺失或不唯一");
-  const branch = fixedBranch ?? matches[0].resource_ref?.ref;
+  const branch = matches[0].resource_ref?.ref;
   if (typeof branch !== "string" || !branch || branch.startsWith("-") || branch.startsWith("refs/") ||
       git(root, ["check-ref-format", "refs/heads/" + branch]).status !== 0)
     throw new FailError("根仓 Project Resource ref 必须是有效分支");
@@ -367,8 +369,12 @@ async function publishCommittedChange(
   const isAncestor = (older: string, newer: string): boolean =>
     git(root, ["merge-base", "--is-ancestor", older, newer]).status === 0;
   let remoteTip = fetch();
+  // A fixed published source is verified against the original remote branch.
+  // Exact recovery needs no proof of the checkout's historical starting ref.
+  if (native && !options.approvedCommit && !options.recoverCommit) assertNativeCheckoutBaseline(root, branch);
   for (let attempt = 0; attempt < 3; attempt++) {
-    if (native && !options.approvedCommit) assertNativeCheckoutBaseline(root, branch);
+    if (options.fixedSourceCommit && !isAncestor(options.fixedSourceCommit, remoteTip))
+      throw new UnknownError("已有 analysis.source.commit 不在原目标分支，停止发布");
     const approved = options.approvedCommit;
     const descendsFromApproval = (commit: string): boolean =>
       !approved || isAncestor(approved, commit);

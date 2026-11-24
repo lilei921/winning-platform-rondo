@@ -47,9 +47,9 @@ export function readAnalysisSource(md: Record<string, unknown>): AnalysisSource 
   return parseAnalysisSource(md["analysis.source"], md["analysis.change_ref"] as string);
 }
 
-/** 分支名用于审计，仓库 + commit + Change 才是批准内容的身份。 */
+/** 固定发布来源：仓库、分支、Commit 与 Change 必须一致。 */
 export function sameAnalysisSource(a: AnalysisSource, b: AnalysisSource): boolean {
-  return a.repo_url === b.repo_url && a.commit === b.commit && a.change_ref === b.change_ref;
+  return a.repo_url === b.repo_url && a.branch === b.branch && a.commit === b.commit && a.change_ref === b.change_ref;
 }
 
 export function analysisArtifactPath(source: AnalysisSource, file: string): string {
