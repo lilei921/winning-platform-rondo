@@ -33,7 +33,7 @@ rondo analysis complete --mode requirement --issue <issue> --facts <facts.json> 
   --registry-config "<config>" --workspace-id <workspace> --root-repo "<root>"
 ```
 
-使用 Native 根仓发布分析工件时，明确提供 `--target-branch <已确认的项目发布目标分支>`；不将本地 Task Branch 或未经核实的 Resource ref 当作发布目标。
+发布至已确认的项目根仓目标分支。Native 根仓需要显式指定发布目标时，使用 `--target-branch <branch>`。
 
 仅 TFS Requirement 使用 `--mode requirement`，其他流程沿用其适用入口。`validate` 只用于预检查；`complete` 首次发布时执行最终真实 Gate、Git 发布和固定来源核对；已处于 `analysis_review` 时只核对固定审核版本，不重新执行 Gate。`complete` 不发布 Issue 评论。
 
