@@ -33,8 +33,6 @@ rondo analysis complete --mode requirement --issue <issue> --facts <facts.json> 
   --registry-config "<config>" --workspace-id <workspace> --root-repo "<root>"
 ```
 
-发布至已确认的项目根仓目标分支。Native 根仓需要显式指定发布目标时，使用 `--target-branch <branch>`。
-
 仅 TFS Requirement 使用 `--mode requirement`，其他流程沿用其适用入口。`validate` 只用于预检查；`complete` 首次发布时执行最终真实 Gate、Git 发布和固定来源核对；已处于 `analysis_review` 时只核对固定审核版本，不重新执行 Gate。`complete` 不发布 Issue 评论。
 
 `complete` 返回 `PASS` 后，Agent 基于固定 Git 来源，通过 Multica 原生可见渠道提供简明审核摘要：目标/方案、影响范围、Independent Verify Recommendation 及依据、风险/待决、`change_ref`、完整 Commit 和 Gate。Comment 触发的 Run 回复本次触发线程；发布前核对当前线程是否已有相同 `change_ref` 和 Commit 的摘要，已有则不重复发布；发布后回读确认。
