@@ -169,7 +169,7 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 
 | 命令 | 功能 |
 | --- | --- |
-| `pr materialize` | 创建/复用 PR。Requirement 通过 Change 级 Completion，确认 PR 登记后，在 `--root-repo` 或 `RONDO_WORKSPACE_PATH` 对应的持久根仓清理本次业务 Worktree；Native 工作区由 Multica 管理，不执行清理 |
+| `pr materialize` | 创建/复用 PR。Requirement 通过 Change 级 Completion，确认 PR 登记后，在 `--root-repo` 或 `RONDO_WORKSPACE_PATH` 对应根仓仅清理归属于独立基础 Clone 的本次 Requirement Worktree；Native 工作区由 Multica 管理 |
 | `pr worktree` | 使用 `create`、`remove`、`prune` 管理本地 Git Worktree |
 | `pr reconcile-status` | 从当前 Run Workspace 扫描 Issue 的 `current_pr`，核实 `completed` / `abandoned` 等外部状态，不使用 Registry |
 
@@ -259,6 +259,8 @@ rondo workspace check-daemon --workspace-id <id> [--project-id <id>]
 | `workspace check-daemon` | 检查 Daemon 环境变量、Runtime 注册、挂载唯一性和交付亲和条件 |
 
 `workspace provision` 的 `--dry-run` 只预览；`workspace sync --local-only` 只生成本地配置，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。完整 provision 将 `workspace-config/provisioning.json` 中的 `project.workspace_branch` 下发为每个受管 Agent 的 `RONDO_WORKSPACE_BRANCH`。
+
+Native 迁移仅修改已验收目标 Workspace 的既有 Overlay（`workspace-config/workspaces/<name>.json`）：先供给并同步 `native-workspace`，核实 CLI、实际 TFS 根仓映射、批准版本及交付验收，再设置 `"workspace_preparation_skill": "native-workspace"` 并重新 provision。未设置时保留旧绑定；该字段只控制 Agent Skill 绑定，不参与运行时决策。
 
 ### 7.2 `rondo runtime`
 
