@@ -6,14 +6,14 @@ description: 根据已批准的 OpenSpec Change 完成一个或多个授权仓�
 # Inputs / Boundaries
 
 - 当前 Issue 的 `analysis.source`、Human Approval、当前 OpenSpec Change 与 `.openspec.yaml.x-repositories`；本 Skill 的 `config/repo-registry.json`。
-- 仅对已批准的 Repository Scope 内代码进行修改。需要本地 Git 时按需使用 `native-workspace`；不以文件存在代替仓库/分支就绪核验。
+- 仅对已批准的 Repository Scope 内代码进行修改。需要本地 Git 时按需使用已绑定的工作区准备 Skill；不以文件存在代替仓库/分支就绪核验。
 - 不修改已批准行为、验收或授权范围；实质变更退回原有 Human Review。
 
 # Work
 
 1. 通过 `rondo analysis read` 读取固定 Commit 中的 Proposal、Specs、必要 Design、Tasks，按专业判断实现；更新本地代码与测试。
-2. 在实际 Candidate Checkout 完成 Local Validation 与 Code Review，解决 Blocking Findings；记录完整 Candidate SHA，并核对远端分支。
-3. 对已验证任务使用 `rondo change update-progress`。OpenSpec 只更新原有工程契约与进度，不创建独立 Evidence/Review 报告。
+2. 在实际 Candidate Checkout 完成 Local Validation 与 Code Review，解决 Blocking Findings；提交业务代码，使用已授权仓库及认证非强制发布至 `feature/<tfs.id>`（例如 `git push origin HEAD:refs/heads/feature/<tfs.id>`），回读 `git ls-remote origin refs/heads/feature/<tfs.id>`，核实完整 Candidate SHA 与本地 HEAD 一致。
+3. 对已验证任务使用 `rondo change update-progress`，仅提交当前 Change 的研发工件，供 `rondo dev publish` 发布，不重复手工 Push 根仓。OpenSpec 只更新原有工程契约与进度，不创建独立 Evidence/Review 报告。
 4. 仅一次按仓库形成 PR Preparation Facts，并最终通过现有 Completion、PR 和 Closeout Gate。
 
 ## Requirement PR Preparation
@@ -46,10 +46,10 @@ rondo dev pr-prepare --mode requirement --config "<config>" --issue <issue> --re
 
 rondo dev publish --config "<config>" --issue <issue> --change-ref <change_ref> --root-repo "<root>"
 rondo dev check-change --config "<config>" --issue <issue> --change-ref <change_ref>
-rondo pr materialize --mode requirement --workspace native --config "<config>" --issue <issue> --change-ref <change_ref> --root-repo "<root>"
+rondo pr materialize --mode requirement --config "<config>" --issue <issue> --change-ref <change_ref> --root-repo "<root>"
 ```
 
-只有确属非实质性 Design 细化才允许 `dev publish --minor-design`。多仓分别对各自的 Candidate 完成绑定。Native 工作区由 Multica 管理。实际代码由 Git 持有，交付事实由 Multica 持有，最终 PR Description 由 TFS PR 持有。
+只有确属非实质性 Design 细化才允许 `dev publish --minor-design`。多仓分别对各自的 Candidate 完成绑定。实际代码由 Git 持有，交付事实由 Multica 持有，最终 PR Description 由 TFS PR 持有。
 
 ## Stop / Output
 
