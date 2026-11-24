@@ -9,7 +9,7 @@ description: 按需准备 Multica 原生根仓和业务仓工作区，供当前 
 
 需要本地工程根仓时，在当前 Task workdir 使用已登记 Project Resource 的 URL 和初始 ref：
 
-```powershell
+```text
 multica repo checkout <root-url> --ref <resource-ref>
 rondo runtime check-checkout --root-repo "<实际返回的根仓路径>"
 ```
@@ -22,7 +22,7 @@ Resource 未指定 ref 时省略 `--ref`。Engineer 准备已批准 Change 时�
 
 从已登记 Project Resource 核实 URL 和初始分支，并与根仓已提交的 `docs/config/repo-context.yaml` 仓库身份对应。需要本地业务仓时执行：
 
-```powershell
+```text
 rondo dev prepare --workspace native --issue <KEY> --repo <repo_id> --root-repo "<root>" --resource-ref <resource-ref>
 ```
 
