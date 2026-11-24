@@ -22,7 +22,6 @@
 import { writeFileSync, unlinkSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { isDaemonCacheWorktree } from "../../clients/native-checkout.js";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, logLine, markLeafExecuted } from "../../cli/output.js";
@@ -365,7 +364,6 @@ async function main(rawArgs: string[]): Promise<number> {
       throw new FailError("Requirement Change 的 PR 创建必须显式 --mode requirement，禁止退回旧入口绕过 Completion Gate");
     }
 
-    if (args.workspace !== undefined && args.workspace !== "native") throw new FailError("--workspace 仅接受 native");
     // Explicit Requirement mode: fully validate published Change before any external PR side effect.
     if (args.mode === "requirement") {
       if (!args["change-ref"]) throw new FailError("Requirement PR 需要 --change-ref");
@@ -424,8 +422,7 @@ async function main(rawArgs: string[]): Promise<number> {
     const confirmed = registerCurrentPr(multica, issue.id, currentPr);
 
     const rootArg = args["root-repo"] || process.env.RONDO_WORKSPACE_PATH;
-    // A Native caller supplies the actual root. Never fall back to a persistent root for cleanup.
-    if (args.mode === "requirement" && args.workspace !== "native" && rootArg) {
+    if (args.mode === "requirement" && rootArg) {
       // 清理只使用本次已确认交付的候选，失败时保留 PR 的成功结果。
       try {
         const facts = confirmed.metadata ?? {};
@@ -433,7 +430,7 @@ async function main(rawArgs: string[]): Promise<number> {
           throw new UnknownError("本次 PR 登记、候选或 Issue 状态未确认");
         }
         const root = requirementRoot(rootArg);
-        for (const { repo_key, candidate_commit } of isDaemonCacheWorktree(root, process.env.MULTICA_WORKSPACE_ID) ? [] : prep) {
+        for (const { repo_key, candidate_commit } of prep) {
           const repo = cfg.registry[repo_key];
           try {
             const name = removePublishedRequirementWorktree(root, repo, Number(tfsId), candidate_commit);
