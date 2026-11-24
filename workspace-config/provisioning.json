@@ -18,6 +18,7 @@
     "spec-preparation",
     "tfs-sync",
     "workitem-triage",
+    "native-workspace",
     "workspace-preparation"
   ],
   "agents": [

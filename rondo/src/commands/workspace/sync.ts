@@ -117,7 +117,7 @@ function renderRegistry(base: any): Record<string, Record<string, string>> {
 
   const seenIds = new Set<string>();
   const seenPaths = new Map<string, string>();
-  const repos = new Map<string, { repo_path: string; repo_url?: string; tfs_project?: string }>();
+  const repos = new Map<string, { repo_path: string; repo_url?: string; tfs_project?: string; default_target_branch?: string }>();
   context.repos.forEach((raw: unknown, index: number) => {
     if (!isRecord(raw)) throw new UnknownError(`repo-context repos[${index}] 不是对象`);
     const repoId = requiredString(raw.repo_id, `repo-context repos[${index}].repo_id`);
@@ -150,6 +150,7 @@ function renderRegistry(base: any): Record<string, Record<string, string>> {
       repo_path: repoPath,
       ...(raw.repo_url ? { repo_url: requiredString(raw.repo_url, `repo-context ${repoId}.repo_url`) } : {}),
       ...(raw.tfs_project ? { tfs_project: raw.tfs_project } : {}),
+      ...(raw.default_target_branch !== undefined ? { default_target_branch: requiredString(raw.default_target_branch, `repo-context ${repoId}.default_target_branch`) } : {}),
     });
   });
   if (repos.size === 0) throw new UnknownError("repo-context 未登记任何非 root 仓库");
@@ -162,11 +163,12 @@ function renderRegistry(base: any): Record<string, Record<string, string>> {
     }
     if (!isRecord(raw)) throw new UnknownError(`delivery overlay ${repoId} 必须是对象`);
     for (const key of Object.keys(raw)) {
-      if (key !== "tfs_repo" && key !== "default_target_branch") {
+      if (key !== "tfs_repo") {
         throw new UnknownError(`delivery overlay ${repoId}.${key} 不允许覆盖 repo-context 字段或引入未登记配置`);
       }
     }
-    for (const key of ["tfs_repo", "default_target_branch"]) {
+    if (!repos.get(repoId)?.default_target_branch) throw new UnknownError(`repo-context ${repoId} 缺少交付目标 default_target_branch`);
+    for (const key of ["tfs_repo"]) {
       if (raw[key] !== undefined) requiredString(raw[key], `delivery overlay ${repoId}.${key}`);
     }
   }
@@ -180,7 +182,7 @@ function renderRegistry(base: any): Record<string, Record<string, string>> {
       ...(repo.repo_url ? { repo_url: repo.repo_url } : {}),
       ...(overlay.tfs_repo ? { tfs_repo: overlay.tfs_repo } : {}),
       ...(repo.tfs_project ? { tfs_project: repo.tfs_project } : {}),
-      ...(overlay.default_target_branch ? { default_target_branch: overlay.default_target_branch } : {}),
+      ...(repo.default_target_branch ? { default_target_branch: repo.default_target_branch } : {}),
     };
   }
   return registry;

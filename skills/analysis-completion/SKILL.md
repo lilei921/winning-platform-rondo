@@ -8,7 +8,7 @@ description: 将已完成的 Analysis Engineering Contract 经真实 Gate 和固
 ## Inputs / Preconditions
 
 - 当前 Issue 已获授权，专业分析和唯一 OpenSpec Change 已完成。
-- 根仓已在当前项目分支准备就绪；必要时使用 `workspace-preparation`，不能仅凭目录存在判断。
+- 根仓已基于适用工程版本准备就绪；必要时使用已绑定的工作区准备 Skill。
 - `<facts.json>` 是 Change 目录外的临时 CLI 输入，包含 `change_kind`、`change_ref`、`verify_agent`；Intentional 还需 `ai_review.verdict`。
 - `<config>` 为本 Skill 的 `config/repo-registry.json`；`runtime.workspace_id` 与当前 Workspace 一致。
 
@@ -26,12 +26,14 @@ rondo analysis stage --issue <issue> --facts <facts.json> --workspace-id <worksp
 rondo analysis validate --issue <issue> --openspec-root "<root>" --workspace-id <workspace> --registry-config "<config>"
 ```
 
-Requirement 模式需先在当前根仓分支提交本次 Change 的必要审核工件（只提交当前 Change，不重复手工 Push）。发布 TFS Requirement 审核版本：
+Requirement 模式需先在当前根仓工作分支提交本次 Change 的必要审核工件（只提交当前 Change，不重复手工 Push）。发布 TFS Requirement 审核版本：
 
 ```bash
 rondo analysis complete --mode requirement --issue <issue> --facts <facts.json> \
   --registry-config "<config>" --workspace-id <workspace> --root-repo "<root>"
 ```
+
+使用 Native 根仓发布分析工件时，明确提供 `--target-branch <已确认的项目发布目标分支>`；不将本地 Task Branch 或未经核实的 Resource ref 当作发布目标。
 
 仅 TFS Requirement 使用 `--mode requirement`，其他流程沿用其适用入口。`validate` 只用于预检查；`complete` 首次发布时执行最终真实 Gate、Git 发布和固定来源核对；已处于 `analysis_review` 时只核对固定审核版本，不重新执行 Gate。`complete` 不发布 Issue 评论。
 

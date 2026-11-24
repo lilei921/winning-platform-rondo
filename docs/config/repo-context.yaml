@@ -7,7 +7,7 @@
 version: 0.4.0
 schema:
   required_fields: [repo_id, repo_type, repo_path, responsibility, keywords, not_responsible_for]
-  optional_fields: [repo_url, tfs_project, tfs_collection]
+  optional_fields: [repo_url, tfs_project, tfs_collection, default_target_branch]
   repo_type_values: [root-workspace, common, backend, frontend]
 
 repos:
@@ -25,6 +25,7 @@ repos:
     repo_type: common
     repo_path: winning-dps-df-common
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-common
+    default_target_branch: dev
     responsibility: 通用实体、常量、DTO、枚举、工具和共享基础代码。
     keywords: [公共, 通用, 实体, 常量, 工具, 共享, 枚举, DTO]
     not_responsible_for: [具体服务业务流程]
@@ -35,6 +36,7 @@ repos:
     repo_type: backend
     repo_path: winning-dps-df-frame
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame
+    default_target_branch: dev
     responsibility: 基础框架后端与公共业务能力，负责租户、用户、认证、权限、菜单、角色和组织管理。
     keywords: [基础框架, 框架, 基座, DF, 租户, 用户, 权限, 菜单, 角色, 组织, 登录, 认证]
     not_responsible_for: [前端页面实现]
@@ -45,6 +47,7 @@ repos:
     repo_type: frontend
     repo_path: winning-dps-df-frame-web
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame-web
+    default_target_branch: dev
     responsibility: 基础框架前端，负责门户、布局、导航、首页、皮肤等页面与交互。
     keywords: [基础框架, 框架, 基座, DF, 页面框架, 门户, 布局, 导航, 首页, 皮肤]
     not_responsible_for: [后端服务逻辑]
@@ -55,6 +58,7 @@ repos:
     repo_type: backend
     repo_path: winning-dps-df-modular
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-03-%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-modular
+    default_target_branch: dev
     responsibility: API 网关与 Nacos 注册/配置中心，负责路由、动态路由管理、限流和自定义 PostgreSQL 数据源插件。
     keywords: [网关, 路由, 限流, nacos, 注册中心, 配置中心]
     not_responsible_for: [具体业务子仓的业务逻辑]
@@ -65,6 +69,7 @@ repos:
     repo_type: backend
     repo_path: winning-dps-df-dataintegration
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-03-%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-dataintegration
+    default_target_branch: dev
     responsibility: 数据集成调度后端，负责采集、ETL、作业流程、任务调度、数据源、集群管理和执行引擎接入。
     keywords: [数据集成, 集成调度, 采集, ETL, 作业流程设计, 作业设计, 集成流程设计, 调度中心, 任务调度, 数据同步, 集群管理, 数据源, 执行引擎]
     not_responsible_for: [前端页面实现]
@@ -75,6 +80,7 @@ repos:
     repo_type: frontend
     repo_path: winning-dps-df-dataintegration-web
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-03-%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-dataintegration-web
+    default_target_branch: dev
     responsibility: 数据集成调度前端，负责流程设计、调度中心、任务配置、数据源及执行引擎相关页面交互。
     keywords: [数据集成, 集成调度, 采集, ETL, 作业流程设计, 作业设计, 集成流程设计, 调度中心, 任务调度, 数据同步, 集群管理, 数据源, 执行引擎]
     not_responsible_for: [后端服务逻辑]
@@ -85,6 +91,7 @@ repos:
     repo_type: backend
     repo_path: winning-dps-df-dataengine
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-03-%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-dataengine
+    default_target_branch: dev
     responsibility: 数据引擎后端，负责 Flink、实时/流/离线计算和算子相关能力。
     keywords: [数据引擎, Flink, 计算, 实时计算, 流计算, 离线计算, 算子]
     not_responsible_for: [前端页面实现]
@@ -95,6 +102,7 @@ repos:
     repo_type: backend
     repo_path: winning-dps-df-datatransfer-core
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20Data%20Integrated%20Platform/_git/winning-dps-df-datatransfer-core
+    default_target_branch: dev
     responsibility: Flink 数据集成与数据交换内核，负责 DDL 注册、JDBC 方言与 Driver、CDC、UDF、Calcite SQL 扩展、Connector 和湖仓一体，提供作业 JSON 命令行与 Hessian RPC 入口。
     keywords: [数据引擎, 引擎, 集成引擎, Flink, 数据集成, 数据交换, SQL Gateway, CDC, JDBC, 方言, UDF, Paimon, IRIS, HL7, 数据工厂]
     not_responsible_for: [前端页面实现]
@@ -105,6 +113,7 @@ repos:
     repo_type: backend
     repo_path: winning-dps-df-devops
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Operation/_git/winning-dps-df-devops
+    default_target_branch: dev
     responsibility: 运维监控后端。
     keywords: [运维, 监控, 告警]
     not_responsible_for: [前端页面实现]
@@ -115,6 +124,7 @@ repos:
     repo_type: frontend
     repo_path: winning-dps-df-devops-web
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Operation/_git/winning-dps-df-devops-web
+    default_target_branch: dev
     responsibility: 运维监控前端。
     keywords: [运维, 监控, 大屏, 告警, 运维中心, 运维大屏, 资源监控]
     not_responsible_for: [后端服务逻辑]
@@ -125,6 +135,7 @@ repos:
     repo_type: backend
     repo_path: winning-dps-df-dataquality
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-dataquality
+    default_target_branch: dev
     responsibility: 数据质控后端。
     keywords: [数据质控, 质量, 质检, 质控规则, 稽核]
     not_responsible_for: [前端页面实现]
@@ -135,6 +146,7 @@ repos:
     repo_type: frontend
     repo_path: winning-dps-df-dataquality-web
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-dataquality-web
+    default_target_branch: dev
     responsibility: 数据质控前端。
     keywords: [数据质控, 质量, 质检, 质控规则, 稽核, 规则校验]
     not_responsible_for: [后端服务逻辑]
@@ -145,6 +157,7 @@ repos:
     repo_type: backend
     repo_path: winning-dps-df-dataservice-api
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20Data%20service%20platform/_git/winning-dps-df-dataservice-api
+    default_target_branch: dev
     responsibility: 数据服务后端，负责 API 生成、监控、发布、调试、主题和授权管理。
     keywords: [数据服务, API服务, API生成, API监控, 服务发布, 服务调试, 主题, 授权]
     not_responsible_for: [前端页面实现]
@@ -155,6 +168,7 @@ repos:
     repo_type: frontend
     repo_path: winning-dps-df-dataservice-web
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20Data%20service%20platform/_git/winning-dps-df-dataservice-web
+    default_target_branch: dev
     responsibility: 数据服务前端，负责 API 编排、生成、发布、调试、计量、日志及服务目录等页面交互。
     keywords: [数据服务, API服务, 服务目录, 数据交换, 服务注册]
     not_responsible_for: [后端服务逻辑]
@@ -165,6 +179,7 @@ repos:
     repo_type: backend
     repo_path: winning-dps-df-dataservice-gateway
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20Data%20service%20platform/_git/winning-dps-df-dataservice-gateway
+    default_target_branch: dev
     responsibility: 数据服务网关，负责限流规则、转发路由、网关令牌、限流日志和告警。
     keywords: [数据服务, 网关, 限流, 转发]
     not_responsible_for: [前端页面实现]
@@ -175,6 +190,7 @@ repos:
     repo_type: backend
     repo_path: winning-dps-df-dataasset
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-dataasset
+    default_target_branch: dev
     responsibility: 数据资产后端。
     keywords: [数据资产, 资产目录, 资产全景, 标签体系]
     not_responsible_for: [前端页面实现]
@@ -185,6 +201,7 @@ repos:
     repo_type: frontend
     repo_path: winning-dps-df-dataasset-web
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-dataasset-web
+    default_target_branch: dev
     responsibility: 数据资产前端。
     keywords: [数据资产, 资产目录, 资产全景, 标签体系, 资产盘点]
     not_responsible_for: [后端服务逻辑]
@@ -195,6 +212,7 @@ repos:
     repo_type: backend
     repo_path: winning-dps-df-metadata
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-metadata
+    default_target_branch: dev
     responsibility: 元数据后端。
     keywords: [元数据, 元模型, 数据标准, 数据字典, 血缘]
     not_responsible_for: [前端页面实现]
@@ -205,6 +223,7 @@ repos:
     repo_type: frontend
     repo_path: winning-dps-df-metadata-web
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-06-%E5%85%83%E6%95%B0%E6%8D%AE%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-metadata-web
+    default_target_branch: dev
     responsibility: 元数据前端。
     keywords: [元数据, 元模型, 数据标准, 数据字典, 血缘, 元数据采集]
     not_responsible_for: [后端服务逻辑]
@@ -215,6 +234,7 @@ repos:
     repo_type: backend
     repo_path: winning-dps-df-datasecurity
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-datasecurity
+    default_target_branch: dev
     responsibility: 数据安全后端，负责脱敏、水印、审计、黑白名单、分类分级、加密、规则管理和密评。
     keywords: [数据安全, 脱敏, 水印, 审计, 黑白名单, 分类分级, 加密, 规则管理, 密评]
     not_responsible_for: [前端页面实现]
@@ -225,6 +245,7 @@ repos:
     repo_type: frontend
     repo_path: winning-dps-df-datasecurity-web
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-datasecurity-web
+    default_target_branch: dev
     responsibility: 数据安全前端，负责脱敏规则与算法、加密、水印、安全审计、黑白名单和分类分级等页面交互。
     keywords: [数据安全, 脱敏, 加密, 安全策略, 合规]
     not_responsible_for: [后端服务逻辑]
@@ -235,6 +256,7 @@ repos:
     repo_type: backend
     repo_path: winning-dps-df-datamodel
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-datamodel
+    default_target_branch: dev
     responsibility: 数据模型后端。
     keywords: [数据模型, 模型管理]
     not_responsible_for: [前端页面实现]
@@ -245,6 +267,7 @@ repos:
     repo_type: frontend
     repo_path: winning-dps-df-datamodel-web
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Governance/_git/winning-dps-df-datamodel-web
+    default_target_branch: dev
     responsibility: 数据模型前端。
     keywords: [数据模型, 模型管理, 模型设计]
     not_responsible_for: [后端服务逻辑]
@@ -255,6 +278,7 @@ repos:
     repo_type: backend
     repo_path: winning-dps-df-basedata
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/IP-08-%E5%9F%BA%E7%A1%80%E6%95%B0%E6%8D%AE%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-basedata
+    default_target_branch: dev
     responsibility: 平台基础数据管理服务，负责主数据全生命周期、组织机构、术语编码、字典表、值域映射、系统/厂商基础数据同步和 MDM 接收。
     keywords: [基础数据, 主数据, 组织机构, 术语编码, 值域映射, 概念域, 编码体系, 字典表, MDM接收]
     not_responsible_for: [前端页面实现]
@@ -265,6 +289,7 @@ repos:
     repo_type: frontend
     repo_path: winning-dps-df-basedata-webui
     repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/IP-08-%E5%9F%BA%E7%A1%80%E6%95%B0%E6%8D%AE%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-basedata-webui
+    default_target_branch: dev
     responsibility: 基础数据管理前端。
     keywords: [基础数据, 基础数据管理]
     not_responsible_for: [后端服务逻辑]

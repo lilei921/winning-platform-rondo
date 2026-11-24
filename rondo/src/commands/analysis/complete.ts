@@ -10,6 +10,7 @@ import { runCommand, runJson } from "../../clients/spawn.js";
 import { loadConfig, type BaseRegistryConfig } from "../../clients/config.js";
 import { resolveRuntimePaths } from "../../clients/runtime-paths.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
+import { isDaemonCacheWorktree } from "../../clients/native-checkout.js";
 import { gitOk } from "../../clients/git.js";
 import { publishChange, requirementBranch, requirementRoot, rootRepositoryUrl } from "../runtime/root-git.js";
 import { assertAnalysisWritable } from "./guard.js";
@@ -46,7 +47,7 @@ function metadataEntries(f: Facts): Record<string, string> {
   };
 }
 
-function parseArgs(argv: string[]): { issue: string; facts: string; cli: string; workspaceId: string | null; registryConfig: string | null; rootRepo: string | null; mode: string } {
+function parseArgs(argv: string[]): { issue: string; facts: string; cli: string; workspaceId: string | null; registryConfig: string | null; rootRepo: string | null; targetBranch: string | null; mode: string } {
   const get = (flag: string): string | null => {
     const i = argv.indexOf(flag);
     return i !== -1 && i + 1 < argv.length ? argv[i + 1] : null;
@@ -54,10 +55,10 @@ function parseArgs(argv: string[]): { issue: string; facts: string; cli: string;
   const issue = get("--issue");
   const facts = get("--facts");
   if (!issue || !facts || !get("--workspace-id") || !get("--registry-config")) {
-    process.stderr.write("用法: rondo analysis complete --issue <issue-id> --facts <facts.json> --registry-config <repo-registry.json> --workspace-id <id> [--multica <cli>] [--root-repo <path>]\n");
+    process.stderr.write("用法: rondo analysis complete --issue <issue-id> --facts <facts.json> --registry-config <repo-registry.json> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>]\n");
     process.exit(64);
   }
-  return { issue, facts, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), registryConfig: get("--registry-config"), rootRepo: get("--root-repo"), mode: get("--mode") ?? "legacy" };
+  return { issue, facts, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), registryConfig: get("--registry-config"), rootRepo: get("--root-repo"), targetBranch: get("--target-branch"), mode: get("--mode") ?? "legacy" };
 }
 
 /** 读取唯一推送地址；拒绝凭据 URL，避免在 metadata 中保存认证信息。 */
@@ -135,6 +136,10 @@ async function main(rawArgs: string[]): Promise<number> {
       issue: before as { project_id?: string | null }, rootRepoArg: args.rootRepo || process.env.RONDO_WORKSPACE_PATH,
       need: ["openspec"],
     }).rootRepo;
+    if (args.targetBranch && (!requirement || !isDaemonCacheWorktree(root, process.env.MULTICA_WORKSPACE_ID))) {
+      throw new PreconditionError("--target-branch 仅用于 Native Requirement 分析发布");
+    }
+    const publicationBranch = requirement ? args.targetBranch || requirementBranch() : undefined;
     const changeDir = join(root, "openspec", "changes", facts.change_ref);
     const readContractAt = (commit: string) => committedContract(root, commit, facts, priorMeta);
     const schema = readChangeSchema(changeDir);
@@ -184,7 +189,7 @@ async function main(rawArgs: string[]): Promise<number> {
         const tfsId = String(priorMeta["tfs.id"] ?? "").trim();
         const subject = `analysis: ${facts.change_ref} (${args.issue}${tfsId ? ` / tfs ${tfsId}` : ""})`;
         const result = requirement ? await publishChange(root, facts.change_ref, args.issue, ANALYSIS_CONTRACT_FILE, subject, {
-          repoUrl: rootRepositoryUrl(root), expectedBranch: requirementBranch(),
+          repoUrl: rootRepositoryUrl(root), expectedBranch: publicationBranch!,
           validateTree: (commit: string) => {
             const candidate = readContractAt(commit);
             if (candidate.schema !== schema || candidate.digest !== gateEvidence.change_digest) {

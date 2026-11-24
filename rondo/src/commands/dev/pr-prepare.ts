@@ -36,6 +36,10 @@ import { resolveRuntimePaths } from "../../clients/runtime-paths.js";
 import { requirementRoot } from "../runtime/root-git.js";
 import { assertTfsRepository, runAuthenticatedGit } from "../../clients/authenticated-git.js";
 import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
+import { assertNativeTaskCheckout } from "../../clients/native-checkout.js";
+import { assertNativeDeliveryMapping } from "./native-prepare.js";
+import { validateBusinessPath } from "./prepare-workspace.js";
+import { readAnalysisSource } from "../analysis/source.js";
 import { guardRepository } from "./requirement-guard.js";
 
 interface RepoEntry {
@@ -274,6 +278,24 @@ async function main(rawArgs: string[]): Promise<number> {
     const repoUrl = assertTfsRepository(repo.repo_url ?? "", loadTfsConfig().serverUrl).href;
     const targetBranch = args.targetBranch || repo.default_target_branch;
     if (!targetBranch) throw new FailError("PR Preparation 缺少目标分支");
+    if (args.mode === "requirement" && statSync(join(hub, ".git")).isFile()) {
+      const workdir = dirname(paths.rootRepo);
+      assertNativeTaskCheckout(paths.rootRepo, workdir);
+      const nativePath = validateBusinessPath(paths.rootRepo, repo);
+      assertNativeTaskCheckout(nativePath, workdir);
+      assertNativeDeliveryMapping(paths.rootRepo, readAnalysisSource(issue.metadata ?? {}).commit, args.repo, repo, loadTfsConfig().serverUrl);
+      const validationDir = realpathSync(args.validationCwd || hub);
+      const validationRelative = relative(realpathSync(nativePath), validationDir);
+      if (targetBranch !== repo.default_target_branch || isAbsolute(validationRelative) ||
+          validationRelative === ".." || validationRelative.startsWith(".." + (process.platform === "win32" ? "\\" : "/")) ||
+          realpathSync(gitOk(validationDir, ["rev-parse", "--show-toplevel"], "核对 Validation Git 根")) !== realpathSync(nativePath))
+        throw new FailError("Native Validation 工作树或交付目标与准备事实不一致");
+      const origin = gitOk(nativePath, ["remote", "get-url", "--all", "origin"], "核对 Native Origin");
+      const push = gitOk(nativePath, ["remote", "get-url", "--push", "--all", "origin"], "核对 Native Push");
+      if (canonicalRepositoryIdentity(origin) !== canonicalRepositoryIdentity(repoUrl) ||
+          canonicalRepositoryIdentity(push) !== canonicalRepositoryIdentity(repoUrl))
+        throw new FailError("Native 工作树与批准仓库身份不一致");
+    }
     if (args.mode !== "requirement" && canonicalRepositoryIdentity(gitOk(hub, ["remote", "get-url", "origin"], "核对业务仓来源")) !== canonicalRepositoryIdentity(repoUrl)) {
       throw new FailError("业务仓 origin 与 Registry 不一致");
     }

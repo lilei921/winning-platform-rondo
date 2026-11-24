@@ -12,7 +12,7 @@ description: 已授权 TFS Bug 的受控 Git Fetch/Push、Candidate 核对和修
 
 ## Git Fetch / Push
 
-确认当前 Issue 的授权业务仓与实际根仓路径可用；缺失时按需使用 `workspace-preparation`，不依赖先前 Run 的准备状态。已固定的 `bug.required_repos` 不可自行改变。
+确认当前 Issue 的授权业务仓与实际根仓路径可用；缺失时按需使用已绑定的工作区准备 Skill，不依赖先前 Run 的准备状态。已固定的 `bug.required_repos` 不可自行改变。
 
 完成修复和验证后，网络 Git 操作使用现有校验与认证：
 

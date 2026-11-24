@@ -9,7 +9,7 @@ description: 使用项目 OpenSpec CLI 与当前 Schema / Artifact Instruction �
 
 - 当前 Issue 的身份、写入授权、已确认的 Technical Change Kind、当前 Change 的 Schema、可追溯专业结论与 Evidence，以及已知的 `change_ref`、`tfs.id`。首次准备时按项目契约确定并持久化 Schema。
 - 本 Skill 的 `config/repo-registry.json` 由 `rondo workspace sync` 按 Workspace 发布；确认可读取且 `runtime.workspace_id` 与当前 Issue 所在 Workspace 一致，否则停止，不借用其他 Skill 配置或猜测路径。
-- 写入前确认 `root_repo` 在当前项目分支真正就绪（路径存在不等于准备成功）；必要时使用 `workspace-preparation`。所有 `openspec` 命令均以已核实根仓为 `cwd`。
+- 写入前确认 `root_repo` 已基于适用工程版本准备就绪（路径存在不等于准备成功）；必要时使用已绑定的工作区准备 Skill。所有 `openspec` 命令均以已核实根仓为 `cwd`。
 
 ## Method（按需选择，不是固定流水线）
 

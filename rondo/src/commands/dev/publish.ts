@@ -1,4 +1,5 @@
 /** Publish committed execution artifacts and bind their remote SHA to the approved Analysis. */
+import { isDaemonCacheWorktree } from "../../clients/native-checkout.js";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
@@ -53,9 +54,10 @@ export function registerDevPublish(group: Command): void {
         const cfg = loadConfig<BaseRegistryConfig>(opts.config);
         const multica = new MulticaClient(cfg.runtime);
         const approved = await approvedChange(cfg, multica, opts.issue, opts.changeRef);
-        const source = approved.source, branch = requirementBranch();
-        if (branch !== source.branch) throw new FailError("项目根仓分支与已批准的 analysis.source.branch 不一致");
+        const source = approved.source;
         const root = requirementRoot(opts.rootRepo);
+        const branch = isDaemonCacheWorktree(root, process.env.MULTICA_WORKSPACE_ID) ? source.branch : requirementBranch();
+        if (branch !== source.branch) throw new FailError("项目根仓分支与已批准的 analysis.source.branch 不一致");
         const original = approved.issue.metadata ?? {};
         const previous = developmentPublication(original);
         const previousCommit = previous?.analysis_commit === source.commit ? previous.commit : undefined;
