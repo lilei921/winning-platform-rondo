@@ -213,7 +213,6 @@ async function main(argv: string[]): Promise<number> {
     if (statSync(join(hub, ".git")).isFile()) {
       assertNativeDeliveryMapping(paths.rootRepo, "HEAD", repoKey, repo, loadTfsConfig().serverUrl);
       if (localHead !== sha) throw new FailError("Native 工作树 HEAD 与 Candidate 不一致");
-      if (targetBranch !== repo.default_target_branch) throw new FailError("Native 交付目标分支与已核实映射不一致");
     }
     const remote = runAuthenticatedGit(repo.repo_url, ["ls-remote", repo.repo_url, "refs/heads/" + sourceBranch], hub);
     if (remote.status !== 0) throw new UnknownError("远端候选分支读取失败");
