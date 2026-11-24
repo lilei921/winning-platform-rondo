@@ -14,7 +14,7 @@ multica repo checkout <root-url> --ref <resource-ref>
 rondo runtime check-checkout --root-repo "<实际返回的根仓路径>"
 ```
 
-Resource 未指定 ref 时省略 `--ref`。Engineer 准备已批准 Change 时，核实根仓包含 `analysis.source.commit`；需要从已发布版本开始时，以已批准的来源分支为起点。首次分析发布目标另行按项目事实确认，不把本地 Task Branch 或 Resource ref 自动当成发布目标。
+Resource 未指定 ref 时省略 `--ref`。Engineer 准备已批准 Change 时，核实根仓包含 `analysis.source.commit`；需要从已发布版本开始时，以已批准的来源分支为起点。
 
 复用当前 Task 的已有 Checkout。Workitem Analyst 仅需本地 OpenSpec 工件时准备根仓即可；只读调查不强制 Checkout。
 
