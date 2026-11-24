@@ -66,6 +66,18 @@ Agent 分组直接位于 Issue 根目录，没有 `sessions` 中间层：
 
 任务级索引用 `issue-replay.json`；会话级 `replay.json` 保持共享格式。同一目录再次导出先校验 profile、显式服务地址、Workspace、Issue UUID；身份冲突停止并要求使用不同输出根目录，不覆盖其他任务。更新生成文件，保留人工 `review.md` 等内容；旧分析基于旧快照，不能自动当作本次结论。
 
+## Autopilot 回放
+
+同一套导出与核验也适用于 Autopilot 的 Run（如定时同步任务）：
+
+```powershell
+python .agents/skills/issue-replay/scripts/autopilot_replay.py <autopilot-uuid> --workspace-id <workspace-uuid> --last 1
+```
+
+- `--last N` 采集最近 N 次 Run，默认 1；`--profile` 可省略，缺省沿用 CLI 当前配置，其余只读参数与 Issue 模式一致。
+- Autopilot Run 窗口采用 `triggered_at → completed_at`，Agent 取 Autopilot 的 assignee；原始字段保留在 `evidence/runs.json`，主体快照为 `evidence/autopilot.json`（含适配用的 `identifier`）。
+- 单次 Run 目录为 `<YYYYMMDD>-<标题>-run-<Run前缀>/`，多次合并为 `<YYYYMMDD>-<标题>/`；索引仍复用 `issue-replay.json`，并以 `subject_type: autopilot` 区分。
+
 ## 验证与交付
 
 - 退出码 `0`：快照覆盖完整；`2`：已落盘但有缺口；`1`：采集、身份校验或写入失败。

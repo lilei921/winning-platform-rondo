@@ -61,18 +61,23 @@ def safe_key(value, label: str) -> str:
 
 class MulticaClient:
     """Desktop 与 CLI 使用同一组只读命令；不改变当前配置。"""
-    def __init__(self, cli: str, profile: str, workspace_id: str, server_url: str | None = None):
-        self.command = [cli, "--profile", profile, "--workspace-id", workspace_id]
+    def __init__(self, cli: str, profile: str | None, workspace_id: str, server_url: str | None = None):
+        # profile 缺省时沿用 CLI 当前配置，不自动登录或改写配置。
+        self.command = [cli]
+        if profile:
+            self.command += ["--profile", profile]
+        self.command += ["--workspace-id", workspace_id]
         if server_url:
             self.command += ["--server-url", server_url]
         self.commands = []
         self.workspace_id = workspace_id
 
-    def read(self, action: str, target: str, *, resource: str = "issue"):
-        if (resource, action) not in {("issue", "get"), ("issue", "runs"), ("agent", "get")}:
-            raise ValueError("仅允许读取 Issue、Run 和 Agent 身份")
+    def read(self, action: str, target: str, *, resource: str = "issue", extra=()):
+        if (resource, action) not in {("issue", "get"), ("issue", "runs"), ("agent", "get"),
+                                      ("autopilot", "get"), ("autopilot", "runs")}:
+            raise ValueError("仅允许读取 Issue、Autopilot、Run 和 Agent 身份")
         safe_key(target, resource)
-        command = [*self.command, resource, action, target, "--output", "json"]
+        command = [*self.command, resource, action, target, *extra, "--output", "json"]
         result = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", timeout=60)
         if result.returncode:
             raise RuntimeError(f"multica {resource} {action} 失败：{result.stderr.strip()[:500]}")
@@ -373,8 +378,10 @@ def render_index(issue: dict, runs: list[dict], index: dict) -> str:
         lines += ["", "## Agent 名称提示", "", *[f"- {cell(w)}" for w in index["agent_warnings"]]]
     lines += ["", "## 覆盖缺口", ""]
     lines += [f"- {cell(gap)}" for gap in index["gaps"]] or ["- 无。"]
+    # Autopilot 复用本导出器时，证据文件与措辞随主体切换，不称为 Issue。
+    subject = "Autopilot" if issue.get("subject_type") == "autopilot" else "Issue"
     lines += ["", "## 证据与边界", "",
-              "- [任务索引](issue-replay.json)、[Issue 快照](evidence/issue.json)、"
+              f"- [任务索引](issue-replay.json)、[{subject} 快照](evidence/{subject.lower()}.json)、"
               "[Run 快照](evidence/runs.json)、[Agent 名称快照](evidence/agents.json)、[来源与核验](evidence/source-manifest.json)。",
               "- 完成消息来自平台历史记录，本次未重新执行业务测试；Run 完成不等于 Issue 已合并、部署或验收。",
               "- Codex 按 item_completed、Claude 按公开消息与 tool_use/tool_result 核验；编排外壳和注入上下文不重复计数。默认截断长文本，FileChange 补丁等受共享导出器限制，非原始日志逐字副本。",
@@ -433,7 +440,7 @@ def export_issue(issue: dict, runs: list[dict], *, output_root: Path, profile: s
              "run_count": len(runs), "active_run_count": 0,
              "tool_calls_total": 0, "subagent_tool_calls_total": 0, "gaps": ["导出尚未完成"]}
     write_json(index_path, index)
-    write_json(directory / "evidence/issue.json", issue)
+    write_json(directory / f"evidence/{'autopilot' if issue.get('subject_type') == 'autopilot' else 'issue'}.json", issue)
     write_json(directory / "evidence/runs.json", runs)
     write_json(directory / "evidence/agents.json", {"collected_at": collected_at, "agents": agents, "warnings": list(agent_warnings)})
     manifest = {"collected_at": collected_at, **identity, "read_only_commands": list(commands), "sessions": []}
