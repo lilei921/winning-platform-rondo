@@ -1,6 +1,6 @@
 /** Requirement Closeout root: Multica Task checkout, isolated archive branch and remote readback. */
 import { existsSync, lstatSync, readdirSync, realpathSync } from "node:fs";
-import { dirname, isAbsolute, join, resolve, win32 } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
@@ -15,6 +15,7 @@ import {
   isDaemonCacheWorktree,
   platformCheckoutMode,
   platformTaskSuffix,
+  parsePlatformCheckoutOutput,
   readDaemonTaskContext,
   readPlatformCheckoutManifest,
   type PlatformCheckoutIdentity,
@@ -224,18 +225,7 @@ export function confirmPublishedArchive(paths: RuntimePaths, source: AnalysisSou
   return { commit: remoteCommit, folder: matches[0] };
 }
 
-/** CLI stdout is the absolute checkout path; stderr usually includes the platform branch. */
-export function parsePlatformCheckoutOutput(stdout: string, stderr = ""): { root: string; branch: string } {
-  const combined = stdout + "\n" + stderr;
-  const absolute = (line: string) => isAbsolute(line) || win32.isAbsolute(line);
-  const root = stdout.split(/\r?\n/).map(line => line.trim()).find(absolute) ??
-    combined.split(/\r?\n/).map(line => line.trim()).find(absolute);
-  const branch = /\(branch:\s*([^)]+)\)/.exec(combined)?.[1]?.trim();
-  if (!root || !absolute(root) || !branch || !branch.includes("/")) {
-    throw new UnknownError("平台 repo checkout 输出无法识别，拒绝使用: " + combined.trim().slice(0, 300));
-  }
-  return { root, branch };
-}
+export { parsePlatformCheckoutOutput } from "../../clients/native-checkout.js";
 
 /** Direct checkout into Task workdir; safe local branch reuse without resets or cleanup. */
 export function prepareRoot(source: AnalysisSource, options: PrepareRootOptions): { root_repo: string } {
