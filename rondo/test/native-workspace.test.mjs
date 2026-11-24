@@ -94,6 +94,29 @@ test("Native linked worktree: committed mapping, first checkout, Kept, dirty pro
     assert.equal(existsSync(legacyWorktree), false);
     assert.equal(removePublishedRequirementWorktree(root, repo, 42, child.sha), undefined);
     assert.equal(readFileSync(join(business, "untracked.txt"), "utf8"), "keep");
+    git(business, "add", "source.txt");
+    git(business, "-c", "user.name=Test", "-c", "user.email=test@example.test", "commit", "-m", "local WIP");
+    const unpushed = git(business, "rev-parse", "HEAD");
+    assert.equal(prepareNativeBusiness(root, repo, "feature/42", runtime, undefined, remote, checkout).head, unpushed);
+    assert.equal(readFileSync(join(business, "untracked.txt"), "utf8"), "keep");
+    // A new Task resumes only the published Candidate, not the previous Task's WIP.
+    const otherTask = join(temp, "other-task"), otherRoot = join(otherTask, "root"), otherBusiness = join(otherRoot, "frame");
+    const otherBranch = "agent/engineer/000000000001";
+    mkdirSync(join(otherTask, ".multica"), { recursive: true });
+    writeFileSync(join(otherTask, ".multica", "daemon_task_context.json"), JSON.stringify({ managed_by: "multica-daemon-task", agent_id: "engineer" }));
+    process.env.MULTICA_TASK_ID = "01234567-abcd-ef12-3456-000000000001";
+    git(rootSeed.bare, "worktree", "add", "-b", otherBranch, otherRoot, rootSeed.sha);
+    assert.equal(assertNativeTaskCheckout(otherRoot, otherTask), otherBranch);
+    const resumed = prepareNativeBusiness(otherRoot, repo, "feature/42", runtime, undefined, remote, (argv, cwd) => {
+      assert.equal(cwd, otherRoot);
+      assert.equal(argv.at(-1), "feature/42");
+      git(child.bare, "worktree", "add", "-b", otherBranch, otherBusiness, candidate);
+      return { status: 0, stdout: otherBusiness, stderr: "(branch: " + otherBranch + ")" };
+    });
+    assert.equal(resumed.head, child.sha);
+    assert.equal(existsSync(join(otherBusiness, "untracked.txt")), false);
+    assert.equal(git(business, "rev-parse", "HEAD"), unpushed);
+    process.env.MULTICA_TASK_ID = "01234567-abcd-ef12-3456-abcdef123456";
     candidate = "f".repeat(40);
     assert.throws(() => prepareNativeBusiness(root, repo, "feature/42", runtime, undefined, remote, checkout));
     assert.throws(() => prepareNativeBusiness(root, repo, "feature/42", runtime, undefined, () => ({ status: 1, stdout: "", stderr: "network" }), checkout));
