@@ -44,6 +44,8 @@ export function removePublishedRequirementWorktree(
   const worktree = validateBusinessPath(root, { repo_path: name });
   if (!existsSync(worktree)) return;
   const hub = validateBusinessPath(root, repo);
+  // Only Rondo-owned worktrees backed by an independent clone are eligible for removal.
+  if (!lstatSync(join(hub, ".git"), { throwIfNoEntry: false })?.isDirectory()) return;
   verifyWorktree(worktree, hub, `feature/${tfsId}`, repo.repo_url);
   if (checked(worktree, ["rev-parse", "HEAD"], "核对候选 HEAD") !== candidate) {
     throw new FailError("本地 HEAD 与已发布候选不一致");
