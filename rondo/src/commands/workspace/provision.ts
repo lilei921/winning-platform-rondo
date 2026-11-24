@@ -73,7 +73,7 @@ interface Manifest extends McpManifest {
   managed_skills: string[];
   agents: ManifestAgent[];
   squad: { name: string; leader: string; members: SquadMemberSpec[] };
-  project: { title: string; workspace_branch?: string };
+  project: { title: string; workspace_branch?: string; description?: string };
   workspace_groups?: Record<string, {
     workspaces?: string[];
     project?: Partial<Manifest["project"]>;
@@ -616,11 +616,24 @@ function main(rawArgs: string[]): number {
     const project = remoteProjects.find((p) => p.title === manifest.project.title);
     if (project) {
       overlay.project = project.id;
-      unchanged.push(`project/${manifest.project.title}`);
+      const description = manifest.project.description;
+      // 未声明 description 时保持兼容，不收敛远端已有描述；声明后精确比对并更新漂移。
+      if (description !== undefined && (project.description ?? "") !== description) {
+        if (dryRun) {
+          updated.push(`project/${manifest.project.title} (description)`);
+        } else {
+          runJson([...MC, "project", "update", ...WS, project.id, "--description", description, "--output", "json"], "project update description");
+          updated.push(`project/${manifest.project.title} (description)`);
+        }
+      } else {
+        unchanged.push(`project/${manifest.project.title}`);
+      }
     } else if (dryRun) {
       created.push(`project/${manifest.project.title}`);
     } else {
-      const cp = runJson([...MC, "project", "create", ...WS, "--title", manifest.project.title, "--output", "json"], "project create") as any;
+      const cp = runJson([...MC, "project", "create", ...WS, "--title", manifest.project.title,
+        ...(manifest.project.description !== undefined ? ["--description", manifest.project.description] : []),
+        "--output", "json"], "project create") as any;
       const id = cp.id ?? cp.project?.id;
       if (!id) throw new UnknownError("project create 输出缺 id");
       overlay.project = id;

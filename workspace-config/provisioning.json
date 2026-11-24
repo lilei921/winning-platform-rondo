@@ -107,7 +107,8 @@
   },
   "project": {
     "title": "winning-platform-monorepo",
-    "workspace_branch": "master"
+    "workspace_branch": "master",
+    "description": "工程根仓为 `winning-platform-monorepo`，仓库 URL 和初始分支以当前 Project Resource 为准。"
   },
   "workspace_repos": [
     {
@@ -143,7 +144,9 @@
         "winning-lyf5"
       ],
       "project": {
-        "title": "winning-base-winex-bi-monorepo"
+        "title": "winning-base-winex-bi-monorepo",
+        "workspace_branch": "master",
+        "description": "工程根仓为 `winning-base-winex-bi-monorepo`，仓库 URL 和初始分支以当前 Project Resource 为准。"
       },
       "workspace_repos": [
         {
