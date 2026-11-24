@@ -157,15 +157,15 @@ Agent 提供单个 JSON 文件；Rondo 读取 Issue 的 `tfs.id`、`tfs.type`、
 ### 6.2 CLI（实施入口）
 
 ```bash
-rondo delivery finalize --phase prepare --issue <KEY> --config "<config-path>"
+rondo delivery finalize --phase prepare --issue <KEY> --root-repo "<root_repo>"
 
 # 只读返回当前 Change 经核验的 PR Commit
-rondo tfs writeback --issue <KEY> --config "<config-path>" --inspect
+rondo tfs writeback --issue <KEY> --inspect --root-repo "<root_repo>"
 
 # Agent 提供 Commit 单归属任务计划；恢复可复用已登记计划
-rondo tfs writeback --issue <KEY> --config "<config-path>" --task-plan "<task-plan.json>"
+rondo tfs writeback --issue <KEY> --task-plan "<task-plan.json>" --root-repo "<root_repo>"
 
-rondo delivery finalize --phase complete --issue <KEY> --config "<config-path>"
+rondo delivery finalize --phase complete --issue <KEY> --root-repo "<root_repo>"
 ```
 
 - 扩展既有 `rondo tfs writeback`，不新增独立的估算/分配 CLI。新增同命令只读 `--inspect` 返回已核验的业务 Commit（`repo_key + sha`）及可用性；Agent 生成每个 Task 的 `commits` 分配，Rondo 严格核验，不把同一个 Commit 复制给多个 Task。

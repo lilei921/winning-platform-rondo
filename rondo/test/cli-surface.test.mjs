@@ -87,3 +87,15 @@ test("delivery root-prepare 不要求 --config，从当前 Runtime 解析环境"
   assert.equal(body.result, "UNKNOWN");
   assert.match(body.reason, /MULTICA_WORKSPACE_ID.*MULTICA_SERVER_URL/);
 });
+
+
+test("PR Preparation 命名统一，Closeout 拒绝旧配置参数", () => {
+  for (const group of ["dev", "bug"]) {
+    const help = runCli([group]);
+    assert.match(help.stderr, /\bpr-prepare\b/);
+    assert.doesNotMatch(help.stderr, /\b(?:pr-prep|prepare-pr)\b/);
+  }
+  for (const args of [["dev", "pr-prep"], ["bug", "prepare-pr"], ["delivery", "finalize", "--phase", "prepare", "--issue", "X", "--config", "unused"], ["tfs", "writeback", "--issue", "X", "--config", "unused"]]) {
+    assert.notEqual(runCli(args).status, 0, args.join(" "));
+  }
+});

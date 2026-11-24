@@ -32,8 +32,8 @@ rondo doctor --help
 | --- | --- | --- |
 | `change` | `resolve-identity`、`update-progress` | Change 身份解析、任务进度 |
 | `analysis` | `stage`、`validate`、`complete`、`read` | 分析事实、Gate、审核提交和工件读取 |
-| `dev` | `materialize`、`prepare`、`check-dispatch`、`check-completion`、`check-change`、`publish`、`pr-prep`、`contract-hash` | 旧派发与新 Change 研发准备、发布、验证 |
-| `bug` | `prepare-pr`、`git`、`resume` | 独立 TFS Bug 修复交付 |
+| `dev` | `materialize`、`prepare`、`check-dispatch`、`check-completion`、`check-change`、`publish`、`pr-prepare`、`contract-hash` | 旧派发与新 Change 研发准备、发布、验证 |
+| `bug` | `pr-prepare`、`git`、`resume` | 独立 TFS Bug 修复交付 |
 | `tfs` | `writeback`、`materialize-tasks`、`resolve-tasks`、`reconcile-workitem` | TFS 工作项同步与交付回写 |
 | `pr` | `materialize`、`worktree`、`reconcile-status`、`create`、`get`、`list` | PR 创建、查询、状态对账及 Worktree |
 | `delivery` | `handoff`、`route-decision`、`finalize` | 准入交接、人工决策路由与交付收口 |
@@ -88,7 +88,7 @@ Requirement 的 `analysis complete` 和 `dev publish` 使用 Git 2.45 或更高�
 rondo dev materialize --config <repo-registry.json> --issue <KEY> --change-ref <ref> --task-refs <1.1,1.2> --engineer-id <uuid> --approved-comment-ref <uuid> [--projection parent|sub-issue] [--depends-on <issue-key>] [--activate] [--root-repo <path>]
 rondo dev check-dispatch --config <repo-registry.json> --issue <KEY> --task-refs <1.1,1.2> [--change-ref <ref>] [--engineer-id <uuid>]
 rondo dev check-completion --openspec-root <path> --change-ref <ref> --task-refs <1.1,1.2> --evidence <evidence.json> [--verify-commits] [--issue <KEY> --registry-config <repo-registry.json> [--root-repo <path>]]
-rondo dev pr-prep --config <repo-registry.json> --issue <KEY> --repo <repo_key> --change-ref <ref> --candidate-commit <sha> --title <title> [--target-branch <branch>] [--source-branch <branch>] [--description <path>]
+rondo dev pr-prepare --config <repo-registry.json> --issue <KEY> --repo <repo_key> --change-ref <ref> --candidate-commit <sha> --title <title> [--target-branch <branch>] [--source-branch <branch>] [--description <path>]
 rondo dev contract-hash --openspec-root <path> --change-ref <ref>
 rondo dev prepare --mode requirement --config <repo-registry.json> --issue <KEY> --change-ref <ref> --repo <repo_key> [--root-repo <path>]
 rondo dev publish --config <repo-registry.json> --issue <KEY> --change-ref <ref> [--root-repo <path>] [--minor-design]
@@ -100,7 +100,7 @@ rondo dev check-change --config <repo-registry.json> --issue <KEY> --change-ref 
 | `dev materialize` | 将已确定的 Task Set、Engineer 和依赖关系物化为研发派发事实，可选 Parent / Sub-Issue 投影 |
 | `dev check-dispatch` | 只读核对任务分工、当前有效派发和工程师身份 |
 | `dev check-completion` | 检查任务完成、验证 Evidence 和可选 Commit 关联 |
-| `dev pr-prep` | 核对候选 Commit，写入 PR 准备事实；不直接创建 PR |
+| `dev pr-prepare` | 核对候选 Commit，写入 PR 准备事实；不直接创建 PR |
 | `dev contract-hash` | 计算当前 Change 契约文件的 SHA-256 摘要，供工程验证引用 |
 | `dev prepare` | 新 Requirement 用持久根仓和 `feature/<tfs.id>` Worktree；旧 Bug 使用原有默认模式 |
 | `dev publish` | 发布当前 Change 已提交的 Tasks / Evidence / PR 描述，回读远端 SHA 并登记 `dev.publication`。非实质性 Design 细化使用 `--minor-design` |
@@ -109,18 +109,18 @@ rondo dev check-change --config <repo-registry.json> --issue <KEY> --change-ref 
 ### 4.2 `rondo bug`
 
 ```bash
-rondo bug prepare-pr --config <repo-registry.json> --issue <KEY> --repo <repo_key> --candidate-commit <40-SHA> --evidence <evidence.json|-> --title <title> [--description <path>] [--required-repos <repo1,repo2>] [--source-branch <branch>] [--target-branch <branch>] [--root-repo <path>]
+rondo bug pr-prepare --config <repo-registry.json> --issue <KEY> --repo <repo_key> --candidate-commit <40-SHA> --evidence <evidence.json|-> --title <title> [--description <path>] [--required-repos <repo1,repo2>] [--source-branch <branch>] [--target-branch <branch>] [--root-repo <path>]
 rondo bug git --config <repo-registry.json> --issue <KEY> --repo <repo_key> --root-repo <path> --operation fetch|push
 rondo bug resume --config <repo-registry.json> --issue <KEY> --human-comment-id <id> --next REWORK|RECREATE_PR
 ```
 
 | 命令 | 功能 |
 | --- | --- |
-| `bug prepare-pr` | 核验 Bug 交付范围、Root Cause、回归验证、本地验证、Code Review 和 Commit，写入 `bug.delivery` 与 `pr_prep` |
+| `bug pr-prepare` | 核验 Bug 交付范围、Root Cause、回归验证、本地验证、Code Review 和 Commit，写入 `bug.delivery` 与 `pr_prep` |
 | `bug resume` | 根据 Human Comment，对处于 `blocked` 且 PR 已确认 `abandoned` 的 Bug Issue 进行受控恢复 |
 | `bug git` | 在当前 Bug Run 授权下受控 Fetch 或非强制 Push 候选分支 |
 
-`bug prepare-pr` 支持从 stdin 读取 JSON（`--evidence -`）或现有本地文件；Issue / TFS ID / Repository / Candidate SHA 由 CLI 核实，可从输入 JSON 省略，显式冲突时拒绝。必要验证 Gate 不变。`bug prepare-pr` 不创建 PR；准备条件满足后使用 `rondo pr materialize`。`bug resume` 的 `REWORK` 表示重新修复，`RECREATE_PR` 表示重建 PR；恢复状态本身不等于启动新 Run。
+`bug pr-prepare` 支持从 stdin 读取 JSON（`--evidence -`）或现有本地文件；Issue / TFS ID / Repository / Candidate SHA 由 CLI 核实，可从输入 JSON 省略，显式冲突时拒绝。必要验证 Gate 不变。`bug pr-prepare` 不创建 PR；准备条件满足后使用 `rondo pr materialize`。`bug resume` 的 `REWORK` 表示重新修复，`RECREATE_PR` 表示重建 PR；恢复状态本身不等于启动新 Run。
 
 ## 5. Delivery 与 PR
 
@@ -129,7 +129,7 @@ rondo bug resume --config <repo-registry.json> --issue <KEY> --human-comment-id 
 ```bash
 rondo delivery handoff --issue <KEY>
 rondo delivery route-decision --config <repo-registry.json> --issue <KEY> --comment-id <uuid> --next ANALYSIS|ENGINEERING|RECREATE_PR|CANCEL_DELIVERY [--reason REJECTED|DISCARDED] [--affected-task-refs <1.1,1.2>]
-rondo delivery finalize --phase prepare|complete --issue <KEY> --config <repo-registry.json> [--root-repo <path>]
+rondo delivery finalize --phase prepare|complete --issue <KEY> [--root-repo <path>]
 rondo delivery root-prepare --issue <KEY>
 ```
 
@@ -183,7 +183,7 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 
 ```bash
 rondo tfs reconcile-workitem --config <sync-config.json>
-rondo tfs writeback --config <repo-registry.json> --issue <KEY> [--root-repo <path>]
+rondo tfs writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-plan <plan.json>]
 rondo tfs materialize-tasks --config <repo-registry.json> --issue <KEY> [--root-repo <path>]
 rondo tfs resolve-tasks --config <repo-registry.json> --issue <KEY>
 ```
@@ -198,10 +198,14 @@ rondo tfs resolve-tasks --config <repo-registry.json> --issue <KEY>
 交付收口的常用调用顺序：
 
 ```bash
-rondo delivery finalize --phase prepare --config <repo-registry.json> --issue <KEY>
-rondo tfs writeback --config <repo-registry.json> --issue <KEY>
-rondo delivery finalize --phase complete --config <repo-registry.json> --issue <KEY>
+rondo delivery root-prepare --issue <KEY>
+rondo delivery finalize --phase prepare --issue <KEY> --root-repo <path>
+rondo tfs writeback --issue <KEY> --root-repo <path> --inspect
+rondo tfs writeback --issue <KEY> --root-repo <path> --task-plan <plan.json>
+rondo delivery finalize --phase complete --issue <KEY> --root-repo <path>
 ```
+
+已有任务计划时省略 `--task-plan`。Direct Bug 不执行 root-prepare / inspect，不传 root-repo 或 task-plan，仅执行 prepare、writeback、complete。收口命令使用当前 Multica Runtime，无 Registry 配置。
 
 ### 6.2 顶级 WIQL 查询及 Git 仓库查询
 

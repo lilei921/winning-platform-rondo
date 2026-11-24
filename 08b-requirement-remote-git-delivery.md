@@ -219,7 +219,7 @@ git -C $hub fetch origin
 git -C $hub worktree add -b feature/12345 $worktree origin/<target-branch>
 ~~~
 
-Worktree 的 `.git` 通常是**文件**，不是独立 Clone 的 `.git` 目录；用 Git Common Dir、Branch、Origin 和 Worktree List 核对归属。现有 `rondo dev prepare` 主要是 Bug 独立 Clone，Requirement Worktree 已实现；`dev pr-prep --mode requirement` 使用 `feature/`，旧 Bug 的 `feat/` 不变，不误影响 08-A Bug。
+Worktree 的 `.git` 通常是**文件**，不是独立 Clone 的 `.git` 目录；用 Git Common Dir、Branch、Origin 和 Worktree List 核对归属。现有 `rondo dev prepare` 主要是 Bug 独立 Clone，Requirement Worktree 已实现；`dev pr-prepare --mode requirement` 使用 `feature/`，旧 Bug 的 `feat/` 不变，不误影响 08-A Bug。
 
 新 Engineer 通过独立 `change-development` Skill，在同一个正常 Run 对实际需要修改的授权仓完成实现、Local Validation、Review、Commit / Push；再由 Rondo 按 §3.1 发布 `tasks.md` checkbox、合法 Design 细化、`evidence*.json`、`pr-description-<repo_key>.md`，回读并执行 Change 级 Completion Check，最后 `rondo pr materialize` 创建或复用所需 PR。创建前整体核对实际代码变更仓库的 Candidate / PR Preparation，无修改仓库不制造空 Commit / PR。发布无法确认时停止，不增加 Lead 二次派发。Evidence 以稳定的 `repo_key + repo_url + commit SHA` 识别，PR 描述从已 Push Change 恢复，不依赖原 Runtime 本地路径。Skill 不依赖旧 `development-execution`、`pull-request` 或领域 Skills。
 
@@ -232,9 +232,9 @@ Worktree 的 `.git` 通常是**文件**，不是独立 Clone 的 `.git` 目录�
 PR Status Sync 不需要访问 Engineer 本地 Worktree。继续由 Rondo 执行：
 
 ~~~bash
-rondo delivery finalize --phase prepare --issue <KEY> --config "<config>"
-rondo tfs writeback --issue <KEY> --config "<config>"
-rondo delivery finalize --phase complete --issue <KEY> --config "<config>"
+rondo delivery finalize --phase prepare --issue <KEY> --config "<config>" --root-repo "<root_repo>"
+rondo tfs writeback --issue <KEY> --config "<config>" --root-repo "<root_repo>"
+rondo delivery finalize --phase complete --issue <KEY> --config "<config>" --root-repo "<root_repo>"
 ~~~
 
 按远端 PR、OpenSpec 和 Delivery Facts 归档并收口，外部动作部分成功时先对账、只补缺失项，不引入跨服务器工作区机制。**TFS 子任务独立于 OpenSpec Tasks**：PR Status Sync Agent 在 Prepare PASS 后依据批准版 `tasks.md` 与真实业务 Commit 决定 1–5 个 TFS 子任务及估时；Rondo 执行独占关联、回读与恢复，**无有效计划不默认创建**。参见 [10 方案](10-tfs-subtask-estimation-design.md)。不让 Analyst / Engineer 管理 TFS 任务。
@@ -269,7 +269,7 @@ Independent Verify 新闭环本期暂不实施：`verify_agent.required=false` �
 | OpenSpec Change Metadata | `.openspec.yaml` 的 `x-repositories` 明确唯一 Repository Scope；`tasks.md` 按工程需要表达 PR 前任务，不因 TFS 数量调整；项目级 Schema 随根仓 Git 管理，必要时同步修订 03 / 05 |
 | 新 `Engineer` / `change-development` | 新建独立 Agent、Skill 与绑定；通过 Rondo 完成 Change 级研发、发布、Completion 和 PR，不依赖旧 Agent / Skills |
 | Engineer 开工入口 | Fetch、可安全时 Fast-forward；否则按批准 Commit 安全读取当前 Change，不破坏其他 WIP |
-| Requirement `dev prepare` / `dev pr-prep` | 同级 `feature/<tfs.id>` Worktree 与候选分支，Git 重入和唯一检出 |
+| Requirement `dev prepare` / `dev pr-prepare` | 同级 `feature/<tfs.id>` Worktree 与候选分支，Git 重入和唯一检出 |
 | 09 Completion / Evidence / TFS Writeback | 新路线采用显式 Change 级契约、稳定 Git 身份和跨服务器 PR / Finalize；PR Status Sync Agent 规划 1–5 个 TFS 子任务，Rondo 强制 Commit 独占，不要求与 OpenSpec Tasks 一一对应；旧 `task_refs` 和 Bug 路线保持可用 |
 
 **修复验收使用新的测试 Issue 和测试仓，保留 LEI-35 现场。** 验证所选目录内按项目分支保存、切换、跟踪与同步；占用时须在暂存前报告目录。核对根仓没有新增 Issue Worktree，业务仓按 TFS ID 隔离。构造 A、B 交错提交及混合路径，确认只发布 A、保留 B；覆盖可兼容的远端推进、当前 Change 内容冲突与重试回读，分别核对实际分析和研发发布 SHA。具体验收场景见[修复方案](08b-requirement-root-branch-and-publish-plan.md)。
