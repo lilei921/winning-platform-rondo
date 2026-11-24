@@ -26,17 +26,30 @@ test("delivery-closeout 名称、Manifest 与 Agent 绑定一致", () => {
   assert.ok(!sync.includes('"issue-closeout"'));
 });
 
-test("delivery-closeout 保留三段 CLI 收口顺序和异常回执", () => {
+test("delivery-closeout 分别保留 Bug 与 Requirement 的收口命令及结果契约", () => {
   const skill = read("skills/delivery-closeout/SKILL.md");
   assert.ok(!skill.includes("--config"));
-  const commands = [
-    "rondo delivery finalize --phase prepare --issue",
-    "rondo tfs writeback --issue",
-    "rondo delivery finalize --phase complete --issue",
-  ];
-  const offsets = commands.map((cmd) => skill.indexOf(cmd));
-  assert.ok(offsets.every((x) => x >= 0));
-  assert.ok(offsets[0] < offsets[1] && offsets[1] < offsets[2]);
+  const bug = skill.split("## Bug 收口\n")[1]?.split("## Requirement 收口\n")[0];
+  const requirement = skill.split("## Requirement 收口\n")[1]?.split("## 已完成 Issue 恢复\n")[0];
+  const recovery = skill.split("## 已完成 Issue 恢复\n")[1]?.split("## 结果处理\n")[0];
+  const commands = (section) => (section ?? "").split("\n").filter(line => line.startsWith("rondo "));
+  assert.deepEqual(commands(bug), [
+    "rondo delivery finalize --phase prepare --issue <KEY>",
+    "rondo tfs writeback --issue <KEY>",
+    "rondo delivery finalize --phase complete --issue <KEY>",
+  ]);
+  assert.deepEqual(commands(requirement), [
+    "rondo delivery root-prepare --issue <KEY>",
+    'rondo delivery finalize --phase prepare --issue <KEY> --root-repo "<root_repo>"',
+    'rondo tfs writeback --issue <KEY> --root-repo "<root_repo>" --inspect',
+    'rondo tfs writeback --issue <KEY> --root-repo "<root_repo>" --task-plan "<plan.json>"',
+    'rondo tfs writeback --issue <KEY> --root-repo "<root_repo>"',
+    'rondo delivery finalize --phase complete --issue <KEY> --root-repo "<root_repo>"',
+  ]);
+  assert.deepEqual(commands(recovery), [
+    "rondo delivery finalize --phase complete --issue <KEY>",
+  ]);
   assert.ok(skill.includes("FAIL") && skill.includes("UNKNOWN"));
-  assert.ok(skill.includes("already=done") && skill.includes("route_archive=skipped"));
+  assert.ok(skill.includes("status=prepared") && skill.includes("result=PASS"));
+  assert.ok(skill.includes("already=done") && skill.includes("status=done"));
 });
