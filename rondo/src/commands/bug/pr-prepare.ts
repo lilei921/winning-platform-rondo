@@ -14,7 +14,7 @@ import { loadConfig, type BaseRegistryConfig } from "../../clients/config.js";
 import { git, gitOk } from "../../clients/git.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { validateNativeCheckout } from "../../clients/native-checkout.js";
-import { runAuthenticatedGit } from "../../clients/authenticated-git.js";
+import { assertTfsRepository, runAuthenticatedGit } from "../../clients/authenticated-git.js";
 import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
 import { assertBugExecution, assertBugStart, assertBugSource } from "./authorization.js";
 import { validatePrepareRepo, validateBusinessPath, validateBusinessCheckout, type PrepareRepo } from "../dev/prepare-workspace.js";
@@ -52,8 +52,9 @@ interface BugEvidence {
 }
 interface PreparedPr {
   repo_key: string;
+  repo_url: string;
   source_branch: string;
-  target_branch?: string;
+  target_branch: string;
   candidate_commit: string;
   title: string;
   description_ref?: string;
@@ -205,6 +206,7 @@ async function main(argv: string[]): Promise<number> {
     }
     const paths = validateNativeCheckout(rootRepo);
     validatePrepareRepo(repo, loadTfsConfig().serverUrl);
+    const repoUrl = assertTfsRepository(repo.repo_url, loadTfsConfig().serverUrl).href;
     const hub = validateBusinessPath(paths.rootRepo, repo);
     validateBusinessCheckout(hub, repo, sourceBranch);
     const remote = runAuthenticatedGit(repo.repo_url, ["ls-remote", repo.repo_url, "refs/heads/" + sourceBranch], hub);
@@ -234,7 +236,7 @@ async function main(argv: string[]): Promise<number> {
     const preparedDelivery = [...oldDelivery.filter(e => e.repo_key !== repoKey), entry];
     const oldPrep = parseList<PreparedPr>(md.pr_prep, "pr_prep");
     const prEntry: PreparedPr = {
-      repo_key: repoKey, source_branch: sourceBranch, target_branch: targetBranch,
+      repo_key: repoKey, repo_url: repoUrl, source_branch: sourceBranch, target_branch: targetBranch,
       candidate_commit: sha, title, ...(description ? { description_ref: "file:" + description } : {}),
     };
     const preparedPr = [...oldPrep.filter(e => e.repo_key !== repoKey), prEntry];

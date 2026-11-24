@@ -35,6 +35,8 @@ import { isRequirementChangeDelivery } from "../delivery/requirement-mode.js";
 import { requirementRoot } from "../runtime/root-git.js";
 import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
 import { normalizeTfsPrWebUrl } from "../../tfs/api/pr.js";
+import { assertTfsRepository } from "../../clients/authenticated-git.js";
+import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 
 class FailItem extends Error {      // 单仓明确失败：记 failures，不中断其余仓
   readonly detail: Record<string, unknown>;
@@ -58,8 +60,9 @@ interface RegistryConfig extends BaseRegistryConfig {
 
 interface PrPrepEntry {
   repo_key: string;
+  repo_url: string;
   source_branch: string;
-  target_branch?: string;
+  target_branch: string;
   candidate_commit: string;
   title: string;
   description_ref?: string;
@@ -85,6 +88,7 @@ interface BugValidation {
 }
 interface BugDeliveryEntry {
   repo_key: string;
+  target_branch: string;
   candidate_commit: string;
   tfs_id: number;
   expected_behavior: string;
@@ -189,13 +193,26 @@ export async function materializeOne(tfs: TfsClient, cfg: RegistryConfig, tfsId:
   if (!repo.tfs_repo || !repo.tfs_project) {
     throw new FailItem({ repo_key: entry.repo_key, reason: "missing_tfs_config", detail: "tfs_repo/tfs_project 未配置" });
   }
-  for (const f of ["source_branch", "candidate_commit", "title"] as const) {
+  for (const f of ["repo_url", "source_branch", "target_branch", "candidate_commit", "title"] as const) {
     if (!entry[f]) throw new FailItem({ repo_key: entry.repo_key, reason: `pr_prep 缺少字段 ${f}` });
   }
-  const target = entry.target_branch || repo.default_target_branch;
-  if (!target) throw new FailItem({ repo_key: entry.repo_key, reason: "no_target_branch" });
+  const collection = loadTfsConfig().serverUrl;
+  const registered = assertTfsRepository(repo.repo_url ?? "", collection);
+  const prepared = assertTfsRepository(entry.repo_url, collection);
+  const parts = registered.pathname.split("/").map(decodeURIComponent);
+  if (canonicalRepositoryIdentity(registered.href) !== canonicalRepositoryIdentity(prepared.href) ||
+      parts.at(-3)!.toLowerCase() !== repo.tfs_project.toLowerCase() ||
+      parts.at(-1)!.toLowerCase() !== repo.tfs_repo.toLowerCase()) {
+    throw new FailItem({ repo_key: entry.repo_key, reason: "pr_prep_repository_identity_mismatch" });
+  }
+  const target = entry.target_branch;
+  // Requirement uses the registered target; Direct Bug retains its explicit target override.
+  if ((remoteDescription !== undefined && target !== repo.default_target_branch) ||
+      (bugDelivery && target !== bugDelivery.target_branch)) {
+    throw new FailItem({ repo_key: entry.repo_key, reason: "pr_prep_target_branch_mismatch" });
+  }
   const prWebUrl = (candidate: string | undefined, id: number): string =>
-    normalizeTfsPrWebUrl(candidate, loadTfsConfig().serverUrl, repo.tfs_project as string, repo.tfs_repo as string, id);
+    normalizeTfsPrWebUrl(candidate, collection, repo.tfs_project as string, repo.tfs_repo as string, id);
 
   // The actual remote branch always pins the Candidate, including when an existing PR is reused.
   const reusePr = async (id: number, priorUrl = ""): Promise<CurrentPrEntry & { reused: boolean }> => {

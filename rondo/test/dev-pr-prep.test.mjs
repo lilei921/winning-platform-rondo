@@ -39,6 +39,7 @@ function fixture(t, { tfsId = "261056", seedPrep = null } = {}) {
   const dir = realpathSync.native(mkdtempSync(join(tmpdir(), "skill-flow-pr-prepare-")));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
 
+  const repoUrl = "http://tfs.test/tfs/C/P/_git/biz";
   const remote = join(dir, "remote.git");
   mkdirSync(remote);
   git(remote, "init", "--bare");
@@ -62,12 +63,15 @@ function fixture(t, { tfsId = "261056", seedPrep = null } = {}) {
   git(hub, "commit", "-am", "c2");
   git(hub, "push", "origin", `feat/${tfsId}`);
   const head = git(hub, "rev-parse", `feat/${tfsId}`);
+  git(hub, "remote", "set-url", "origin", repoUrl);
+  const transport = join(dir, "git-transport.cjs");
+  writeFileSync(transport, `#!/usr/bin/env node\nconst {spawnSync}=require("node:child_process");\nconst args=process.argv.slice(2);\nif(args[0]==="ls-remote" && args[1]==="origin") args[1]=${JSON.stringify(remote)};\nconst r=spawnSync("git",args,{stdio:"inherit"});\nprocess.exit(r.status??1);\n`, {mode:0o755});
 
   chmodSync(MOCK, 0o755);
   const config = join(dir, "registry.json");
   writeFileSync(config, JSON.stringify({
     runtime: { multica_cli: MOCK, workspace_id: "ws-test" },
-    registry: { "datamodel-web": { repo_path: "hub-clone" } },
+    registry: { "datamodel-web": { repo_path: "hub-clone", repo_url: repoUrl, default_target_branch: "main" } },
   }));
 
   const statePath = join(dir, "state.json");
@@ -76,7 +80,7 @@ function fixture(t, { tfsId = "261056", seedPrep = null } = {}) {
   writeFileSync(statePath, JSON.stringify({ metadata, project_resources: [] }));
 
   const callsPath = join(dir, "calls.jsonl");
-  const env = { MOCK_STATE: statePath, MOCK_SYNC_CALLS_FILE: callsPath };
+  const env = { MOCK_STATE: statePath, MOCK_SYNC_CALLS_FILE: callsPath, TFS_SERVER_URL: "http://tfs.test/tfs/C", TFS_PAT: "fixture", RONDO_GIT_EXECUTABLE: transport };
   const descPath = join(rootRepo, "openspec", "changes", "sample", "pr-description-datamodel-web.md");
   const run = (over = {}) => runCli([
     "dev", "pr-prepare", "--config", config, "--issue", "WNDF-T", "--repo", "datamodel-web",
@@ -104,6 +108,8 @@ test("PASS 合并写入保留他仓条目并搭架描述文件", (t) => {
   assert.deepEqual(prep.find((e) => e.repo_key === "other-repo"), OTHER_ENTRY);
   const mine = prep.find((e) => e.repo_key === "datamodel-web");
   assert.equal(mine.source_branch, "feat/261056");
+  assert.equal(mine.repo_url, "http://tfs.test/tfs/C/P/_git/biz");
+  assert.equal(mine.target_branch, "main");
   assert.equal(mine.candidate_commit, f.head);
   assert.equal(mine.title, "测试 PR");
   assert.equal(mine.description_ref, `file:${f.descPath}`);

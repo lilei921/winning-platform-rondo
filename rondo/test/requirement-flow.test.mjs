@@ -23,7 +23,7 @@ const registry = {
 const sha1 = "a".repeat(40);
 const sha2 = "b".repeat(40);
 function prep(key, sha) {
-  return { repo_key: key, source_branch: "feature/42", target_branch: "dev",
+  return { repo_key: key, repo_url: registry[key].repo_url, source_branch: "feature/42", target_branch: "dev",
     candidate_commit: sha, title: "Change",
     description: "实现修复；已完成验证；风险已评估。",
     local_validation: { result: "PASS", summary: "Tests passed", command: ["node", "--test"],
@@ -43,7 +43,10 @@ test("Requirement Scope, Candidate 和验证/Review 必须由同一份原生事�
   assert.doesNotThrow(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{result:"PASS",candidate_commit:sha1,summary:"Review",findings:[{resolved:false,blocking:false,risk_note:"known acceptable risk"}]}}], ["frame"],42,registry));
 });
 
-test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专业描述", async () => {
+test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专业描述", async (t) => {
+  const previous = { TFS_SERVER_URL: process.env.TFS_SERVER_URL, TFS_PAT: process.env.TFS_PAT };
+  process.env.TFS_SERVER_URL = "http://tfs.test/tfs/C"; process.env.TFS_PAT = "fixture";
+  t.after(() => { for (const [k,v] of Object.entries(previous)) { if (v === undefined) delete process.env[k]; else process.env[k]=v; } });
   const entry = prep("frame", sha1);
   const cfg = { registry: { frame: { ...registry.frame, tfs_repo: "biz", tfs_project: "P" } } };
   let remoteHead = sha1;
@@ -66,6 +69,9 @@ test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专
   } };
   const prior = { repo_key: "frame", pr_id: 17, pr_url: "http://tfs.test/pr/17",
     source_branch: "feature/42", target_branch: "dev" };
+  await assert.rejects(materializeOne(tfs, cfg, "42", {...entry, repo_url: registry.web.repo_url}, prior, undefined, entry.description), /identity_mismatch/);
+  await assert.rejects(materializeOne(tfs, cfg, "42", {...entry, target_branch: "main"}, prior, undefined, entry.description), /target_branch_mismatch/);
+  assert.deepEqual(calls, [], "身份不一致不得产生外部 PR 操作");
   const reused = await materializeOne(tfs, cfg, "42", entry, prior, undefined, entry.description);
   assert.equal(reused.pr_id, 17);
   assert.equal(reused.reused, true);

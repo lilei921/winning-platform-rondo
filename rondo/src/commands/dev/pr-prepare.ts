@@ -34,7 +34,8 @@ import { runCommand } from "../../clients/spawn.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 import { resolveRuntimePaths } from "../../clients/runtime-paths.js";
 import { requirementRoot } from "../runtime/root-git.js";
-import { runAuthenticatedGit } from "../../clients/authenticated-git.js";
+import { assertTfsRepository, runAuthenticatedGit } from "../../clients/authenticated-git.js";
+import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
 import { guardRepository } from "./requirement-guard.js";
 
 interface RepoEntry {
@@ -49,8 +50,9 @@ interface RegistryConfig extends BaseRegistryConfig {
 
 interface PrPrepEntry {
   repo_key: string;
+  repo_url: string;
   source_branch: string;
-  target_branch?: string;
+  target_branch: string;
   candidate_commit: string;
   title: string;
   description_ref?: string;
@@ -269,8 +271,15 @@ async function main(rawArgs: string[]): Promise<number> {
       throw new UnknownError(`枢纽克隆不存在或不是 git 仓: ${hub}（先完成根仓检出/业务仓接驳）`);
     }
 
+    const repoUrl = assertTfsRepository(repo.repo_url ?? "", loadTfsConfig().serverUrl).href;
+    const targetBranch = args.targetBranch || repo.default_target_branch;
+    if (!targetBranch) throw new FailError("PR Preparation 缺少目标分支");
+    if (args.mode !== "requirement" && canonicalRepositoryIdentity(gitOk(hub, ["remote", "get-url", "origin"], "核对业务仓来源")) !== canonicalRepositoryIdentity(repoUrl)) {
+      throw new FailError("业务仓 origin 与 Registry 不一致");
+    }
+
     // 1. HEAD 核验（FAIL 即停，零写入）
-    const { found, head } = checkRemoteHead(hub, sourceBranch, args.mode === "requirement" ? repo.repo_url : undefined);
+    const { found, head } = checkRemoteHead(hub, sourceBranch, args.mode === "requirement" ? repoUrl : undefined);
     if (!found) {
       return fail(args.issue, "source_branch_not_found", [
         `远端分支 ${sourceBranch} 不存在（origin，经 ${hub} 查询）——Engineer 未完成 push 或分支名有误`,
@@ -293,7 +302,7 @@ async function main(rawArgs: string[]): Promise<number> {
       if (delivery.code_review?.candidate_commit !== args.candidateCommit) {
         throw new FailError("Code Review 审核的 Candidate 与实际待发布 Commit 不一致");
       }
-      verifyAndExecuteValidation(paths.rootRepo, args.validationCwd || hub, repo.repo_url!,
+      verifyAndExecuteValidation(paths.rootRepo, args.validationCwd || hub, repoUrl,
         args.candidateCommit, delivery.validation!.command!);
     } else {
       const desc = resolveLegacyDescription(args, paths.openspecRoot);
@@ -320,7 +329,9 @@ async function main(rawArgs: string[]): Promise<number> {
     const preserved = existing.filter((e) => e?.repo_key !== args.repo);
     const entry: PrPrepEntry = {
       repo_key: args.repo,
+      repo_url: repoUrl,
       source_branch: sourceBranch,
+      target_branch: targetBranch,
       candidate_commit: args.candidateCommit,
       title: args.title,
       ...(descriptionRef && { description_ref: descriptionRef }),
@@ -332,7 +343,6 @@ async function main(rawArgs: string[]): Promise<number> {
         blockers: [],
       }),
     };
-    if (args.targetBranch) entry.target_branch = args.targetBranch;
     const merged = [...preserved, entry];
     multica.setMetadata(issue.id, "pr_prep", JSON.stringify(merged));
     log(`pr_prep 已写入（共 ${merged.length} 条，本仓条目替换/新增，保留 ${preserved.length} 条他仓条目）`);
@@ -343,6 +353,7 @@ async function main(rawArgs: string[]): Promise<number> {
     const mine = readback.find((e) => e?.repo_key === args.repo);
     const preservedAfter = readback.filter((e) => e?.repo_key !== args.repo);
     const fieldMismatch = !mine ||
+      mine.repo_url !== entry.repo_url ||
       mine.source_branch !== entry.source_branch ||
       mine.candidate_commit !== entry.candidate_commit ||
       mine.title !== entry.title ||
