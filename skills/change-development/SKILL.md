@@ -6,7 +6,7 @@ description: 根据已批准的 OpenSpec Change 完成一个或多个授权仓�
 # Inputs / Boundaries
 
 - 当前 Issue 的 `analysis.source`、Human Approval、当前 OpenSpec Change 与 `.openspec.yaml.x-repositories`；本 Skill 的 `config/repo-registry.json`。
-- 仅对已批准的 Repository Scope 内代码进行修改。需要本地 Git 时按需使用已绑定的工作区准备 Skill；不以文件存在代替仓库/分支就绪核验。
+- 在已准备就绪的业务工作树中，仅修改已批准的 Repository Scope 内的代码。
 - 不修改已批准行为、验收或授权范围；实质变更退回原有 Human Review。
 
 # Work
