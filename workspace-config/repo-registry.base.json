@@ -5,104 +5,79 @@
   },
   "delivery": {
     "basedata": {
-      "tfs_repo": "winning-dps-df-basedata",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-basedata"
     },
     "basedata-webui": {
-      "tfs_repo": "winning-dps-df-basedata-webui",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-basedata-webui"
     },
     "common": {
-      "tfs_repo": "winning-dps-df-common",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-common"
     },
     "dataasset": {
-      "tfs_repo": "winning-dps-df-dataasset",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-dataasset"
     },
     "dataasset-web": {
-      "tfs_repo": "winning-dps-df-dataasset-web",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-dataasset-web"
     },
     "dataengine": {
-      "tfs_repo": "winning-dps-df-dataengine",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-dataengine"
     },
     "dataintegration": {
-      "tfs_repo": "winning-dps-df-dataintegration",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-dataintegration"
     },
     "dataintegration-web": {
-      "tfs_repo": "winning-dps-df-dataintegration-web",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-dataintegration-web"
     },
     "datamodel": {
-      "tfs_repo": "winning-dps-df-datamodel",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-datamodel"
     },
     "datamodel-web": {
-      "tfs_repo": "winning-dps-df-datamodel-web",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-datamodel-web"
     },
     "dataquality": {
-      "tfs_repo": "winning-dps-df-dataquality",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-dataquality"
     },
     "dataquality-web": {
-      "tfs_repo": "winning-dps-df-dataquality-web",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-dataquality-web"
     },
     "datasecurity": {
-      "tfs_repo": "winning-dps-df-datasecurity",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-datasecurity"
     },
     "datasecurity-web": {
-      "tfs_repo": "winning-dps-df-datasecurity-web",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-datasecurity-web"
     },
     "dataservice-api": {
-      "tfs_repo": "winning-dps-df-dataservice-api",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-dataservice-api"
     },
     "dataservice-gateway": {
-      "tfs_repo": "winning-dps-df-dataservice-gateway",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-dataservice-gateway"
     },
     "dataservice-web": {
-      "tfs_repo": "winning-dps-df-dataservice-web",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-dataservice-web"
     },
     "datatransfer-core": {
-      "tfs_repo": "winning-dps-df-datatransfer-core",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-datatransfer-core"
     },
     "devops": {
-      "tfs_repo": "winning-dps-df-devops",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-devops"
     },
     "devops-web": {
-      "tfs_repo": "winning-dps-df-devops-web",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-devops-web"
     },
     "frame": {
-      "tfs_repo": "winning-dps-df-frame",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-frame"
     },
     "frame-web": {
-      "tfs_repo": "winning-dps-df-frame-web",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-frame-web"
     },
     "metadata": {
-      "tfs_repo": "winning-dps-df-metadata",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-metadata"
     },
     "metadata-web": {
-      "tfs_repo": "winning-dps-df-metadata-web",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-metadata-web"
     },
     "modular": {
-      "tfs_repo": "winning-dps-df-modular",
-      "default_target_branch": "dev"
+      "tfs_repo": "winning-dps-df-modular"
     }
   }
 }
