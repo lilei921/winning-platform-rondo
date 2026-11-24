@@ -1,4 +1,4 @@
-# 14 — PR Submission 共用 Skill 优化方案
+# 14 — Pull Request 共用 Skill 优化方案
 
 - 日期：2026-11-24
 - 状态：设计草案，待评审；本次仅保存方案，不实施
@@ -7,7 +7,7 @@
 
 ## 1. 目标与结论
 
-将 `bug-delivery` 与 `change-development` 收敛为一个共用 Skill：`pr-submission`，供 Bug Fix Agent 与 Engineer 使用。其边界从已完成实现与必要验证的授权代码变更开始，到 PR 创建或复用、确认 Issue 进入 in_review 为止。只提供 PR Preparation、必要提交前置操作、PR Materialization 及结果处理；按 Bug / Requirement 场景保留必要差异。
+将 `bug-delivery` 与 `change-development` 收敛为一个共用 Skill：`pull-request`，供 Bug Fix Agent 与 Engineer 使用。其边界从已完成实现与必要验证的授权代码变更开始，到 PR 创建或复用、确认 Issue 进入 in_review 为止。只提供 PR Preparation、必要提交前置操作、PR Materialization 及结果处理；按 Bug / Requirement 场景保留必要差异。
 
 统一 Skill 不等于统一业务流程、Evidence Schema、CLI 或 Agent。遵循 KISS、YAGNI、Specialist Focus、One Rule One Owner、Native First、Minimal Sufficient、Right-sized Execution 和 Contract First。避免把 Skill 演变成整个交付生命周期的总控流程。
 
@@ -39,15 +39,15 @@ PR 创建或复用、关联 TFS Work Item、登记 current_pr、全部登记成�
 | --- | --- |
 | 保留两个 Skill，仅各自精简 | 改造成本低，但交付方法和说明持续重复 |
 | 保留两个 Skill，再新增 pr-delivery | 形成三个 Skill；公共确定性 PR 操作已有 CLI，额外组合收益不足 |
-| 合并为 pr-submission，内部区分两种场景 | 推荐；减少一个 Skill，不新增调用链、状态、命令或数据结构 |
+| 合并为 pull-request，内部区分两种场景 | 推荐；减少一个 Skill，不新增调用链、状态、命令或数据结构 |
 
-命名采用 `pr-submission`（PR 提交），覆盖 Candidate 核验、PR Preparation 与 PR Materialization。验证方法、代码实现、需求理解、根因诊断、工作区准备、Human Review、PR Merge、状态巡检与 Delivery Closeout 均不是本 Skill 的职责。Requirement 的 Publish / Completion Check 仅作为 PR 提交所需的既有前置操作。
+命名采用 `pull-request`（Git 原生领域术语），职责由 Skill Description 和执行说明限定，覆盖 Candidate 核验、PR Preparation 与 PR Materialization。验证方法、代码实现、需求理解、根因诊断、工作区准备、Human Review、PR Merge、状态巡检与 Delivery Closeout 均不是本 Skill 的职责。Requirement 的 Publish / Completion Check 仅作为 PR 提交所需的既有前置操作。
 
 ## 4. 职责与流程
 
 - Bug Fix Agent：根因诊断、缺陷修复、必要回归、专业质量判断和代码交付结果。
 - Engineer：理解已批准工程契约、实现、集成、验证、更新已验证 Tasks 和代码交付结果。
-- pr-submission：当前场景所需 PR 输入、Candidate 核验、提交前置操作、CLI 使用及 PR 结果处理。
+- pull-request：当前场景所需 PR 输入、Candidate 核验、提交前置操作、CLI 使用及 PR 结果处理。
 - Workspace Skill：按需准备授权工作区；保持独立，使用实施时已生效的 workspace-preparation / native-workspace 契约，不复制 Git 工作区准备算法。
 - Rondo CLI：身份、授权、Candidate、确定性校验、交付事实登记、PR 创建或复用和现有状态更新。
 - Multica Issue / Git / PR / OpenSpec：分别保留已有交付事实、代码事实、审核载体、Requirement 工程契约。
@@ -61,13 +61,22 @@ PR 创建或复用、关联 TFS Work Item、登记 current_pr、全部登记成�
 
 ```text
 skills/
-  pr-submission/
+  pull-request/
     SKILL.md
     config/
       repo-registry.json
 ```
 
 复用现有 Registry 配置供给，是否仍需该配置以实施时实际命令为准。不新增 Schema、Template、Script、Reference 或独立状态。
+
+建议 Skill 定义：
+
+```yaml
+---
+name: pull-request
+description: 为已完成实现和验证的代码变更准备并创建 PR，适用于 Bug 和 Requirement。
+---
+```
 
 建议 SKILL.md 结构：
 
@@ -82,7 +91,7 @@ skills/
 
 ### 5.1 Bug PR Preparation
 
-保留已授权 TFS Bug、真实根仓、Repository Scope、Candidate Commit（含 Refs: #<tfs.id>）及 PR 标题等前提。现有受控 Git Push 用于提交 Candidate；Fetch 仅在提交前核对远端事实确有需要时使用，不强制执行或接管工作区准备。研发过程中需要 Fetch 时仍可使用同一既有命令，不依赖 PR Submission 已开始。
+保留已授权 TFS Bug、真实根仓、Repository Scope、Candidate Commit（含 Refs: #<tfs.id>）及 PR 标题等前提。现有受控 Git Push 用于提交 Candidate；Fetch 仅在提交前核对远端事实确有需要时使用，不强制执行或接管工作区准备。研发过程中需要 Fetch 时仍可使用同一既有命令，不依赖 PR 准备已开始。
 
 ```bash
 rondo bug git --operation fetch --config "<config>" --issue <KEY> --repo <repo_key> --root-repo "<root>"
@@ -194,7 +203,7 @@ rondo pr materialize --mode requirement --issue <KEY> --config "<config>" --chan
 ## 7. 实施范围与顺序
 
 1. 重新读取实施基线，尤其是并行 native-workspace 改造后的实际命令和工作区契约；避免将旧路径重新引入。
-2. 创建 pr-submission Skill，合并必要说明，保留两场景功能和现有数据格式；退役 bug-delivery、change-development 及其独立 Evidence Reference。
+2. 创建 pull-request Skill，合并必要说明，保留两场景功能和现有数据格式；退役 bug-delivery、change-development 及其独立 Evidence Reference。
 3. 更新 workspace-config/provisioning.json 中 managed_skills 和 Bug Fix Agent / Engineer 绑定；保留其他 Skill。按第 4 节核查 Engineer Instructions，必要时最小补充原 Skill 的获批 Change 读取和 Tasks 更新职责，保留命令可发现性；Bug Fix Agent 的专业职责不变。
 4. 核查并更新 Registry 渲染/配置投影、Workspace Sync / Provision、Agent README、当前有效设计文档、测试与其他实际名称引用。仅更新必要引用，不重写 archive、历史 replay 和 validation evidence。
 5. 核实平台旧 Skill 解绑、删除与新 Skill 注册行为；优先复用现有机制，不默认删除 Git 文件即可退役平台 Skill。实施及平台发布按实际授权处理。
