@@ -11,7 +11,7 @@ description: 需求变更获批后，在当前 Issue 登记获批版本并发布
 
 确认 `analysis.gate.result=PASS`。根据当前 Issue 的人工批准评论，核对获批 Change 和版本分别与 `analysis.change_ref`、`analysis.source` 一致，并确认批准人对独立验收的决定。
 
-需要核对工程内容时，使用 `rondo analysis read --config "<配置绝对路径>" --issue <issue> --file proposal.md` 读取获批版本的 Proposal，其他工件按需读取。批准意见含糊、版本不符或所需工件读取失败时，停止并说明具体原因。
+需要核对工程内容时，使用 `rondo analysis read --issue <issue> --file proposal.md` 读取获批版本的 Proposal，其他工件按需读取。批准意见含糊、版本不符或所需工件读取失败时，停止并说明具体原因。
 
 ## 登记批准记录
 

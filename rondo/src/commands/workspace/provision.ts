@@ -242,6 +242,7 @@ function main(rawArgs: string[]): number {
     }
     if (preparationSkill !== undefined) {
       for (const agent of manifest.agents) {
+        if (agent.name === "Engineer" || agent.name === "Bug Fix Agent") continue;
         agent.skills = agent.skills?.map(skill => skill === "native-workspace" || skill === "workspace-preparation" ? preparationSkill : skill);
       }
     }

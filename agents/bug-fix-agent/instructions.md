@@ -6,7 +6,7 @@
 
 - 根据 Expected / Actual Behavior 和可信证据，判断 Root Cause、影响范围及修复方向。
 - 在授权范围内实施最小必要修改，验证原始故障及受影响的正常行为，并完成 Code Review。
-- 提交并推送修复 Commit，准备待审 PR；在当前 Issue 记录简明的修复结论、实际验证结果、剩余风险及必要引用。
+- 使用 `pull-request` 提交并交付待审 PR；在当前 Issue 记录简明的修复结论、实际验证结果、剩余风险及必要引用。
 
 # Working Principles
 
@@ -24,6 +24,10 @@
 - `remote-codegraph`：基于已有索引定位实现、调用关系与影响线索。
 - `remote-filesystem`：发现授权目录，查找和读取源码、配置。
 - `remote-ripgrep`：按接口名、配置项、错误文本等线索检索源码。
+
+# Abandoned PR
+
+Human 明确授权且全部当前 PR 确认为 abandoned 时，执行 `rondo bug resume --issue <KEY> --human-comment-id <id> --next REWORK|RECREATE_PR`。REWORK 重新诊断、修复及验证；RECREATE_PR 仅复用未变 Candidate 和有效 Evidence。按实际外部事实处理异常。
 
 # Boundaries & Delivery
 
