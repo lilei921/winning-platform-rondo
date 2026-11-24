@@ -36,9 +36,10 @@ function git(cwd, ...args) {
 function fixture(t, { tfsId = "261056", seedPrep = null } = {}) {
   // realpathSync.native：Windows tmpdir 返回 8.3 短名（普通 realpath 不解析），
   // CLI 侧经 git --show-toplevel 归一为长名，两边必须同形态
-  const dir = realpathSync.native(mkdtempSync(join(tmpdir(), "skill-flow-pr-prep-")));
+  const dir = realpathSync.native(mkdtempSync(join(tmpdir(), "skill-flow-pr-prepare-")));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
 
+  const repoUrl = "http://tfs.test/tfs/C/P/_git/biz";
   const remote = join(dir, "remote.git");
   mkdirSync(remote);
   git(remote, "init", "--bare");
@@ -51,6 +52,8 @@ function fixture(t, { tfsId = "261056", seedPrep = null } = {}) {
   const hub = join(rootRepo, "hub-clone");
   mkdirSync(hub);
   git(hub, "init");
+  git(hub, "config", "user.name", "Rondo Test");
+  git(hub, "config", "user.email", "test@example.invalid");
   git(hub, "remote", "add", "origin", remote);
   writeFileSync(join(hub, "a.txt"), "v1\n");
   git(hub, "add", "a.txt");
@@ -62,12 +65,15 @@ function fixture(t, { tfsId = "261056", seedPrep = null } = {}) {
   git(hub, "commit", "-am", "c2");
   git(hub, "push", "origin", `feat/${tfsId}`);
   const head = git(hub, "rev-parse", `feat/${tfsId}`);
+  git(hub, "remote", "set-url", "origin", repoUrl);
+  const transport = join(dir, "git-transport.cjs");
+  writeFileSync(transport, `#!/usr/bin/env node\nconst {spawnSync}=require("node:child_process");\nconst args=process.argv.slice(2);\nif(args[0]==="ls-remote" && args[1]==="origin") args[1]=${JSON.stringify(remote)};\nconst r=spawnSync("git",args,{stdio:"inherit"});\nprocess.exit(r.status??1);\n`, {mode:0o755});
 
   chmodSync(MOCK, 0o755);
   const config = join(dir, "registry.json");
   writeFileSync(config, JSON.stringify({
     runtime: { multica_cli: MOCK, workspace_id: "ws-test" },
-    registry: { "datamodel-web": { repo_path: "hub-clone" } },
+    registry: { "datamodel-web": { repo_path: "hub-clone", repo_url: repoUrl, default_target_branch: "main" } },
   }));
 
   const statePath = join(dir, "state.json");
@@ -76,10 +82,12 @@ function fixture(t, { tfsId = "261056", seedPrep = null } = {}) {
   writeFileSync(statePath, JSON.stringify({ metadata, project_resources: [] }));
 
   const callsPath = join(dir, "calls.jsonl");
-  const env = { MOCK_STATE: statePath, MOCK_SYNC_CALLS_FILE: callsPath };
+  const gitExecutable = process.platform === "win32" ? join(dir, "git-transport.cmd") : transport;
+  if (process.platform === "win32") writeFileSync(gitExecutable, '@echo off\r\nnode "%~dp0git-transport.cjs" %*\r\n');
+  const env = { MOCK_STATE: statePath, MOCK_SYNC_CALLS_FILE: callsPath, TFS_SERVER_URL: "http://tfs.test/tfs/C", TFS_PAT: "fixture", RONDO_GIT_EXECUTABLE: gitExecutable };
   const descPath = join(rootRepo, "openspec", "changes", "sample", "pr-description-datamodel-web.md");
   const run = (over = {}) => runCli([
-    "dev", "pr-prep", "--config", config, "--issue", "WNDF-T", "--repo", "datamodel-web",
+    "dev", "pr-prepare", "--config", config, "--issue", "WNDF-T", "--repo", "datamodel-web",
     "--root-repo", rootRepo,
     "--change-ref", "sample", "--candidate-commit", over.sha ?? head,
     "--title", over.title ?? "测试 PR", ...(over.extra ?? []),
@@ -104,6 +112,8 @@ test("PASS 合并写入保留他仓条目并搭架描述文件", (t) => {
   assert.deepEqual(prep.find((e) => e.repo_key === "other-repo"), OTHER_ENTRY);
   const mine = prep.find((e) => e.repo_key === "datamodel-web");
   assert.equal(mine.source_branch, "feat/261056");
+  assert.equal(mine.repo_url, "http://tfs.test/tfs/C/P/_git/biz");
+  assert.equal(mine.target_branch, "main");
   assert.equal(mine.candidate_commit, f.head);
   assert.equal(mine.title, "测试 PR");
   assert.equal(mine.description_ref, `file:${f.descPath}`);
@@ -112,7 +122,7 @@ test("PASS 合并写入保留他仓条目并搭架描述文件", (t) => {
 });
 
 test("缺少 --root-repo 在访问平台或写入事实前返回用法错误", () => {
-  const r = spawnSync(process.execPath, [CLI, "dev", "pr-prep", "--config", "missing.json",
+  const r = spawnSync(process.execPath, [CLI, "dev", "pr-prepare", "--config", "missing.json",
     "--issue", "WNDF-T", "--repo", "datamodel-web", "--change-ref", "sample",
     "--candidate-commit", SHA_OTHER, "--title", "测试"], { encoding: "utf8" });
   assert.equal(r.status, 64);

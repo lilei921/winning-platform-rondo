@@ -1,6 +1,9 @@
 /** Explicit new-flow identity from the existing PR branch contract; no dev.dispatch or extra mode metadata. */
 import { FailError, UnknownError } from "../../cli/errors.js";
-import { checkedTaskProgress, validateChangeDelivery } from "../dev/change-completion.js";
+import { checkedTaskProgress } from "../dev/change-completion.js";
+import { readAnalysisSource } from "../analysis/source.js";
+import { assertProjectedVerifyDecision } from "./verify-decision.js";
+import { runCommand } from "../../clients/spawn.js";
 import { parseRepositoryScope } from "../analysis/repository-scope.js";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -22,18 +25,27 @@ export function isRequirementChangeDelivery(md: Record<string, string>): boolean
   return match.every(Boolean);
 }
 
-/** Pure, archive-safe local verification of the new Change-level evidence. */
-export function assertRequirementEvidence(
-  registry: Record<string, {repo_path?: string; repo_url?: string; default_target_branch?: string}>,
-  md: Record<string, string>, changeDir: string, changeRef: string,
-): void {
-  checkedTaskProgress(readFileSync(join(changeDir, "tasks.md"), "utf8"));
-  let prep: unknown;
-  try { prep = JSON.parse(md.pr_prep ?? "null"); }
-  catch { throw new UnknownError("Requirement pr_prep 非法"); }
-  // Native delivery facts are pinned per Repository + Candidate in pr_prep.
-  // The approved repository scope is still checked against .openspec.yaml.
-  const scope = parseRepositoryScope(readFileSync(join(changeDir, ".openspec.yaml"), "utf8"));
-  if (md["analysis.change_ref"] !== changeRef) throw new FailError("Requirement Change 身份不一致");
-  validateChangeDelivery(prep as any[], scope, Number(md["tfs.id"]), registry);
+/** Scope is authoritative at the approved Commit, not the latest working or archived file. */
+export function approvedRequirementScope(md: Record<string, string>, root: string): string[] {
+  const source = readAnalysisSource(md);
+  const shown = runCommand(["git", "show", source.commit + ":openspec/changes/" + source.change_ref + "/.openspec.yaml"], root);
+  if (shown.status !== 0 || !shown.stdout.trim()) throw new UnknownError("批准版 Repository Scope 不存在或不可读");
+  return parseRepositoryScope(shown.stdout);
+}
+
+/** First Prepare consumes approval and verification, not Engineering quality evidence. */
+export function assertRequirementPrepareGate(md: Record<string, string>, issueStatus: string | undefined): void {
+  if (md["analysis.gate.result"] !== "PASS") throw new FailError("analysis.gate.result != PASS");
+  if (assertProjectedVerifyDecision(md)) {
+    throw new UnknownError("verify_agent.required=true，但尚无可确认的 Independent Verification PASS；禁止 Finalize");
+  }
+  if (issueStatus === "blocked") throw new FailError("Issue blocked，禁止 Requirement Closeout");
+}
+
+/** Check progress on the aligned Change before archive or recovery commit. */
+export function assertCompletedRequirementTasks(changeDir: string): void {
+  let tasks: string;
+  try { tasks = readFileSync(join(changeDir, "tasks.md"), "utf8"); }
+  catch { throw new UnknownError("tasks.md 不存在或不可读"); }
+  checkedTaskProgress(tasks);
 }

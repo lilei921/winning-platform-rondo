@@ -17,7 +17,7 @@ function runCli(args, env = {}) {
 const TREE = {
   change: ["resolve-identity", "update-progress"],
   analysis: ["stage", "validate", "complete", "read"],
-  dev: ["check-dispatch", "materialize", "pr-prep", "check-completion", "contract-hash"],
+  dev: ["check-dispatch", "materialize", "pr-prepare", "check-completion", "contract-hash"],
   tfs: ["writeback", "materialize-tasks", "resolve-tasks", "reconcile-workitem"],
   pr: ["materialize", "worktree", "reconcile-status", "create", "get", "list"],
   delivery: ["route-decision", "finalize"],
@@ -86,4 +86,16 @@ test("delivery root-prepare 不要求 --config，从当前 Runtime 解析环境"
   const body = JSON.parse(r.stdout);
   assert.equal(body.result, "UNKNOWN");
   assert.match(body.reason, /MULTICA_WORKSPACE_ID.*MULTICA_SERVER_URL/);
+});
+
+
+test("PR Preparation 命名统一，Closeout 拒绝旧配置参数", () => {
+  for (const group of ["dev", "bug"]) {
+    const help = runCli([group]);
+    assert.match(help.stderr, /\bpr-prepare\b/);
+    assert.doesNotMatch(help.stderr, /(?:^|\s)(?:pr-prep|prepare-pr)(?=\s|$)/m);
+  }
+  for (const args of [["dev", "pr-prep"], ["bug", "prepare-pr"], ["delivery", "finalize", "--phase", "prepare", "--issue", "X", "--config", "unused"], ["tfs", "writeback", "--issue", "X", "--config", "unused"]]) {
+    assert.notEqual(runCli(args).status, 0, args.join(" "));
+  }
 });

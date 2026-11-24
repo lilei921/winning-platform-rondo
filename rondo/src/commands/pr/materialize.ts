@@ -34,7 +34,9 @@ import { removePublishedRequirementWorktree } from "../dev/requirement-worktree.
 import { isRequirementChangeDelivery } from "../delivery/requirement-mode.js";
 import { requirementRoot } from "../runtime/root-git.js";
 import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
-import { normalizeTfsPrWebUrl } from "../../tfs/api/pr.js";
+import { normalizeTfsPrWebUrl, parseTfsPrWebUrl } from "../../tfs/api/pr.js";
+import { assertTfsRepository } from "../../clients/authenticated-git.js";
+import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 
 class FailItem extends Error {      // 单仓明确失败：记 failures，不中断其余仓
   readonly detail: Record<string, unknown>;
@@ -58,8 +60,9 @@ interface RegistryConfig extends BaseRegistryConfig {
 
 interface PrPrepEntry {
   repo_key: string;
+  repo_url: string;
   source_branch: string;
-  target_branch?: string;
+  target_branch: string;
   candidate_commit: string;
   title: string;
   description_ref?: string;
@@ -74,6 +77,22 @@ interface CurrentPrEntry {
   target_branch: string;
 }
 
+/** Confirm PR registration independently of optional worktree cleanup. */
+export function registerCurrentPr(
+  multica: Pick<MulticaClient, "setMetadata" | "getIssue" | "setStatus">, issueId: string, currentPr: string,
+): ReturnType<MulticaClient["getIssue"]> {
+  multica.setMetadata(issueId, "current_pr", currentPr);
+  if (multica.getIssue(issueId).metadata?.current_pr !== currentPr) {
+    throw new UnknownError("current_pr 登记未确认，禁止进入 in_review");
+  }
+  multica.setStatus(issueId, "in_review");
+  const confirmed = multica.getIssue(issueId);
+  if (confirmed.status !== "in_review" || confirmed.metadata?.current_pr !== currentPr) {
+    throw new UnknownError("PR 登记或 in_review 状态未确认");
+  }
+  return confirmed;
+}
+
 function log(msg: string): void {
   logLine(msg);
 }
@@ -85,6 +104,7 @@ interface BugValidation {
 }
 interface BugDeliveryEntry {
   repo_key: string;
+  target_branch: string;
   candidate_commit: string;
   tfs_id: number;
   expected_behavior: string;
@@ -189,13 +209,36 @@ export async function materializeOne(tfs: TfsClient, cfg: RegistryConfig, tfsId:
   if (!repo.tfs_repo || !repo.tfs_project) {
     throw new FailItem({ repo_key: entry.repo_key, reason: "missing_tfs_config", detail: "tfs_repo/tfs_project 未配置" });
   }
-  for (const f of ["source_branch", "candidate_commit", "title"] as const) {
+  for (const f of ["repo_url", "source_branch", "target_branch", "candidate_commit", "title"] as const) {
     if (!entry[f]) throw new FailItem({ repo_key: entry.repo_key, reason: `pr_prep 缺少字段 ${f}` });
   }
-  const target = entry.target_branch || repo.default_target_branch;
-  if (!target) throw new FailItem({ repo_key: entry.repo_key, reason: "no_target_branch" });
+  const collection = loadTfsConfig().serverUrl;
+  const registered = assertTfsRepository(repo.repo_url ?? "", collection);
+  const prepared = assertTfsRepository(entry.repo_url, collection);
+  const parts = registered.pathname.split("/").map(decodeURIComponent);
+  if (canonicalRepositoryIdentity(registered.href) !== canonicalRepositoryIdentity(prepared.href) ||
+      parts.at(-3)!.toLowerCase() !== repo.tfs_project.toLowerCase() ||
+      parts.at(-1)!.toLowerCase() !== repo.tfs_repo.toLowerCase()) {
+    throw new FailItem({ repo_key: entry.repo_key, reason: "pr_prep_repository_identity_mismatch" });
+  }
+  const target = entry.target_branch;
+  // Requirement uses the registered target; Direct Bug retains its explicit target override.
+  if ((remoteDescription !== undefined && target !== repo.default_target_branch) ||
+      (bugDelivery && target !== bugDelivery.target_branch)) {
+    throw new FailItem({ repo_key: entry.repo_key, reason: "pr_prep_target_branch_mismatch" });
+  }
   const prWebUrl = (candidate: string | undefined, id: number): string =>
-    normalizeTfsPrWebUrl(candidate, loadTfsConfig().serverUrl, repo.tfs_project as string, repo.tfs_repo as string, id);
+    normalizeTfsPrWebUrl(candidate, collection, repo.tfs_project as string, repo.tfs_repo as string, id);
+
+  if (prior) {
+    const location = parseTfsPrWebUrl(prior.pr_url, collection);
+    if (!location || location.prId !== prior.pr_id || prior.repo_key !== entry.repo_key ||
+        location.project.toLowerCase() !== repo.tfs_project.toLowerCase() ||
+        location.repository.toLowerCase() !== repo.tfs_repo.toLowerCase() ||
+        prior.source_branch !== entry.source_branch || prior.target_branch !== target) {
+      throw new UnknownError(`${entry.repo_key}: current_pr 仓库、PR 或分支身份不匹配`);
+    }
+  }
 
   // The actual remote branch always pins the Candidate, including when an existing PR is reused.
   const reusePr = async (id: number, priorUrl = ""): Promise<CurrentPrEntry & { reused: boolean }> => {
@@ -376,18 +419,14 @@ async function main(rawArgs: string[]): Promise<number> {
 
     // 全部登记完成才回写 + 转状态（02 §10.2：所有 required PR 注册完成后才进 in_review）
     const currentPr = JSON.stringify(prs.map(({ reused: _, ...rest }) => rest));
-    multica.setMetadata(issue.id, "current_pr", currentPr);
-    // --no-start：in_review 是流转事实，不触发 Run（02：状态与 Run 生命周期分离）
-    multica.setStatus(issue.id, "in_review");
+    const confirmed = registerCurrentPr(multica, issue.id, currentPr);
 
     const rootArg = args["root-repo"] || process.env.RONDO_WORKSPACE_PATH;
     if (args.mode === "requirement" && rootArg) {
       // 清理只使用本次已确认交付的候选，失败时保留 PR 的成功结果。
       try {
-        const confirmed = multica.getIssue(issue.id);
         const facts = confirmed.metadata ?? {};
-        if (confirmed.status !== "in_review" || facts.current_pr !== currentPr ||
-            facts.pr_prep !== md.pr_prep || facts["tfs.id"] !== tfsId) {
+        if (facts.pr_prep !== md.pr_prep || facts["tfs.id"] !== tfsId) {
           throw new UnknownError("本次 PR 登记、候选或 Issue 状态未确认");
         }
         const root = requirementRoot(rootArg);

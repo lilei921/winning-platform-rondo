@@ -1,88 +1,15 @@
 /** Delivery-owned TFS Tasks are independent of OpenSpec Tasks. */
-import { readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
+import { unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { FailError, UnknownError } from "../../cli/errors.js";
-import { resolveStableEvidenceCommit } from "../delivery/evidence-repository.js";
-import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
 import type { Clients } from "./writeback.js";
 
 export interface TfsDeliveryTask { id: number; title?: string | null; parentId?: number | null; project?: string | null; state?: string | null }
-interface DeliveryRegistry { [repo: string]: { repo_path: string; repo_url?: string; tfs_project?: string; tfs_repo?: string } }
-function titlePrefix(issueKey: string): string { return "[" + issueKey + " Delivery"; }
 /** Externally split task titles: [ISSUE Delivery/1] ... [ISSUE Delivery/5]. */
 export function isDeliveryTaskTitle(issueKey: string, title: string): boolean {
   const escaped = issueKey.replace(/[\^$.*+?()[\]{}|]/g, "\\$&");
   return new RegExp("^\\[" + escaped + " Delivery(?:\\/[1-5])?\\](?:\\s|$)").test(title);
-}
-
-export async function findDeliveryTasks(
-  clients: Pick<Clients,"tfsQuery">, issueKey: string, tfsId: number,
-): Promise<TfsDeliveryTask[]> {
-  const key = titlePrefix(issueKey);
-  const candidates = await clients.tfsQuery("SELECT [System.Id] FROM WorkItems WHERE [System.Title] CONTAINS '" + key.replace(/'/g, "''") + "'",
-    "查找当前 Change 的 Delivery 子任务");
-  const tasks = candidates.filter(t => t.parentId === tfsId && typeof t.title === "string" && isDeliveryTaskTitle(issueKey,t.title));
-  if (tasks.length > 5) throw new FailError("Delivery TFS 子任务超过 5 个；请先由 Delivery 调整");
-  if (new Set(tasks.map(t=>t.id)).size !== tasks.length) throw new UnknownError("TFS Delivery 子任务存在重复 ID");
-  if (tasks.some(t=>!Number.isSafeInteger(t.id)||t.id<=0)) throw new UnknownError("TFS Delivery 子任务包含非法 ID");
-  // A default singleton and an explicitly split group are mutually exclusive.
-  const labels = tasks.map(t => t.title!.slice(titlePrefix(issueKey).length).match(/^(?:\/([1-5]))?\]/)?.[1] ?? "default");
-  if ((tasks.length > 1 && labels.includes("default")) || new Set(labels).size !== labels.length) {
-    throw new FailError("Delivery TFS 子任务存在默认项与拆分项混用或重复编号；请由 Delivery 核对");
-  }
-  return tasks;
-}
-
-export async function ensureDeliveryTasks(
-  clients: Pick<Clients,"tfsQuery"|"tfsCreateTask">, issueKey: string, changeRef: string, tfsId: number,
-): Promise<{ids:number[];created:boolean}> {
-  const parents = await clients.tfsQuery("SELECT [System.Id] FROM WorkItems WHERE [System.Id] = " + tfsId,"核对 TFS 父需求");
-  if(parents.length!==1||parents[0].id!==tfsId)throw new FailError("TFS 父需求不可读取");
-  const found=await findDeliveryTasks(clients,issueKey,tfsId);
-  if(found.length)return {ids:found.map(t=>t.id),created:false};
-  const title=titlePrefix(issueKey)+"] 研发交付";
-  const descriptionFile=join(tmpdir(),"rondo-delivery-"+process.pid+".md");
-  writeFileSync(descriptionFile,"Multica Issue: "+issueKey+"\nOpenSpec Change: "+changeRef+
-    "\nTFS 子任务拆合由 Delivery 独立管理，与 OpenSpec Tasks 无需一一对应。\n","utf8");
-  try{
-    const made=await clients.tfsCreateTask({title,parent:tfsId,project:parents[0].project,descriptionFile});
-    const actual=await findDeliveryTasks(clients,issueKey,tfsId);
-    if(!actual.some(t=>t.id===made.id))throw new UnknownError("TFS 创建响应后未确认父子链接，保留现场");
-    return {ids:actual.map(t=>t.id),created:true};
-  }finally{try{unlinkSync(descriptionFile);}catch{/* cleanup best effort */}}
-}
-
-/** Link stable business commits to the parent, not to invented OpenSpec task mappings. */
-export async function linkRequirementCommits(
-  clients: Pick<Clients,"tfsLinkCommits">, registry: DeliveryRegistry, changeDir: string, parentId: number,
-): Promise<Record<string, unknown>> {
-  const failed: Array<Record<string,unknown>>=[];
-  const grouped=new Map<string,{repo:string;project:string;shas:Set<string>}>();
-  for(const file of readdirSync(changeDir)){
-    if(!/^evidence.*\.json$/i.test(file))continue;
-    let content:unknown;
-    try{content=JSON.parse(readFileSync(join(changeDir,file),"utf8"));}
-    catch{failed.push({file,error:"Evidence JSON 无法解析"});continue;}
-    const commits=(content as {commits?:unknown})?.commits;
-    if(!Array.isArray(commits))continue;
-    for(const item of commits){
-      try{
-        const c=resolveStableEvidenceCommit(registry,item,loadTfsConfig().serverUrl);
-        const bucket=grouped.get(c.key)??{repo:c.repo,project:c.project,shas:new Set<string>()};
-        bucket.shas.add(c.sha);grouped.set(c.key,bucket);
-      }catch(e){failed.push({file,error:e instanceof Error?e.message:String(e)});}
-    }
-  }
-  const linked:Record<string,number>={};
-  for(const [key,bucket] of grouped){
-    try{
-      const result=await clients.tfsLinkCommits(parentId,bucket.repo,[...bucket.shas],bucket.project);
-      linked[key]=(result.linked??[]).length;
-      for(const f of result.failed??[])failed.push({repo_key:key,...f});
-    }catch(e){failed.push({repo_key:key,error:e instanceof Error?e.message:String(e)});}
-  }
-  return {linked,commit_link_failed:failed};
 }
 
 /** New Requirement: Agent owns grouping/estimates; Rondo owns all deterministic guards. */

@@ -17,7 +17,7 @@ function git(cwd, ...args) {
   return r.stdout.trim();
 }
 
-test('Bug prepare-pr CLI: stdin/file, Git identity, quality Gate and Metadata readback', t => {
+test('Bug pr-prepare CLI: stdin/file, Git identity, quality Gate and Metadata readback', t => {
   const dir = realpathSync(mkdtempSync(join(tmpdir(), 'rondo-bug-cli-')));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const root = join(dir, 'winning-platform-monorepo'), hub = join(root, 'biz'), remote = join(dir, 'remote.git');
@@ -69,7 +69,7 @@ process.exit(r.status ?? 1);
     local_validation: { result: 'PASS', summary: '定向测试通过', evidence_refs: ['run:fixture/test'] },
     code_review: { result: 'PASS', summary: '修改范围已审查', evidence_refs: ['run:fixture/review'], findings: [] }, blockers: [],
   };
-  const args = ['bug', 'prepare-pr', '--config', config, '--issue', 'I-1', '--repo', 'biz', '--candidate-commit', sha,
+  const args = ['bug', 'pr-prepare', '--config', config, '--issue', 'I-1', '--repo', 'biz', '--candidate-commit', sha,
     '--title', '修复空数据', '--root-repo', root];
   const run = (input, extraEnv = {}, source = '-') => spawnSync(process.execPath, [cli, ...args, '--evidence', source], {
     input, encoding: 'utf8', env: { ...env, ...extraEnv }, timeout: 30_000,
@@ -110,6 +110,8 @@ process.exit(r.status ?? 1);
     fix_summary: evidence.fix_summary, regression: evidence.regression, local_validation: evidence.local_validation, code_review: evidence.code_review,
   }]);
   assert.equal(JSON.parse(md.pr_prep)[0].candidate_commit, sha);
+  assert.equal(JSON.parse(md.pr_prep)[0].repo_url, repoUrl);
+  assert.equal(JSON.parse(md.pr_prep)[0].target_branch, 'main');
   assert.equal(md['analysis.change_kind'], 'corrective');
   const calls = readFileSync(callsPath, 'utf8').trim().split('\n').map(line => JSON.parse(line));
   assert.deepEqual(calls.at(-1).slice(0, 3), ['issue', 'get', 'I-1']);

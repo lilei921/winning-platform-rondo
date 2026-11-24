@@ -1,5 +1,5 @@
 /**
- * bug prepare-pr — No-OpenSpec Bug delivery gate and PR preparation.
+ * bug pr-prepare — No-OpenSpec Bug delivery gate and PR preparation.
  *
  * Verify a TFS Bug's current candidate commit, diagnosis, regression, local validation
  * and code review before recording bug.delivery and the existing pr_prep contract.
@@ -14,7 +14,7 @@ import { loadConfig, type BaseRegistryConfig } from "../../clients/config.js";
 import { git, gitOk } from "../../clients/git.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { validateNativeCheckout } from "../../clients/native-checkout.js";
-import { runAuthenticatedGit } from "../../clients/authenticated-git.js";
+import { assertTfsRepository, runAuthenticatedGit } from "../../clients/authenticated-git.js";
 import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
 import { assertBugExecution, assertBugStart, assertBugSource } from "./authorization.js";
 import { validatePrepareRepo, validateBusinessPath, validateBusinessCheckout, type PrepareRepo } from "../dev/prepare-workspace.js";
@@ -52,8 +52,9 @@ interface BugEvidence {
 }
 interface PreparedPr {
   repo_key: string;
+  repo_url: string;
   source_branch: string;
-  target_branch?: string;
+  target_branch: string;
   candidate_commit: string;
   title: string;
   description_ref?: string;
@@ -83,7 +84,7 @@ function refs(raw: unknown): boolean {
   return Array.isArray(raw) && raw.length > 0 && raw.every(filled);
 }
 
-/** Pure evidence validation; external I/O and Git identity are checked by prepare-pr. */
+/** Pure evidence validation; external I/O and Git identity are checked by pr-prepare. */
 export function validateBugEvidence(
   raw: unknown, identity: { issue: string; tfsId: number; repoKey: string; sha: string },
 ): string[] {
@@ -151,7 +152,7 @@ function getArg(argv: string[], name: string): string {
   const i = argv.indexOf(name);
   return i >= 0 && i + 1 < argv.length && !argv[i + 1].startsWith("--") ? argv[i + 1] : "";
 }
-const USAGE = "用法: rondo bug prepare-pr --config <repo-registry.json> --issue <KEY> --repo <repo_key> " +
+const USAGE = "用法: rondo bug pr-prepare --config <repo-registry.json> --issue <KEY> --repo <repo_key> " +
   "--candidate-commit <40-SHA> --evidence <json路径|-> --title <PR标题> --root-repo <path> " +
   "[--description <md路径>] [--required-repos <repo1,repo2>] [--source-branch <branch>] [--target-branch <branch>]\n";
 
@@ -205,6 +206,7 @@ async function main(argv: string[]): Promise<number> {
     }
     const paths = validateNativeCheckout(rootRepo);
     validatePrepareRepo(repo, loadTfsConfig().serverUrl);
+    const repoUrl = assertTfsRepository(repo.repo_url, loadTfsConfig().serverUrl).href;
     const hub = validateBusinessPath(paths.rootRepo, repo);
     validateBusinessCheckout(hub, repo, sourceBranch);
     const remote = runAuthenticatedGit(repo.repo_url, ["ls-remote", repo.repo_url, "refs/heads/" + sourceBranch], hub);
@@ -234,7 +236,7 @@ async function main(argv: string[]): Promise<number> {
     const preparedDelivery = [...oldDelivery.filter(e => e.repo_key !== repoKey), entry];
     const oldPrep = parseList<PreparedPr>(md.pr_prep, "pr_prep");
     const prEntry: PreparedPr = {
-      repo_key: repoKey, source_branch: sourceBranch, target_branch: targetBranch,
+      repo_key: repoKey, repo_url: repoUrl, source_branch: sourceBranch, target_branch: targetBranch,
       candidate_commit: sha, title, ...(description ? { description_ref: "file:" + description } : {}),
     };
     const preparedPr = [...oldPrep.filter(e => e.repo_key !== repoKey), prEntry];
@@ -273,8 +275,8 @@ async function main(argv: string[]): Promise<number> {
   }
 }
 
-export function registerBugPreparePr(group: Command): void {
-  group.command("prepare-pr")
+export function registerBugPrPrepare(group: Command): void {
+  group.command("pr-prepare")
     .description("Bug 修复完成检查与 PR Preparation（无 OpenSpec）")
     .helpOption(false).allowUnknownOption(true).allowExcessArguments(true)
     .action(async (...cbArgs: unknown[]) => {

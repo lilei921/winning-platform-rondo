@@ -32,9 +32,9 @@ import { registerDevCheckCompletion } from "./commands/dev/check-completion.js";
 import { registerDevCheckChange } from "./commands/dev/check-change.js";
 import { registerDevPublish } from "./commands/dev/publish.js";
 import { registerDevCheckDispatch } from "./commands/dev/check-dispatch.js";
-import { registerDevPrPrep } from "./commands/dev/pr-prep.js";
+import { registerDevPrPrepare } from "./commands/dev/pr-prepare.js";
 import { registerDevContractHash } from "./commands/dev/contract-hash.js";
-import { registerBugPreparePr } from "./commands/bug/prepare-pr.js";
+import { registerBugPrPrepare } from "./commands/bug/pr-prepare.js";
 import { registerBugGit } from "./commands/bug/git.js";
 import { registerRuntimeCheckCheckout } from "./commands/runtime/check-checkout.js";
 import { registerRuntimePrepareRoot } from "./commands/runtime/prepare-root.js";
@@ -96,11 +96,11 @@ registerDevCheckDispatch(dev);
 registerDevCheckCompletion(dev);
 registerDevCheckChange(dev);
 registerDevPublish(dev);
-registerDevPrPrep(dev);
+registerDevPrPrepare(dev);
 registerDevContractHash(dev);
 
 const bug = bareGroup(program.command("bug").description("无 OpenSpec 的 TFS Bug 修复交付入口"));
-registerBugPreparePr(bug);
+registerBugPrPrepare(bug);
 registerBugGit(bug);
 registerBugResume(bug);
 

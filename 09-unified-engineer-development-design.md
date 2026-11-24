@@ -206,7 +206,7 @@ Workspace 路径、分支准备与根仓 Git 发布以 08-B 的运行契约为�
 | `requirement-guard` | 已实现独立新路径，不复用旧 `dev.dispatch` | 新 Change 级模式仅只读核对当前 Multica Actor / Run、Human Approval、Change、Repository Scope；不物化新 `dev.dispatch` |
 | `dev prepare --mode requirement` | 已实现 Requirement Worktree，旧 Bug 模式保持 | 为 Requirement 准备或复用授权工作区，保留 Bug 原行为 |
 | `dev publish` | 已有受控 Git 发布与远端回读入口，单需求差异发布待修复 | 发布已验证的 `tasks.md`、Evidence 与 PR 描述，回读并记录本次远端发布 SHA，保留获批分析 SHA。 |
-| `dev pr-prep --mode requirement`、`dev check-change` | 已实现独立 Change 级核验 | Change 级检查真实 Candidate、Evidence、原生 Tasks 全量进度与 PR Preparation，不使用派发 Task 编号集合 |
+| `dev pr-prepare --mode requirement`、`dev check-change` | 已实现独立 Change 级核验 | Change 级检查真实 Candidate、Evidence、原生 Tasks 全量进度与 PR Preparation，不使用派发 Task 编号集合 |
 | `pr materialize --mode requirement` | 已实现新模式且旧路径独立 | 新模式在创建任何 PR 前整体校验 Completion、批准和实际有代码变更仓库的 Candidate / `pr_prep` 对账；支持远端 PR 描述，逐仓幂等恢复 |
 
 可复用现有确定性实现，但新旧执行路径必须显式区分，不能靠缺失 `task_refs` 自动推断新模式。此表用于实施对齐，不作为 `SKILL.md` 的历史说明或额外执行流程。
@@ -267,7 +267,7 @@ Engineer 对获批 `tasks.md` 的全部 Implementation Tasks 和 PR 前必要的
 | Analysis Workspace / 规范基线 | Analyst 与 Engineer 复用 `runtime prepare-root`。项目级 Schema / Specs 基线按 08-B 核对，根仓不按 Issue 建 Worktree。 |
 | Analysis / Change Git 发布 | Requirement 分析通过 `analysis complete --mode requirement` 发布当前 Change 差异。分析来源记录实际远端分支及该次发布 SHA，获批后供 Engineer 跨 Runtime 读取。 |
 | Analysis 专业执行资产 | 保留 Workitem Analyst，聚焦需求分析与可实施的 OpenSpec；定向优化 `requirement-analysis`、`spec-preparation` 和 `analysis-completion`，不参与 TFS 子任务拆分与数量控制 |
-| Requirement `dev prepare` / `dev pr-prep` | 按 08-B 使用 `feature/<tfs.id>` Worktree 及授权 Repository；旧 Bug Clone / 分支与原有 `feat/` 路线不变 |
+| Requirement `dev prepare` / `dev pr-prepare` | 按 08-B 使用 `feature/<tfs.id>` Worktree 及授权 Repository；旧 Bug Clone / 分支与原有 `feat/` 路线不变 |
 | Change 级 Completion / Progress / Evidence | 从当前获批 `tasks.md` 核验应由研发完成的任务、Candidate 和 Evidence；原生编号仅定位 checkbox，不要求新 Evidence 携带派发任务数组；发布后可跨 Runtime 回读 |
 | `rondo pr materialize` 的新入口 | 创建任何 PR 前校验 Change 级完成、Human Approval、当前 Engineer Run 与实际修改仓库的完整 Candidate / PR Preparation；保留幂等恢复及旧入口行为 |
 | PR 描述与跨 Runtime | 从已 Push 的 Change 读取 PR 描述，不能仅依赖上一个 Runtime 的本机 `file:` 路径；保持已有远端 Finalize 机制 |

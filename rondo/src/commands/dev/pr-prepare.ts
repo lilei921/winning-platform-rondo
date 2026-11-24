@@ -1,5 +1,5 @@
 /**
- * dev pr-prep —— PR Preparation Facts 一段写入（engineer-run-efficiency-optimization-plan P1-1）。
+ * dev pr-prepare —— PR Preparation Facts 一段写入（engineer-run-efficiency-optimization-plan P1-1）。
  *
  * 背景：pr_prep 此前由 Engineer 手工多步写入（探测 CLI 帮助 → 先写一次 → 补描述文件 →
  * 重写补齐 description_ref），WNDF-43 Run 实测该段 3.6m / 13 次工具轮。本命令把固定顺序的
@@ -11,7 +11,7 @@
  *
  * 事实契约唯一权威：pull-request/references/pr-facts-contract.md（本命令只是写入方）。
  *
- * 用法: rondo dev pr-prep --config <repo-registry.json> --issue <KEY> --repo <repo_key>
+ * 用法: rondo dev pr-prepare --config <repo-registry.json> --issue <KEY> --repo <repo_key>
  *        --root-repo <path> --change-ref <ref> --candidate-commit <sha> --title <PR 标题>
  *        [--target-branch <branch>] [--source-branch <branch>] [--description <path>]
  *
@@ -34,7 +34,8 @@ import { runCommand } from "../../clients/spawn.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 import { resolveRuntimePaths } from "../../clients/runtime-paths.js";
 import { requirementRoot } from "../runtime/root-git.js";
-import { runAuthenticatedGit } from "../../clients/authenticated-git.js";
+import { assertTfsRepository, runAuthenticatedGit } from "../../clients/authenticated-git.js";
+import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
 import { guardRepository } from "./requirement-guard.js";
 
 interface RepoEntry {
@@ -49,13 +50,14 @@ interface RegistryConfig extends BaseRegistryConfig {
 
 interface PrPrepEntry {
   repo_key: string;
+  repo_url: string;
   source_branch: string;
-  target_branch?: string;
+  target_branch: string;
   candidate_commit: string;
   title: string;
   description_ref?: string;
   description?: string;
-  local_validation?: { result: "PASS"; summary: string; command: string[]; exit_code: 0; candidate_commit: string; source: "rondo dev pr-prep" };
+  local_validation?: { result: "PASS"; summary: string; command: string[]; exit_code: 0; candidate_commit: string; source: "rondo dev pr-prepare" };
   code_review?: { result: "PASS"; candidate_commit: string; summary: string; findings: Array<{ resolved?: boolean; blocking?: boolean; risk_note?: string; risk_ref?: string }> };
   blockers?: string[];
 }
@@ -87,7 +89,7 @@ interface Args {
 }
 
 const USAGE =
-  "用法: rondo dev pr-prep --config <repo-registry.json> --issue <KEY> --repo <repo_key>\n" +
+  "用法: rondo dev pr-prepare --config <repo-registry.json> --issue <KEY> --repo <repo_key>\n" +
   "  --root-repo <path> --change-ref <ref> --candidate-commit <sha> --title <PR 标题>\n" +
   "  [--target-branch <branch>] [--source-branch <branch>] [--delivery-facts <temporary.json>] [--validation-cwd <path>] [--description <path>]\n";
 
@@ -156,7 +158,7 @@ function resolveLegacyDescription(args: Args, openspecRoot: string): { path: str
     if (statSync(p).size === 0) return { code: "description_file_empty", reason: `pr-description 文件为空: ${p}` };
     return { path: p, scaffolded: false };
   }
-  const template = `# ${args.title}\n\n> 本文件由 rondo dev pr-prep 生成草稿；语义内容由 Engineer 维护。\n\n## 变更摘要\n\n\n## 验证\n\n\n## 关联\n\n- Refs: #（补 TFS 工作项 id）\n`;
+  const template = `# ${args.title}\n\n> 本文件由 rondo dev pr-prepare 生成草稿；语义内容由 Engineer 维护。\n\n## 变更摘要\n\n\n## 验证\n\n\n## 关联\n\n- Refs: #（补 TFS 工作项 id）\n`;
   mkdirSync(dirname(p), { recursive: true });
   writeFileSync(p, template, "utf8");
   return { path: p, scaffolded: true };
@@ -269,8 +271,15 @@ async function main(rawArgs: string[]): Promise<number> {
       throw new UnknownError(`枢纽克隆不存在或不是 git 仓: ${hub}（先完成根仓检出/业务仓接驳）`);
     }
 
+    const repoUrl = assertTfsRepository(repo.repo_url ?? "", loadTfsConfig().serverUrl).href;
+    const targetBranch = args.targetBranch || repo.default_target_branch;
+    if (!targetBranch) throw new FailError("PR Preparation 缺少目标分支");
+    if (args.mode !== "requirement" && canonicalRepositoryIdentity(gitOk(hub, ["remote", "get-url", "origin"], "核对业务仓来源")) !== canonicalRepositoryIdentity(repoUrl)) {
+      throw new FailError("业务仓 origin 与 Registry 不一致");
+    }
+
     // 1. HEAD 核验（FAIL 即停，零写入）
-    const { found, head } = checkRemoteHead(hub, sourceBranch, args.mode === "requirement" ? repo.repo_url : undefined);
+    const { found, head } = checkRemoteHead(hub, sourceBranch, args.mode === "requirement" ? repoUrl : undefined);
     if (!found) {
       return fail(args.issue, "source_branch_not_found", [
         `远端分支 ${sourceBranch} 不存在（origin，经 ${hub} 查询）——Engineer 未完成 push 或分支名有误`,
@@ -293,7 +302,7 @@ async function main(rawArgs: string[]): Promise<number> {
       if (delivery.code_review?.candidate_commit !== args.candidateCommit) {
         throw new FailError("Code Review 审核的 Candidate 与实际待发布 Commit 不一致");
       }
-      verifyAndExecuteValidation(paths.rootRepo, args.validationCwd || hub, repo.repo_url!,
+      verifyAndExecuteValidation(paths.rootRepo, args.validationCwd || hub, repoUrl,
         args.candidateCommit, delivery.validation!.command!);
     } else {
       const desc = resolveLegacyDescription(args, paths.openspecRoot);
@@ -320,19 +329,20 @@ async function main(rawArgs: string[]): Promise<number> {
     const preserved = existing.filter((e) => e?.repo_key !== args.repo);
     const entry: PrPrepEntry = {
       repo_key: args.repo,
+      repo_url: repoUrl,
       source_branch: sourceBranch,
+      target_branch: targetBranch,
       candidate_commit: args.candidateCommit,
       title: args.title,
       ...(descriptionRef && { description_ref: descriptionRef }),
       ...(delivery && {
         description: delivery.description,
         local_validation: { result: "PASS", summary: delivery.validation!.summary!, command: delivery.validation!.command!,
-          exit_code: 0, candidate_commit: args.candidateCommit, source: "rondo dev pr-prep" as const },
+          exit_code: 0, candidate_commit: args.candidateCommit, source: "rondo dev pr-prepare" as const },
         code_review: { result: "PASS", candidate_commit: delivery.code_review!.candidate_commit!, summary: delivery.code_review!.summary!, findings: delivery.code_review!.findings! },
         blockers: [],
       }),
     };
-    if (args.targetBranch) entry.target_branch = args.targetBranch;
     const merged = [...preserved, entry];
     multica.setMetadata(issue.id, "pr_prep", JSON.stringify(merged));
     log(`pr_prep 已写入（共 ${merged.length} 条，本仓条目替换/新增，保留 ${preserved.length} 条他仓条目）`);
@@ -343,6 +353,7 @@ async function main(rawArgs: string[]): Promise<number> {
     const mine = readback.find((e) => e?.repo_key === args.repo);
     const preservedAfter = readback.filter((e) => e?.repo_key !== args.repo);
     const fieldMismatch = !mine ||
+      mine.repo_url !== entry.repo_url ||
       mine.source_branch !== entry.source_branch ||
       mine.candidate_commit !== entry.candidate_commit ||
       mine.title !== entry.title ||
@@ -388,9 +399,9 @@ async function main(rawArgs: string[]): Promise<number> {
 }
 
 /** commander 注册：group=dev；参数解析沿用同组命令实现以保证契约逐字节等价。 */
-export function registerDevPrPrep(group: Command): void {
+export function registerDevPrPrepare(group: Command): void {
   group
-    .command("pr-prep")
+    .command("pr-prepare")
     .description("PR Preparation Facts（HEAD + Candidate Validation + Code Review + 合并写及回读）")
     .helpOption(false)
     .allowUnknownOption(true)

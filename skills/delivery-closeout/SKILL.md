@@ -5,7 +5,7 @@ description: PR 完成后执行交付收口，包括 Prepare、TFS Writeback 和
 
 # Delivery Closeout
 
-消费 `pr-status-sync` 返回的 Issue `<KEY>`。配置 `<config-path>` 为当前 Workspace 挂载的 `delivery-closeout/config/repo-registry.json` 绝对路径。
+消费 `pr-status-sync` 返回的 Issue `<KEY>`。CLI 使用当前 Multica Runtime 与已登记交付事实，无需 Registry。
 
 Issue 已经 `done` 且仅需清理残留 pending 时，直接执行不带根仓的 `delivery finalize --phase complete`，按 `already=done` 结束；无需根仓。
 
@@ -22,10 +22,10 @@ rondo delivery root-prepare --issue <KEY>
 ## Prepare
 
 ```bash
-rondo delivery finalize --phase prepare --issue <KEY> --config "<config-path>" --root-repo "<root_repo>"
+rondo delivery finalize --phase prepare --issue <KEY> --root-repo "<root_repo>"
 ```
 
-Bug 去掉 `--root-repo`。若返回 `already=done`，结束该 Issue；`status=prepared` 才继续。所有 PR 必须由 TFS 确认 completed，Requirement 的 Archive/Push/远端回读属于 Prepare 的 Hard Gate；不要重做 Analysis / Engineer 质量 Gate。
+Bug 去掉 `--root-repo`。若返回 `already=done`，结束该 Issue；`status=prepared` 才继续。PR、归档及必要前置事实由 Rondo CLI 核验。
 
 已 Prepare 的 Requirement 使用同一命令恢复。Rondo 核对当前 PR 完成事件和 Change，回读远端归档成功后返回 `status=prepared`（`route_archive=skipped`），直接继续 TFS Writeback。只有 pending 缺少 Prepare 标记时才走完整归档流程。已确认的归档无法回读或事实冲突时，按异常流程处理。
 
@@ -34,7 +34,7 @@ Bug 去掉 `--root-repo`。若返回 `already=done`，结束该 Issue；`status=
 已确认有保存计划的 Requirement，直接执行本节的已有计划恢复命令。需要新计划或计划状态尚未确认时，先运行 Inspect。
 
 ```bash
-rondo tfs writeback --issue <KEY> --config "<config-path>" --root-repo "<root_repo>" --inspect
+rondo tfs writeback --issue <KEY> --root-repo "<root_repo>" --inspect
 ```
 
 Bug 不使用 `--inspect`，直接执行无规划参数的回写。Requirement Inspect 输出批准 Commit 版本的 `approved_tasks`、已完成 PR 的真实 Commit 列表和 `saved_plan`。若计划已保存，不重复规划；否则根据这些工程任务与实际改动，归并 1–5 个 TFS 子任务，每项估时 0.5–4 小时，引用准确的 `source_refs` 与独占业务 Commit。
@@ -42,13 +42,13 @@ Bug 不使用 `--inspect`，直接执行无规划参数的回写。Requirement I
 新计划写入 `<plan.json>`：顶层 `tasks` 数组，每项含 `summary`、`estimate_hours`、`source_refs`、`commits`。Commit 使用 Inspect 返回的 `repo_key` 与完整 `sha`。
 
 ```bash
-rondo tfs writeback --issue <KEY> --config "<config-path>" --root-repo "<root_repo>" --task-plan "<plan.json>"
+rondo tfs writeback --issue <KEY> --root-repo "<root_repo>" --task-plan "<plan.json>"
 ```
 
 已有计划使用以下命令恢复：
 
 ```bash
-rondo tfs writeback --issue <KEY> --config "<config-path>" --root-repo "<root_repo>"
+rondo tfs writeback --issue <KEY> --root-repo "<root_repo>"
 ```
 
 Bug 的回写命令同上，但去掉 `--root-repo`。只有非 Inspect 的实际写回返回 `result=PASS` 后才能 Complete。
@@ -56,7 +56,7 @@ Bug 的回写命令同上，但去掉 `--root-repo`。只有非 Inspect 的实�
 ## Complete
 
 ```bash
-rondo delivery finalize --phase complete --issue <KEY> --config "<config-path>" --root-repo "<root_repo>"
+rondo delivery finalize --phase complete --issue <KEY> --root-repo "<root_repo>"
 ```
 
 Bug 去掉 `--root-repo`。Complete 核实远端归档与 TFS 回读，并完成 Summary、Issue Done、`finalize.pending` 清理；不重复 Archive 或上游质量 Gate。

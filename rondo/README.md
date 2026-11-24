@@ -89,7 +89,7 @@ $env:MULTICA_REPO_ROOT = "D:/UserProgram/winning-platform-rondo"
 
 ### 5.3 Multica 交付命令
 
-多数交付命令通过 `--config <repo-registry.json>` 指定 Repository Registry，其中 `runtime.workspace_id` 约束目标 Workspace，`registry` 描述业务仓库信息。例如：
+需要 Repository Registry 的交付命令通过 `--config <repo-registry.json>` 指定配置。`delivery finalize`、`tfs writeback` 和 `pr reconcile-status` 使用当前 Multica Runtime，无需 Registry。其他 Registry 命令中，`runtime.workspace_id` 约束目标 Workspace，`registry` 描述业务仓库信息。例如：
 
 ```json
 {

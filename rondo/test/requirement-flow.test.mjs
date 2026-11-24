@@ -8,11 +8,11 @@ import { spawnSync } from "node:child_process";
 import { assertEngineerExecution, readDevelopmentCommit } from "../dist/commands/dev/requirement-guard.js";
 import { parseRepositoryScope } from "../dist/commands/analysis/repository-scope.js";
 import { checkedTaskProgress, validateChangeDelivery, checkPublishedChange } from "../dist/commands/dev/change-completion.js";
-import { isRequirementChangeDelivery, assertRequirementEvidence } from "../dist/commands/delivery/requirement-mode.js";
-import { isDeliveryTaskTitle, findDeliveryTasks, ensureDeliveryTasks } from "../dist/commands/tfs/requirement-tasks.js";
+import { isRequirementChangeDelivery, approvedRequirementScope } from "../dist/commands/delivery/requirement-mode.js";
+import { isDeliveryTaskTitle } from "../dist/commands/tfs/requirement-tasks.js";
 import { prepareRequirementWorktree, removePublishedRequirementWorktree } from "../dist/commands/dev/requirement-worktree.js";
 import { TfsClient } from "../dist/tfs/client.js";
-import { materializeOne } from "../dist/commands/pr/materialize.js";
+import { materializeOne, registerCurrentPr } from "../dist/commands/pr/materialize.js";
 import { outgoing, prepareRoot, publishChange } from "../dist/commands/runtime/root-git.js";
 
 const repoUrl = "http://tfs.test/tfs/C/P/_git/biz";
@@ -23,11 +23,11 @@ const registry = {
 const sha1 = "a".repeat(40);
 const sha2 = "b".repeat(40);
 function prep(key, sha) {
-  return { repo_key: key, source_branch: "feature/42", target_branch: "dev",
+  return { repo_key: key, repo_url: registry[key].repo_url, source_branch: "feature/42", target_branch: "dev",
     candidate_commit: sha, title: "Change",
     description: "实现修复；已完成验证；风险已评估。",
     local_validation: { result: "PASS", summary: "Tests passed", command: ["node", "--test"],
-      exit_code: 0, candidate_commit: sha, source: "rondo dev pr-prep" },
+      exit_code: 0, candidate_commit: sha, source: "rondo dev pr-prepare" },
     code_review: { result: "PASS", candidate_commit: sha, summary: "Reviewed", findings: [] }, blockers: [] };
 }
 
@@ -43,7 +43,10 @@ test("Requirement Scope, Candidate 和验证/Review 必须由同一份原生事�
   assert.doesNotThrow(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{result:"PASS",candidate_commit:sha1,summary:"Review",findings:[{resolved:false,blocking:false,risk_note:"known acceptable risk"}]}}], ["frame"],42,registry));
 });
 
-test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专业描述", async () => {
+test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专业描述", async (t) => {
+  const previous = { TFS_SERVER_URL: process.env.TFS_SERVER_URL, TFS_PAT: process.env.TFS_PAT };
+  process.env.TFS_SERVER_URL = "http://tfs.test/tfs/C"; process.env.TFS_PAT = "fixture";
+  t.after(() => { for (const [k,v] of Object.entries(previous)) { if (v === undefined) delete process.env[k]; else process.env[k]=v; } });
   const entry = prep("frame", sha1);
   const cfg = { registry: { frame: { ...registry.frame, tfs_repo: "biz", tfs_project: "P" } } };
   let remoteHead = sha1;
@@ -64,8 +67,11 @@ test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专
     }
     throw Error("Unexpected external PR write");
   } };
-  const prior = { repo_key: "frame", pr_id: 17, pr_url: "http://tfs.test/pr/17",
+  const prior = { repo_key: "frame", pr_id: 17, pr_url: "http://tfs.test/tfs/C/P/_git/biz/pullrequest/17",
     source_branch: "feature/42", target_branch: "dev" };
+  await assert.rejects(materializeOne(tfs, cfg, "42", {...entry, repo_url: registry.web.repo_url}, prior, undefined, entry.description), /identity_mismatch/);
+  await assert.rejects(materializeOne(tfs, cfg, "42", {...entry, target_branch: "main"}, prior, undefined, entry.description), /target_branch_mismatch/);
+  assert.deepEqual(calls, [], "身份不一致不得产生外部 PR 操作");
   const reused = await materializeOne(tfs, cfg, "42", entry, prior, undefined, entry.description);
   assert.equal(reused.pr_id, 17);
   assert.equal(reused.reused, true);
@@ -85,16 +91,26 @@ test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专
   assert.equal(listed, true, "未登记 PR 可通过外部 Active PR 发现后复用");
 });
 
-test("Requirement Closeout 读取批准范围与现有 pr_prep，不依赖 Evidence JSON", t => {
-  const changeDir = mkdtempSync(join(tmpdir(), "rondo-requirement-scope-"));
-  t.after(() => rmSync(changeDir, { recursive: true, force: true }));
+test("Requirement Closeout 读取批准 Commit 的范围而非当前工作树", t => {
+  const root = mkdtempSync(join(tmpdir(), "rondo-requirement-scope-"));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const git = (...args) => {
+    const result = spawnSync("git", args, {cwd: root, encoding: "utf8"});
+    assert.equal(result.status, 0, result.stderr);
+    return result.stdout.trim();
+  };
+  git("init");
+  git("config", "user.name", "Rondo Test");
+  git("config", "user.email", "test@example.invalid");
+  const changeDir = join(root, "openspec", "changes", "foo-42");
+  mkdirSync(changeDir, {recursive: true});
   writeFileSync(join(changeDir, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [frame]\n");
-  writeFileSync(join(changeDir, "proposal.md"), "# Proposal\n");
-  writeFileSync(join(changeDir, "tasks.md"), "- [x] 1.1 Build\n");
-  const md = { "tfs.id": "42", "analysis.change_ref": "foo-42", pr_prep: JSON.stringify([prep("frame", sha1)]) };
-  assert.doesNotThrow(() => assertRequirementEvidence(registry, md, changeDir, "foo-42"));
+  git("add", "-A");
+  git("commit", "-m", "approved");
+  const source = { repo_url: repoUrl, branch: "main", commit: git("rev-parse", "HEAD"), change_ref: "foo-42" };
+  const md = {"analysis.source": JSON.stringify(source), "analysis.change_ref": "foo-42"};
   writeFileSync(join(changeDir, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [web]\n");
-  assert.throws(() => assertRequirementEvidence(registry, md, changeDir, "foo-42"), /Scope/);
+  assert.deepEqual(approvedRequirementScope(md, root), ["frame"]);
 });
 
 test("Repository Scope 和完整原生 Tasks 校验，拒绝重复、空范围和未完成项", () => {
@@ -185,36 +201,10 @@ test("Requirement 和旧 Task Set 明确分开，不隐式从缺少 dispatch 推
   assert.throws(()=>isRequirementChangeDelivery({...newMd,pr_prep:JSON.stringify([prep("frame",sha1),{...prep("web",sha2),source_branch:"feat/42"}])}),/混合/);
 });
 
-test("兼容旧 Delivery Task helper：默认单任务与外部分合行为保留，不作为新 Requirement 入口",async()=>{
+test("识别旧 Delivery Task 标题以阻止与现行计划混用",()=>{
   assert.equal(isDeliveryTaskTitle("LEI-24","[LEI-24 Delivery] 开发"),true);
   assert.equal(isDeliveryTaskTitle("LEI-24","[LEI-24 Delivery/5] Backend"),true);
   assert.equal(isDeliveryTaskTitle("LEI-24","[LEI-24 1.1] Backend"),false);
-  const state = { tasks:[], creates:0 };
-  const client = {
-    async tfsQuery(query) {
-      return query.includes("System.Id] = 42")
-        ? [{id:42,project:"P"}] : state.tasks;
-    },
-    async tfsCreateTask({title,parent}) {
-      state.creates++;
-      const t={id:55,title,parentId:parent,state:"活动"};
-      state.tasks.push(t);
-      return t;
-    },
-  };
-  const first=await ensureDeliveryTasks(client,"LEI-24","foo-42",42);
-  assert.deepEqual(first,{ids:[55],created:true});
-  const replay=await ensureDeliveryTasks(client,"LEI-24","foo-42",42);
-  assert.deepEqual(replay,{ids:[55],created:false});
-  assert.equal(state.creates,1);
-  state.tasks.push(...[1,2,3,4,5].map(i=>({id:55+i,parentId:42,title:"[LEI-24 Delivery/"+i+"] task"})));
-  await assert.rejects(findDeliveryTasks(client,"LEI-24",42),/超过 5/);
-  state.tasks = [{id:80,parentId:42,title:"[LEI-24 Delivery] default"},{id:81,parentId:42,title:"[LEI-24 Delivery/1] split"}];
-  await assert.rejects(findDeliveryTasks(client,"LEI-24",42),/混用/);
-  state.tasks = [{id:82,parentId:42,title:"[LEI-24 Delivery/1] A"},{id:83,parentId:42,title:"[LEI-24 Delivery/1] B"}];
-  await assert.rejects(findDeliveryTasks(client,"LEI-24",42),/重复编号/);
-  state.tasks = [{id:84,parentId:42,title:"[LEI-24 Delivery/1] A"},{id:85,parentId:42,title:"[LEI-24 Delivery/2] B"}];
-  assert.deepEqual((await findDeliveryTasks(client,"LEI-24",42)).map(t=>t.id),[84,85]);
 });
 
 function git(cwd,...args){
@@ -427,4 +417,27 @@ test("持久根仓安全 Fast-forward 保留其他 Change 的 staged WIP",async 
   assert.equal(done.pushed,true);
   assert.equal(git(root,"rev-parse","refs/remotes/origin/main"),done.commit);
   assert.match(git(root,"status","--porcelain","--","openspec/changes/other-200/tasks.md"),/^M /);
+});
+
+test("PR 登记回读独立于交付模式及 Worktree Cleanup", () => {
+  const currentPr = JSON.stringify([{repo_key:"frame",pr_id:17}]);
+  for (const failure of ["metadata","status","none"]) {
+    const issue = {id:"issue",status:"in_progress",metadata:{}};
+    const calls = [];
+    const client = {
+      setMetadata(id,key,value) { calls.push("metadata"); if (failure !== "metadata") issue.metadata[key]=value; },
+      getIssue() { calls.push("read"); return issue; },
+      setStatus(id,status) { calls.push("status"); if (failure !== "status") issue.status=status; },
+    };
+    if (failure === "metadata") {
+      assert.throws(()=>registerCurrentPr(client,issue.id,currentPr), /登记未确认/);
+      assert.deepEqual(calls,["metadata","read"]);
+    } else if (failure === "status") {
+      assert.throws(()=>registerCurrentPr(client,issue.id,currentPr), /状态未确认/);
+      assert.deepEqual(calls,["metadata","read","status","read"]);
+    } else {
+      assert.equal(registerCurrentPr(client,issue.id,currentPr).status,"in_review");
+      assert.deepEqual(calls,["metadata","read","status","read"]);
+    }
+  }
 });

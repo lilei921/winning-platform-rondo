@@ -1,68 +1,25 @@
 import { ensureDeliverySummary } from "./summary.js";
-/**
- * delivery finalize — PR 收口、对账与最终完成（02 §11.3 / §12 的确定性投影）。
- *
- * 收编说明（裁决 D3 修订）：自 rondo 收编起，实现位置为 @winning/skill-flow 包内
- * commands/delivery/finalize.ts，原 projects/multica/workspace-skills/finalize-delivery/scripts/
- * finalize-delivery.ts 路径在迁移窗口期保持有效。
- *
- * 调用方：PR Status Sync Run（same-run finalize）或 Delivery Lead 手动触发。
- * 前置：Issue metadata 齐备（tfs.id / analysis.change_ref / analysis.gate.result /
- *       analysis.human_approval / verify_agent.required / current_pr，
- *       契约见 references/finalize-facts-contract.md）。
- *
- * D3-B（2026-11-10）：本命令只负责 Delivery 的工程/Multica 收口。
- *   --phase prepare：核实 PR / 工程交付，执行 OpenSpec Archive、根仓提交推送，保留 finalize.pending。
- *   外部 PR Status Sync Agent 同 Run 调用 rondo tfs writeback（独立 TFS Work Item/Task 管理能力）。
- *   --phase complete：必须确认前述外部 TFS Writeback 完整成功，然后 Summary、Issue done、清 pending。
- * 本命令不创建 TFS 子任务，不估时，不写 TFS Work Item 管理字段。
- *
- * 幂等纪律（02 §12.4.2/§12.4.3）：每步先回读当前事实再补缺失项；不凭上轮日志认定成功；
- * 不做补偿回滚；Issue 已 done 且 pending 残留时仅核对并清 pending。
- *
- * 用法：rondo delivery finalize --phase prepare|complete --issue <KEY|id> --config <repo-registry.json> [--root-repo <path>（使用本地工件时必填）]
- * 本地根仓路径显式使用 --root-repo，
- * 派生 openspec/，业务枢纽仓按 root_repo/repo_path 定位；解析失败一律 UNKNOWN（exit 3），零写入，不回退旧静态路径。
- * 退出码：0 PASS / 2 FAIL（明确条件不满足）/ 3 UNKNOWN / 64 用法错误。stdout 只出 JSON；日志走 stderr。
- */
-
+/** Prepare → TFS Writeback → Complete; current Requirement and Direct Bug only. */
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmdirSync, unlinkSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { basename, dirname, isAbsolute, join, resolve } from "node:path";
+import { join } from "node:path";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
 import { runCommand } from "../../clients/spawn.js";
-import { loadConfig, type BaseRegistryConfig, type RuntimeConfig } from "../../clients/config.js";
+import { resolveMulticaRuntime, type MulticaRuntime } from "../../clients/runtime-context.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { TfsClient } from "../../clients/tfs.js";
 import { resolveRuntimePaths, type RuntimePaths } from "../../clients/runtime-paths.js";
-import { classifyTfsType } from "../analysis/facts.js";
 import { verifyTfsWriteback } from "../tfs/writeback.js";
-import { assertStableChangeRef, readChangeSchema, sourceSchemaViolation, changeKindSchemaViolation, CHANGE_KINDS } from "../analysis/change-schema.js";
-import { assertProjectedVerifyDecision } from "./verify-decision.js";
+import { assertStableChangeRef } from "../analysis/change-schema.js";
 import { computeContractFiles, touchedCapabilities } from "./contract-files.js";
-import { assertCurrentEvidence } from "./current-evidence.js";
-import { isRequirementChangeDelivery, assertRequirementEvidence } from "./requirement-mode.js";
-import { isDirectBugDelivery, assertBugFinalizationFacts, bugDeliveryDigest, assertMergedBugSource } from "../bug/finalize-facts.js";
-import { RemoteArtifactReader, materializeDeliveryArtifacts, checkoutArchiveRoot, runAuthenticatedRootGit, type DeliveryArtifacts } from "./remote-artifacts.js";
+import { isRequirementChangeDelivery, approvedRequirementScope, assertRequirementPrepareGate, assertCompletedRequirementTasks } from "./requirement-mode.js";
+import { verifyCloseoutPrs, type CloseoutPr as CurrentPrEntry } from "./closeout-pr.js";
+import { TfsClient as TfsApiClient } from "../../tfs/client.js";
+import { isDirectBugDelivery, assertBugFinalizationFacts, bugDeliveryDigest } from "../bug/finalize-facts.js";
+import { runAuthenticatedGit as runAuthenticatedRootGit } from "../../clients/authenticated-git.js";
 import { readAnalysisSource } from "../analysis/source.js";
-import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
-import { resolveStableEvidenceCommit } from "./evidence-repository.js";
 import { verifyCloseoutRoot, confirmPublishedArchive, assertCloseoutChange } from "./closeout-root.js";
-
-interface RegistryConfig extends BaseRegistryConfig {
-  runtime: RuntimeConfig;
-  registry: Record<string, { repo_path: string; repo_url?: string; tfs_repo?: string; tfs_project?: string; default_target_branch?: string }>;
-}
-
-interface CurrentPrEntry {
-  repo_key: string;
-  pr_id: number;
-  pr_url: string;
-  source_branch: string;
-  target_branch: string;
-}
 
 interface StepResult { status: "done" | "skipped"; detail?: unknown }
 
@@ -82,102 +39,6 @@ function gitOk(cwd: string, args: string[], what: string, remoteUrl?: string): s
 
 // --- 各步骤 ---
 
-function requireRepo(cfg: RegistryConfig, repoKey: string, needTfs = false): RegistryConfig["registry"][string] {
-  const repo = cfg.registry[repoKey];
-  if (!repo) throw new FailError(`repo_key 未登记: ${repoKey}`);
-  if (typeof repo.repo_path !== "string" || repo.repo_path === "." || repo.repo_path === ".."
-    || repo.repo_path.trim() !== repo.repo_path || isAbsolute(repo.repo_path) || /[<>:"/\\|?*\0]/.test(repo.repo_path)) {
-    throw new FailError(`${repoKey} 的 repo_path 不是根仓直接子目录: ${String(repo.repo_path)}`);
-  }
-  if (needTfs && (!repo.tfs_repo || !repo.tfs_project)) {
-    throw new FailError(`${repoKey} 缺少 tfs_repo/tfs_project 交付配置，不能执行 PR/TFS 操作`);
-  }
-  return repo;
-}
-
-/** PR Transition Gate（02 §12.1）：逐仓回核终态与身份。全部 completed 才放行。 */
-async function prTransitionGate(
-  tfs: TfsClient, cfg: RegistryConfig, prs: CurrentPrEntry[],
-  expectedSourceCommits?: Map<string,string>,
-  stableRepositories = false,
-): Promise<void> {
-  const notCompleted: unknown[] = [];
-  for (const entry of prs) {
-    const repo = requireRepo(cfg, entry.repo_key, true);
-    if (stableRepositories && expectedSourceCommits) resolveStableEvidenceCommit(cfg.registry, {
-      repo_key: entry.repo_key, repo_url: repo.repo_url, sha: expectedSourceCommits.get(entry.repo_key),
-    }, loadTfsConfig().serverUrl);
-    const got = await tfs.run(
-      ["pr", "get", "--repo", repo.tfs_repo as string, "--id", String(entry.pr_id), "--project", repo.tfs_project as string],
-      `回核 PR #${entry.pr_id}(${entry.repo_key})`,
-    ) as { found?: boolean; status?: string; sourceBranch?: string; targetBranch?: string; sourceCommitId?: string | null };
-    if (got.found === false) {
-      throw new UnknownError(`${entry.repo_key}: 已登记 PR #${entry.pr_id} 外部查无（身份不可确认，交 Lead）`);
-    }
-    if ((got as { id?: number }).id !== entry.pr_id) throw new UnknownError("PR 回读身份不一致");
-    if (got.sourceBranch !== entry.source_branch || got.targetBranch !== entry.target_branch) {
-      throw new UnknownError(`${entry.repo_key}: PR #${entry.pr_id} 分支事实与登记不符（${got.sourceBranch}→${got.targetBranch} vs ${entry.source_branch}→${entry.target_branch}）`);
-    }
-    if (got.status === "abandoned") {
-      throw new UnknownError(`${entry.repo_key}: PR #${entry.pr_id} 已 abandoned——finalize 不处理 abandoned 路径（02 §11.2，等 Human Decision）`);
-    }
-    if (got.status !== "completed") {
-      notCompleted.push({ repo_key: entry.repo_key, pr_id: entry.pr_id, status: got.status });
-    }
-    if (got.status === "completed" && expectedSourceCommits) {
-      const expected = expectedSourceCommits.get(entry.repo_key);
-      // TFS 2018 sometimes omits the underlying lastMergeSourceCommit:
-      // without it, no one may assert the reviewed candidate was merged.
-      assertMergedBugSource(entry.repo_key, got.sourceCommitId, expected);
-    }
-  }
-  if (notCompleted.length > 0) {
-    throw new FailError(`存在未完成 PR（等待合并，不属异常）: ${JSON.stringify(notCompleted)}`);
-  }
-}
-
-/** 合并后工作区对账（02 §12.2）：枢纽对齐 target、worktree 回收、源分支 -d（绝不 -D）。 */
-function reconcileWorkspace(cfg: RegistryConfig, paths: RuntimePaths, issueKey: string, entry: CurrentPrEntry): Record<string, unknown> {
-  const repo = requireRepo(cfg, entry.repo_key);
-  const hub = join(paths.rootRepo, repo.repo_path);
-  if (!existsSync(join(hub, ".git"))) {
-    throw new UnknownError(`枢纽克隆不存在: ${hub}（先人工克隆就位）`);
-  }
-  const detail: Record<string, unknown> = { repo_key: entry.repo_key, hub };
-  gitOk(hub, ["fetch", "origin", "--prune"], `fetch(${entry.repo_key})`);
-
-  // 枢纽对齐 target_branch：已对齐不重复切换；脏树/无法 ff → UNKNOWN（02 §12.2 强行对齐禁区）
-  const curBranch = gitOk(hub, ["rev-parse", "--abbrev-ref", "HEAD"], "读取枢纽当前分支");
-  if (curBranch !== entry.target_branch) {
-    const dirty = gitOk(hub, ["status", "--porcelain"], "检查枢纽工作树");
-    if (dirty) throw new UnknownError(`枢纽工作树不干净: ${hub}（拒绝切换分支，交人工核对）`);
-    gitOk(hub, ["switch", entry.target_branch], `枢纽切换到 ${entry.target_branch}`);
-    detail.switched = entry.target_branch;
-  }
-  gitOk(hub, ["pull", "--ff-only", "origin", entry.target_branch], `对齐 ${entry.target_branch}`);
-  detail.target_aligned = true;
-
-  // worktree 回收：存在且干净才删；脏 → UNKNOWN 拒删（不吞未提交工作）
-  const wt = join(paths.rootRepo, ".worktrees", `${issueKey}-${entry.repo_key}`);
-  if (existsSync(wt)) {
-    const dirty = gitOk(wt, ["status", "--porcelain"], "检查 worktree 工作树");
-    if (dirty) throw new UnknownError(`worktree 不干净: ${wt}（拒删，交人工核对）\n${dirty.slice(0, 500)}`);
-    gitOk(hub, ["worktree", "remove", wt], "移除 worktree");
-    detail.worktree_removed = wt;
-  }
-
-  // 源分支清理：git branch -d（安全删除被拒绝则保留；绝不 -D，02 §12.2）
-  const srcRef = git(hub, ["rev-parse", "--verify", `refs/heads/${entry.source_branch}`]);
-  if (srcRef.status === 0) {
-    const del = git(hub, ["branch", "-d", entry.source_branch]);
-    detail.source_branch_deleted = del.status === 0;
-    if (del.status !== 0) detail.source_branch_keep_reason = del.stderr.trim();
-  } else {
-    detail.source_branch_deleted = "skipped_not_exists";
-  }
-  return detail;
-}
-
 /** 定位 Change 目录：未归档取 changes/<ref>；已归档取 changes/archive/*<ref>（幂等恢复）。
  * 冻结契约明示的既定例外：本函数内联保留，不改用 change resolve-identity。
  * （导出供 tfs writeback 复用：PR 通过后 tasks.md / evidence 可能已随归档移动。） */
@@ -192,47 +53,6 @@ export function resolveChangeDir(paths: RuntimePaths, changeRef: string): { dir:
     if (hits.length === 1) return { dir: join(archiveRoot, hits[0]), archived: true };
   }
   throw new UnknownError(`Change 目录不可确认：changes/${changeRef} 与 archive 中均不存在`);
-}
-
-/** Delivery Completion Gate（02 §12.3 的机器可判定子集）。
- * 尾部追加 M2.2 contract_binding 检查（Evidence↔契约哈希绑定）；既有 5 项检查原样在前。 */
-export function deliveryCompletionGate(
-  cfg: RegistryConfig,
-  md: Record<string, string>,
-  issueStatus: string | undefined,
-  changeDir: string,
-  changeRef: string,
-  context?: { rootRepo: string; issueKey: string; remote?: boolean },
-): void {
-  if (md["analysis.gate.result"] !== "PASS") {
-    throw new FailError(`analysis.gate.result != PASS（实际 ${md["analysis.gate.result"] ?? "缺失"}）`);
-  }
-  // Never decide from Analyst Recommendation: the effective, Human-approved decision
-  // must already be projected and consistent with its approval source.
-  if (assertProjectedVerifyDecision(md)) {
-    // Verify Agent execution / Evidence Gate is not implemented in the current runtime.
-    // Fail closed even if an unrelated or stale verification.result happens to exist.
-    throw new UnknownError("verify_agent.required=true，但当前尚无可确认的 Independent Verification PASS；禁止 Finalize");
-  }
-  if (issueStatus === "blocked") {
-    throw new FailError("Issue 当前为 blocked（存在未解除阻塞）");
-  }
-  // tasks.md 勾选事实：任何未勾选项 → FAIL（checkbox 缺失可确定性 FAIL，02 §8）
-  const tasksPath = join(changeDir, "tasks.md");
-  if (!existsSync(tasksPath)) throw new UnknownError(`tasks.md 不存在: ${tasksPath}`);
-  const unchecked = readFileSync(tasksPath, "utf8").split("\n").filter((l) => /^\s*-\s*\[ \]/.test(l));
-  if (unchecked.length > 0) {
-    throw new FailError(`tasks.md 存在 ${unchecked.length} 个未勾选任务（首个: ${unchecked[0].trim().slice(0, 120)}）`);
-  }
-
-  // 活跃/归档目录均支持；运行入口显式传入根仓，独立 Gate 调用按标准 Change 路径解析。
-  const rootRepo = context?.rootRepo ?? resolve(changeDir, basename(dirname(changeDir)) === "archive" ? "../../../.." : "../../..");
-  if (isRequirementChangeDelivery(md)) {
-    assertRequirementEvidence(cfg.registry ?? {}, md, changeDir, changeRef);
-  } else {
-    assertCurrentEvidence(cfg.registry ?? {}, md, changeDir, changeRef, rootRepo, context?.issueKey, context?.remote);
-  }
-
 }
 
 /** Final Summary：结构化事实模板渲染（非 LLM），评论 ID 回写防重复（02 §12.4.3）。 */
@@ -323,20 +143,12 @@ function assertArchiveCommits(root: string, upstream: string, allowed: (path: st
 }
 
 /** 只做安全快进；分叉不 rebase、不 stash，保留本地提交、索引及运行时文件。 */
-function syncArchiveBranch(root: string, localBranch: string, targetBranch: string, allowed: (path: string) => boolean, expectedRemoteCommit?: string, remoteUrl?: string): void {
+function syncArchiveBranch(root: string, localBranch: string, targetBranch: string, allowed: (path: string) => boolean, remoteUrl?: string): void {
   if (gitOk(root, ["symbolic-ref", "--short", "HEAD"], "核对根仓分支") !== localBranch) {
     throw new UnknownError("归档期间根仓分支已变化（保留现场，停止推进）");
   }
   const upstream = `refs/remotes/origin/${targetBranch}`;
   gitOk(root, ["fetch", "origin", `refs/heads/${targetBranch}:${upstream}`], "刷新根仓远端分支", remoteUrl);
-  if (expectedRemoteCommit) {
-    const remoteHead = gitOk(root, ["rev-parse", upstream], "核对固定归档基线");
-    const localHead = gitOk(root, ["rev-parse", "HEAD"], "核对本次归档提交");
-    // 只容忍本次 push 已被接受但响应丢失；其他分支前进须重新读取所有事实。
-    if (remoteHead !== expectedRemoteCommit && remoteHead !== localHead) {
-      throw new UnknownError("权威分支在 Gate 后前进，须重新核验远端工件；保留归档现场");
-    }
-  }
   const [ahead, behind] = gitOk(root, ["rev-list", "--left-right", "--count", `HEAD...${upstream}`], "核对根仓分支关系")
     .split(/\s+/).map(Number);
   if (ahead > 0 && behind > 0) {
@@ -353,7 +165,7 @@ function syncArchiveBranch(root: string, localBranch: string, targetBranch: stri
 /** Route Archive：安全快进 → 保存本 Change → 原生归档 → 限定提交/推送。
  * openspec 外未暂存改动允许保留；外来暂存项和无关 OpenSpec 修改仍拒绝。
  * 对齐后与归档后复核契约；分叉保留现场，不自动改写历史或暂存用户文件。 */
-export function routeArchive(paths: RuntimePaths, issueKey: string, changeRef: string, tfsId: string, expectedRemoteCommit?: string, targetBranch?: string): Record<string, unknown> {
+export function routeArchive(paths: RuntimePaths, issueKey: string, changeRef: string, tfsId: string, targetBranch: string): Record<string, unknown> {
   const detail: Record<string, unknown> = {};
   const lock = new RootLock(paths, issueKey);
   try {
@@ -364,7 +176,7 @@ export function routeArchive(paths: RuntimePaths, issueKey: string, changeRef: s
       throw new UnknownError("根仓处于 detach HEAD 或无法探测本地归档分支");
     }
     const localBranch = branchRes.stdout.trim();
-    const branch = targetBranch ?? localBranch;
+    const branch = targetBranch;
     if (runCommand(["git", "check-ref-format", "--branch", branch], root).status !== 0) {
       throw new FailError("归档远端目标分支非法");
     }
@@ -399,11 +211,12 @@ export function routeArchive(paths: RuntimePaths, issueKey: string, changeRef: s
     }
     // 新增本地提交之前同步，避免“先保存再拉取”制造本可避免的分叉。
     const preHash = JSON.stringify(computeContractFiles(current.dir).files);
-    syncArchiveBranch(root, localBranch, branch, allowed, expectedRemoteCommit, paths.gitRemoteUrl);
+    syncArchiveBranch(root, localBranch, branch, allowed, paths.gitRemoteUrl);
     const aligned = resolveChangeDir(paths, changeRef);
     if (aligned.dir !== current.dir || JSON.stringify(computeContractFiles(aligned.dir).files) !== preHash) {
       throw new UnknownError("根仓对齐后契约文件或归档位置漂移（此前 completion_gate PASS 失效，须重新核验）");
     }
+    assertCompletedRequirementTasks(aligned.dir);
     const before = checkWorkspace();
 
     // 幂等：已归档（change 目录不在、archive 在）→ 跳过 archive，只核对 commit/push
@@ -452,7 +265,7 @@ export function routeArchive(paths: RuntimePaths, issueKey: string, changeRef: s
 
     // One ordinary fast-forward push; resolve an uncertain reply from remote facts.
     checkWorkspace();
-    syncArchiveBranch(root, localBranch, branch, allowed, expectedRemoteCommit, paths.gitRemoteUrl);
+    syncArchiveBranch(root, localBranch, branch, allowed, paths.gitRemoteUrl);
     const archived = resolveChangeDir(paths, changeRef);
     if (!archived.archived || JSON.stringify(computeContractFiles(archived.dir).files) !== preHash) {
       throw new UnknownError("推送前归档契约漂移（保留现场，停止后续收口）");
@@ -506,41 +319,6 @@ function parseArgs(argv: string[]): Record<string, string> {
   return out;
 }
 
-/** 远端收口必须精确证明合并的是本轮候选，不能用 merge commit 或旧路径代替。 */
-function remoteCandidateCommits(md: Record<string, string>, prs: CurrentPrEntry[]): Map<string, string> {
-  let candidates: Array<{ repo_key?: string; candidate_commit?: string }>;
-  try { candidates = JSON.parse(md.pr_prep ?? "null"); } catch { throw new UnknownError("pr_prep 非法"); }
-  if (!Array.isArray(candidates) || !candidates.length || !Array.isArray(prs) || !prs.length) throw new UnknownError("远端收口缺少候选或 PR");
-  const map = new Map<string, string>();
-  for (const c of candidates) {
-    if (!c?.repo_key || !/^[0-9a-f]{40}$/i.test(c.candidate_commit ?? "") || map.has(c.repo_key)) throw new UnknownError("候选仓库不唯一或缺少完整 SHA");
-    map.set(c.repo_key, c.candidate_commit!.toLowerCase());
-  }
-  if (prs.length !== map.size || new Set(prs.map(p => p?.repo_key)).size !== map.size ||
-      prs.some(p => !p || !map.has(p.repo_key) || !Number.isInteger(p.pr_id) || p.pr_id <= 0)) throw new UnknownError("current_pr 与当前候选仓库集合不一致");
-  return map;
-}
-
-/** 独立远端 Writer 重验工程 Gate、PR 与 pending 绑定；Prepare 标记不能替代当前外部事实。 */
-export async function verifyRemoteRequirement(cfg: RegistryConfig, issue: import("../../clients/multica.js").IssueRecord, paths: RuntimePaths): Promise<void> {
-  const md = issue.metadata ?? {}; const changeRef = md["analysis.change_ref"];
-  const change = resolveChangeDir(paths, changeRef);
-  const schema = readChangeSchema(change.dir);
-  const mismatch = changeKindSchemaViolation(md["analysis.change_kind"], schema) || sourceSchemaViolation(classifyTfsType(md["tfs.type"]), schema);
-  if (mismatch) throw new FailError(mismatch);
-  if (schema === "intentional-change" && md["analysis.ai_review.verdict"] !== "APPROVED") throw new FailError("Intentional Change 缺少专业 AI Review");
-  let prs: CurrentPrEntry[], pending: { event_keys?: string[] };
-  try { prs = JSON.parse(md.current_pr ?? "null"); pending = JSON.parse(md["finalize.pending"] ?? "null"); }
-  catch { throw new UnknownError("PR 或 pending 事实损坏"); }
-  const candidates = remoteCandidateCommits(md, prs);
-  const expected = prs.map(p => `${issue.identifier ?? issue.id}#${p.repo_key}#${p.pr_id}#completed`);
-  if (!pending || !Array.isArray(pending.event_keys) || pending.event_keys.length !== expected.length || expected.some(k => !pending.event_keys!.includes(k))) {
-    throw new FailError("finalize.pending 与当前 PR 完成事件不一致");
-  }
-  deliveryCompletionGate(cfg, md, issue.status, change.dir, changeRef, { rootRepo: paths.rootRepo, issueKey: issue.identifier ?? issue.id, remote: true });
-  await prTransitionGate(new TfsClient(), cfg, prs, candidates, true);
-}
-
 /** Done 重放仅核对服务端最小交付事实，不要求已卸载的 OpenSpec 根仓可访问。 */
 export function assertCompletedAnalysisFacts(md: Record<string, string>): void {
   assertStableChangeRef(md["analysis.change_ref"]);
@@ -556,7 +334,7 @@ export function assertCompletedAnalysisFacts(md: Record<string, string>): void {
  * Do not run workspace Git mutations in the external PR Status Sync daemon.
  */
 async function finalizeDirectBug(
-  cfg: RegistryConfig, client: MulticaClient, tfs: TfsClient,
+  runtime: MulticaRuntime, client: MulticaClient, tfs: TfsClient,
   issue: ReturnType<MulticaClient["getIssue"]>, issueKey: string,
   phase: "prepare" | "complete",
 ): Promise<number> {
@@ -569,7 +347,7 @@ async function finalizeDirectBug(
   // Never trust metadata alone: confirm the actual external PR states before side effects.
   const entries = JSON.parse(md["bug.delivery"]) as Array<{repo_key:string;candidate_commit:string}>;
   const verifiedSources = new Map(entries.map(item => [item.repo_key, item.candidate_commit]));
-  await prTransitionGate(tfs, cfg, prs, verifiedSources);
+  await verifyCloseoutPrs(md, new TfsApiClient(), tfs, undefined, verifiedSources);
   const expectedKeys = prs.map(p => issueKey + "#" + p.repo_key + "#" + p.pr_id + "#completed");
   type BugPending = {
     event_keys?: unknown;
@@ -623,7 +401,7 @@ async function finalizeDirectBug(
   if (md["delivery.tfs_written"] !== "true") {
     throw new UnknownError("Bug TFS Writeback 尚未确认，禁止 Issue Done");
   }
-  const tfsVerified = await verifyTfsWriteback(cfg, issue);
+  const tfsVerified = await verifyTfsWriteback(runtime, issue);
   const summary = [
       "## Bug 修复交付完成",
       "",
@@ -654,16 +432,13 @@ async function finalizeDirectBug(
 
 async function main(argv: string[]): Promise<number> {
   const args = parseArgs(argv);
-  if (!args.issue || !args.config || (args.phase !== "prepare" && args.phase !== "complete")) {
-    process.stderr.write("用法: rondo delivery finalize --phase prepare|complete --issue <KEY|id> --config <repo-registry.json> [--root-repo <path>（使用本地工件时必填）]\n");
+  if (!args.issue || argv.some(arg => arg === "--config" || arg.startsWith("--config=")) || (args.phase !== "prepare" && args.phase !== "complete")) {
+    process.stderr.write("用法: rondo delivery finalize --phase prepare|complete --issue <KEY|id> [--root-repo <path>（Requirement 必填）]\n");
     return 64;
   }
-  let remote: DeliveryArtifacts | undefined;
-  let temporary: ReturnType<typeof checkoutArchiveRoot> | undefined;
-  let archivePublished = false;
   try {
-    const cfg = loadConfig<RegistryConfig>(args.config);
-    const client = new MulticaClient(cfg.runtime);
+    const runtime = resolveMulticaRuntime();
+    const client = new MulticaClient(runtime);
     const tfs = new TfsClient();
     const issue = client.getIssue(args.issue);
     const md = issue.metadata ?? {};
@@ -692,58 +467,19 @@ async function main(argv: string[]): Promise<number> {
 
     // Direct Bug path has no root repository or OpenSpec Archive dependency.
     if (isDirectBugDelivery(md)) {
-      return await finalizeDirectBug(cfg, client, tfs, issue, issueKey, args.phase as "prepare" | "complete");
+      return await finalizeDirectBug(runtime, client, tfs, issue, issueKey, args.phase as "prepare" | "complete");
     }
 
-    // 本地根仓由调用方显式传入；只校验与派生路径。
-    // 在任何持久化写入（finalize.pending）之前完成解析，失败即 UNKNOWN 零写入。
-    // 显式配置固定分支才启用新路径；旧本地模式与独立 Bug 均保持原契约。
-    const changeMode = isRequirementChangeDelivery(md);
-    if (changeMode && !args["root-repo"]) throw new UnknownError("Requirement Closeout 必须使用当前 Task 的 Multica Checkout，并显式传入 --root-repo");
-    if (!args["root-repo"] && cfg.runtime.root_branch !== undefined) {
-      if (!cfg.runtime.workspace_id) throw new UnknownError("远端收口必须显式配置 workspace_id");
-      const authorized = readAnalysisSource(md);
-      remote = await materializeDeliveryArtifacts(new RemoteArtifactReader(authorized.repo_url), md, changeMode ? authorized.branch : cfg.runtime.root_branch!);
-      steps.remote_artifacts = { status: "done", detail: { repo_url: remote.source.repo_url, branch: remote.branch, commit: remote.commit, archived: remote.archived } };
-    }
-    const paths = remote?.paths ?? resolveRuntimePaths(cfg, { issue, rootRepoArg: args["root-repo"], need: ["openspec"] });
-    const source = changeMode ? readAnalysisSource(md) : null;
-    if (source) {
-      Object.assign(paths, verifyCloseoutRoot(paths, source));
-      assertCloseoutChange(paths, source);
-    }
-
-    // 1. 身份、Multica 的持久化 Change Kind 与 OpenSpec Engineering Contract：
-    //    必须相互一致，不能从 TFS 类型单独推断技术变更性质。
+    if (!isRequirementChangeDelivery(md)) throw new FailError("仅支持 Change-level Requirement 和 Direct Bug Closeout");
+    if (issue.status === "blocked") throw new FailError("Issue blocked，禁止 Requirement Closeout");
+    if (!args["root-repo"]) throw new UnknownError("Requirement Closeout 必须使用当前 Task 的 Multica Checkout，并显式传入 --root-repo");
+    const source = readAnalysisSource(md);
+    const paths = verifyCloseoutRoot(resolveRuntimePaths({ runtime }, { issue, rootRepoArg: args["root-repo"], need: ["openspec"] }), source);
+    assertCloseoutChange(paths, source);
     const tfsId = md["tfs.id"];
-    if (!tfsId) throw new UnknownError("缺少 metadata tfs.id");
-    const changeRef = md["analysis.change_ref"];
-    assertStableChangeRef(changeRef);
-    // Quality/approval gates belong to upstream stages, not Requirement Closeout.
-    if (!changeMode) {
-      const schema = readChangeSchema(resolveChangeDir(paths, changeRef).dir);
-    const kindMismatch = changeKindSchemaViolation(md["analysis.change_kind"], schema);
-    if (kindMismatch) throw new FailError(kindMismatch);
-    const violation = sourceSchemaViolation(classifyTfsType(md["tfs.type"]), schema);
-    if (violation) throw new FailError(violation);
-    if (schema === "intentional-change" && md["analysis.ai_review.verdict"] !== "APPROVED") {
-      throw new FailError("Intentional Change 缺少 APPROVED 的专业 AI Review");
-    }
-    // Fail closed before PR Transition, pending metadata, workspace reconciliation,
-    // archive, or TFS writeback can produce externally visible side effects.
-    if (assertProjectedVerifyDecision(md)) {
-      throw new UnknownError("verify_agent.required=true，Independent Verification 尚未实现或未取得有效 PASS，禁止进入 Finalize");
-    }
-    }
-    const prsRaw = md["current_pr"];
-    if (!prsRaw) throw new UnknownError("缺少 metadata current_pr（无业务仓交付的收口路径 v1 未覆盖，交 Lead）");
-    let prs: CurrentPrEntry[];
-    try { prs = JSON.parse(prsRaw) as CurrentPrEntry[]; }
-    catch { throw new UnknownError("metadata current_pr 不是合法 JSON"); }
-    if (!Array.isArray(prs) || prs.length === 0) throw new UnknownError("current_pr 为空数组");
-
-    // 2. PR Transition Gate（只读；全部 completed 才可持久化 completed 事件）
-    await prTransitionGate(tfs, cfg, prs);
+    const changeRef = source.change_ref;
+    const verified = await verifyCloseoutPrs(md, new TfsApiClient(), tfs, approvedRequirementScope(md, paths.rootRepo));
+    const prs = verified.map(item => item.pr);
     steps.pr_transition_gate = { status: "done" };
 
     const expectedKeys = prs.map((p) => `${issueKey}#${p.repo_key}#${p.pr_id}#completed`);
@@ -774,16 +510,8 @@ async function main(argv: string[]): Promise<number> {
         assertPendingEvents(pending);
         steps.pending_written = { status: "skipped", detail: "已存在（恢复模式，按当前事实补齐）" };
       }
-      if (remote || changeMode) {
-        steps.workspace_reconciliation = { status: "skipped", detail: "Closeout 不负责业务 Workspace 对账" };
-      } else {
-        const reconcileDetails: unknown[] = [];
-        for (const entry of prs) reconcileDetails.push(reconcileWorkspace(cfg, paths, issueKey, entry));
-        steps.workspace_reconciliation = { status: "done", detail: reconcileDetails };
-      }
-
       // 已确认 Prepare 的 Requirement 只回读归档；事件或 Change 变更时应保留原恢复事实。
-      if (source && pending.prepared_change_ref !== undefined) {
+      if (pending.prepared_change_ref !== undefined) {
         if (pending.prepared_change_ref !== changeRef) {
           throw new FailError("finalize.pending 的已准备 Change 与当前 Change 不一致，拒绝恢复");
         }
@@ -793,29 +521,10 @@ async function main(argv: string[]): Promise<number> {
         return 0;
       }
 
-      const change = resolveChangeDir(paths, changeRef);
-      deliveryCompletionGate(cfg, md, issue.status, change.dir, changeRef,
-        { rootRepo: paths.rootRepo, issueKey, remote: Boolean(remote) });
+      assertRequirementPrepareGate(md, issue.status);
       steps.completion_gate = { status: "done" };
-      if (remote?.archived) {
-        steps.route_archive = { status: "done", detail: { archive: "skipped_already_archived", pushed: true, commit: remote.commit } };
-      } else if (remote) {
-        temporary = checkoutArchiveRoot(remote);
-        const localChange = resolveChangeDir(temporary.paths, changeRef);
-        deliveryCompletionGate(cfg, md, issue.status, localChange.dir, changeRef, { rootRepo: temporary.paths.rootRepo, issueKey, remote: true });
-        steps.route_archive = { status: "done", detail: routeArchive(temporary.paths, issueKey, changeRef, tfsId, remote.commit) };
-        archivePublished = true;
-        // 用独立 API 回读已发布归档；不新增 Archive SHA Metadata。
-        const confirmed = await materializeDeliveryArtifacts(new RemoteArtifactReader(remote.source.repo_url), md, remote.branch);
-        try {
-          if (!confirmed.archived) throw new UnknownError("归档 push 后远端仍未确认归档，禁止 Prepare 标记");
-          deliveryCompletionGate(cfg, md, issue.status, confirmed.changeDir, changeRef, { rootRepo: confirmed.paths.rootRepo, issueKey, remote: true });
-          steps.archive_readback = { status: "done", detail: { commit: confirmed.commit, archived: true } };
-        } finally { confirmed.dispose(); }
-      } else {
-        steps.route_archive = { status: "done", detail: routeArchive(paths, issueKey, changeRef, tfsId, undefined, source?.branch) };
-        if (source) steps.archive_readback = { status: "done", detail: confirmPublishedArchive(paths, source) };
-      }
+      steps.route_archive = { status: "done", detail: routeArchive(paths, issueKey, changeRef, tfsId, source.branch) };
+      steps.archive_readback = { status: "done", detail: confirmPublishedArchive(paths, source) };
       // 只有安全归档 + Git Push 返回成功后才能给独立 TFS Writer 提供可执行准备事实。
       client.setMetadata(issue.id, "finalize.pending", JSON.stringify({ ...pending, prepared_change_ref: changeRef }));
       const persisted = client.getIssue(args.issue).metadata?.["finalize.pending"];
@@ -844,19 +553,8 @@ async function main(argv: string[]): Promise<number> {
       throw new UnknownError("工程 Change 尚未归档，不能跳过 prepare 直接 complete");
     }
     // 再次只读回核父项及全部 required TFS 子任务的外部真实状态；仅凭 Metadata 标记不足以 done。
-    steps.tfs_verification = { status: "done", detail: await verifyTfsWriteback(
-      cfg, issue, source ? paths.rootRepo : remote?.changeDir ?? resolveChangeDir(paths, changeRef).dir,
-    ) };
-    // 再次确定 Archive 已提交到远端；幂等回读，不操作 TFS Work Item/Task。
-    if (source) {
-      steps.route_archive = { status: "done", detail: confirmPublishedArchive(paths, source) };
-    } else if (remote) {
-      deliveryCompletionGate(cfg, md, issue.status, remote.changeDir, changeRef, { rootRepo: paths.rootRepo, issueKey, remote: true });
-      steps.route_archive = { status: "done", detail: { archived: true, commit: remote.commit, source: "fixed_commit_api" } };
-    } else {
-      // 此分支 source 已收窄为 null，无需再传分支名
-      steps.route_archive = { status: "done", detail: routeArchive(paths, issueKey, changeRef, tfsId, undefined, undefined) };
-    }
+    steps.tfs_verification = { status: "done", detail: await verifyTfsWriteback(runtime, issue, paths.rootRepo, verified) };
+    steps.route_archive = { status: "done", detail: confirmPublishedArchive(paths, source) };
 
     // 先查询本次摘要；ID 缺失/旧 ID 均不能作为发布或跳过的依据。
     steps.summary = ensureDeliverySummary(client, issue.id,
@@ -874,7 +572,7 @@ async function main(argv: string[]): Promise<number> {
 
     // complete 阶段返回工程和 Multica 的确定性收口事实；TFS Writeback 单独提供结果。
     const orderedSteps: Record<string, StepResult> = {};
-    for (const k of ["remote_artifacts", "pr_transition_gate", "pending_written", "workspace_reconciliation", "completion_gate", "tfs_verification",
+    for (const k of ["pr_transition_gate", "pending_written", "completion_gate", "tfs_verification",
       "summary", "route_archive", "issue_done", "pending_cleared"]) {
       if (steps[k]) orderedSteps[k] = steps[k];
     }
@@ -892,10 +590,6 @@ async function main(argv: string[]): Promise<number> {
       return 3;
     }
     throw exc;
-  } finally {
-    remote?.dispose();
-    // 推送已确认的临时 clone 可删除；未知或未发布提交保留现场。
-    if (archivePublished) temporary?.dispose();
   }
 }
 

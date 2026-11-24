@@ -49,6 +49,7 @@ function fixture(t, { checkoutSuffix = taskSuffix, checkoutThrows = false, stale
   for (const ref of ['change-a', 'change-b', 'change-c']) {
     const folder = join(work, 'openspec', 'changes', ref);
     mkdirSync(folder, { recursive: true });
+    writeFileSync(join(folder, '.openspec.yaml'), 'schema: intentional-change\nx-repositories: [app]\n');
     writeFileSync(join(folder, 'tasks.md'), '- [ ] 1.1 Implement ' + ref + '\n');
   }
   git(work, 'add', '-A');
@@ -347,7 +348,7 @@ test('Inspect 仍拒绝与已批准 PR Preparation 分支不符的 PR', async t 
     current_pr: JSON.stringify([{ repo_key: 'app', pr_id: 42, source_branch: 'feature/99', target_branch: 'dev' }]),
   };
   await assert.rejects(
-    inspectRequirementCommits({ app: { repo_url: repoUrl } }, md, root, { config: {} }, {}),
+    inspectRequirementCommits(md, root, { config: { serverUrl: 'http://tfs.test/tfs/C' } }, {}),
     /PR Preparation.*分支不一致/,
   );
 });

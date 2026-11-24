@@ -13,8 +13,6 @@ import type { MulticaEnvironment } from "./multica-environment.js";
 export interface RuntimeConfig extends MulticaEnvironment {
   multica_cli: string;
   workspace_id?: string;
-  /** 显式启用 Requirement 远端收口的固定权威分支；仓库 URL 复用已批准 analysis.source。 */
-  root_branch?: string;
   /** @deprecated rondo 合并后 TFS 调用进程内化,该键不再消费(方案 §5);保留仅为兼容旧 registry 文件。 */
   tfs_cli?: string[];
   delivery_squad_id?: string;
