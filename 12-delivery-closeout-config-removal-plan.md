@@ -104,6 +104,18 @@ rondo delivery finalize --phase complete --issue <KEY> --root-repo "<root_repo>"
 
 plan.json 是 Agent 的一次性任务规划业务输入，不是配置文件，保留其现有格式和校验。
 
+### 4.6 PR Preparation 命名统一
+
+仅统一两个既有 PR Preparation 命令的命名：
+
+| 当前命令 | 目标命令 |
+| --- | --- |
+| `rondo dev pr-prep` | `rondo dev pr-prepare` |
+| `rondo bug prepare-pr` | `rondo bug pr-prepare` |
+| `rondo pr materialize` | 保持不变 |
+
+两个 Preparation 命令分别保留在 dev / bug 命令组，沿用各自专业实现及既有输入、输出契约（§4.2 必要的事实补齐除外）。不合并实现、不保留旧命令 Alias、不修改 `pr_prep` / `current_pr` Metadata Key。同步更新 CLI 注册、Help、Usage、现行 Skill/Agent 命令引用、文档及测试；源码文件及注册函数按新名称统一，仅修改直接相关引用。`pr materialize`、底层 `pr create/get/list` 和其他 PR 命令名称保持不变。现有 Metadata 中的验证来源标识若引用命令名，生产方与校验方须同步更新，避免破坏既有 Gate。
+
 ## 5. 文件与发布范围
 
 | 资产 | 变更 |
@@ -115,14 +127,15 @@ plan.json 是 Agent 的一次性任务规划业务输入，不是配置文件，
 | rondo/src/commands/tfs/writeback.ts | Runtime、真实业务事实、删除旧 dispatch Writeback 分支 |
 | rondo/src/commands/tfs/requirement-commits.ts | 使用核验后的 PR 仓身份 |
 | rondo/src/commands/delivery/requirement-mode.ts | 现行 Requirement 判定及批准版 Repository Scope 核验；删除仅供 Closeout 重复上游质量检查的代码 |
-| rondo/src/commands/dev/pr-prep.ts、bug/prepare-pr.ts、pr/materialize.ts | 仅必要的预期仓库、实际分支事实固定和交叉校验 |
+| rondo/src/commands/dev/pr-prep.ts、bug/prepare-pr.ts、pr/materialize.ts | 必要的预期仓库、实际分支事实固定和交叉校验；前两个命令及文件统一为 pr-prepare，pr materialize 保持名称不变 |
+| rondo/src/index.ts、相关 Skill / Agent 调用及测试 | 仅同步 PR Preparation 新命令名和直接相关引用 |
 | 共享 helper 与测试 | 只修改直接相关调用点，删除确无调用的旧 Closeout 实现与测试 |
 | rondo/COMMANDS.md、README.md | 更新现行命令及无配置调用例外；不维护历史过程 |
 | 02 / 10 等现行设计文档 | 仅同步受影响的收口契约、CLI 示例和旧 dispatch 兼容表述；不重写其他阶段 |
 
-保留其他 Skill 的 Registry、Workspace base/overlay、Agent Instructions、Autopilot Prompt、provisioning 绑定、OpenSpec Schema/Template 和 task-plan JSON。不要新增 Agent、Skill、CLI 命令或平台对象。
+保留其他 Skill 的 Registry、Workspace base/overlay、Agent Instructions（仅同步必要命令引用）、Autopilot Prompt、provisioning 绑定、OpenSpec Schema/Template 和 task-plan JSON。不新增 Agent、Skill、CLI 能力或平台对象。
 
-发布顺序：先构建/测试，将同一新版 Rondo CLI 部署到所有受影响的 Runtime（Engineer、Bug Fix Agent、PR Materialize 执行方、PR Status Sync Agent，以及执行 Workspace Sync 的环境）；再同步 delivery-closeout Skill。使用已更新的仓库工作副本，确认本地旧 JSON 不存在，并回读远端文件已删除。用新建测试 Issue 完整验证两类交付，避免旧 CLI 生成不完整 pr_prep 或与新 Skill 命令错配。不引入滚动兼容机制、Feature Flag 或迁移工具；真实 Workspace 发布单独执行和核验。
+发布顺序：先构建/测试，将同一新版 Rondo CLI 部署到所有受影响的 Runtime（Engineer、Bug Fix Agent、PR Materialize 执行方、PR Status Sync Agent，以及执行 Workspace Sync 的环境）；再同步 delivery-closeout、change-development、bug-delivery 等实际受影响的 Skill 及必要的 Agent 命令引用。使用已更新的仓库工作副本，确认本地旧 JSON 不存在，并回读远端文件已删除。用新建测试 Issue 完整验证两类交付，避免旧 CLI 生成不完整 pr_prep 或与新 Skill 命令错配。不引入滚动兼容机制、Feature Flag 或迁移工具；真实 Workspace 发布单独执行和核验。
 
 ## 6. 验收
 
@@ -134,6 +147,7 @@ plan.json 是 Agent 的一次性任务规划业务输入，不是配置文件，
 - 已有计划与新计划冲突、Commit 已被其他 TFS Task 占用、反向回读异常及工时越界仍阻断。
 - 旧 dev.dispatch Requirement 明确不支持；不允许隐式回退或误归类为 Direct Bug。旧 --config 返回用法错误。
 - workspace sync --local-only / --check 不再渲染 delivery-closeout Registry；真实 sync 后回读远端不存在该文件，其他 Skill 配置与绑定不受影响。
+- 两个 pr-prepare 新命令可用，旧名称不再注册；现行 Skill 引用与 CLI 一致，pr materialize 和底层 TFS PR 命令名称与原契约保持不变（§4.2 必要身份核验除外）。
 - TypeScript build、相关单元/集成测试与其他共享命令回归通过；最终在真实 Multica/TFS 环境分别验证 Requirement 和 Bug。未实际执行不视为通过。
 
 ## 7. 设计原则复核
