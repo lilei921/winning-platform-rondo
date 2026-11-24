@@ -1,166 +1,211 @@
-# Workspace Preparation Registry 退役优化方案
+# Workspace 管理机制解耦与 Registry 退役优化方案
 
-> 状态：待实施、待实际业务根仓验证。日期：2026-11-24。
-> 分析基线：winning-platform-rondo main Tree `0fb95275b6ffc6bcfb086fe797ac2a2790222740`；01 统一设计规范 v1.16.13。
-> 本文为方案，不代表代码已修改或运行验证通过。
+> 状态：已确认设计方向及 Skill 命名，待实施与真实 Runtime 验证。2026-11-24。
+> 依据：[01 统一设计规范](../../01-multica-openspec-design-guideline.md) v1.16.13；原始分析基线 main Tree `0fb95275b6ffc6bcfb086fe797ac2a2790222740`。
+> 本方案整合此前 Registry 退役、根仓准备统一及完整仓库管理机制解耦设计。未修改生产代码。
 
-## 1. 目标与结论
+## 1. 目标及原则
 
-退役 `skills/workspace-preparation/config/repo-registry.json`，删除 `rondo dev prepare` 对 Skill 级 JSON 的依赖。保留必要的业务仓库配置及现有 Git 准备、授权、幂等和安全边界。
+**Repository Management is independent of Work Item Type.**
 
-遵循 First Principles、KISS、YAGNI、Native First、Specialist Focus、One Rule One Owner、Reference not Replication、Minimal Sufficient、Greenfield First。不是全局 Registry 退役，不增加 Agent、Skill、Gate、Metadata、状态机或配置服务。
+Bug / Requirement 是业务处理类型；Native / Persistent 是本地仓库管理机制。两者正交，根仓和子仓采用同一种管理机制，不按 Issue 类型决定 Clone、Checkout 或 Worktree。
 
-## 2. 当前实现与证据
+建立两个完整、可独立绑定的 Skill：
 
-- [workspace-preparation/SKILL.md](../../skills/workspace-preparation/SKILL.md)：Bug / Requirement 的 `dev prepare` 均需要 `--config`，根仓 checkout、check-checkout、prepare-root 不需要。
-- [dev/prepare.ts](../../rondo/src/commands/dev/prepare.ts)：读取 Registry，构造 MulticaClient，解析业务仓，再按模式执行授权和 Git 准备。
-- [prepare-workspace.ts](../../rondo/src/commands/dev/prepare-workspace.ts)：消费 repo_path、repo_url、tfs_repo、tfs_project、default_target_branch；校验 TFS URL、目录、目标分支及已有 checkout。
-- [requirement-worktree.ts](../../rondo/src/commands/dev/requirement-worktree.ts)：业务基础 Clone 与 feature/<tfs.id> Worktree。
-- [requirement-guard.ts](../../rondo/src/commands/dev/requirement-guard.ts)：核验当前 Engineer Run、批准 Change、x-repositories 及 Registry 登记范围。
-- [runtime-context.ts](../../rondo/src/clients/runtime-context.ts)：已有 resolveMulticaRuntime()，从环境解析当前 Runtime，不查询 Squad。
-- [repo-context.yaml](../../docs/config/repo-context.yaml)：已有 25 个业务仓及根仓的身份与路径映射，尚无 default_target_branch。
-- [repo-registry.base.json](../../workspace-config/repo-registry.base.json)：25 个业务仓当前目标分支均为 dev。
-- [workspace/sync.ts](../../rondo/src/commands/workspace/sync.ts)：根据 repo-context、base 和 Workspace Overlay 生成 Skill Registry，已有远端文件差异删除能力。
-- [01 统一设计规范](../../01-multica-openspec-design-guideline.md)。
+```text
+skills/
+├── native-workspace/
+│   └── SKILL.md
+└── persistent-workspace/
+    └── SKILL.md
+```
 
-当前 Registry 是派生配置，不是独立事实源。Workitem Analyst 仅准备根仓时无需 Registry；Bug Fix Agent 和 Engineer 准备业务仓时才需要仓库映射。
+- `native-workspace`：根仓和业务子仓均使用 Multica Native Checkout。
+- `persistent-workspace`：常驻根仓 + 业务基础 Clone + 按 Issue 隔离的业务 Worktree。
+- 两者均支持 Bug Fix Agent、Workitem Analyst、Engineer；Workitem Analyst 按需只准备根仓。
+- 不按根仓/子仓、Bug/Requirement 拆分 Skill；不引入 Module 路由。
+- 退役原 `workspace-preparation` 及其 Registry JSON，不复制给新 Skill。
 
-## 3. 目标态信息来源
+遵守 First Principles、KISS、YAGNI、Native First、Specialist Focus、One Rule One Owner、Reference not Replication、Minimal Sufficient、Greenfield First、Right-sized Composition。
 
-| 字段 | 权威来源 / 处理 |
+## 2. 当前实现与实际耦合
+
+| 场景 | 根仓 | 业务子仓 |
+| --- | --- | --- |
+| Bug Fix | Native Checkout | 独立 Clone，feat/<tfs.id> |
+| Requirement A | Native Checkout | Clone + Worktree，feature/<tfs.id> |
+| Requirement B | 常驻根仓 | Clone + Worktree，feature/<tfs.id> |
+
+当前 [workspace-preparation/SKILL.md](../../skills/workspace-preparation/SKILL.md) 同时描述上述路径；[dev/prepare.ts](../../rondo/src/commands/dev/prepare.ts) 按 mode=bug/requirement 直接选择不同 Git 准备算法，且依赖 --config。
+
+其他必要兼容点：
+
+- [prepare-workspace.ts](../../rondo/src/commands/dev/prepare-workspace.ts)：Bug checkout 校验要求独立 .git 目录、指定本地分支和 Git Common Directory。
+- [requirement-worktree.ts](../../rondo/src/commands/dev/requirement-worktree.ts)：已有基础 Clone、候选续接、Worktree 隔离与回收算法，可复用为通用 Worktree 能力。
+- [bug/git.ts](../../rondo/src/commands/bug/git.ts)、[bug/pr-prepare.ts](../../rondo/src/commands/bug/pr-prepare.ts)：强依赖独立 Clone 及本地 feat 分支，不能直接用于 Worktree 或 Native 子仓。
+- [dev/pr-prepare.ts](../../rondo/src/commands/dev/pr-prepare.ts)：通过 root/repo_path 推导基础仓，部分验证消费实际路径。
+- [pr/materialize.ts](../../rondo/src/commands/pr/materialize.ts)：Requirement PR 登记后包含 Worktree 清理，需将清理职责从业务类型解耦。
+- [dev/requirement-guard.ts](../../rondo/src/commands/dev/requirement-guard.ts)：已有 Engineer、批准 Change、Scope、Registry 范围校验，必须保留。
+- [runtime/check-checkout.ts](../../rondo/src/commands/runtime/check-checkout.ts)：仅检查本地 Git 根目录及 AGENTS.md，不查询 Multica 或核验 Task/Actor/Workspace 身份。
+- [workspace/sync.ts](../../rondo/src/commands/workspace/sync.ts)：现有 Registry 渲染和远端 Skill 文件差异对账。
+- [workspace-config/provisioning.json](../../workspace-config/provisioning.json)：现有三个 Agent 绑定 workspace-preparation，默认 Project Resource 主要登记根仓。
+
+## 3. Native Workspace
+
+### 3.1 根仓
+
+复用当前 Task 的 Native Checkout；首次在 Task workdir 执行：
+
+```powershell
+multica repo checkout <root-url> --ref <resource-ref>
+rondo runtime check-checkout --root-repo "<actual-root>"
+```
+
+URL 与 ref 来自 Project Resource；未指定 ref 时省略参数。使用实际返回路径。check-checkout 仅描述本地就绪检查，不增加额外身份机制。根仓 Checkout 起点、本地 Task Branch、OpenSpec 远端发布目标是不同概念，保留现有发布契约。
+
+### 3.2 业务子仓
+
+使用已授权 Repository 的 URL 和已核实的基线：
+
+```powershell
+multica repo checkout <business-repo-url> --ref <base-ref>
+```
+
+在已就绪根仓目录下按需准备业务仓，实际路径以 Multica 返回为准，不推测目录，不由 Rondo 额外创建 Clone 或 Worktree。
+
+远端 Candidate 已存在时从已核实 Candidate 继续；首次从明确的目标分支开始。Native Task Branch 不必与远端 Candidate 同名。保留候选续接、实际 HEAD、Origin、授权、非强制发布、远端 SHA 回读等已有交付要求。
+
+Multica 管理本地工作区及其生命周期，Rondo 负责必要的确定性校验和正式 Candidate 发布，不重建平台 Checkout / Cache / 清理机制。已有 Checkout 的 kept / fetch_error 等结果不能直接等同于最新基线，不覆盖本地 WIP。
+
+真实 Runtime 必须验证 TFS URL/凭据、业务仓是否需要 Project Resource 登记、嵌套 Checkout、重复 Checkout、Candidate 续接及 Native 本地工作树与交付兼容。未验证前不得认定完整 Native 路径已可用。
+
+## 4. Persistent Workspace
+
+### 4.1 根仓
+
+```powershell
+rondo runtime prepare-root
+```
+
+使用 RONDO_WORKSPACE_PATH 与 RONDO_WORKSPACE_BRANCH，依赖已存在的常驻根仓，不负责首次 Clone。复用当前 Origin 核验、Fetch、分支切换、安全 Fast-forward 和 WIP 保护算法。
+
+### 4.2 业务子仓
+
+Bug 与 Requirement 均使用常驻基础 Clone + 按 Issue 隔离的业务 Worktree。目录沿用现有约定：
+
+```text
+RONDO_WORKSPACE_PATH/
+├── docs/
+├── openspec/
+├── <repo_path>/             # 基础 Clone
+└── <repo_path>-<tfs.id>/    # 业务 Worktree
+```
+
+目标态调用示意（非当前可执行契约）：
+
+```powershell
+rondo dev prepare --issue <issue> --repo <repo_id> --root-repo "<root>"
+```
+
+Requirement 继续提供必要的 --change-ref 或复用当前 Issue 已批准的明确引用，具体最小接口在实施时确认；业务授权与准备方式分别处理。复用现有 requirement-worktree.ts 核心算法，按既有业务候选分支传参，抽取通用业务 Worktree 准备能力。不新增 Workspace Provider 框架。
+
+Rondo 负责已确认交付后的业务 Worktree 回收，适用于 Bug 与 Requirement；保护 dirty/unpushed 等未交付内容，不让清理失败改变已确认的 PR 登记结果。共享常驻根仓本身不具备按 Issue 的 OpenSpec 隔离，保留现有根仓发布及并发约束，不另建机制。
+
+## 5. Skill 绑定及内容
+
+通过现有 Multica 原生 Skill 绑定在部署时选择一种机制，同一 Workspace 的研发成员一致采用该机制。不让 LLM 根据业务类型或临时情况选择管理机制，不同时挂载两种 Skill。
+
+| Agent | Native 部署 | Persistent 部署 |
+| --- | --- | --- |
+| Bug Fix Agent | native-workspace | persistent-workspace |
+| Workitem Analyst | native-workspace | persistent-workspace |
+| Engineer | native-workspace | persistent-workspace |
+
+Agent Instructions 不硬编码具体机制，例如：
+
+> 需要本地根仓或业务源码时，按需使用已绑定的工作区准备 Skill，以核实的实际路径开展工作。
+
+Workitem Analyst 可仅描述本地 OpenSpec 根仓需求。专业交付 Skill 不重复定义 Checkout、Clone 或 Worktree 算法，不固定 Skill 调用链。
+
+### native-workspace 目标内容
+
+- Description：按需使用 Multica 原生机制准备或复用工程根仓和授权业务仓。
+- 根仓：Project Resource URL/ref、Native Checkout、实际路径、根仓就绪检查。
+- 业务仓：按需准备已授权仓库，使用已核实的起始 ref、实际 Checkout 路径，消费现有确定性校验与发布入口。
+- Result：使用确认成功的实际路径，核实异常并保护已有工作成果。
+
+### persistent-workspace 目标内容
+
+- Description：按需准备或复用常驻工程根仓及按 Issue 隔离的授权业务 Worktree。
+- 根仓：rondo runtime prepare-root。
+- 业务仓：统一业务 Worktree 准备入口，Requirement 提供必要批准引用，使用实际返回路径。
+- Result：使用确认成功的实际路径，核实异常并保护已有工作成果。
+
+两个 Skill 不新增 config、modules、references、scripts，当前规模不需要。正式命令以兼容改造后的 CLI 为准，不提前在生产 Skill 中写入未实现命令。
+
+## 6. Rondo CLI 解耦与交付兼容
+
+- Issue 类型只决定授权、专业处理、交付事实；保留 assertBugExecution、assertBugStart、assertBugSource、guardRepository、批准 Change 和 Verify 决策投影等已有语义。
+- Native 由 Multica 创建本地工作树；Persistent 复用现有 Worktree 算法。CLI 不按 Bug/Requirement 决定本地机制，不建立新动态路由层。
+- Bug 的 feat/<tfs.id> 与 Requirement 的 feature/<tfs.id> 本次先保留；远端分支命名统一不在本次范围。
+- Bug fetch/push、PR Preparation 与 Requirement PR Preparation 消费真实工作树路径、Git Repository Identity、Candidate SHA 和已批准/授权 Scope，不强制特定 .git 形态或本地分支等于远端候选分支。必要时新增最小显式路径参数，优先复用已有参数。
+- Native 正式发布 Candidate 使用安全非强制 Push 和远端 SHA 回读；已有远端 Candidate 优先续接，不从目标分支覆盖已交付修改。
+- Worktree 清理按管理机制归属：Native 由 Multica，Persistent 由 Rondo，沿用已确认 PR 登记后清理的契约。
+- 保持 PR Materialize、Delivery Closeout、TFS Writeback、OpenSpec Schema 及现有业务交付语义，不进行无关重构。
+
+## 7. Registry 退役
+
+两种 Skill 均不携带 repo-registry.json，不新增公共 JSON 副本或配置服务。
+
+| 字段 | 权威来源 |
 | --- | --- |
 | multica_cli | MULTICA_CLI_PATH，默认 multica |
 | multica_server_url | MULTICA_SERVER_URL |
 | workspace_id | MULTICA_WORKSPACE_ID |
-| rondo | 无需配置，命令本身 |
-| repo_id / repo_key | 权威 repo-context.yaml 的 repo_id |
-| repo_path、repo_url | 权威 repo-context.yaml |
-| tfs_repo、tfs_project | 合法 TFS URL 解析；保留已有身份核验，已有 tfs_project 应与 URL 一致 |
-| default_target_branch | repo-context.yaml 显式业务策略 |
+| rondo | CLI 本身 |
+| 根仓 URL/ref | Project Resource（Native）；已配置常驻根仓（Persistent） |
+| repo_id、repo_path、repo_url | 权威 docs/config/repo-context.yaml |
+| tfs_repo / tfs_project | 合法 TFS URL 解析，保留已有身份一致性校验 |
+| default_target_branch | repo-context.yaml 显式业务分支策略 |
+| 常驻根仓路径/分支 | RONDO_WORKSPACE_PATH / RONDO_WORKSPACE_BRANCH |
+| 研发授权 / Scope | Multica Issue / 已批准 OpenSpec |
 
-复用 resolveMulticaRuntime()，不使用额外查询 Delivery Squad 的 resolveRuntimeContext()。不硬编码 dev，不把 Remote HEAD 或 Project Resource ref 当成 PR Target Branch。
+复用 [resolveMulticaRuntime()](../../rondo/src/clients/runtime-context.ts)，不查询 Delivery Squad。当前 Rondo repo-context.yaml 与 Registry 均包含 25 个业务仓，base 的目标分支均为 dev，但不能硬编码 dev 或将 Git Remote HEAD/Resource ref 当作交付目标分支。
 
-当前 Multica Project Resource 默认主要登记根仓，不要求重新登记全部业务仓或建立新映射。Native Checkout 模式与现有持久根仓/Worktree 模式均保留。
+在权威 repo-context.yaml 及对应全量清单增加 default_target_branch。实际内网业务根仓与 Rondo GitHub 配置仓不同，实施前必须核实所有目标根仓的已提交映射完整可读，不能假设已经存在。Requirement 使用可确认的批准版本对应映射，复用 analysis.source.commit，不新增 Snapshot Artifact。Bug 使用可确认的根仓已提交映射。其余仍消费 Registry 的 Skill 保持原输出契约，Workspace Sync 从同一权威字段渲染，避免 base/YAML 双写，核验准备基线与 PR Target 一致。
 
-### 根仓准备统一（已确认）
+移除 dev prepare 对 --config 的依赖；现有 Guard 可在内部消费相同的数据结构，保持 Scope 和 Runtime 校验。移除 REPO_REGISTRY_SKILLS 中 workspace-preparation，不向新 Skill 注入 JSON。复用现有同步/供给能力完成新 Skill 绑定和旧 Skill 解绑；旧远端 Skill 是否需显式退役须核实，不能假定 unmanaged Skill 会被自动删除。
 
-Bug 与 Requirement 的根仓准备具有相同目标：获取可使用的工程根仓，不因 Issue 类型而建立不同的 Native Checkout 方法。
+本次不是全局 Registry 退役。其他交付命令如仍需要 Registry，可继续消费既有配置，除本次必要的路径、授权、目标分支一致性适配外不扩大范围。
 
-- 两者统一优先复用当前 Task 的 Native Checkout；首次准备在 Task workdir 执行 `multica repo checkout <root-url> --ref <resource-ref>`。URL 与 ref 来自当前 Project Resource，未指定 ref 时省略参数。
-- Checkout 的起点 ref 不等于本地 Task Branch，也不等于 OpenSpec 远端发布目标。保留现有 Requirement 发布分支契约，不改变 `RONDO_WORKSPACE_BRANCH` 或 `analysis.source` 语义。
-- 使用实际返回的根仓路径执行 `rondo runtime check-checkout --root-repo "<root>"`。该命令只检查 Git 工作树根目录与 AGENTS.md 就绪情况，不查询 Multica、不验证 Task / Actor / Workspace 身份。Skill 按实际能力描述；不为匹配旧描述而增加身份校验。现有业务命令的授权检查继续保留。
-- Requirement 常驻根仓模式继续使用 `rondo runtime prepare-root`；该命令依赖已存在的本地根仓及 RONDO_WORKSPACE_BRANCH，不负责首次 Clone。本次不退役该模式、不修改根仓准备算法。
-- Workitem Analyst 仅需按需准备根仓；Bug Fix Agent 和 Engineer 在需要本地业务源码时分别准备独立 Clone 与 Worktree。根仓准备本身不依赖 Registry。
-- §5 的统一根仓章节作为目标态 Skill 内容，不在 Bug 与 Requirement 章节重复描述 Checkout 步骤。
+## 8. 分阶段实施
 
-### 实施前提
-
-Rondo GitHub 配置仓与实际内网 TFS 业务根仓不是同一事实域。实施前核实实际业务根仓已提交的 docs/config/repo-context.yaml 覆盖所需业务仓、URL、路径和目标分支，并验证批准版本的映射可读取。不能将 Rondo 仓库配置存在视作所有 Runtime 已具备条件。
-
-在现有 repo-context.yaml 及对应全量清单补充 default_target_branch。保留其他字段和现有仓库策略。仍消费 Registry 的 Skill 由现有 Workspace Sync 从同一权威字段生成目标分支，避免 base 与 YAML 双写；不擅自改变其他 Skill 的输出契约。实际部署根仓与派生 Registry 的数据一致性需在实施前确认。
-
-## 4. CLI 改造
-
-移除 dev prepare 必填 --config，目标命令：
-
-```powershell
-rondo dev prepare --mode bug --issue <issue> --repo <repo_key> --root-repo "<root>"
-rondo dev prepare --mode requirement --issue <issue> --change-ref <change_ref> --repo <repo_id> --root-repo "<root>"
-```
-
-内部流程：
-
-1. 获取当前 Multica Runtime，读取 Issue 并执行现有身份及授权检查。
-2. 确定并核验根仓，读取权威仓库映射。Bug 使用可确认的根仓已提交映射；Requirement 优先复用已批准 analysis.source.commit 对应映射，避免相同 repo_id 在批准后指向不同仓库。不新增快照 Artifact 或 Metadata。
-3. 解析目标 Repository，保持合法 TFS URL、身份、目录、目标分支等必要校验。
-4. Requirement 保留批准 Change、全量 Scope 登记及目标仓 Scope 校验；保持 verify_agent.required 等现有副作用语义。尽量通过内部构造现有 Guard 可消费的数据结构实现，避免改变其他调用方。
-5. Bug 继续调用 prepareBusinessWorkspace()；Requirement 继续调用 prepareRequirementWorktree()。
-6. 返回现有 PASS / FAIL / UNKNOWN 及实际路径契约。
-
-仅新增最小内部映射读取函数，优先复用已有 YAML 解析能力。保留现有 feat/<tfs.id> 与 feature/<tfs.id> 分支策略、候选续接、目录边界、Origin 校验及 dirty/unpushed 保护。不得把缺失映射猜测为合法仓库。
-
-## 5. Skill 目标内容（建议）
-
-```markdown
----
-name: workspace-preparation
-description: 按需准备或复用授权的本地 Git 工作区，支持根仓 Checkout、Bug Fix 业务仓 Clone 和 Requirement Worktree。
----
-
-# Workspace Preparation
-
-仅在需要本地工作树时使用。
-
-## 根仓准备
-
-优先复用当前 Task 的 Native Checkout。尚未检出时，使用 Project Resource 的 URL 和 ref：
-
-    multica repo checkout <root-url> --ref <resource-ref>
-
-Resource 未指定 ref 时省略 --ref。
-
-使用实际 Checkout 路径核实根仓：
-
-    rondo runtime check-checkout --root-repo "<root>"
-
-Requirement 常驻根仓模式可使用：
-
-    rondo runtime prepare-root
-
-## Bug Fix
-
-需要修改业务源码时，使用当前 Issue、目标 Repository 和根仓路径准备业务仓：
-
-    rondo dev prepare --mode bug --issue <issue> --repo <repo_key> --root-repo "<root>"
-
-## Requirement
-
-Workitem Analyst 按需准备根仓即可。
-
-Engineer 根据已批准 Change 的 Repository Scope 准备业务 Worktree：
-
-    rondo dev prepare --mode requirement --issue <issue> --change-ref <change_ref> --repo <repo_id> --root-repo "<root>"
-
-## Result
-
-使用成功返回的实际工作区路径。
-
-准备失败或结果不明确时，根据工具反馈核实并处理异常，不覆盖已有工作成果。
-```
-
-Skill 不承担 Runtime 解析、Workspace 身份核验、映射解析、配置生成或 Git 算法。
-
-## 6. 实施范围
-
-| 优先级 | 模块 | 改动 |
+| 阶段 | 目标 | 最小实施范围 |
 | --- | --- | --- |
-| P0 | docs/config/repo-context.yaml 及全量清单、实际业务根仓 | 完善目标分支字段及覆盖范围 |
-| P0 | rondo/src/commands/dev/prepare.ts | 移除 --config，复用 Runtime 与权威映射 |
-| P0 | dev/prepare-workspace.ts | 适配输入来源，保留必要校验 |
-| P0 | dev/requirement-guard.ts | 保持批准和 Scope 约束 |
-| P0 | skills/workspace-preparation/SKILL.md | 精简命令与说明 |
-| P0 | skills/workspace-preparation/config/ | 删除 |
-| P0 | workspace/sync.ts | 从 REPO_REGISTRY_SKILLS 移除 workspace-preparation；统一目标分支事实来源 |
-| P0 | 相关测试 | 验证配置退役及两条路径 |
-| P1 | rondo/COMMANDS.md、11/12 设计文档 | 更新受影响的现行契约 |
+| 1 | 解耦业务类型与工作区机制 | Registry 退役、通用 Worktree、实际路径消费、Bug Worktree 兼容 |
+| 2 | Native 完整支持 | 根仓及子仓 Native Checkout、远端 Candidate 续接/发布、PR 兼容、真实 Runtime 验证 |
+| 3 | Skill 收敛 | 注册 native-workspace / persistent-workspace，调整三个 Agent 的 Instructions 和绑定，退役 workspace-preparation |
 
-复用 Workspace Sync 的远端文件差异删除能力；不新建迁移脚本。确认配置不再被生成或同步回平台。
+阶段实施期间保留仍在使用的可用路径；两种目标机制具备相应验证结果后再切换部署和退役旧 Skill。不为未来维护永久双套兼容入口。
 
-## 7. 验收
+涉及文件：repo-context.yaml 及全量清单/实际业务根仓、dev/prepare.ts、prepare-workspace.ts、requirement-worktree.ts、requirement-guard.ts、bug/git.ts、bug/pr-prepare.ts、dev/pr-prepare.ts、pr/materialize.ts、两个新 SKILL.md、旧 workspace-preparation、三个 Agent Instructions、provisioning.json、workspace/sync.ts、受影响测试及 COMMANDS.md / 11、12 现行设计契约。只修改实际受影响的部分。
 
-- Bug / Requirement 共用 Native Checkout 指引，Resource ref 缺省时可省略；保留 Requirement 常驻根仓模式和原有发布分支语义，check-checkout 仅描述本地就绪检查。
-- 实际业务根仓与批准版本的仓库映射完整、可读取，目标分支明确。
-- Bug / Requirement 无 --config 正常准备及重入；返回实际路径。
-- 无效身份、未批准仓库、未登记映射、错误 URL / 路径 / 分支等仍按现有契约拒绝或报告 UNKNOWN，且不覆盖已有成果。
-- Clone / Worktree 的已有分支续接、dirty/unpushed 保护及 Origin 校验不退化。
-- Workspace Sync 不再生成该 Skill JSON，已上传文件由原生差异同步清理。
-- 其他 Skill 的 Registry 消费与现有 PR Preparation、PR Materialize、Delivery Closeout、TFS Writeback 契约保持正确；验证目标分支与准备基线一致。
-- 更新受影响命令文档及测试；运行 Rondo Build 和相关回归测试，并区分本地测试与真实 Runtime 验证。
+## 9. 验收标准
 
-## 8. 非目标与设计审查
+- 两种管理机制分别覆盖 Bug 与 Requirement；Workitem Analyst 按需准备根仓即可。
+- 同一机制下根仓与子仓统一管理；Agent 仅绑定选定 Skill，Instructions 与具体机制解耦。
+- 新 Skill 无 Registry JSON；dev prepare 无 --config；映射、目标分支、实际根仓及批准版本来源可核实。
+- 四条组合路径（Native Bug、Native Requirement、Persistent Bug、Persistent Requirement）验证首次准备、重入、远端候选续接、真实路径、Git 发布及 PR Preparation/Materialize。
+- 授权、批准 Scope、仓库身份、候选 SHA、Origin、路径边界、dirty/unpushed 保护不退化；不覆盖已有工作。
+- Native 不重复创建或回收业务 Worktree；Persistent 按 Issue 隔离并按现有交付事实回收。
+- 根仓 OpenSpec 发布目标及批准源 SHA 契约保持不变。
+- Workspace Sync 不再生成旧 Registry，旧 Skill 解绑/退役和新绑定核实；其他 Skill 配置及交付收口不受影响。
+- 运行 Build、相关回归测试及真实 Multica/TFS 环境验证；区分设计预期、代码测试和真实端到端结果。
 
-不改 Git 分支策略、Clone/Worktree 算法、Agent 职责、OpenSpec Schema、PR Materialize、Delivery Closeout、TFS Writeback，不借此退役其他 Skill Registry。
+## 10. 非目标
 
-不新增 Registry Service、registry resolve CLI、RONDO_REGISTRY_PATH、公共 JSON 副本、配置缓存、Repository Metadata、每 Issue 快照、全 TFS 仓库自动发现或双模式 --config 兼容层。无明确兼容需求时不保留旧入口。
+不新增 Skill Router、Workspace Manager Agent、Workspace Provider/Adapter Factory、Runtime 管理层、RONDO_WORKSPACE_MODE、RONDO_REGISTRY_PATH、Registry Service、配置缓存、路径 Metadata、每 Issue 配置快照、全 TFS 仓库发现、额外 Gate 或状态机。
 
-设计结论：保留必要业务配置，消除不必要的配置传递。Runtime 归 Multica，仓库映射归已有工程事实源，确定性执行归 Rondo，Skill 仅提供按需准备方法及结果消费。
+不统一 Bug/Requirement 专业交付流程或远端分支命名，不改 OpenSpec Schema，不重写 Git 算法，不扩散至全局 Registry 退役、PR Status Sync 或 TFS Writeback。
+
+**最终设计：两个完整且互斥绑定的 Skill（native-workspace / persistent-workspace），两种完整仓库管理机制，共用现有工程事实与业务授权/交付契约。**
