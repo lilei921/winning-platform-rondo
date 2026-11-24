@@ -1,6 +1,6 @@
 /** 只读检查调用方明确传入的根仓；执行者授权由具体写操作负责。 */
-import { readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { lstatSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { dirname, isAbsolute, join, resolve, win32 } from "node:path";
 import { FailError, UnknownError } from "../cli/errors.js";
 import { runCommand } from "./spawn.js";
 import { validateRootRepo } from "./runtime-paths.js";
@@ -138,4 +138,55 @@ export function assertPlatformCheckoutIdentity(evidence: PlatformCheckoutIdentit
   if (tail !== suffix && !new RegExp("^" + suffix + "-\\d+$").test(tail)) {
     throw new FailError("平台 checkout 分支尾号与当前 Task 不一致，拒绝使用该根仓");
   }
+}
+
+
+/** Read the actual path and Task branch from the supported CLI output (including Kept). */
+export function parsePlatformCheckoutOutput(stdout: string, stderr = ""): { root: string; branch: string } {
+  const combined = stdout + "\n" + stderr;
+  const absolute = (line: string) => isAbsolute(line) || win32.isAbsolute(line);
+  const lines = combined.split(/\r?\n/).map(line => line.trim());
+  const branch = /\(branch:\s*(agent\/[^,\s)]+)(?=[,\s)])/m.exec(combined)?.[1];
+  const paths = lines.filter(absolute);
+  for (const line of lines) {
+    const match = /^(?:Checked out|Kept the existing checkout)\b.*?\s->\s(.+?)(?:\s+\(branch:|$)/.exec(line);
+    if (match && absolute(match[1])) paths.push(match[1]);
+  }
+  const unique = [...new Set(paths)];
+  if (unique.length !== 1 || !branch) throw new UnknownError("平台 repo checkout 输出无法确认路径与 Task 分支，保留现场");
+  return { root: unique[0], branch };
+}
+
+const samePath = (a: string, b: string): boolean => process.platform === "win32"
+  ? resolve(a).toLowerCase() === resolve(b).toLowerCase() : resolve(a) === resolve(b);
+
+/** Require a real Native linked worktree, anchored in the current daemon Task's workdir. */
+export function assertNativeTaskCheckout(path: string, workdir: string, reportedBranch?: string): string {
+  const taskId = process.env.MULTICA_TASK_ID, workspaceId = process.env.MULTICA_WORKSPACE_ID;
+  const agentId = process.env.MULTICA_AGENT_ID;
+  const context = readDaemonTaskContext(workdir);
+  if (!taskId || !workspaceId || !agentId || context?.managed_by !== "multica-daemon-task" || context.agent_id !== agentId)
+    throw new UnknownError("无法确认当前 daemon Task 上下文");
+  const canonical = realpathSync(path), parent = realpathSync(workdir);
+  const immediate = dirname(canonical);
+  if (!samePath(canonical, path) || lstatSync(path).isSymbolicLink() ||
+      !(samePath(immediate, parent) || samePath(dirname(immediate), parent)) ||
+      !lstatSync(join(path, ".git"), { throwIfNoEntry: false })?.isFile() ||
+      !isDaemonCacheWorktree(path, workspaceId)) throw new FailError("工作树不属于当前 Task 的 Native Checkout");
+  const read = (args: string[]) => {
+    const r = runCommand(["git", ...args], path);
+    if (r.status !== 0 || !r.stdout.trim()) throw new UnknownError("Native Checkout Git 身份无法确认");
+    return r.stdout.trim();
+  };
+  if (!samePath(read(["rev-parse", "--show-toplevel"]), canonical)) throw new FailError("Native Git 根目录不一致");
+  const branch = read(["symbolic-ref", "--short", "HEAD"]);
+  if (!branch.startsWith("agent/") || (reportedBranch && reportedBranch !== branch))
+    throw new FailError("Native Checkout 当前分支与平台返回不一致");
+  const gitDir = read(["rev-parse", "--absolute-git-dir"]);
+  const manifest = readPlatformCheckoutManifest(gitDir);
+  const liveMode = platformCheckoutMode(path) ?? "isolated";
+  assertPlatformCheckoutIdentity(manifest ?? { checkout_branch: branch, task_id: taskId, workspace_id: workspaceId,
+    checkout_mode: liveMode }, { mode: liveMode, taskId, workspaceId });
+  if (manifest && manifest.checkout_branch !== branch) throw new FailError("Native Checkout manifest 分支不一致");
+  return branch;
 }
