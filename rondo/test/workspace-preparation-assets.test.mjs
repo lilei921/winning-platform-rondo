@@ -43,7 +43,13 @@ test("workspace preparation is owned by one Skill; delivery contracts remain in 
   const analysis = read("skills/analysis-completion/SKILL.md");
   assert.ok(analysis.includes("rondo analysis validate") && analysis.includes("rondo analysis complete"));
   const dev = read("agents/engineer/instructions.md");
-  assert.ok(dev.includes("rondo dev publish") && bug.includes("rondo pr materialize"));
+  assert.ok(dev.includes("rondo analysis read") && dev.includes("pull-request"));
+  assert.ok(bugAgent.includes("pull-request"));
+  for (const command of ["rondo change update-progress", "rondo dev publish", "rondo bug resume"]) {
+    assert.ok(bug.includes(command), command);
+    assert.ok(!dev.includes(command) && !bugAgent.includes(command), command);
+  }
+  assert.ok(bug.includes("rondo pr materialize"));
   assert.ok(!skills.managed_skills.includes("bug-delivery") && !skills.managed_skills.includes("change-development"));
   assert.ok(!readdirSync(bugDir,{recursive:true}).includes("config/repo-registry.json"));
 });
