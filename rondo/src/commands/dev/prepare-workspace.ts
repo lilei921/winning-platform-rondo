@@ -1,9 +1,10 @@
 /** 单个业务仓安全准备主体；不修改根仓、不覆盖已有工作树、不自动 push。 */
 import { existsSync, lstatSync, realpathSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { git, gitOk } from "../../clients/git.js";
 import { runAuthenticatedGit, assertTfsRepository } from "../../clients/authenticated-git.js";
+import { assertNativeTaskCheckout } from "../../clients/native-checkout.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 
 export interface PrepareRepo { repo_path: string; repo_url: string; tfs_repo?: string; tfs_project?: string; default_target_branch: string }
@@ -36,16 +37,24 @@ export function validateBusinessPath(root: string, repo: Pick<PrepareRepo, "repo
   return path;
 }
 
-export function validateBusinessCheckout(path: string, repo: PrepareRepo, branch: string): string {
+export function validateBusinessCheckout(path: string, repo: PrepareRepo, branch: string, nativeWorkdir?: string): string {
   const dotgit = join(path, ".git");
-  if (!existsSync(dotgit) || lstatSync(dotgit).isSymbolicLink() || !lstatSync(dotgit).isDirectory()) throw new UnknownError("已有目录不是完整独立业务仓，保留现场");
-  if (!same(gitOk(path, ["rev-parse", "--show-toplevel"], "核验业务仓根"), path) ||
-      !same(gitOk(path, ["rev-parse", "--path-format=absolute", "--git-common-dir"], "核验业务仓 Git 目录"), dotgit)) throw new FailError("业务仓不是独立 Git checkout");
+  const dot = lstatSync(dotgit, { throwIfNoEntry: false });
+  if (!dot || dot.isSymbolicLink() || (!dot.isDirectory() && !dot.isFile())) throw new UnknownError("已有目录不是有效业务仓，保留现场");
+  if (!same(gitOk(path, ["rev-parse", "--show-toplevel"], "核验业务仓根"), path)) throw new FailError("业务仓 Git 根目录不一致");
+  if (dot.isFile()) {
+    assertNativeTaskCheckout(path, nativeWorkdir ?? dirname(dirname(path)));
+  } else {
+    if (nativeWorkdir) throw new FailError("已有目录不是 Native 工作树，保留现场");
+    if (!same(gitOk(path, ["rev-parse", "--path-format=absolute", "--git-common-dir"], "核验业务仓 Git 目录"), dotgit))
+      throw new FailError("业务仓不是独立 Git checkout");
+    if (gitOk(path, ["symbolic-ref", "--short", "HEAD"], "核验候选分支") !== branch)
+      throw new FailError("现有分支不属于当前 Bug；保留 dirty 和未推送 Commit");
+  }
   const origin = gitOk(path, ["remote", "get-url", "--all", "origin"], "核验业务仓 origin");
   const push = gitOk(path, ["remote", "get-url", "--push", "--all", "origin"], "核验业务仓 push URL");
   if (canonicalRepositoryIdentity(origin) !== canonicalRepositoryIdentity(repo.repo_url) ||
-      canonicalRepositoryIdentity(push) !== canonicalRepositoryIdentity(repo.repo_url)) throw new FailError("业务仓 origin 与 Registry 不一致");
-  if (gitOk(path, ["symbolic-ref", "--short", "HEAD"], "核验候选分支") !== branch) throw new FailError("现有分支不属于当前 Bug；保留 dirty 和未推送 Commit");
+      canonicalRepositoryIdentity(push) !== canonicalRepositoryIdentity(repo.repo_url)) throw new FailError("业务仓 origin 与已授权仓库不一致");
   return gitOk(path, ["rev-parse", "HEAD"], "核验候选 HEAD");
 }
 
