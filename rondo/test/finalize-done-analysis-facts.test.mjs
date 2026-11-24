@@ -27,17 +27,12 @@ function runDone(t, metadata) {
   const root = mkdtempSync(join(tmpdir(), "rondo-finalize-done-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const stateFile = join(root, "state.json");
-  const configFile = join(root, "config.json");
   chmodSync(MOCK, 0o755);
   writeFileSync(stateFile, JSON.stringify({ status: "done", metadata }));
-  writeFileSync(configFile, JSON.stringify({
-    runtime: { multica_cli: MOCK, workspace_id: "ws-test" },
-    registry: {},
-  }));
   const out = spawnSync(process.execPath, [CLI, "delivery", "finalize", "--phase", "complete",
-    "--issue", "issue-1", "--config", configFile], {
+    "--issue", "issue-1"], {
     encoding: "utf8",
-    env: { ...process.env, MOCK_STATE: stateFile },
+    env: { ...process.env, MOCK_STATE: stateFile, MULTICA_CLI_PATH: MOCK, MULTICA_WORKSPACE_ID: "ws-test", MULTICA_SERVER_URL: "http://multica.test" },
     timeout: 20_000,
   });
   assert.equal(out.error, undefined, out.error?.message);

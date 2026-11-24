@@ -3,27 +3,27 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { computeContractFiles } from "./contract-files.js";
-import { deliveryCompletionGate } from "./finalize.js";
+import { assertRequirementPrepareGate } from "./requirement-mode.js";
 
 function caseFixture(t: { after: (fn: () => void) => void }, analyst: string, human: boolean) {
   const dir = mkdtempSync(join(tmpdir(), "rondo-finalize-verify-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   writeFileSync(join(dir, "tasks.md"), "- [x] 1.1 Verified by Engineer\n");
   writeFileSync(join(dir, "proposal.md"), "# 当前提案\n");
-  writeFileSync(join(dir, "evidence.json"), JSON.stringify({ change_ref: "c-x", task_refs: ["1.1"], contract_files: computeContractFiles(dir) }));
+  const source = { repo_url: "http://tfs.test/tfs/C/P/_git/root", branch: "main", commit: "a".repeat(40), change_ref: "c-x" };
   const metadata = {
-    "dev.dispatch": JSON.stringify([{ active: true, change_ref: "c-x", task_refs: ["1.1"] }]),
+    "analysis.source": JSON.stringify(source),
+    "analysis.change_ref": "c-x",
     "analysis.gate.result": "PASS",
     "analysis.verify_agent.recommendation": analyst,
     "analysis.human_approval": JSON.stringify({
-      decision: "approved", by: "human", at: "2026-11-08T00:00:00Z",
+      source, decision: "approved", by: "human", at: "2026-11-08T00:00:00Z",
       comment_ref: "approval-1", verify_agent_required: human,
     }),
     "verify_agent.required": String(human),
   };
   const check = (values = metadata) =>
-    deliveryCompletionGate({} as never, values, "in_review", dir, "c-x");
+    assertRequirementPrepareGate(values, "in_review", dir);
   return { metadata, check };
 }
 

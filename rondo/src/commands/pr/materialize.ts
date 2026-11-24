@@ -34,7 +34,7 @@ import { removePublishedRequirementWorktree } from "../dev/requirement-worktree.
 import { isRequirementChangeDelivery } from "../delivery/requirement-mode.js";
 import { requirementRoot } from "../runtime/root-git.js";
 import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
-import { normalizeTfsPrWebUrl } from "../../tfs/api/pr.js";
+import { normalizeTfsPrWebUrl, parseTfsPrWebUrl } from "../../tfs/api/pr.js";
 import { assertTfsRepository } from "../../clients/authenticated-git.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 
@@ -213,6 +213,16 @@ export async function materializeOne(tfs: TfsClient, cfg: RegistryConfig, tfsId:
   }
   const prWebUrl = (candidate: string | undefined, id: number): string =>
     normalizeTfsPrWebUrl(candidate, collection, repo.tfs_project as string, repo.tfs_repo as string, id);
+
+  if (prior) {
+    const location = parseTfsPrWebUrl(prior.pr_url, collection);
+    if (!location || location.prId !== prior.pr_id || prior.repo_key !== entry.repo_key ||
+        location.project.toLowerCase() !== repo.tfs_project.toLowerCase() ||
+        location.repository.toLowerCase() !== repo.tfs_repo.toLowerCase() ||
+        prior.source_branch !== entry.source_branch || prior.target_branch !== target) {
+      throw new UnknownError(`${entry.repo_key}: current_pr 仓库、PR 或分支身份不匹配`);
+    }
+  }
 
   // The actual remote branch always pins the Candidate, including when an existing PR is reused.
   const reusePr = async (id: number, priorUrl = ""): Promise<CurrentPrEntry & { reused: boolean }> => {

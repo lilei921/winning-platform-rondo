@@ -8,7 +8,7 @@ import { spawnSync } from "node:child_process";
 import { assertEngineerExecution, readDevelopmentCommit } from "../dist/commands/dev/requirement-guard.js";
 import { parseRepositoryScope } from "../dist/commands/analysis/repository-scope.js";
 import { checkedTaskProgress, validateChangeDelivery, checkPublishedChange } from "../dist/commands/dev/change-completion.js";
-import { isRequirementChangeDelivery, assertRequirementEvidence } from "../dist/commands/delivery/requirement-mode.js";
+import { isRequirementChangeDelivery, approvedRequirementScope } from "../dist/commands/delivery/requirement-mode.js";
 import { isDeliveryTaskTitle, findDeliveryTasks, ensureDeliveryTasks } from "../dist/commands/tfs/requirement-tasks.js";
 import { prepareRequirementWorktree, removePublishedRequirementWorktree } from "../dist/commands/dev/requirement-worktree.js";
 import { TfsClient } from "../dist/tfs/client.js";
@@ -67,7 +67,7 @@ test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专
     }
     throw Error("Unexpected external PR write");
   } };
-  const prior = { repo_key: "frame", pr_id: 17, pr_url: "http://tfs.test/pr/17",
+  const prior = { repo_key: "frame", pr_id: 17, pr_url: "http://tfs.test/tfs/C/P/_git/biz/pullrequest/17",
     source_branch: "feature/42", target_branch: "dev" };
   await assert.rejects(materializeOne(tfs, cfg, "42", {...entry, repo_url: registry.web.repo_url}, prior, undefined, entry.description), /identity_mismatch/);
   await assert.rejects(materializeOne(tfs, cfg, "42", {...entry, target_branch: "main"}, prior, undefined, entry.description), /target_branch_mismatch/);
@@ -91,16 +91,26 @@ test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专
   assert.equal(listed, true, "未登记 PR 可通过外部 Active PR 发现后复用");
 });
 
-test("Requirement Closeout 读取批准范围与现有 pr_prep，不依赖 Evidence JSON", t => {
-  const changeDir = mkdtempSync(join(tmpdir(), "rondo-requirement-scope-"));
-  t.after(() => rmSync(changeDir, { recursive: true, force: true }));
+test("Requirement Closeout 读取批准 Commit 的范围而非当前工作树", t => {
+  const root = mkdtempSync(join(tmpdir(), "rondo-requirement-scope-"));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const git = (...args) => {
+    const result = spawnSync("git", args, {cwd: root, encoding: "utf8"});
+    assert.equal(result.status, 0, result.stderr);
+    return result.stdout.trim();
+  };
+  git("init");
+  git("config", "user.name", "Rondo Test");
+  git("config", "user.email", "test@example.invalid");
+  const changeDir = join(root, "openspec", "changes", "foo-42");
+  mkdirSync(changeDir, {recursive: true});
   writeFileSync(join(changeDir, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [frame]\n");
-  writeFileSync(join(changeDir, "proposal.md"), "# Proposal\n");
-  writeFileSync(join(changeDir, "tasks.md"), "- [x] 1.1 Build\n");
-  const md = { "tfs.id": "42", "analysis.change_ref": "foo-42", pr_prep: JSON.stringify([prep("frame", sha1)]) };
-  assert.doesNotThrow(() => assertRequirementEvidence(registry, md, changeDir, "foo-42"));
+  git("add", "-A");
+  git("commit", "-m", "approved");
+  const source = { repo_url: repoUrl, branch: "main", commit: git("rev-parse", "HEAD"), change_ref: "foo-42" };
+  const md = {"analysis.source": JSON.stringify(source), "analysis.change_ref": "foo-42"};
   writeFileSync(join(changeDir, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [web]\n");
-  assert.throws(() => assertRequirementEvidence(registry, md, changeDir, "foo-42"), /Scope/);
+  assert.deepEqual(approvedRequirementScope(md, root), ["frame"]);
 });
 
 test("Repository Scope 和完整原生 Tasks 校验，拒绝重复、空范围和未完成项", () => {
