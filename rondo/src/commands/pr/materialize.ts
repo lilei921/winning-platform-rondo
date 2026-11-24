@@ -77,6 +77,22 @@ interface CurrentPrEntry {
   target_branch: string;
 }
 
+/** Confirm PR registration independently of optional worktree cleanup. */
+export function registerCurrentPr(
+  multica: Pick<MulticaClient, "setMetadata" | "getIssue" | "setStatus">, issueId: string, currentPr: string,
+): ReturnType<MulticaClient["getIssue"]> {
+  multica.setMetadata(issueId, "current_pr", currentPr);
+  if (multica.getIssue(issueId).metadata?.current_pr !== currentPr) {
+    throw new UnknownError("current_pr 登记未确认，禁止进入 in_review");
+  }
+  multica.setStatus(issueId, "in_review");
+  const confirmed = multica.getIssue(issueId);
+  if (confirmed.status !== "in_review" || confirmed.metadata?.current_pr !== currentPr) {
+    throw new UnknownError("PR 登记或 in_review 状态未确认");
+  }
+  return confirmed;
+}
+
 function log(msg: string): void {
   logLine(msg);
 }
@@ -403,16 +419,7 @@ async function main(rawArgs: string[]): Promise<number> {
 
     // 全部登记完成才回写 + 转状态（02 §10.2：所有 required PR 注册完成后才进 in_review）
     const currentPr = JSON.stringify(prs.map(({ reused: _, ...rest }) => rest));
-    multica.setMetadata(issue.id, "current_pr", currentPr);
-    if (multica.getIssue(issue.id).metadata?.current_pr !== currentPr) {
-      throw new UnknownError("current_pr 登记未确认，禁止进入 in_review");
-    }
-    // --no-start：in_review 是流转事实，不触发 Run（02：状态与 Run 生命周期分离）
-    multica.setStatus(issue.id, "in_review");
-    const confirmed = multica.getIssue(issue.id);
-    if (confirmed.status !== "in_review" || confirmed.metadata?.current_pr !== currentPr) {
-      throw new UnknownError("PR 登记或 in_review 状态未确认");
-    }
+    const confirmed = registerCurrentPr(multica, issue.id, currentPr);
 
     const rootArg = args["root-repo"] || process.env.RONDO_WORKSPACE_PATH;
     if (args.mode === "requirement" && rootArg) {

@@ -12,7 +12,7 @@ import { isRequirementChangeDelivery, approvedRequirementScope } from "../dist/c
 import { isDeliveryTaskTitle, findDeliveryTasks, ensureDeliveryTasks } from "../dist/commands/tfs/requirement-tasks.js";
 import { prepareRequirementWorktree, removePublishedRequirementWorktree } from "../dist/commands/dev/requirement-worktree.js";
 import { TfsClient } from "../dist/tfs/client.js";
-import { materializeOne } from "../dist/commands/pr/materialize.js";
+import { materializeOne, registerCurrentPr } from "../dist/commands/pr/materialize.js";
 import { outgoing, prepareRoot, publishChange } from "../dist/commands/runtime/root-git.js";
 
 const repoUrl = "http://tfs.test/tfs/C/P/_git/biz";
@@ -443,4 +443,27 @@ test("持久根仓安全 Fast-forward 保留其他 Change 的 staged WIP",async 
   assert.equal(done.pushed,true);
   assert.equal(git(root,"rev-parse","refs/remotes/origin/main"),done.commit);
   assert.match(git(root,"status","--porcelain","--","openspec/changes/other-200/tasks.md"),/^M /);
+});
+
+test("PR 登记回读独立于交付模式及 Worktree Cleanup", () => {
+  const currentPr = JSON.stringify([{repo_key:"frame",pr_id:17}]);
+  for (const failure of ["metadata","status","none"]) {
+    const issue = {id:"issue",status:"in_progress",metadata:{}};
+    const calls = [];
+    const client = {
+      setMetadata(id,key,value) { calls.push("metadata"); if (failure !== "metadata") issue.metadata[key]=value; },
+      getIssue() { calls.push("read"); return issue; },
+      setStatus(id,status) { calls.push("status"); if (failure !== "status") issue.status=status; },
+    };
+    if (failure === "metadata") {
+      assert.throws(()=>registerCurrentPr(client,issue.id,currentPr), /登记未确认/);
+      assert.deepEqual(calls,["metadata","read"]);
+    } else if (failure === "status") {
+      assert.throws(()=>registerCurrentPr(client,issue.id,currentPr), /状态未确认/);
+      assert.deepEqual(calls,["metadata","read","status","read"]);
+    } else {
+      assert.equal(registerCurrentPr(client,issue.id,currentPr).status,"in_review");
+      assert.deepEqual(calls,["metadata","read","status","read"]);
+    }
+  }
 });

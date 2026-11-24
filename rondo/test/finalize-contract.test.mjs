@@ -17,6 +17,7 @@ const CHANGE_REF = "c-fin";
 const STEPS_GOLDEN = ["pr_transition_gate", "pending_written", "completion_gate", "route_archive", "archive_readback", "tfs_writeback", "tfs_verification", "summary", "issue_done", "pending_cleared"];
 
 const PROJECT_GUID="11111111-1111-1111-1111-111111111111", REPO_GUID="22222222-2222-2222-2222-222222222222", BUSINESS_COMMIT="a".repeat(40);
+const PROJECT2_GUID="33333333-3333-3333-3333-333333333333", REPO2_GUID="44444444-4444-4444-4444-444444444444";
 function git(cwd, ...args) {
   const r = spawnSync("git", ["-C", cwd, ...args], { encoding: "utf8" });
   assert.equal(r.status, 0, `git ${args.join(" ")}: ${r.stderr}`);
@@ -79,20 +80,22 @@ function startTfsStub(wiState, opsLog, control = { denyStateWrite: false }, gitR
       return res.writeHead(200).end(readFileSync(file));
     }
     const json = (code, obj) => { res.writeHead(code, { "content-type": "application/json" }); res.end(JSON.stringify(obj)); };
+    const project2 = p.startsWith("/Proj2/") || p.startsWith("/" + PROJECT2_GUID + "/");
+    const projectId = project2 ? PROJECT2_GUID : PROJECT_GUID, repoId = project2 ? REPO2_GUID : REPO_GUID;
     if (req.method === "OPTIONS" && /^\/_apis\/[^/]+$/.test(p)) return json(200, { value: TFS_LOCATIONS });
     if (req.method === "GET" && p === "/_apis/resourceAreas") return json(200, { count: 0, value: null });
     if (req.method === "GET" && /\/_apis\/git\/repositories\/[^/]+\/pullrequests\/\d+$/.test(p)) {
       return json(200, {
-        pullRequestId: 1, title: "t", status: 3,
+        pullRequestId: project2 ? 2 : 1, title: "t", status: 3,
         sourceRefName: control.directBug ? "refs/heads/feat/999" : "refs/heads/feature/999", targetRefName: "refs/heads/main",
         lastMergeSourceCommit: { commitId: control.candidate },
         lastMergeCommit: { commitId: "deadbeef" }, createdBy: { displayName: "t" }, creationDate: "2026-01-01T00:00:00Z",
       });
     }
     if (req.method === "GET" && /\/_apis\/git\/repositories\/[^/]+$/.test(p)) {
-      return json(200, { id: REPO_GUID, name: "repo1", project: { id: PROJECT_GUID, name: "Proj1" } });
+      return json(200, { id: repoId, name: "repo1", project: { id: projectId, name: project2 ? "Proj2" : "Proj1" } });
     }
-    if (req.method === "GET" && /\/pullrequests\/1\/commits$/i.test(p)) {
+    if (req.method === "GET" && /\/pullrequests\/[12]\/commits$/i.test(p)) {
       return json(200, {value: [{commitId: BUSINESS_COMMIT, comment: "business implementation"}]});
     }
     if (req.method === "GET" && /\/commits\/[0-9a-f]{40}\/changes$/i.test(p)) {
@@ -101,7 +104,7 @@ function startTfsStub(wiState, opsLog, control = { denyStateWrite: false }, gitR
     if (req.method === "GET" && /\/_apis\/git\/repositories\/[^/]+\/commits$/.test(p)) {
       const sha = url.searchParams.get("searchCriteria.fromCommitId");
       const workItems = [...wis.values()].filter(wi => wi.relations.some(rel =>
-        rel.rel === "ArtifactLink" && decodeURIComponent(rel.url).endsWith("/" + sha))).map(wi => ({id: wi.id}));
+        rel.rel === "ArtifactLink" && decodeURIComponent(rel.url).endsWith("/" + projectId + "/" + repoId + "/" + sha))).map(wi => ({id: wi.id}));
       return json(200, {value: [{commitId: sha, workItems}]});
     }
     if (req.method === "POST" && /\/_apis\/wit\/workitems\/\$/.test(p)) {
@@ -257,6 +260,8 @@ async function fixture(t, opts = {}) {
   const rootRepo = opts.requirement ? join(dir, "root") : join(dir, "root-repo");
   mkdirSync(rootRepo);
   git(rootRepo, "init");
+  git(rootRepo, "config", "user.name", "Rondo Test");
+  git(rootRepo, "config", "user.email", "test@example.invalid");
   git(rootRepo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "--allow-empty", "-m", "init");
   git(rootRepo, "branch", "-M", "dev");
   git(rootRepo, "remote", "add", "origin", rootRemote);
@@ -270,7 +275,7 @@ async function fixture(t, opts = {}) {
   let changeParent = join(rootRepo, "openspec", "changes", CHANGE_REF);
   mkdirSync(join(changeParent, "specs", "cap1"), { recursive: true });
   writeFileSync(join(changeParent, ".openspec.yaml"), opts.requirement
-    ? "schema: corrective-change\nx-repositories: [repo1]\n" : "schema: corrective-change\n");
+    ? "schema: corrective-change\nx-repositories: " + (opts.multiRepo ? "[repo1, repo2]\n" : "[repo1]\n") : "schema: corrective-change\n");
   writeFileSync(join(changeParent, "proposal.md"), "# 提案\n");
   writeFileSync(join(changeParent, "tasks.md"), TASKS_CHECKED);
   writeFileSync(join(changeParent, "specs", "cap1", "spec.md"), "# cap1 spec\n");
@@ -348,6 +353,15 @@ async function fixture(t, opts = {}) {
         blockers: [],
       }]),
     };
+    if (opts.multiRepo) {
+      const repoUrl = tfsUrl + "/Proj2/_git/repo1";
+      const prep = JSON.parse(metadata.pr_prep);
+      const prs = JSON.parse(metadata.current_pr);
+      prep.push({...prep[0], repo_key:"repo2", repo_url:repoUrl});
+      prs.push({...prs[0], repo_key:"repo2", pr_id:2, pr_url:repoUrl + "/pullrequest/2"});
+      metadata.pr_prep = JSON.stringify(prep);
+      metadata.current_pr = JSON.stringify(prs);
+    }
   } else {
     const fact = {result:"PASS", summary:"Verified", evidence_refs:["test:1"]};
     const entry = {repo_key:"repo1", tfs_id:999, source_branch:"feat/999", target_branch:"main", candidate_commit:tfsControl.candidate,
@@ -362,7 +376,11 @@ async function fixture(t, opts = {}) {
   // multica mock state
   chmodSync(MOCK, 0o755);
   const planFile = join(dir, "plan.json");
-  writeFileSync(planFile, JSON.stringify({tasks:[{summary:"实现并验证", estimate_hours:2, source_refs:["1.1","1.2"], commits:[{repo_key:"repo1",sha:BUSINESS_COMMIT}]}]}));
+  const planTasks = opts.multiRepo ? [
+    {summary:"实现",estimate_hours:1,source_refs:["1.1"],commits:[{repo_key:"repo1",sha:BUSINESS_COMMIT}]},
+    {summary:"验证",estimate_hours:2,source_refs:["1.2"],commits:[{repo_key:"repo2",sha:BUSINESS_COMMIT}]},
+  ] : [{summary:"实现并验证",estimate_hours:2,source_refs:["1.1","1.2"],commits:[{repo_key:"repo1",sha:BUSINESS_COMMIT}]}];
+  writeFileSync(planFile, JSON.stringify({tasks:planTasks}));
   const statePath = join(dir, "state.json");
   writeFileSync(statePath, JSON.stringify({
     issues: {
@@ -1071,4 +1089,18 @@ test("Requirement 对齐远端后任务退回未完成，不归档", async t => 
   assert.match(result.body.reason, /未完成|tasks\.md/);
   assert.ok(!f.readOps().includes("archive"));
   assert.ok(existsSync(f.changeDir));
+});
+
+test("跨 Project 同名仓库及相同 SHA 按 GUID 分别关联真实 TFS Task", async t => {
+  const f = await fixture(t,{multiRepo:true});
+  const result = await f.run();
+  assert.equal(result.exit,0,result.stdout+result.stderr);
+  const tasks = [...f.wis.values()].filter(wi=>wi.fields["System.WorkItemType"]==="任务");
+  assert.equal(tasks.length,2);
+  assert.deepEqual(tasks.map(wi=>wi.relations.filter(rel=>rel.rel==="ArtifactLink").map(rel=>decodeURIComponent(rel.url))), [
+    ["vstfs:///Git/Commit/"+PROJECT_GUID+"/"+REPO_GUID+"/"+BUSINESS_COMMIT],
+    ["vstfs:///Git/Commit/"+PROJECT2_GUID+"/"+REPO2_GUID+"/"+BUSINESS_COMMIT]
+  ]);
+  assert.deepEqual(tasks.map(wi=>wi.fields["Microsoft.VSTS.Scheduling.CompletedWork"]),[1,2]);
+  assert.equal(f.readState().issues["WNDF-T"].status,"done");
 });

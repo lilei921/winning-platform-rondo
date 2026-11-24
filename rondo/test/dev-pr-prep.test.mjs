@@ -52,6 +52,8 @@ function fixture(t, { tfsId = "261056", seedPrep = null } = {}) {
   const hub = join(rootRepo, "hub-clone");
   mkdirSync(hub);
   git(hub, "init");
+  git(hub, "config", "user.name", "Rondo Test");
+  git(hub, "config", "user.email", "test@example.invalid");
   git(hub, "remote", "add", "origin", remote);
   writeFileSync(join(hub, "a.txt"), "v1\n");
   git(hub, "add", "a.txt");
@@ -80,7 +82,9 @@ function fixture(t, { tfsId = "261056", seedPrep = null } = {}) {
   writeFileSync(statePath, JSON.stringify({ metadata, project_resources: [] }));
 
   const callsPath = join(dir, "calls.jsonl");
-  const env = { MOCK_STATE: statePath, MOCK_SYNC_CALLS_FILE: callsPath, TFS_SERVER_URL: "http://tfs.test/tfs/C", TFS_PAT: "fixture", RONDO_GIT_EXECUTABLE: transport };
+  const gitExecutable = process.platform === "win32" ? join(dir, "git-transport.cmd") : transport;
+  if (process.platform === "win32") writeFileSync(gitExecutable, '@echo off\r\nnode "%~dp0git-transport.cjs" %*\r\n');
+  const env = { MOCK_STATE: statePath, MOCK_SYNC_CALLS_FILE: callsPath, TFS_SERVER_URL: "http://tfs.test/tfs/C", TFS_PAT: "fixture", RONDO_GIT_EXECUTABLE: gitExecutable };
   const descPath = join(rootRepo, "openspec", "changes", "sample", "pr-description-datamodel-web.md");
   const run = (over = {}) => runCli([
     "dev", "pr-prepare", "--config", config, "--issue", "WNDF-T", "--repo", "datamodel-web",
