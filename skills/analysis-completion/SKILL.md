@@ -8,7 +8,7 @@ description: 将已完成的 Analysis Engineering Contract 经真实 Gate 和固
 ## Inputs / Preconditions
 
 - 当前 Issue 已获授权，专业分析和唯一 OpenSpec Change 已完成。
-- 根仓已基于适用工程版本准备就绪；必要时使用已绑定的工作区准备 Skill。
+- 根仓已基于适用工程版本准备就绪。
 - `<facts.json>` 是 Change 目录外的临时 CLI 输入，包含 `change_kind`、`change_ref`、`verify_agent`；Intentional 还需 `ai_review.verdict`。
 - `<config>` 为本 Skill 的 `config/repo-registry.json`；`runtime.workspace_id` 与当前 Workspace 一致。
 
