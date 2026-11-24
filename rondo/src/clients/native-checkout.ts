@@ -183,7 +183,9 @@ export function assertNativeTaskCheckout(path: string, workdir: string, reported
   if (!branch.startsWith("agent/") || (reportedBranch && reportedBranch !== branch))
     throw new FailError("Native Checkout 当前分支与平台返回不一致");
   const gitDir = read(["rev-parse", "--absolute-git-dir"]);
-  const manifest = readPlatformCheckoutManifest(gitDir);
+  const commonDir = read(["rev-parse", "--path-format=absolute", "--git-common-dir"]);
+  const manifest = readPlatformCheckoutManifest(gitDir) ??
+    (samePath(commonDir, gitDir) ? null : readPlatformCheckoutManifest(commonDir));
   const liveMode = platformCheckoutMode(path) ?? "isolated";
   assertPlatformCheckoutIdentity(manifest ?? { checkout_branch: branch, task_id: taskId, workspace_id: workspaceId,
     checkout_mode: liveMode }, { mode: liveMode, taskId, workspaceId });
