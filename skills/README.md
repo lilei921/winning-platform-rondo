@@ -23,16 +23,16 @@
 | [workitem-triage](workitem-triage/SKILL.md) | Work Item 准入评估 |
 | [workspace-preparation](workspace-preparation/SKILL.md) | Bug / Requirement 需要的 Git 工作区准备与复用 |
 
-## 保留但不受管
+## 已归档或保留但不受管
 
 | 资产 | 说明 |
 | --- | --- |
-| [tfs-writeback](tfs-writeback/SKILL.md) | 保留的方法资产；当前由 `delivery-closeout` 使用 Rondo Writeback 命令，不单独发布为受管 Skill |
-| [workitem-analysis](workitem-analysis/SKILL.md) | 退役 Skill，保留源码供历史追溯 |
-| [development-execution](development-execution/SKILL.md)、[backend-engineering](backend-engineering/SKILL.md)、[frontend-engineering](frontend-engineering/SKILL.md) | 旧 Task Set / 分角色研发方法，已由统一 Engineer 路线替代 |
-| [delivery-flow](delivery-flow/SKILL.md)、[delivery-gate](delivery-gate/SKILL.md)、[pull-request](pull-request/SKILL.md) | 旧协作与交付方法，保留源码 |
+| [tfs-writeback](../archive/03-skills/tfs-writeback/SKILL.md) | 历史方法资产；当前由 `delivery-closeout` 使用 Rondo Writeback 命令，不单独发布为受管 Skill |
+| [workitem-analysis](../archive/skills-2026-11-24/workitem-analysis/SKILL.md) | 已归档的退役 Skill，仅供历史追溯 |
+| [development-execution](../archive/skills-2026-11-24/development-execution/SKILL.md)、[backend-engineering](../archive/skills-2026-11-24/backend-engineering/SKILL.md)、[frontend-engineering](../archive/skills-2026-11-24/frontend-engineering/SKILL.md) | 已归档的旧 Task Set / 分角色研发方法，已由统一 Engineer 路线替代 |
+| [delivery-flow](../archive/skills-2026-11-24/delivery-flow/SKILL.md)、[delivery-gate](../archive/skills-2026-11-24/delivery-gate/SKILL.md)、[pull-request](../archive/skills-2026-11-24/pull-request/SKILL.md) | 已归档的旧协作与交付方法 |
 
-以上资产不在当前 `managed_skills` 或 Agent 绑定中。移出受管清单不表示远端旧对象已被删除。
+以上资产不在当前 `managed_skills` 或 Agent 绑定中。未关联现行 Agent 的 7 项源码已于 2026-11-24 移至 `archive/skills-2026-11-24/`；归档不表示远端旧对象已被删除。
 
 ## 目录约定
 

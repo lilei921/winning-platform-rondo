@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
 const SKILLS = fileURLToPath(new URL("../../skills/", import.meta.url));
+const ARCHIVED_SKILLS = fileURLToPath(new URL("../../archive/skills-2026-11-24/", import.meta.url));
 const FRONT = (name) => readFileSync(join(SKILLS, name, "SKILL.md"), "utf8");
 
 function fixture(t) {
@@ -143,7 +144,7 @@ test("D1 workspace sync refuses missing squad identity rather than writing fallb
   assert.match(r.body.reason, /delivery_squad_id/);
 });
 
-test("D2 skill contracts: retire legacy without deletion and bind composable Analyst methods", () => {
+test("D2 skill contracts: archive legacy and bind composable Analyst methods", () => {
   const manifest = JSON.parse(readFileSync(join(SKILLS, "..", "workspace-config", "provisioning.json"), "utf8"));
   const analyst = manifest.agents.find((a) => a.name === "Workitem Analyst");
   assert.deepEqual(analyst.skills, [
@@ -156,8 +157,9 @@ test("D2 skill contracts: retire legacy without deletion and bind composable Ana
     assert.ok(manifest.managed_skills.includes(name));
     assert.ok(analyst.skills.includes(name));
   }
-  assert.ok(existsSync(join(SKILLS, "workitem-analysis", "SKILL.md")), "retired Skill must be retained");
-  // 旧文件无需文字标记；是否参与执行由上面的受管清单和实际 Agent 绑定决定。
+  assert.equal(existsSync(join(SKILLS, "workitem-analysis", "SKILL.md")), false, "retired Skill must leave the active directory");
+  assert.ok(existsSync(join(ARCHIVED_SKILLS, "workitem-analysis", "SKILL.md")), "retired Skill must be archived");
+  // 归档旧文件无需文字标记；是否参与执行由上面的受管清单和实际 Agent 绑定决定。
   assert.deepEqual(
     manifest.agents.find((agent) => agent.name === "Wayfinder Agent").skills,
     ["workitem-triage", "codebase-explorer"],
@@ -171,7 +173,7 @@ test("D2 skill contracts: retire legacy without deletion and bind composable Ana
   ]) assert.ok(spec.includes(expected), "spec-preparation missing: " + expected);
   assert.ok(!spec.includes("新建并绑定 Agent"));
   const canonical = readFileSync(join(SKILLS, "spec-preparation", "references", "tasks-md-authoring-contract.md"), "utf8");
-  const legacy = readFileSync(join(SKILLS, "workitem-analysis", "references", "tasks-md-authoring-contract.md"), "utf8");
+  const legacy = readFileSync(join(ARCHIVED_SKILLS, "workitem-analysis", "references", "tasks-md-authoring-contract.md"), "utf8");
   // D3-B：现行工程 Task 写法已不包含 TFS 工时约束；Retired 历史契约只用于追溯，
   // 不允许因修改权威 Reference 而同步覆写旧快照。
   assert.match(canonical, /工程 Task/);
