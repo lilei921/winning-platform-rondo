@@ -89,6 +89,7 @@ interface Overlay extends MulticaEnvironment, McpOverlay {
   delivery_squad_id?: string;
   project?: string;
   skills?: Record<string, string>;
+  workspace_preparation_skill?: "native-workspace" | "workspace-preparation";
   [k: string]: unknown;
 }
 
@@ -230,6 +231,16 @@ function main(rawArgs: string[]): number {
     if (group) {
       manifest.project = { ...manifest.project, ...group.project };
       if (group.mcp_servers !== undefined) manifest.mcp_servers = group.mcp_servers;
+    }
+    // Deployment binding only; this does not select a runtime execution mode.
+    const preparationSkill = overlay.workspace_preparation_skill;
+    if (preparationSkill !== undefined && preparationSkill !== "native-workspace" && preparationSkill !== "workspace-preparation") {
+      throw new UnknownError("workspace_preparation_skill 必须是已支持的工作区准备 Skill");
+    }
+    if (preparationSkill === "native-workspace") {
+      for (const agent of manifest.agents) {
+        agent.skills = agent.skills?.map(skill => skill === "workspace-preparation" ? preparationSkill : skill);
+      }
     }
     const branch = manifest.project?.workspace_branch;
     if (branch !== undefined && (typeof branch !== "string" || !branch.trim() || branch !== branch.trim())) {
