@@ -113,7 +113,7 @@
   "workspace_repos": [
     {
       "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo",
-      "description": "monorepo根仓库，负责 Agent 配置、共享文档、OpenSpec和工具。默认使用main"
+      "description": "monorepo根仓库，负责 Agent 配置、共享文档、OpenSpec和工具。"
     }
   ],
   "workspace_groups": {
@@ -151,7 +151,7 @@
       "workspace_repos": [
         {
           "url": "http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-base-winex-bi-monorepo",
-          "description": "monorepo根仓库，负责 Agent 配置、共享文档、OpenSpec和工具。默认使用main"
+          "description": "monorepo根仓库，负责 Agent 配置、共享文档、OpenSpec和工具。"
         }
       ],
       "mcp_servers": [

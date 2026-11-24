@@ -14,9 +14,9 @@ test("来源必须完整且与 Issue Change 一致，禁止凭据和非 TFS 地�
   assert.throws(() => parseAnalysisSource(source, "other"));
 });
 
-test("分支仅作追溯，来源身份由仓库、commit 和 Change 决定", () => {
-  assert.equal(sameAnalysisSource(source, { ...source, branch: "new-name" }), true);
-  for (const field of ["repo_url", "commit", "change_ref"] as const) {
+test("固定来源身份由仓库、branch、commit 和 Change 共同决定", () => {
+  assert.equal(sameAnalysisSource(source, { ...source }), true);
+  for (const field of ["repo_url", "branch", "commit", "change_ref"] as const) {
     assert.equal(sameAnalysisSource(source, { ...source, [field]: "different" }), false);
   }
 });

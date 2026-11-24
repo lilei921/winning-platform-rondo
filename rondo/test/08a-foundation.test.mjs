@@ -69,7 +69,7 @@ test('越界、junction、未忽略目录和不完整 clone 保留现场且拒�
   assert.throws(() => prepareBusinessWorkspace(f.root, repo, 12, f.transport), /链接/);
   unlinkSync(join(f.root, 'biz')); mkdirSync(join(f.root, 'biz'));
   writeFileSync(join(f.root, 'biz', 'partial'), 'keep');
-  assert.throws(() => prepareBusinessWorkspace(f.root, repo, 12, f.transport), /完整独立/);
+  assert.throws(() => prepareBusinessWorkspace(f.root, repo, 12, f.transport), /不是有效业务仓/);
   assert.equal(readFileSync(join(f.root, 'biz', 'partial'), 'utf8'), 'keep');
 });
 
@@ -81,7 +81,7 @@ test('clone 中断重试不删除现场或重复 clone', t => {
     return { status: 128, stdout: '', stderr: 'network' };
   };
   assert.throws(() => prepareBusinessWorkspace(f.root, repo, 12, broken), /clone/);
-  assert.throws(() => prepareBusinessWorkspace(f.root, repo, 12, broken), /完整独立/);
+  assert.throws(() => prepareBusinessWorkspace(f.root, repo, 12, broken), /不是有效业务仓/);
   assert.equal(clones, 1);
 });
 
