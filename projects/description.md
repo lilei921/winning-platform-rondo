@@ -1,1 +1,0 @@
-工程根仓为 `winning-platform-monorepo`，仓库 URL 和初始分支以当前 Project Resource 为准。

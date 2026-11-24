@@ -25,7 +25,11 @@ function fixture(t, scenario = "normal", extraEnv = {}) {
   );
   write(shared + "provisioning.json", {
     managed_skills: ["spec-preparation"], agents,
-    squad: { name: "Delivery", leader: "Workitem Analyst", members: [] }, project: { title: "Project", workspace_branch: ["branch", "group"].includes(scenario) ? "release" : undefined }, autopilots: [],
+    squad: { name: "Delivery", leader: "Workitem Analyst", members: [] }, project: {
+      title: "Project",
+      workspace_branch: ["branch", "group"].includes(scenario) ? "release" : undefined,
+      description: ["project-create", "project-description"].includes(scenario) ? "项目描述" : undefined,
+    }, autopilots: [],
     workspace_groups: { bi: { workspaces: ["pilot"], project: scenario === "group" ? { title: "BI Project" } : {} } },
     workflow: { statuses: [{ key: "analysis_review", name: "Analysis Review", category: "started" }] },
   });
@@ -112,7 +116,9 @@ else if(key==='agent env') {
 }
 else if(key==='squad list') out=[{id:'squad-1',name:'Delivery',leader_id:'agent-1',instructions:'instructions'}];
 else if(key==='squad member') out=[];
-else if(key==='project list') out=[{id:'project-1',title:process.env.MC_SCENARIO==='group'?'BI Project':'Project'}];
+else if(key==='project list') out=process.env.MC_SCENARIO==='project-create'?[]:[{id:'project-1',title:process.env.MC_SCENARIO==='group'?'BI Project':'Project',description:process.env.MC_SCENARIO==='project-description'?'旧描述':'项目描述'}];
+else if(key==='project create') out={id:'project-1'};
+else if(key==='project update') out={id:'project-1'};
 else if(key==='autopilot list') out=[];
 else { console.error('Unexpected platform mutation: '+args.join(' ')); process.exit(1); }
 console.log(JSON.stringify(out));
@@ -144,6 +150,34 @@ test("根目录供给按分组选择 Project、继承默认分支且不改写 ma
     assert.equal(readFileSync(manifest, "utf8"), before);
   }
   assert.equal(JSON.parse(readFileSync(f.trace + ".agent-1", "utf8")).RONDO_WORKSPACE_BRANCH, "release");
+});
+
+test("创建 Project 时下发 manifest 中的 description", t => {
+  const f = fixture(t, "project-create");
+  const result = f.run("workspace", "provision", "--workspace", "pilot", "--skip-workflow");
+  assert.equal(result.code, 0, result.stderr);
+  assert.ok(result.body.created.includes("project/Project"));
+  const create = f.calls().find(args => args.includes("project") && args.includes("create"));
+  assert.ok(create);
+  assert.equal(create[create.indexOf("--description") + 1], "项目描述");
+  assert.equal(JSON.parse(readFileSync(f.overlay, "utf8")).project, "project-1");
+});
+
+test("已有 Project 的描述漂移支持预检和更新", t => {
+  const f = fixture(t, "project-description");
+  const provision = (...flags) => f.run("workspace", "provision", "--workspace", "pilot", "--skip-workflow", ...flags);
+  const preview = provision("--dry-run");
+  assert.equal(preview.code, 0, preview.stderr);
+  assert.ok(preview.body.updated.includes("project/Project (description)"));
+  assert.ok(!f.calls().some(args => args.includes("project") && args.includes("update")));
+
+  const result = provision();
+  assert.equal(result.code, 0, result.stderr);
+  assert.ok(result.body.updated.includes("project/Project (description)"));
+  const update = f.calls().find(args => args.includes("project") && args.includes("update"));
+  assert.ok(update);
+  assert.ok(update.includes("project-1"));
+  assert.equal(update[update.indexOf("--description") + 1], "项目描述");
 });
 
 test("项目分支仅下发至 Analyst / Engineer，保留其他变量且再次供给无写入", t => {
