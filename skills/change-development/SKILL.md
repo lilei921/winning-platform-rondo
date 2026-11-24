@@ -6,7 +6,7 @@ description: 根据已批准的 OpenSpec Change 完成一个或多个授权仓�
 # Inputs / Boundaries
 
 - 当前 Issue 的 `analysis.source`、Human Approval、当前 OpenSpec Change 与 `.openspec.yaml.x-repositories`；本 Skill 的 `config/repo-registry.json`。
-- 仅对已批准的 Repository Scope 内代码进行修改。需要本地 Git 时按需使用 `workspace-preparation`；不以文件存在代替仓库/分支就绪核验。
+- 仅对已批准的 Repository Scope 内代码进行修改。需要本地 Git 时按需使用 `native-workspace`；不以文件存在代替仓库/分支就绪核验。
 - 不修改已批准行为、验收或授权范围；实质变更退回原有 Human Review。
 
 # Work
@@ -46,10 +46,10 @@ rondo dev pr-prepare --mode requirement --config "<config>" --issue <issue> --re
 
 rondo dev publish --config "<config>" --issue <issue> --change-ref <change_ref> --root-repo "<root>"
 rondo dev check-change --config "<config>" --issue <issue> --change-ref <change_ref>
-rondo pr materialize --mode requirement --config "<config>" --issue <issue> --change-ref <change_ref> --root-repo "<root>"
+rondo pr materialize --mode requirement --workspace native --config "<config>" --issue <issue> --change-ref <change_ref> --root-repo "<root>"
 ```
 
-只有确属非实质性 Design 细化才允许 `dev publish --minor-design`。多仓分别对各自的 Candidate 完成绑定。从持久根仓运行 `pr materialize`，Rondo 确认 PR 已登记且 Issue 已进入 `in_review` 后，回收本次研发的业务 Worktree。实际代码由 Git 持有，交付事实由 Multica 持有，最终 PR Description 由 TFS PR 持有。
+只有确属非实质性 Design 细化才允许 `dev publish --minor-design`。多仓分别对各自的 Candidate 完成绑定。Native 工作区由 Multica 管理。实际代码由 Git 持有，交付事实由 Multica 持有，最终 PR Description 由 TFS PR 持有。
 
 ## Stop / Output
 
