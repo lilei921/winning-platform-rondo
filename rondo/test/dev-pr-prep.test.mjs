@@ -10,7 +10,7 @@ const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
 const MOCK = fileURLToPath(new URL("./mock-multica.cjs", import.meta.url));
 const SHA_OTHER = "b".repeat(40);
 const SHA_WRONG = "c".repeat(40);
-const OTHER_ENTRY = { repo_key: "other-repo", source_branch: "feat/1", candidate_commit: SHA_OTHER, title: "Other PR" };
+const OTHER_ENTRY = { repo_key: "other-repo", source_branch: "feature/1", candidate_commit: SHA_OTHER, title: "Other PR" };
 
 function runCli(args, env = {}) {
   const result = spawnSync(process.execPath, [CLI, ...args], {
@@ -60,11 +60,11 @@ function fixture(t, { tfsId = "261056", seedPrep = null } = {}) {
   git(hub, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-m", "c1");
   git(hub, "branch", "-M", "main");
   git(hub, "push", "origin", "main");
-  git(hub, "checkout", "-b", `feat/${tfsId}`);
+  git(hub, "checkout", "-b", `feature/${tfsId}`);
   writeFileSync(join(hub, "a.txt"), "v2\n");
   git(hub, "commit", "-am", "c2");
-  git(hub, "push", "origin", `feat/${tfsId}`);
-  const head = git(hub, "rev-parse", `feat/${tfsId}`);
+  git(hub, "push", "origin", `feature/${tfsId}`);
+  const head = git(hub, "rev-parse", `feature/${tfsId}`);
   git(hub, "remote", "set-url", "origin", repoUrl);
   const transport = join(dir, "git-transport.cjs");
   writeFileSync(transport, `#!/usr/bin/env node\nconst {spawnSync}=require("node:child_process");\nconst args=process.argv.slice(2);\nif(args[0]==="ls-remote" && args[1]==="origin") args[1]=${JSON.stringify(remote)};\nconst r=spawnSync("git",args,{stdio:"inherit"});\nprocess.exit(r.status??1);\n`, {mode:0o755});
@@ -111,7 +111,7 @@ test("PASS 合并写入保留他仓条目并搭架描述文件", (t) => {
   assert.equal(prep.length, 2);
   assert.deepEqual(prep.find((e) => e.repo_key === "other-repo"), OTHER_ENTRY);
   const mine = prep.find((e) => e.repo_key === "datamodel-web");
-  assert.equal(mine.source_branch, "feat/261056");
+  assert.equal(mine.source_branch, "feature/261056");
   assert.equal(mine.repo_url, "http://tfs.test/tfs/C/P/_git/biz");
   assert.equal(mine.target_branch, "main");
   assert.equal(mine.candidate_commit, f.head);
@@ -140,7 +140,7 @@ test("HEAD 不一致 FAIL 且不写 metadata", (t) => {
 
 test("远端分支不存在 FAIL", (t) => {
   const f = fixture(t);
-  const r = f.run({ extra: ["--source-branch", "feat/nonexistent"] });
+  const r = f.run({ extra: ["--source-branch", "feature/nonexistent"] });
   assert.equal(r.exit, 2);
   assert.equal(r.body.code, "source_branch_not_found");
   assert.equal(f.state().metadata["pr_prep"], undefined);

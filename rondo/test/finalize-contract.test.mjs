@@ -87,7 +87,7 @@ function startTfsStub(wiState, opsLog, control = { denyStateWrite: false }, gitR
     if (req.method === "GET" && /\/_apis\/git\/repositories\/[^/]+\/pullrequests\/\d+$/.test(p)) {
       return json(200, {
         pullRequestId: project2 ? 2 : 1, title: "t", status: 3,
-        sourceRefName: control.directBug ? "refs/heads/feature/999" : "refs/heads/feature/999", targetRefName: "refs/heads/main",
+        sourceRefName: "refs/heads/feature/999", targetRefName: "refs/heads/main",
         lastMergeSourceCommit: { commitId: control.candidate },
         lastMergeCommit: { commitId: "deadbeef" }, createdBy: { displayName: "t" }, creationDate: "2026-01-01T00:00:00Z",
       });
