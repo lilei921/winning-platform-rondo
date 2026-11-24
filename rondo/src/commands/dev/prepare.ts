@@ -9,11 +9,12 @@ import { assertNativeTaskCheckout, validateNativeCheckout } from "../../clients/
 import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
 import { assertBugExecution, assertBugStart, assertBugSource } from "../bug/authorization.js";
 import { prepareBusinessWorkspace, validatePrepareRepo, type PrepareRepo } from "./prepare-workspace.js";
-import { guardRepository } from "./requirement-guard.js";
+import { assertEngineerExecution, guardRepository } from "./requirement-guard.js";
 import { prepareRequirementWorktree } from "./requirement-worktree.js";
 import { resolveMulticaRuntime } from "../../clients/runtime-context.js";
 import { readAnalysisSource } from "../analysis/source.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
+import { runAuthenticatedGit } from "../../clients/authenticated-git.js";
 import { gitOk, git } from "../../clients/git.js";
 import { readNativeRepoMapping, prepareNativeBusiness } from "./native-prepare.js";
 import { requirementRoot } from "../runtime/root-git.js";
@@ -50,11 +51,19 @@ export function registerDevPrepare(group: Command): void {
             const source = readAnalysisSource(issue.metadata);
             if (canonicalRepositoryIdentity(gitOk(root, ["remote", "get-url", "origin"], "核对批准根仓")) !== canonicalRepositoryIdentity(source.repo_url))
               throw new FailError("Native 根仓与批准来源不一致");
+            assertEngineerExecution(client, issue, runtime.workspace_id);
+            if (git(root, ["cat-file", "-e", source.commit + "^{commit}"]).status !== 0) {
+              const ref = "refs/heads/" + source.branch;
+              if (source.branch.startsWith("-") || source.branch.startsWith("refs/") || git(root, ["check-ref-format", ref]).status !== 0)
+                throw new FailError("批准来源分支非法");
+              const fetched = runAuthenticatedGit(source.repo_url, ["fetch", "--no-tags", source.repo_url, ref], root);
+              if (fetched.status !== 0) throw new UnknownError("批准来源 Fetch 未确认，保留现场");
+            }
             if (git(root, ["merge-base", "--is-ancestor", source.commit, "HEAD"]).status !== 0)
               throw new UnknownError("Native 根仓尚不包含批准 Commit，保留现场");
             const registry = readNativeRepoMapping(root, source.commit, server);
             const approved = await guardRepository({ runtime, registry }, client, opts.issue, opts.changeRef, opts.repo);
-            if (approved.source.commit !== source.commit || approved.source.repo_url !== source.repo_url)
+            if (approved.source.commit !== source.commit || approved.source.repo_url !== source.repo_url || approved.source.branch !== source.branch)
               throw new UnknownError("批准来源在准备期间变化");
             const repo = validatePrepareRepo(registry[opts.repo], server);
             result = prepareNativeBusiness(root, repo, "feature/" + approved.tfsId, runtime, opts.resourceRef);
