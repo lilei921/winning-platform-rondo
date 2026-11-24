@@ -9,7 +9,7 @@ import { assertEngineerExecution, readDevelopmentCommit } from "../dist/commands
 import { parseRepositoryScope } from "../dist/commands/analysis/repository-scope.js";
 import { checkedTaskProgress, validateChangeDelivery, checkPublishedChange } from "../dist/commands/dev/change-completion.js";
 import { isRequirementChangeDelivery, approvedRequirementScope } from "../dist/commands/delivery/requirement-mode.js";
-import { isDeliveryTaskTitle, findDeliveryTasks, ensureDeliveryTasks } from "../dist/commands/tfs/requirement-tasks.js";
+import { isDeliveryTaskTitle } from "../dist/commands/tfs/requirement-tasks.js";
 import { prepareRequirementWorktree, removePublishedRequirementWorktree } from "../dist/commands/dev/requirement-worktree.js";
 import { TfsClient } from "../dist/tfs/client.js";
 import { materializeOne, registerCurrentPr } from "../dist/commands/pr/materialize.js";
@@ -201,36 +201,10 @@ test("Requirement 和旧 Task Set 明确分开，不隐式从缺少 dispatch 推
   assert.throws(()=>isRequirementChangeDelivery({...newMd,pr_prep:JSON.stringify([prep("frame",sha1),{...prep("web",sha2),source_branch:"feat/42"}])}),/混合/);
 });
 
-test("兼容旧 Delivery Task helper：默认单任务与外部分合行为保留，不作为新 Requirement 入口",async()=>{
+test("识别旧 Delivery Task 标题以阻止与现行计划混用",()=>{
   assert.equal(isDeliveryTaskTitle("LEI-24","[LEI-24 Delivery] 开发"),true);
   assert.equal(isDeliveryTaskTitle("LEI-24","[LEI-24 Delivery/5] Backend"),true);
   assert.equal(isDeliveryTaskTitle("LEI-24","[LEI-24 1.1] Backend"),false);
-  const state = { tasks:[], creates:0 };
-  const client = {
-    async tfsQuery(query) {
-      return query.includes("System.Id] = 42")
-        ? [{id:42,project:"P"}] : state.tasks;
-    },
-    async tfsCreateTask({title,parent}) {
-      state.creates++;
-      const t={id:55,title,parentId:parent,state:"活动"};
-      state.tasks.push(t);
-      return t;
-    },
-  };
-  const first=await ensureDeliveryTasks(client,"LEI-24","foo-42",42);
-  assert.deepEqual(first,{ids:[55],created:true});
-  const replay=await ensureDeliveryTasks(client,"LEI-24","foo-42",42);
-  assert.deepEqual(replay,{ids:[55],created:false});
-  assert.equal(state.creates,1);
-  state.tasks.push(...[1,2,3,4,5].map(i=>({id:55+i,parentId:42,title:"[LEI-24 Delivery/"+i+"] task"})));
-  await assert.rejects(findDeliveryTasks(client,"LEI-24",42),/超过 5/);
-  state.tasks = [{id:80,parentId:42,title:"[LEI-24 Delivery] default"},{id:81,parentId:42,title:"[LEI-24 Delivery/1] split"}];
-  await assert.rejects(findDeliveryTasks(client,"LEI-24",42),/混用/);
-  state.tasks = [{id:82,parentId:42,title:"[LEI-24 Delivery/1] A"},{id:83,parentId:42,title:"[LEI-24 Delivery/1] B"}];
-  await assert.rejects(findDeliveryTasks(client,"LEI-24",42),/重复编号/);
-  state.tasks = [{id:84,parentId:42,title:"[LEI-24 Delivery/1] A"},{id:85,parentId:42,title:"[LEI-24 Delivery/2] B"}];
-  assert.deepEqual((await findDeliveryTasks(client,"LEI-24",42)).map(t=>t.id),[84,85]);
 });
 
 function git(cwd,...args){

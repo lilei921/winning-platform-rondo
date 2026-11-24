@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { RemoteArtifactReader } from '../dist/commands/delivery/remote-artifacts.js';
 import { authenticatedGitEnvironment as rootGitEnvironment } from '../dist/clients/authenticated-git.js';
-import { resolveStableEvidenceCommit } from '../dist/commands/delivery/evidence-repository.js';
+import { canonicalRepositoryIdentity } from '../dist/commands/delivery/evidence-repository.js';
 
 const repo='http://tfs.test/tfs/C/P/_git/root';
-const approved='a'.repeat(40), latest='b'.repeat(40), ref='m10-fixture';
-const live=`/openspec/changes/${ref}`, archived=`/openspec/changes/archive/2026-11-13-${ref}`;
+const approved='a'.repeat(40), ref='m10-fixture';
+const live=`/openspec/changes/${ref}`;
 test('Git 认证只限精确仓库 URL 的子进程环境，禁重定向且不改变父进程',()=>{
   const before={...process.env};const client={config:{serverUrl:'http://tfs.test/tfs/C',pat:'fixture-only-credential'}};
   const env=rootGitEnvironment(repo,client);const entries={};
@@ -18,12 +18,10 @@ test('Git 认证只限精确仓库 URL 的子进程环境，禁重定向且不�
 function fixture(options={}) {
   const files={
     [approved]:{[`${live}/.openspec.yaml`]:'schema: corrective-change\n',[`${live}/proposal.md`]:'# fixture\n',[`${live}/tasks.md`]:'- [ ] 1.1 验证\n'},
-    [latest]:{[`${archived}/.openspec.yaml`]:'schema: corrective-change\n',[`${archived}/proposal.md`]:'# fixture\n',[`${archived}/tasks.md`]:'- [x] 1.1 验证\n',[`${archived}/evidence.json`]:'{}'},
   };
   const requests=[];
   const client={config:{serverUrl:'http://tfs.test/tfs/C'},async rawRequest(raw,method){
     const u=new URL(raw);requests.push({method,path:u.pathname,query:Object.fromEntries(u.searchParams)});
-    if(u.pathname.endsWith('/refs'))return {statusCode:200,body:JSON.stringify({value:[{name:'refs/heads/validation',objectId:latest}]})};
     const commit=u.searchParams.get('versionDescriptor.version');
     const scope=u.searchParams.get('scopePath');
     if(scope){const value=Object.keys(files[commit]??{}).filter(p=>p.startsWith(scope+'/')).map(path=>({path,commitId:commit,objectId:'c'.repeat(40),isFolder:false}));return {statusCode:200,body:JSON.stringify({value})};}
@@ -32,8 +30,7 @@ function fixture(options={}) {
     return {statusCode:200,body:JSON.stringify({path,commitId:commit,objectId:'c'.repeat(40),content,...options.response})};
   }};
   const reader=new RemoteArtifactReader(repo,client);
-  const source={repo_url:repo,branch:'approval-audit-only',commit:approved,change_ref:ref};
-  return {reader,files,requests,source,md:{'analysis.change_ref':ref,'analysis.source':JSON.stringify(source)}};
+  return {reader,requests};
 }
 
 test('RemoteArtifactReader 按指定完整 Commit 读取工程契约', async () => {
@@ -53,11 +50,9 @@ test('跨服务 URL、响应错版本与不安全路径拒绝读取', async () =
   await assert.rejects(f.reader.list('abc', live), /commit/);
 });
 
-test('稳定 Evidence 身份使用配置 repo_url 和完整 SHA，不读旧机器路径',()=>{
-  const registry={frame:{repo_path:'frame',repo_url:'http://tfs.test/tfs/C/Biz/_git/frame',tfs_repo:'frame',tfs_project:'Biz'}};
-  const commit={repo_key:'frame',repo_url:registry.frame.repo_url,sha:'d'.repeat(40),repo_path:'Z:/deleted/old/worktree'};
-  assert.equal(resolveStableEvidenceCommit(registry,commit).key,'frame');
-  assert.equal(resolveStableEvidenceCommit(registry,commit,'http://tfs.test/tfs/C').project,'Biz');
-  for(const server of ['http://elsewhere/tfs/C','http://tfs.test/tfs/Other'])assert.throws(()=>resolveStableEvidenceCommit(registry,commit,server),/Collection/);
-  for(const changed of [{sha:'abcdef0'},{repo_url:'http://evil/tfs/C/Biz/_git/frame'},{repo_key:'unknown'}, {repo_url:repo}])assert.throws(()=>resolveStableEvidenceCommit(registry,{...commit,...changed}));
+test('仓库身份比较保留 Collection、Project 和 Repository 全路径',()=>{
+  const repo='http://tfs.test/tfs/C/Biz/_git/frame';
+  assert.equal(canonicalRepositoryIdentity(repo),canonicalRepositoryIdentity('http://tfs.test/tfs/c/biz/_git/FRAME'));
+  assert.notEqual(canonicalRepositoryIdentity(repo),canonicalRepositoryIdentity('http://tfs.test/tfs/Other/Biz/_git/frame'));
+  assert.notEqual(canonicalRepositoryIdentity(repo),canonicalRepositoryIdentity('http://tfs.test/tfs/C/Other/_git/frame'));
 });
