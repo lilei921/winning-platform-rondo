@@ -373,6 +373,7 @@ export async function executeWriteback(runtime: MulticaRuntime, issue: IssueReco
         !resolveChangeDir(paths, preparedChange).archived) {
       throw new FailError("TFS Writeback 必须等待 Prepare 的 Archive / Git Push 已确认，禁止仅凭 pending 或本地归档执行");
     }
+    confirmPublishedArchive(paths, readAnalysisSource(md));
   }
 
   const tfsIdRaw = md["tfs.id"];
@@ -428,7 +429,6 @@ async function main(rawArgs: string[]): Promise<number> {
       const source = readAnalysisSource(md);
       Object.assign(paths, verifyCloseoutRoot(paths, source));
       assertCloseoutChange(paths, source);
-      confirmPublishedArchive(paths, source);
     }
     if (args.inspect && args["task-plan"]) throw new FailError("--inspect 与 --task-plan 不能同时使用");
     if (args.inspect && args.inspect !== true) throw new FailError("--inspect 不接受值");

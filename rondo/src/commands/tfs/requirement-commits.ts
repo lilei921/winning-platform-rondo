@@ -1,5 +1,5 @@
 /** Requirement business commits are derived from verified completed PRs, not old candidates. */
-import { FailError, UnknownError } from "../../cli/errors.js";
+import { UnknownError } from "../../cli/errors.js";
 import { runCommand } from "../../clients/spawn.js";
 import { TfsClient as FlowTfsClient } from "../../clients/tfs.js";
 import { TfsClient as ApiTfsClient } from "../../tfs/client.js";

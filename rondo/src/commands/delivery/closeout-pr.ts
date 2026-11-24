@@ -84,7 +84,7 @@ export async function verifyCloseoutPrs(
         live.sourceBranch !== pr.source_branch || live.targetBranch !== pr.target_branch) {
       throw new UnknownError("PR " + pr.pr_id + " 外部身份或分支与 current_pr 不一致");
     }
-    if (live.status === "active") throw new FailError("PR " + pr.pr_id + " 尚未完成");
+    if (live.status === "active" || live.status === "abandoned") throw new FailError("PR " + pr.pr_id + " 尚未完成: " + live.status);
     if (live.status !== "completed") throw new UnknownError("PR " + pr.pr_id + " 未确认 completed");
     if (expectedBugSources) assertMergedBugSource(pr.repo_key, live.sourceCommitId, expectedBugSources.get(pr.repo_key));
     verified.push({ pr, repo });

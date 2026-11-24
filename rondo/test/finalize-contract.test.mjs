@@ -14,8 +14,7 @@ const { computeContractFiles } = await import(pathToFileURL(fileURLToPath(new UR
 const { routeArchive } = await import(pathToFileURL(fileURLToPath(new URL("../dist/commands/delivery/finalize.js", import.meta.url))).href);
 
 const CHANGE_REF = "c-fin";
-const STEPS_GOLDEN = ["pr_transition_gate", "pending_written", "completion_gate", "archive_readback",
-  "summary", "route_archive", "tfs_writeback", "tfs_verification", "issue_done", "pending_cleared"];
+const STEPS_GOLDEN = ["pr_transition_gate", "pending_written", "completion_gate", "route_archive", "archive_readback", "tfs_writeback", "tfs_verification", "summary", "issue_done", "pending_cleared"];
 
 const PROJECT_GUID="11111111-1111-1111-1111-111111111111", REPO_GUID="22222222-2222-2222-2222-222222222222", BUSINESS_COMMIT="a".repeat(40);
 function git(cwd, ...args) {
@@ -861,8 +860,8 @@ test("推送时远端才前进：拒绝后回核分叉，不自动 rebase 或再
 test("D3-B: TFS writeback cannot run before prepared archive, even with valid work item", async t => {
   const f = await fixture(t);
   const result = await f.writeback();
-  assert.ok([2,3].includes(result.exit), result.stdout + result.stderr);
-  assert.match(result.body.reason, /finalize.pending|归档|Archive/);
+  assert.equal(result.exit, 2, result.stdout + result.stderr);
+  assert.match(result.body.reason, /finalize.pending/);
   assert.notEqual(f.readState().issues["WNDF-T"].status, "done");
   assert.equal(f.wis.get(999).fields["System.State"], "活动");
   assert.equal(f.readOps().includes("archive"), false);

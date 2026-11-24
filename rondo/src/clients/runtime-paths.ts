@@ -39,7 +39,7 @@ export interface RuntimePaths {
   projectId: string;
   daemonId: string | null;
   source: "explicit_arg" | "remote_artifacts";
-  /** 仅新建临时归档 clone 使用；凭据不在此对象中保存。 */
+  /** 已核验的根仓远端地址；凭据不在此对象中保存。 */
   gitRemoteUrl?: string;
 }
 

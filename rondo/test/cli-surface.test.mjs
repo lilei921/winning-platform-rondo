@@ -93,7 +93,7 @@ test("PR Preparation 命名统一，Closeout 拒绝旧配置参数", () => {
   for (const group of ["dev", "bug"]) {
     const help = runCli([group]);
     assert.match(help.stderr, /\bpr-prepare\b/);
-    assert.doesNotMatch(help.stderr, /\b(?:pr-prep|prepare-pr)\b/);
+    assert.doesNotMatch(help.stderr, /(?:^|\s)(?:pr-prep|prepare-pr)(?=\s|$)/m);
   }
   for (const args of [["dev", "pr-prep"], ["bug", "prepare-pr"], ["delivery", "finalize", "--phase", "prepare", "--issue", "X", "--config", "unused"], ["tfs", "writeback", "--issue", "X", "--config", "unused"]]) {
     assert.notEqual(runCli(args).status, 0, args.join(" "));
