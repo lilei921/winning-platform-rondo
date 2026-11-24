@@ -92,4 +92,3 @@ export function readBugEvidenceInput(input: string): unknown {
   try { return JSON.parse(text); }
   catch { throw new FailError("evidence 必须是合法 JSON"); }
 }
-
