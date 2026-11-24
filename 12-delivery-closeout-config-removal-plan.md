@@ -1,6 +1,6 @@
 # 12 Delivery Closeout 无配置化优化方案
 
-- 状态：待实施
+- 状态：待实施（设计 Review 后修订）
 - 日期：2026-11-24
 - 范围：`skills/delivery-closeout`、Rondo Closeout CLI 及直接相关的事实生产与 Workspace 发布
 - 上位规范：[01 统一设计规范](01-multica-openspec-design-guideline.md)
@@ -13,7 +13,7 @@ Delivery Closeout 面向已经登记 PR 的 Issue，完成 Prepare、TFS Writeba
 
 **仅支持当前 Change-level Requirement 和 Direct Bug。项目尚处研发阶段，无正式业务存量需要迁移；不保留旧 `dev.dispatch` Requirement 的 Closeout 路径，不提供旧配置兼容、回退或迁移机制。** 不以此为由删除其他命令或 Skill 独立消费的共享能力。
 
-不改变收口阶段边界、PR 完成核验、Archive/Push/Readback、TFS Task/Commit 独占关联、工时、幂等恢复及 Done 后置条件。
+不改变收口阶段边界、PR 完成核验、Archive/Push/Readback、TFS Task/Commit 独占关联、工时、幂等恢复及 Done 后置条件。收敛重复的上游工程质量检查，只保留收口必要事实与 Hard Gate。
 
 ## 2. 当前源码证据
 
@@ -37,9 +37,9 @@ Delivery Closeout 面向已经登记 PR 的 Issue，完成 Prepare、TFS Writeba
 | TFS Work Item | Issue tfs.id / tfs.type 与 TFS 回读 |
 | OpenSpec 根仓和发布分支 | analysis.source.repo_url / branch / commit / change_ref，配合当前 Task 原生 Checkout 与 Git 核验 |
 | 业务 PR | current_pr 中 repo_key / pr_id / pr_url / source_branch / target_branch |
-| 预期业务仓与分支 | 已核验的 pr_prep 仓库身份、实际目标分支；Requirement 结合批准版 Repository Scope |
+| 预期业务仓与分支 | 已核验的 pr_prep 仓库身份、实际目标分支；Requirement 结合 analysis.source.commit 固定的 Repository Scope |
 | PR 外部事实 | TFS PR API；按配置 Collection、Project、Repository、PR ID 查询，核对分支及 completed |
-| Commit | 已核验的 PR Commit；TFS 返回 Project GUID、Repository GUID 与完整 SHA |
+| 真实仓库与 Commit | TFS 实时确认 Project GUID + Repository GUID；Requirement 按已核验 PR ID 读取真实业务 Commit，关联身份为 Project GUID + Repository GUID + 完整 SHA |
 | 任务计划与完成 | 已批准 tasks.md、delivery.tfs_task_plan、TFS 子任务及工时/关联的实际回读 |
 
 runtime.rondo 不消费；repo_path 在当前新收口中不需要；tfs_repo/tfs_project 不再静态复制；default_target_branch 是上游 PR 准备的策略，不是 Closeout 的实时策略。不得把 analysis.source.repo_url 当作业务仓 URL。
@@ -56,14 +56,15 @@ finalize / writeback 复用 resolveMulticaRuntime() 和现有 MulticaClient、TF
 
 复用 parseTfsPrWebUrl()、canonicalRepositoryIdentity()、assertTfsRepository()、verifiedRepo() 等现有能力。按 current_pr 逐项解析并核验，无需枚举 25 个仓库。
 
-**不可用同一条 current_pr URL 同时充当预期仓库和实际仓库的独立证明。** 最小必要的事实补齐：由现有 PR Preparation CLI 将已核验的无凭据业务 repo_url 和实际 target_branch 写入已有 pr_prep 条目并回读；Requirement 与 Direct Bug 均适用，不新增 Metadata Key。PR Materialize 使用现有 Registry 校验这些已固定事实，拒绝不一致后再登记 current_pr；上游仍可按现有策略选择默认目标分支。不要把工作区路径、全量 Registry 或凭据写入 Metadata。
+**不可用同一条 current_pr URL 同时充当预期仓库和实际仓库的独立证明。** 最小必要的事实补齐：由现有 PR Preparation CLI 将已核验的无凭据业务 repo_url 和实际 target_branch 写入已有 pr_prep 条目并回读；Requirement 与 Direct Bug 均适用，不新增 Metadata Key。目标分支由 PR Preparation CLI 按 Requirement / Direct Bug 各自现行策略确定并写入，不新增 Agent 输入。PR Materialize 在创建或复用 PR 前使用现有 Registry 核验已固定的仓库身份和目标分支，一致才继续；登记 current_pr 时沿用现有 URL 规范化及回读机制。不要把工作区路径、全量 Registry 或凭据写入 Metadata。
 
 Closeout：
-1. 校验 current_pr、pr_prep 唯一 repo_key、完整字段及本次 PR 仓集合一致；Requirement 继续核对批准版 Repository Scope（批准范围允许存在无需实际修改的仓，不强制每仓产生 PR）。
+1. 校验 current_pr、pr_prep 唯一 repo_key、必要字段及本次 PR 仓集合一致。Requirement 从当前已核验根仓通过 `git show <analysis.source.commit>:openspec/changes/<change_ref>/.openspec.yaml` 读取批准版 Repository Scope，复用 parseRepositoryScope()；不以当前归档目录中的 Scope 替代批准范围。实际交付仓集合可以是批准范围的子集。
 2. 将 PR URL 限定到配置 TFS Collection，解析 Project、Repository、PR ID，并与 pr_prep.repo_url 的规范化仓库身份、source_branch、target_branch 比对。调用 TFS API 确认真实仓库、PR 身份、分支与状态。不能仅比较仓名或 SHA，不能信任任意 URL 并向其发送凭证。
-3. 保持 Bug 的 Candidate/实际合并源 Commit 核验；Requirement 保持现有 Candidate、任务进度等实际生效的核验，不因取消 Registry 而放宽；不扩大上游质量 Gate 范围。复用同一核验结果供 Inspect、Writeback、Complete 使用（各命令独立回读当前外部事实，不跨 Run 缓存）。
-4. inspectRequirementCommits 消费已核验的本次 PR 仓身份，读取实际 PR Commit、Project/Repository GUID 及占用事实。用于 TFS 链接和反向验证的完整身份不变；任务计划仍使用 repo_key + SHA。
-5. 优先复用小型现有函数；确需共享时提取一个 Closeout 专用的 PR 身份核验函数，不新建通用 Registry Resolver、配置映射缓存或服务。工程侧 validateChangeDelivery 的 Registry 授权语义保持不变；Closeout 如需复用纯校验，应分离必要事实检查与上游 Registry 策略，不以由当前 PR 反推的虚假 Registry 冒充独立授权。
+3. 使用 verifiedRepo() 返回的 Project GUID + Repository GUID 按真实仓库身份判重。现行一仓一 PR 模型下，不允许不同 repo_key 指向同一真实仓库；GUID 仅在运行时使用，不新增 Metadata 字段。不同 Project 下同名仓库可独立交付。
+4. Requirement 的业务 Commit 直接按已核验的仓库及 PR ID 查询，保持 prChangedCommits(api, repo, prId) 的现有用法，不额外核验 Candidate 是否属于 PR Commit 列表或等于合并源 Commit；Candidate 的研发验证仍由上游负责。Direct Bug 保留既有 Candidate/实际合并源 Commit 核验，不扩展至 Requirement。
+5. inspectRequirementCommits 消费已核验的本次 PR 仓身份，读取实际 PR Commit 与占用事实。TFS 链接和反向验证仍以 Project GUID + Repository GUID + 完整 SHA 为真实身份；任务计划仍使用 repo_key + SHA。
+6. 优先复用现有小型函数，必要时共享一个 Closeout 专用 PR 身份核验函数。各命令根据实际需要查询外部事实，同一命令内复用结果；不新增跨 Run 缓存、通用 Registry Resolver、服务或从 Issue 反推的动态 Registry。工程侧 validateChangeDelivery 及其授权规则保持原位，不为 Closeout 重构上游 Gate。
 
 研发阶段原有测试 Issue 如缺新的 pr_prep 仓库身份，按新流程重新准备验证，不引入历史兼容、回填脚本或推断性认领。所有身份缺失、冲突、不可见或回读异常必须阻断相关外部写入。
 
@@ -73,7 +74,8 @@ Closeout：
 - Bug：保留 Direct Bug Prepare/Complete 及 bug.delivery、pending digest、真实合并 Candidate 核验；不需要根仓、不归档、不创建子任务。
 - Writeback：保留 Inspect 读取批准 Commit 版本 tasks.md、真实 PR Commit 和已保存计划；新计划 1–5 个 Task，每项 0.5–4h，独占真实业务 Commit；保存计划及恢复、父子项身份、工时、双向关联、父项评论、delivery.tfs_written 等原有逻辑不变。
 - Complete：保留 PR 状态、Prepare 标记、远端 Archive、TFS 真实完成回读、Summary、Issue done 和 pending 清理。done 残留恢复无需根仓，不重复外部写入。
-- 不改动既有实际生效的安全/质量核验语义。检查是否仍需保留当前 Requirement 首次 Prepare 的上游 Gate 调用属于独立职责优化，不混入本次无配置化。
+- Requirement 首次 Prepare 不再调用完整的 deliveryCompletionGate() / validateChangeDelivery() 来重复审核上游工程质量；只保留必要的既有授权、Hard Gate 与归档前提：当前交付模式及 Change 身份、已批准来源、必要审批/Analysis PASS 事实、Independent Verification 的现行阻断规则、Issue blocked 阻断、批准 Repository Scope、有效 PR 事实及归档所需 tasks.md 完成状态。不得重新执行 Analysis、Local Validation、Code Review，或重复校验 PR Description、Review Findings、验证命令和 Candidate 工程证据。上游质量规则不变；不将已通过的质量检查重建为 Closeout Gate。
+- Writeback 沿用现有 Prepare 标记、远端 Archive 回读、Issue 写入前一致性检查及任务关联验证。本次不新增 pr_prep 写入前二次比较、不额外扩展 pending 事件核验到 Writeback、不新增 Requirement Digest、Snapshot、Version Token 或锁；保留现有 Direct Bug digest 与各阶段原有必要恢复检查。
 
 ### 4.4 直接删除旧 Closeout 路线
 
@@ -109,10 +111,10 @@ plan.json 是 Agent 的一次性任务规划业务输入，不是配置文件，
 | skills/delivery-closeout/SKILL.md | 删除 config-path 约定及所有 --config 参数，其余方法与职责保留 |
 | skills/delivery-closeout/config/repo-registry.json | 删除 |
 | rondo/src/commands/workspace/sync.ts | 从 REPO_REGISTRY_SKILLS 移除 delivery-closeout；复用现有远端文件删除机制，不新增专属清理 |
-| rondo/src/commands/delivery/finalize.ts | Runtime、PR 核验、删除旧 Closeout 分支 |
+| rondo/src/commands/delivery/finalize.ts | Runtime、PR 核验、精简 Requirement 首次 Prepare Gate、删除旧 Closeout 分支 |
 | rondo/src/commands/tfs/writeback.ts | Runtime、真实业务事实、删除旧 dispatch Writeback 分支 |
 | rondo/src/commands/tfs/requirement-commits.ts | 使用核验后的 PR 仓身份 |
-| rondo/src/commands/delivery/requirement-mode.ts | 必要的现行 Requirement 判定及证据入参调整 |
+| rondo/src/commands/delivery/requirement-mode.ts | 现行 Requirement 判定及批准版 Repository Scope 核验；删除仅供 Closeout 重复上游质量检查的代码 |
 | rondo/src/commands/dev/pr-prep.ts、bug/prepare-pr.ts、pr/materialize.ts | 仅必要的预期仓库、实际分支事实固定和交叉校验 |
 | 共享 helper 与测试 | 只修改直接相关调用点，删除确无调用的旧 Closeout 实现与测试 |
 | rondo/COMMANDS.md、README.md | 更新现行命令及无配置调用例外；不维护历史过程 |
@@ -120,14 +122,15 @@ plan.json 是 Agent 的一次性任务规划业务输入，不是配置文件，
 
 保留其他 Skill 的 Registry、Workspace base/overlay、Agent Instructions、Autopilot Prompt、provisioning 绑定、OpenSpec Schema/Template 和 task-plan JSON。不要新增 Agent、Skill、CLI 命令或平台对象。
 
-发布顺序：先构建/测试并部署支持无配置命令的新 Rondo CLI，再同步 delivery-closeout Skill，验证远端旧 JSON 已删除。避免旧 CLI 与新 Skill 错配；真实 Workspace 发布单独执行和核验。
+发布顺序：先构建/测试，将同一新版 Rondo CLI 部署到所有受影响的 Runtime（Engineer、Bug Fix Agent、PR Materialize 执行方、PR Status Sync Agent，以及执行 Workspace Sync 的环境）；再同步 delivery-closeout Skill。使用已更新的仓库工作副本，确认本地旧 JSON 不存在，并回读远端文件已删除。用新建测试 Issue 完整验证两类交付，避免旧 CLI 生成不完整 pr_prep 或与新 Skill 命令错配。不引入滚动兼容机制、Feature Flag 或迁移工具；真实 Workspace 发布单独执行和核验。
 
 ## 6. 验收
 
 - Requirement 多仓完整收口与跨 TFS Project PR/Commit 解析；根仓正确归档到 analysis.source.branch，不切换为业务 PR target_branch。
 - Bug 完整收口，不要求根仓或任务计划，Candidate 与真实合并源核验保持。
 - Prepare 已归档重跑、任务计划恢复、子任务/Commit 关联部分成功恢复、Complete 重跑、done pending 清理；不重复归档或产生重复 TFS 副作用。
-- 缺少 Runtime、错误 Collection、PR ID/分支/仓库冲突、同名跨 Project 仓库、repo_key 重复或不在批准范围、pr_prep 缺失/冲突、真实 Commit 不可确认时拒绝推进。
+- 缺少 Runtime、错误 Collection、PR ID/分支/仓库冲突、repo_key 重复、不同 repo_key 指向相同 Project GUID + Repository GUID、repo_key 不在批准 Commit 的 Repository Scope、pr_prep 必要身份缺失/冲突、真实 Commit 不可确认时拒绝推进；不同 Project 下同名仓库正确区分。
+- Requirement 按已核验 PR ID 读取真实业务 Commit，不增加 Candidate 归属校验；首次 Prepare 不重复上游专业质量 Gate，仍保留必要授权、阻断和归档完成条件。Writeback 不增加既有一致性检查的字段或新状态机制。
 - 已有计划与新计划冲突、Commit 已被其他 TFS Task 占用、反向回读异常及工时越界仍阻断。
 - 旧 dev.dispatch Requirement 明确不支持；不允许隐式回退或误归类为 Direct Bug。旧 --config 返回用法错误。
 - workspace sync --local-only / --check 不再渲染 delivery-closeout Registry；真实 sync 后回读远端不存在该文件，其他 Skill 配置与绑定不受影响。
@@ -136,9 +139,9 @@ plan.json 是 Agent 的一次性任务规划业务输入，不是配置文件，
 ## 7. 设计原则复核
 
 - KISS：只保留 issue、root-repo、phase/inspect/task-plan 等本次必要输入。
-- YAGNI：没有正式存量，不维护旧 Closeout 路径、不做迁移框架、配置兼容或 Registry 服务。
+- YAGNI：没有正式存量，不维护旧 Closeout 路径、不做迁移框架、配置兼容或 Registry 服务；不新增 Requirement Candidate/PR Commit 归属校验、不扩展 Writeback 一致性检查或持久化状态。
 - Native First：复用 Multica Runtime、原生 Checkout、已有 Issue Metadata 及 TFS API。
 - One Rule One Owner：上游固定交付身份和目标分支，CLI 核验外部事实，Agent 做语义规划，Skill 不维护环境与仓库目录。
-- Specialist Focus：仅处理 Closeout 无配置化及直接阻碍它的必要依赖；其他 Registry 使用和上游工程规则不扩散。
+- Specialist Focus：仅处理 Closeout 无配置化、直接相关的身份事实和重复 Gate 收敛；其他 Registry 使用和上游工程规则不扩散。
 
 结论：静态 Registry 从 Delivery Closeout 完全退出，当前 Requirement 与 Direct Bug 的收口能力、真实事实验证及幂等安全保持不变。
