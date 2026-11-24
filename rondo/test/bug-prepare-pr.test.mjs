@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { validateBugEvidence, readBugEvidenceInput } from "../dist/commands/bug/prepare-pr.js";
+import { validateBugEvidence, readBugEvidenceInput } from "../dist/commands/bug/pr-prepare.js";
 import { FailError, UnknownError } from "../dist/cli/errors.js";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -84,7 +84,7 @@ test("Bug evidence input supports UTF-8 files with or without BOM and stdin", t 
     assert.deepEqual(readBugEvidenceInput(path), ev);
   }
 
-  const moduleUrl = new URL("../dist/commands/bug/prepare-pr.js", import.meta.url).href;
+  const moduleUrl = new URL("../dist/commands/bug/pr-prepare.js", import.meta.url).href;
   const script = `import { readBugEvidenceInput } from ${JSON.stringify(moduleUrl)};
 process.stdout.write(JSON.stringify(readBugEvidenceInput("-")));`;
   const r = spawnSync(process.execPath, ["--input-type=module", "-e", script], {
@@ -106,7 +106,7 @@ test("empty or malformed Bug input is FAIL; unreadable input is UNKNOWN", t => {
 });
 
 test("interactive Bug evidence stdin is FAIL before any read", () => {
-  const moduleUrl = new URL("../dist/commands/bug/prepare-pr.js", import.meta.url).href;
+  const moduleUrl = new URL("../dist/commands/bug/pr-prepare.js", import.meta.url).href;
   const errorsUrl = new URL("../dist/cli/errors.js", import.meta.url).href;
   const script = `import { readBugEvidenceInput } from ${JSON.stringify(moduleUrl)};
 import { FailError } from ${JSON.stringify(errorsUrl)};

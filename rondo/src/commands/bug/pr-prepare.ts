@@ -1,5 +1,5 @@
 /**
- * bug prepare-pr — No-OpenSpec Bug delivery gate and PR preparation.
+ * bug pr-prepare — No-OpenSpec Bug delivery gate and PR preparation.
  *
  * Verify a TFS Bug's current candidate commit, diagnosis, regression, local validation
  * and code review before recording bug.delivery and the existing pr_prep contract.
@@ -83,7 +83,7 @@ function refs(raw: unknown): boolean {
   return Array.isArray(raw) && raw.length > 0 && raw.every(filled);
 }
 
-/** Pure evidence validation; external I/O and Git identity are checked by prepare-pr. */
+/** Pure evidence validation; external I/O and Git identity are checked by pr-prepare. */
 export function validateBugEvidence(
   raw: unknown, identity: { issue: string; tfsId: number; repoKey: string; sha: string },
 ): string[] {
@@ -151,7 +151,7 @@ function getArg(argv: string[], name: string): string {
   const i = argv.indexOf(name);
   return i >= 0 && i + 1 < argv.length && !argv[i + 1].startsWith("--") ? argv[i + 1] : "";
 }
-const USAGE = "用法: rondo bug prepare-pr --config <repo-registry.json> --issue <KEY> --repo <repo_key> " +
+const USAGE = "用法: rondo bug pr-prepare --config <repo-registry.json> --issue <KEY> --repo <repo_key> " +
   "--candidate-commit <40-SHA> --evidence <json路径|-> --title <PR标题> --root-repo <path> " +
   "[--description <md路径>] [--required-repos <repo1,repo2>] [--source-branch <branch>] [--target-branch <branch>]\n";
 
@@ -273,8 +273,8 @@ async function main(argv: string[]): Promise<number> {
   }
 }
 
-export function registerBugPreparePr(group: Command): void {
-  group.command("prepare-pr")
+export function registerBugPrPrepare(group: Command): void {
+  group.command("pr-prepare")
     .description("Bug 修复完成检查与 PR Preparation（无 OpenSpec）")
     .helpOption(false).allowUnknownOption(true).allowExcessArguments(true)
     .action(async (...cbArgs: unknown[]) => {

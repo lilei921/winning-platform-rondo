@@ -17,7 +17,7 @@ function runCli(args, env = {}) {
 const TREE = {
   change: ["resolve-identity", "update-progress"],
   analysis: ["stage", "validate", "complete", "read"],
-  dev: ["check-dispatch", "materialize", "pr-prep", "check-completion", "contract-hash"],
+  dev: ["check-dispatch", "materialize", "pr-prepare", "check-completion", "contract-hash"],
   tfs: ["writeback", "materialize-tasks", "resolve-tasks", "reconcile-workitem"],
   pr: ["materialize", "worktree", "reconcile-status", "create", "get", "list"],
   delivery: ["route-decision", "finalize"],

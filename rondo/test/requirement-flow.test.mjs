@@ -27,7 +27,7 @@ function prep(key, sha) {
     candidate_commit: sha, title: "Change",
     description: "实现修复；已完成验证；风险已评估。",
     local_validation: { result: "PASS", summary: "Tests passed", command: ["node", "--test"],
-      exit_code: 0, candidate_commit: sha, source: "rondo dev pr-prep" },
+      exit_code: 0, candidate_commit: sha, source: "rondo dev pr-prepare" },
     code_review: { result: "PASS", candidate_commit: sha, summary: "Reviewed", findings: [] }, blockers: [] };
 }
 

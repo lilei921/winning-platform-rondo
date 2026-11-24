@@ -40,7 +40,7 @@ description: 根据已批准的 OpenSpec Change 完成一个或多个授权仓�
 验证命令和工作目录由 Engineer 依据真实项目选择；例中的 `npm test` 不是统一强制测试方式。Rondo 在实际 Candidate Checkout 执行 `validation.command`，核验仓库身份、HEAD、测试退出码、Code Review 和 Blocking Findings，然后将每仓 Candidate/验证/审查/描述存入 **现有 Issue metadata `pr_prep`**。不接受单靠手写 PASS。
 
 ```bash
-rondo dev pr-prep --mode requirement --config "<config>" --issue <issue> --repo <repo_id> \
+rondo dev pr-prepare --mode requirement --config "<config>" --issue <issue> --repo <repo_id> \
   --change-ref <change_ref> --root-repo "<root>" --candidate-commit <sha> --title "<title>" \
   --delivery-facts "<temporary-json>" --validation-cwd "<candidate-checkout>"
 

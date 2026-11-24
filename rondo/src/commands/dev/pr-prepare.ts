@@ -1,5 +1,5 @@
 /**
- * dev pr-prep —— PR Preparation Facts 一段写入（engineer-run-efficiency-optimization-plan P1-1）。
+ * dev pr-prepare —— PR Preparation Facts 一段写入（engineer-run-efficiency-optimization-plan P1-1）。
  *
  * 背景：pr_prep 此前由 Engineer 手工多步写入（探测 CLI 帮助 → 先写一次 → 补描述文件 →
  * 重写补齐 description_ref），WNDF-43 Run 实测该段 3.6m / 13 次工具轮。本命令把固定顺序的
@@ -11,7 +11,7 @@
  *
  * 事实契约唯一权威：pull-request/references/pr-facts-contract.md（本命令只是写入方）。
  *
- * 用法: rondo dev pr-prep --config <repo-registry.json> --issue <KEY> --repo <repo_key>
+ * 用法: rondo dev pr-prepare --config <repo-registry.json> --issue <KEY> --repo <repo_key>
  *        --root-repo <path> --change-ref <ref> --candidate-commit <sha> --title <PR 标题>
  *        [--target-branch <branch>] [--source-branch <branch>] [--description <path>]
  *
@@ -55,7 +55,7 @@ interface PrPrepEntry {
   title: string;
   description_ref?: string;
   description?: string;
-  local_validation?: { result: "PASS"; summary: string; command: string[]; exit_code: 0; candidate_commit: string; source: "rondo dev pr-prep" };
+  local_validation?: { result: "PASS"; summary: string; command: string[]; exit_code: 0; candidate_commit: string; source: "rondo dev pr-prepare" };
   code_review?: { result: "PASS"; candidate_commit: string; summary: string; findings: Array<{ resolved?: boolean; blocking?: boolean; risk_note?: string; risk_ref?: string }> };
   blockers?: string[];
 }
@@ -87,7 +87,7 @@ interface Args {
 }
 
 const USAGE =
-  "用法: rondo dev pr-prep --config <repo-registry.json> --issue <KEY> --repo <repo_key>\n" +
+  "用法: rondo dev pr-prepare --config <repo-registry.json> --issue <KEY> --repo <repo_key>\n" +
   "  --root-repo <path> --change-ref <ref> --candidate-commit <sha> --title <PR 标题>\n" +
   "  [--target-branch <branch>] [--source-branch <branch>] [--delivery-facts <temporary.json>] [--validation-cwd <path>] [--description <path>]\n";
 
@@ -156,7 +156,7 @@ function resolveLegacyDescription(args: Args, openspecRoot: string): { path: str
     if (statSync(p).size === 0) return { code: "description_file_empty", reason: `pr-description 文件为空: ${p}` };
     return { path: p, scaffolded: false };
   }
-  const template = `# ${args.title}\n\n> 本文件由 rondo dev pr-prep 生成草稿；语义内容由 Engineer 维护。\n\n## 变更摘要\n\n\n## 验证\n\n\n## 关联\n\n- Refs: #（补 TFS 工作项 id）\n`;
+  const template = `# ${args.title}\n\n> 本文件由 rondo dev pr-prepare 生成草稿；语义内容由 Engineer 维护。\n\n## 变更摘要\n\n\n## 验证\n\n\n## 关联\n\n- Refs: #（补 TFS 工作项 id）\n`;
   mkdirSync(dirname(p), { recursive: true });
   writeFileSync(p, template, "utf8");
   return { path: p, scaffolded: true };
@@ -327,7 +327,7 @@ async function main(rawArgs: string[]): Promise<number> {
       ...(delivery && {
         description: delivery.description,
         local_validation: { result: "PASS", summary: delivery.validation!.summary!, command: delivery.validation!.command!,
-          exit_code: 0, candidate_commit: args.candidateCommit, source: "rondo dev pr-prep" as const },
+          exit_code: 0, candidate_commit: args.candidateCommit, source: "rondo dev pr-prepare" as const },
         code_review: { result: "PASS", candidate_commit: delivery.code_review!.candidate_commit!, summary: delivery.code_review!.summary!, findings: delivery.code_review!.findings! },
         blockers: [],
       }),
@@ -388,9 +388,9 @@ async function main(rawArgs: string[]): Promise<number> {
 }
 
 /** commander 注册：group=dev；参数解析沿用同组命令实现以保证契约逐字节等价。 */
-export function registerDevPrPrep(group: Command): void {
+export function registerDevPrPrepare(group: Command): void {
   group
-    .command("pr-prep")
+    .command("pr-prepare")
     .description("PR Preparation Facts（HEAD + Candidate Validation + Code Review + 合并写及回读）")
     .helpOption(false)
     .allowUnknownOption(true)

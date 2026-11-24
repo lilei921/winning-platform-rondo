@@ -4,7 +4,7 @@
 
 ## Requirement `pr_prep`
 
-`rondo dev pr-prep --mode requirement` 由当前 Engineer 在授权仓库的真实 Candidate Checkout 上执行验证后，按 `repo_key` 写入已有 `pr_prep` JSON 数组。每仓包含：
+`rondo dev pr-prepare --mode requirement` 由当前 Engineer 在授权仓库的真实 Candidate Checkout 上执行验证后，按 `repo_key` 写入已有 `pr_prep` JSON 数组。每仓包含：
 
 ```json
 {
@@ -20,7 +20,7 @@
     "command": ["npm", "test"],
     "exit_code": 0,
     "candidate_commit": "<同一 Candidate SHA>",
-    "source": "rondo dev pr-prep"
+    "source": "rondo dev pr-prepare"
   },
   "code_review": {
     "result": "PASS",

@@ -63,7 +63,7 @@ export function validateChangeDelivery(prep: PrPrep[], scope: string[], tfsId: n
       throw new FailError("PR Preparation 缺少真实 Candidate 或 Engineer 专业描述: " + key);
     }
     const validation = entry.local_validation;
-    if (validation?.result !== "PASS" || validation.source !== "rondo dev pr-prep" ||
+    if (validation?.result !== "PASS" || validation.source !== "rondo dev pr-prepare" ||
         validation.exit_code !== 0 || validation.candidate_commit !== entry.candidate_commit ||
         !validation.summary?.trim() || !Array.isArray(validation.command) || validation.command.length === 0) {
       throw new FailError("缺少与 Candidate 一致的 Rondo 实际执行验证结果: " + key);

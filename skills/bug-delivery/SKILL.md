@@ -30,11 +30,11 @@ fetch 仅更新远端事实、不整合；push 仅非强制推送已核验 HEAD�
 
 ## PR Preparation
 
-1. 明确本次 Bug 涉及的全部 `repo_key`。多仓时，**首次** `prepare-pr` 通过 `--required-repos <repo1,repo2>` 提供完整集合；单仓可省略该参数。
+1. 明确本次 Bug 涉及的全部 `repo_key`。多仓时，**首次** `pr-prepare` 通过 `--required-repos <repo1,repo2>` 提供完整集合；单仓可省略该参数。
 2. 每仓将本次验证 JSON 放入 Bash 变量 `evidence_json`，通过 UTF-8 stdin 执行：
 
    ```bash
-   printf '%s' "$evidence_json" | rondo bug prepare-pr --config "<repo-registry.json绝对路径>" \
+   printf '%s' "$evidence_json" | rondo bug pr-prepare --config "<repo-registry.json绝对路径>" \
      --issue <ISSUE-KEY> --repo <repo_key> --candidate-commit <40位SHA> \
      --evidence - --title "<PR标题>" \
      --root-repo "<平台实际根仓路径>"
@@ -53,7 +53,7 @@ fetch 仅更新远端事实、不整合；push 仅非强制推送已核验 HEAD�
 
 ## Validation & Recovery
 
-- `prepare-pr` 与 `materialize` 均须取得 exit 0 且 `result=PASS`；`ready_for_pr=false` 时继续准备其他仓库，不得提前创建 PR。
+- `pr-prepare` 与 `materialize` 均须取得 exit 0 且 `result=PASS`；`ready_for_pr=false` 时继续准备其他仓库，不得提前创建 PR。
 - `FAIL`（exit 2）修正明确的输入或前置条件缺口；`UNKNOWN`（exit 3）先核对读取或写入结果。候选 SHA / PR 身份冲突时停止，不盲目重复物化。
 
 ## Output

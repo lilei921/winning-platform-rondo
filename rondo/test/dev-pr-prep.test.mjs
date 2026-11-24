@@ -36,7 +36,7 @@ function git(cwd, ...args) {
 function fixture(t, { tfsId = "261056", seedPrep = null } = {}) {
   // realpathSync.native：Windows tmpdir 返回 8.3 短名（普通 realpath 不解析），
   // CLI 侧经 git --show-toplevel 归一为长名，两边必须同形态
-  const dir = realpathSync.native(mkdtempSync(join(tmpdir(), "skill-flow-pr-prep-")));
+  const dir = realpathSync.native(mkdtempSync(join(tmpdir(), "skill-flow-pr-prepare-")));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
 
   const remote = join(dir, "remote.git");
@@ -79,7 +79,7 @@ function fixture(t, { tfsId = "261056", seedPrep = null } = {}) {
   const env = { MOCK_STATE: statePath, MOCK_SYNC_CALLS_FILE: callsPath };
   const descPath = join(rootRepo, "openspec", "changes", "sample", "pr-description-datamodel-web.md");
   const run = (over = {}) => runCli([
-    "dev", "pr-prep", "--config", config, "--issue", "WNDF-T", "--repo", "datamodel-web",
+    "dev", "pr-prepare", "--config", config, "--issue", "WNDF-T", "--repo", "datamodel-web",
     "--root-repo", rootRepo,
     "--change-ref", "sample", "--candidate-commit", over.sha ?? head,
     "--title", over.title ?? "测试 PR", ...(over.extra ?? []),
@@ -112,7 +112,7 @@ test("PASS 合并写入保留他仓条目并搭架描述文件", (t) => {
 });
 
 test("缺少 --root-repo 在访问平台或写入事实前返回用法错误", () => {
-  const r = spawnSync(process.execPath, [CLI, "dev", "pr-prep", "--config", "missing.json",
+  const r = spawnSync(process.execPath, [CLI, "dev", "pr-prepare", "--config", "missing.json",
     "--issue", "WNDF-T", "--repo", "datamodel-web", "--change-ref", "sample",
     "--candidate-commit", SHA_OTHER, "--title", "测试"], { encoding: "utf8" });
   assert.equal(r.status, 64);
