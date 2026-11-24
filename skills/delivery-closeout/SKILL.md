@@ -25,7 +25,7 @@ rondo delivery root-prepare --issue <KEY>
 rondo delivery finalize --phase prepare --issue <KEY> --root-repo "<root_repo>"
 ```
 
-Bug 去掉 `--root-repo`。若返回 `already=done`，结束该 Issue；`status=prepared` 才继续。所有 PR 必须由 TFS 确认 completed，Requirement 的 Archive/Push/远端回读属于 Prepare 的 Hard Gate；不要重做 Analysis / Engineer 质量 Gate。
+Bug 去掉 `--root-repo`。若返回 `already=done`，结束该 Issue；`status=prepared` 才继续。PR、归档及必要前置事实由 Rondo CLI 核验。
 
 已 Prepare 的 Requirement 使用同一命令恢复。Rondo 核对当前 PR 完成事件和 Change，回读远端归档成功后返回 `status=prepared`（`route_archive=skipped`），直接继续 TFS Writeback。只有 pending 缺少 Prepare 标记时才走完整归档流程。已确认的归档无法回读或事实冲突时，按异常流程处理。
 

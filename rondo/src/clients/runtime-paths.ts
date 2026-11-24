@@ -38,7 +38,7 @@ export interface RuntimePaths {
   openspecRoot: string;
   projectId: string;
   daemonId: string | null;
-  source: "explicit_arg" | "remote_artifacts";
+  source: "explicit_arg";
   /** 已核验的根仓远端地址；凭据不在此对象中保存。 */
   gitRemoteUrl?: string;
 }

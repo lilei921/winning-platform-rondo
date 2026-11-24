@@ -1,15 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { assertRequirementPrepareGate } from "./requirement-mode.js";
 
 function caseFixture(t: { after: (fn: () => void) => void }, analyst: string, human: boolean) {
-  const dir = mkdtempSync(join(tmpdir(), "rondo-finalize-verify-"));
-  t.after(() => rmSync(dir, { recursive: true, force: true }));
-  writeFileSync(join(dir, "tasks.md"), "- [x] 1.1 Verified by Engineer\n");
-  writeFileSync(join(dir, "proposal.md"), "# 当前提案\n");
   const source = { repo_url: "http://tfs.test/tfs/C/P/_git/root", branch: "main", commit: "a".repeat(40), change_ref: "c-x" };
   const metadata = {
     "analysis.source": JSON.stringify(source),
@@ -23,7 +16,7 @@ function caseFixture(t: { after: (fn: () => void) => void }, analyst: string, hu
     "verify_agent.required": String(human),
   };
   const check = (values = metadata) =>
-    assertRequirementPrepareGate(values, "in_review", dir);
+    assertRequirementPrepareGate(values, "in_review");
   return { metadata, check };
 }
 
