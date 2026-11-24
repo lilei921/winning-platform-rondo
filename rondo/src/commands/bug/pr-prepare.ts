@@ -210,7 +210,7 @@ async function main(argv: string[]): Promise<number> {
     const repoUrl = assertTfsRepository(repo.repo_url, loadTfsConfig().serverUrl).href;
     const hub = validateBusinessPath(paths.rootRepo, repo);
     const workdir = dirname(paths.rootRepo);
-    const native = nativeCheckoutExpected(paths.rootRepo) || nativeCheckoutExpected(hub, workdir);
+    const native = nativeCheckoutExpected(hub, workdir, sourceBranch);
     const localHead = validateBusinessCheckout(hub, repo, sourceBranch, native ? workdir : undefined);
     if (native) {
       assertNativeTaskCheckout(paths.rootRepo, workdir);

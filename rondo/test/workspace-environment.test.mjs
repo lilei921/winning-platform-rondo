@@ -18,21 +18,24 @@ function fixture(t, scenario = "normal", extraEnv = {}) {
   };
   const shared = "workspace-config/";
   const overlay = write(shared + "workspaces/pilot.json", { workspace_id: "ws-1" });
-  const agents = [{ dir: "analyst", name: "Workitem Analyst", skills: ["spec-preparation"] }];
-  if (scenario === "branch") agents.push(
-    { dir: "engineer", name: "Engineer", skills: [] },
+  const branchScenario = ["branch", "group", "native-branch"].includes(scenario);
+  const preparation = scenario === "native-branch" ? "native-workspace" : "workspace-preparation";
+  const agents = [{ dir: "analyst", name: "Workitem Analyst", skills: ["spec-preparation", ...(branchScenario ? [preparation] : [])] }];
+  if (["branch", "native-branch"].includes(scenario)) agents.push(
+    { dir: "engineer", name: "Engineer", skills: [preparation] },
     { dir: "delivery-lead", name: "Delivery Lead", skills: [] },
   );
   write(shared + "provisioning.json", {
-    managed_skills: ["spec-preparation"], agents,
-    squad: { name: "Delivery", leader: "Workitem Analyst", members: [] }, project: { title: "Project", workspace_branch: ["branch", "group"].includes(scenario) ? "release" : undefined }, autopilots: [],
+    managed_skills: ["spec-preparation", ...(branchScenario ? [preparation] : [])], agents,
+    squad: { name: "Delivery", leader: "Workitem Analyst", members: [] }, project: { title: "Project", workspace_branch: branchScenario ? "release" : undefined }, autopilots: [],
     workspace_groups: { bi: { workspaces: ["pilot"], project: scenario === "group" ? { title: "BI Project" } : {} } },
     workflow: { statuses: [{ key: "analysis_review", name: "Analysis Review", category: "started" }] },
   });
   write("skills/spec-preparation/SKILL.md", "---\nname: spec-preparation\ndescription: fixture\n---\n");
   write("agents/analyst/instructions.md", "instructions");
   write("agents/analyst/description.md", "description");
-  if (scenario === "branch") {
+  if (branchScenario) write(`skills/${preparation}/SKILL.md`, `---\nname: ${preparation}\ndescription: fixture\n---\n`);
+  if (["branch", "native-branch"].includes(scenario)) {
     for (const dir of ["engineer", "delivery-lead"]) {
       write(`agents/${dir}/instructions.md`, "instructions");
       write(`agents/${dir}/description.md`, "description");
@@ -421,4 +424,11 @@ test("delivery-closeout sync deletes a stale remote Repository Registry attachme
   const check = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "delivery-closeout", "--check");
   assert.equal(check.code, 0, JSON.stringify(check.body));
   assert.equal(check.body.result, "PASS");
+});
+
+test("Native Workspace provision does not read or inject the historical root branch variable", t => {
+  const f = fixture(t, "native-branch");
+  const result = f.run("workspace", "provision", "--workspace", "pilot", "--skip-workflow");
+  assert.equal(result.code, 0, result.stderr);
+  assert.ok(!f.calls().some(args => args.includes("env") || args.some(arg => arg.includes("RONDO_WORKSPACE_BRANCH"))));
 });

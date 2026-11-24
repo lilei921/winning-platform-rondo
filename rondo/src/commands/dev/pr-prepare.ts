@@ -278,7 +278,7 @@ async function main(rawArgs: string[]): Promise<number> {
     const repoUrl = assertTfsRepository(repo.repo_url ?? "", loadTfsConfig().serverUrl).href;
     const targetBranch = args.targetBranch || repo.default_target_branch;
     if (!targetBranch) throw new FailError("PR Preparation 缺少目标分支");
-    if (args.mode === "requirement" && (nativeCheckoutExpected(paths.rootRepo) || nativeCheckoutExpected(hub, dirname(paths.rootRepo)))) {
+    if (args.mode === "requirement" && nativeCheckoutExpected(hub, dirname(paths.rootRepo), repo.default_target_branch)) {
       const workdir = dirname(paths.rootRepo);
       assertNativeTaskCheckout(paths.rootRepo, workdir);
       const nativePath = validateBusinessPath(paths.rootRepo, repo);

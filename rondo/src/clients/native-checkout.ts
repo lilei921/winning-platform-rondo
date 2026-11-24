@@ -76,10 +76,14 @@ export function readDaemonTaskContext(workdir: string): DaemonTaskContext | null
 }
 
 /** Native intent must not silently fall back to a legacy Git workflow when identity is incomplete. */
-export function nativeCheckoutExpected(path: string, workdir = dirname(path)): boolean {
-  if (existsSync(join(workdir, DAEMON_TASK_CONTEXT)) || platformCheckoutMode(path) !== null) return true;
+export function nativeCheckoutExpected(path: string, workdir = dirname(path), legacyBranch?: string): boolean {
+  if (platformCheckoutMode(path) !== null) return true;
   const branch = runCommand(["git", "symbolic-ref", "--short", "HEAD"], path);
-  return branch.status === 0 && branch.stdout.trim().startsWith("agent/");
+  const name = branch.status === 0 ? branch.stdout.trim() : "";
+  if (name.startsWith("agent/")) return true;
+  // An explicitly expected legacy branch is not inferred from the parent's checkout.
+  if (legacyBranch && name === legacyBranch) return false;
+  return existsSync(join(workdir, DAEMON_TASK_CONTEXT));
 }
 
 /**

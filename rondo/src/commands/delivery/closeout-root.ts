@@ -16,6 +16,7 @@ import {
   platformTaskSuffix,
   parsePlatformCheckoutOutput,
   readDaemonTaskContext,
+  DAEMON_TASK_CONTEXT,
   readPlatformCheckoutManifest,
   type PlatformCheckoutIdentity,
 } from "../../clients/native-checkout.js";
@@ -106,7 +107,8 @@ function platformIsolatedMode(root: string, workdir: string): string | null {
   const configured = platformCheckoutMode(root);
   const context = readDaemonTaskContext(workdir);
   const agentId = process.env.MULTICA_AGENT_ID;
-  if (context && (context.managed_by !== "multica-daemon-task" || !agentId || context.agent_id !== agentId))
+  if (existsSync(join(workdir, DAEMON_TASK_CONTEXT)) &&
+      (!context || context.managed_by !== "multica-daemon-task" || !agentId || context.agent_id !== agentId))
     throw new FailError("Closeout daemon Task / Agent 上下文不一致");
   // The Task's original branch is checked separately, including after Archive branch switches.
   return configured ?? (context ? "isolated" : null);
@@ -134,6 +136,9 @@ function verifyPlatformCheckout(root: string, workdir: string, reportedBranch?: 
   if (reportedBranch && reportedBranch !== evidence.checkout_branch) {
     throw new UnknownError("平台 Checkout 返回分支与身份事实不一致");
   }
+  const current = local(root, ["symbolic-ref", "--short", "HEAD"], "核对当前 Task 本地分支");
+  if (current !== branch && (reportedBranch || !current.startsWith("rondo/closeout/" + platformTaskSuffix(taskId!) + "/")))
+    throw new UnknownError("当前分支不属于本 Task 的 Checkout 或归档分支");
 }
 
 function locateChange(root: string, ref: string): { archived: boolean; folder: string } {
@@ -319,7 +324,7 @@ function argsOf(argv: string[]): Record<string, string> {
 function platformCheckout(runtime: MulticaRuntime): CloseoutCheckout {
   return (workdir, repoUrl) => {
     const r = runCommand([...multicaPrefix(runtime), "repo", "checkout", repoUrl], workdir, undefined, 600_000);
-    if (r.status !== 0) throw new UnknownError("平台 repo checkout 失败: " + (r.stderr || r.stdout).trim().slice(0, 400));
+    if (r.status !== 0 || /fetch[_ -]error|fetch (?:failed|failure)/i.test(r.stdout + "\n" + r.stderr)) throw new UnknownError("平台 repo checkout 失败: " + (r.stderr || r.stdout).trim().slice(0, 400));
     return parsePlatformCheckoutOutput(r.stdout, r.stderr);
   };
 }

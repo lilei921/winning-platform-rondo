@@ -1,6 +1,7 @@
 /** Requirement branch worktree: shared base clone; never reset/clean or change Bug checkout semantics. */
 import { existsSync, lstatSync, realpathSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { nativeCheckoutExpected } from "../../clients/native-checkout.js";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { git, gitOk } from "../../clients/git.js";
 import { runAuthenticatedGit } from "../../clients/authenticated-git.js";
@@ -42,7 +43,7 @@ export function removePublishedRequirementWorktree(
   if (!Number.isSafeInteger(tfsId) || tfsId <= 0 || !repo.repo_url) throw new FailError("缺少有效 TFS ID 或仓库 URL");
   const hub = validateBusinessPath(root, repo);
   // Only Rondo-owned worktrees backed by an independent clone are eligible for removal.
-  if (!lstatSync(join(hub, ".git"), { throwIfNoEntry: false })?.isDirectory()) return;
+  if (!lstatSync(join(hub, ".git"), { throwIfNoEntry: false })?.isDirectory() || nativeCheckoutExpected(hub)) return;
   const name = `${repo.repo_path}-${tfsId}`;
   const worktree = validateBusinessPath(root, { repo_path: name });
   if (!existsSync(worktree)) return;
@@ -79,7 +80,7 @@ export function prepareRequirementWorktree(
   }
   if (existsSync(hub)) {
     const dot = join(hub, ".git");
-    if (!existsSync(dot) || !lstatSync(dot).isDirectory() ||
+    if (nativeCheckoutExpected(hub) || !existsSync(dot) || !lstatSync(dot).isDirectory() ||
         !samePath(checked(hub, ["rev-parse", "--show-toplevel"], "检查基础仓根"), hub)) {
       throw new UnknownError("已有业务基础仓不是独立 Git checkout，保留现场");
     }

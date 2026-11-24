@@ -19,6 +19,7 @@ interface PublishOptions {
   repoUrl: string;
   expectedBranch: string;
   approvedCommit?: string;
+  recoverCommit?: string;
   remote?: RootRemote;
   validateTree?: (commit: string) => void | Promise<void>;
 }
@@ -371,6 +372,12 @@ async function publishCommittedChange(
     const descendsFromApproval = (commit: string): boolean =>
       !approved || isAncestor(approved, commit);
     if (!descendsFromApproval(remoteTip)) throw new FailError("目标分支不含批准的 Analysis SHA: " + approved);
+    if (options.recoverCommit) {
+      if (!shaPattern.test(options.recoverCommit) || !isAncestor(options.recoverCommit, remoteTip))
+        throw new UnknownError("已固定的分析发布 Commit 不在原目标分支，停止恢复");
+      await options.validateTree?.(options.recoverCommit);
+      return result(options.recoverCommit);
+    }
     const receipts = remoteReceipts(root, remoteTip, changeRef);
     const sourceIsRemote = isAncestor(source, remoteTip);
     // A fresh clone can contain a zero-diff receipt after its last path-changing commit.

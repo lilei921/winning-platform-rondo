@@ -111,7 +111,7 @@ function sameText(a: string, b: string): boolean {
   return a.replace(/\s+$/g, "") === b.replace(/\s+$/g, "");
 }
 
-// 根仓分支只下发给需要常驻根仓的 Analyst / Engineer；其余 Agent 不注入也不改既有值。
+// 仅仍绑定常驻根仓准备 Skill 的 Analyst / Engineer 需要分支变量。
 const RONDO_BRANCH_AGENTS = new Set(["Workitem Analyst", "Engineer"]);
 
 /** Multica 的 env set 替换整张表；其他键用原生保留标记，避免传递已有凭据。 */
@@ -245,7 +245,8 @@ function main(rawArgs: string[]): number {
         agent.skills = agent.skills?.map(skill => skill === "native-workspace" || skill === "workspace-preparation" ? preparationSkill : skill);
       }
     }
-    const branch = manifest.project?.workspace_branch;
+    const branchAgent = (a: ManifestAgent) => RONDO_BRANCH_AGENTS.has(a.name) && a.skills?.includes("workspace-preparation");
+    const branch = manifest.agents.some(branchAgent) ? manifest.project?.workspace_branch : undefined;
     if (branch !== undefined && (typeof branch !== "string" || !branch.trim() || branch !== branch.trim())) {
       throw new UnknownError("project.workspace_branch 必须是非空分支名");
     }
@@ -482,7 +483,7 @@ function main(rawArgs: string[]): number {
         } else {
           const cp = runJson(
             [...MC, "agent", "create", ...WS, "--name", a.name, "--runtime-id", runtimeId,
-              ...(branch && RONDO_BRANCH_AGENTS.has(a.name) ? ["--custom-env", JSON.stringify({ RONDO_WORKSPACE_BRANCH: branch })] : []),
+              ...(branch && branchAgent(a) ? ["--custom-env", JSON.stringify({ RONDO_WORKSPACE_BRANCH: branch })] : []),
               "--description", desc, "--instructions", instr, "--visibility", wantVisibility, "--output", "json"],
             `agent create ${a.name}`,
           ) as any;
@@ -497,7 +498,7 @@ function main(rawArgs: string[]): number {
         continue;
       }
       agentIds[a.name] = hit.id;
-      const branchChanged = branch && RONDO_BRANCH_AGENTS.has(a.name)
+      const branchChanged = branch && branchAgent(a)
         && reconcileWorkspaceBranch(MC, WS, hit.id, branch, dryRun);
       if (branchChanged) updated.push(`agent/${a.name} (RONDO_WORKSPACE_BRANCH)`);
       const drift: string[] = [];

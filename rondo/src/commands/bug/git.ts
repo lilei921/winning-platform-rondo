@@ -29,7 +29,7 @@ export function registerBugGit(group: Command): void {
         const repo = validatePrepareRepo(cfg.registry[opts.repo], loadTfsConfig().serverUrl);
         const path = validateBusinessPath(paths.rootRepo, repo);
         const workdir = dirname(paths.rootRepo);
-        const native = nativeCheckoutExpected(paths.rootRepo) || nativeCheckoutExpected(path, workdir);
+        const native = nativeCheckoutExpected(path, workdir, branch);
         const head = validateBusinessCheckout(path, repo, branch, native ? workdir : undefined);
         if (native) {
           assertNativeTaskCheckout(paths.rootRepo, workdir);

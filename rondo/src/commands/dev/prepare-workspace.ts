@@ -43,7 +43,7 @@ export function validateBusinessCheckout(path: string, repo: PrepareRepo, branch
   if (!dot || dot.isSymbolicLink() || (!dot.isDirectory() && !dot.isFile())) throw new UnknownError("已有目录不是有效业务仓，保留现场");
   if (!same(gitOk(path, ["rev-parse", "--show-toplevel"], "核验业务仓根"), path)) throw new FailError("业务仓 Git 根目录不一致");
   const workdir = nativeWorkdir ?? dirname(dirname(path));
-  if (nativeWorkdir || nativeCheckoutExpected(path, workdir)) {
+  if (nativeWorkdir || nativeCheckoutExpected(path, workdir, branch)) {
     assertNativeTaskCheckout(path, workdir);
   } else {
     if (!same(gitOk(path, ["rev-parse", "--path-format=absolute", "--git-common-dir"], "核验业务仓 Git 目录"), dotgit))

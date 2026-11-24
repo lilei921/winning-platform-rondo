@@ -197,6 +197,17 @@ async function main(rawArgs: string[]): Promise<number> {
       }
       // Recover only from a previously pinned, byte-identical remote contract.
       let recovered: AnalysisSource | undefined;
+      let recoverCommit: string | undefined;
+      if (requirement && pinned) {
+        const published = await readPublishedContract(pinned, priorMeta);
+        if (published.digest === gateEvidence.change_digest) {
+          if (published.schema !== schema) throw new UnknownError("已保存来源的 Schema 与当前审核包不一致");
+          const local = readContractAt(gitOk(root, ["rev-parse", "HEAD"], "核对当前已提交的分析工件"));
+          if (local.digest !== gateEvidence.change_digest || local.schema !== schema)
+            throw new FailError("当前已提交分析工件与 Gate 不一致");
+          recoverCommit = pinned.commit;
+        }
+      }
       if (!requirement && priorMeta["analysis.source"] !== undefined) {
         const saved = parseAnalysisSource(priorMeta["analysis.source"]);
         if (saved.change_ref === facts.change_ref) {
@@ -214,7 +225,7 @@ async function main(rawArgs: string[]): Promise<number> {
         const tfsId = String(priorMeta["tfs.id"] ?? "").trim();
         const subject = `analysis: ${facts.change_ref} (${args.issue}${tfsId ? ` / tfs ${tfsId}` : ""})`;
         const result = requirement ? await publishChange(root, facts.change_ref, args.issue, ANALYSIS_CONTRACT_FILE, subject, {
-          repoUrl: rootRepositoryUrl(root), expectedBranch: publicationBranch!,
+          repoUrl: rootRepositoryUrl(root), expectedBranch: publicationBranch!, recoverCommit,
           validateTree: (commit: string) => {
             const candidate = readContractAt(commit);
             if (candidate.schema !== schema || candidate.digest !== gateEvidence.change_digest) {
