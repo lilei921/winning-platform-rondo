@@ -12,7 +12,7 @@ baseline: cd9273de916e4482a04e4640fffaf57009beb47b
 
 以 [LEI-64 本次回放](projects/replay/20261125-LEI-64/replay.md) 为唯一运行事实，对照当前 main 源码及 [01 设计原则](01-multica-openspec-design-guideline.md)，解决 Analysis 执行时间过长、发布错误阻断与职责偏移。遵循 First Principles、KISS、YAGNI、Specialist Focus、Native First、One Rule One Owner、Minimal Sufficient。
 
-核心决策：首次 Requirement Analysis Publish 使用 Git 原生的固定 Commit 及远端分支可达性证明发布结果，不再用 TFS REST API 逐文件回读正文、重复计算 Digest。保留真实 Analysis Gate、候选工程契约一致性、授权、并发保护、固定来源、Human Approval。此次仅保存方案，不实施代码或 Skill 改造。
+核心决策（已确认）：最小校验、信任 Git 原生完整性机制。首次 Requirement Analysis Publish 使用 Git 原生的固定 Commit 及远端分支可达性证明发布结果，不再用 TFS REST API 逐文件回读正文、重复计算 Digest。保留真实 Analysis Gate、候选工程契约一致性、授权、并发保护、固定来源、Human Approval。此次仅保存方案，不实施代码或 Skill 改造。
 
 ## 2. 回放事实与耗时
 
@@ -46,17 +46,27 @@ Analyst 17:41:43–18:02:52，人工取消，未正常完成。Wayfinder 111s，
 
 目标是 Human 审核通过 Gate 的同一版本，而非证明 TFS REST API 可重复返回同一正文。Commit SHA 绑定 Tree 与 Blob；第 2、3 步已经提供目标所需的证据。第 4 步重复证明 Git 内容完整性，额外耦合 HTTP/PAT/JSON/UTF-8，构成 LEI-64 错误阻断。
 
-### 3.2 最小充分契约
+### 3.2 最小校验契约（已确认）
 
-| 必须证明的事实 | 唯一权威 |
-|---|---|
-| 当前 Issue/授权/专业 Facts 合法，Change 符合契约 | 本次 Analysis Gate |
-| 最终候选的工程契约与 Gate 一致（含必要 Evidence） | committedContract + validateTree |
-| 目标仓库、分支正确，候选已发布 | publishChange 的 Git Fetch/可达性证明 |
-| 审核指向固定版本 | analysis.source（repo_url、branch、commit、change_ref） |
-| 审核事实、身份、状态未被并发覆盖 | 现有 Issue/Metadata 写入前后核对 |
+Gate 只判断本次交付是否满足继续推进的必要硬条件。每项校验必须对应一个独立、真实的失败风险；同一事实一旦由权威机制证明，不再通过另一条链路重复证明。优先删除校验，而不是用新的校验替换旧校验。
 
-正常流程：真实 Gate → 候选 Git Tree 一致性 → Git Push/Fetch 验证可达 → 固定 source、Gate PASS、审核状态。无需 REST 正文回读、远端 Digest 或单独 tasks Blob ID 对账。不以 push 退出码单独证明成功，不以可变 HEAD 替代候选 SHA，不要求候选等于共享分支最新 HEAD。保留并发安全、只发布当前 Change、禁止未授权文件、Schema/身份校验及 EOL 归一化。不得删除真实 Gate 或仅信任旧 PASS。
+正常首次 Requirement Analysis Publish 只保留三个逻辑检查：
+
+| 最小检查 | 必须证明 | 实现归属 |
+|---|---|---|
+| Analysis Gate | 当前授权、必要 Facts、Change 身份及工程契约有效，原生 OpenSpec 校验通过 | 现有 evaluateAnalysisGate，仅执行一次 |
+| Git 发布 | 候选 Commit 包含本次通过 Gate 的契约，且已发布至正确远端目标分支 | 现有 committedContract / validateTree 与 publishChange 的 Git 可达性证明 |
+| 审核登记 | 当前 Issue 仍允许提交审核，固定 source 与 PASS 对应，审核状态登记成功 | 现有 Issue/Metadata 机制 |
+
+上述为三个事实边界，不新增三个 Gate 或固定 Skill 调用链。专业语义由 Agent 判断，不将专业判断改造为机械 Gate。候选版本仅需一次与本次 Gate 契约的一致性检查；已有 Git Tree / Blob 身份能证明的内容不额外计算新摘要。保留当前必要的 Digest 比较以覆盖工作树与候选版本可能不同的风险，不另造摘要协议。
+
+正常流程：真实 Gate → 通过候选一致性检查的 Git Publish → 登记固定 analysis.source、PASS 与审核状态。
+
+**明确删除：** 发布后的 TFS REST 目录读取、逐文件正文读取、远端 Digest、远端 Tasks Blob ID 对账及为这些检查服务的重复本地读取。不得改用 REST HEAD/GET、额外 git show、再次 fetch 或其他等价检查变相恢复同一校验。已由 publishChange 证明的仓库、分支和候选可达性直接消费其结果。不得要求候选等于共享分支最新 HEAD。
+
+**保留必要保障：** 本次真实 Gate（不信任旧 PASS）、候选契约一致性、正确发布目标、Git Push/Fetch 可达性、单 Change 授权范围、并发冲突保护、审核身份/状态和固定来源、独立 Human Approval。不仅凭 Push 退出码宣称成功，不以可变 HEAD 代替固定候选 SHA。现有身份/Facts/状态核验只保留副作用边界必要检查；相同快照上的重复核验按调用链就地合并，不能为追求最少调用而移除跨副作用的必要并发保护，也不扩展为 Metadata 子系统重构。
+
+实施判断：若删除某项校验后，既没有新增未覆盖的真实风险，也没有破坏必要授权、工程质量或审核版本正确性，则删除。正常路径不预执行 validate，不要求 Agent 复核 CLI 已确认结果；异常恢复按实际风险处理，不把恢复检查叠加到正常路径。
 
 ### 3.3 恢复、重放及消费边界
 
@@ -95,7 +105,7 @@ LEI-64 resolve-identity 使用未知 --output 参数；正确示例现已存在�
 优先修改 publish.ts（必要时 published-source.ts）、tfs/client.ts、直接受影响的回归测试及 analysis-publish Skill；仅在实际证据需要时小幅调整 spec-preparation/codebase-explorer。更新 [03](03-workitem-analysis-design.md) 及 [08b](08b-requirement-remote-git-delivery.md) 中要求候选与远端正文重复核对的描述，使规则由对应权威文档维护。保留既有 Git 发布算法和 Metadata/审批契约。
 
 验收：
-- 正常首次 Requirement Publish：Git 候选通过真实 Gate，远端目标分支可达，即使 TFS 正文接口模拟损坏或不可用仍可正常发布；不发出冗余正文读取。
+- 正常首次 Requirement Publish：仅执行一次真实 Gate；候选一致性检查与 Git 发布可达性证明由现有发布链路完成，直接消费结果。即使 TFS 正文接口模拟损坏或不可用仍可正常发布；不发出冗余正文读取，不新增等价的替代校验。
 - 候选 Schema、必要工件或 Evidence Digest 不匹配，目标仓库/分支不符，Git Push 未确认或候选不可达：拒绝审核状态，不写错误 PASS/source。
 - 共享目标分支因其他 Change 前进且候选仍可达时允许成功；保持现有冲突/未授权工件保护。
 - 恢复/重放幂等、旧源变化/身份/Facts 冲突保护与 Human Approval 精确 SHA 契约不回退；审批后的下游按固定 SHA 读取仍正常。
