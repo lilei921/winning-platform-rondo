@@ -5,7 +5,7 @@
   "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
   "issue_id": "01a211df-205a-7e3c-8598-dac06f6a59c0",
   "identifier": "LEI-64",
-  "collected_at": "2026-11-25T18:04:50+08:00",
+  "collected_at": "2026-11-25T18:27:59+08:00",
   "coverage": "partial",
   "sessions": [
     {
@@ -23,6 +23,22 @@
       "replay": "wayfinder/20261125-1739-dd5f99e6/replay.json",
       "timeline": "wayfinder/20261125-1739-dd5f99e6/timeline.md",
       "verification": "PASS"
+    },
+    {
+      "session_id": "e5e21a79-0b80-4966-a4a9-e10983a87439",
+      "provider": "claude",
+      "run_ids": [
+        "01a21215-1c34-7b04-849e-78560194775c"
+      ],
+      "agent_ids": [
+        "46e4b7dd-d186-470e-beb3-2c2d322871e1"
+      ],
+      "started_at": "2026-11-25T17:41:43+08:00",
+      "completed_at": "2026-11-25T18:02:52+08:00",
+      "tool_calls_total": 120,
+      "replay": "workitem-analyst/20261125-1741-e5e21a79/replay.json",
+      "timeline": "workitem-analyst/20261125-1741-e5e21a79/timeline.md",
+      "verification": "PARTIAL"
     }
   ],
   "agents": [
@@ -46,14 +62,15 @@
     "46e4b7dd-d186-470e-beb3-2c2d322871e1": "workitem-analyst"
   },
   "session_directories": {
-    "dd5f99e6-2b3f-4640-953d-94772df48946": "wayfinder/20261125-1739-dd5f99e6"
+    "dd5f99e6-2b3f-4640-953d-94772df48946": "wayfinder/20261125-1739-dd5f99e6",
+    "e5e21a79-0b80-4966-a4a9-e10983a87439": "workitem-analyst/20261125-1741-e5e21a79"
   },
   "run_count": 3,
   "active_run_count": 0,
-  "tool_calls_total": 28,
+  "tool_calls_total": 148,
   "subagent_tool_calls_total": 0,
   "gaps": [
-    "Run 01a21215-1c34-7b04-849e-78560194775c 没有 session_id",
-    "session 40363905-7d72-482c-b131-13b3031c2b65 导出失败：未找到声明的 claude 日志，可补充 --claude-home"
+    "session 40363905-7d72-482c-b131-13b3031c2b65 导出失败：未找到声明的 claude 日志，可补充 --claude-home",
+    "session e5e21a79-0b80-4966-a4a9-e10983a87439 完整性核验未通过，详见 source-manifest.json"
   ]
 }

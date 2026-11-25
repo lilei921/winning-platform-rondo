@@ -134,15 +134,94 @@ def find_sources(runs: list[dict], codex_homes) -> dict[str, SessionSource]:
     return sources
 
 
-def find_claude_sources(runs: list[dict], homes):
-    """支持默认 Claude 配置目录、显式 home 和 Multica 隔离运行目录。"""
+def claude_home_candidates(runs: list[dict], homes) -> set[Path]:
+    """Claude 配置目录、显式 home 与 Multica 隔离运行目录，统一解析为绝对路径。"""
     candidates = list(homes)
     for run in runs:
         for work_dir in ((run.get("result") or {}).get("work_dir"), run.get("work_dir")):
             if work_dir:
                 candidates.extend([Path(work_dir).parent / "claude-home", Path(work_dir) / ".claude"])
+    candidates.append(Path(os.environ.get("CLAUDE_CONFIG_DIR") or Path.home() / ".claude"))
+    return {Path(candidate).expanduser().resolve() for candidate in candidates}
+
+
+def find_claude_sources(runs: list[dict], homes):
+    """支持默认 Claude 配置目录、显式 home 和 Multica 隔离运行目录。"""
     ids = {(run.get("result") or {}).get("session_id") for run in runs}
-    return claude_session.discover_sources([sid for sid in ids if sid], candidates)
+    return claude_session.discover_sources([sid for sid in ids if sid], claude_home_candidates(runs, homes))
+
+
+def parse_stamp(value) -> datetime | None:
+    """解析平台/日志时间戳；无时区或非法值返回 None。"""
+    try:
+        stamp = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        return stamp if stamp.tzinfo else None
+    except (TypeError, ValueError):
+        return None
+
+
+def transcript_window(transcript: Path) -> tuple[datetime, datetime] | None:
+    """读取会话首尾公开时间戳，用于与 Run 执行窗口匹配；坏行跳过。"""
+    first = last = None
+    try:
+        with transcript.open("r", encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                if not line.strip():
+                    continue
+                try:
+                    record = json.loads(line)
+                except (ValueError, UnicodeError):
+                    continue
+                if not isinstance(record, dict):
+                    continue
+                stamp = parse_stamp(record.get("timestamp"))
+                if stamp is None:
+                    continue
+                if first is None:
+                    first = stamp
+                last = stamp
+    except OSError:
+        return None
+    return (first, last) if first is not None else None
+
+
+def discover_claude_sessions_by_workdir(runs, homes) -> dict[str, list[tuple[str, SessionSource]]]:
+    """为没有 session_id 的 Run 按 work_dir 编码目录与时间窗口定位本地 Claude 会话。
+
+    暂停/取消等未完成 Run 的平台 result 不写 session_id，但会话记录仍落在
+    <claude-home>/projects/<编码 cwd>/<session-id>.jsonl；用工作目录的 Claude
+    编码名定位目录、用 Run 执行窗口排除其他会话。多个候选不自动选择，留缺口。
+    """
+    matches: dict[str, list[tuple[str, SessionSource]]] = defaultdict(list)
+    for run in runs:
+        if (run.get("result") or {}).get("session_id"):
+            continue
+        start = parse_stamp(run.get("started_at"))
+        if start is None:
+            continue
+        # 运行中（未终止）的 Run 没有 completed_at，用采集时刻作为窗口终点。
+        end = parse_stamp(run.get("completed_at")) or datetime.now(timezone.utc)
+        for work_dir in ((run.get("result") or {}).get("work_dir"), run.get("work_dir")):
+            if not work_dir:
+                continue
+            encoded = re.sub(r"[^A-Za-z0-9]", "-", str(Path(work_dir)))
+            for home in sorted(homes):
+                project = home / "projects" / encoded
+                if not project.is_dir():
+                    continue
+                for transcript in sorted(project.glob("*.jsonl")):
+                    window = transcript_window(transcript)
+                    if window is None:
+                        continue
+                    # 平台 started_at 登记可能晚于会话首条记录，仅允许 5 秒偏差。
+                    if not (max(start - timedelta(seconds=5), window[0]) <= min(end, window[1])):
+                        continue
+                    session_id = transcript.stem
+                    children = sorted({p.resolve() for p in (transcript.parent / session_id / "subagents").glob("agent-*.jsonl")})
+                    source = SessionSource(session_id, None, (transcript.resolve(),), tuple(children), None,
+                                           transcript.stat().st_mtime)
+                    matches[run["id"]].append((session_id, source))
+    return dict(matches)
 
 
 def select_source(session_id, runs, codex_sources, claude_sources):
@@ -195,18 +274,11 @@ def match_claude_runs(runs, source):
 
 def match_run_boundaries(runs: list[dict], boundaries: list[dict]) -> dict:
     """用独立执行区间证明每个 Run 有日志，不因 session ID 相同就推定全部覆盖。"""
-    def parse(value):
-        try:
-            stamp = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-            return stamp if stamp.tzinfo is not None else None
-        except ValueError:
-            return None
-
     intervals = []
     pending = None
     malformed = False
     for boundary in boundaries:
-        stamp = parse(boundary.get("timestamp"))
+        stamp = parse_stamp(boundary.get("timestamp"))
         if stamp is None:
             malformed = True
             continue
@@ -219,7 +291,7 @@ def match_run_boundaries(runs: list[dict], boundaries: list[dict]) -> dict:
             else:
                 intervals.append((pending, stamp))
             pending = None
-    windows = {run["id"]: (parse(run.get("started_at")), parse(run.get("completed_at"))) for run in runs}
+    windows = {run["id"]: (parse_stamp(run.get("started_at")), parse_stamp(run.get("completed_at"))) for run in runs}
     assignments = {run["id"]: [] for run in runs}
     ambiguous = []
     for start, end in intervals:
@@ -366,9 +438,13 @@ def render_index(issue: dict, runs: list[dict], index: dict) -> str:
                      f"[时间线]({entry['timeline']}) | {entry['verification']} |")
     lines += ["", "## Run 与 session 对应", "", "| Agent | Run | session | 状态 | 开始 / 结束（北京时间） |",
               "| --- | --- | --- | --- | --- |"]
+    # 暂停/取消等未完成 Run 的平台 result 不写 session_id，回放关联以任务索引为准。
+    session_for_run = {run_id: entry["session_id"] for entry in index["sessions"] for run_id in entry["run_ids"]}
     for run in sorted(runs, key=chronological):
+        platform_session = (run.get("result") or {}).get("session_id")
+        session_label = session_for_run.get(run["id"]) or platform_session or "-"
         lines.append(f"| {cell(agent_label(run.get('agent_id'), index['agents']))} | `{run['id']}` | "
-                     f"`{(run.get('result') or {}).get('session_id', '-')}` | {cell(run.get('status'))} | "
+                     f"`{session_label}` | {cell(run.get('status'))} | "
                      f"{beijing_time(run.get('started_at'))} / {beijing_time(run.get('completed_at'))} |")
     lines += ["", "## 平台完成消息", ""]
     for run in sorted(runs, key=chronological):
@@ -446,23 +522,39 @@ def export_issue(issue: dict, runs: list[dict], *, output_root: Path, profile: s
     manifest = {"collected_at": collected_at, **identity, "read_only_commands": list(commands), "sessions": []}
     index["gaps"] = []
     grouped = defaultdict(list)
+    unresolved = []
     for run in sorted(runs, key=chronological):
         if run.get("status") not in TERMINAL:
             index["active_run_count"] += 1
             index["gaps"].append(f"Run {run['id']} 尚未终止或状态未知：{run.get('status')}")
         session_id = (run.get("result") or {}).get("session_id")
         if not session_id:
-            index["gaps"].append(f"Run {run['id']} 没有 session_id")
+            unresolved.append(run)
         else:
             grouped[safe_key(session_id, "session")].append(run["id"])
+    # 暂停/取消等未完成 Run 的平台 result 不写 session_id，但本地会话记录仍在：
+    # 按 work_dir 的 Claude 编码目录与执行窗口定位，保留已产生的回放证据。
+    sources = find_sources(runs, codex_homes)
+    claude_sources = find_claude_sources(runs, claude_homes)
+    workdir_matches = discover_claude_sessions_by_workdir(unresolved, claude_home_candidates(runs, claude_homes))
+    for run in unresolved:
+        matches = workdir_matches.get(run["id"])
+        if not matches:
+            index["gaps"].append(f"Run {run['id']} 没有 session_id，也未按 work_dir 定位到本地会话")
+            continue
+        if len(matches) > 1:
+            index["gaps"].append(f"Run {run['id']} 的 work_dir 关联到多个会话，未自动选择："
+                                 f"{', '.join(session_id for session_id, _ in matches)}")
+            continue
+        session_id, source = matches[0]
+        claude_sources.setdefault(session_id, source)
+        grouped[safe_key(session_id, "session")].append(run["id"])
     session_agents = {sid: sorted({run.get("agent_id") for run in runs
                                   if run["id"] in run_ids and run.get("agent_id")}) for sid, run_ids in grouped.items()}
     session_groups = {sid: directories[ids[0]] if len(ids) == 1 else "shared" if ids else "agent-unknown"
                       for sid, ids in session_agents.items()}
     migrate_session_directories(directory, index, session_groups)
     write_json(index_path, index)
-    sources = find_sources(runs, codex_homes)
-    claude_sources = find_claude_sources(runs, claude_homes)
     for session_id, run_ids in grouped.items():
         session_runs = [run for run in runs if run["id"] in run_ids]
         try:

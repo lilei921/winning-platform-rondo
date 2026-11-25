@@ -1,5 +1,5 @@
 {
-  "collected_at": "2026-11-25T18:04:50+08:00",
+  "collected_at": "2026-11-25T18:27:59+08:00",
   "profile": "",
   "server_url": null,
   "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
@@ -106,8 +106,55 @@
         "complete": true
       },
       "sources_stable": true
+    },
+    {
+      "verification_schema": "claude_public_messages",
+      "coverage_granularity": "public text + tool_use/tool_result",
+      "invalid_jsonl_lines": 0,
+      "identity_mismatch_files": [],
+      "conflicting_uuids": [],
+      "source_public_tool_count": 120,
+      "exported_tool_count": 120,
+      "source_user_messages": 1,
+      "source_assistant_messages": 5,
+      "messages_match": true,
+      "missing_tool_ids": [],
+      "extra_tool_ids": [],
+      "tool_order_matches": true,
+      "tool_results_match": true,
+      "missing_tool_results": [
+        "chatcmpl-tool-8a123610cbcd1382"
+      ],
+      "orphan_tool_results": [],
+      "duplicate_tool_ids": [],
+      "duplicate_tool_results": [],
+      "unsupported_events": {},
+      "complete": false,
+      "session_id": "e5e21a79-0b80-4966-a4a9-e10983a87439",
+      "subagents": [],
+      "inline_sidechain_records": 0,
+      "missing_subagent_ids": [],
+      "provider": "claude",
+      "sources": [
+        {
+          "path": "C:\\Users\\lilei\\.claude\\projects\\D--Multica-default-winning-lil-b39bad65de56-lei-64-78560194775c-workdir\\e5e21a79-0b80-4966-a4a9-e10983a87439.jsonl",
+          "size_bytes": 2396784,
+          "sha256": "f90a108fae07900a3a3c30abfd4d5813a6a553459575be8bfd5648b88abe9d86"
+        }
+      ],
+      "run_coverage": {
+        "method": "claude_public_request_and_completion",
+        "run_intervals": {
+          "01a21215-1c34-7b04-849e-78560194775c": []
+        },
+        "uncovered_run_ids": [
+          "01a21215-1c34-7b04-849e-78560194775c"
+        ],
+        "complete": false
+      },
+      "sources_stable": true
     }
   ],
   "coverage": "partial",
-  "verified_at": "2026-11-25T18:05:19+08:00"
+  "verified_at": "2026-11-25T18:27:59+08:00"
 }
