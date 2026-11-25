@@ -165,6 +165,13 @@ function startTfsStub(wiState, opsLog, control = { denyStateWrite: false }, gitR
         if (control.denyStateWrite && ops.some(op => op.path === "/fields/System.State")) {
           return json(403, { message: "injected TFS state write failure" });
         }
+        const nextState = ops.find(op => op.path === "/fields/System.State")?.value;
+        const currentState = wi.fields["System.State"];
+        const wiType = wi.fields["System.WorkItemType"];
+        if (nextState && ((wiType === "Bug" && nextState !== "活动") ||
+            (wiType === "任务" && nextState === "已关闭" && currentState !== "已解决" && currentState !== "已关闭"))) {
+          return json(400, { message: "invalid state transition" });
+        }
         for (const op of ops) {
           if (op.path?.startsWith("/fields/")) {
             const f = op.path.slice("/fields/".length);
@@ -1038,19 +1045,42 @@ test("D3-B: TFS state write failure leaves pending, can resume without archive r
 
 
 test("Direct Bug 完整收口不依赖 OpenSpec 根仓，不创建 Task", async t => {
-  const f = await fixture(t, {requirement:false});
+  const f = await fixture(t, {requirement:false, wiState:"已建议"});
   const prepared = await f.phase("prepare");
   assert.equal(prepared.exit,0,prepared.stdout+prepared.stderr);
   assert.equal(prepared.body.status,"prepared");
   const write = await f.writeback();
   assert.equal(write.exit,0,write.stdout+write.stderr);
   assert.equal(write.body.tasks,"skipped_bug");
+  assert.equal(write.body.parent_writeback.state,"活动");
+  assert.equal(f.wis.get(999).fields["System.State"],"活动");
+  const repeated = await f.writeback();
+  assert.equal(repeated.exit,0,repeated.stdout+repeated.stderr);
+  assert.equal(f.readOps().filter(op=>op==="tfs-state").length,1);
+  assert.equal(f.readOps().filter(op=>op==="tfs-comment").length,1);
+  // A stale writeback marker must not authorize completion at the wrong state.
+  f.wis.get(999).fields["System.State"] = "已建议";
+  const rejectedWrite = await f.writeback();
+  assert.equal(rejectedWrite.exit,3,rejectedWrite.stdout+rejectedWrite.stderr);
+  const rejectedComplete = await f.phase("complete");
+  assert.equal(rejectedComplete.exit,3,rejectedComplete.stdout+rejectedComplete.stderr);
+  assert.notEqual(f.readState().issues["WNDF-T"].status,"done");
+  f.wis.get(999).fields["System.State"] = "活动";
   const done = await f.phase("complete");
   assert.equal(done.exit,0,done.stdout+done.stderr);
   assert.equal(done.body.status,"done");
   assert.equal(f.wis.size,1);
   assert.ok(!f.readOps().includes("archive"));
   assert.equal(f.readState().issues["WNDF-T"].metadata["finalize.pending"],undefined);
+});
+
+test("Direct Bug 已处于活动时不重复写入状态", async t => {
+  const f = await fixture(t, {requirement:false, wiState:"活动"});
+  const result = await f.run();
+  assert.equal(result.exit,0,result.stdout+result.stderr);
+  assert.equal(f.wis.get(999).fields["System.State"],"活动");
+  assert.equal(f.readOps().filter(op=>op==="tfs-state").length,0);
+  assert.equal(f.readOps().filter(op=>op==="tfs-comment").length,1);
 });
 
 test("Requirement Inspect 固定批准任务，读取 PR 实际业务 Commit 并恢复计划", async t => {
@@ -1071,6 +1101,20 @@ test("Requirement Inspect 固定批准任务，读取 PR 实际业务 Commit 并
   assert.equal(resumed.exit,0,resumed.stdout+resumed.stderr);
   assert.equal(f.wis.size,2);
   assert.equal(resumed.body.tasks_materialized.created.length,0);
+  const task = [...f.wis.values()].find(wi=>wi.fields["System.WorkItemType"]==="任务");
+  assert.equal(task.fields["System.State"],"已关闭");
+  assert.equal(task.fields["Microsoft.VSTS.Scheduling.CompletedWork"],task.fields["Microsoft.VSTS.Scheduling.OriginalEstimate"]);
+  assert.equal(task.fields["Microsoft.VSTS.Scheduling.RemainingWork"],0);
+  assert.equal(f.wis.get(999).fields["System.State"],"已解决");
+  const stateWrites = f.readOps().filter(op=>op==="tfs-state").length;
+  const repeated = await f.writeback();
+  assert.equal(repeated.exit,0,repeated.stdout+repeated.stderr);
+  assert.equal(f.readOps().filter(op=>op==="tfs-state").length,stateWrites);
+  task.fields["System.State"] = "已解决";
+  const rejected = await f.phase("complete");
+  assert.equal(rejected.exit,3,rejected.stdout+rejected.stderr);
+  assert.notEqual(f.readState().issues["WNDF-T"].status,"done");
+  task.fields["System.State"] = "已关闭";
   const complete = await f.phase("complete");
   assert.equal(complete.exit,0,complete.stdout+complete.stderr);
 });
@@ -1102,5 +1146,6 @@ test("跨 Project 同名仓库及相同 SHA 按 GUID 分别关联真实 TFS Task
     ["vstfs:///Git/Commit/"+PROJECT2_GUID+"/"+REPO2_GUID+"/"+BUSINESS_COMMIT]
   ]);
   assert.deepEqual(tasks.map(wi=>wi.fields["Microsoft.VSTS.Scheduling.CompletedWork"]),[1,2]);
+  assert.deepEqual(tasks.map(wi=>wi.fields["System.State"]),["已关闭","已关闭"]);
   assert.equal(f.readState().issues["WNDF-T"].status,"done");
 });

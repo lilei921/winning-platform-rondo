@@ -113,18 +113,25 @@ function parseArgs(argv: string[]): Record<string, string | boolean> {
   return out;
 }
 
+export const TASK_TARGET_STATE = "已关闭";
+
+function parentTargetState(md: Record<string, string>): string {
+  return isDirectBugDelivery(md) ? "活动" : "已解决";
+}
+
 export async function writebackParent(clients: Pick<Clients, "tfsQuery" | "tfsSetState" | "tfsComment" | "setMetadata">, issue: IssueRecord, issueKey: string, md: Record<string, string>, tfsId: number, readHistory = readTfsHistory): Promise<Record<string, unknown>> {
+  const targetState = parentTargetState(md);
   if (md["delivery.tfs_written"] === "true") {
     const actual = await clients.tfsQuery(`SELECT [System.Id] FROM WorkItems WHERE [System.Id] = ${tfsId}`, "回读已登记 TFS 父项");
-    if (actual.length !== 1 || actual[0].state !== "已解决") {
-      throw new UnknownError("delivery.tfs_written 已登记但 TFS 父项未确认已解决，拒绝复用过期标记");
+    if (actual.length !== 1 || actual[0].state !== targetState) {
+      throw new UnknownError(`delivery.tfs_written 已登记但 TFS 父项未确认${targetState}，拒绝复用过期标记`);
     }
     return { status: "skipped", note: "delivery.tfs_written 已置位，父项实际状态已回读" };
   }
   const reference = deliveryCommentReference(issue);
   const legacy = `交付完成（Multica ${issueKey}）`;
   const exists = hasDeliveryComment(await readHistory(tfsId), reference, legacy);
-  const stateOut = await clients.tfsSetState(tfsId, "已解决");
+  const stateOut = await clients.tfsSetState(tfsId, targetState);
   if (!exists) {
     const commentFile = join(tmpdir(), `writeback-tfs-comment-${process.pid}.md`);
     const content = isDirectBugDelivery(md)
@@ -136,7 +143,7 @@ export async function writebackParent(clients: Pick<Clients, "tfsQuery" | "tfsSe
     if (!hasDeliveryComment(await readHistory(tfsId), reference, legacy)) throw new UnknownError("TFS 评论成功响应后未回读到本次引用");
   }
   clients.setMetadata(issue.id, "delivery.tfs_written", "true");
-  return { status: "done", state: "已解决", ...(stateOut.via?.length ? { via: stateOut.via } : {}), comment: true };
+  return { status: "done", state: targetState, ...(stateOut.via?.length ? { via: stateOut.via } : {}), comment: true };
 }
 
 /** 只读后置条件：核对 TFS 外部真实状态，不创建任务、不更新工时/状态、不追加评论。 */
@@ -153,8 +160,9 @@ export async function verifyTfsWriteback(runtime: MulticaRuntime, issue: IssueRe
   const parent = await clients.tfsQuery(
     `SELECT [System.Id] FROM WorkItems WHERE [System.Id] = ${tfsId}`, "核对 TFS 父项实际完成状态",
   );
-  if (parent.length !== 1 || parent[0].id !== tfsId || parent[0].state !== "已解决") {
-    throw new UnknownError(`TFS 父项 ${tfsId} 当前未确认已解决；不可仅凭 delivery.tfs_written 完成 Multica Issue`);
+  const targetState = parentTargetState(md);
+  if (parent.length !== 1 || parent[0].id !== tfsId || parent[0].state !== targetState) {
+    throw new UnknownError(`TFS 父项 ${tfsId} 当前未确认${targetState}；不可仅凭 delivery.tfs_written 完成 Multica Issue`);
   }
   if (isDirectBugDelivery(md)) return { parent: tfsId, parent_state: parent[0].state, tasks: "skipped_bug" };
 
@@ -227,9 +235,9 @@ async function verifyPlannedTaskFacts(
         task.originalEstimate !== plan.tasks[i].estimate_hours) {
       throw new FailError(`TFS Task ${ids[i]} 的类型或 OriginalEstimate 与计划不一致`);
     }
-    if (completed && (task.state !== "已解决" || task.remainingWork !== 0 ||
+    if (completed && (task.state !== TASK_TARGET_STATE || task.remainingWork !== 0 ||
         task.completedWork !== plan.tasks[i].estimate_hours)) {
-      throw new UnknownError(`TFS Task ${ids[i]} 未确认已解决或工时未完全落库`);
+      throw new UnknownError(`TFS Task ${ids[i]} 未确认${TASK_TARGET_STATE}或工时未完全落库`);
     }
     // A planned Task must not silently carry an unrelated/manual business Commit.
     const allowed = new Set(plan.tasks[i].commits.map(ref => {
@@ -330,7 +338,7 @@ async function executePlannedRequirement(
   }
   await verifyPlannedTaskFacts(clients, api, plan, materialized.ids, snapshot.commits, false);
   for (const id of materialized.ids) {
-    const result = await clients.tfsSetState(id, "已解决", true);
+    const result = await clients.tfsSetState(id, TASK_TARGET_STATE, true);
     if (result.estimateMissing) throw new UnknownError(`TFS Task ${id} 缺少 OriginalEstimate`);
   }
   await verifyPlannedTaskFacts(clients, api, plan, materialized.ids, snapshot.commits, true);
@@ -403,7 +411,7 @@ export async function executeWriteback(runtime: MulticaRuntime, issue: IssueReco
     return { ...detail, ...await executePlannedRequirement(clients, issue, issueKey, md, tfsId, paths.rootRepo, opts) };
   }
 
-  // 4. 父项回写（Bug 与 需求 共用；子任务全部解决后才到这一步）
+  // 4. 父项回写（Bug 与 需求 共用；子任务全部关闭后才到这一步）
   detail.parent_writeback = await writebackParent(clients, issue, issueKey, md, tfsId);
 
   return detail;

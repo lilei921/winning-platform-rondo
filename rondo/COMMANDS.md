@@ -194,7 +194,7 @@ rondo tfs resolve-tasks --config <repo-registry.json> --issue <KEY>
 | `tfs reconcile-workitem` | 依据同步配置查询 TFS Work Item，并创建或更新对应 Multica Issue 及其来源内容 |
 | `tfs writeback` | 按交付事实回写 TFS 工作项、任务状态、工时及关联信息 |
 | `tfs materialize-tasks` | 根据工程任务事实创建或复用对应 TFS Task |
-| `tfs resolve-tasks` | 将已完成交付对应的 TFS Task 更新至已解决状态 |
+| `tfs resolve-tasks` | 将已完成交付对应的 TFS Task 更新至已关闭状态 |
 
 交付收口的常用调用顺序：
 
