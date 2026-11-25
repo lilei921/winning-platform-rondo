@@ -224,9 +224,7 @@ export function prepareRoot(arg?: string | null, legacyBranch?: string, remote: 
   if (switched || fastForward) rootRepositoryUrl(root, finalTip);
   if (switched) {
     // Even a commit with a private index would consume the current worktree's MERGE_HEAD.
-    const gitDir = run(root, ["rev-parse", "--absolute-git-dir"], "定位根仓 Git 目录");
-    const operation = ["MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply", "sequencer"]
-      .find(name => existsSync(join(gitDir, name)));
+    const operation = rootGitOperation(root);
     if (operation) throw new UnknownError("原分支 Git 操作仍在进行，已保留现场: " + operation);
     if (!localTip) {
       // A single-branch clone needs the new tracking refspec for @{upstream} and later fetches.
@@ -343,29 +341,37 @@ function fetchPublishBase(root: string, url: string, branch: string, remote: Roo
   }
 }
 
+function rootGitOperation(root: string): string | undefined {
+  const gitDir = run(root, ["rev-parse", "--absolute-git-dir"], "定位根仓 Git 目录");
+  return ["MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply", "sequencer"]
+    .find(name => existsSync(join(gitDir, name)));
+}
+
 /** Save only the current analysis Change; preserve unrelated staged/working files. */
-function commitWorkingChange(root: string, path: string, allowed: RegExp | undefined, subject: string): void {
+function commitWorkingChange(root: string, path: string, allowed: RegExp | undefined, subject: string,
+  beforeWrite: () => void): void {
   const prefix = path + "/";
   const status = git(root, ["--literal-pathspecs", "status", "--porcelain=v1", "--no-renames", "--untracked-files=all", "-z", "--", path]);
   if (status.status !== 0) throw new UnknownError("检查 Analysis Change 修改失败: " + status.stderr);
-  const entries = status.stdout.split("\0").filter(Boolean);
+  const isAllowed = (file: string): boolean => file.startsWith(prefix) && (!allowed || allowed.test(file.slice(prefix.length)));
+  const entries = status.stdout.split("\0").filter(entry => entry && isAllowed(entry.slice(3)));
   if (!entries.length) return;
-  const assertAllowed = (file: string): void => {
-    if (!file.startsWith(prefix) || (allowed && !allowed.test(file.slice(prefix.length)))) {
-      throw new FailError("存在不允许发布的 Change 工件: " + file);
-    }
-  };
+  const selected = [...new Set(entries.map(entry => entry.slice(3)))];
+  const stage = new Set<string>();
   for (const entry of entries) {
     const xy = entry.slice(0, 2), file = entry.slice(3);
     if (xy.includes("U") || xy === "AA" || xy === "DD") throw new UnknownError("Analysis Change 存在未解决冲突: " + file);
-    assertAllowed(file);
+    // A deletion already staged is absent from both the index and working tree.
+    if (xy[1] !== " ") stage.add(file);
   }
-  writeGit(root, ["--literal-pathspecs", "add", "-A", "--", path], "暂存 Analysis Change");
-  const staged = git(root, ["--literal-pathspecs", "diff", "--cached", "--name-only", "--no-renames", "-z", "HEAD", "--", path]);
+  beforeWrite();
+  const operation = rootGitOperation(root);
+  if (operation) throw new UnknownError("根仓 Git 操作仍在进行，已保留现场: " + operation);
+  if (stage.size) writeGit(root, ["--literal-pathspecs", "add", "-A", "--", ...stage], "暂存 Analysis Change");
+  const staged = git(root, ["--literal-pathspecs", "diff", "--cached", "--name-only", "--no-renames", "-z", "HEAD", "--", ...selected]);
   if (staged.status !== 0) throw new UnknownError("检查 Analysis Change 暂存差异失败: " + staged.stderr);
   const paths = staged.stdout.split("\0").filter(Boolean);
   if (!paths.length) return;
-  paths.forEach(assertAllowed);
   const marker = randomUUID();
   writeGit(root, ["--literal-pathspecs", "commit", "--only", "-m", subject + "\n\nRondo-Publish: " + marker, "--", ...paths],
     "按路径保存 Analysis Change", () => Boolean(latestMarkedCommit(root, marker)));
@@ -373,7 +379,8 @@ function commitWorkingChange(root: string, path: string, allowed: RegExp | undef
   if (!commit) throw new UnknownError("Analysis Change Commit 无法确认");
   const actual = git(root, ["diff-tree", "--no-commit-id", "--name-only", "--no-renames", "-r", "-z", commit]);
   if (actual.status !== 0) throw new UnknownError("核对 Analysis Change Commit 失败: " + actual.stderr);
-  actual.stdout.split("\0").filter(Boolean).forEach(assertAllowed);
+  if (actual.stdout.split("\0").filter(Boolean).some(file => !isAllowed(file)))
+    throw new UnknownError("Analysis Change Commit 包含未授权工件");
 }
 
 async function publishCommittedChange(
@@ -395,21 +402,37 @@ async function publishCommittedChange(
     return target;
   };
   let target = checkTarget();
-  if (options.commitWorkingChange) commitWorkingChange(root, path, allowed, subject ?? `analysis: ${changeRef} (${issue})`);
   const branchRef = "refs/heads/" + branch;
   const fetch = () => fetchPublishBase(root, target.fetchUrl, branch, remote);
+  const isAncestor = (older: string, newer: string): boolean =>
+    git(root, ["merge-base", "--is-ancestor", older, newer]).status === 0;
+  let baselineChecked = false;
+  const checkBaseline = () => {
+    if (native && !options.approvedCommit && !baselineChecked) {
+      assertNativeCheckoutBaseline(root, branch);
+      baselineChecked = true;
+    }
+  };
+  const checkFixedSource = (tip: string) => {
+    if (options.fixedSourceCommit && !isAncestor(options.fixedSourceCommit, tip))
+      throw new UnknownError("已有 analysis.source.commit 不在原目标分支，停止发布");
+  };
+  // Analysis must confirm the target before saving new work. Clean recovery keeps
+  // its existing fixed-source fast path; Development still consumes committed work.
+  let remoteTip = options.commitWorkingChange ? fetch() : undefined;
+  if (options.commitWorkingChange) {
+    checkFixedSource(remoteTip!);
+    commitWorkingChange(root, path, allowed, subject ?? `analysis: ${changeRef} (${issue})`, checkBaseline);
+  }
   const head = run(root, ["rev-parse", "HEAD"], "固定本地提交");
   const source = run(root, ["log", "-1", "--format=%H", head, "--", path], "定位 Change 已提交版本");
   if (!shaPattern.test(source)) throw new FailError("Change 尚未形成 Git Commit: " + path);
   const localTree = changeTree(root, head, path);
   const result = (commit: string, committed: number | string = "skipped_no_changes"): PublishedChange =>
     ({ repo_url: repositoryUrl(target.pushUrls[0]).href, branch, commit, committed, pushed: true });
-  const isAncestor = (older: string, newer: string): boolean =>
-    git(root, ["merge-base", "--is-ancestor", older, newer]).status === 0;
-  let remoteTip = fetch();
+  remoteTip ??= fetch();
   for (let attempt = 0; attempt < 3; attempt++) {
-    if (options.fixedSourceCommit && !isAncestor(options.fixedSourceCommit, remoteTip))
-      throw new UnknownError("已有 analysis.source.commit 不在原目标分支，停止发布");
+    checkFixedSource(remoteTip);
     if (attempt === 0) {
       // 固定来源已可达；按本次契约判断是否恢复，不需要重复读取或校验候选。
       const fixed = options.fixedSourceCommit;
@@ -418,7 +441,7 @@ async function publishCommittedChange(
           throw new UnknownError("原目标分支的 Change 已变化，不能复用旧审核版本");
         return result(fixed);
       }
-      if (native && !options.approvedCommit) assertNativeCheckoutBaseline(root, branch);
+      checkBaseline();
     }
     const approved = options.approvedCommit;
     const descendsFromApproval = (commit: string): boolean =>

@@ -167,6 +167,10 @@ test("Native Requirement publishes a new uncommitted Change and preserves unrela
   git(f.root, "add", "openspec/changes/other/proposal.md");
   writeFileSync(join(sibling, "proposal.md"), "unrelated working");
   writeFileSync(join(f.root, "local.txt"), "unrelated untracked");
+  writeFileSync(join(f.change, "scratch.txt"), "unrelated temporary");
+  writeFileSync(join(f.change, "notes.txt"), "unrelated staged");
+  git(f.root, "add", prefix + "/notes.txt");
+  writeFileSync(join(f.change, "notes.txt"), "unrelated working");
   const result = f.complete();
   assert.equal(result.exit, 0, JSON.stringify(result));
   const local = git(f.root, "rev-parse", "HEAD");
@@ -175,6 +179,10 @@ test("Native Requirement publishes a new uncommitted Change and preserves unrela
   assert.equal(git(f.root, "show", ":openspec/changes/other/proposal.md"), "unrelated staged");
   assert.equal(readFileSync(join(sibling, "proposal.md"), "utf8"), "unrelated working");
   assert.equal(readFileSync(join(f.root, "local.txt"), "utf8"), "unrelated untracked");
+  assert.equal(readFileSync(join(f.change, "scratch.txt"), "utf8"), "unrelated temporary");
+  assert.equal(git(f.root, "show", ":" + prefix + "/notes.txt"), "unrelated staged");
+  assert.equal(readFileSync(join(f.change, "notes.txt"), "utf8"), "unrelated working");
+  assert.equal(git(f.remote, "ls-tree", "-r", "--name-only", "dev", prefix + "/scratch.txt", prefix + "/notes.txt"), "");
   assert.equal(git(f.remote, "show", result.body.analysis_source.commit + ":" + prefix + "/proposal.md"), PROPOSAL.trim());
   assert.equal(git(f.remote, "ls-tree", "-r", "--name-only", "dev", "openspec/changes/other", "local.txt"), "");
   assert.equal(f.complete().exit, 0);
@@ -192,7 +200,7 @@ test("Requirement saves uncommitted edits to an existing Change before publishin
   assert.equal(git(f.remote, "show", result.body.analysis_source.commit + ":openspec/changes/" + CHANGE + "/proposal.md"), revised.trim());
 });
 
-test("Failed Gate leaves a new Change uncommitted; unsupported new artifacts cannot be published", t => {
+test("Failed Gate leaves a new Change uncommitted; committed unauthorized artifacts cannot be published", t => {
   const f = fixture(t, true, true, false);
   const local = git(f.root, "rev-parse", "HEAD");
   const remote = git(f.remote, "rev-parse", "dev");
@@ -201,13 +209,67 @@ test("Failed Gate leaves a new Change uncommitted; unsupported new artifacts can
   assert.equal(git(f.root, "rev-parse", "HEAD"), local);
   writeFileSync(join(f.change, "tasks.md"), "- [ ] 1.1 Fix and 验证 regression\n");
   writeFileSync(join(f.change, "scratch.txt"), "not an analysis artifact");
+  git(f.root, "add", "openspec/changes/" + CHANGE);
+  git(f.root, "commit", "-m", "unauthorized committed artifact");
+  const committed = git(f.root, "rev-parse", "HEAD");
   const forbidden = f.complete();
   assert.equal(forbidden.exit, 2, JSON.stringify(forbidden));
   assert.match(forbidden.body.reason, /不允许发布/);
-  assert.equal(git(f.root, "rev-parse", "HEAD"), local);
+  assert.equal(git(f.root, "rev-parse", "HEAD"), committed);
   assert.equal(git(f.remote, "rev-parse", "dev"), remote);
   assert.equal(f.state().metadata["analysis.source"], undefined);
   assert.equal(f.state().status, "in_progress");
+});
+
+test("Requirement publishes deletion of a no-longer-needed optional design, staged or unstaged", async t => {
+  for (const staged of [false, true]) await t.test(staged ? "staged" : "unstaged", t => {
+    const f = fixture(t);
+    const path = "openspec/changes/" + CHANGE + "/design.md";
+    writeFileSync(join(f.change, "design.md"), "# Design\n");
+    git(f.root, "add", path);
+    git(f.root, "commit", "-m", "existing design");
+    git(f.root, "push", "origin", "dev");
+    if (staged) git(f.root, "rm", path);
+    else rmSync(join(f.change, "design.md"));
+    const result = f.complete();
+    assert.equal(result.exit, 0, JSON.stringify(result));
+    assert.equal(git(f.root, "diff-tree", "--no-commit-id", "--name-status", "-r", "HEAD"), "D\t" + path);
+    assert.equal(git(f.remote, "ls-tree", "-r", "--name-only", "dev", path), "");
+  });
+});
+
+test("Requirement preserves the local commit when remote Push fails and reuses it on retry", t => {
+  const f = fixture(t, true, false, false);
+  const hook = join(f.remote, "hooks", "pre-receive");
+  writeFileSync(hook, "#!/bin/sh\nexit 1\n");
+  chmodSync(hook, 0o755);
+  const before = git(f.root, "rev-parse", "HEAD");
+  const remote = git(f.remote, "rev-parse", "dev");
+  const failed = f.complete();
+  assert.equal(failed.exit, 3, JSON.stringify(failed));
+  assert.match(failed.body.reason, /Push 未确认/);
+  const saved = git(f.root, "rev-parse", "HEAD");
+  assert.notEqual(saved, before);
+  assert.equal(git(f.remote, "rev-parse", "dev"), remote);
+  assert.equal(f.state().metadata["analysis.source"], undefined);
+  rmSync(hook);
+  const retry = f.complete();
+  assert.equal(retry.exit, 0, JSON.stringify(retry));
+  assert.equal(git(f.root, "rev-parse", "HEAD"), saved);
+});
+
+test("Requirement does not stage or commit during an ongoing Git operation", t => {
+  const f = fixture(t, true, false, false);
+  const before = git(f.root, "rev-parse", "HEAD");
+  const marker = join(f.root, ".git", "CHERRY_PICK_HEAD");
+  writeFileSync(marker, before + "\n");
+  const index = git(f.root, "ls-files", "--stage");
+  const blocked = f.complete();
+  assert.equal(blocked.exit, 3, JSON.stringify(blocked));
+  assert.match(blocked.body.reason, /Git 操作仍在进行/);
+  assert.equal(git(f.root, "rev-parse", "HEAD"), before);
+  assert.equal(git(f.root, "ls-files", "--stage"), index);
+  assert.equal(readFileSync(marker, "utf8"), before + "\n");
 });
 
 test("Repository Scope accepts repo_id strings, not objects; diagnostics show the valid format", t => {
@@ -373,7 +435,14 @@ test("Native Analysis refuses Project/Resource/Task mismatch and conflicting tar
   git(f.root, "push", "origin", "dev:other");
   good.resources[0].resource_ref.ref = "other";
   writeFileSync(f.resourcePath, JSON.stringify(good));
-  assert.notEqual(f.complete().exit, 0);
+  writeFileSync(join(f.change, "proposal.md"), PROPOSAL.replace("restore behavior", "revised behavior"));
+  const local = git(f.root, "rev-parse", "HEAD");
+  const index = git(f.root, "ls-files", "--stage");
+  const mismatch = f.complete();
+  assert.notEqual(mismatch.exit, 0);
+  assert.match(mismatch.body.reason, /初始基线/);
+  assert.equal(git(f.root, "rev-parse", "HEAD"), local);
+  assert.equal(git(f.root, "ls-files", "--stage"), index);
   assert.equal(git(f.remote, "rev-parse", "dev"), before);
   assert.equal(git(f.remote, "rev-parse", "other"), before);
   assert.equal(f.state().metadata["analysis.source"], undefined);
