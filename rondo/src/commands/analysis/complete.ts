@@ -83,6 +83,7 @@ async function main(rawArgs: string[]): Promise<number> {
     if (!before.id) throw new UnknownError(`Issue ${args.issue} 不可读取（不存在或不属于当前工作区）`);
 
     const priorMeta = runJson([...MC, "issue", "metadata", "list", args.issue, ...ws, "--output", "json"], "核对当前分析身份", undefined, { transient: true }) as Record<string, unknown>;
+    if (!priorMeta || typeof priorMeta !== "object" || Array.isArray(priorMeta)) throw new UnknownError("metadata list 输出形状不可识别");
     if (!["legacy", "requirement"].includes(args.mode)) throw new PreconditionError("analysis complete --mode 仅支持 requirement 或省略");
     const tfsKind = classifyTfsType(priorMeta["tfs.type"]);
     if (args.mode === "requirement" && tfsKind !== "requirement") throw new PreconditionError("Requirement 模式仅适用于 TFS 需求");
@@ -154,7 +155,7 @@ async function main(rawArgs: string[]): Promise<number> {
     const changeDir = join(root, "openspec", "changes", facts.change_ref);
     const readContractAt = (commit: string) => committedContract(root, commit, facts, effectiveMeta);
     // Shared real Gate, independent of caller-supplied PASS or old Metadata.
-    const gate = evaluateAnalysisGate({ issue: args.issue, openspecRoot: root, workspaceId: args.workspaceId!, runtime, facts, snapshot: { issue: before, metadata: priorMeta } });
+    const gate = evaluateAnalysisGate({ issue: args.issue, openspecRoot: root, workspaceId: args.workspaceId!, runtime, facts, snapshot: { issue: before, metadata: effectiveMeta } });
     if (gate.exitCode !== 0 || gate.payload.result !== "PASS") {
       const reason = gate.payload.reasons.join("; ") || "Analysis Gate 未通过";
       if (gate.payload.result === "FAIL") throw new FailError(reason);

@@ -297,7 +297,7 @@ function checkOpenSpecValidate(changeDir: string | null, openspecRoot: string): 
     return { name, result: "UNKNOWN", reasons: [`openspec validate 退出码 ${cp.status} 与校验结果不一致`] };
   }
   const issues: { level: string; path: string; message: string }[] = Array.isArray(item.issues) ? item.issues : [];
-  if (item.valid) return { name, result: "PASS", reasons: issues.map(issue => `${issue.level}: ${issue.path}: ${issue.message}`) };
+  if (item.valid) return { name, result: "PASS", reasons: issues.filter(issue => issue && typeof issue.message === "string").map(issue => `${issue.level}: ${issue.path}: ${issue.message}`) };
   const details = issues.filter(issue => issue?.level === "ERROR" || issue?.level === "WARNING")
     .map(issue => `${issue.path}: ${issue.message}`).join("\n").slice(0, 500);
   return { name, result: "FAIL", reasons: [`openspec validate --strict 失败: ${details || changeRef}`] };
@@ -312,7 +312,7 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
     // 先确认 Issue 在当前工作区可读取（防止静默读错工作区）
     const issue = input.snapshot?.issue ?? cli.getIssue(args.issue);
     if (!issue.id) throw new UnknownError(`Issue ${args.issue} 不可读取（不存在或不属于当前工作区）`);
-    const meta = submissionMetadata(input.snapshot?.metadata ?? cli.getMetadata(args.issue), input.facts);
+    const meta = input.snapshot?.metadata ?? submissionMetadata(cli.getMetadata(args.issue), input.facts);
     // --openspec-root 语义统一：根仓路径自动归一到其 openspec/ 子目录
     const openspecRoot = resolveOpenspecRootDir(args.openspecRoot);
     const { check: change, changeDir, schema } = checkChange(openspecRoot, meta);
@@ -371,11 +371,11 @@ function main(rawArgs: string[]): number {
     const missing = facts && typeof facts === "object" ? validateDraftFields(facts) : ["facts 必须为对象"];
     if (missing.length) return emitResult({ result: "FAIL", checks: [], reasons: missing }, 2, null);
     const outcome = evaluateAnalysisGate({
-    issue: args.issue,
-    openspecRoot: args.openspecRoot,
-    workspaceId: args.workspaceId!,
-    runtime: analysisRuntime(rawArgs, args.cli, args.workspaceId), facts,
-  });
+      issue: args.issue,
+      openspecRoot: args.openspecRoot,
+      workspaceId: args.workspaceId!,
+      runtime: analysisRuntime(rawArgs, args.cli, args.workspaceId), facts,
+    });
     return emitResult(outcome.payload, outcome.exitCode, null);
   } catch (error) {
     if (error instanceof UnknownError) return emitResult({ result: "UNKNOWN", checks: [], reasons: [error.message] }, 3, null);

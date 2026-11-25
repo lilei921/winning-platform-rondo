@@ -175,7 +175,7 @@ async function main(argv: string[]): Promise<number> {
       const matches = matchingRuns(readRuns(client, issue.id), issue.id, expectedAgentId);
       if (matches.length === 0) throw new UnknownError("已指派目标但未观察到对应的交接 Run，禁止重新触发");
       process.stdout.write(JSON.stringify({
-        result: "NOOP", issue: issueKey, tfs_type: tfsType,
+        result: "NOOP", issue: issueKey, decision: args.decision, tfs_type: tfsType,
         target: { type: route.type, name: route.name, id: target.id },
         status: issue.status, run_id: matches[0].id,
       }, null, 2) + "\n");
@@ -221,7 +221,7 @@ async function main(argv: string[]): Promise<number> {
     }
 
     process.stdout.write(JSON.stringify({
-      result: "PASS", issue: issueKey, tfs_type: tfsType,
+      result: "PASS", issue: issueKey, decision: args.decision, tfs_type: tfsType,
       target: { type: route.type, name: route.name, id: target.id },
       status: after.status, run_id: matches[0].id,
       mode: writeError ? "recovered" : "applied",

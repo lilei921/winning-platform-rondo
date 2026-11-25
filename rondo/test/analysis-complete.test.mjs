@@ -369,7 +369,7 @@ test("Current Facts replace stale analysis fields; validate is read-only and com
   const f = fixture(t);
   const old = f.state();
   old.metadata["analysis.change_ref"] = "stale-change";
-  old.metadata["analysis.verify_agent.focus_refs"] = JSON.stringify(["missing.md"]);
+  old.metadata["analysis.verify_agent.focus_refs"] = JSON.stringify(["./missing.md"]);
   old.metadata["analysis.ai_review.verdict"] = "APPROVED";
   f.setState(old);
   assert.equal(f.gate().exit, 0);

@@ -2,7 +2,7 @@
  * Analysis Handoff Facts 的单一字段契约（validate / complete 共用）。
  * TFS Type、持久化的 analysis.change_kind 与 OpenSpec Schema 各司其职；不维护独立路由。
  * 输入检查确认字段形状；Gate 按 Change Schema 检查专业结果；
- * complete 在写入审核状态前再次按持久化 Schema 核验。
+ * complete 与 validate 使用本次 Facts；审核重放核验已发布 Schema。
  */
 import { readFileSync } from "node:fs";
 import { UnknownError } from "../../cli/errors.js";
@@ -36,7 +36,7 @@ export function loadFactsFile(path: string): unknown {
 }
 
 /**
- * 未传 schema 时检查可暂存 draft 的基础形状；传入 canonical Schema
+ * 未传 schema 时检查本次 Facts 的基础形状；传入 canonical Schema
  * 时检查对应专业 Review 必备字段，不允许 Intentional 漏审后 complete。
  * 必填 change_kind 是可跨 Run 查询和统计的专业分类，不是固定流程选择器。
  */

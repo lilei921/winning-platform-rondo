@@ -861,6 +861,8 @@ analysis:
   ai_review:
     verdict: APPROVED | NEEDS_REVISION
 
+  gate:
+    result: PASS  # complete 最终真实 Gate 通过后登记
 ```
 
 实际工程增量的 `analysis.change_kind` 由 `rondo analysis complete` 按本次专业 Facts 经最终 Gate 后写入并回读，供跨 Run 交接及完成任务统计；Analysis Gate / Complete / Finalize 必须核对其与当前 Change Schema 一致。它是持久化分类结果，不决定 Skill 顺序或自动化授权。统计完成工作须结合 Issue 的有效完成状态，不以分类字段存在作为完成证据。
