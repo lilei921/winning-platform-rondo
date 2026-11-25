@@ -5,13 +5,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
 import { validatePrFacts } from "../dist/commands/pr/prepare.js";
-import { verifyAndExecuteValidation } from "../dist/commands/pr/validation.js";
-const valid=()=>({validation:{result:"PASS",command:[process.execPath,"-e","process.exit(0)"],summary:"actual validation"},code_review:{result:"PASS",summary:"review"},blockers:[],description:"professional description"});
+import { validateChangeDelivery } from "../dist/commands/dev/change-completion.js";
+import { verifyAndExecuteValidation, ValidationCommandError } from "../dist/commands/pr/validation.js";
+const valid=()=>({validation:{command:[process.execPath,"-e","process.exit(0)"],summary:"actual validation"},code_review:{result:"PASS",summary:"review"},blockers:[],description:"professional description"});
 test("common Facts enforce actual command for Requirement, allow Bug evidence-only",()=>{
   assert.deepEqual(validatePrFacts(valid(),false).code_review.findings,[]);
   const f=valid();delete f.validation.command;
   assert.throws(()=>validatePrFacts(f,false),/command/);
+  assert.throws(()=>validatePrFacts(f,true),/PASS/);
+  f.validation.result="PASS";
   assert.doesNotThrow(()=>validatePrFacts(f,true));
+  assert.equal(validatePrFacts(valid(),false).validation.result,undefined);
+  assert.equal(validatePrFacts(valid(),true).validation.result,undefined);
   for(const bad of [null,[],[""],["node",42]]) {f.validation.command=bad;assert.throws(()=>validatePrFacts(f,true),/command/);}
 });
 test("public PR Facts reject FAIL, unresolved blockers and nonblocking risk without evidence",()=>{
@@ -32,7 +37,15 @@ test("validation executes in exact authorized Git checkout, rejects failure, cha
   git(root,"init");git(root,"remote","add","origin",url);writeFileSync(join(root,"a.txt"),"old");git(root,"add",".");git(root,"-c","user.name=test","-c","user.email=test@example.com","commit","-m","fixture");
   const sha=git(root,"rev-parse","HEAD");
   assert.doesNotThrow(()=>verifyAndExecuteValidation(root,root,url,sha,[process.execPath,"-e","process.exit(0)"]));
-  assert.throws(()=>verifyAndExecuteValidation(root,root,url,sha,[process.execPath,"-e","process.exit(7)"]),/失败/);
+  assert.throws(()=>verifyAndExecuteValidation(root,root,url,sha,[process.execPath,"-e","process.exit(7)"]),e=>e instanceof ValidationCommandError && e.exitCode===7);
   assert.throws(()=>verifyAndExecuteValidation(root,other,url,sha,[process.execPath,"-e","process.exit(0)"]),/目录/);
   assert.throws(()=>verifyAndExecuteValidation(root,root,url,sha,[process.execPath,"-e","require('fs').writeFileSync('a.txt','changed')"]),/发生变化/);
+});
+
+test("Requirement Gate rejects a failed participating repo even when another repo passed",()=>{
+  const sha="a".repeat(40), repoUrl="http://tfs.test/tfs/C/P/_git/";
+  const entry=key=>({repo_key:key,repo_url:repoUrl+key,source_branch:"feature/12",target_branch:"main",candidate_commit:sha,title:"change",description:"review",local_validation:{result:"PASS",source:"rondo pr prepare",exit_code:0,candidate_commit:sha,summary:"test",command:["npm","test"]},code_review:{result:"PASS",candidate_commit:sha,summary:"review",findings:[]},blockers:[]});
+  const a=entry("a"), b=entry("b"), registry={a:{repo_url:a.repo_url,default_target_branch:"main"},b:{repo_url:b.repo_url,default_target_branch:"main"}};
+  assert.throws(()=>validateChangeDelivery([a,{...b,local_validation:{...b.local_validation,result:"FAIL",exit_code:9}}],["a","b"],12,registry),/实际执行验证结果/);
+  assert.deepEqual(validateChangeDelivery([a,b],["a","b"],12,registry),{a:sha,b:sha});
 });

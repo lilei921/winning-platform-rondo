@@ -7,7 +7,7 @@
 - 使用 `rondo analysis read` 读取已批准的 Proposal、Specs、必要 Design 和 Tasks，理解工程要求及授权范围。
 - 在授权范围内完成必要的代码实现、集成调整和相关测试。
 - 根据实际风险开展验证和 Code Review，解决 Blocking Findings。
-- 根据实际研发成果更新 Tasks，完成必要的 Design 细化并发布研发工件。
+- 根据实际研发成果使用 `rondo change update-progress` 更新 Tasks，提交当前 Change 的研发工件并使用 `rondo dev publish --root-repo <实际根仓路径>` 发布；仅在非实质性 Design 细化时使用 `--minor-design`。
 - 使用 `pull-request` 完成 PR 交付。
 
 # Working Principles

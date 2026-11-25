@@ -33,6 +33,7 @@ test('Bug pr prepare CLI (Native): stdin/file, Git identity, quality Gate and Me
     writeFileSync(join(root, 'docs', 'config', 'repo-context.yaml'), JSON.stringify({ repos: [
       { repo_id: 'root', repo_path: '.', repo_url: rootUrl },
       { repo_id: 'biz', repo_path: 'biz', repo_url: repoUrl, tfs_project: 'P', default_target_branch: 'main' },
+      { repo_id: 'sibling', repo_path: 'sibling', repo_url: 'http://tfs.test/tfs/C/P/_git/sibling', tfs_project: 'P', default_target_branch: 'main' },
     ] }));
     git(root, 'add', 'docs/config/repo-context.yaml');
     git(root, 'config', 'multica.checkout-mode', 'isolated');
@@ -124,8 +125,42 @@ process.exit(r.status ?? 1);
   assert.equal(state().issues['I-1'].metadata.pr_prep, undefined);
   writeFileSync(callsPath, '');
   const before = readdirSync(hub).sort();
-  result(run(JSON.stringify({...evidence,validation:{...evidence.validation,command:[process.execPath,'-e','process.exit(9)']}})),2);
+  const commandEvidence = { ...evidence, validation: { summary: '定向测试范围', evidence_refs: evidence.validation.evidence_refs, command: [process.execPath, '-e', 'process.exit(0)'] } };
+  const marker=join(dir,'validation-ran');
+  const invalid={...commandEvidence,regression:{...evidence.regression,result:'FAIL'},
+    validation:{...commandEvidence.validation,command:[process.execPath,'-e','require("fs").writeFileSync('+JSON.stringify(marker)+',"ran")']}};
+  const beforeInvalid=state();
+  result(run(JSON.stringify(invalid)),2);
+  assert.deepEqual(state(),beforeInvalid);
+  assert.ok(!readdirSync(dir).includes('validation-ran'));
+  const failing={...commandEvidence,validation:{...commandEvidence.validation,command:[process.execPath,'-e','process.exit(9)']}};
+  result(run(JSON.stringify(failing)),2);
   assert.equal(state().issues['I-1'].metadata.pr_prep,undefined);
+  assert.equal(JSON.parse(state().issues['I-1'].metadata['bug.delivery'])[0].local_validation.result,'FAIL');
+  assert.equal(JSON.parse(state().issues['I-1'].metadata['bug.delivery'])[0].local_validation.exit_code,9);
+  result(run(JSON.stringify(evidence)),2);
+  assert.equal(result(run(JSON.stringify(commandEvidence)), 0).ready_for_pr, true);
+  assert.deepEqual(JSON.parse(state().issues['I-1'].metadata['bug.delivery'])[0].local_validation, {
+    ...commandEvidence.validation, result: 'PASS', exit_code: 0, candidate_commit: sha, source: 'rondo pr prepare',
+  });
+  const preparedState=state();
+  const multi=state();
+  const multiMd=multi.issues['I-1'].metadata;
+  const siblingPrep={...JSON.parse(multiMd.pr_prep)[0],repo_key:'sibling',repo_url:'http://tfs.test/tfs/C/P/_git/sibling'};
+  const siblingDelivery={...JSON.parse(multiMd['bug.delivery'])[0],repo_key:'sibling'};
+  multiMd['bug.required_repos']=JSON.stringify(['biz','sibling']);
+  multiMd.pr_prep=JSON.stringify([...JSON.parse(multiMd.pr_prep),siblingPrep]);
+  multiMd['bug.delivery']=JSON.stringify([...JSON.parse(multiMd['bug.delivery']),siblingDelivery]);
+  writeFileSync(statePath,JSON.stringify(multi));
+  result(run(JSON.stringify(failing)),2);
+  const failedMd=state().issues['I-1'].metadata;
+  assert.deepEqual(JSON.parse(failedMd.pr_prep),JSON.parse(multiMd.pr_prep));
+  assert.equal(JSON.parse(failedMd['bug.delivery']).find(x=>x.repo_key==='biz').local_validation.result,'FAIL');
+  assert.deepEqual(JSON.parse(failedMd['bug.delivery']).find(x=>x.repo_key==='sibling'),siblingDelivery);
+  assert.equal(failedMd['bug.required_repos'],multiMd['bug.required_repos']);
+  result(run(JSON.stringify(evidence)),2);
+  assert.equal(result(run(JSON.stringify(commandEvidence)),0).ready_for_pr,true);
+  writeFileSync(statePath,JSON.stringify(preparedState));
   const completed = result(run(JSON.stringify(evidence)), 0);
   assert.equal(completed.ready_for_pr, true);
   const md = state().issues['I-1'].metadata;
