@@ -432,3 +432,33 @@ test("invalid professional Facts never reach Gate or write metadata", t => {
   assert.equal(f.complete().exit, 2);
   assert.deepEqual(f.state(), before);
 });
+
+
+test("Gate PASS 写入失败不切换审核，恢复复用固定来源", t => {
+  const f = fixture(t);
+  f.env.MOCK_FAIL_METADATA_KEY = "analysis.gate.result";
+  assert.notEqual(f.complete().exit, 0);
+  assert.equal(f.state().status, "in_progress");
+  assert.equal(f.state().metadata["analysis.gate.result"], undefined);
+  const source = f.state().metadata["analysis.source"];
+  assert.ok(source);
+  delete f.env.MOCK_FAIL_METADATA_KEY;
+  f.tfs.update(s => { s.requests = []; });
+  const replay = f.complete();
+  assert.equal(replay.exit, 0, JSON.stringify(replay));
+  assert.equal(f.state().metadata["analysis.source"], source);
+  assert.equal(f.tfs.state().requests.filter(r => r.query.scopePath).length, 1);
+});
+
+test("远端契约读取仅消费必要工件及明确引用", t => {
+  const f = fixture(t);
+  mkdirSync(join(f.change, "logs"));
+  writeFileSync(join(f.change, "logs", "debug.txt"), "unreferenced");
+  git(f.root, "add", "openspec/changes/" + CHANGE);
+  git(f.root, "commit", "-m", "add unreferenced log");
+  const result = f.complete();
+  assert.equal(result.exit, 0, JSON.stringify(result));
+  const paths = f.tfs.state().requests.map(r => r.query.path).filter(Boolean);
+  assert.ok(paths.some(path => path.endsWith("/proposal.md")));
+  assert.ok(!paths.some(path => path.endsWith("/logs/debug.txt")));
+});

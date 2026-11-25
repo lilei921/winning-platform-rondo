@@ -363,7 +363,7 @@ rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsuppor
 
 同步替换 handoff 的现有消费者、Decision 枚举、CLI 参数、Agent Instructions、Comment 示例、COMMANDS.md、相关测试和有效设计引用；不保留重复公开命令（除非存在经核实且不可同步迁移的实际消费者，需明确说明）。不扩展到其他 delivery 命令。
 
-实施时同步清理 workspace-config/provisioning.json 的 Skill 发布及绑定、Wayfinder README、受影响设计文档与 Manifest 测试（rondo/test/d1-analysis-skills.test.mjs 已断言当前绑定）。确认实际 Workspace 解绑/退役能力，避免遗留活动 Skill；不改历史 Replay。按上述目标稿和准入执行契约研发，验证实际消费者及原生机制。
+实施时同步清理 workspace-config/provisioning.json 的 Skill 发布及绑定、Wayfinder README、受影响设计文档与 Manifest 测试（rondo/test/d1-analysis-skills.test.mjs 已断言当前绑定）。现有 Workspace 先执行 `rondo workspace provision --workspace <name>` 收敛绑定与 Overlay，再执行 `rondo workspace sync --workspace <name>`；确认 Wayfinder 仅绑定 codebase-explorer 且旧 Skill ID 不再登记。未绑定的远端 Skill 对象按需原生清理，不新增自动删除机制。不改历史 Replay。按上述目标稿和准入执行契约研发，验证实际消费者及原生机制。
 
 ### 5.6 Rondo CLI
 
@@ -374,7 +374,7 @@ rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsuppor
 1. 读取当前 Issue 及 Metadata，核实适用身份、状态、Runtime；对已处于 analysis_review 的相同提交沿用固定版本重放，不重新执行 Gate。
 2. 将本次 Analysis Facts 投影到当前来源事实的内存视图；共享 Gate 直接消费这份待提交视图，执行最终真实校验。专业字段由本次输入提供，不继承过期 Review Verdict。保留初始服务端事实作为冲突核验依据。
 3. 使用现有 Git 发布能力核对候选版本与 Gate 摘要、实际发布路径及远端固定 Commit；Gate、候选 Commit 与远端契约的 digest 计算统一消费本次 Facts（包括 verify_agent.focus_refs），不混用旧 Metadata。不改 Git 发布算法。
-4. 在写入最终 Facts、Gate、Source 前核对相关服务端事实及状态未发生冲突；只写变化字段，保留原有来源回读、状态写入及最终结果确认。部分成功与响应丢失依靠现有固定来源/发布恢复语义，不新增持久化事务。
+4. 在写入最终 Facts、Gate、Source 前核对相关服务端事实及状态未发生冲突；只写变化字段；替换旧审核事实时先撤销旧 PASS，确认本次 Facts、Source 完整后再登记本次 PASS，保留状态写入前及最终结果确认。部分成功与响应丢失依靠现有固定来源/发布恢复语义，不新增持久化事务。
 
 待提交视图与初始服务端快照仅作为现有函数中的普通数据及参数传递，不新增独立类型体系、Snapshot Manager、Facts Store、事务管理或恢复状态机。两者必须区分；最终 Gate 摘要绑定本次提交，冲突比较基于初始实际事实，不能要求旧 draft 与新输入相同。旧字段不适用时明确处理，不复用旧 ai_review。保留现有身份/授权及实际外部操作边界核验。若直接消费 Facts 经实现验证反而显著增加恢复复杂度，则采用最小的现有 stage 逻辑复用，不强行重构。
 

@@ -269,12 +269,16 @@ async function main(rawArgs: string[]): Promise<number> {
           Object.entries(entries).some(([k, v]) => k !== GATE_RESULT && published[k] !== v) ||
           metadataEvidenceDigest(published) !== gateEvidence.metadata_digest || !sameDeliveryFacts(priorMeta, published) ||
           published[GATE_RESULT] !== latestMeta[GATE_RESULT]) throw new UnknownError("审核 metadata 回读不一致，未进入 analysis_review");
+      if (published[GATE_RESULT] !== "PASS") {
+        runJson([...MC, "issue", "metadata", "set", args.issue, "--key", GATE_RESULT, "--value", "PASS", "--type", "string", ...ws, "--output", "json"], "登记本次 Gate PASS");
+        const confirmed = runJson([...MC, "issue", "metadata", "list", args.issue, ...ws, "--output", "json"], "确认本次 Gate 与审核来源") as Record<string, unknown>;
+        if (Object.entries(entries).some(([k, v]) => confirmed[k] !== v) ||
+            metadataEvidenceDigest(confirmed) !== gateEvidence.metadata_digest || !sameDeliveryFacts(priorMeta, confirmed))
+          throw new UnknownError("本次 Gate 或审核来源无法确认，未进入 analysis_review");
+      }
       const ready = runJson([...MC, "issue", "get", args.issue, ...ws, "--output", "json"], "切换审核前核对 Issue") as Record<string, unknown>;
       if (String(ready.status ?? ready.status_name ?? "") !== "in_progress" || !sameIssueOwner(before, ready))
         throw new UnknownError("审核状态或负责人已变化，停止发布");
-      if (published[GATE_RESULT] !== "PASS") {
-        runJson([...MC, "issue", "metadata", "set", args.issue, "--key", GATE_RESULT, "--value", "PASS", "--type", "string", ...ws, "--output", "json"], "登记本次 Gate PASS");
-      }
       const statusCp = runCommand([...MC, "issue", "status", args.issue, TARGET_STATUS, "--no-start", ...ws, "--output", "json"]);
       if (statusCp.status !== 0) {
         throw new UnknownError(`写入状态失败 rc=${statusCp.status}: ${statusCp.stderr.trim()}`);

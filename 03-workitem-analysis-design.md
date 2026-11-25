@@ -183,12 +183,13 @@ Intentional
 
 ### Multica：Delivery Truth（交付事实）
 
-Analysis Handoff Facts **不是新对象**，只是使用 Multica 原生 Issue / metadata / custom property / comment / run result 等能力持久化的最小交付事实。具体字段映射由后续实现统一设计；本方案不定义新的存储、版本、状态机或生命周期。
+Analysis Handoff Facts **不是新对象**，只是实际工程增量经 `analysis complete` 登记的最小 Issue Metadata。以下是已提交审核的逻辑字段视图；无需工程增量仅通过普通 Comment 回流。
 
 ```yaml
 analysis:
   change_kind: corrective | intentional  # Multica Issue Metadata：analysis.change_kind
   change_ref: ...
+  source: ... # 固定 repo_url / branch / commit / change_ref
 
   verify_agent:
     recommendation: required | not_required
@@ -198,15 +199,13 @@ analysis:
       - <task-number: 1.1>
 
   ai_review:
-    verdict: APPROVED | NEEDS_REVISION
-    findings_ref: ...
+    verdict: APPROVED # Intentional 必需
 
   gate:
-    result: PASS | FAIL | UNKNOWN
-    reasons_ref: ...
+    result: PASS
 ```
 
-`analysis.change_kind` 是 Workitem Analyst 的专业分类结论，由 `analysis-completion` 在 Stage 写入 Multica Issue Metadata 并回读。它供交付追溯和统计；OpenSpec Schema 仍只由当前 Change 持有。Gate / Complete 校验两者对应；该字段不能作为独立 Route、Human Approval 或自动处理授权。
+`analysis.change_kind` 是 Workitem Analyst 的专业分类结论，由 `rondo analysis complete` 在最终 Gate 通过并核验固定 Git 来源后登记并回读。它供交付追溯和统计；OpenSpec Schema 仍只由当前 Change 持有。Gate / Complete 校验两者对应；该字段不能作为独立 Route、Human Approval 或自动处理授权。
 
 `focus_refs` 只引用当前 OpenSpec Acceptance / Verification Contract（验证契约），不复制正文；可使用 Capability Spec 路径 + 原生 Requirement / Scenario 标题、Corrective Proposal 现有 Heading，或当前 Change 的可读任务编号（例如 `1.1`）定位。具体精确引用与唯一性检查由 [05](05-openspec-schema-implementation-design.md) 的 Native First 契约维护，不另造 Acceptance / Verification Identity。技术 Risk、Dependency、Open Decision、Evidence、Development Scope 等不因为跨 Run 交接而复制成第二份结构化技术合同。
 
@@ -841,9 +840,9 @@ Intentional：已确认 Goal / Requirement / Scenario / Rules / Scope / Selected
 | Prepare | 在新建或已存在的 active Change 上，根据当前 Schema、`apply.requires` 及 Artifact `requires` 传递依赖、条件性 Design 和**实际文件集合**补全必要工件；复用已有效内容 |
 | Revise | 已有明确修订请求且仍在本次授权及批准边界内时，仅修订受影响工件，并核对必要上下游依赖、Tasks 和 Verification；越权的业务决策或已批准契约变更须停止并请求确认 |
 
-准备期间必须核实唯一 Change 与根仓、项目级 Schema 及 OpenSpec 版本，明确设置 CLI 的根仓 `cwd`，并使用原生 `status / instructions / validate` 及当前专业 Evidence。对 `specs/**/*.md` 等 Glob，不因 `specs=done` 就假定 Proposal 声明的所有 Capability Spec 已齐全：按**具体文件路径**核实预期集合，只补缺失或获授权修订的文件。Conditional Design 的适用性是专业判断；需要时先形成关键 Design 决策再定稿相关 Tasks，不需要时不制造空文件。只有原生事实允许且业务行为确无 Spec-level Delta 时才能 `skip_specs`。
+准备期间必须核实唯一 Change 与根仓、项目级 Schema 及 OpenSpec 版本，明确设置 CLI 的根仓 `cwd`，并使用原生 `status / instructions` 及当前专业 Evidence；准备阶段的 `validate` 按需执行，最终 Analysis Gate 必须执行 Strict Validation。对 `specs/**/*.md` 等 Glob，不因 `specs=done` 就假定 Proposal 声明的所有 Capability Spec 已齐全：按**具体文件路径**核实预期集合，只补缺失或获授权修订的文件。Conditional Design 的适用性是专业判断；需要时先形成关键 Design 决策再定稿相关 Tasks，不需要时不制造空文件。只有原生事实允许且业务行为确无 Spec-level Delta 时才能 `skip_specs`。
 
-按当前需要维护 Corrective Proposal / Tasks 或 Intentional Proposal / Specs / Conditional Design / Tasks；每项 Implementation Task 说明可执行的验证方法，必要时才补 Change-level Verification Task。定向返工复用同一 Change，不重做有效专业分析；未确认的身份、授权、业务选择、真实文件路径或 CLI 结果必须安全停止。准备完成后回读原生状态和 Validation；Corrective 做必要专业一致性复核、Intentional 由 Analyst 做专业 Review，最终通过 `analysis-completion` 收口。具体执行细节以现行 `workspace-skills/spec-preparation/SKILL.md` 为准。
+按当前需要维护 Corrective Proposal / Tasks 或 Intentional Proposal / Specs / Conditional Design / Tasks；每项 Implementation Task 说明可执行的验证方法，必要时才补 Change-level Verification Task。定向返工复用同一 Change，不重做有效专业分析；未确认的身份、授权、业务选择、真实文件路径或 CLI 结果必须安全停止。准备完成后核对必要原生状态，保留实际执行的 Validation 诊断；Corrective 做必要专业一致性复核、Intentional 由 Analyst 做专业 Review，最终通过 `analysis-completion` 收口。具体执行细节以现行 `skills/spec-preparation/SKILL.md` 为准。
 
 当前 Schema 适用范围摘要：
 
@@ -1242,7 +1241,7 @@ Workitem Analyst 只可在当前授权分析任务的提交环节写入 `analysi
 确认本次 OpenSpec Change、专业 Facts 与必要 Evidence；限定范围 Commit
 → rondo analysis complete（直接消费本次 Facts）
 → CLI 内部最终真实 Gate、候选及远端固定 Git 契约核验
-→ CLI 登记 Facts、Gate、Source 与 analysis_review 并确认结果
+→ CLI 核对冲突事实；替换旧审核时先使旧 PASS 失效，登记 Facts、Source、本次 PASS 与 analysis_review 并确认结果
 → PASS 后使用返回的 analysis_source 发布原生审核 Comment
 → 结束本轮分析，等待 Human Review
 ```
@@ -1392,7 +1391,7 @@ Workitem Analyst 对总体分析质量负责：从实际任务、证据与变更
 
 Workitem Analyst 依据当前 Issue 与可信证据判断 `corrective | intentional`；`tfs.type` 保留来源管理语义。首次准备时确定当前 OpenSpec Schema，之后所有 Run 从当前 Change 的原生状态读取；映射与 Artifact 依赖由 [05](05-openspec-schema-implementation-design.md) 维护。
 
-不建立 Analysis Route 配置、路由脚本或新的 Skill 调度表；专业 Skill 按需调用。**现行已实现契约**：Analysis Handoff Facts 必含 `change_kind`，Stage 写入并回读 Multica 服务端 Issue Metadata；Gate / Complete / Finalize 核对其与当前 Change Schema 一致。相关源码变更已合并并通过自动化测试，仍须隔离 Workspace 验证实际 CLI 发布与 Agent/Skill 加载。项目尚未上线，无历史数据迁移任务。
+不建立 Analysis Route 配置、路由脚本或新的 Skill 调度表；专业 Skill 按需调用。**现行契约**：仅实际工程增量需要 `change_kind`，`analysis complete` 消费本次 Facts，通过真实 Gate 后登记并回读 Multica Issue Metadata；Gate / Complete / Finalize 核对其与当前 Change Schema 一致。实际 CLI 发布和 Agent/Skill 加载仍须隔离 Workspace 验证。项目尚未上线，无历史数据迁移任务。
 
 ```text
 Issue / Evidence → Analyst 判断 Change Kind
@@ -1510,7 +1509,9 @@ Agent Instructions 与相关 Skill 的职责收敛已通过 #83 合并；`rondo 
 ```text
 Issue（当前目标 / 可信 Evidence）
        ↓
-Workitem Analyst：判断 corrective / intentional（并核对自动化边界）
+Workitem Analyst：判断是否存在需要实施的工程增量
+       ├── 无需工程增量 → 普通 Comment（结论 / 依据 / 建议）
+       └── 存在工程增量 → 判断 corrective / intentional
        ├── Corrective → 按需 bug-analysis
        └── Intentional → 按需 requirement-analysis
        ↓
@@ -1559,7 +1560,7 @@ Human Analysis Review → Delivery Lead
 | Acceptance Contract | Intentional → Spec / Delta Spec 的 Requirement + Scenario；Corrective → Proposal Expected Behavior / Regression Scope，存在 Specs 时一并使用 |
 | Verification Contract | 每个 Implementation Task 必须有验证方式；组合行为按需形成 Change-level Verification Task；不因 `verify_agent=not_required` 取消 |
 | Verify 推荐 | 所有获准自动处理的 Change 都输出 Independent Verify Recommendation / Reason / Focus；只决定是否需要独立执行者，不拥有 Verification Contract |
-| Human Analysis Review | 所有自动 Analysis 都需人工决定；不是 Analysis Gate PASS 的同义词，完整流程见[主方案 §6](02-multica-delivery-lifecycle-design.md#human-analysis-review) |
+| Human Analysis Review | 实际工程增量提交 Human Review，需人工批准工程契约；无需工程增量通过普通 Comment 回流，不触发工程契约批准。批准不是 Analysis Gate PASS 的同义词，完整流程见[主方案 §6](02-multica-delivery-lifecycle-design.md#human-analysis-review) |
 | Approved OpenSpec Commit | Human APPROVED 后提交根仓 Git，记录开发基线；允许批准边界内更新，不创建独立 PR |
 | Reject Rework | Lead 理解并保留反馈，写入并确认 `in_progress` 后单次委派 Workitem Analyst；修订后由 Workitem Analyst 再提交 |
 | Analysis Route 配置 | 不创建 `analysis-routing.yaml`，现行模型见 [§14.3](#analysis-routing-config) |

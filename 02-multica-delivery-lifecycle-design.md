@@ -978,9 +978,9 @@ OpenSpec 根仓产物 → Git 跟踪与 Commit，不创建独立 PR，不进入 
 
 ## 5.4 Analysis Gate（分析门禁）
 
-Workitem Analyst 在 `analysis-completion` 中调用 Analysis Gate。Gate 只返回检查结果；发布分析结果和写入审核状态由 Workitem Analyst 在同一收口方法内负责，详细执行契约见 [03 §12.1 Analysis Completion](03-workitem-analysis-design.md#analysis-completion)。
+存在实际工程增量时，Workitem Analyst 使用 `analysis-completion`，由 `rondo analysis complete` 执行最终真实 Gate、发布固定来源及写入审核状态；按需使用只读 `validate` 诊断。Gate 本身只返回检查结果，详细执行契约见 [03 §12.1 Analysis Completion](03-workitem-analysis-design.md#analysis-completion)。
 
-Analysis Gate 的公共检查和不同 Change Contract 的细项统一引用 [03 Analysis 方案 §11.2](03-workitem-analysis-design.md#analysis-gate)。公共契约至少确认：
+Analysis Gate 的公共检查和不同 Change Contract 的细项统一引用 [03 Analysis 方案 §11.2](03-workitem-analysis-design.md#analysis-gate)。整体专业准备与确定性检查至少应满足以下条件（并非 CLI 逐项自动检查）：
 
 ```text
 Delivery / TFS identity、Change Kind 与已持久化 Schema 一致
@@ -994,9 +994,9 @@ Evidence References 可追溯
 专业 Review / Consistency Result 可读取且无 unresolved blocker
 ```
 
-Corrective 额外检查 Proposal 中的 Expected / Actual、Root Cause / Evidence、Fix Strategy、Fix / Regression Scope 与 Tasks / Verification 一致；Intentional 额外检查 Proposal / Specs / Tasks、Conditional Design 判断及结构化 AI Review Result。Gate 不要求 `bug-analysis.md`、`acceptance.md`、`verification-requirements.md` 等重复载体。
+Corrective 的 Expected / Actual、Root Cause / Evidence、Fix Strategy、Fix / Regression Scope 与 Tasks / Verification 一致性，以及 Intentional 的 Proposal / Specs / Tasks、Conditional Design 判断，由 Analyst 专业复核；CLI 只检查适用的确定性条件及 Intentional Review Verdict。Gate 不要求 `bug-analysis.md`、`acceptance.md`、`verification-requirements.md` 等重复载体。
 
-Gate 消费已有专业结论，不能凭 Artifact 存在、Validation PASS 或推荐字段齐全替代语义判断。Gate 的 PASS 结果须能核对 Issue / Workspace、Change Kind / Schema 与当前 Change 工件摘要；Complete 回读已落盘的 Gate Result，确认全部必需检查项 PASS、工件未变化后方可提交 `analysis_review`。结果引用与摘要只是本次确定性校验证据，不创建新的审批状态、版本对象或重复技术事实。成员选择及 `task_refs` 分工在 Human Review 后由 Delivery Lead 处理，不作为 Analysis 的必交输入。
+Gate 消费已有专业结论，不能凭 Artifact 存在、Validation PASS 或推荐字段齐全替代语义判断。Gate 的 PASS 结果须能核对 Issue / Workspace、Change Kind / Schema 与当前 Change 工件摘要；Complete 直接消费本次 Facts，执行真实 Gate 并确认候选与远端固定 Git 契约一致；核对服务端冲突事实后登记 Facts、Source 和本次 PASS，再提交 `analysis_review`。不落盘 Gate Result。结果引用与摘要只是本次确定性校验证据，不创建新的审批状态、版本对象或重复技术事实。成员选择及 `task_refs` 分工在 Human Review 后由 Delivery Lead 处理，不作为 Analysis 的必交输入。
 
 统一结果：
 
@@ -1181,7 +1181,7 @@ Reject 不触发整套 Analysis 无差别重跑。针对已经批准的 Analysis
 | 主体 | 承担的职责 |
 |---|---|
 | Human | 作出批准、退回以及必须由人确认的取舍 |
-| Workitem Analyst / `analysis-completion` | 当前分析通过 Gate 后发布产物，写入并确认 `analysis_review`，结束本轮分析；提交细节见 [03 §12.1 Analysis Completion](03-workitem-analysis-design.md#analysis-completion) |
+| Workitem Analyst / `analysis-completion` | 实际工程增量通过 Gate 后发布固定来源，写入并确认 `analysis_review`；无需工程增量直接记录普通 Comment，提交细节见 [03 §12.1 Analysis Completion](03-workitem-analysis-design.md#analysis-completion) |
 | Delivery Lead / `delivery-flow` | 理解人审意见及条件，保留来源和必要摘要，组织批准后的研发或退回后的分析修正 |
 | Gate | 检查当前适用的硬条件并返回结果；不修改审核状态、不批准分析 |
 | 原生工具 / 必要执行封装 | 核对可确认的身份、来源、状态和已执行动作；完成已明确授权的 Git / 状态写入并回读，不解释自然语言或替代 Human 决定 |
@@ -2657,12 +2657,13 @@ Artifact
 
 入口准入依据由同一 Issue 的 `/note` Comment 保留（首次可顶层，Human Comment 触发的恢复 Run 必须线程回复；含 Decision、TFS 来源版本、Evidence References、未决问题），Status / Assignee 表达当前交接结果；不新增 Triage Artifact 或并行 Truth Store。权威细则见 [§4.1.1](#delivery-intake)。
 
-Analysis 阶段只在 Multica 保存最小 Delivery Facts；这些事实不组成新的 `analysis_result` Domain Object。具体使用 metadata、custom property、comment 或 run result 的字段映射留待后续实现统一确定：
+存在工程增量时，Analysis 在 Multica Issue Metadata 中保存最小 Delivery Facts，不新增 `analysis_result` Domain Object；无需工程增量仅保留原生 Comment。以下为已提交审核的逻辑字段视图：
 
 ```yaml
 analysis:
-  # 不维护独立 Analysis Route 字段
+  change_kind: corrective | intentional
   change_ref: ...
+  source: ... # 固定 repo_url / branch / commit / change_ref
 
   verify_agent:
     recommendation: required | not_required
@@ -2672,15 +2673,13 @@ analysis:
       - <task-number: 1.1>
 
   ai_review:
-    verdict: APPROVED | NEEDS_REVISION
-    findings_ref: ...
+    verdict: APPROVED # Intentional 必需
 
   gate:
-    result: PASS | FAIL | UNKNOWN
-    reasons_ref: ...
+    result: PASS
 ```
 
-Acceptance Contract、Verification Contract、Development / Repository Scope、技术风险 / 依赖 / Open Decision 与 Evidence 均保留在各自权威 OpenSpec / Supporting Artifact 中；Multica Handoff Facts 只保存 Delivery 决策与必要引用，不复制工程契约。Analysis Gate 的 PASS / FAIL / UNKNOWN 属于 Multica Runtime Fact，可由 Analysis Package 引用，不需要创建 `gate-result.md` 或独立 Gate Result 对象。
+Acceptance Contract、Verification Contract、Development / Repository Scope、技术风险 / 依赖 / Open Decision 与 Evidence 均保留在各自权威 OpenSpec / Supporting Artifact 中；Multica Handoff Facts 只保存 Delivery 决策与必要引用，不复制工程契约。Analysis Gate 以 stdout 返回 PASS / FAIL / UNKNOWN；仅发布成功的 PASS 登记为 Issue Metadata，不创建 `gate-result.md` 或独立 Gate Result 对象。
 
 对于一次 Engineer Task Set 执行，建议在当前 Run / Issue 上保存最小 Engineering Facts，并以 `task_refs` 标识覆盖范围：
 
@@ -2948,7 +2947,7 @@ ANALYSIS / ENGINEERING / RECREATE_PR / CANCEL_DELIVERY
 
 > **OpenSpec 初始批准基线先提交根仓；研发受控修改保存于持久共享工作区，最终由 Finalize 统一提交。它不作为业务 Repository Change，不创建独立 PR，也不进入 required PR 集合；关键内容丢失时停止并交 Lead 恢复。**
 
-> **Workitem Analyst 通过 `analysis-completion` 提交审核并回读确认状态；Human 作出决定；Delivery Lead 理解自然语言意见并落实。Gate 检查与工具写入不代替人工决定，也不替代其语义理解。**
+> **实际工程增量由 Workitem Analyst 通过 `analysis-completion` 提交审核；无需工程增量直接记录普通 Comment。Human 作出工程契约批准决定；Delivery Lead 理解自然语言意见并落实。Gate 检查与工具写入不代替人工决定，也不替代其语义理解。**
 
 > **Human 批准需求、方案与验收边界；Leader 在边界内组织协作。需要改变 Expected Behavior、Contract、Scope 或降低验收要求时，返回既有 Analysis / Human Review。**
 
