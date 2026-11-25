@@ -44,8 +44,6 @@ node rondo/dist/index.js workspace provision --workspace <name> --mcp-only --che
 # 明确需要替换远端 MCP 配置时
 node rondo/dist/index.js workspace provision --workspace <name> --mcp-only --update-mcp remote-ripgrep
 
-# 需要为 Analyst / Engineer 配置 08-B MCP 绑定时
-node rondo/dist/index.js workspace provision --workspace <name> --mcp-only --mcp-phase 08-b
 ```
 
 新建 Workspace 需使用完整 `workspace provision` 流程；`--mcp-only` 只适用于现有 Workspace。正式供给前准备相应连接文件；`--dry-run` 和 `--check` 不验证实际 MCP 连通性。更完整的参数见 [Rondo 命令说明](../rondo/COMMANDS.md)。
@@ -55,4 +53,4 @@ node rondo/dist/index.js workspace provision --workspace <name> --mcp-only --mcp
 - `--check` 只能核实公开的 MCP 身份和绑定，不能证明完整连接配置或工具可用。
 - `--update-mcp` 会更新指定 MCP 的远端配置；运行前先确认连接文件和目标对象，异常时回读后再重试。
 - 平台无法完整回读连接内容时，不能将 Provision 成功等同于配置验收；需要在真实 Task 中验证各 MCP 的可访问性与授权范围。
-- 修改 `mcp_phase` 不会自动删除之前的 Agent 绑定；不把阶段切换当作回滚机制。
+- Agent 的受管 MCP 绑定以 Manifest 中的 `mcp_servers` 为准；不自动删除用户另行配置的绑定。

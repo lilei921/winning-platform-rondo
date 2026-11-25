@@ -23,7 +23,7 @@ function fixture(t) {
     mcp_servers: names.map(name => ({ name, template: name + ".json" })),
     managed_skills: ["demo"], agents: [
       { dir: "wayfinder", name: "Wayfinder", skills: ["demo"], mcp_servers: names },
-      { dir: "analyst", name: "Analyst", skills: ["demo"], mcp_servers: names, mcp_phase: "08-b" },
+      { dir: "analyst", name: "Analyst", skills: ["demo"], mcp_servers: names },
     ], squad: { name: "Delivery", leader: "Wayfinder", members: [] }, project: { title: "Project" }, autopilots: [],
   };
   write(shared + "provisioning.json", manifest);
@@ -112,7 +112,7 @@ test("完整 provision 创建三 MCP 并绑定；重入无重复写入，凭据�
   assert.equal(r.status, 0, r.stderr);
   assert.equal(f.state().servers.length, 3);
   assert.equal(f.state().bindings["a-0"].length, 3);
-  assert.equal(f.state().bindings["a-1"], undefined);
+  assert.equal(f.state().bindings["a-1"].length, 3);
   assert.deepEqual(Object.keys(f.overlay().mcp_servers), names);
   assert.equal(f.overlay().provisioning_required, undefined);
   assert.equal(f.state().input_valid, true);
@@ -197,14 +197,13 @@ test("连接文件缺失时预先停止，即使环境变量有值也不兜底",
   assert.equal(f.calls().length, 0);
 });
 
-test("显式更新只替换指定 MCP；08-B 绑定需显式启用并保存阶段", t => {
+test("显式更新只替换指定 MCP；已有 Agent 绑定不重复写入", t => {
   const f = fixture(t); assert.equal(f.run(["--mcp-only"]).status, 0);
   const count = f.calls().length;
-  assert.equal(f.run(["--mcp-only", "--update-mcp", "remote-ripgrep", "--mcp-phase", "08-b"]).status, 0);
+  assert.equal(f.run(["--mcp-only", "--update-mcp", "remote-ripgrep"]).status, 0);
   const writes = f.calls().slice(count).filter(a => a.includes("update"));
   assert.equal(writes.length, 1);
   assert.ok(writes[0].includes("id-remote-ripgrep"));
-  assert.equal(f.overlay().mcp_phase, "08-b");
   assert.equal(f.state().bindings["a-1"].length, 3);
 });
 
@@ -231,7 +230,6 @@ test("正式项目配置根仓分支，并为受管源码 Agent 声明 MCP", () 
   for (const dir of ["wayfinder-agent", "bug-fix-agent", "workitem-analyst", "engineer"]) {
     const a = m.agents.find(a => a.dir === dir);
     assert.deepEqual(a.mcp_servers, names);
-    assert.equal(a.mcp_phase, ["wayfinder-agent", "bug-fix-agent"].includes(dir) ? undefined : "08-b");
   }
 });
 
@@ -243,6 +241,7 @@ test("全新 workspace 与 Agent 从零创建后获得 MCP 绑定", t => {
   assert.equal(f.state().workspace_exists, true);
   assert.equal(f.state().agents.length, 2);
   assert.equal(f.state().bindings["a-0"].length, 3);
+  assert.equal(f.state().bindings["a-1"].length, 3);
   assert.equal(f.overlay().workspace_id, "ws-1");
 });
 
@@ -254,7 +253,7 @@ test("全新 workspace 预演包含 MCP 绑定；缺凭据正式执行连 worksp
   assert.equal(preview.status, 0, preview.stderr);
   assert.ok(preview.body.created.includes("mcp/remote-codegraph"));
   assert.ok(preview.body.created.includes("agent/Wayfinder/mcp/remote-codegraph"));
-  assert.ok(!preview.body.created.includes("agent/Analyst/mcp/remote-codegraph"));
+  assert.ok(preview.body.created.includes("agent/Analyst/mcp/remote-codegraph"));
   assert.deepEqual(f.overlay(), {});
   assert.equal(f.run(args).status, 3);
   assert.ok(f.calls().every(a => !a.includes("create") && !a.includes("add")));
