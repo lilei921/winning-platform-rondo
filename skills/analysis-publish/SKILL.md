@@ -20,14 +20,7 @@ description: 将已完成的 OpenSpec 工程契约发布为固定 Git 审核版�
 rondo analysis validate --issue <issue> --change-ref <change_ref> --openspec-root "<root>" --workspace-id <workspace> --registry-config "<config>"
 ```
 
-Requirement 模式需先在当前根仓工作分支提交本次新增或修订的必要审核工件，复用已有效提交的版本。只提交实际涉及的工件，不夹带其他 Change、无关文件，不重复手工 Push。例如在根仓仅修订 Proposal 时：
-
-```bash
-git add -- openspec/changes/<change_ref>/proposal.md
-git commit --only -m "analysis: <change_ref>" -- openspec/changes/<change_ref>/proposal.md
-```
-
-按本次实际工件选择提交路径。使用已准备的实际根仓路径（当前 cwd 已是根仓时可用 `.`），发布 TFS Requirement 审核版本：
+使用已准备的实际根仓路径（当前 cwd 已是根仓时可用 `.`），直接发布 TFS Requirement 审核版本。CLI 在最终 Gate 通过后按当前 Change 保存实际新增、修改及删除的审核工件，并发布固定版本；已有有效 Commit 时复用。无需手工 Git Add、Commit 或 Push：
 
 ```bash
 rondo analysis publish --mode requirement --issue <issue> --change-ref <change_ref> \

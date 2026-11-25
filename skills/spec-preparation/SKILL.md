@@ -20,7 +20,12 @@ description: 使用项目 OpenSpec CLI 与当前 Schema / Artifact Instruction �
 
 - **Schema 权威**：确认 `openspec/schemas/<schema>/schema.yaml` 属于当前根仓，并通过 `openspec schema which <schema> --json` 核实来源；以当前 `openspec status --change <id> --json`、`openspec instructions <artifact> --change <id> --json` 提供的 Artifact State、Instruction、Template 和依赖为准；这些信息已充分时直接准备工件，无需翻查历史 Change 示例。核对 CLI 返回的可用来源信息；`implicit`、错误来源或未知结果不得用于写入。
 - **实际依赖**：按当前 Artifact `requires` 准备工件；`apply.requires` 仅用于判断或报告 Apply Readiness，不作为工件写入前置。不自建 Artifact Graph。根据实际行为变化判断 Spec-level Delta；合法 `skip_specs`、Conditional Design 与其他省略以当前 Schema、专业语义和原生状态为准，不为填满文件清单制造 Artifact。
-- **Repository Scope**：在当前 Change 的 `.openspec.yaml` 顶层维护 `x-repositories`，`repo_id` 从 `docs/config/repo-context.yaml` 选取；不在其他工件创建第二套授权范围。
+- **Repository Scope**：在当前 Change 的 `.openspec.yaml` 顶层维护 `x-repositories`，使用非空、去重的 `repo_id` 字符串列表（不是对象列表、仓库 URL 或路径）。`repo_id` 从 `docs/config/repo-context.yaml` 选取；不在其他工件创建第二套授权范围。例如：
+
+  ```yaml
+  x-repositories:
+    - dataintegration
+  ```
 - **最小写入**：使用当前 Instruction / Template 和已确认结论。`specs/**/*.md` 是生成模式而非文件名，需核对实际 Capability 文件；即使 `specs=done` 也应核对 Proposal 所要求的具体文件。只改获授权内容，不覆盖无关工件；需要技术决策时以必要 Design 支撑 Tasks，不需要时不生成空 Design。
 - **Task 与验证方法**：按实际依赖和可验证结果组织任务；验证深度与变更风险匹配，优先复用足以证明行为的现有验证方式，必要或已批准要求时安排 E2E。具体任务格式与内容要求以当前 Artifact Instruction / Template 为准。
 - **按需一致性核对**：修改后仅核对受影响 Artifact 的内容与依赖；发现专业结论、授权或关键决策冲突时报告调用方，不自行给出 Review Verdict 或新增 Gate。

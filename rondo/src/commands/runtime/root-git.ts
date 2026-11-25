@@ -19,6 +19,8 @@ interface PublishOptions {
   repoUrl: string;
   expectedBranch: string;
   approvedCommit?: string;
+  /** Analysis saves its Gate-checked working files before projecting the Change. */
+  commitWorkingChange?: boolean;
   fixedSourceCommit?: string;
   /** 在固定来源已 Fetch 且可达后，按当前契约决定是否恢复该版本。 */
   canRecoverFixedSource?: (commit: string, localHead: string) => boolean;
@@ -341,6 +343,39 @@ function fetchPublishBase(root: string, url: string, branch: string, remote: Roo
   }
 }
 
+/** Save only the current analysis Change; preserve unrelated staged/working files. */
+function commitWorkingChange(root: string, path: string, allowed: RegExp | undefined, subject: string): void {
+  const prefix = path + "/";
+  const status = git(root, ["--literal-pathspecs", "status", "--porcelain=v1", "--no-renames", "--untracked-files=all", "-z", "--", path]);
+  if (status.status !== 0) throw new UnknownError("检查 Analysis Change 修改失败: " + status.stderr);
+  const entries = status.stdout.split("\0").filter(Boolean);
+  if (!entries.length) return;
+  const assertAllowed = (file: string): void => {
+    if (!file.startsWith(prefix) || (allowed && !allowed.test(file.slice(prefix.length)))) {
+      throw new FailError("存在不允许发布的 Change 工件: " + file);
+    }
+  };
+  for (const entry of entries) {
+    const xy = entry.slice(0, 2), file = entry.slice(3);
+    if (xy.includes("U") || xy === "AA" || xy === "DD") throw new UnknownError("Analysis Change 存在未解决冲突: " + file);
+    assertAllowed(file);
+  }
+  writeGit(root, ["--literal-pathspecs", "add", "-A", "--", path], "暂存 Analysis Change");
+  const staged = git(root, ["--literal-pathspecs", "diff", "--cached", "--name-only", "--no-renames", "-z", "HEAD", "--", path]);
+  if (staged.status !== 0) throw new UnknownError("检查 Analysis Change 暂存差异失败: " + staged.stderr);
+  const paths = staged.stdout.split("\0").filter(Boolean);
+  if (!paths.length) return;
+  paths.forEach(assertAllowed);
+  const marker = randomUUID();
+  writeGit(root, ["--literal-pathspecs", "commit", "--only", "-m", subject + "\n\nRondo-Publish: " + marker, "--", ...paths],
+    "按路径保存 Analysis Change", () => Boolean(latestMarkedCommit(root, marker)));
+  const commit = latestMarkedCommit(root, marker);
+  if (!commit) throw new UnknownError("Analysis Change Commit 无法确认");
+  const actual = git(root, ["diff-tree", "--no-commit-id", "--name-only", "--no-renames", "-r", "-z", commit]);
+  if (actual.status !== 0) throw new UnknownError("核对 Analysis Change Commit 失败: " + actual.stderr);
+  actual.stdout.split("\0").filter(Boolean).forEach(assertAllowed);
+}
+
 async function publishCommittedChange(
   root: string, changeRef: string, issue: string, allowed: RegExp | undefined, subject: string | undefined, options: PublishOptions,
 ): Promise<PublishedChange> {
@@ -360,6 +395,7 @@ async function publishCommittedChange(
     return target;
   };
   let target = checkTarget();
+  if (options.commitWorkingChange) commitWorkingChange(root, path, allowed, subject ?? `analysis: ${changeRef} (${issue})`);
   const branchRef = "refs/heads/" + branch;
   const fetch = () => fetchPublishBase(root, target.fetchUrl, branch, remote);
   const head = run(root, ["rev-parse", "HEAD"], "固定本地提交");
