@@ -141,7 +141,7 @@ corrective / intentional 是变更性质，不回答是否需要变更。存在�
 
 ### 3.3 专业聚焦与 Evidence
 
-Wayfinder 的职责是判断能否承接，而非完整诊断。发现既有修复是有价值的证据，不必继续验证现场版本、全部回归场景、技术方案或最终任务。LEI-62 在明确受支持的业务范围、定位相关后端仓、判断为现有功能优化后即可形成 eligible；已发现的代码位置和参考实现作为 Evidence，而非继续扩大专业调查。两个 Issue 均应复用可信 Decision 及已知路径，只核实影响当前结论的差异。
+Wayfinder 的职责是判断能否承接，而非完整诊断。发现既有修复是有价值的证据，不必继续验证现场版本、全部回归场景、技术方案或最终任务。LEI-62 在明确受支持的业务范围、定位相关后端仓、判断为现有功能优化后即可形成 accepted；已发现的代码位置和参考实现作为 Evidence，而非继续扩大专业调查。两个 Issue 均应复用可信 Decision 及已知路径，只核实影响当前结论的差异。
 
 Analyst 可复用原 Decision、LEI-31、PR、Commit 和归档 Evidence，只核实当前诉求与已有修复之间的实质差异。已有证据并不自动等同当前代码事实；必要时验证版本与范围。远程 MCP 足够时不必准备本地仓；需要精确 Git 版本关系、本地验证或写入时按需 Checkout。不改变 native-workspace 的工作区架构。
 
@@ -256,7 +256,7 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 
 已确认收敛方向：
 - 删除 Repository Accessibility 和 Admission Boundary 两个独立评估维度；保留 Business Scope、Repository Discovery、Processing Capability，按下述已确认的准入规则判断。实际访问异常与已明确的授权/排除规则仍按实际影响处理，不要求常规逐项调查权限或限制。
-- 保留 eligible / needs_human / unsupported 三种专业决策。先确认有效 Decision 已记录，再通过统一的 rondo delivery admission 执行确定性结果处理；不新增 Decision Gate 或自然语言解析。
+- 统一使用 accepted / needs_human / unsupported 三种专业决策；准入通过命名由 eligible 调整为 accepted，不保留旧命名兼容别名。先确认有效 Decision 已记录，再通过统一的 rondo delivery admission 执行确定性结果处理；不新增 Decision Gate 或自然语言解析。
 - 保留 /note 原生静默评论、必要 Evidence 与增量重评；不要求固定 JSON 或 Markdown 字段。取消 supersedes、resume_ref 的固定字段要求，使用原生 Comment 上下文和必要引用；当前 handoff 不解析 Decision 正文，其他实际消费者在实施时核实。写入已明确成功时不强制额外回读，结果不明时先核实。
 - 正文采用 Role & Goal、Working Principles、Admission Criteria、Decision、Delivery 的精简结构；不把方案中的历史说明、内部 CLI 实现或固定调查步骤写入 Instructions。
 
@@ -278,11 +278,11 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 | 需求 | Bug 类问题 | 支持 |
 | 需求 | 现有功能优化 | 支持 |
 | 需求 | 新增业务功能 | 暂不支持 |
-| 需求 | 诉求性质尚不明确 | 按需取证或澄清，不能直接认定 eligible |
+| 需求 | 诉求性质尚不明确 | 按需取证或澄清，不能直接认定 accepted |
 
 根据实际业务诉求及既有业务能力判断功能优化与新增业务功能，不以是否需要新增代码、接口或页面作为分类标准。准入分类不替代下游 Technical Change Kind、OpenSpec Schema 或技术方案的专业判断。
 
-满足三项条件且无已明确硬性阻断时为 eligible；明确不属于当前支持范围（如新增业务功能）时为 unsupported；影响准入判断的关键事实确需 Human 确认时为 needs_human。尚未定位仓库或诉求尚不明确时先按实际需要调查，不把证据不足直接认定为 unsupported。
+满足三项条件且无已明确硬性阻断时为 accepted；明确不属于当前支持范围（如新增业务功能）时为 unsupported；影响准入判断的关键事实确需 Human 确认时为 needs_human。尚未定位仓库或诉求尚不明确时先按实际需要调查，不把证据不足直接认定为 unsupported。
 
 准入规则直接维护在 Wayfinder Instructions 中，不新增配置文件、规则引擎、CLI 语义 Gate 或固定调查顺序。
 
@@ -314,7 +314,7 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 
 # Decision
 
-- eligible：满足准入条件。
+- accepted：满足准入条件。
 - needs_human：影响准入判断的关键事项需要 Human 补充或确认。
 - unsupported：有明确依据表明不属于当前支持范围。
 
@@ -324,7 +324,7 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 
 确认有效 Decision 已记录后，执行：
 
-rondo delivery admission --issue <KEY> --decision <eligible|needs_human|unsupported>
+rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsupported>
 
 根据命令结果处理后续事项。操作结果不明确时核实实际结果，不重复执行已确认成功的操作。
 ```
@@ -336,20 +336,20 @@ Decision 是专业结论，Comment 是专业内容的原生载体；CLI 不消�
 将现有 rondo delivery handoff 收敛为唯一公开入口：
 
 ```bash
-rondo delivery admission --issue <KEY> --decision <eligible|needs_human|unsupported>
+rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsupported>
 ```
 
 | Decision | CLI 操作 |
 | --- | --- |
-| eligible | 复用现有 handoff：按 tfs.type 将原 Issue 指派给 Bug Fix Agent 或 Delivery Squad，单次原生 Update 设置 todo 并确认下游 Run |
+| accepted | 复用现有 handoff：按 tfs.type 将原 Issue 指派给 Bug Fix Agent 或 Delivery Squad，单次原生 Update 设置 todo 并确认下游 Run |
 | needs_human | 保留 Wayfinder Assignee，设置 blocked，不启动新 Run |
 | unsupported | 保留 Wayfinder Assignee，设置当前 Workspace 已有效配置的 unsupported，不启动新 Run |
 
 当前 handoff.ts 并不传递专业内容；下游在同一 Issue 消费原始信息和 /note Evidence。新入口仅执行 Agent 已给出的 Decision，不判定准入语义，不解析评论，不增加 Metadata 或状态机，不修改 TFS Work Item。
 
-最小实现：复用现有 Runtime 身份、Issue 归属、来源与状态校验，以及 MulticaClient.setStatusNoStart；非 eligible 分支无需查询下游目标或 Run。状态已符合时返回 NOOP；不覆盖已移交下游的 Issue。保留原 eligible 的单次触发及不确定结果恢复语义，未知状态或目标不明时返回真实错误。unsupported 已在 Manifest 定义为 cancelled category；实际 Workspace 配置和原生恢复行为以安装版本为准，不另造状态。核实现有 blocked / unsupported 恢复及运行中状态，不增加泛化恢复框架。
+最小实现：复用现有 Runtime 身份、Issue 归属、来源与状态校验，以及 MulticaClient.setStatusNoStart；非 accepted 分支无需查询下游目标或 Run。状态已符合时返回 NOOP；不覆盖已移交下游的 Issue。保留原 handoff 的单次触发及不确定结果恢复语义，未知状态或目标不明时返回真实错误。unsupported 已在 Manifest 定义为 cancelled category；实际 Workspace 配置和原生恢复行为以安装版本为准，不另造状态。核实现有 blocked / unsupported 恢复及运行中状态，不增加泛化恢复框架。
 
-同步替换 handoff 的现有消费者、COMMANDS.md、相关测试和有效设计引用；不保留重复公开命令（除非存在经核实且不可同步迁移的实际消费者，需明确说明）。不扩展到其他 delivery 命令。
+同步替换 handoff 的现有消费者、Decision 枚举、CLI 参数、Agent Instructions、Comment 示例、COMMANDS.md、相关测试和有效设计引用；不保留重复公开命令（除非存在经核实且不可同步迁移的实际消费者，需明确说明）。不扩展到其他 delivery 命令。
 
 实施时同步清理 workspace-config/provisioning.json 的 Skill 发布及绑定、Wayfinder README、受影响设计文档与 Manifest 测试（rondo/test/d1-analysis-skills.test.mjs 已断言当前绑定）。确认实际 Workspace 解绑/退役能力，避免遗留活动 Skill；不改历史 Replay。按上述目标稿和准入执行契约研发，验证实际消费者及原生机制。
 
