@@ -48,7 +48,7 @@
 | `P0-2` | P0 | OpenSpec 原生 Template Contract 粒度不足 | **Resolved (Native First)** | 沿用原生 Proposal / Delta Spec / Markdown checkbox 与可读编号；不强制 `[T-xxx]`、固定 `Verify:` 或平行 Acceptance ID；仅对实际派发的任务编号、引用及进度修改做必要确定性检查 |
 | `P0-3` | P0 | AC / Verification Requirements 缺少稳定 Identity Contract | **Resolved by Native Model** | 不再设计 `AC-xxx` / `VR-xxx` 平行 Identity；有 Specs 时以 Requirement + Scenario 作为 Acceptance Contract（验收契约），验证执行要求进入 `tasks.md` |
 | `P0-4` | P0 | Change Identity 的查找、创建、恢复不够确定 | **Resolved** | 参考历史 `fire` 分支的 resolver：只读 deterministic resolver、active-first、archive fallback、冲突/损坏不猜测、create-after-NOT_FOUND、可从部分失败恢复 |
-| `P0-5` | P0 | 并行 Engineer 更新共享 `tasks.md` 可能 lost update | **Resolved** | Engineer 可并行实现，但 checkbox 持久化通过 change-scoped single-writer critical section 串行执行；已派发任务的原生可读编号在有效派工期间保持稳定 |
+| `P0-5` | P0 | 并行 Engineer 更新共享 `tasks.md` 可能 lost update | **Resolved** | 当前 Change 由一个 Engineer 维护任务进度；保留 Git 发布并发保护与稳定原生任务编号 |
 | `P1-1` | P1 | OpenSpec Apply Context 与 Project Development Context 边界 | Open | 后续专项讨论；当前 [§13](#openspec-schema-section-13) 继续作为接口基线 |
 | `P1-2` | P1 | Archive 与 `issue-closeout` 的实施接口偏薄 | Open | 后续只补 Integration Contract，不复制 Delivery [主方案](02-multica-delivery-lifecycle-design.md)状态机 |
 | `P1-3` | P1 | Validation 负向 / 恢复测试覆盖不足 | Open | 按已收口的 Native First 契约补任务定位、进度修改与负向 / 恢复回归，不新增强制 Markdown Grammar |
@@ -62,7 +62,7 @@
 → P0-1 Runtime Baseline
 → P0-3 Native Acceptance / Verification Model
 → P0-4 Change Identity Resolver
-→ P0-5 Task Progress Serialization
+→ P0-5 Task Progress Ownership
 
 本轮收口
 → P0-2 Native Template Contract：原生结构 + 最小项目级派工约束
@@ -259,7 +259,6 @@ openspec/
         └── ...
 
 tools/rondo/src/commands/change/resolve-identity.ts    # 当前 Change Identity Resolver
-tools/rondo/src/commands/change/update-progress.ts      # 当前 Task Progress Patch 实现
 
 tests/
 ├── schema/
@@ -780,7 +779,7 @@ Native Verify 不应由每个 Engineer / 每个 Task Set（任务集合） 重�
 
 - 编号如 `1.1`、`1.2` 是当前 `tasks.md` 的**可读定位值**，不是 OpenSpec CLI 提供的持久 Task ID；不新增 `T-xxx` 或全局 ID Registry。
 - 只在任务需由多个 Agent 精确派工、完成回写或定向返工时使用 `change_ref + task_refs`，其中 `task_refs` 为当前已批准且可唯一解析的编号字符串。单 Engineer 全量执行可使用已批准的整个 Task 范围，不必机械生成每项引用列表。
-- 已派发任务的编号在该派工有效期间保持不变；当前文档中编号缺失、重复或不唯一时，拒绝精确派发 / checkbox patch，不以任务标题或顺序猜测。
+- 已派发任务的编号在该派工有效期间保持不变；当前文档中编号缺失、重复或不唯一时，拒绝无法确认身份的任务操作，不以任务标题或顺序猜测。
 - Requirement / Scenario 精确定位使用 Capability Spec 路径 + 原生标题层级；Corrective 可用 `proposal.md` 与既有 Heading 定位。所有引用须能定位到当前可读内容，不创建 AC / VR / R / S ID。
 
 ```yaml
@@ -811,129 +810,29 @@ Human Approval / 派发后：
 
 # 11. Task Progress Update（任务进度更新）
 
-**职责区分（D3-B，2026-11-10 现行契约）**：本节的 `rondo change update-progress` 负责 OpenSpec 工程 Task checkbox 的确定性更新；它**不是** TFS Task 物化、估时或工时字段管理入口。TFS 子任务与估算由外部 `rondo tfs writeback` 根据授权来源管理，`[预估: Nh]` 及 6h 不属于 OpenSpec Task 必填条件。实施时需连同 `analysis validate`、`gate-evidence`、`writeback` 的消费者与测试一起调整，详见 [D3-B 专项方案](../plans/d3b-external-tfs-management-decoupling-plan-2026-11-10.md)。
-
 <a id="section-11-1"></a>
 
 ## 11.1 Default Model（默认模型）
 
-不建立 Task Completion Store，不建立中央 Writer Agent，不保存中间 completion artifact。
+当前获批准的 Change 由 Engineer 负责整体实现和任务完成状态。根据实际研发与验证结果直接编辑 `tasks.md`，保持已批准任务正文、编号与范围不变；可随实际进度更新，不要求固定工具或批量更新时机。
 
-多个 Runtime Executor 可以按 [02 §7](02-multica-delivery-lifecycle-design.md#development-materialization) 的分派约束完成不同 Task Set；不同业务 Repository 的 Engineer 可以并行实现，独立验收场景下被明确分配的 Change-level Verification Task 也可由 Verify Agent 执行。对同一个持久共享根仓工作区的 `tasks.md` 写入统一采用 **single-writer critical section**，不因不同 Run 创建进度副本：
+不建立独立任务进度存储、写入命令、中央 Writer Agent 或文件锁。独立 Verify 的专业结论按其批准范围回流，不替代 Engineer 的研发任务完成判断。
 
-```text
-Engineer：当前任务 Evidence → Development Completion Check PASS ─┐
-                                                              ├─ rondo change update-progress
-Verify：已执行的 assigned Verification Task + 有效 Evidence ────┘
-        ↓
-Change-scoped serialized write → read-back verify
-        ├─ Engineer：发布前核对检查依据 → Task Set READY
-        └─ Verify：Verification Gate 检查当前 Task Completion / Report / Evidence
-```
+## 11.2 Publish and Completion（发布与完成）
 
-两条路径的业务条件分别由 [02 §8](02-multica-delivery-lifecycle-design.md#development-execution) / [§9.9](02-multica-delivery-lifecycle-design.md#section-9-9) 维护；Verify 的任务进度写入不以 Verification Gate PASS 为前置，也不额外经过 Engineer 的 Development Completion Check。此处持久化只表示受控文件写入与回读，**不等于根仓 Git Commit**；初始批准基线与最终统一提交按 [02 §6.1](02-multica-delivery-lifecycle-design.md#section-6-1) / [§12.4](02-multica-delivery-lifecycle-design.md#final-completion) 执行。共享修改丢失或关键 Evidence 不可读时，caller 停止并交 Delivery Lead 恢复，不能凭旧 READY 重放 checkbox。
+Engineer 提交必要研发工件并通过 `rondo dev publish` 发布固定研发版本。发布检查允许 checkbox 变化，拒绝批准契约实质漂移；`rondo pr materialize` 内部核验完整 Tasks、Candidate、Validation 和 Code Review。checkbox 不替代实际工程验证或 Independent Verification。
 
-## 11.2 Deterministic Patch（确定性补丁更新）
+## 11.3 Concurrent Work（并发边界）
 
-现行确定性入口与源码：
+同一 Issue 保持唯一有效研发委派。发布冲突由现有 Git 并发保护处理；发生事实冲突时保留成果并协调，不覆盖已批准契约或其他 Change。
 
-```bash
-rondo change update-progress --openspec-root <root> --change-ref <stable-change-id> --check <completed-task-refs-csv>
-```
+## 11.4 Task Identity（任务身份）
 
-实现：`tools/rondo/src/commands/change/update-progress.ts`。`--check` 只传当前实际已完成且有有效 Evidence 的 Task 编号，不引入额外的 `expected_action` 参数。
-
-命令只执行确定性 checkbox patch，不判断任务是否语义完成；Engineer 的调用依据是 Development Completion Check PASS，Verify Agent 的调用依据是已分配验证任务的实际执行结果与当前有效 Evidence，详见 [§11.1](#section-11-1)。脚本不生成 READY 或 Verification Gate PASS。当派发范围是“当前已批准的全部任务”而没有逐条 `task_refs` 时，caller 必须先从获批 `tasks.md` 确定本轮需完成的任务编号集合，并通过 `--check` 传入命令；命令不把未批准的新任务自动纳入完成范围。
-
-正常 Procedure：
-
-```text
-取得当前 Change 的 tasks.md 独占写入权
-→ 读取最新 tasks.md
-→ 解析当前带 checkbox 的任务编号（如 1.1）
-→ 校验显式 task_refs 在当前有效任务中存在且唯一
-→ 校验当前操作只允许 checkbox [ ] → [x]
-→ 在临时文件生成 patch 后原子替换 tasks.md
-→ 回读确认目标 task_refs 状态
-→ 释放写入权
-```
-
-输出至少区分：
-
-```text
-UPDATED
-ALREADY_COMPLETE
-BUSY
-CONFLICT
-INVALID
-```
-
-其中：
-
-- `ALREADY_COMPLETE`：目标 Task 已完成；不重复改写，由 caller 判断是否存在重复 Runtime；
-- `BUSY`：当前 Change 正有另一个 writer，当前调用不无限等待；
-- `CONFLICT`：目标编号重复、已派发目标内容发生不允许的结构变化或当前 patch 无法安全应用；
-- `INVALID`：输入、Change 或 `tasks.md` Contract 非法。
-
-## 11.3 Controlled Serialization（受控串行化）
-
-v1 不采用“多个 Engineer 各自读文件后乐观覆盖”的模型，也不建设全局锁服务。
-
-要求：
-
-```text
-锁粒度 = 当前 Change 的 tasks.md
-锁用途 = 极短的 checkbox persistence critical section
-锁生命周期 = 当前脚本进程
-锁事实 = transient technical synchronization
-         ≠ Workflow State
-         ≠ Delivery Truth
-```
-
-实现必须使用 **process-scoped exclusive file lock 或等价的进程退出可释放机制**。不得使用需要人工清理的长期 lock marker 作为正常方案。
-
-取得锁失败时使用有界等待 / 重试；仍不可获得则返回 `BUSY`，由当前 Run 稍后重试或上层协调，不长期阻塞 Agent Run。
-
-进入锁以后必须重新读取最新 `tasks.md`；不能使用锁外缓存内容执行写入。
-
-原子写入要求：
-
-```text
-write temp file in same filesystem
-→ flush
-→ atomic replace
-→ read-back verify
-```
-
-此机制只序列化 `tasks.md` 的短写入窗口，不阻止 Backend / Frontend / Flink Engineer 并行编码、验证或处理不同 Repository。
-
-## 11.4 Same-task and Structural Conflicts（同任务与结构冲突）
-
-同一 `task_ref` 不应同时分配给两个正常 Runtime。Runtime Projection 已发生重复时属于 Delivery 协作冲突，而不是由文件写锁解决。
-
-```text
-same task concurrently assigned
-→ 上层视为 conflict / UNKNOWN
-→ Delivery Lead 协调
-```
-
-若第二个 patch 到达时目标已为 `[x]`，脚本返回 `ALREADY_COMPLETE`，不得通过再次写入制造“第二次完成”事实。
-
-以下结构异常返回 `CONFLICT` / `INVALID`，不得覆盖：
-
-```text
-Task 缺失
-任务编号重复
-目标 task line 无法唯一解析
-并行 Development 期间出现影响当前有效派工的未授权任务新增 / 删除 / 重编号
-任务正文发生无法解释的 Contract 变化
-```
+任务编号必须稳定且唯一；缺失、重复、非法或未完成任务按现有 PR 准入条件拒绝。不得凭旧结果虚假勾选。
 
 ## 11.5 Update Frequency（更新频率）
 
-`tasks.md` 不承担实时进度。
-
-默认只在当前责任执行者取得本轮任务所需完成证据后批量更新一次。Engineer 按 [§11.1](#section-11-1) 先通过 Development Completion Check，再 Patch / 回读并核对发布依据，之后才形成 READY；Verify Agent 只更新已实际完成且证据有效的 assigned Verification Tasks，回读后再由 Verification Gate 检查。失败或未完成任务不勾选；Patch 未确认时 Engineer 不得发布 READY，Verification Gate 不得 PASS，但可保留已形成的实际验证报告与 Evidence。单纯写入失败恢复时可复用仍有效的验证证据，不机械重做验证。
+仅标记实际完成的任务，不要求一次性批量勾选。TFS 子任务、估算与工时由 `rondo tfs writeback` 管理，不属于 OpenSpec checkbox 更新职责。
 
 ---
 
@@ -947,7 +846,7 @@ Task 缺失
 | `specs` | Write | 默认 Read；Requirement / Scenario 实质变化必须回 Review | Read | Apply/Archive |
 | `design.md` | Write | 可在批准边界内细化 implementation detail | Read | Preserve |
 | `tasks.md` task body | Write；Approval 前可创建/细化 | Approval 后默认 Read；执行时消费 Task + Verify；新增 Top-level Task 必须返回受控 Analysis / Rework 边界 | Read / Execute assigned verification tasks | Preserve |
-| `tasks.md` checkbox | Initial | 通过 deterministic patch 更新 assigned task_refs | 通过同一受控机制更新被明确分配的 verification task_refs | Must be complete |
+| `tasks.md` checkbox | Initial | Engineer 按真实完成结果直接更新 | Read；独立验证结论按批准范围回流 | Must be complete |
 
 Engineer 对 Design / Tasks 的细化不能改变批准的 Engineering Contract。`tasks.md` 正文没有固定 `Verify:` 字段；Verification Evidence 来自实际测试 / Review / 当前候选版本，而不是字段存在性。
 
@@ -1090,10 +989,9 @@ openspec/schemas/corrective-change/templates/*
 openspec/schemas/intentional-change/schema.yaml
 openspec/schemas/intentional-change/templates/*
 tools/rondo/src/commands/change/resolve-identity.ts  # 当前 Change Identity 实现
-tools/rondo/src/commands/change/update-progress.ts # 当前 Task Progress Patch 实现
 tests/schema/
 tests/change-identity/
-tests/task-contract/   # native checkbox / 编号定位 / patch / 冲突
+tests/task-contract/   # native checkbox / 编号定位 / 契约一致性
 tests/verification-contract/   # 验证 Evidence 与引用边界
 ```
 
@@ -1180,40 +1078,13 @@ multiple PRs
 
 Repository 数量不改变 Schema。
 
-## Case F（场景 F）— Multi-Engineer Task Progress（多工程师任务进度）
+## Case F（场景 F）— Change Task Progress（Change 任务进度）
 
-```text
-Backend Run → 1.1,1.2
-Frontend Run → 2.1,2.2
-```
+Engineer 按实际完成结果更新 checkbox；跨仓库实现仍由同一获授权 Engineer 负责。发布保留任务正文、编号与其他 Change，PR 准入检查所有必需任务完成。
 
-期望：
+## Case G（场景 G）— Concurrent Conflict（并发冲突）
 
-```text
-两个 Engineer Run 可以并行实现 / 验证
-→ checkbox persistence 进入 change-scoped single-writer critical section
-→ 后进入的 writer 读取前一个 writer 已提交的最新 tasks.md
-→ 不发生 lost update
-→ 不建设 completion store
-```
-
-两名 Engineer 分别负责不同业务 Repository，按 [02 §7](02-multica-delivery-lifecycle-design.md#development-materialization) 保持同仓唯一责任。分别验证 Check PASS 后才 Patch、回读前不发布 READY、发布前依据变化时重新检查；后续新 Run 应能读取共享根仓的受控未提交进度。根仓未最终 Commit 不阻塞 READY，修改丢失则停止并交 Lead，不能用旧结果自动补勾。
-
-## Case G（场景 G）— Same-task Conflict（同任务冲突）
-
-两个 Runtime 同时引用当前 Change 的任务 `1.2`。
-
-期望：
-
-```text
-Runtime Projection 不应形成重复正常分配
-→ conflict / UNKNOWN
-→ Delivery Lead 协调
-
-若第二个 patch 到达时 1.2 已完成
-→ ALREADY_COMPLETE
-→ 不重复写入、不伪造第二次完成
-```
+发现同一 Issue 重复有效委派或 Git 发布冲突时，保留成果并协调，不覆盖其他工作。
 
 ## Case H（场景 H）— Task Mutation After Approval（批准后的任务变更）
 
@@ -1338,9 +1209,7 @@ verify_agent.required = true
 - `tasks.md` 中的 3.1 验证要求不因 Executor 改变；
 - CI / test runner 只是执行机制，不拥有 Task；
 - Engineer Evidence 不自动升级为 Independent Verification PASS；
-- Verify Agent 执行 3.1 时可通过受控 `rondo change update-progress` 更新该已分配 verification task_ref。
-- 3.1 的实际验证与有效 Evidence 先于 Patch，Patch / 回读先于 Verification Gate；不以 Gate PASS 或 Engineer Completion Check 作为 Verify 写入前置。
-- 写入失败时保留有效报告与 Evidence，先回读恢复；进度未确认前 Gate 不得 PASS，也不因单纯写入失败重复执行已有效完成的验证。
+- 独立验证结果按批准范围回流；Engineer 根据真实研发与验证结果维护 Tasks。
 
 ## Case O（场景 O）— OpenSpec Native Verify Execution（OpenSpec 原生验证执行）
 

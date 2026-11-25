@@ -124,7 +124,7 @@ Task workdir/
 | 首次分析 / Bug 根仓 | `multica repo checkout <root-url> --ref <resource-ref>` | 当前 Task workdir | 根仓 Resource ref |
 | 已批准 Requirement 研发根仓 | `multica repo checkout <source.repo_url> --ref <source.branch>` | 当前 Task workdir | 已批准 analysis.source.branch |
 | 只读业务调查 | `multica repo checkout <business-url> --ref <resource-ref>` | 实际根仓路径 | 业务仓 Resource ref |
-| Requirement / Bug 研发 | 现有 `rondo dev prepare --workspace native --issue <KEY> --repo <repo_id> --root-repo "<root>" --resource-ref <resource-ref>`；Requirement 追加 `--change-ref <change_ref>` | CLI 已设为实际根仓路径 | 已发布 Candidate 优先，否则 Resource ref |
+| Requirement / Bug 研发 | 现有 `rondo dev prepare --workspace native --issue <KEY> --repo <repo_id> --root-repo "<root>" --resource-ref <resource-ref>` | CLI 已设为实际根仓路径 | 已发布 Candidate 优先，否则 Resource ref |
 | Requirement 收口根仓 | 现有 `rondo delivery root-prepare --issue <KEY>` | 当前 Task workdir | 固定 analysis.source；沿用现有归档分支准备机制 |
 
 根仓直接 Checkout 后使用实际返回路径，执行现有 `rondo runtime check-checkout --root-repo "<root>"`。首次根仓以已登记 Project Resource 的明确 URL/ref 为依据，不按名称、列表顺序或默认分支推测；Requirement 首次发布要求明确有效的分支。其他 Resource 无 ref 时可省略 --ref。Engineer 使用已批准的来源并核实根仓包含批准 commit，研发授权仍由现有业务 Guard 执行。

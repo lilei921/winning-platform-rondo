@@ -56,21 +56,20 @@ export function assertEngineerExecution(multica: MulticaClient, issue: IssueReco
   if (agent?.id !== agentId || agent?.name !== "Engineer") throw new FailError("当前执行者不是已登记的 Engineer Agent");
 }
 
-export async function approvedChange(cfg: BaseRegistryConfig, multica: MulticaClient, issueRef: string, changeRef: string, allowInReview = false): Promise<ApprovedChange> {
+export async function approvedChange(cfg: BaseRegistryConfig, multica: MulticaClient, issueRef: string, allowInReview = false): Promise<ApprovedChange> {
   const issue = multica.getIssue(issueRef), md = issue.metadata ?? {};
   // A completed Engineer Run is not active during read-only PR admission.
   if (!allowInReview) assertEngineerExecution(multica, issue, cfg.runtime.workspace_id);
   if (md["tfs.type"] !== "需求") throw new FailError("当前 Change 研发仅支持 TFS Requirement，Bug 使用原有入口");
   if (!(allowInReview ? ["todo", "in_progress", "in_review"] : ["todo", "in_progress"]).includes(issue.status ?? "")) throw new FailError("当前 Issue 状态不允许 Requirement 开工");
-  if (md["analysis.gate.result"] !== "PASS" || md["analysis.change_ref"] !== changeRef) {
-    throw new FailError("Analysis Gate 未通过或 Change 身份不一致");
+  if (md["analysis.gate.result"] !== "PASS") {
+    throw new FailError("Analysis Gate 未通过");
   }
   if (md["dev.dispatch"] !== undefined) throw new FailError("Change 级 Engineer 不允许与旧 dev.dispatch 同时生效");
   if (md["finalize.pending"] || md["delivery.tfs_written"] === "true") throw new FailError("当前 Change 已进入收口，禁止写入");
   const tfsId = Number(md["tfs.id"]);
   if (!Number.isSafeInteger(tfsId) || tfsId <= 0) throw new FailError("TFS Requirement ID 非法");
   const source = readAnalysisSource(md);
-  if (source.change_ref !== changeRef) throw new FailError("批准来源与请求的 Change 不一致");
   const decision = readApprovedVerifyDecision(md);
   if (md["verify_agent.required"] !== undefined && md["verify_agent.required"] !== String(decision.required)) {
     throw new FailError("verify_agent.required 与 Human Approval 冲突");
@@ -88,8 +87,8 @@ export async function approvedChange(cfg: BaseRegistryConfig, multica: MulticaCl
   return { issue, source, scope, tfsId, verifyRequired: decision.required };
 }
 
-export async function guardRepository(cfg: BaseRegistryConfig, multica: MulticaClient, issue: string, changeRef: string, repo: string): Promise<ApprovedChange> {
-  const change = await approvedChange(cfg, multica, issue, changeRef);
+export async function guardRepository(cfg: BaseRegistryConfig, multica: MulticaClient, issue: string, repo: string): Promise<ApprovedChange> {
+  const change = await approvedChange(cfg, multica, issue);
   if (!change.scope.includes(repo)) throw new FailError("repo_id " + repo + " 超出批准的 Repository Scope");
   return change;
 }

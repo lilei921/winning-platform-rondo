@@ -13,7 +13,7 @@ import { prepareBusinessWorkspace, validatePrepareRepo, type PrepareRepo } from 
 import { assertEngineerExecution, guardRepository } from "./requirement-guard.js";
 import { prepareRequirementWorktree } from "./requirement-worktree.js";
 import { resolveMulticaRuntime } from "../../clients/runtime-context.js";
-import { readAnalysisSource } from "../analysis/source.js";
+import { readAnalysisSource, sameAnalysisSource } from "../analysis/source.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 import { runAuthenticatedGit } from "../../clients/authenticated-git.js";
 import { gitOk, git } from "../../clients/git.js";
@@ -25,10 +25,9 @@ export function registerDevPrepare(group: Command): void {
     .option("--workspace <workspace>", "native")
     .option("--resource-ref <ref>", "已核实的业务仓 Project Resource 初始分支")
     .option("--mode <mode>", "bug | requirement")
-    .option("--change-ref <ref>")
     .option("--config <path>").requiredOption("--issue <key>")
     .requiredOption("--repo <key>").option("--root-repo <path>")
-    .action(async (opts: { config?: string; issue: string; repo: string; rootRepo?: string; mode?: string; changeRef?: string; workspace?: string; resourceRef?: string }) => {
+    .action(async (opts: { config?: string; issue: string; repo: string; rootRepo?: string; mode?: string; workspace?: string; resourceRef?: string }) => {
       markLeafExecuted();
       try {
         if (opts.workspace === "native") {
@@ -43,12 +42,10 @@ export function registerDevPrepare(group: Command): void {
             assertBugExecution(client, issue);
             await assertBugSource(issue, server);
             const id = assertBugStart(client, issue, opts.repo);
-            if (opts.changeRef) throw new FailError("Bug 不使用 --change-ref");
             const mapping = readNativeRepoMapping(root, "HEAD", server);
             const repo = validatePrepareRepo(mapping[opts.repo], server);
             result = prepareNativeBusiness(root, repo, candidateBranch(id), runtime, opts.resourceRef);
           } else if (issue.metadata?.["tfs.type"] === "需求") {
-            if (!opts.changeRef) throw new FailError("Requirement prepare 需要 --change-ref");
             const source = readAnalysisSource(issue.metadata);
             if (canonicalRepositoryIdentity(gitOk(root, ["remote", "get-url", "origin"], "核对批准根仓")) !== canonicalRepositoryIdentity(source.repo_url))
               throw new FailError("Native 根仓与批准来源不一致");
@@ -63,8 +60,8 @@ export function registerDevPrepare(group: Command): void {
             if (git(root, ["merge-base", "--is-ancestor", source.commit, "HEAD"]).status !== 0)
               throw new UnknownError("Native 根仓尚不包含批准 Commit，保留现场");
             const registry = readNativeRepoMapping(root, source.commit, server);
-            const approved = await guardRepository({ runtime, registry }, client, opts.issue, opts.changeRef, opts.repo);
-            if (approved.source.commit !== source.commit || approved.source.repo_url !== source.repo_url || approved.source.branch !== source.branch)
+            const approved = await guardRepository({ runtime, registry }, client, opts.issue, opts.repo);
+            if (!sameAnalysisSource(approved.source, source) || approved.issue.metadata?.["analysis.human_approval"] !== issue.metadata?.["analysis.human_approval"] || approved.issue.metadata?.["tfs.id"] !== issue.metadata?.["tfs.id"])
               throw new UnknownError("批准来源在准备期间变化");
             const repo = validatePrepareRepo(registry[opts.repo], server);
             result = prepareNativeBusiness(root, repo, candidateBranch(approved.tfsId), runtime, opts.resourceRef);
@@ -84,8 +81,7 @@ export function registerDevPrepare(group: Command): void {
         let result: Record<string, unknown>;
         let issue;
         if (mode === "requirement") {
-          if (!opts.changeRef) throw new FailError("Requirement prepare 需要 --change-ref");
-          const approved = await guardRepository(cfg, client, opts.issue, opts.changeRef, opts.repo);
+          const approved = await guardRepository(cfg, client, opts.issue, opts.repo);
           issue = approved.issue;
           const root = requirementRoot(opts.rootRepo);
           result = prepareRequirementWorktree(root, repo, approved.tfsId, loadTfsConfig().serverUrl);

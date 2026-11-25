@@ -21,7 +21,6 @@ import { ExitSignal, hasLeafExecuted, logLine } from "./cli/output.js";
 import { TOOL_VERSION } from "./cli/version.js";
 import { registerTfsApiLeaf } from "./tfs/runner.js";
 import { registerResolveIdentity } from "./commands/change/resolve-identity.js";
-import { registerUpdateProgress } from "./commands/change/update-progress.js";
 import { registerAnalysisValidate } from "./commands/analysis/validate.js";
 import { registerAnalysisPublish } from "./commands/analysis/publish.js";
 import { registerAnalysisRead } from "./commands/analysis/read.js";
@@ -29,7 +28,6 @@ import { registerAnalysisApprove } from "./commands/analysis/approve.js";
 import { registerDevMaterialize } from "./commands/dev/materialize.js";
 import { registerDevPrepare } from "./commands/dev/prepare.js";
 import { registerDevCheckCompletion } from "./commands/dev/check-completion.js";
-import { registerDevCheckChange } from "./commands/dev/check-change.js";
 import { registerDevPublish } from "./commands/dev/publish.js";
 import { registerDevCheckDispatch } from "./commands/dev/check-dispatch.js";
 import { registerDevContractHash } from "./commands/dev/contract-hash.js";
@@ -82,7 +80,6 @@ function bareGroup(group: Command): Command {
 
 const change = bareGroup(program.command("change").description("OpenSpec Change 身份与任务进度(冻结契约 §1/§2)"));
 registerResolveIdentity(change);
-registerUpdateProgress(change);
 
 const analysis = bareGroup(program.command("analysis").description("Analysis Gate 与收口(02 §5.4/§12.1)"));
 registerAnalysisValidate(analysis);
@@ -96,7 +93,6 @@ registerDevPrepare(dev);
 registerDevGit(dev);
 registerDevCheckDispatch(dev);
 registerDevCheckCompletion(dev);
-registerDevCheckChange(dev);
 registerDevPublish(dev);
 registerDevContractHash(dev);
 

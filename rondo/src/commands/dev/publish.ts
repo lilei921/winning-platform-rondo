@@ -9,7 +9,7 @@ import { git, gitOk } from "../../clients/git.js";
 import { readGitTree, readGitBlob } from "../../clients/git-tree.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { normalizeContractText } from "../delivery/contract-files.js";
-import { readAnalysisArtifact, readAnalysisSource, type AnalysisSource } from "../analysis/source.js";
+import { readAnalysisArtifact, readAnalysisSource, sameAnalysisSource, type AnalysisSource } from "../analysis/source.js";
 import { approvedChange, developmentPublication } from "./requirement-guard.js";
 import { publishChange, requirementRoot } from "../runtime/root-git.js";
 
@@ -47,24 +47,25 @@ export function checkPublishContract(root: string, source: AnalysisSource, candi
 
 export function registerDevPublish(group: Command): void {
   group.command("publish").description("发布当前 Change 已提交的研发工件，登记远端交付 SHA")
-    .requiredOption("--issue <key>").requiredOption("--change-ref <ref>")
+    .requiredOption("--issue <key>")
     .option("--root-repo <path>").option("--minor-design", "确认仅细化非实质性 Design")
-    .action(async (opts: { issue: string; changeRef: string; rootRepo?: string; minorDesign?: boolean }) => {
+    .action(async (opts: { issue: string; rootRepo?: string; minorDesign?: boolean }) => {
       markLeafExecuted();
       try {
         const runtime = resolveMulticaRuntime(), client = new MulticaClient(runtime);
-        const sourceForMapping = readAnalysisSource(client.getIssue(opts.issue).metadata ?? {});
+        const initial = client.getIssue(opts.issue).metadata ?? {};
+        const sourceForMapping = readAnalysisSource(initial);
         const cfg = { runtime, registry: await readApprovedRepoMapping(sourceForMapping, loadTfsConfig().serverUrl) };
         const multica = client;
-        const approved = await approvedChange(cfg, multica, opts.issue, opts.changeRef);
+        const approved = await approvedChange(cfg, multica, opts.issue);
         const source = approved.source;
-        if (source.commit !== sourceForMapping.commit || source.repo_url !== sourceForMapping.repo_url || source.branch !== sourceForMapping.branch || source.change_ref !== sourceForMapping.change_ref) throw new UnknownError("批准来源在读取映射期间变化");
+        if (!sameAnalysisSource(source, sourceForMapping) || approved.issue.metadata?.["analysis.human_approval"] !== initial["analysis.human_approval"] || approved.issue.metadata?.["tfs.id"] !== initial["tfs.id"]) throw new UnknownError("批准来源在读取映射期间变化");
         const root = requirementRoot(opts.rootRepo);
         const branch = source.branch;
         const original = approved.issue.metadata ?? {};
         const previous = developmentPublication(original);
         const previousCommit = previous?.analysis_commit === source.commit ? previous.commit : undefined;
-        const published = await publishChange(root, opts.changeRef, approved.issue.identifier ?? approved.issue.id,
+        const published = await publishChange(root, source.change_ref, approved.issue.identifier ?? approved.issue.id,
           executionArtifact, undefined, { repoUrl: source.repo_url, expectedBranch: branch, approvedCommit: source.commit,
             validateTree: commit => checkPublishContract(root, source, commit, opts.minorDesign === true, previousCommit) });
         const tasks = await readAnalysisArtifact({ ...source, commit: published.commit }, "tasks.md");
@@ -72,11 +73,11 @@ export function registerDevPublish(group: Command): void {
         if (tasks.object_id !== blob) throw new UnknownError("远端 tasks.md 与发布版本不一致");
 
         const receipt = JSON.stringify({ analysis_commit: source.commit, commit: published.commit });
-        const rechecked = await approvedChange(cfg, multica, opts.issue, opts.changeRef);
+        const rechecked = await approvedChange(cfg, multica, opts.issue);
         if (rechecked.issue.status !== approved.issue.status) throw new UnknownError("发布期间 Issue 状态变化");
         const current = rechecked.issue.metadata ?? {};
         if (current["analysis.source"] !== original["analysis.source"] ||
-            current["analysis.human_approval"] !== original["analysis.human_approval"]) {
+            current["analysis.human_approval"] !== original["analysis.human_approval"] || rechecked.tfsId !== approved.tfsId) {
           throw new UnknownError("发布期间批准来源发生变化，停止登记交付");
         }
         if (current["dev.publication"] !== receipt) {
@@ -91,7 +92,7 @@ export function registerDevPublish(group: Command): void {
             confirmed["analysis.human_approval"] !== original["analysis.human_approval"]) {
           throw new UnknownError("研发交付记录或批准版本回读不一致");
         }
-        process.stdout.write(JSON.stringify({ result: "PASS", change_ref: opts.changeRef, ...published }, null, 2) + "\n");
+        process.stdout.write(JSON.stringify({ result: "PASS", change_ref: source.change_ref, ...published }, null, 2) + "\n");
       } catch (e) {
         if (!(e instanceof FailError || e instanceof UnknownError)) throw e;
         process.stdout.write(JSON.stringify({ result: e instanceof FailError ? "FAIL" : "UNKNOWN", reason: e.message }, null, 2) + "\n");

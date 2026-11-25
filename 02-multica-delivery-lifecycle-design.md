@@ -43,6 +43,8 @@
 
 整个研发任务默认作为一个完整的 **Issue** 管理。
 
+当前统一 Engineer 的研发契约以 [09](09-unified-engineer-development-design.md) 为准，Tasks 直接编辑与发布规则由 [05 §11](05-openspec-schema-implementation-design.md#openspec-schema-section-11) 维护。本文中 Task Set 派发相关内容仅描述尚待退役的旧路线，不作为当前 Engineer 的执行要求。
+
 一个配置范围内的 TFS Work Item 默认对应一个 Issue。**自动 TFS 同步入口**先由 Wayfinder Agent 探索和准入，`accepted` 后根据 `tfs.type` 交 Bug Fix Agent 或 Delivery Squad；明确直接委派给 Squad / Workitem Analyst 的 Analysis 可以绕过 Wayfinder，不将其作为所有 Analysis 的强制 Gate。存在实际工程增量时，后续 Analysis Gate 与 Human Approval 规则不变；无需工程增量时，Analyst 在当前 Issue Comment 记录专业结论、关键依据和处理建议，复用原生回流，不生成 Change、Gate 或研发批准，不得借此绕过已生效的工程契约。
 
 研发过程中：
@@ -103,7 +105,7 @@ OpenSpec Tasks / Runtime Projection
          ▼
 Implementation / Local Validation / Code Review
          ▼
-Development Completion Check → Task Progress Patch / Readback
+Development Completion Check → Tasks 完成状态更新
          ▼
 Parent Delivery Aggregation → Verification Projection
    ├─ verify_agent.required=false → 验证 Evidence
@@ -223,7 +225,7 @@ Implementation
  ↓
 Development Completion Check
  ↓
-Task Progress Patch / Readback → 核对依据 → Task Set READY
+Tasks 完成状态更新 → 核对依据 → Task Set READY
  ↓
 Parent Issue / Delivery Lead 聚合当前有效结果
 ├─ Parent Issue Runtime → task_refs completion / evidence facts 回流
@@ -282,7 +284,7 @@ Merge 后正常 QA / 测试发现的新问题形成新的 TFS Bug / Requirement�
 - **Run 2 — Delivery Lead：** 读取有效准入事实与当前 Owner / Status，`@Workitem Analyst`，结束协调 Run。
 - **Run 3 — Workitem Analyst：** 增量复核 Wayfinder Evidence，完成 Intentional Analysis、OpenSpec Preparation、Analysis Gate；通过 `analysis-publish` 提交并回读 `analysis_review`。
 - **Run 4 — Delivery Lead：** Human 明确批准后，核对批准事实、提交根仓初始基线，确定 `task_refs` 和 Backend Engineer；`in_progress` 回读后 `@Backend Engineer`。
-- **Run 5 — Backend Engineer：** 实现、Task Verification、Local Validation、Code Review、Commit / Push、PR Preparation、Development Evidence 与 Completion Check；Task Progress Patch / 回读后发布 READY。
+- **Run 5 — Backend Engineer：** 实现、Task Verification、Local Validation、Code Review、Commit / Push、PR Preparation、Development Evidence 与 Completion Check；Tasks 完成状态更新后发布 READY。
 - **Run 6 — Delivery Lead：** 聚合当前有效结果；本例不需独立 Verify，满足 PR Gate 后调用确定性 PR Materialization，进入 `in_review`。
 - **Run 7 — PR Status Sync Agent：** PR `completed` 后在同一 Run 执行有界 Finalize / Archive / TFS Close，并按后置条件关闭 Issue。
 
@@ -1365,7 +1367,7 @@ Development Evidence
     ↓
 Development Completion Check
     ↓
-Task Progress Patch / Readback
+Tasks 完成状态更新
     ↓
 核对检查依据 → 当前 Task Set READY
 ```
@@ -1835,7 +1837,7 @@ Finding
 → Commit / Push
 → PR Preparation / Evidence Update
 → Development Completion Check
-→ Task Progress Patch / 回读 → 核对依据 → 受影响 Task Set READY
+→ Tasks 完成状态更新 → 核对依据 → 受影响 Task Set READY
 → 原 Sub-Issue 的全部当前 required Task Sets 均 READY 后再次完成
 → Parent Delivery 重新评估 Verify
 ```
@@ -2680,7 +2682,7 @@ development.result = complete
 + 必要业务代码 Commit / Push（纯验证按 §8 复用）
 + PR Preparation
 + Evidence 完整
-+ Task Progress Patch / 回读确认且发布前依据仍有效
++ Tasks 完成状态更新确认且发布前依据仍有效
 ```
 
 对于 Development Sub-Issue，先按 [§8](#development-execution) 保存各 Task Set 结果；其全部当前 required Task Sets 均满足 READY 条件后，才以 Sub-Issue 的当前完成状态作为其完整承接范围的 Runtime Completion Fact。重开时该事实立即不成立；旧 `development.result` / Check 结果仅可作为对应旧候选成果的记录，不能覆盖当前 Issue 状态。

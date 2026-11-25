@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { analysisTfsFixture } from "./analysis-tfs-fixture.mjs";
@@ -11,7 +11,7 @@ const cli = fileURLToPath(new URL("../dist/index.js", import.meta.url));
 const multica = fileURLToPath(new URL("./mock-multica.cjs", import.meta.url));
 const git = (cwd, ...args) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
 
-function fixture(t, { previousTasks, approvedTasks = "- [ ] 1.1 Verify\n", design } = {}) {
+function fixture(t, { previousTasks, approvedTasks = "- [ ] 1.1 Verify\n", design, secondChange = false } = {}) {
   const work = "openspec/changes/alpha";
   const dir = realpathSync(mkdtempSync(join(tmpdir(), "rondo-dev-publication-")));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
@@ -25,7 +25,14 @@ function fixture(t, { previousTasks, approvedTasks = "- [ ] 1.1 Verify\n", desig
   };
   identify(root);
   mkdirSync(join(root, "docs", "config"), { recursive: true });
-  writeFileSync(join(root, "docs/config/repo-context.yaml"), JSON.stringify({repos:[{repo_id:"root",repo_path:".",repo_url:tfs.repoUrl},{repo_id:"biz",repo_path:"biz",repo_url:tfs.repoUrl.replace(/[^/]+$/,"biz"),tfs_project:"P",default_target_branch:"integration"}]}));
+  const bizUrl = tfs.repoUrl.replace(/[^/]+$/, "biz");
+  writeFileSync(join(root, "docs/config/repo-context.yaml"), [
+    "repos:", "  - repo_id: root", "    repo_path: .", "    repo_url: " + tfs.repoUrl,
+    "  - repo_id: biz", "    repo_path: biz", "    repo_url: " + bizUrl,
+    "    tfs_project: P", "    default_target_branch: integration", "",
+  ].join("\n"));
+  writeFileSync(join(root, "AGENTS.md"), "# Fixture\n");
+  writeFileSync(join(root, ".gitignore"), "biz/\nbiz-42/\n");
   mkdirSync(join(root, "openspec", "schemas"), { recursive: true });
   writeFileSync(join(root, "openspec/schemas/.keep"), "");
   if (previousTasks) {
@@ -45,6 +52,12 @@ function fixture(t, { previousTasks, approvedTasks = "- [ ] 1.1 Verify\n", desig
   if (design) writeFileSync(join(analyst, work, "design.md"), design);
   writeFileSync(join(analyst, work, "proposal.md"), proposal);
   writeFileSync(join(analyst, work, ".openspec.yaml"), "schema: intentional-change\nx-repositories:\n  - biz\n");
+  if (secondChange) {
+    const other = "openspec/changes/beta";
+    mkdirSync(join(analyst, other), { recursive: true });
+    writeFileSync(join(analyst, other, ".openspec.yaml"), "schema: intentional-change\nx-repositories:\n  - biz\n");
+    git(analyst, "add", other);
+  }
   git(analyst, "add", work);
   git(analyst, "commit", "-m", "analysis");
   git(analyst, "push");
@@ -62,14 +75,15 @@ function fixture(t, { previousTasks, approvedTasks = "- [ ] 1.1 Verify\n", desig
   const env = { ...process.env, ...tfs.env, MOCK_STATE: state, MULTICA_TASK_ID: "run", MULTICA_AGENT_ID: "engineer",
     MULTICA_CLI_PATH: multica, MULTICA_SERVER_URL: "http://multica.test", MULTICA_WORKSPACE_ID: "ws", MULTICA_TOKEN: "fixture", MULTICA_DAEMON_PORT: "1234",
     RONDO_WORKSPACE_PATH: root, RONDO_WORKSPACE_BRANCH: "integration" };
-  function run(expected, ...args) {
-    const proc = spawnSync(process.execPath, [cli, ...args, "--issue", "WNDF-T"], { cwd: dir, env, encoding: "utf8" });
+  function runWithEnv(expected, extraEnv, ...args) {
+    const proc = spawnSync(process.execPath, [cli, ...args, "--issue", "WNDF-T"], { cwd: dir, env: { ...env, ...extraEnv }, encoding: "utf8" });
     assert.equal(proc.status, expected, proc.stdout + "\n" + proc.stderr);
     return JSON.parse(proc.stdout);
   }
-  const publish = (expected, ...options) => run(expected, "dev", "publish", "--change-ref", "alpha", ...options);
+  const run = (expected, ...args) => runWithEnv(expected, {}, ...args);
+  const publish = (expected, ...options) => run(expected, "dev", "publish", ...options);
   const metadata = () => JSON.parse(readFileSync(state, "utf8")).metadata;
-  return { root, bare, analyst, work, approved, proposal, source, state, metadata, run, publish };
+  return { root, bare, analyst, work, approved, proposal, source, state, metadata, run, runWithEnv, publish, bizUrl };
 }
 
 test("Engineer 从批准 SHA 读取缺失工件，在分叉的常驻根仓独立发布并登记研发 SHA", t => {
@@ -202,4 +216,84 @@ test("Design 细化仍受批准版本约束，Evidence JSON 不再参与发布",
   assert.match(publish(2).reason, /design\.md/);
   assert.equal(git(bare, "rev-parse", "integration"), nextSource.commit);
   assert.deepEqual(JSON.parse(metadata()["dev.publication"]), { analysis_commit: approved, commit: second });
+});
+
+function drift(read, patch) {
+  return { MOCK_METADATA_ON_ISSUE_READ: String(read), MOCK_ISSUE_METADATA_PATCH: JSON.stringify(patch) };
+}
+
+test("dev publish 拒绝来源不一致及读取期间批准变化；Push 后变化不登记回执", t => {
+  const { root, bare, approved, source, state, metadata, runWithEnv, work } = fixture(t, { secondChange: true });
+  const initial = readFileSync(state, "utf8");
+  const approval = JSON.parse(metadata()["analysis.human_approval"]);
+  const other = { ...source, change_ref: "beta" };
+  const otherChange = { "analysis.change_ref": "beta", "analysis.source": JSON.stringify(other),
+    "analysis.human_approval": JSON.stringify({ ...approval, source: other }) };
+  git(root, "pull", "--ff-only", bare, "integration");
+  writeFileSync(join(root, work, "tasks.md"), "- [x] 1.1 Verify\n");
+  git(root, "commit", "-am", "complete approved task");
+  for (const [patch, reason] of [
+    [{ "analysis.change_ref": "beta" }, /Change 身份.*不一致/],
+    [otherChange, /批准来源在读取映射期间变化/],
+    [{ "analysis.human_approval": JSON.stringify({ ...approval, at: "2026-11-20T00:00:00Z" }) }, /批准来源在读取映射期间变化/],
+  ]) {
+    writeFileSync(state, initial);
+    assert.match(runWithEnv(3, drift(2, patch), "dev", "publish").reason, reason);
+    assert.equal(git(bare, "rev-parse", "integration"), approved);
+    assert.equal(metadata()["dev.publication"], undefined);
+  }
+  writeFileSync(state, initial);
+  assert.match(runWithEnv(3, drift(3, otherChange), "dev", "publish").reason, /发布期间批准来源发生变化/);
+  assert.notEqual(git(bare, "rev-parse", "integration"), approved);
+  assert.equal(metadata()["dev.publication"], undefined);
+});
+
+test("Native Requirement prepare 从 Issue 取得 Change，拒绝同 SHA 的其他 Change 和批准变化", t => {
+  const { root, bare, source, state, metadata, runWithEnv, bizUrl } = fixture(t, { secondChange: true });
+  const dir = dirname(root), hub = join(root, "biz"), remote = join(dir, "biz.git");
+  const taskId = "01234567-abcd-ef12-3456-abcdef123456";
+  const branch = "agent/engineer/abcdef123456";
+  git(root, "pull", "--ff-only", bare, "integration");
+  git(root, "branch", "-m", branch);
+  git(root, "config", "multica.checkout-mode", "isolated");
+  mkdirSync(join(dir, ".multica"), { recursive: true });
+  writeFileSync(join(dir, ".multica", "daemon_task_context.json"), JSON.stringify({
+    managed_by: "multica-daemon-task", issue_id: "issue-1", agent_id: "engineer",
+  }));
+  git(dir, "init", "--bare", remote);
+  git(root, "init", "-b", "integration", hub);
+  writeFileSync(join(hub, "code.txt"), "fixture");
+  git(hub, "add", ".");
+  git(hub, "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", "fixture");
+  git(hub, "push", remote, "HEAD:refs/heads/integration", "HEAD:refs/heads/feature/42");
+  git(hub, "remote", "add", "origin", bizUrl);
+  git(hub, "branch", "-m", branch);
+  git(hub, "config", "multica.checkout-mode", "isolated");
+  const initial = JSON.parse(readFileSync(state, "utf8"));
+  initial.runs["issue-1"][0].id = taskId;
+  initial.repo_checkout = { url: bizUrl, ref: "feature/42", path: hub, branch };
+  const approval = JSON.parse(initial.metadata["analysis.human_approval"]);
+  const other = { ...source, change_ref: "beta" };
+  const env = { MULTICA_TASK_ID: taskId, MOCK_GIT_BUSINESS_REMOTE: remote, MOCK_GIT_BUSINESS_URL: bizUrl,
+    MOCK_SYNC_CALLS_FILE: join(dir, "prepare-calls.jsonl") };
+  const args = ["dev", "prepare", "--workspace", "native", "--repo", "biz", "--root-repo", root];
+  for (const [patch, reason] of [
+    [{ "analysis.change_ref": "beta" }, /Change 身份.*不一致/],
+    [{ "analysis.change_ref": "beta", "analysis.source": JSON.stringify(other),
+      "analysis.human_approval": JSON.stringify({ ...approval, source: other }) }, /批准来源在准备期间变化/],
+    [{ "analysis.human_approval": JSON.stringify({ ...approval, at: "2026-11-20T00:00:00Z" }) }, /批准来源在准备期间变化/],
+  ]) {
+    writeFileSync(state, JSON.stringify(initial));
+    writeFileSync(env.MOCK_SYNC_CALLS_FILE, "");
+    assert.match(runWithEnv(3, { ...env, ...drift(2, patch) }, ...args).reason, reason);
+    const calls = readFileSync(env.MOCK_SYNC_CALLS_FILE, "utf8").trim().split("\n").filter(Boolean).map(JSON.parse);
+    assert.ok(!calls.some(call => call.includes("checkout") || (call.includes("metadata") && call.includes("set"))));
+    assert.equal(metadata()["verify_agent.required"], undefined);
+  }
+  writeFileSync(state, JSON.stringify(initial));
+  const prepared = runWithEnv(0, env, ...args);
+  assert.equal(prepared.result, "PASS");
+  assert.equal(prepared.path, hub);
+  assert.equal(prepared.branch, "feature/42");
+  assert.equal(metadata()["verify_agent.required"], "false");
 });

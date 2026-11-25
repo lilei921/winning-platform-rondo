@@ -153,18 +153,21 @@ description: 根据已批准的 OpenSpec Change 完成软件实现、开发侧�
 
 ```bash
 # 按批准来源读取工程任务
-rondo analysis read --config "<config>" --issue <issue> --file tasks.md
+rondo analysis read --issue <issue> --file tasks.md
 
-# 计算当前 Change 的工程契约摘要（Evidence 需要时）
-rondo dev contract-hash --openspec-root "<root>" --change-ref <change_ref>
+# 准备获授权的研发仓库
+rondo dev prepare --workspace native --issue <issue> --repo <repo_id> --root-repo "<root>" --resource-ref <ref>
 
-# 只标记已取得有效验证依据的任务
-rondo change update-progress --openspec-root "<root>" --change-ref <change_ref> --check <verified_task_ids>
+# 发布已提交的研发工件
+rondo dev publish --issue <issue> --root-repo "<root>"
+
+# 创建或核实 PR，内部执行 Change 完成检查
+rondo pr materialize --issue <issue>
 ```
 
-`analysis read` 读取批准版本，不等于最新执行进度；`change update-progress` 只更新本地 `tasks.md`。继续执行前核对当前已发布的工件，交付前完成受控发布与回读。
+`analysis read` 读取批准版本，不等于最新执行进度；Engineer 根据实际验证结果直接更新本地 `tasks.md` 的 checkbox，保持批准任务正文与编号不变。继续执行前核对当前已发布的工件，交付前完成受控发布与回读。
 
-通过 Rondo 核对批准来源与授权。只读工件和派发消息时不操作 Git。进入研发、需要常驻根仓时，通过 Rondo 准备根仓和业务工作区。研发完成后发布当前 Change 的进度与 Evidence，通过 Completion Check 才调用 `rondo pr materialize`。按当前可用的 Change 级 CLI 入口执行，不自行拼装不受支持的参数。
+通过 Rondo 核对批准来源与授权。只读工件和派发消息时不操作 Git。进入研发、需要常驻根仓时，通过 Rondo 准备根仓和业务工作区。研发完成后发布当前 Change 的研发工件，`rondo pr materialize` 内部执行 Completion Check。按当前可用的 Change 级 CLI 入口执行，不自行拼装不受支持的参数。
 
 所需入口不存在、参数无法确认或 Gate 为 FAIL / UNKNOWN 时停止；外部操作结果未知时先回读，不盲目重试或覆盖成果。
 
@@ -202,12 +205,12 @@ Workspace 路径、分支准备与根仓 Git 发布以 08-B 的运行契约为�
 | --- | --- | --- |
 | `runtime prepare-root` | 已有受控 TFS Git Fetch 入口，项目分支准备逻辑待修复 | Analysis / Development 共用常驻根仓准备。按项目配置的分支准备并 Fetch，安全时快进。历史分叉时保留本地提交和工作区，Engineer 仍按获批 SHA 读取。 |
 | `analysis read` | 已支持 | 按获批 `analysis.source` 读取固定版本 Change 工件 |
-| `dev contract-hash`、`change update-progress` | 已支持本地操作 | 获取契约摘要、受控更新已验证的原生 checkbox；进度仍需远端发布 |
+| 原生 Tasks 编辑 | Engineer 直接维护 checkbox | 真实完成后更新，保持任务正文和编号；进度由研发发布固定 SHA |
 | `requirement-guard` | 已实现独立新路径，不复用旧 `dev.dispatch` | 新 Change 级模式仅只读核对当前 Multica Actor / Run、Human Approval、Change、Repository Scope；不物化新 `dev.dispatch` |
-| `dev prepare --mode requirement` | 已实现 Requirement Worktree，旧 Bug 模式保持 | 为 Requirement 准备或复用授权工作区，保留 Bug 原行为 |
-| `dev publish` | 已有受控 Git 发布与远端回读入口，单需求差异发布待修复 | 发布已验证的 `tasks.md`、Evidence 与 PR 描述，回读并记录本次远端发布 SHA，保留获批分析 SHA。 |
-| `dev pr-prepare --mode requirement`、`dev check-change` | 已实现独立 Change 级核验 | Change 级检查真实 Candidate、Evidence、原生 Tasks 全量进度与 PR Preparation，不使用派发 Task 编号集合 |
-| `pr materialize --mode requirement` | 已实现新模式且旧路径独立 | 新模式在创建任何 PR 前整体校验 Completion、批准和实际有代码变更仓库的 Candidate / `pr_prep` 对账；支持远端 PR 描述，逐仓幂等恢复 |
+| `dev prepare` | Native 准备及旧 Worktree 入口 | 从 Issue 批准来源定位 Change，不需要显式 Change ID；保留 Bug 原行为 |
+| `dev publish` | 受控 Git 发布与远端回读 | 从 Issue 批准来源定位 Change，发布已提交的 `tasks.md` 与适用的 Design 细化，登记研发 SHA，保留获批分析 SHA。 |
+| `pr prepare` / `pr materialize` 内部完成检查 | 无独立 Change 完成检查入口 | Change 级检查真实 Candidate、Evidence、原生 Tasks 全量进度与 PR Preparation，不使用派发 Task 编号集合 |
+| `pr materialize` | 已实现新模式且旧路径独立 | 新模式在创建任何 PR 前整体校验 Completion、批准和实际有代码变更仓库的 Candidate / `pr_prep` 对账；支持远端 PR 描述，逐仓幂等恢复 |
 
 可复用现有确定性实现，但新旧执行路径必须显式区分，不能靠缺失 `task_refs` 自动推断新模式。此表用于实施对齐，不作为 `SKILL.md` 的历史说明或额外执行流程。
 

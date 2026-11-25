@@ -155,7 +155,7 @@ export function registerPrMaterialize(group: Command): void {
         } else {
           const source=readAnalysisSource(md);
           registry=await readApprovedRepoMapping(source,server);
-          await checkPublishedChange({runtime,registry},multica,opts.issue,source.change_ref);
+          await checkPublishedChange({runtime,registry},multica,opts.issue,source);
         }
         const identities=new Map<string,VerifiedRepo>(), seen=new Set<string>();
         for(const entry of prep) {

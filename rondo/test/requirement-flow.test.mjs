@@ -185,12 +185,13 @@ test("Completion 读取批准 SHA 与登记的研发 SHA，其他 Change 推进�
       ? { value: Object.keys(files[commit]).map(item) } : { ...item(name), content: files[commit][name] };
     return { statusCode: 200, body: JSON.stringify(body) };
   });
-  const checked = await checkPublishedChange(cfg, multica, issue.id, source.change_ref);
+  const checked = await checkPublishedChange(cfg, multica, issue.id, source);
+  await assert.rejects(checkPublishedChange(cfg, multica, issue.id, { ...source, change_ref: "another-42" }), /批准来源.*变化/);
   assert.equal(checked.commit, sha2);
   assert.deepEqual(checked.repo_keys, ["frame"]);
   assert.deepEqual(versions, new Set([sha1, sha2]));
   files[sha2][".openspec.yaml"] = "schema: intentional-change\nx-repositories:\n  - web\n";
-  await assert.rejects(checkPublishedChange(cfg, multica, issue.id, source.change_ref), /\.openspec\.yaml/);
+  await assert.rejects(checkPublishedChange(cfg, multica, issue.id, source), /\.openspec\.yaml/);
   for (const receipt of [undefined, "{", JSON.stringify({ analysis_commit: branchTip, commit: sha2 }),
     JSON.stringify({ analysis_commit: sha1, commit: "main" })]) {
     assert.throws(() => readDevelopmentCommit({ "dev.publication": receipt }, source), /dev.publication|研发发布记录/);

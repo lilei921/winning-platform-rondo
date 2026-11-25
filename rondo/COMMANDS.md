@@ -31,9 +31,9 @@ rondo doctor --help
 
 | 命令组 | 子命令 | 主要用途 |
 | --- | --- | --- |
-| `change` | `resolve-identity`、`update-progress` | Change 身份解析、任务进度 |
+| `change` | `resolve-identity` | Change 身份解析 |
 | `analysis` | `validate`、`publish`、`read`、`approve` | 分析事实、Gate、审核提交、工件读取和批准登记 |
-| `dev` | `materialize`、`prepare`、`check-dispatch`、`check-completion`、`check-change`、`publish`、`pr-prepare`、`contract-hash` | 旧派发与新 Change 研发准备、发布、验证 |
+| `dev` | `materialize`、`prepare`、`check-dispatch`、`check-completion`、`publish`、`pr-prepare`、`contract-hash` | 旧派发与新 Change 研发准备、发布、验证 |
 | `bug` | `pr-prepare`、`git`、`resume` | 独立 TFS Bug 修复交付 |
 | `tfs` | `writeback`、`materialize-tasks`、`resolve-tasks`、`reconcile-workitem` | TFS 工作项同步与交付回写 |
 | `pr` | `materialize`、`worktree`、`reconcile-status`、`create`、`get`、`list` | PR 创建、查询、状态对账及 Worktree |
@@ -52,13 +52,11 @@ rondo doctor --help
 
 ```bash
 rondo change resolve-identity --openspec-root <path> [--change-ref <ref>] [--tfs-id <id>] [--expect-schema <name>] [--output json]
-rondo change update-progress --openspec-root <path> --change-ref <ref> --check <1.1,1.2,...>
 ```
 
 | 命令 | 功能 |
 | --- | --- |
 | `change resolve-identity` | 根据 Change Ref 或 TFS ID 定位 OpenSpec Change，并可校验 Schema |
-| `change update-progress` | 将 `tasks.md` 中指定任务标记为完成；已完成任务保持不变 |
 
 ### 3.2 `rondo analysis`
 
@@ -92,10 +90,9 @@ rondo dev check-dispatch --config <repo-registry.json> --issue <KEY> --task-refs
 rondo dev check-completion --openspec-root <path> --change-ref <ref> --task-refs <1.1,1.2> --evidence <evidence.json> [--verify-commits] [--issue <KEY> --registry-config <repo-registry.json> [--root-repo <path>]]
 rondo dev git --operation fetch|push --issue <KEY> --repo <repo_id> --root-repo <path>
 rondo dev contract-hash --openspec-root <path> --change-ref <ref>
-rondo dev prepare --workspace native --issue <KEY> --repo <repo_id> --root-repo <path> [--resource-ref <branch>] [--change-ref <ref>]
-rondo dev prepare --mode requirement --config <repo-registry.json> --issue <KEY> --change-ref <ref> --repo <repo_key> [--root-repo <path>]
-rondo dev publish --issue <KEY> --change-ref <ref> [--root-repo <path>] [--minor-design]
-rondo dev check-change --issue <KEY> --change-ref <ref>
+rondo dev prepare --workspace native --issue <KEY> --repo <repo_id> --root-repo <path> [--resource-ref <branch>]
+rondo dev prepare --mode requirement --config <repo-registry.json> --issue <KEY> --repo <repo_key> [--root-repo <path>]
+rondo dev publish --issue <KEY> [--root-repo <path>] [--minor-design]
 ```
 
 | 命令 | 功能 |
@@ -105,9 +102,8 @@ rondo dev check-change --issue <KEY> --change-ref <ref>
 | `dev check-completion` | 检查任务完成、验证 Evidence 和可选 Commit 关联 |
 | `dev git` | 受控 Fetch / 非强制 Push 当前授权 Candidate |
 | `dev contract-hash` | 计算当前 Change 契约文件的 SHA-256 摘要，供工程验证引用 |
-| `dev prepare` | Native 使用 Multica Checkout；Requirement 必须提供 `--change-ref`，无远端 Candidate 时须提供已核实的 `--resource-ref`。旧入口仅保留兼容 |
+| `dev prepare` | Native 使用 Multica Checkout；Requirement 从 Issue 的批准来源确定 Change，无远端 Candidate 时须提供已核实的 `--resource-ref`。旧入口仅保留兼容 |
 | `dev publish` | 按已批准的 `analysis.source.branch` 发布当前 Change 已提交的 Tasks / Design，回读远端 SHA 并登记 `dev.publication`。非实质性 Design 细化使用 `--minor-design` |
-| `dev check-change` | 按批准版本与登记的研发交付版本核验 Change 全部 Tasks、Candidate、Review 与 Evidence |
 
 ### 4.2 `rondo bug`
 
