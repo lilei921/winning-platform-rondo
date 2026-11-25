@@ -1,5 +1,5 @@
 ---
-name: multica-workspace-sync
+name: rondo-sync
 description: Use when synchronizing Multica workspace assets — Skill、Agent、Squad、Project、Autopilot、MCP、workspace 仓库注册表 — into the winning-* workspaces that the admin user belongs to, or into explicitly named workspaces. 触发词：同步 workspace、同步 agent 和 skill、把 skill 同步到 workspace、Multica 同步、provision workspace。
 metadata:
   author: winning\li_lei
@@ -44,20 +44,22 @@ metadata:
 | 条件 | 不满足时 |
 | --- | --- |
 | `multica` CLI 已安装并 `multica login` | 停止，提示先登录 |
-| 本仓 `rondo/dist/index.js` 已构建，或 PATH 有适配当前结构的 `rondo` | 优先在 `rondo/` 执行 `npm install`、`npm run build`；脚本优先本仓构建，缺失时再尝试全局 `rondo` / `skill-flow` |
+| 本机有 `npm`，且 `<repo>/rondo/package.json` 存在 | 同步脚本默认先打包并全局安装 rondo（见「执行」步骤 0）；缺失或失败会在写平台前停止 |
 | Python ≥ 3.7 且当前解释器已安装 PyYAML | Windows 通常用 `python -m pip install PyYAML`，Linux 通常用 `python3 -m pip install PyYAML`；Rondo 复用启动同步脚本的解释器 |
 | 目标 workspace 已存在且有 runtime | runtime 是 workspace 级对象，需先在该 workspace 启动 daemon 注册 |
 | manifest 含 `mcp_servers` 时：当前账号在目标 workspace 为 owner/admin，或可按下文临时提权 | member 角色会在 MCP 供给处失败，见「MCP 供给权限」 |
 
 ## 执行
 
-本 Skill 随仓分发在 `.claude/skills/multica-workspace-sync/`。在 Windows 的 PowerShell 中，从仓库根目录执行：
+本 Skill 随仓分发在 `.claude/skills/rondo-sync/`。在 Windows 的 PowerShell 中，从仓库根目录执行：
 
 ```powershell
-python .claude/skills/multica-workspace-sync/scripts/sync_workspace.py
+python .claude/skills/rondo-sync/scripts/sync_workspace.py
 ```
 
 Linux 上将本页命令中的 `python` 替换为 `python3`。Skill 正文和附属文件使用 UTF-8 保存，同步时统一为无 BOM、LF 换行的文本。
+
+同步默认以 **打包 → 全局安装 → 清理 shim** 开始，确保各 workspace 的 Agent 使用最新的全局 `rondo`：在 `rondo/` 执行 `npm pack --silent` 与 `npm install -g <tarball>`，再用 `npm prefix -g` 定位全局目录并删除 `rondo.ps1`（仅 Windows，文件不存在则跳过；非 Windows 不执行删除）。前置步骤失败会在写平台前整体停止；`--dry-run` 只打印计划，不打包、不安装、不删除。脚本自身执行 provision / sync 时仍优先使用本仓 `rondo/dist/index.js`（打包经 `prepack` 会重新构建）。
 
 仓库路径只在本次运行中确定，不要求用户配置全局变量：
 
@@ -68,7 +70,7 @@ Linux 上将本页命令中的 `python` 替换为 `python3`。Skill 正文和附
 显式输入路径的示例（也适用于 check / 仓库注册表脚本）：
 
 ```powershell
-python .claude/skills/multica-workspace-sync/scripts/sync_workspace.py winning-lfw --repo-root "D:/ai-project/winning-platform-rondo" --dry-run
+python .claude/skills/rondo-sync/scripts/sync_workspace.py winning-lfw --repo-root "D:/ai-project/winning-platform-rondo" --dry-run
 ```
 
 常用参数：
@@ -85,7 +87,11 @@ python .claude/skills/multica-workspace-sync/scripts/sync_workspace.py winning-l
 | `--with-workflow` | 恢复 workflow 检查与状态供给；仅在服务端支持 workflow API 时使用 |
 | `--skip-tfs-env` | 跳过默认的 Agent TFS 环境变量补齐步骤 |
 | `--skip-repos` | 跳过默认的 workspace 仓库注册表供给步骤 |
-| `--dry-run` | 只预演，不写平台与仓内 overlay |
+| `--dry-run` | 只预演，不打包/安装、不写平台与仓内 overlay |
+
+执行同步前先完成一次全局前置步骤（面向所有 workspace，失败则整体停止）：
+
+0. **打包与全局安装 rondo** — 在 `rondo/` 执行 `npm pack --silent` 与 `npm install -g <tarball>`，并通过 `npm prefix -g` 定位全局目录、删除 `rondo.ps1`（仅 Windows）。
 
 每个 workspace 依次执行下列步骤，任一步失败即停止该 workspace 并计入失败数，其余 workspace 继续：
 
@@ -117,7 +123,7 @@ python .claude/skills/multica-workspace-sync/scripts/sync_workspace.py winning-l
 主同步流水线的默认步骤（每个 workspace 最后执行）；也可单独按需执行：
 
 ```bash
-python .claude/skills/multica-workspace-sync/scripts/provision_workspace_repos.py [workspace] [--dry-run]
+python .claude/skills/rondo-sync/scripts/provision_workspace_repos.py [workspace] [--dry-run]
 # 默认目标 winning-admin
 ```
 
@@ -134,7 +140,7 @@ python .claude/skills/multica-workspace-sync/scripts/provision_workspace_repos.p
 主同步流水线的默认步骤（每个 workspace 最后执行）；也可单独按需执行：
 
 ```bash
-python .claude/skills/multica-workspace-sync/scripts/provision_agent_tfs_env.py [workspace] [--dry-run]
+python .claude/skills/rondo-sync/scripts/provision_agent_tfs_env.py [workspace] [--dry-run]
 # 默认目标 winning-admin
 ```
 
@@ -194,8 +200,8 @@ Agent 绑定的是**某台机器的** runtime，workspace 里可同时存在多�
 发现口径与主同步一致（缺省 = 成员含 admin 的 `winning-*`，支持位置参数 / `--member` / `--prefix`）：
 
 ```bash
-python .claude/skills/multica-workspace-sync/scripts/check_workspaces.py                # 全部目标 workspace
-python .claude/skills/multica-workspace-sync/scripts/check_workspaces.py winning-lfw    # 指定 workspace
+python .claude/skills/rondo-sync/scripts/check_workspaces.py                # 全部目标 workspace
+python .claude/skills/rondo-sync/scripts/check_workspaces.py winning-lfw    # 指定 workspace
 ```
 
 校验维度与基准（`provisioning.json`，组覆盖优先于顶层默认）：
@@ -240,7 +246,7 @@ overlay 文件是仓内唯一记录平台对象 ID 的位置，随同步产生�
 修改本 Skill 或同步命令后运行：
 
 ```powershell
-python -X utf8 -m unittest discover -s .claude/skills/multica-workspace-sync/tests
+python -X utf8 -m unittest discover -s .claude/skills/rondo-sync/tests
 cd rondo
 npm run build
 node --test test/workspace-root-layout.test.mjs test/workspace-environment.test.mjs test/workspace-mcp.test.mjs test/d1-analysis-skills.test.mjs dist/clients/required-statuses.test.js

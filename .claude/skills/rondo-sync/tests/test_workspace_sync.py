@@ -75,6 +75,63 @@ class WorkspaceSyncTests(unittest.TestCase):
             local.unlink()
             self.assertEqual(sync.resolve_cli(self.root), ["old-rondo"])
 
+    def _rondo_dir_with_package(self):
+        rondo_dir = self.root / "rondo"
+        rondo_dir.mkdir()
+        (rondo_dir / "package.json").write_text("{}", encoding="utf-8")
+        return rondo_dir
+
+    def test_install_rondo_packs_installs_and_removes_global_ps1(self):
+        rondo_dir = self._rondo_dir_with_package()
+        global_dir = self.root / "global"
+        global_dir.mkdir()
+        ps1 = global_dir / "rondo.ps1"
+        ps1.write_text("shim", encoding="utf-8")
+        tarball = rondo_dir / "winning-rondo-1.2.39.tgz"
+        outputs = {
+            ("npm", "pack", "--silent"): tarball.name,
+            ("npm", "install", "-g", str(tarball)): "changed 32 packages",
+            ("npm", "prefix", "-g"): str(global_dir),
+        }
+
+        def fake_run_text(command, cwd):
+            return outputs[tuple(command)]
+
+        with patch.object(sync, "run_text", side_effect=fake_run_text) as run_text, \
+                patch.object(sync.os, "name", "nt"):
+            sync.install_rondo_cli(self.root)
+
+        self.assertFalse(ps1.exists())
+        commands = [call[0][0] for call in run_text.call_args_list]
+        self.assertEqual(commands, [
+            ["npm", "pack", "--silent"],
+            ["npm", "install", "-g", str(tarball)],
+            ["npm", "prefix", "-g"],
+        ])
+        self.assertTrue(all(call[0][1] == rondo_dir for call in run_text.call_args_list))
+
+    def test_install_rondo_dry_run_never_runs_npm(self):
+        self._rondo_dir_with_package()
+        with patch.object(sync, "run_text") as run_text:
+            sync.install_rondo_cli(self.root, dry_run=True)
+        run_text.assert_not_called()
+
+    def test_install_rondo_skips_ps1_cleanup_off_windows(self):
+        rondo_dir = self._rondo_dir_with_package()
+        tarball = rondo_dir / "winning-rondo-1.2.39.tgz"
+        outputs = {
+            ("npm", "pack", "--silent"): tarball.name,
+            ("npm", "install", "-g", str(tarball)): "changed 32 packages",
+        }
+
+        def fake_run_text(command, cwd):
+            return outputs[tuple(command)]
+
+        with patch.object(sync, "run_text", side_effect=fake_run_text) as run_text, \
+                patch.object(sync.os, "name", "posix"):
+            sync.install_rondo_cli(self.root)
+        self.assertEqual(run_text.call_count, 2)
+
     def test_python_preflight_uses_current_interpreter_without_path_alias(self):
         with patch.object(sync.shutil, "which", return_value=None), patch.dict(sys.modules, {"yaml": object()}):
             sync.check_python()
