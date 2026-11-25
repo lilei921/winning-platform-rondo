@@ -19,7 +19,7 @@ export function parseRepositoryScope(rawMetadata: string): string[] {
   const ids = new Set<string>();
   for (const id of repos) {
     if (typeof id !== "string" || !/^[a-z][a-z0-9-]*$/.test(id)) {
-      throw new FailError("x-repositories 必须逐项列出合法 repo_id");
+      throw new FailError("x-repositories 必须逐项列出合法 repo_id（字符串列表），例如 x-repositories: [dataintegration]，不接受对象或仓库 URL");
     }
     if (ids.has(id)) throw new FailError("x-repositories 存在重复 repo_id: " + id);
     ids.add(id);

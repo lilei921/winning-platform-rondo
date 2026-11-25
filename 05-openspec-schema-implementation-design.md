@@ -611,7 +611,12 @@ Desired behavior changes
 
 ## 8.1 Intentional（意图性变更）`proposal.md`
 
-[Intentional Proposal 模板](../../openspec/schemas/intentional-change/templates/proposal.md) 说明期望达到的结果和范围，有 Delta 时列出对应的 Capability。两类 Change 均在 `.openspec.yaml` 顶层 `x-repositories` 中列出可修改的 `repo_id`，取值来自 [repo-context.yaml](../../docs/config/repo-context.yaml)；Proposal 不再维护第二份仓库清单。
+[Intentional Proposal 模板](../../openspec/schemas/intentional-change/templates/proposal.md) 说明期望达到的结果和范围，有 Delta 时列出对应的 Capability。两类 Change 均在 `.openspec.yaml` 顶层 `x-repositories` 中列出可修改的 `repo_id`，格式为非空、去重的字符串列表（不是对象列表、仓库 URL 或路径），取值来自 [repo-context.yaml](docs/config/repo-context.yaml)；Proposal 不再维护第二份仓库清单。例如：
+
+```yaml
+x-repositories:
+  - dataintegration
+```
 
 ## 8.2 Corrective（纠正性变更）`proposal.md`
 

@@ -30,7 +30,7 @@ function runCli(args, env = {}, cwd) {
   catch { assert.fail("CLI did not return JSON: " + cp.stdout + "\n" + cp.stderr); }
   return { exit: cp.status, body, stderr: cp.stderr };
 }
-function fixture(t, requirement = true, native = false) {
+function fixture(t, requirement = true, native = false, commitChange = true) {
   const home = realpathSync.native(mkdtempSync(join(tmpdir(), "rondo-fileless-gate-")));
   t.after(() => rmSync(home, { recursive: true, force: true }));
   const remote = join(home, "remote.git"); mkdirSync(remote);
@@ -91,8 +91,10 @@ function fixture(t, requirement = true, native = false) {
       "issue-1": [{ id: taskId, issue_id: "issue-1", agent_id: "analyst", workspace_id: "ws-test", status: "running" }],
     } }));
   }
-  git(root, "add", "openspec/changes/" + CHANGE);
-  git(root, "-c", "user.email=test@example.invalid", "-c", "user.name=Test", "commit", "-m", "reviewed Change contract");
+  if (commitChange) {
+    git(root, "add", "openspec/changes/" + CHANGE);
+    git(root, "-c", "user.email=test@example.invalid", "-c", "user.name=Test", "commit", "-m", "reviewed Change contract");
+  }
 
   const bin = join(home, "bin"); mkdirSync(bin);
   const executable = join(bin, process.platform === "win32" ? "openspec.cmd" : "openspec");
@@ -156,6 +158,132 @@ test("Preview → Complete without Stage: final Gate and fixed Git Contract; no 
   assert.equal(existsSync(join(f.change, "analysis-handoff.json")), false);
 });
 
+test("Native Requirement publishes a new uncommitted Change and preserves unrelated WIP", t => {
+  const f = fixture(t, true, true, false);
+  const prefix = "openspec/changes/" + CHANGE;
+  const sibling = join(f.root, "openspec", "changes", "other");
+  mkdirSync(sibling, { recursive: true });
+  writeFileSync(join(sibling, "proposal.md"), "unrelated staged");
+  git(f.root, "add", "openspec/changes/other/proposal.md");
+  writeFileSync(join(sibling, "proposal.md"), "unrelated working");
+  writeFileSync(join(f.root, "local.txt"), "unrelated untracked");
+  writeFileSync(join(f.change, "scratch.txt"), "unrelated temporary");
+  writeFileSync(join(f.change, "notes.txt"), "unrelated staged");
+  git(f.root, "add", prefix + "/notes.txt");
+  writeFileSync(join(f.change, "notes.txt"), "unrelated working");
+  const result = f.complete();
+  assert.equal(result.exit, 0, JSON.stringify(result));
+  const local = git(f.root, "rev-parse", "HEAD");
+  assert.deepEqual(git(f.root, "diff-tree", "--no-commit-id", "--name-only", "-r", local).split("\n").sort(),
+    [prefix + "/.openspec.yaml", prefix + "/proposal.md", prefix + "/tasks.md"].sort());
+  assert.equal(git(f.root, "show", ":openspec/changes/other/proposal.md"), "unrelated staged");
+  assert.equal(readFileSync(join(sibling, "proposal.md"), "utf8"), "unrelated working");
+  assert.equal(readFileSync(join(f.root, "local.txt"), "utf8"), "unrelated untracked");
+  assert.equal(readFileSync(join(f.change, "scratch.txt"), "utf8"), "unrelated temporary");
+  assert.equal(git(f.root, "show", ":" + prefix + "/notes.txt"), "unrelated staged");
+  assert.equal(readFileSync(join(f.change, "notes.txt"), "utf8"), "unrelated working");
+  assert.equal(git(f.remote, "ls-tree", "-r", "--name-only", "dev", prefix + "/scratch.txt", prefix + "/notes.txt"), "");
+  assert.equal(git(f.remote, "show", result.body.analysis_source.commit + ":" + prefix + "/proposal.md"), PROPOSAL.trim());
+  assert.equal(git(f.remote, "ls-tree", "-r", "--name-only", "dev", "openspec/changes/other", "local.txt"), "");
+  assert.equal(f.complete().exit, 0);
+  assert.equal(git(f.root, "rev-parse", "HEAD"), local);
+});
+
+test("Requirement saves uncommitted edits to an existing Change before publishing", t => {
+  const f = fixture(t);
+  const previous = git(f.root, "rev-parse", "HEAD");
+  const revised = PROPOSAL.replace("restore behavior", "restore detailed behavior");
+  writeFileSync(join(f.change, "proposal.md"), revised);
+  const result = f.complete();
+  assert.equal(result.exit, 0, JSON.stringify(result));
+  assert.notEqual(git(f.root, "rev-parse", "HEAD"), previous);
+  assert.equal(git(f.remote, "show", result.body.analysis_source.commit + ":openspec/changes/" + CHANGE + "/proposal.md"), revised.trim());
+});
+
+test("Failed Gate leaves a new Change uncommitted; committed unauthorized artifacts cannot be published", t => {
+  const f = fixture(t, true, true, false);
+  const local = git(f.root, "rev-parse", "HEAD");
+  const remote = git(f.remote, "rev-parse", "dev");
+  writeFileSync(join(f.change, "tasks.md"), "no task checkbox\n");
+  assert.equal(f.complete().exit, 2);
+  assert.equal(git(f.root, "rev-parse", "HEAD"), local);
+  writeFileSync(join(f.change, "tasks.md"), "- [ ] 1.1 Fix and 验证 regression\n");
+  writeFileSync(join(f.change, "scratch.txt"), "not an analysis artifact");
+  git(f.root, "add", "openspec/changes/" + CHANGE);
+  git(f.root, "commit", "-m", "unauthorized committed artifact");
+  const committed = git(f.root, "rev-parse", "HEAD");
+  const forbidden = f.complete();
+  assert.equal(forbidden.exit, 2, JSON.stringify(forbidden));
+  assert.match(forbidden.body.reason, /不允许发布/);
+  assert.equal(git(f.root, "rev-parse", "HEAD"), committed);
+  assert.equal(git(f.remote, "rev-parse", "dev"), remote);
+  assert.equal(f.state().metadata["analysis.source"], undefined);
+  assert.equal(f.state().status, "in_progress");
+});
+
+test("Requirement publishes deletion of a no-longer-needed optional design, staged or unstaged", async t => {
+  for (const staged of [false, true]) await t.test(staged ? "staged" : "unstaged", t => {
+    const f = fixture(t);
+    const path = "openspec/changes/" + CHANGE + "/design.md";
+    writeFileSync(join(f.change, "design.md"), "# Design\n");
+    git(f.root, "add", path);
+    git(f.root, "commit", "-m", "existing design");
+    git(f.root, "push", "origin", "dev");
+    if (staged) git(f.root, "rm", path);
+    else rmSync(join(f.change, "design.md"));
+    const result = f.complete();
+    assert.equal(result.exit, 0, JSON.stringify(result));
+    assert.equal(git(f.root, "diff-tree", "--no-commit-id", "--name-status", "-r", "HEAD"), "D\t" + path);
+    assert.equal(git(f.remote, "ls-tree", "-r", "--name-only", "dev", path), "");
+  });
+});
+
+test("Requirement preserves the local commit when remote Push fails and reuses it on retry", t => {
+  const f = fixture(t, true, false, false);
+  const hook = join(f.remote, "hooks", "pre-receive");
+  writeFileSync(hook, "#!/bin/sh\nexit 1\n");
+  chmodSync(hook, 0o755);
+  const before = git(f.root, "rev-parse", "HEAD");
+  const remote = git(f.remote, "rev-parse", "dev");
+  const failed = f.complete();
+  assert.equal(failed.exit, 3, JSON.stringify(failed));
+  assert.match(failed.body.reason, /Push 未确认/);
+  const saved = git(f.root, "rev-parse", "HEAD");
+  assert.notEqual(saved, before);
+  assert.equal(git(f.remote, "rev-parse", "dev"), remote);
+  assert.equal(f.state().metadata["analysis.source"], undefined);
+  rmSync(hook);
+  const retry = f.complete();
+  assert.equal(retry.exit, 0, JSON.stringify(retry));
+  assert.equal(git(f.root, "rev-parse", "HEAD"), saved);
+});
+
+test("Requirement does not stage or commit during an ongoing Git operation", t => {
+  const f = fixture(t, true, false, false);
+  const before = git(f.root, "rev-parse", "HEAD");
+  const marker = join(f.root, ".git", "CHERRY_PICK_HEAD");
+  writeFileSync(marker, before + "\n");
+  const index = git(f.root, "ls-files", "--stage");
+  const blocked = f.complete();
+  assert.equal(blocked.exit, 3, JSON.stringify(blocked));
+  assert.match(blocked.body.reason, /Git 操作仍在进行/);
+  assert.equal(git(f.root, "rev-parse", "HEAD"), before);
+  assert.equal(git(f.root, "ls-files", "--stage"), index);
+  assert.equal(readFileSync(marker, "utf8"), before + "\n");
+});
+
+test("Repository Scope accepts repo_id strings, not objects; diagnostics show the valid format", t => {
+  const f = fixture(t, true, false, false);
+  const local = git(f.root, "rev-parse", "HEAD");
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories:\n  - repo_id: root\n");
+  const invalid = f.complete();
+  assert.equal(invalid.exit, 2, JSON.stringify(invalid));
+  assert.match(invalid.body.reason, /x-repositories: \[dataintegration\]/);
+  assert.equal(git(f.root, "rev-parse", "HEAD"), local);
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories:\n  - root\n");
+  assert.equal(f.complete().exit, 0);
+});
+
 test("旧 metadata PASS 不能绕过最终真实 Gate", t => {
   const f = fixture(t);
   const st = f.state(); st.metadata["analysis.gate.result"] = "PASS"; f.setState(st);
@@ -192,10 +320,13 @@ test("OpenSpec 独立 CLI 未确认通过，不能持久化 Gate PASS 或 Human 
 test("Git clean filter 修改工程正文，固定 Commit 不匹配时必须阻断", t => {
   const f = fixture(t);
   writeFileSync(join(f.change, "proposal.md"), PROPOSAL.replace("restore behavior", "APPROVED"));
-  writeFileSync(join(f.change, ".gitattributes"), "proposal.md filter=review-test\n");
+  writeFileSync(join(f.root, ".git", "info", "attributes"), "openspec/changes/" + CHANGE + "/proposal.md filter=review-test\n");
   git(f.root, "config", "filter.review-test.clean", "sed s/APPROVED/REWRITTEN/g");
+  const remote = git(f.remote, "rev-parse", "dev");
   const result = f.complete();
   assert.notEqual(result.exit, 0);
+  assert.match(result.body.reason, /候选发布版本.*不一致/);
+  assert.equal(git(f.remote, "rev-parse", "dev"), remote);
   assert.equal(f.state().metadata["analysis.source"], undefined);
 });
 
@@ -304,7 +435,14 @@ test("Native Analysis refuses Project/Resource/Task mismatch and conflicting tar
   git(f.root, "push", "origin", "dev:other");
   good.resources[0].resource_ref.ref = "other";
   writeFileSync(f.resourcePath, JSON.stringify(good));
-  assert.notEqual(f.complete().exit, 0);
+  writeFileSync(join(f.change, "proposal.md"), PROPOSAL.replace("restore behavior", "revised behavior"));
+  const local = git(f.root, "rev-parse", "HEAD");
+  const index = git(f.root, "ls-files", "--stage");
+  const mismatch = f.complete();
+  assert.notEqual(mismatch.exit, 0);
+  assert.match(mismatch.body.reason, /初始基线/);
+  assert.equal(git(f.root, "rev-parse", "HEAD"), local);
+  assert.equal(git(f.root, "ls-files", "--stage"), index);
   assert.equal(git(f.remote, "rev-parse", "dev"), before);
   assert.equal(git(f.remote, "rev-parse", "other"), before);
   assert.equal(f.state().metadata["analysis.source"], undefined);

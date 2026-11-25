@@ -206,6 +206,7 @@ async function main(rawArgs: string[]): Promise<number> {
         const subject = `analysis: ${args.changeRef} (${args.issue}${tfsId ? ` / tfs ${tfsId}` : ""})`;
         const result = requirement ? await publishChange(root, args.changeRef, args.issue, ANALYSIS_CONTRACT_FILE, subject, {
           repoUrl: rootRepositoryUrl(root), expectedBranch: publicationBranch!, fixedSourceCommit: pinned?.commit,
+          commitWorkingChange: true,
           canRecoverFixedSource: pinned && metadataEvidenceDigest(priorMeta) === gateEvidence.metadata_digest
             ? (commit: string, localHead: string) => {
                 const published = readContractAt(commit);
