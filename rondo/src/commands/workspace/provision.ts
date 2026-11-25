@@ -29,7 +29,6 @@
  *   --mcp-only         仅维护已有 workspace 的 MCP 和 Agent 绑定，不触碰其他资产
  *   --check            只读检查，缺失/漂移 exit 2；MCP 完整配置不可回读，运行验证单列 NOT_RUN
  *   --update-mcp       逗号分隔名称，使用当前模板与预备连接文件显式替换完整连接配置
- *   --mcp-phase        08-a（默认）或 08-b；08-b 追加 Analyst / Engineer 绑定
  *
  * 退出码：0 PASS / 2 DRIFT（--check）/ 3 UNKNOWN（已获得的 ID 仍落盘，重跑断点续建）/ 64 用法错误。
  * stdout 只出 JSON；日志走 stderr。
@@ -187,7 +186,7 @@ function main(rawArgs: string[]): number {
   const args = parseArgs(rawArgs);
   if (typeof args.workspace !== "string" || !args.workspace) {
     process.stderr.write(
-      "用法: rondo workspace provision --workspace <name> [--slug <slug>] [--create-workspace [--display-name <n>]] [--runtime-id <uuid>] [--profile <name>] [--dry-run | --check] [--skip-workflow] [--mcp-only] [--mcp-phase 08-a|08-b] [--update-mcp <name,...>]\n",
+      "用法: rondo workspace provision --workspace <name> [--slug <slug>] [--create-workspace [--display-name <n>]] [--runtime-id <uuid>] [--profile <name>] [--dry-run | --check] [--skip-workflow] [--mcp-only] [--update-mcp <name,...>]\n",
     );
     return 64;
   }
@@ -250,10 +249,6 @@ function main(rawArgs: string[]): number {
     const branch = manifest.agents.some(branchAgent) ? manifest.project?.workspace_branch : undefined;
     if (branch !== undefined && (typeof branch !== "string" || !branch.trim() || branch !== branch.trim())) {
       throw new UnknownError("project.workspace_branch 必须是非空分支名");
-    }
-    if (args["mcp-phase"] !== undefined) {
-      if (!["08-a", "08-b"].includes(String(args["mcp-phase"]))) throw new UnknownError("--mcp-phase 仅支持 08-a / 08-b");
-      overlay.mcp_phase = args["mcp-phase"] as "08-a" | "08-b";
     }
     const mcpSpecs = loadMcpSpecs(manifest, overlay, file => readJson(join(REPO_ROOT, "mcps", file), "MCP 模板"));
     if (mcpOnly && !mcpSpecs.length) throw new UnknownError("manifest 尚未登记受管 MCP");
@@ -341,7 +336,7 @@ function main(rawArgs: string[]): number {
             result: "PASS", workspace: args.workspace, mode: "dry-run",
             created: [`workspace/${args.slug}`, ...mcpSpecs.map(s => `mcp/${s.name}`), ...repoSkills.map(s => `skill/${s}`),
               ...manifest.agents.map(a => `agent/${a.name}`), `squad/${manifest.squad.name}`,
-              ...manifest.agents.filter(a => a.mcp_phase !== "08-b" || overlay.mcp_phase === "08-b")
+              ...manifest.agents
                 .flatMap(a => (a.mcp_servers ?? []).map(name => `agent/${a.name}/mcp/${name}`)),
               `project/${manifest.project.title}`, ...manifest.autopilots.map(a => `autopilot/${a.title}`)],
             updated: [], unchanged: [], unmanaged_remote: [], overlay_written: false, next: null,
@@ -392,7 +387,7 @@ function main(rawArgs: string[]): number {
           || new Set(agents.map(a => a.name)).size !== agents.length) throw new UnknownError("Agent 清单非法或重名，禁止 MCP 绑定");
       const ids = Object.fromEntries(agents.map(a => [a.name, a.id]));
       for (const a of manifest.agents) {
-        if (a.mcp_servers?.length && (a.mcp_phase !== "08-b" || overlay.mcp_phase === "08-b") && !ids[a.name]) {
+        if (a.mcp_servers?.length && !ids[a.name]) {
           throw new UnknownError(`MCP 绑定缺少 Agent ${a.name}，请先完整 provision`);
         }
       }

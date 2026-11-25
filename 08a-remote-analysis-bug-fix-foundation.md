@@ -55,7 +55,7 @@ Desktop 0.9.0 的真实 TT-5 / TT-6 运行表明，Resource 清单不自动触�
 | 完整连接配置 | Multica workspace MCP library | 创建 / 显式更新时通过 stdin 注入；完整连接源文件在维护前准备并受控备份，不从环境变量读取 |
 | 实际绑定及 enabled 状态 | Multica Agent MCP assignments | 写后回读校验；注册条目不等于 Agent 已绑定 |
 
-默认 `08-a` 阶段为 Wayfinder、Bug Fix Agent 绑定三个 MCP。Workitem Analyst、Backend Engineer、Frontend Engineer 的同一组绑定已在 manifest 声明，仅显式选择 `--mcp-phase 08-b` 后供给；该参数不代表 08-B 流程已验收或授权上线。TFS Sync、PR Status Sync、Delivery Lead 不默认绑定。
+Agent 的 MCP 绑定以 `workspace-config/provisioning.json` 中各 Agent 的 `mcp_servers` 为准。Wayfinder、Bug Fix Agent、Workitem Analyst、Engineer 均声明三个只读 MCP；TFS Sync、PR Status Sync、Delivery Lead 不默认绑定。
 
 供给规则：
 

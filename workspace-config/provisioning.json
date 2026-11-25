@@ -50,7 +50,6 @@
       "dir": "workitem-analyst",
       "name": "Workitem Analyst",
       "mcp_servers": ["remote-codegraph", "remote-filesystem", "remote-ripgrep"],
-      "mcp_phase": "08-b",
       "visibility": "workspace",
       "skills": [
         "codebase-explorer",
@@ -65,7 +64,6 @@
       "dir": "engineer",
       "name": "Engineer",
       "mcp_servers": ["remote-codegraph", "remote-filesystem", "remote-ripgrep"],
-      "mcp_phase": "08-b",
       "visibility": "workspace",
       "skills": ["pull-request", "native-workspace"]
     },
