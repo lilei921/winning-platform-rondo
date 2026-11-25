@@ -87,9 +87,8 @@ export function changeEvidenceDigest(changeDir: string, meta?: Record<string, un
   }, normalizeEol);
 }
 
-/** The same selection and byte digest apply to worktree validation and immutable Git snapshots. */
-export function digestGateFiles(changeId: string, selected: Set<string>, meta: Record<string, unknown> | undefined,
-  read: (name: string) => Buffer, normalizeEol: boolean): string {
+/** Select the same contract files for worktree, Git tree and remote reads. */
+export function selectGateFiles(changeId: string, selected: Set<string>, meta: Record<string, unknown> | undefined): Set<string> {
   for (const name of [".openspec.yaml", "proposal.md", "tasks.md"]) selected.add(name);
   function includeReference(input: unknown): void {
     if (typeof input !== "string") return;
@@ -122,8 +121,14 @@ export function digestGateFiles(changeId: string, selected: Set<string>, meta: R
     }
   }
 
+  return selected;
+}
+
+/** The same selection and byte digest apply to worktree validation and immutable Git snapshots. */
+export function digestGateFiles(changeId: string, selected: Set<string>, meta: Record<string, unknown> | undefined,
+  read: (name: string) => Buffer, normalizeEol: boolean): string {
   const hash = createHash("sha256");
-  for (const name of [...selected].sort((a, b) => a.localeCompare(b, "en"))) {
+  for (const name of [...selectGateFiles(changeId, selected, meta)].sort((a, b) => a.localeCompare(b, "en"))) {
     let bytes = read(name);
     if (normalizeEol && /\.(?:md|ya?ml|json|txt)$/i.test(name)) {
       bytes = Buffer.from(bytes.toString("latin1").replace(/\r\n/g, "\n"), "latin1");

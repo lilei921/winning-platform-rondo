@@ -1,8 +1,8 @@
 /**
- * Analysis Handoff Facts 的单一字段契约（stage / complete 共用）。
+ * Analysis Handoff Facts 的单一字段契约（validate / complete 共用）。
  * TFS Type、持久化的 analysis.change_kind 与 OpenSpec Schema 各司其职；不维护独立路由。
- * stage 仅检查 draft 字段形状；Gate 按 Change Schema 检查专业结果；
- * complete 在写入审核状态前再次按持久化 Schema 核验。
+ * 输入检查确认字段形状；Gate 按 Change Schema 检查专业结果；
+ * complete 与 validate 使用本次 Facts；审核重放核验已发布 Schema。
  */
 import { readFileSync } from "node:fs";
 import { UnknownError } from "../../cli/errors.js";
@@ -19,11 +19,9 @@ export interface DraftFacts {
   change_kind: ChangeKind;
   change_ref: string;
   verify_agent: { recommendation: string; reason: string; focus_refs: string[] };
-  ai_review?: { verdict: string; findings_ref?: string };
+  ai_review?: { verdict: string };
 }
-export interface Facts extends DraftFacts {
-  gate?: { result: string; reasons_ref?: string };
-}
+export type Facts = DraftFacts;
 
 export class PreconditionError extends Error {}
 
@@ -36,7 +34,7 @@ export function loadFactsFile(path: string): unknown {
 }
 
 /**
- * 未传 schema 时检查可暂存 draft 的基础形状；传入 canonical Schema
+ * 未传 schema 时检查本次 Facts 的基础形状；传入 canonical Schema
  * 时检查对应专业 Review 必备字段，不允许 Intentional 漏审后 complete。
  * 必填 change_kind 是可跨 Run 查询和统计的专业分类，不是固定流程选择器。
  */
@@ -54,12 +52,26 @@ export function validateDraftFields(f: Partial<DraftFacts>, schema?: ChangeSchem
       f.verify_agent.focus_refs.some((x) => typeof x !== "string" || !x.trim())) {
     missing.push("verify_agent.focus_refs（非空字符串引用数组）");
   }
-  if (schema === "intentional-change" || f.ai_review !== undefined) {
-    const verdict = f.ai_review?.verdict;
-    if (verdict !== "APPROVED" && verdict !== "NEEDS_REVISION") missing.push("ai_review.verdict");
-    if (schema === "intentional-change" && verdict === "NEEDS_REVISION") missing.push("ai_review.verdict=NEEDS_REVISION（尚未通过专业审查）");
+  if (f.ai_review !== undefined && !["APPROVED", "NEEDS_REVISION"].includes(f.ai_review?.verdict ?? "")) missing.push("ai_review.verdict");
+  if (schema) {
+    const reason = reviewVerdictViolation(schema, f.ai_review?.verdict);
+    if (reason) missing.push(reason);
   }
   return missing;
+}
+
+/** Intentional 必须通过专业审查；Corrective 不强制 Review。 */
+export function reviewVerdictViolation(schema: ChangeSchema, verdict: unknown): string | null {
+  if (schema !== "intentional-change" || verdict === "APPROVED") return null;
+  return verdict === "NEEDS_REVISION" ? "ai_review.verdict=NEEDS_REVISION（尚未通过专业审查）" : "ai_review.verdict 缺失或非法";
+}
+
+/** Both CLI entrypoints validate input before projecting professional fields. */
+export function loadValidatedFacts(path: string): Facts {
+  const raw = loadFactsFile(path) as Partial<Facts> | null;
+  const missing = raw && typeof raw === "object" && !Array.isArray(raw) ? validateDraftFields(raw) : ["facts 必须为对象"];
+  if (missing.length) throw new PreconditionError("facts 字段缺失或非法: " + missing.join("; "));
+  return raw as Facts;
 }
 
 /** 写入 Multica Issue Metadata，供跨 Run 交接及完成任务的统计分析。 */
@@ -75,4 +87,11 @@ export function draftMetadataEntries(f: DraftFacts): Record<string, string> {
     entries["analysis.ai_review.verdict"] = f.ai_review.verdict;
   }
   return entries;
+}
+
+/** This submission replaces previous professional fields; source facts stay unchanged. */
+export function submissionMetadata(meta: Record<string, unknown>, facts: DraftFacts): Record<string, unknown> {
+  const next: Record<string, unknown> = { ...meta, ...draftMetadataEntries(facts) };
+  if (facts.ai_review === undefined) delete next["analysis.ai_review.verdict"];
+  return next;
 }

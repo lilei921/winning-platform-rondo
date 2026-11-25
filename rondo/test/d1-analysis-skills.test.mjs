@@ -163,16 +163,20 @@ test("D2 skill contracts: archive legacy and bind composable Analyst methods", (
   // 归档旧文件无需文字标记；是否参与执行由上面的受管清单和实际 Agent 绑定决定。
   assert.deepEqual(
     manifest.agents.find((agent) => agent.name === "Wayfinder Agent").skills,
-    ["workitem-triage", "codebase-explorer"],
+    ["codebase-explorer"],
   );
   const spec = FRONT("spec-preparation");
   for (const expected of [
-    "config/repo-registry.json", "runtime.workspace_id", "root_repo",
+    "root_repo",
     "--tfs-id <tfs.id>", "--change-ref <stable-id>", "同时传入",
     "cwd", "openspec schema which", "implicit",
     "--type change --strict --no-interactive --json", "Conditional Design", "skip_specs", "specs/**/*.md",
   ]) assert.ok(spec.includes(expected), "spec-preparation missing: " + expected);
   assert.ok(!spec.includes("新建并绑定 Agent"));
+  assert.ok(!spec.includes("config/repo-registry.json"), "spec preparation commands do not consume registry config");
+  assert.equal(manifest.managed_skills.includes("workitem-triage"), false);
+  assert.ok(manifest.agents.every(agent => !(agent.skills ?? []).includes("workitem-triage")));
+  assert.equal(existsSync(join(SKILLS, "workitem-triage", "SKILL.md")), false);
   // Current Schema / Artifact Instructions own authoring rules, not an archived Skill reference.
   assert.ok(!existsSync(join(SKILLS, "spec-preparation", "references", "tasks-md-authoring-contract.md")));
   assert.ok(existsSync(join(ARCHIVED_SKILLS, "workitem-analysis", "references", "tasks-md-authoring-contract.md")));

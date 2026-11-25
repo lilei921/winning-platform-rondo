@@ -97,7 +97,7 @@ export async function readAnalysisArtifact(source: AnalysisSource, file: string)
 }
 
 /** 只识别原生 checkbox 编号，不解释任务语义；重复编号不是可派发契约。 */
-export function locateTaskRefs(text: string, refs: string[]): string[] {
+export function taskReferences(text: string): string[] {
   const counts = new Map<string, number>();
   for (const match of text.matchAll(/^\s*- \[[ xX]\]\s+(\S+)/gm)) {
     const ref = match[1].replace(/\.$/, "");
@@ -105,5 +105,10 @@ export function locateTaskRefs(text: string, refs: string[]): string[] {
   }
   const duplicate = [...counts].filter(([, count]) => count > 1).map(([ref]) => ref);
   if (duplicate.length) throw new FailError(`tasks.md 原生任务编号重复: ${duplicate.join(", ")}`);
-  return refs.filter(ref => !counts.has(ref));
+  return [...counts.keys()];
+}
+
+export function locateTaskRefs(text: string, refs: string[]): string[] {
+  const available = new Set(taskReferences(text));
+  return refs.filter(ref => !available.has(ref));
 }

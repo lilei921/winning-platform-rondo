@@ -16,12 +16,12 @@ function runCli(args, env = {}) {
 /** 当前完整命令树；包含 analysis read 和顶层叶子 query/doctor。 */
 const TREE = {
   change: ["resolve-identity", "update-progress"],
-  analysis: ["stage", "validate", "complete", "read"],
+  analysis: ["validate", "complete", "read", "approve"],
   dev: ["check-dispatch", "materialize", "git", "prepare", "check-completion", "check-change", "publish", "contract-hash"],
   bug: ["resume"],
   tfs: ["writeback", "materialize-tasks", "resolve-tasks", "reconcile-workitem"],
   pr: ["prepare", "materialize", "worktree", "reconcile-status", "create", "get", "list"],
-  delivery: ["route-decision", "finalize", "root-prepare", "handoff"],
+  delivery: ["route-decision", "finalize", "root-prepare", "admission"],
   workspace: ["provision", "sync", "migrate-repo-keys", "check-daemon"],
   runtime: ["resolve-root-repo","prepare-root","get-context","check-checkout"],
   repo: ["get"],
@@ -99,4 +99,9 @@ test("PR Preparation 命名统一，Closeout 拒绝旧配置参数", () => {
   for (const args of [["dev", "pr-prepare"], ["bug", "pr-prepare"], ["bug", "git"], ["dev", "pr-prep"], ["bug", "prepare-pr"], ["pr","materialize","--issue","X","--config","unused"], ["delivery", "finalize", "--phase", "prepare", "--issue", "X", "--config", "unused"], ["tfs", "writeback", "--issue", "X", "--config", "unused"]]) {
     assert.notEqual(runCli(args).status, 0, args.join(" "));
   }
+});
+
+test("retired stage and handoff are not public commands", () => {
+  for (const args of [["analysis", "stage"], ["delivery", "handoff"]]) assert.notEqual(runCli(args).status, 0);
+  for (const args of [["analysis", "validate"], ["analysis", "complete"], ["delivery", "admission"]]) assert.equal(runCli([...args, "--help"]).status, 0);
 });

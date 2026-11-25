@@ -5,7 +5,7 @@ import { readGitTree, readGitBlob } from "../../clients/git-tree.js";
 import { RemoteArtifactReader } from "../delivery/remote-artifacts.js";
 import type { Facts } from "./facts.js";
 import { parseChangeSchema } from "./change-schema.js";
-import { changeEvidenceDigest, digestGateFiles } from "./gate-evidence.js";
+import { changeEvidenceDigest, digestGateFiles, selectGateFiles } from "./gate-evidence.js";
 import type { AnalysisSource } from "./source.js";
 
 /** Read a pinned remote Engineering Contract. No Gate file is stored in Git. */
@@ -14,12 +14,13 @@ export async function readPublishedContract(source: AnalysisSource, metadata: Re
   const prefix = "/openspec/changes/" + source.change_ref;
   const items = await reader.list(source.commit, prefix);
   const contents = new Map<string, Buffer>();
-  const selected = new Set<string>();
-  for (const item of items) {
-    if (item.isFolder || !item.path.startsWith(prefix + "/")) continue;
-    const name = item.path.slice(prefix.length + 1);
-    contents.set(name, Buffer.from(await reader.read(source.commit, item.path), "utf8"));
-    if (name === "design.md" || (name.startsWith("specs/") && name.endsWith(".md"))) selected.add(name);
+  const files = new Map(items.filter(item => !item.isFolder && item.path.startsWith(prefix + "/"))
+    .map(item => [item.path.slice(prefix.length + 1), item] as const));
+  const selected = new Set([...files.keys()].filter(name => name === "design.md" || (name.startsWith("specs/") && name.endsWith(".md"))));
+  for (const name of selectGateFiles(source.change_ref, selected, metadata)) {
+    const item = files.get(name);
+    if (!item) throw new FailError("固定 Git 版本缺少 Gate 所需工件: " + name);
+    contents.set(name, Buffer.from(await reader.read(source.commit, item.path, item.objectId), "utf8"));
   }
   const read = (name: string): Buffer => {
     const data = contents.get(name);
@@ -28,7 +29,7 @@ export async function readPublishedContract(source: AnalysisSource, metadata: Re
   };
   const schema = parseChangeSchema(read(".openspec.yaml").toString("utf8"));
   const digest = digestGateFiles(source.change_ref, selected, metadata, read, true);
-  return { schema, digest };
+  return { schema, digest, tasksObjectId: files.get("tasks.md")?.objectId };
 }
 
 /** Check that local bytes inspected by the final Gate match the immutable Git candidate. */

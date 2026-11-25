@@ -31,12 +31,12 @@ rondo doctor --help
 | 命令组 | 子命令 | 主要用途 |
 | --- | --- | --- |
 | `change` | `resolve-identity`、`update-progress` | Change 身份解析、任务进度 |
-| `analysis` | `stage`、`validate`、`complete`、`read`、`approve` | 分析事实、Gate、审核提交、工件读取和批准登记 |
+| `analysis` | `validate`、`complete`、`read`、`approve` | 分析事实、Gate、审核提交、工件读取和批准登记 |
 | `dev` | `materialize`、`prepare`、`check-dispatch`、`check-completion`、`check-change`、`publish`、`pr-prepare`、`contract-hash` | 旧派发与新 Change 研发准备、发布、验证 |
 | `bug` | `pr-prepare`、`git`、`resume` | 独立 TFS Bug 修复交付 |
 | `tfs` | `writeback`、`materialize-tasks`、`resolve-tasks`、`reconcile-workitem` | TFS 工作项同步与交付回写 |
 | `pr` | `materialize`、`worktree`、`reconcile-status`、`create`、`get`、`list` | PR 创建、查询、状态对账及 Worktree |
-| `delivery` | `handoff`、`route-decision`、`finalize` | 准入交接、人工决策路由与交付收口 |
+| `delivery` | `admission`、`route-decision`、`finalize` | 准入交接、人工决策路由与交付收口 |
 | `workspace` | `provision`、`sync`、`migrate-repo-keys`、`check-daemon` | Workspace 资源供给、同步及检查 |
 | `runtime` | `get-context`、`resolve-root-repo`、`check-checkout`、`prepare-root` | 当前 Run 上下文查询、根仓库就绪检查及准备 |
 | `repo` | `get` | 查询 TFS Git 仓库 |
@@ -61,8 +61,7 @@ rondo change update-progress --openspec-root <path> --change-ref <ref> --check <
 ### 3.2 `rondo analysis`
 
 ```bash
-rondo analysis stage --issue <id> --facts <facts.json> --workspace-id <id> [--registry-config <repo-registry.json>] [--multica <cli>] [--profile <name>]
-rondo analysis validate --issue <id> --openspec-root <path> --workspace-id <id> [--out <path>] [--registry-config <repo-registry.json>] [--multica <cli>] [--profile <name>]
+rondo analysis validate --issue <id> --facts <facts.json> --openspec-root <path> --workspace-id <id> [--registry-config <repo-registry.json>] [--multica <cli>] [--profile <name>]
 rondo analysis complete [--mode requirement] --issue <id> --facts <facts.json> --registry-config <repo-registry.json> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>] [--profile <name>]
 rondo analysis read --issue <KEY> --file <Change内相对路径>
 rondo analysis approve --issue <KEY> --comment-id <ID> --commit <SHA> --verify-required true|false
@@ -70,7 +69,6 @@ rondo analysis approve --issue <KEY> --comment-id <ID> --commit <SHA> --verify-r
 
 | 命令 | 功能 |
 | --- | --- |
-| `analysis stage` | 将分析结果暂存到 Issue Metadata，不直接推进审核状态 |
 | `analysis validate` | 核对 Analysis Facts，在指定根仓对当前 Change 运行 OpenSpec 严格校验，并核实返回的根仓和 Change 身份 |
 | `analysis complete` | Requirement 使用 `--mode requirement` 核验 Gate，向已确认的项目根仓分支发布当前 Change 已提交的审核工件（Native 首次发布取当前根仓 Project Resource ref；已有同 Change 来源使用固定分支，`--target-branch` 不得覆盖），并登记可回读的 `analysis.source` |
 | `analysis read` | 按 Issue 中的 `analysis.source` 读取指定版本的 `tasks.md`、`proposal.md`、`design.md` 或 Spec，属于只读操作 |
@@ -126,7 +124,7 @@ rondo bug resume --issue <KEY> --human-comment-id <id> --next REWORK|RECREATE_PR
 ### 5.1 `rondo delivery`
 
 ```bash
-rondo delivery handoff --issue <KEY>
+rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsupported>
 rondo delivery route-decision --config <repo-registry.json> --issue <KEY> --comment-id <uuid> --next ANALYSIS|ENGINEERING|RECREATE_PR|CANCEL_DELIVERY [--reason REJECTED|DISCARDED] [--affected-task-refs <1.1,1.2>]
 rondo delivery finalize --phase prepare|complete --issue <KEY> [--root-repo <path>]
 rondo delivery root-prepare --issue <KEY>
@@ -134,23 +132,23 @@ rondo delivery root-prepare --issue <KEY>
 
 | 命令 | 功能 |
 | --- | --- |
-| `delivery handoff` | Wayfinder 准入通过后依据 Issue 的 `tfs.type` 将 Issue 交给目标 Agent / Squad，并回读原生 Run |
+| `delivery admission` | 执行 Wayfinder 已记录的 Decision：通过时按 `tfs.type` 交接并回读原生 Run，其他结果保留 Wayfinder 并设置对应状态 |
 | `delivery route-decision` | 根据已确定的 Human Decision 执行交付返工、重建 PR 等确定性动作 |
 | `delivery finalize` | `prepare` 核验交付并准备收口；`complete` 在外部回写完成后核验并结束交付 |
 | `delivery root-prepare` | 在 Task `workdir/<repo-name>` 复用 Multica Checkout，建立 Task 独立本地归档分支，返回 `root_repo` |
 
 `delivery root-prepare` 使用当前 Run 的 Multica Runtime（`MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`），仅用于 Requirement OpenSpec Change，必须在 Multica Task workdir 内运行。优先复用现有 Checkout，必要时直接调用 `multica repo checkout`，校验平台 isolated/Task/Workspace 身份、Origin/Push URL 与 `analysis.source.commit` 的可达性；本地归档分支按 Task 和来源分支隔离。Fetch、普通 Push（`HEAD:refs/heads/<analysis.source.branch>`）及 Readback 均指向 `analysis.source.branch`。不使用 Owner Marker、Cleanup Token 或 `root-cleanup`；平台 Worktree 由 Multica 管理。`root-clone` 暂保留为 Native Checkout 兼容别名。
 
-`delivery handoff` 的映射规则：
+`delivery admission` 的映射规则：
 
 | `tfs.type` | 交接目标 |
 | --- | --- |
 | `Bug` | `Bug Fix Agent` |
 | `Requirement`、`需求` | `Delivery Squad` |
 
-`handoff` 执行一次 `status=todo + assignee` 更新，通过 Multica 原生机制启动对应 Run。它不重新判断 Wayfinder 的 `eligible` 结论，也不解析 `/note` 或 Evidence。若无法确认结果则返回 `UNKNOWN`，不盲目重复交接。
+`accepted` 执行一次 `status=todo + assignee` 更新，通过 Multica 原生机制启动对应 Run。它不重新判断 Wayfinder 的 `accepted` 结论，也不解析 `/note` 或 Evidence。若无法确认结果则返回 `UNKNOWN`，不盲目重复交接。
 
-`delivery handoff` 只接受 `--issue`。Workspace 与服务端从 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL` 读取；CLI 路径可选 `MULTICA_CLI_PATH`（默认 `multica`），并校验 `MULTICA_AGENT_ID` 必须是当前 Workspace 的 Wayfinder Agent。缺失或身份不符返回 `UNKNOWN`，不使用默认 Workspace。交接目标始终从当前 Workspace 查询。完整说明见 `rondo delivery handoff --help`。
+`delivery admission` 接受 `--issue` 和 `--decision`。`needs_human` / `unsupported` 保留 Wayfinder Assignee，分别设置 `blocked` / `unsupported`，不启动新 Run。Workspace 与服务端从 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL` 读取；CLI 路径可选 `MULTICA_CLI_PATH`（默认 `multica`），并校验 `MULTICA_AGENT_ID` 必须是当前 Workspace 的 Wayfinder Agent。缺失或身份不符返回 `UNKNOWN`，不使用默认 Workspace。交接目标始终从当前 Workspace 查询。完整说明见 `rondo delivery admission --help`。
 
 ### 5.2 `rondo pr`
 
@@ -259,6 +257,8 @@ rondo workspace check-daemon --workspace-id <id> [--project-id <id>]
 | `workspace check-daemon` | 检查 Daemon 环境变量、Runtime 注册、挂载唯一性和交付亲和条件 |
 
 `workspace provision` 的 `--dry-run` 只预览；`workspace sync --local-only` 只生成本地配置，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。只有绑定 `workspace-preparation` 的 Workitem Analyst / Engineer 才接收 `project.workspace_branch` 对应的 `RONDO_WORKSPACE_BRANCH`；不修改其他 Agent 的既有环境变量。
+
+受管 Skill 或 Agent 绑定发生变化时，先执行 `rondo workspace provision --workspace <name>` 更新绑定和 Overlay，再执行 `rondo workspace sync --workspace <name>` 同步内容。此次 `workitem-triage` 退役后，核对 Wayfinder 仅绑定 `codebase-explorer`、Overlay 不再登记旧 Skill；不自动删除其他未受管平台 Skill。
 
 研发 Agent（Engineer / Bug Fix Agent）绑定 `native-workspace`。执行 provision 前核实 CLI、实际 TFS 根仓映射及批准版本；供给并同步 Skill 后验证实际交付。其他仍支持旧准备方式的 Agent 可按实际情况使用既有 Overlay。
 
