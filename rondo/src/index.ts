@@ -56,6 +56,7 @@ import { registerWorkspaceMigrateRepoKeys } from "./commands/workspace/migrate-r
 import { registerWorkspaceCheckDaemon } from "./commands/workspace/check-daemon.js";
 import { registerRuntimeResolveRootRepo } from "./commands/runtime/resolve-root-repo.js";
 import { registerDoctor } from "./commands/doctor/doctor.js";
+import { registerOpenspecInstall } from "./commands/openspec/install.js";
 
 const program = new Command();
 
@@ -136,6 +137,10 @@ registerRuntimeResolveRootRepo(runtime);
 registerRuntimeCheckCheckout(runtime);
 registerRuntimePrepareRoot(runtime);
 registerRuntimeGetContext(runtime);
+
+// openspec 组：Schema 安装（随包分发，用户级全局目录）
+const openspec = bareGroup(program.command("openspec").description("OpenSpec Schema 安装"));
+registerOpenspecInstall(openspec);
 
 // TFS API 叶子(原 tfs-cli):query 顶级;repo/branch/workitem 各自成组
 registerTfsApiLeaf(program, "query", ["query"], "WIQL 查询(--wiql 必填)");

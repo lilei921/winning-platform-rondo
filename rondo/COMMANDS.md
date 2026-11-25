@@ -39,6 +39,7 @@ rondo doctor --help
 | `delivery` | `admission`、`route-decision`、`finalize` | 准入交接、人工决策路由与交付收口 |
 | `workspace` | `provision`、`sync`、`migrate-repo-keys`、`check-daemon` | Workspace 资源供给、同步及检查 |
 | `runtime` | `get-context`、`resolve-root-repo`、`check-checkout`、`prepare-root` | 当前 Run 上下文查询、根仓库就绪检查及准备 |
+| `openspec` | `install` | 安装随包分发的 OpenSpec Schema 到用户全局目录 |
 | `repo` | `get` | 查询 TFS Git 仓库 |
 | `branch` | `get` | 查询 TFS Git 分支 |
 | `workitem` | `set-state`、`comment`、`create`、`link-commits`、`download-attachment` | TFS Work Item 操作 |
@@ -274,6 +275,14 @@ rondo runtime prepare-root [--root-repo <path>] [--branch <branch>]
 `runtime get-context` 只读获取当前 Multica Agent Run 的 Runtime 信息（`multica_cli`、`multica_server_url`、`workspace_id`、`rondo`、`delivery_squad_id`）。Workspace 和 Server 来自当前 Run 环境变量；按名称 `Delivery Squad` 在当前 Workspace 查找唯一有效 Squad。缺少环境或无法确认目标时返回 `UNKNOWN`（exit 3）；不依赖 `repo-registry.json`，不支持从外部终端猜测默认 Workspace。
 
 `runtime resolve-root-repo` 根据 Issue、Project 或指定路径解析根仓库位置，返回根仓及相关上下文路径信息。`check-checkout` 只读校验已有根仓。`prepare-root` 优先使用 `--root-repo`，省略时读取 `RONDO_WORKSPACE_PATH`。分支取必需的 `RONDO_WORKSPACE_BRANCH`，优先于 `--branch`。命令在原目录检查分支占用、按 Change 分别本地保存切换前的改动，并在安全时快进。历史分叉时保留本地提交和工作区。
+
+### 7.3 `rondo openspec`
+
+```bash
+rondo openspec install
+```
+
+把随 rondo 包分发的 `openspec/schemas` 安装到 OpenSpec 用户全局目录（`XDG_DATA_HOME` / `%LOCALAPPDATA%` / `~/.local/share` 下的 `openspec/schemas`）。同名 Schema 直接覆盖，其他 Schema 不受影响；不访问网络、不做 OpenSpec CLI 校验。SEA 单文件运行不支持该命令。
 
 ## 8. 环境检查：`rondo doctor`
 
