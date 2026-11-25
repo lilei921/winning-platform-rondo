@@ -455,7 +455,10 @@ test("远端契约读取仅消费必要工件及明确引用", t => {
   mkdirSync(join(f.change, "logs"));
   writeFileSync(join(f.change, "logs", "debug.txt"), "unreferenced");
   git(f.root, "add", "openspec/changes/" + CHANGE);
-  git(f.root, "commit", "-m", "add unreferenced log");
+  git(f.root, "commit", "-m", "seed remote contract with historical unreferenced log");
+  // This log already exists remotely; normal publication must not introduce unauthorized files.
+  git(f.root, "push", "origin", "dev");
+  assert.equal(git(f.remote, "show", "dev:openspec/changes/" + CHANGE + "/logs/debug.txt"), "unreferenced");
   const result = f.complete();
   assert.equal(result.exit, 0, JSON.stringify(result));
   const paths = f.tfs.state().requests.map(r => r.query.path).filter(Boolean);
