@@ -1,6 +1,6 @@
 /**
  * Analysis Gate 证据：绑定执行身份、当前 Change 工件和已审核的 Issue Facts。
- * 只计算当前 Engineering Contract 与显式引用的可信内容。
+ * 只计算当前 Engineering Contract；专业审核建议不属于确定性 Gate 输入。
  * Gate 是内存执行结果，不在 Change 内存储 Gate 或 Handoff 文件。
  */
 import { createHash } from "node:crypto";
@@ -10,7 +10,7 @@ import { UnknownError } from "../../cli/errors.js";
 
 export const ANALYSIS_GATE_CHECKS = [
   "identity", "change", "acceptance_contract", "tasks",
-  "ai_review", "openspec_validate",
+  "openspec_validate",
 ] as const;
 
 /** JSON 对象键排序；保留数组顺序及所有业务字段，忽略无语义的缩进变化。 */
@@ -28,16 +28,12 @@ function canonicalJson(value: unknown): string {
 
 /** 只绑定 Gate 消费的来源和分析字段；后续 gate/human_approval 等流程写入不使结果失效。 */
 export function metadataEvidenceDigest(meta: Record<string, unknown>): string {
-  const keys = ["tfs.id", "tfs.type", "analysis.change_ref", "analysis.change_kind",
-    "analysis.verify_agent.recommendation", "analysis.verify_agent.reason", "analysis.verify_agent.focus_refs",
-    "analysis.ai_review.verdict"];
+  const keys = ["tfs.id", "tfs.type", "analysis.change_ref", "analysis.change_kind"];
   return createHash("sha256").update(canonicalJson(Object.fromEntries(keys.map(key => [key, meta[key] ?? null])))).digest("hex");
 }
 
 /**
- * Hash the engineering contract and explicitly referenced in-Change evidence.
- * Non-referenced runtime/debug logs do not invalidate a professional Gate.
- * External evidence locators remain bound by metadata_digest, not by file bytes.
+ * Hash the engineering contract only; runtime/debug logs and professional advice are not Gate input.
  */
 export function changeEvidenceDigest(changeDir: string, meta?: Record<string, unknown>, inspect?: (name: string, bytes: Buffer) => void, normalizeEol = false): string {
   try {
@@ -88,39 +84,8 @@ export function changeEvidenceDigest(changeDir: string, meta?: Record<string, un
 }
 
 /** Select the same contract files for worktree, Git tree and remote reads. */
-export function selectGateFiles(changeId: string, selected: Set<string>, meta: Record<string, unknown> | undefined): Set<string> {
+export function selectGateFiles(_changeId: string, selected: Set<string>, _meta: Record<string, unknown> | undefined): Set<string> {
   for (const name of [".openspec.yaml", "proposal.md", "tasks.md"]) selected.add(name);
-  function includeReference(input: unknown): void {
-    if (typeof input !== "string") return;
-    const value = input.trim().split("#", 1)[0].replaceAll("\\", "/");
-    if (!value || /^(?:[a-z][a-z0-9+.-]*:|\/)/i.test(value)) return;
-    const prefix = "openspec/changes/" + changeId + "/";
-    let rel: string;
-    if (value.startsWith(prefix)) rel = value.slice(prefix.length);
-    else if (value.startsWith("openspec/changes/")) throw new UnknownError("Evidence 引用其他 Change: " + value);
-    else if (value.startsWith("./")) rel = value.slice(2);
-    else if (/^(?:\.openspec\.yaml|proposal\.md|design\.md|tasks\.md|specs\/|logs\/|review\/|evidence\/|references\/)/.test(value)) rel = value;
-    else return; // External repository/Issue reference: bind the locator in metadata_digest.
-    if (!rel || rel.split("/").some(segment => !segment || segment === "." || segment === "..")) {
-      throw new UnknownError("Evidence 路径不安全: " + value);
-    }
-    if (rel === "logs/analysis-gate-result.json" || rel.startsWith("logs/analysis-gate-result.json.tmp-")) {
-      throw new UnknownError("Evidence 不得自引用 Gate Result");
-    }
-    selected.add(rel);
-  }
-
-  if (meta) {
-    const rawFocus = meta["analysis.verify_agent.focus_refs"];
-    if (typeof rawFocus === "string") {
-      let focus: unknown;
-      try { focus = JSON.parse(rawFocus); }
-      catch { throw new UnknownError("无法解析 Verify Evidence 引用数组"); }
-      if (!Array.isArray(focus)) throw new UnknownError("Verify Evidence 必须是引用数组");
-      focus.forEach(includeReference);
-    }
-  }
-
   return selected;
 }
 

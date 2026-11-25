@@ -63,20 +63,20 @@ rondo change update-progress --openspec-root <path> --change-ref <ref> --check <
 ### 3.2 `rondo analysis`
 
 ```bash
-rondo analysis validate --issue <id> --facts <facts.json> --openspec-root <path> --workspace-id <id> [--registry-config <repo-registry.json>] [--multica <cli>] [--profile <name>]
-rondo analysis publish [--mode requirement] --issue <id> --facts <facts.json> --registry-config <repo-registry.json> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>] [--profile <name>]
+rondo analysis validate --issue <id> --change-ref <id> --openspec-root <path> --workspace-id <id> [--registry-config <repo-registry.json>] [--multica <cli>] [--profile <name>]
+rondo analysis publish [--mode requirement] --issue <id> --change-ref <id> --registry-config <repo-registry.json> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>] [--profile <name>]
 rondo analysis read --issue <KEY> --file <Change内相对路径>
 rondo analysis approve --issue <KEY> --comment-id <ID> --commit <SHA> --verify-required true|false
 ```
 
 | 命令 | 功能 |
 | --- | --- |
-| `analysis validate` | 核对 Analysis Facts，在指定根仓对当前 Change 运行 OpenSpec 严格校验，并核实返回的根仓和 Change 身份 |
+| `analysis validate` | 核对当前 Issue 与 Change 身份，在指定根仓对当前 Change 运行 OpenSpec 严格校验，并核实返回的根仓和 Change 身份 |
 | `analysis publish` | Requirement 使用 `--mode requirement` 核验 Gate，向已确认的项目根仓分支发布当前 Change 已提交的审核工件（Native 首次发布取当前根仓 Project Resource ref；已有同 Change 来源使用固定分支，`--target-branch` 不得覆盖），并登记可回读的 `analysis.source` |
 | `analysis read` | 按 Issue 中的 `analysis.source` 读取指定版本的 `tasks.md`、`proposal.md`、`design.md` 或 Spec，属于只读操作 |
 | `analysis approve` | 登记已确认的 Human Approval 与独立验收决定，核对 Gate、当前审核版本及真实成员评论，回读事实后按需以 `--no-start` 进入 `in_progress`。使用当前 Multica Runtime，无 Registry、Agent 或 Run 身份参数，不发 Mention、不启动 Run；同一批准可幂等重试。 |
 
-`validate`、`publish` 面向当前分析事实；涉及 `--workspace-id` 的命令需保证其与配置中的 Workspace 身份一致。
+`validate`、`publish` 直接指定 Change ID；Change Kind 由 Schema 推导，专业审查与独立验证建议不作为 CLI 输入；涉及 `--workspace-id` 的命令需保证其与配置中的 Workspace 身份一致。
 
 Requirement 的 `analysis publish` 和 `dev publish` 使用 Git 2.45 或更高版本，依赖 `git merge-tree` 对三个目录树的三方合并支持。
 

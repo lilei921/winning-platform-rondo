@@ -11,12 +11,10 @@ import {
   sourceSchemaViolation,
 } from "../dist/commands/analysis/change-schema.js";
 import {
-  draftMetadataEntries,
-  validateDraftFields,
+  analysisMetadataEntries,
 } from "../dist/commands/analysis/facts.js";
 import {
   checkAcceptanceContract,
-  checkAiReview,
   checkChange,
   checkIdentity,
 } from "../dist/commands/analysis/validate.js";
@@ -29,28 +27,14 @@ function fixture(schema = "corrective-change") {
   return { root, dir, dispose: () => rmSync(root, { recursive: true, force: true }) };
 }
 
-function draft(extra = {}) {
-  return {
-    change_kind: "corrective",
-    change_ref: "fixture-123",
-    verify_agent: {
-      recommendation: "not_required",
-      reason: "范围可由开发侧验证",
-      focus_refs: ["proposal.md#expected-behavior"],
-    },
-    ...extra,
-  };
-}
-
 test("Issue change_kind 持久化且与 Change Schema 校验一致，不再输出独立 Route", () => {
   const f = fixture();
   try {
     assert.equal(readChangeSchema(f.dir), "corrective-change");
-    const entries = draftMetadataEntries(draft());
+    const entries = analysisMetadataEntries("fixture-123", readChangeSchema(f.dir));
     assert.equal(entries["analysis.change_kind"], "corrective");
     assert.equal(Object.hasOwn(entries, "analysis.route"), false);
     assert.equal(entries["analysis.change_ref"], "fixture-123");
-    assert.deepEqual(validateDraftFields(draft()), []);
     const checked = checkChange(f.root, { "analysis.change_ref": "fixture-123" });
     assert.equal(checked.check.result, "PASS");
     assert.equal(checked.schema, "corrective-change");
@@ -66,25 +50,7 @@ test("来源管理类型不自动推断 Schema，但拒绝 Bug + Intentional 自
   assert.match(sourceSchemaViolation("bug", "intentional-change"), /超出/);
   assert.equal(checkIdentity({ "tfs.id": "123", "tfs.type": "Requirement", "analysis.change_kind": "corrective" }, "corrective-change").result, "PASS");
   assert.equal(checkIdentity({ "tfs.id": "123", "tfs.type": "Bug", "analysis.change_kind": "intentional" }, "intentional-change").result, "FAIL");
-  assert.equal(checkIdentity({ "tfs.id": "123", "tfs.type": "Requirement", "analysis.change_kind": "corrective" }, "intentional-change").result, "FAIL");
-  assert.ok(validateDraftFields(draft({ change_kind: "corrective" }), "intentional-change").some(x => x.includes("Schema")));
-});
-
-test("Intentional 的 AI Review 为硬约束，Corrective 无强制 AI Review", () => {
-  const meta = {};
-  assert.equal(checkAiReview("corrective-change", meta).result, "PASS");
-  assert.equal(checkAiReview("intentional-change", meta).result, "FAIL");
-  assert.ok(validateDraftFields(draft(), "intentional-change").some((x) => x.includes("ai_review.verdict")));
-  const approved = { verdict: "APPROVED", findings_ref: "review/findings.md" };
-  assert.deepEqual(validateDraftFields(draft({ change_kind: "intentional", ai_review: approved }), "intentional-change"), []);
-  assert.equal(checkAiReview("intentional-change", {
-    "analysis.ai_review.verdict": "APPROVED",
-    "analysis.ai_review.findings_ref": approved.findings_ref,
-  }).result, "PASS");
-  assert.ok(validateDraftFields(draft({ change_kind: "intentional", ai_review: { verdict: "NEEDS_REVISION", findings_ref: "review/findings.md" } }), "intentional-change").length);
-  assert.equal(checkAiReview("intentional-change", {
-    "analysis.ai_review.verdict": "NEEDS_REVISION", "analysis.ai_review.findings_ref": "review/findings.md",
-  }).result, "FAIL");
+  assert.equal(checkIdentity({ "tfs.id": "123", "tfs.type": "Requirement", "analysis.change_kind": "corrective" }, "intentional-change").result, "PASS");
 });
 
 test("Acceptance Contract 根据 Schema 选择而非 Issue 分类字段", () => {
@@ -148,7 +114,7 @@ test("Schema 必须来自顶层字段，嵌套、重复和非法声明不得被�
   }
 });
 
-test("工件摘要仅保护实际工程内容与明确引用的 Review Evidence", () => {
+test("工件摘要保护实际工程内容，不受历史专业建议引用影响", () => {
   const f = fixture();
   try {
     writeFileSync(join(f.dir, "proposal.md"), "Expected Behavior\nRoot Cause\nFix Strategy\nRegression Scope\n");
@@ -162,9 +128,9 @@ test("工件摘要仅保护实际工程内容与明确引用的 Review Evidence"
     assert.equal(changeEvidenceDigest(f.dir, meta), before);
     const reviewed = { "analysis.verify_agent.focus_refs": JSON.stringify(["proposal.md", "logs/review-findings.md"]) };
     const after = changeEvidenceDigest(f.dir, reviewed);
-    assert.notEqual(after, before);
+    assert.equal(after, before);
     writeFileSync(join(logs, "review-findings.md"), "# reviewed and amended");
-    assert.notEqual(changeEvidenceDigest(f.dir, reviewed), after);
+    assert.equal(changeEvidenceDigest(f.dir, reviewed), after);
   } finally {
     f.dispose();
   }
@@ -176,7 +142,6 @@ test("未知 Schema 与不安全 Change ID 均安全停止", () => {
     assert.throws(() => readChangeSchema(f.dir), /不属于已支持/);
     assert.equal(checkChange(f.root, { "analysis.change_ref": "fixture-123" }).check.result, "FAIL");
     assert.throws(() => assertStableChangeRef("../fixture-123"), /非法/);
-    assert.ok(validateDraftFields(draft({ change_ref: "../fixture-123" })).length);
     assert.equal(checkChange(f.root, { "analysis.change_ref": "../fixture-123" }).check.result, "FAIL");
   } finally {
     f.dispose();
