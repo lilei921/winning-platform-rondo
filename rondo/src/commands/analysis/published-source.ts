@@ -3,7 +3,6 @@ import { join } from "node:path";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { readGitTree, readGitBlob } from "../../clients/git-tree.js";
 import { RemoteArtifactReader } from "../delivery/remote-artifacts.js";
-import type { Facts } from "./facts.js";
 import { parseChangeSchema } from "./change-schema.js";
 import { changeEvidenceDigest, digestGateFiles, selectGateFiles } from "./gate-evidence.js";
 import type { AnalysisSource } from "./source.js";
@@ -49,9 +48,9 @@ export function assertCommittedContractFiles(
 
 /** Compare a Git candidate's actual tree to the same in-memory Gate contract. */
 export function committedContract(
-  root: string, commit: string, facts: Facts, meta: Record<string, unknown>,
+  root: string, commit: string, changeRef: string, meta: Record<string, unknown>,
 ) {
-  const tree = readGitTree(root, commit, "openspec/changes/" + facts.change_ref);
+  const tree = readGitTree(root, commit, "openspec/changes/" + changeRef);
   const read = (path: string): Buffer => {
     const entry = tree.get(path);
     if (!entry || !/^100(?:644|755)$/.test(entry.mode)) throw new FailError("Git 版本缺少普通 Gate 工件: " + path);
@@ -65,6 +64,6 @@ export function committedContract(
     }
     if (name === "design.md" || (name.startsWith("specs/") && name.endsWith(".md"))) selected.add(name);
   }
-  const digest = digestGateFiles(facts.change_ref, selected, meta, read, true);
+  const digest = digestGateFiles(changeRef, selected, meta, read, true);
   return { schema, digest };
 }

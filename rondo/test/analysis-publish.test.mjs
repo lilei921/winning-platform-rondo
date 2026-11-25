@@ -12,10 +12,6 @@ import { changeEvidenceDigest, metadataEvidenceDigest } from "../dist/commands/a
 const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
 const MOCK = fileURLToPath(new URL("./mock-multica.cjs", import.meta.url));
 const CHANGE = "c-test";
-const FACTS = {
-  change_kind: "corrective", change_ref: CHANGE,
-  verify_agent: { recommendation: "not_required", reason: "按变更范围验证即可", focus_refs: ["proposal.md"] },
-};
 const PROPOSAL = "# Proposal\n\n## Problem\n- Expected Behavior: expected\n- Actual Behavior: actual\n\n## Root Cause\nconfirmed cause\n\n## Fix Strategy\nrestore behavior\n\n## Regression Scope\nregression verification\n";
 
 function git(cwd, ...args) {
@@ -61,14 +57,9 @@ function fixture(t, requirement = true, native = false) {
   const metadata = {
     "tfs.type": requirement ? "需求" : "Bug", "tfs.id": "261056",
     "analysis.change_kind": "corrective", "analysis.change_ref": CHANGE,
-    "analysis.verify_agent.recommendation": FACTS.verify_agent.recommendation,
-    "analysis.verify_agent.reason": FACTS.verify_agent.reason,
-    "analysis.verify_agent.focus_refs": JSON.stringify(FACTS.verify_agent.focus_refs),
   };
   const statePath = join(home, "state.json");
   writeFileSync(statePath, JSON.stringify({ status: "in_progress", metadata }));
-  const factsPath = join(home, "facts.json");
-  writeFileSync(factsPath, JSON.stringify(FACTS));
 
   const tfs = analysisTfsFixture(t, home, { remote }, { requirementOrigin: requirement });
   if (requirement) {
@@ -121,15 +112,15 @@ function fixture(t, requirement = true, native = false) {
       MULTICA_WORKSPACE_ID: "ws-test", MULTICA_AGENT_ID: "analyst" } : {}) };
   const args = ["--issue", "issue-1", "--openspec-root", root,
     "--workspace-id", "ws-test", "--registry-config", config, "--multica", MOCK];
-  const gate = () => runCli(["analysis", "validate", "--facts", factsPath, ...args], env);
+  const gate = (ref = CHANGE) => runCli(["analysis", "validate", "--change-ref", ref, ...args], env);
   const completeAt = (rootArg, cwd, ...extra) => runCli(["analysis", "publish",
-    "--issue", "issue-1", "--facts", factsPath,
+    "--issue", "issue-1", "--change-ref", CHANGE,
     "--workspace-id", "ws-test", "--registry-config", config, "--multica", MOCK,
     "--root-repo", rootArg, ...(requirement ? ["--mode", "requirement"] : []), ...extra], env, cwd);
   const complete = (...extra) => completeAt(root, undefined, ...extra);
   const state = () => JSON.parse(readFileSync(statePath, "utf8"));
   const setState = data => writeFileSync(statePath, JSON.stringify(data));
-  return { home, root, change, remote, report, tfs, env, gate, complete, completeAt, state, setState, factsPath, metadata, taskBranch, resourcePath };
+  return { home, root, change, remote, report, tfs, env, gate, complete, completeAt, state, setState, metadata, taskBranch, resourcePath };
 }
 
 test("Preview → Complete without Stage: final Gate and fixed Git Contract; no automatic Comment or Gate file", t => {
@@ -156,16 +147,18 @@ test("Preview → Complete without Stage: final Gate and fixed Git Contract; no 
   assert.equal(source.commit, git(f.remote, "rev-parse", "dev"));
   assert.equal(git(f.remote, "show", source.commit + ":openspec/changes/" + CHANGE + "/proposal.md"), PROPOSAL.trim());
   assert.equal(f.state().metadata["analysis.gate.result"], "PASS");
+  assert.equal(f.state().metadata["analysis.change_kind"], "corrective");
+  assert.equal(f.state().metadata["analysis.verify_agent.recommendation"], undefined);
+  assert.equal(f.state().metadata["analysis.ai_review.verdict"], undefined);
   assert.equal(f.state().status, "analysis_review");
   assert.equal(f.state().comments?.["issue-1"]?.length ?? 0, 0);
   assert.equal(existsSync(join(f.change, "logs", "analysis-gate-result.json")), false);
   assert.equal(existsSync(join(f.change, "analysis-handoff.json")), false);
 });
 
-test("旧 metadata PASS/调用方自报 PASS 都不能绕过最终真实 Gate", t => {
+test("旧 metadata PASS 不能绕过最终真实 Gate", t => {
   const f = fixture(t);
   const st = f.state(); st.metadata["analysis.gate.result"] = "PASS"; f.setState(st);
-  writeFileSync(f.factsPath, JSON.stringify({ ...FACTS, gate: { result: "PASS" } }));
   writeFileSync(join(f.change, "proposal.md"), "");
   const result = f.complete();
   assert.equal(result.exit, 2, JSON.stringify(result));
@@ -249,7 +242,7 @@ test("Legacy Publish 拒绝相对 RONDO_WORKSPACE_PATH，即使 cwd 是合法根
   const f = fixture(t, false);
   f.env.RONDO_WORKSPACE_PATH = ".";
   const result = runCli(["analysis", "publish", "--issue", "issue-1",
-    "--facts", f.factsPath, "--workspace-id", "ws-test", "--registry-config", join(f.home, "registry.json"),
+    "--change-ref", CHANGE, "--workspace-id", "ws-test", "--registry-config", join(f.home, "registry.json"),
     "--multica", MOCK], f.env, f.root);
   assert.equal(result.exit, 3, JSON.stringify(result));
   assert.match(result.body.reason, /绝对路径.*RONDO_WORKSPACE_PATH/);
@@ -261,7 +254,7 @@ test("Requirement 必须使用 requirement 模式，禁止误选 legacy", t => {
   f.env.RONDO_WORKSPACE_BRANCH = "";
   f.env.RONDO_WORKSPACE_PATH = "";
   const result = runCli(["analysis", "publish", "--issue", "issue-1",
-    "--facts", f.factsPath, "--workspace-id", "ws-test", "--registry-config", join(f.home, "registry.json"),
+    "--change-ref", CHANGE, "--workspace-id", "ws-test", "--registry-config", join(f.home, "registry.json"),
     "--multica", MOCK, "--root-repo", f.root], f.env);
   assert.equal(result.exit, 2);
   assert.match(result.body.reason, /--mode requirement/);
@@ -387,7 +380,7 @@ test("Native Analysis recovers a lost source write on the original Resource with
   assert.equal(JSON.parse(f.state().metadata["analysis.source"]).commit, published);
 });
 
-test("Current Facts replace stale analysis fields; validate is read-only and complete clears old Review", t => {
+test("Current Change replaces stale identity; historical advice is ignored, validate is read-only", t => {
   const f = fixture(t);
   const old = f.state();
   old.metadata["analysis.change_ref"] = "stale-change";
@@ -399,7 +392,8 @@ test("Current Facts replace stale analysis fields; validate is read-only and com
   const result = f.complete();
   assert.equal(result.exit, 0, JSON.stringify(result));
   assert.equal(f.state().metadata["analysis.change_ref"], CHANGE);
-  assert.equal(f.state().metadata["analysis.ai_review.verdict"], undefined);
+  assert.equal(f.state().metadata["analysis.change_kind"], "corrective");
+  assert.equal(f.state().metadata["analysis.ai_review.verdict"], "APPROVED");
   assert.deepEqual(result.body.analysis_source, JSON.parse(f.state().metadata["analysis.source"]));
   assert.equal(f.complete().exit, 0);
 });
@@ -409,7 +403,7 @@ test("Partial Facts write failure can resume without Stage", t => {
   const old = f.state();
   old.metadata = { "tfs.type": old.metadata["tfs.type"], "tfs.id": old.metadata["tfs.id"] };
   f.setState(old);
-  f.env.MOCK_FAIL_METADATA_KEY = "analysis.verify_agent.reason";
+  f.env.MOCK_FAIL_METADATA_KEY = "analysis.change_kind";
   assert.notEqual(f.complete().exit, 0);
   assert.equal(f.state().status, "in_progress");
   delete f.env.MOCK_FAIL_METADATA_KEY;
@@ -425,15 +419,17 @@ test("返工 Facts 写入失败时旧 Gate PASS 不得继续生效", t => {
   const prior = f.state();
   prior.status = "in_progress";
   f.setState(prior);
-  writeFileSync(f.factsPath, JSON.stringify({ ...FACTS, verify_agent: { ...FACTS.verify_agent, reason: "本轮复核后的新依据" } }));
-  f.env.MOCK_FAIL_METADATA_KEY = "analysis.verify_agent.reason";
+  writeFileSync(join(f.change, "proposal.md"), PROPOSAL + "\nRevised contract\n");
+  git(f.root, "add", "openspec/changes/" + CHANGE);
+  git(f.root, "-c", "user.email=test@example.invalid", "-c", "user.name=Test", "commit", "-m", "rework");
+  f.env.MOCK_FAIL_METADATA_KEY = "analysis.source";
   assert.notEqual(f.complete().exit, 0);
   assert.equal(f.state().metadata["analysis.gate.result"], undefined);
   assert.equal(f.state().status, "in_progress");
   delete f.env.MOCK_FAIL_METADATA_KEY;
   assert.equal(f.complete().exit, 0);
   assert.equal(f.state().metadata["analysis.gate.result"], "PASS");
-  assert.equal(f.state().metadata["analysis.verify_agent.reason"], "本轮复核后的新依据");
+  assert.notEqual(f.state().metadata["analysis.source"], prior.metadata["analysis.source"]);
 });
 
 test("重复任务引用在最终 Gate 被拒绝，未发布审核", t => {
@@ -446,12 +442,14 @@ test("重复任务引用在最终 Gate 被拒绝，未发布审核", t => {
 });
 
 
-test("invalid professional Facts never reach Gate or write metadata", t => {
+test("invalid Change ID never publishes or writes metadata", t => {
   const f = fixture(t);
   const before = f.state();
-  writeFileSync(f.factsPath, JSON.stringify({ ...FACTS, verify_agent: { ...FACTS.verify_agent, focus_refs: [] } }));
-  assert.equal(f.gate().exit, 2);
-  assert.equal(f.complete().exit, 2);
+  assert.equal(f.gate("../invalid").exit, 2);
+  const result = runCli(["analysis", "publish", "--issue", "issue-1", "--change-ref", "../invalid",
+    "--workspace-id", "ws-test", "--registry-config", join(f.home, "registry.json"), "--multica", MOCK,
+    "--root-repo", f.root, "--mode", "requirement"], f.env);
+  assert.equal(result.exit, 2);
   assert.deepEqual(f.state(), before);
 });
 
@@ -531,7 +529,7 @@ test("Git 发布后并发 Source 或 Facts 变化时不覆盖现有事实", asyn
   for (const [key, value] of [
     ["analysis.source", JSON.stringify({ repo_url: "http://tfs.test/tfs/C/P/_git/root", branch: "dev", commit: "a".repeat(40), change_ref: CHANGE })],
     ["tfs.id", "999999"],
-    ["analysis.verify_agent.reason", "另一流程已更新依据"],
+    ["analysis.change_kind", "intentional"],
   ]) {
     await t.test(key, t => {
       const f = fixture(t);
@@ -550,10 +548,10 @@ test("Git 发布后并发 Source 或 Facts 变化时不覆盖现有事实", asyn
 test("审核 Facts 写入后出现不一致时不得登记 Gate PASS", t => {
   const f = fixture(t);
   f.env.MOCK_METADATA_ON_ISSUE_READ = "3";
-  f.env.MOCK_ISSUE_METADATA_PATCH = JSON.stringify({ "analysis.verify_agent.reason": "" });
+  f.env.MOCK_ISSUE_METADATA_PATCH = JSON.stringify({ "analysis.change_kind": "" });
   const result = f.complete();
   assert.notEqual(result.exit, 0, JSON.stringify(result));
-  assert.equal(f.state().metadata["analysis.verify_agent.reason"], "");
+  assert.equal(f.state().metadata["analysis.change_kind"], "");
   assert.equal(f.state().metadata["analysis.gate.result"], undefined);
   assert.equal(f.state().status, "in_progress");
 });
