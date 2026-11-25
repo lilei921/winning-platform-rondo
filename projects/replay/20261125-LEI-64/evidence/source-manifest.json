@@ -156,5 +156,31 @@
     }
   ],
   "coverage": "partial",
-  "verified_at": "2026-11-25T18:27:59+08:00"
+  "verified_at": "2026-11-25T18:27:59+08:00",
+  "platform_runs": [
+    {
+      "run_id": "01a21214-7418-7b62-bbfd-865fe530e42a",
+      "session_id": "40363905-7d72-482c-b131-13b3031c2b65",
+      "provider": "claude",
+      "evidence_type": "platform_run_messages",
+      "command": "multica issue run-messages 01a21214-7418-7b62-bbfd-865fe530e42a --output json",
+      "evidence_path": "evidence/run-messages-01a21214-7418-7b62-bbfd-865fe530e42a.json",
+      "size_bytes": 27653,
+      "sha256": "13cde4b9b563be8c7d432f5b23a2a03037e85c8bfb5b09aeb1da90879d387737",
+      "event_count": 61,
+      "event_counts": {
+        "thinking": 44,
+        "tool_use": 7,
+        "tool_result": 7,
+        "text": 3
+      },
+      "tool_use_count": 7,
+      "tool_result_count": 7,
+      "first_event_at": "2026-11-25T09:41:08.457712Z",
+      "last_event_at": "2026-11-25T09:41:54.351778Z",
+      "native_transcript_available": false,
+      "complete": false,
+      "note": "平台公开执行消息已保存，但无法替代原生 transcript 的消息、工具及 Run 边界完整性核验。"
+    }
+  ]
 }

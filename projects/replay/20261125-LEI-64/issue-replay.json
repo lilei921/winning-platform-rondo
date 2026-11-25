@@ -39,6 +39,23 @@
       "replay": "workitem-analyst/20261125-1741-e5e21a79/replay.json",
       "timeline": "workitem-analyst/20261125-1741-e5e21a79/timeline.md",
       "verification": "PARTIAL"
+    },
+    {
+      "session_id": "40363905-7d72-482c-b131-13b3031c2b65",
+      "provider": "claude",
+      "evidence_type": "platform_run_messages",
+      "run_ids": [
+        "01a21214-7418-7b62-bbfd-865fe530e42a"
+      ],
+      "agent_ids": [
+        "3c1c3ac1-a922-4e7b-abdf-07a6268398a3"
+      ],
+      "started_at": "2026-11-25T17:41:00+08:00",
+      "completed_at": "2026-11-25T17:41:54+08:00",
+      "tool_calls_total": 7,
+      "replay": "delivery-lead/20261125-1741-40363905/replay.json",
+      "timeline": "delivery-lead/20261125-1741-40363905/timeline.md",
+      "verification": "PARTIAL"
     }
   ],
   "agents": [
@@ -63,14 +80,15 @@
   },
   "session_directories": {
     "dd5f99e6-2b3f-4640-953d-94772df48946": "wayfinder/20261125-1739-dd5f99e6",
-    "e5e21a79-0b80-4966-a4a9-e10983a87439": "workitem-analyst/20261125-1741-e5e21a79"
+    "e5e21a79-0b80-4966-a4a9-e10983a87439": "workitem-analyst/20261125-1741-e5e21a79",
+    "40363905-7d72-482c-b131-13b3031c2b65": "delivery-lead/20261125-1741-40363905"
   },
   "run_count": 3,
   "active_run_count": 0,
-  "tool_calls_total": 148,
+  "tool_calls_total": 155,
   "subagent_tool_calls_total": 0,
   "gaps": [
-    "session 40363905-7d72-482c-b131-13b3031c2b65 导出失败：未找到声明的 claude 日志，可补充 --claude-home",
-    "session e5e21a79-0b80-4966-a4a9-e10983a87439 完整性核验未通过，详见 source-manifest.json"
+    "Delivery Lead session 40363905-7d72-482c-b131-13b3031c2b65 的原生 Claude transcript 位于不可访问的远端 Linux runtime；已导出 61 条平台 run-messages 作为平台级回放，未完成原生日志核验",
+    "Workitem Analyst session e5e21a79-0b80-4966-a4a9-e10983a87439 被人工取消：120 次工具调用均已导出，但最后 1 次工具调用没有结果且无最终回复，因此保持 PARTIAL"
   ]
 }
