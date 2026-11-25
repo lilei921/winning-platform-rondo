@@ -210,6 +210,18 @@ test("Failed Gate leaves a new Change uncommitted; unsupported new artifacts can
   assert.equal(f.state().status, "in_progress");
 });
 
+test("Repository Scope accepts repo_id strings, not objects; diagnostics show the valid format", t => {
+  const f = fixture(t, true, false, false);
+  const local = git(f.root, "rev-parse", "HEAD");
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories:\n  - repo_id: root\n");
+  const invalid = f.complete();
+  assert.equal(invalid.exit, 2, JSON.stringify(invalid));
+  assert.match(invalid.body.reason, /x-repositories: \[dataintegration\]/);
+  assert.equal(git(f.root, "rev-parse", "HEAD"), local);
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories:\n  - root\n");
+  assert.equal(f.complete().exit, 0);
+});
+
 test("旧 metadata PASS 不能绕过最终真实 Gate", t => {
   const f = fixture(t);
   const st = f.state(); st.metadata["analysis.gate.result"] = "PASS"; f.setState(st);
@@ -246,10 +258,13 @@ test("OpenSpec 独立 CLI 未确认通过，不能持久化 Gate PASS 或 Human 
 test("Git clean filter 修改工程正文，固定 Commit 不匹配时必须阻断", t => {
   const f = fixture(t);
   writeFileSync(join(f.change, "proposal.md"), PROPOSAL.replace("restore behavior", "APPROVED"));
-  writeFileSync(join(f.change, ".gitattributes"), "proposal.md filter=review-test\n");
+  writeFileSync(join(f.root, ".git", "info", "attributes"), "openspec/changes/" + CHANGE + "/proposal.md filter=review-test\n");
   git(f.root, "config", "filter.review-test.clean", "sed s/APPROVED/REWRITTEN/g");
+  const remote = git(f.remote, "rev-parse", "dev");
   const result = f.complete();
   assert.notEqual(result.exit, 0);
+  assert.match(result.body.reason, /候选发布版本.*不一致/);
+  assert.equal(git(f.remote, "rev-parse", "dev"), remote);
   assert.equal(f.state().metadata["analysis.source"], undefined);
 });
 
