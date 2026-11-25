@@ -83,7 +83,11 @@ export function analysisTfsFixture(t, dir, initial, { requirementOrigin = false 
   writeFileSync(script, `const {spawnSync}=require('node:child_process');
 const args=process.argv.slice(2);
 const query=args.join(' '), fetchUrl=process.env.MOCK_GIT_FETCH_URL, pushUrl=process.env.MOCK_GIT_PUSH_URL;
-if (query === 'remote get-url --push --all origin' || (${JSON.stringify(requirementOrigin)} && query === 'remote get-url --push origin')) {
+if (process.env.MOCK_GIT_BUSINESS_REMOTE && args[0] === 'ls-remote' && args[1] === process.env.MOCK_GIT_BUSINESS_URL) {
+  const r=spawnSync(${JSON.stringify(realGit)},[args[0],process.env.MOCK_GIT_BUSINESS_REMOTE,...args.slice(2)],{stdio:'inherit'});process.exit(r.status??1);
+} else if (process.env.MOCK_GIT_BUSINESS_REMOTE && require('node:path').basename(process.cwd()) === 'biz' && args[0] === 'remote' && args[1] === 'get-url') {
+  const r=spawnSync(${JSON.stringify(realGit)},args,{stdio:'inherit'});process.exit(r.status??1);
+} else if (query === 'remote get-url --push --all origin' || (${JSON.stringify(requirementOrigin)} && query === 'remote get-url --push origin')) {
   process.stdout.write((pushUrl || ${JSON.stringify(repoUrl)})+'\\n');
 } else if (${JSON.stringify(requirementOrigin)} && (query === 'remote get-url origin' || query === 'remote get-url --all origin')) {
   process.stdout.write((fetchUrl || ${JSON.stringify(repoUrl)})+'\\n');

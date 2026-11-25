@@ -303,6 +303,10 @@ if (a[0] === "issue" && a[1] === "get") {
 } else if (a[0] === "squad" && a[1] === "list") {
   injectReadFail();
   process.stdout.write(JSON.stringify(st.squads_list || []));
+} else if (a[0] === "repo" && a[1] === "checkout" && st.repo_checkout) {
+  const checkout = st.repo_checkout;
+  if (a[2] !== checkout.url || flag("--ref") !== checkout.ref) throw new Error("Unexpected checkout URL/ref");
+  process.stdout.write(checkout.path + "\nKept the existing checkout (branch: " + checkout.branch + ")\n");
 } else if (a[0] === "agent" && a[1] === "list") {
   // agent list → [{id, name}, ...]（reconcile 解析唯一准入 Agent）
   injectReadFail();

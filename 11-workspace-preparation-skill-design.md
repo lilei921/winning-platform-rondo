@@ -36,7 +36,7 @@ Skill 只说明**何时准备、调用哪个现有入口、如何使用结果及
 1. 需要本地 OpenSpec 根仓时，调用 `rondo runtime prepare-root`；使用返回的 `root_repo`，根仓分支按既有 `RONDO_WORKSPACE_BRANCH` 配置。
 2. 需要修改业务仓的 Engineer，对已授权的 `repo_id` 调用：
 
-   `rondo dev prepare --mode requirement --config <config> --issue <issue> --change-ref <change_ref> --repo <repo_id> --root-repo <root>`
+   `rondo dev prepare --mode requirement --config <config> --issue <issue> --repo <repo_id> --root-repo <root>`
 
 3. Workitem Analyst 仅准备所需根仓；不因 OpenSpec 分析而创建业务 Worktree。
 

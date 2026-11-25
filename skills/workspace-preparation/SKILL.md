@@ -31,10 +31,10 @@ rondo dev prepare --mode bug --config "<config>" --issue <issue> --repo <repo_ke
 
 需要本地 OpenSpec 工件时，优先使用当前 Task 的平台 checkout：尚未检出时在 Task workdir 执行 `multica repo checkout <root-url> --ref <项目分支>`，使用实际返回路径，并用 `rondo runtime check-checkout --root-repo "<root>"` 校验；已有检出直接复用，不重复 checkout，也不手工 `git clone`。常驻根仓模式仍可用 `rondo runtime prepare-root`（读取 `RONDO_WORKSPACE_PATH` 与 `RONDO_WORKSPACE_BRANCH`）。Workitem Analyst 准备根仓即可。
 
-Engineer 修改业务源码时，使用当前 Issue、获批的 `change_ref` 及其 `x-repositories` 内的 `repo_id`。已有适用于当前 Issue、批准版本和仓库的成功准备结果时，使用其 Worktree `path`。首次准备、仅有目录或上次准备中断时，调用同一入口：
+Engineer 修改业务源码时，使用当前 Issue 及获批 `x-repositories` 内的 `repo_id`。已有适用于当前 Issue、批准版本和仓库的成功准备结果时，使用其 Worktree `path`。首次准备、仅有目录或上次准备中断时，调用同一入口：
 
 ```bash
-rondo dev prepare --mode requirement --config "<config>" --issue <issue> --change-ref <change_ref> --repo <repo_id> --root-repo "<root>"
+rondo dev prepare --mode requirement --config "<config>" --issue <issue> --repo <repo_id> --root-repo "<root>"
 ```
 
 ## Result / Stop
