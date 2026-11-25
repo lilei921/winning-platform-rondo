@@ -1101,7 +1101,7 @@ Final Independent Verification Decision
 verify_agent.required = true | false
 ```
 
-仅改变“是否需要 Independent Verify Agent”且不改变 Acceptance Contract、Verification Contract、Scope 或 required Verification Tasks 时，不要求返回 Analysis；Delivery Lead 将批准意见（接受 Recommendation 或 Override）及真实来源评论写入 `analysis.human_approval` 的 `verify_agent_required`（JSON boolean）和必填 `comment_ref`，由 `rondo dev materialize` 核对当前 `analysis.gate.result=PASS`、真实评论引用及批准字段后生成并回读 `verify_agent.required`（Metadata string `true` / `false`）。研发已派发但只改变独立验证决定时，复用已有派发参数与新批准评论，再调用同一命令仅更新最终决定，保留已存在的派发/Task Set；不为此新建状态或重复启动 Run。缺失、冲突或无法确认时停止，不从 Analyst Recommendation 自动推断最终决定。如果 Human 意见新增、删除或实质改变验收行为、Verification Task、Regression / Integration / E2E 范围或批准 Scope，则这不是单纯 Verify override，必须返回 Workitem Analyst 定向更新 Engineering Truth 并重新 Human Review。
+仅改变“是否需要 Independent Verify Agent”且不改变 Acceptance Contract、Verification Contract、Scope 或 required Verification Tasks 时，不要求返回 Analysis；Delivery Lead 理解 Human 决定，使用 `rondo analysis approve` 引用真实批准评论、获批 Commit 和明确的独立验收决定，由 CLI 核对 Gate、登记 `analysis.human_approval` 并投影、回读 `verify_agent.required`。对同一获批 Change 的新决定，在允许的研发状态下更新批准事实，不重新派发已有效委派的工作。缺失、冲突或无法确认时不从 Analyst Recommendation 自动推断最终决定。如果 Human 意见新增、删除或实质改变验收行为、Verification Task、Regression / Integration / E2E 范围或批准 Scope，则这不是单纯 Verify override，必须返回 Workitem Analyst 定向更新 Engineering Truth 并重新 Human Review。
 
 已获准交付的 Approved OpenSpec Change 在进入 Development 前提交到根仓 Git，记录已批准的开发基线。Git Commit 不禁止批准边界内的设计细化和任务更新；需要改变已批准行为、范围、关键技术约束或验收要求时，仍返回既有 Analysis / Human Review。该 Commit 不创建独立 PR，也不进入业务 required PR 集合。
 
@@ -1594,7 +1594,7 @@ Workitem Analyst 是首次专业判断者：根据当前 Acceptance / Verificati
 
 仅对独立性要求的 override 不修改 OpenSpec Engineering Truth，也不要求 Analysis Rework；若 Human Feedback 实质改变 Verification Contract、Acceptance Contract、Scope 或 required Verification Tasks，则返回 Workitem Analyst 定向修订并重新审核。
 
-Human 最终决定批准后，执行事实继续使用现有字段（由派发前的 `rondo dev materialize` 依据 `analysis.human_approval.verify_agent_required` 投影、回读；与批准评论绑定）：
+Human 最终决定批准后，执行事实继续使用现有字段（由 `rondo analysis approve` 依据 Human 决定统一登记并回读；与批准评论及获批版本绑定）：
 
 ```text
 verify_agent.required = true | false

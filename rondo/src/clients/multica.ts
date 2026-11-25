@@ -32,6 +32,7 @@ export interface CommentRecord {
   content?: string;
   author_id?: string;
   author_type?: string;
+  created_at?: string;
 }
 
 /** 仅响应不确定时执行回读恢复；权限/参数/业务拒绝不应自动重试。 */

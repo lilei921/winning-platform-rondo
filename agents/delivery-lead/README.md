@@ -4,6 +4,6 @@ Delivery Squad 的协调角色，负责成员交接、阶段边界和异常处�
 
 角色资产：[Instructions](instructions.md) · [Description](description.md) · [Squad Instructions](../../squads/squad-instructions.md)。
 
-当前 [Manifest](../../workspace-config/provisioning.json) 绑定 [change-handoff](../../skills/change-handoff/SKILL.md)，用于获批 Change 的研发交接。现行 Requirement 研发由 Engineer 完成，PR 状态同步及 Issue 收口由 PR Status Sync Agent 处理。
+Delivery Lead 使用 `rondo analysis approve` 登记已明确的 Human Approval，使用 Multica 原生 Mention 交接。Requirement 研发由 Engineer 完成，PR 状态同步及 Issue 收口由 PR Status Sync Agent 处理。
 
 配置发布使用 `rondo workspace provision`，远端实际状态以回读为准。
