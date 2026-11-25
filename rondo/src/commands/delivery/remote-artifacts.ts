@@ -54,11 +54,11 @@ export class RemoteArtifactReader {
     }
     return response.value;
   }
-  async read(commit: string, path: string): Promise<string> {
+  async read(commit: string, path: string, expectedObjectId?: string): Promise<string> {
     safePath(path);
     if (!fullSha(commit)) throw new UnknownError("远端读取必须固定完整 commit");
     const item = await this.get("items", { path, includeContent: "true", "versionDescriptor.versionType": "commit", "versionDescriptor.version": commit }) as GitItem;
-    if (!item || item.commitId !== commit || item.path !== path || item.isFolder || !fullSha(item.objectId) || typeof item.content !== "string") {
+    if (!item || item.commitId !== commit || item.path !== path || item.isFolder || !fullSha(item.objectId) || (expectedObjectId !== undefined && item.objectId !== expectedObjectId) || typeof item.content !== "string") {
       throw new UnknownError("远端工件响应的 commit、路径或正文不一致");
     }
     return item.content;

@@ -24,7 +24,6 @@ import { registerResolveIdentity } from "./commands/change/resolve-identity.js";
 import { registerUpdateProgress } from "./commands/change/update-progress.js";
 import { registerAnalysisValidate } from "./commands/analysis/validate.js";
 import { registerAnalysisComplete } from "./commands/analysis/complete.js";
-import { registerAnalysisStage } from "./commands/analysis/stage.js";
 import { registerAnalysisRead } from "./commands/analysis/read.js";
 import { registerAnalysisApprove } from "./commands/analysis/approve.js";
 import { registerDevMaterialize } from "./commands/dev/materialize.js";
@@ -84,7 +83,6 @@ registerResolveIdentity(change);
 registerUpdateProgress(change);
 
 const analysis = bareGroup(program.command("analysis").description("Analysis Gate 与收口(02 §5.4/§12.1)"));
-registerAnalysisStage(analysis);
 registerAnalysisValidate(analysis);
 registerAnalysisComplete(analysis);
 registerAnalysisRead(analysis);

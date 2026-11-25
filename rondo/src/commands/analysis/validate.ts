@@ -1,9 +1,9 @@
 /**
  * analysis validate — Analysis Gate 确定性检查（02 §5.4）。
  *
- * 用法: rondo analysis validate --issue <issue-id> --openspec-root <path> --workspace-id <id> [--multica <cli>]
+ * 用法: rondo analysis validate --issue <issue-id> --facts <facts.json> --openspec-root <path> --workspace-id <id> [--registry-config <path>] [--multica <cli>] [--profile <name>]
  *
- * 输入：Issue（metadata 已含 analysis.* 事实）+ OpenSpec Change 目录。
+ * 输入：当前 Issue 来源事实、本次 Facts 文件及 OpenSpec Change 目录。
  * 输出：{ result: PASS | FAIL | UNKNOWN, checks: [...], reasons: [...] }
  * 退出码：0 = PASS，2 = FAIL，3 = UNKNOWN。
  *
@@ -24,9 +24,9 @@ import { runCommand } from "../../clients/spawn.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { commandExists } from "../../clients/which.js";
 import { resolveOpenspecRootDir } from "../../clients/runtime-paths.js";
-import { classifyTfsType } from "./facts.js";
+import { classifyTfsType, loadFactsFile, validateDraftFields, submissionMetadata, type DraftFacts } from "./facts.js";
 import { parseRepositoryScope } from "./repository-scope.js";
-import { ANALYSIS_GATE_CHECKS, changeEvidenceDigest, metadataEvidenceDigest } from "./gate-evidence.js";
+import { changeEvidenceDigest, metadataEvidenceDigest } from "./gate-evidence.js";
 
 type CheckResult = "PASS" | "FAIL" | "UNKNOWN";
 interface Check { name: string; result: CheckResult; reasons: string[] }
@@ -47,7 +47,7 @@ function listMarkdown(dir: string): string[] {
   return out;
 }
 
-interface Args { issue: string; openspecRoot: string; cli: string; workspaceId: string | null; out: string | null }
+interface Args { issue: string; openspecRoot: string; cli: string; workspaceId: string | null; out: string | null; facts: string | null }
 
 function parseArgs(argv: string[]): Args {
   const get = (flag: string): string | null => {
@@ -56,11 +56,11 @@ function parseArgs(argv: string[]): Args {
   };
   const issue = get("--issue");
   const openspecRoot = get("--openspec-root");
-  if (!issue || !openspecRoot || !get("--workspace-id")) {
-    process.stderr.write("用法: rondo analysis validate --issue <issue-id> --openspec-root <path> --workspace-id <id> [--multica <cli>]\n");
+  if (!issue || !openspecRoot || !get("--workspace-id") || !get("--facts")) {
+    process.stderr.write("用法: rondo analysis validate --issue <issue-id> --facts <facts.json> --openspec-root <path> --workspace-id <id> [--registry-config <path>] [--multica <cli>] [--profile <name>]\n");
     process.exit(64);
   }
-  return { issue, openspecRoot, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), out: get("--out") };
+  return { issue, openspecRoot, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), out: get("--out"), facts: get("--facts") };
 }
 
 /** Gate is a read-only check; stdout and Complete share this in-memory result. */
@@ -225,17 +225,6 @@ export function checkAcceptanceContract(schema: ChangeSchema | null, changeDir: 
       }
       if (native.result === "FAIL") reasons.push(native.reason);
     }
-  } else {
-    // Corrective：Expected/Actual、Root Cause、Fix Strategy、Regression Scope
-    const text = proposal ?? "";
-    for (const [label, pattern] of [
-      ["Expected Behavior", /expected/i],
-      ["Root Cause", /root\s*cause/i],
-      ["Fix Strategy", /fix\s*strategy/i],
-      ["Regression Scope", /regression\s*scope/i],
-    ] as const) {
-      if (!pattern.test(text)) reasons.push(`proposal.md 缺少 ${label}`);
-    }
   }
   return { name: "acceptance_contract", result: reasons.length ? "FAIL" : "PASS", reasons };
 }
@@ -246,7 +235,6 @@ function checkTasks(changeDir: string | null): Check {
   const tasks = readText(join(changeDir, "tasks.md"));
   if (!tasks) return { name: "tasks", result: "FAIL", reasons: ["缺少 tasks.md"] };
   if (!/- \[[ x]\]/i.test(tasks)) reasons.push("tasks.md 未找到任何任务项");
-  if (!/verification|验证/i.test(tasks)) reasons.push("tasks.md 未找到 Verification / 验证内容（每个 Implementation Task 必须有验证方式）");
   return { name: "tasks", result: reasons.length ? "FAIL" : "PASS", reasons };
 }
 
@@ -308,23 +296,23 @@ function checkOpenSpecValidate(changeDir: string | null, openspecRoot: string): 
   if (cp.status !== (item.valid ? 0 : 1)) {
     return { name, result: "UNKNOWN", reasons: [`openspec validate 退出码 ${cp.status} 与校验结果不一致`] };
   }
-  if (item.valid) return { name, result: "PASS", reasons: [] };
   const issues: { level: string; path: string; message: string }[] = Array.isArray(item.issues) ? item.issues : [];
+  if (item.valid) return { name, result: "PASS", reasons: issues.map(issue => `${issue.level}: ${issue.path}: ${issue.message}`) };
   const details = issues.filter(issue => issue?.level === "ERROR" || issue?.level === "WARNING")
     .map(issue => `${issue.path}: ${issue.message}`).join("\n").slice(0, 500);
   return { name, result: "FAIL", reasons: [`openspec validate --strict 失败: ${details || changeRef}`] };
 }
 
-export function evaluateAnalysisGate(input: { issue: string; openspecRoot: string; workspaceId: string; runtime: RuntimeConfig }): GateOutcome {
+export function evaluateAnalysisGate(input: { issue: string; openspecRoot: string; workspaceId: string; runtime: RuntimeConfig; facts: DraftFacts; snapshot?: { issue: Record<string, unknown>; metadata: Record<string, unknown> } }): GateOutcome {
   const args = input;
   const checks: Check[] = [];
   let context: { issue_id: string; workspace_id: string; change_ref: string; change_kind: "corrective" | "intentional"; schema: ChangeSchema; change_dir: string; metadata_digest: string; metadata: Record<string, unknown> } | null = null;
   try {
     const cli = new Cli(input.runtime);
     // 先确认 Issue 在当前工作区可读取（防止静默读错工作区）
-    const issue = cli.getIssue(args.issue);
+    const issue = input.snapshot?.issue ?? cli.getIssue(args.issue);
     if (!issue.id) throw new UnknownError(`Issue ${args.issue} 不可读取（不存在或不属于当前工作区）`);
-    const meta = cli.getMetadata(args.issue);
+    const meta = submissionMetadata(input.snapshot?.metadata ?? cli.getMetadata(args.issue), input.facts);
     // --openspec-root 语义统一：根仓路径自动归一到其 openspec/ 子目录
     const openspecRoot = resolveOpenspecRootDir(args.openspecRoot);
     const { check: change, changeDir, schema } = checkChange(openspecRoot, meta);
@@ -358,12 +346,6 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
   const reasons = checks.flatMap((c) => c.reasons.map((r) => `[${c.name}] ${r}`));
   const code = result === "PASS" ? 0 : result === "FAIL" ? 2 : 3;
   if (result === "PASS") {
-    // 以同一份必需检查项契约约束 Gate 产出和 Complete 消费。
-    const names = new Set(checks.map((check) => check.name));
-    if (checks.length !== ANALYSIS_GATE_CHECKS.length || names.size !== ANALYSIS_GATE_CHECKS.length ||
-        ANALYSIS_GATE_CHECKS.some((name) => !names.has(name))) {
-      return gateOutcome({ result: "UNKNOWN", checks, reasons: ["Analysis Gate 必需检查项集合不完整"] }, 3, null);
-    }
     if (!context) return gateOutcome({ result: "UNKNOWN", checks, reasons: ["Gate 缺少可核验的 Change 身份"] }, 3, null);
     try {
       const { change_dir, metadata, ...identity } = context;
@@ -381,15 +363,24 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
 
 /** Preview never persists a file. Complete invokes the same check again before publication. */
 function main(rawArgs: string[]): number {
+  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis validate --issue <issue-id> --facts <facts.json> --openspec-root <path> --workspace-id <id> [--registry-config <path>] [--multica <cli>] [--profile <name>]\n"); return 0; }
   const args = parseArgs(rawArgs);
   if (args.out) return emitResult({ result: "FAIL", checks: [], reasons: ["--out 已退役；Analysis Gate 结果不再持久化"] }, 2, null);
-  const outcome = evaluateAnalysisGate({
+  try {
+    const facts = loadFactsFile(args.facts!) as DraftFacts;
+    const missing = facts && typeof facts === "object" ? validateDraftFields(facts) : ["facts 必须为对象"];
+    if (missing.length) return emitResult({ result: "FAIL", checks: [], reasons: missing }, 2, null);
+    const outcome = evaluateAnalysisGate({
     issue: args.issue,
     openspecRoot: args.openspecRoot,
     workspaceId: args.workspaceId!,
-    runtime: analysisRuntime(rawArgs, args.cli, args.workspaceId),
+    runtime: analysisRuntime(rawArgs, args.cli, args.workspaceId), facts,
   });
-  return emitResult(outcome.payload, outcome.exitCode, null);
+    return emitResult(outcome.payload, outcome.exitCode, null);
+  } catch (error) {
+    if (error instanceof UnknownError) return emitResult({ result: "UNKNOWN", checks: [], reasons: [error.message] }, 3, null);
+    throw error;
+  }
 }
 
 /** commander 注册：group=analysis；参数解析沿用原脚本实现以保证契约逐字节等价。 */

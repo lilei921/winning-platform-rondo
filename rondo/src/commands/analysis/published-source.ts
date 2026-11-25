@@ -18,7 +18,7 @@ export async function readPublishedContract(source: AnalysisSource, metadata: Re
   for (const item of items) {
     if (item.isFolder || !item.path.startsWith(prefix + "/")) continue;
     const name = item.path.slice(prefix.length + 1);
-    contents.set(name, Buffer.from(await reader.read(source.commit, item.path), "utf8"));
+    contents.set(name, Buffer.from(await reader.read(source.commit, item.path, item.objectId), "utf8"));
     if (name === "design.md" || (name.startsWith("specs/") && name.endsWith(".md"))) selected.add(name);
   }
   const read = (name: string): Buffer => {
@@ -28,7 +28,7 @@ export async function readPublishedContract(source: AnalysisSource, metadata: Re
   };
   const schema = parseChangeSchema(read(".openspec.yaml").toString("utf8"));
   const digest = digestGateFiles(source.change_ref, selected, metadata, read, true);
-  return { schema, digest };
+  return { schema, digest, tasksObjectId: items.find(item => item.path === prefix + "/tasks.md" && !item.isFolder)?.objectId };
 }
 
 /** Check that local bytes inspected by the final Gate match the immutable Git candidate. */

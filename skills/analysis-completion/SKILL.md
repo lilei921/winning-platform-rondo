@@ -14,16 +14,25 @@ description: 将已完成的 Analysis Engineering Contract 经真实 Gate 和固
 
 ## Execution
 
-提交 Analysis Facts：
+本次 Facts 示例（Intentional 场景，实际值须来自专业判断）：
 
-```bash
-rondo analysis stage --issue <issue> --facts <facts.json> --workspace-id <workspace> --registry-config "<config>"
+```json
+{
+  "change_kind": "intentional",
+  "change_ref": "job-migration-detail-error-log-268376",
+  "verify_agent": {
+    "recommendation": "not_required",
+    "reason": "当前开发侧验证可覆盖已识别风险",
+    "focus_refs": ["tasks.md"]
+  },
+  "ai_review": { "verdict": "APPROVED" }
+}
 ```
 
 按需预检查（结果输出至 stdout，不生成文件）：
 
 ```bash
-rondo analysis validate --issue <issue> --openspec-root "<root>" --workspace-id <workspace> --registry-config "<config>"
+rondo analysis validate --issue <issue> --facts <facts.json> --openspec-root "<root>" --workspace-id <workspace> --registry-config "<config>"
 ```
 
 Requirement 模式需先在当前根仓工作分支提交本次 Change 的必要审核工件（只提交当前 Change，不重复手工 Push）。发布 TFS Requirement 审核版本：
@@ -35,11 +44,11 @@ rondo analysis complete --mode requirement --issue <issue> --facts <facts.json> 
 
 仅 TFS Requirement 使用 `--mode requirement`，其他流程沿用其适用入口。`validate` 只用于预检查；`complete` 首次发布时执行最终真实 Gate、Git 发布和固定来源核对；已处于 `analysis_review` 时只核对固定审核版本，不重新执行 Gate。`complete` 不发布 Issue 评论。
 
-`complete` 返回 `PASS` 后，在当前 Issue Comment 提供简明审核摘要：目标/方案、影响范围、Independent Verify Recommendation 及依据、风险/待决、`change_ref`、完整 Commit 和 Gate。OpenSpec 工件通过固定 Git 来源引用，默认不重复导出或上传附件；Human 明确要求时除外。Comment 触发的 Run 回复本次触发线程；发布前核对当前线程是否已有相同 `change_ref` 和 Commit 的摘要，已有则不重复发布；发布后回读确认。
+`complete` 返回 `PASS` 后，使用返回的 `analysis_source` 固定来源，在当前 Issue Comment 提供简明审核摘要：目标/方案、影响范围、Independent Verify Recommendation 及依据、风险/待决、`change_ref`、完整 Commit 和 Gate。OpenSpec 工件通过固定 Git 来源引用，默认不重复导出或上传附件；Human 明确要求时除外。Comment 触发的 Run 回复本次触发线程；发布前核对当前线程是否已有相同 `change_ref` 和 Commit 的摘要，已有则不重复发布；使用 `--content-file` 时以实际 cwd 解析路径；结果不明时回读确认，不重复发布。
 
 ## Acceptance / Stop
 
-- 仅当 `complete` 返回 `result=PASS`，且 `analysis.gate.result=PASS`、Issue 状态 `analysis_review` 和固定来源均可回读时，才声明审核版本发布完成；Agent 的审核交付还需确认摘要在当前 Issue 可见。
+- `complete` 返回 `result=PASS` 即确认审核版本发布完成，无需重复核对 CLI 已确认的后置条件；检查返回的 `diagnostics` 并按专业影响处理有意义的原生诊断。Agent 的审核交付还需确保摘要发布成功。
 - `analysis.source` 由 Rondo 写入，包含 `repo_url`、`branch`、`commit`、`change_ref`。来源身份由 `repo_url + commit + change_ref` 确定，`branch` 用于追溯；不得手填或以可变 HEAD 代替。
 - `FAIL` 按实际原因处理，不绕过 Gate；`UNKNOWN` 先回读状态和固定来源，符合现有 `complete` Replay / 恢复条件时可重试确认，否则停止。不复用旧 PASS 或自行补写 Metadata。仅评论发布失败时先回读原生线程并按需补齐，不重新执行已成功的 Gate/Git 发布。
 - 不新增 Gate、Review、Handoff 等过程性持久化工件；临时 Facts 不提交 Git 或 Archive。

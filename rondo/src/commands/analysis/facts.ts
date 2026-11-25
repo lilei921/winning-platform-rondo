@@ -1,7 +1,7 @@
 /**
- * Analysis Handoff Facts 的单一字段契约（stage / complete 共用）。
+ * Analysis Handoff Facts 的单一字段契约（validate / complete 共用）。
  * TFS Type、持久化的 analysis.change_kind 与 OpenSpec Schema 各司其职；不维护独立路由。
- * stage 仅检查 draft 字段形状；Gate 按 Change Schema 检查专业结果；
+ * 输入检查确认字段形状；Gate 按 Change Schema 检查专业结果；
  * complete 在写入审核状态前再次按持久化 Schema 核验。
  */
 import { readFileSync } from "node:fs";
@@ -75,4 +75,12 @@ export function draftMetadataEntries(f: DraftFacts): Record<string, string> {
     entries["analysis.ai_review.verdict"] = f.ai_review.verdict;
   }
   return entries;
+}
+
+/** This submission replaces previous professional fields; source facts stay unchanged. */
+export function submissionMetadata(meta: Record<string, unknown>, facts: DraftFacts): Record<string, unknown> {
+  const next: Record<string, unknown> = { ...meta, ...draftMetadataEntries(facts) };
+  if (facts.ai_review === undefined && meta["analysis.ai_review.verdict"] !== undefined)
+    next["analysis.ai_review.verdict"] = "";
+  return next;
 }
