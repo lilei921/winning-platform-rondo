@@ -59,8 +59,8 @@ function fixture(t, initial = initialState()) {
   const read = () => JSON.parse(readFileSync(statePath, "utf8"));
   const write = (state) => writeFileSync(statePath, JSON.stringify(state));
   const pathKey = Object.keys(process.env).find(key => key.toLowerCase() === "path") ?? "PATH";
-  const run = (extraEnv = {}) => {
-    const r = spawnSync(process.execPath, [CLI, "delivery", "handoff", "--issue", "WNDF-T"], {
+  const run = (extraEnv = {}, decision = "accepted") => {
+    const r = spawnSync(process.execPath, [CLI, "delivery", "admission", "--issue", "WNDF-T", "--decision", decision], {
       encoding: "utf8",
       env: {
         ...process.env,
@@ -214,24 +214,24 @@ test("assignment without observed Run is UNKNOWN and cannot retrigger", t => {
   assert.equal(f.read().issues["WNDF-T"].assignee_id, "bug-1");
 });
 
-test("blocked + Wayfinder does not satisfy CLI handoff state guard", t => {
+test("blocked + Wayfinder can be re-evaluated and accepted", t => {
   const state = initialState("Requirement");
   state.issues["WNDF-T"].status = "blocked";
   const f = fixture(t, state);
   const r = f.run();
-  assert.equal(r.code, 2);
-  assert.equal(r.body.result, "FAIL");
-  assert.equal(f.read().handoff_update_count, undefined);
+  assert.equal(r.code, 0, JSON.stringify(r.body));
+  assert.equal(r.body.result, "PASS");
+  assert.equal(f.read().handoff_update_count, 1);
 });
 
-test("unsupported terminal state cannot hand off", t => {
+test("unsupported + Wayfinder can be re-evaluated and accepted", t => {
   const state = initialState("Requirement");
   state.issues["WNDF-T"].status = "unsupported";
   const f = fixture(t, state);
   const r = f.run();
-  assert.equal(r.code, 2);
-  assert.equal(r.body.result, "FAIL");
-  assert.equal(f.read().handoff_update_count, undefined);
+  assert.equal(r.code, 0, JSON.stringify(r.body));
+  assert.equal(r.body.result, "PASS");
+  assert.equal(f.read().handoff_update_count, 1);
 });
 
 test("workspace must be explicit", t => {
@@ -283,4 +283,25 @@ test("deprecated intake command is absent", t => {
   });
   assert.equal(r.status, 64);
   assert.equal(f.read().handoff_update_count, undefined);
+});
+
+for (const [decision, status] of [["needs_human", "blocked"], ["unsupported", "unsupported"]]) {
+  test(decision + ": retain Wayfinder and do not trigger a Run", t => {
+    const state = initialState("Task");
+    state.agents_list = [AGENTS[0]];
+    state.squads_list = [];
+    const f = fixture(t, state);
+    const result = f.run({}, decision);
+    assert.equal(result.code, 0, JSON.stringify(result.body));
+    assert.equal(f.read().issues["WNDF-T"].status, status);
+    assert.equal(f.read().issues["WNDF-T"].assignee_id, "wayfinder-1");
+    assert.equal(f.read().runs["issue-1"]?.length ?? 0, 0);
+    assert.equal(f.run({}, decision).body.result, "NOOP");
+  });
+}
+test("non-accepted cannot overwrite a downstream owner", t => {
+  const f = fixture(t);
+  assert.equal(f.run().code, 0);
+  assert.equal(f.run({}, "unsupported").code, 2);
+  assert.equal(f.read().issues["WNDF-T"].assignee_id, "bug-1");
 });

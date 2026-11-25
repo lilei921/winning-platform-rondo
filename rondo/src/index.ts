@@ -39,7 +39,7 @@ import { registerRuntimeCheckCheckout } from "./commands/runtime/check-checkout.
 import { registerRuntimePrepareRoot } from "./commands/runtime/prepare-root.js";
 import { registerRuntimeGetContext } from "./commands/runtime/get-context.js";
 import { registerBugResume } from "./commands/bug/resume.js";
-import { registerDeliveryHandoff } from "./commands/delivery/handoff.js";
+import { registerDeliveryAdmission } from "./commands/delivery/handoff.js";
 import { registerTfsMaterializeTasks } from "./commands/tfs/materialize-tasks.js";
 import { registerTfsResolveTasks } from "./commands/tfs/resolve-tasks.js";
 import { registerTfsReconcileWorkitem } from "./commands/tfs/reconcile-workitem.js";
@@ -121,7 +121,7 @@ registerTfsApiLeaf(pr, "list", ["pr", "list"], "列出 TFS PR(--status/--source-
 
 const delivery = bareGroup(program.command("delivery").description("入口交接、Human Decision 路由与交付收口(02 §4.1/§11.2/§12)"));
 registerDeliveryRouteDecision(delivery);
-registerDeliveryHandoff(delivery);
+registerDeliveryAdmission(delivery);
 registerDeliveryFinalize(delivery);
 registerCloseoutRoot(delivery);
 

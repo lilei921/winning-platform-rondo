@@ -15,7 +15,6 @@
     "requirement-analysis",
     "spec-preparation",
     "tfs-sync",
-    "workitem-triage",
     "native-workspace",
     "workspace-preparation"
   ],
@@ -32,7 +31,6 @@
       "mcp_servers": ["remote-codegraph", "remote-filesystem", "remote-ripgrep"],
       "visibility": "workspace",
       "skills": [
-        "workitem-triage",
         "codebase-explorer"
       ]
     },

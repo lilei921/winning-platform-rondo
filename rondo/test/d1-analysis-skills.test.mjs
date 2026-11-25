@@ -163,7 +163,7 @@ test("D2 skill contracts: archive legacy and bind composable Analyst methods", (
   // 归档旧文件无需文字标记；是否参与执行由上面的受管清单和实际 Agent 绑定决定。
   assert.deepEqual(
     manifest.agents.find((agent) => agent.name === "Wayfinder Agent").skills,
-    ["workitem-triage", "codebase-explorer"],
+    ["codebase-explorer"],
   );
   const spec = FRONT("spec-preparation");
   for (const expected of [

@@ -8,9 +8,9 @@ import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
 import { MulticaClient, type IssueRecord } from "../../clients/multica.js";
 
-// handoff 只接受 --issue；Workspace、CLI 与身份一律来自 Runtime 环境变量，不读外部配置。
+// admission 接受 --issue 和 --decision；Workspace、CLI 与身份一律来自 Runtime 环境变量，不读外部配置。
 const USAGE = [
-  "用法: rondo delivery handoff --issue <KEY>",
+  "用法: rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsupported>",
   "",
   "从 MULTICA_WORKSPACE_ID / MULTICA_SERVER_URL 定位 Workspace，",
   "MULTICA_CLI_PATH 可指定 CLI（默认 multica）。",
@@ -40,14 +40,17 @@ export function resolveHandoffTarget(tfsType: string): Route | null {
   }
 }
 
-function parseArgs(argv: string[]): { issue: string } | null {
+type Decision = "accepted" | "needs_human" | "unsupported";
+function parseArgs(argv: string[]): { issue: string; decision: Decision } | null {
   const values: Record<string, string> = {};
   for (let i = 0; i < argv.length; i += 2) {
     const flag = argv[i], value = argv[i + 1];
-    if (flag !== "--issue" || !value || value.startsWith("--") || values[flag]) return null;
+    if (!["--issue", "--decision"].includes(flag) || !value || value.startsWith("--") || values[flag]) return null;
     values[flag] = value;
   }
-  return values["--issue"] ? { issue: values["--issue"] } : null;
+  const decision = values["--decision"];
+  return values["--issue"] && ["accepted", "needs_human", "unsupported"].includes(decision)
+    ? { issue: values["--issue"], decision: decision as Decision } : null;
 }
 
 function namedList(raw: unknown, what: string): NamedObject[] {
@@ -87,7 +90,7 @@ function matchingRuns(runs: Run[], issueId: string, agentId: string): Run[] {
 function isWayfinderOwned(issue: Issue, wayfinderId: string): boolean {
   return issue.assignee_id === wayfinderId &&
     (!issue.assignee_type || issue.assignee_type === "agent") &&
-    (issue.status === "todo" || issue.status === "in_progress");
+    ["todo", "in_progress", "blocked", "unsupported"].includes(issue.status ?? "");
 }
 
 async function main(argv: string[]): Promise<number> {
@@ -121,9 +124,6 @@ async function main(argv: string[]): Promise<number> {
     }
     if (issue.parent_issue_id) throw new FailError("入口交接只接受原始 TFS Issue，不处理 Sub-Issue");
 
-    const route = resolveHandoffTarget(tfsType);
-    if (!route) throw new FailError("不支持的 TFS Work Item Type: " + tfsType);
-
     const agents = namedList(client.run(
       ["agent", "list", ...client.ws(), "--output", "json"], "读取当前 Workspace Agents",
       { transient: true },
@@ -132,6 +132,24 @@ async function main(argv: string[]): Promise<number> {
     if (process.env.MULTICA_AGENT_ID?.trim() !== wayfinder.id) {
       throw new UnknownError("当前 Multica Runtime Agent 不是 Wayfinder，禁止交接");
     }
+    if (args.decision !== "accepted") {
+      if (!isWayfinderOwned(issue, wayfinder.id)) throw new FailError("Issue 不再处于 Wayfinder 可准入状态，禁止覆盖");
+      const status = args.decision === "needs_human" ? "blocked" : "unsupported";
+      const fresh = client.getIssue(issue.id) as Issue;
+      if (!isWayfinderOwned(fresh, wayfinder.id) || fresh.status !== issue.status ||
+        fresh.metadata?.["tfs.type"] !== tfsType || fresh.metadata?.["tfs.id"] !== tfsId ||
+        fresh.metadata?.["tfs.changed_at"] !== issue.metadata?.["tfs.changed_at"])
+        throw new UnknownError("准入前 Issue 负责人、状态或来源已经变化");
+      if (fresh.status !== status) client.setStatusNoStart(issue.id, status);
+      const after = client.getIssue(issue.id) as Issue;
+      if (!isWayfinderOwned(after, wayfinder.id) || after.status !== status)
+        throw new UnknownError("准入结果无法确认，禁止覆盖当前负责人");
+      process.stdout.write(JSON.stringify({ result: fresh.status === status ? "NOOP" : "PASS",
+        issue: issueKey, decision: args.decision, status, assignee_id: wayfinder.id }, null, 2) + "\n");
+      return 0;
+    }
+    const route = resolveHandoffTarget(tfsType);
+    if (!route) throw new FailError("不支持的 TFS Work Item Type: " + tfsType);
     let target: NamedObject;
     let expectedAgentId: string;
     if (route.type === "agent") {
@@ -171,7 +189,7 @@ async function main(argv: string[]): Promise<number> {
     const beforeRuns = new Set(readRuns(client, issue.id).map((run) => run.id));
     // The current source/owner may have changed during lookups; re-read before the one write.
     const fresh = client.getIssue(issue.id) as Issue;
-    if (!isWayfinderOwned(fresh, wayfinder.id) ||
+    if (!isWayfinderOwned(fresh, wayfinder.id) || fresh.status !== issue.status ||
       fresh.metadata?.["tfs.type"] !== tfsType ||
       fresh.metadata?.["tfs.id"] !== tfsId ||
       fresh.metadata?.["tfs.changed_at"] !== issue.metadata?.["tfs.changed_at"]) {
@@ -218,9 +236,9 @@ async function main(argv: string[]): Promise<number> {
   }
 }
 
-export function registerDeliveryHandoff(group: Command): void {
-  group.command("handoff")
-    .description("Wayfinder 通过准入后的确定性 TFS Type 交接")
+export function registerDeliveryAdmission(group: Command): void {
+  group.command("admission")
+    .description("执行 Wayfinder 准入 Decision（原生指派或状态更新）")
     .helpOption(false).allowUnknownOption(true).allowExcessArguments(true)
     .action(async (...cbArgs: unknown[]) => {
       markLeafExecuted();

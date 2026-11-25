@@ -19,7 +19,6 @@
 | [requirement-analysis](requirement-analysis/SKILL.md) | Intentional 需求澄清与方案分析 |
 | [spec-preparation](spec-preparation/SKILL.md) | 通过 OpenSpec CLI 准备和修订 Change 工件 |
 | [tfs-sync](tfs-sync/SKILL.md) | TFS Work Item 与 Issue 同步 |
-| [workitem-triage](workitem-triage/SKILL.md) | Work Item 准入评估 |
 | [workspace-preparation](workspace-preparation/SKILL.md) | Bug / Requirement 需要的 Git 工作区准备与复用 |
 
 ## 已归档或保留但不受管
