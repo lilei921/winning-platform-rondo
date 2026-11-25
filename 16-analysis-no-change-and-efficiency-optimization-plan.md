@@ -141,7 +141,7 @@ corrective / intentional 是变更性质，不回答是否需要变更。存在�
 
 ### 3.3 专业聚焦与 Evidence
 
-Wayfinder 的职责是判断能否承接，而非完整诊断。发现既有修复是有价值的证据，不必继续验证现场版本、全部回归场景、技术方案或最终任务。LEI-62 在确认日志问题归属、可访问的候选后端仓和承接能力后即可形成 eligible；已发现的代码位置和参考实现作为 Evidence，而非继续扩大专业调查。两个 Issue 均应复用可信 Decision 及已知路径，只核实影响当前结论的差异。
+Wayfinder 的职责是判断能否承接，而非完整诊断。发现既有修复是有价值的证据，不必继续验证现场版本、全部回归场景、技术方案或最终任务。LEI-62 在明确受支持的业务范围、定位相关后端仓、判断为现有功能优化后即可形成 eligible；已发现的代码位置和参考实现作为 Evidence，而非继续扩大专业调查。两个 Issue 均应复用可信 Decision 及已知路径，只核实影响当前结论的差异。
 
 Analyst 可复用原 Decision、LEI-31、PR、Commit 和归档 Evidence，只核实当前诉求与已有修复之间的实质差异。已有证据并不自动等同当前代码事实；必要时验证版本与范围。远程 MCP 足够时不必准备本地仓；需要精确 Git 版本关系、本地验证或写入时按需 Checkout。不改变 native-workspace 的工作区架构。
 
@@ -255,10 +255,36 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 当前 workitem-triage 仅绑定 Wayfinder（workspace-config/provisioning.json），其主要内容为准入语义、Decision 有效性、记录和结果处理，属于 Wayfinder 自身角色职责。建议合并到 agents/wayfinder-agent/instructions.md，取消独立 workitem-triage Skill，不新增替代 Skill 或兼容层；codebase-explorer 保持可复用工程调查方法。
 
 已确认收敛方向：
-- 删除 Repository Accessibility 和 Admission Boundary 两个独立评估维度；保留 Business Scope、Repository Discovery、Processing Capability。实际访问异常与已明确的授权/排除规则仍按实际影响处理，不要求常规逐项调查权限或限制。
+- 删除 Repository Accessibility 和 Admission Boundary 两个独立评估维度；保留 Business Scope、Repository Discovery、Processing Capability，按下述已确认的准入规则判断。实际访问异常与已明确的授权/排除规则仍按实际影响处理，不要求常规逐项调查权限或限制。
 - 保持 eligible / needs_human / unsupported 的现有语义及必要结果处理；已有有效 Decision 可直接复用。先记录并确认有效 Decision，再执行原有 rondo delivery handoff --issue <KEY>；不新增 Decision Gate、参数或自然语言解析。
 - 减少重复职责、MCP 方法及不必要的调查限制，保留可追溯的 Evidence、增量重评和必要原生 Comment 使用说明。/note、supersedes、resume_ref 等当前记录语义是否简化，在 Instructions 正文讨论时核实实际消费者。
-- 正文采用角色、工作原则、Decision、Delivery 的精简结构，具体措辞待讨论确认；不把本方案的举例或历史说明直接拼入 Instructions。
+- 正文采用 Role & Goal、Working Principles、Admission Criteria、Decision、Delivery 的精简结构。Admission Criteria 已确认，其他正文措辞待讨论；不把本方案的举例或历史说明直接拼入 Instructions。
+
+#### Admission Criteria（已确认）
+
+三个维度均为准入条件，不是固定调查步骤或工具调用清单。
+
+| 维度 | 准入条件 |
+| --- | --- |
+| Business Scope | 必须明确 Issue 所属业务范围，且属于当前支持的业务范围。 |
+| Repository Discovery | 必须定位与当前 Issue 相关的工程仓库；无需确定最终修改文件、Symbol、完整调用链或技术实现方案。 |
+| Processing Capability | 依据 TFS Work Item 类型和实际诉求判断当前支持范围，不额外调查 Agent、工具或技术实现能力。 |
+
+当前支持规则：
+
+| TFS Work Item 类型 | 实际诉求 | 支持情况 |
+| --- | --- | --- |
+| Bug | Bug 修复 | 支持；Business Scope 与 Repository Discovery 满足即可通过准入 |
+| 需求 | Bug 类问题 | 支持 |
+| 需求 | 现有功能优化 | 支持 |
+| 需求 | 新增业务功能 | 暂不支持 |
+| 需求 | 诉求性质尚不明确 | 按需取证或澄清，不能直接认定 eligible |
+
+根据实际业务诉求及既有业务能力判断功能优化与新增业务功能，不以是否需要新增代码、接口或页面作为分类标准。准入分类不替代下游 Technical Change Kind、OpenSpec Schema 或技术方案的专业判断。
+
+满足三项条件且无已明确硬性阻断时为 eligible；明确不属于当前支持范围（如新增业务功能）时为 unsupported；影响准入判断的关键事实确需 Human 确认时为 needs_human。尚未定位仓库或诉求尚不明确时先按实际需要调查，不把证据不足直接认定为 unsupported。
+
+准入规则直接维护在 Wayfinder Instructions 中，不新增配置文件、规则引擎、CLI 语义 Gate 或固定调查顺序。
 
 实施时同步清理 workspace-config/provisioning.json 的 Skill 发布及绑定、Wayfinder README、受影响设计文档与 Manifest 测试（rondo/test/d1-analysis-skills.test.mjs 已断言当前绑定）。确认实际 Workspace 解绑/退役能力，避免遗留活动 Skill；不改历史 Replay。正文与合并实施细节经讨论确认后再研发。
 
@@ -321,7 +347,7 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 
 ## 6. LEI-61 目标行为
 
-Wayfinder 确认范围、授权与承接能力，记录已有修复线索并交接。Analyst 核实原诉求与已有修复一致性、版本与必要覆盖，在当前 Issue 直接发布专业结论 Comment；Multica 原生回流后 Lead 根据实际情况协调处理，不要求 @Lead。
+Wayfinder 明确受支持的业务范围、定位相关工程仓库，判断需求属于 Bug 类问题，记录已有修复线索并交接。Analyst 核实原诉求与已有修复一致性、版本与必要覆盖，在当前 Issue 直接发布专业结论 Comment；Multica 原生回流后 Lead 根据实际情况协调处理，不要求 @Lead。
 
 Issue Comment 示例（仅示意，不定义固定模板或新契约）：
 
@@ -337,7 +363,7 @@ Issue Comment 示例（仅示意，不定义固定模板或新契约）：
 
 ### 6.1 LEI-62 目标行为
 
-Wayfinder 确认业务归属、授权、访问能力和承接条件，记录已定位的 DfJobMigration / OdrJobMigration 证据。Analyst 复用定位结果，核查日志实际消费链、现有异常记录方式、凭据安全与验收边界；必要时核实前端/API 是否需要调整，证据充分即可结束调查。保持 API 与前端不变是当前回放的分析结论，不是对所有日志需求的固定约束。
+Wayfinder 明确受支持的业务范围、定位相关工程仓库，判断需求属于现有功能优化，记录已定位的 DfJobMigration / OdrJobMigration 证据。Analyst 复用定位结果，核查日志实际消费链、现有异常记录方式、凭据安全与验收边界；必要时核实前端/API 是否需要调整，证据充分即可结束调查。保持 API 与前端不变是当前回放的分析结论，不是对所有日志需求的固定约束。
 
 确认真实增量后准备当前 Schema 所需最小 OpenSpec（是否需要 Design、Spec Delta 按原生 Schema 与专业判断决定），完成专业复核、本次 Change 的本地 Commit，调用一次常规 analysis complete，发布固定审核版本及 Comment。无需创建额外 AI Review 文档、在正常流程反查 CLI 内部实现或执行 stage；validate 和准备阶段 Strict Validation 按需执行，最终 Gate 仍执行原生严格校验。Human Approval、必要开发侧验证及脱敏要求保持。
 
@@ -357,7 +383,7 @@ Wayfinder 确认业务归属、授权、访问能力和承接条件，记录已�
 - 无工程增量：直接发布 Comment，原生回流，由 Lead 协调，不虚构 Change/Gate/Approval/PR/TFS 事实；现场版本未知不等于已解决；已有有效契约不被静默取消。
 - 真实工程增量：正常 complete 直接消费本次 Facts，保留专业复核、原生 Strict Validation、必要 Gate、Git 固定来源、Human Approval；必要诊断仍可执行。
 - CLI 回归：输入缺失或不合法、发布路径越界、身份或事实冲突、候选/远端不一致、部分成功恢复与审核重放；不得降低已有保护或增加无意义校验。
-- Wayfinder：有效 Decision 先记录再交接；删除两个独立准入维度，不取消真实授权边界；合并实施后确认绑定及当前原生评论契约。
+- Wayfinder：Business Scope 与 Repository Discovery 必须满足；Bug 满足前两项即可准入，需求仅支持 Bug 类及现有功能优化，新增业务功能暂不支持，关键性质不明时按需澄清。有效 Decision 先记录再交接；删除两个独立准入维度，不取消真实授权边界；合并实施后确认绑定及当前原生评论契约。
 - 工程调查：远端路径和证据版本真实，按需使用工具；不强制重复 Checkout。
 - 效率仅作回放观察，不写入 Agent Instructions、Gate 或固定限时、配额。Runtime 取消与等待独立调查，不作为功能实现验收条件。
 
