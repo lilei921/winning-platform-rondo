@@ -42,7 +42,7 @@ git add -- openspec/changes/<change_ref>/proposal.md
 git commit --only -m "analysis: <change_ref>" -- openspec/changes/<change_ref>/proposal.md
 ```
 
-按本次实际工件选择提交路径。发布 TFS Requirement 审核版本：
+按本次实际工件选择提交路径。使用已准备的实际根仓绝对路径（`--root-repo` 不接受 `.`），发布 TFS Requirement 审核版本：
 
 ```bash
 rondo analysis publish --mode requirement --issue <issue> --facts <facts.json> \
@@ -63,6 +63,6 @@ multica issue comment add <issue> --content-file "<summary-file>" --workspace-id
 
 - `publish` 返回 `result=PASS` 即确认审核版本发布完成，无需重复核对 CLI 已确认的后置条件；检查返回的 `diagnostics` 并按专业影响处理有意义的原生诊断；发现工程契约存在实质缺陷时，如实报告并按既有审核修订机制处理，不宣称契约无问题。Agent 的审核交付还需确保摘要发布成功。
 - `analysis.source` 由 Rondo 写入，包含 `repo_url`、`branch`、`commit`、`change_ref`。固定发布来源包括仓库、分支、完整 Commit 和 Change Ref；不得手填或以可变 HEAD 代替。
-- `FAIL` 按实际原因处理，不绕过 Gate；`UNKNOWN` 先回读状态和固定来源，符合现有 `publish` Replay / 恢复条件时可重试确认，否则停止。不复用旧 PASS 或自行补写 Metadata。仅评论发布失败时先回读原生线程并按需补齐，不重新执行已成功的 Gate/Git 发布。
+- `FAIL` 按实际原因处理，不绕过 Gate；`UNKNOWN` 中可明确修正的输入问题按原因处理，发布结果不明时先回读状态和固定来源，仅在符合现有 `publish` Replay / 恢复条件时重试确认。CLI 内部故障或外部基础设施异常时，保留已完成工件及已知 Commit，在当前 Issue Comment 说明实际进展与阻断原因，停止发布；不排查 CLI 内部实现、不循环重试。不复用旧 PASS 或自行补写 Metadata。仅评论发布失败时先回读原生线程并按需补齐，不重新执行已成功的 Gate/Git 发布。
 - 不新增 Gate、Review、Handoff 等过程性持久化工件；临时 Facts 不提交 Git 或 Archive。
 - Human Approval 属于后续独立决定；本 Skill 不负责研发派发、代码实现或 TFS 回写。
