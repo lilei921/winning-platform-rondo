@@ -16,7 +16,7 @@ function runCli(args, env = {}) {
 /** 当前完整命令树；包含 analysis read 和顶层叶子 query/doctor。 */
 const TREE = {
   change: ["resolve-identity", "update-progress"],
-  analysis: ["validate", "complete", "read", "approve"],
+  analysis: ["validate", "publish", "read", "approve"],
   dev: ["check-dispatch", "materialize", "git", "prepare", "check-completion", "check-change", "publish", "contract-hash"],
   bug: ["resume"],
   tfs: ["writeback", "materialize-tasks", "resolve-tasks", "reconcile-workitem"],
@@ -103,5 +103,5 @@ test("PR Preparation 命名统一，Closeout 拒绝旧配置参数", () => {
 
 test("retired stage and handoff are not public commands", () => {
   for (const args of [["analysis", "stage"], ["delivery", "handoff"]]) assert.notEqual(runCli(args).status, 0);
-  for (const args of [["analysis", "validate"], ["analysis", "complete"], ["delivery", "admission"]]) assert.equal(runCli([...args, "--help"]).status, 0);
+  for (const args of [["analysis", "validate"], ["analysis", "publish"], ["delivery", "admission"]]) assert.equal(runCli([...args, "--help"]).status, 0);
 });

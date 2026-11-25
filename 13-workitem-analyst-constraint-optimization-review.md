@@ -9,11 +9,11 @@
 
 **不降低专业质量及工程安全要求；减少无必要的方法限制、重复检查解释和辅助报告。**
 
-当前 Agent / Skills 的总体结构合理。Workitem Analyst 对准确、可实施、可验证的 Engineering Contract 负责，可按需组合专业 Skill。需要优化的主要是少数执行型 Skill 的**规则密度**，而非架构和文件长度；`instructions.md`、`spec-preparation/SKILL.md`、`analysis-completion/SKILL.md` 分别约 43、41、71 行，不能因文字密集就认定全部需要重写。尚无 A/B 运行数据证明 Prompt 冗长实际造成质量或性能下降。
+当前 Agent / Skills 的总体结构合理。Workitem Analyst 对准确、可实施、可验证的 Engineering Contract 负责，可按需组合专业 Skill。需要优化的主要是少数执行型 Skill 的**规则密度**，而非架构和文件长度；`instructions.md`、`spec-preparation/SKILL.md`、`analysis-publish/SKILL.md` 分别约 43、41、71 行，不能因文字密集就认定全部需要重写。尚无 A/B 运行数据证明 Prompt 冗长实际造成质量或性能下降。
 
 **实施建议：**
 - **P0**：针对 `spec-preparation` 只删除已被原生机制覆盖、且不会造成操作歧义的重复解释；保留写入前提与专业判断。
-- **P1**：针对 `analysis-completion` 精简重复错误解释，准确保留 Stage、Gate、本地 Commit、Rondo Complete 的实际执行契约。
+- **P1**：针对 `analysis-publish` 精简重复错误解释，准确保留 Stage、Gate、本地 Commit、Rondo Complete 的实际执行契约。
 - **按需**：`workitem-analyst/instructions.md` 若经文件级 Diff 确认确有重复，再微调 Verify Recommendation；没有实质收益则不改。
 - **不改**：`bug-analysis`、`requirement-analysis`、`workspace-preparation`、`codebase-explorer`（除非真实样例显示多余查询）、Skill 绑定、01/03、Rondo、Schema、Gate。
 
@@ -21,7 +21,7 @@
 
 ## 2. 事实与规则 Owner
 
-当前 [绑定清单](workspace-config/provisioning.json) 为 Workitem Analyst 声明 6 个 Skill：`codebase-explorer`、`bug-analysis`、`requirement-analysis`、`spec-preparation`、`analysis-completion`、`workspace-preparation`。仓内配置是绑定意图；实际 Multica Workspace 是否已同步必须独立回读，不能从文件存在推定。
+当前 [绑定清单](workspace-config/provisioning.json) 为 Workitem Analyst 声明 6 个 Skill：`codebase-explorer`、`bug-analysis`、`requirement-analysis`、`spec-preparation`、`analysis-publish`、`workspace-preparation`。仓内配置是绑定意图；实际 Multica Workspace 是否已同步必须独立回读，不能从文件存在推定。
 
 | 规则层级 | 唯一职责 | 必须保留的判断 |
 | --- | --- | --- |
@@ -50,7 +50,7 @@
 **建议**：
 - 保留 Workitem Analyst 的专业端到端责任，不拆分 Review Agent / Preparation Agent。
 - 只在确有重复时压缩 `required / not_required` 判定说明；保留“独立执行是否有实质增量、剩余风险是否需要额外覆盖”的专业判断，不把 Change Kind、仓库数或测试类型当作自动触发条件。
-- `analysis-completion` 负责提交结构化 `verify_agent` 事实，不重新作出首次推荐；`not_required` 不减免开发侧验证。
+- `analysis-publish` 负责提交结构化 `verify_agent` 事实，不重新作出首次推荐；`not_required` 不减免开发侧验证。
 - 若现有内容已经足够简洁，**不修改 Agent Instructions**。
 
 **保留的约束**：未经批准不得作产品关键选择、代码实现、外部 TFS 管理、Issue 审批与 PR 合并；没有证据不能宣称确定结果。
@@ -82,15 +82,15 @@
 
 **验收**：可在正确 Root 创建/复用唯一 Change；错误身份/授权时拒绝危险写入；可合法跳过不需要的工件，且必要的工程内容仍可实施和验证。
 
-### D. Analysis Completion 的执行语义及恢复（WIA-09、WIA-10）
+### D. Analysis Publish 的执行语义及恢复（WIA-09、WIA-10）
 
-**现状/问题**：[当前 Skill](skills/analysis-completion/SKILL.md) 存在对 CLI 内部字段校验和错误码处理的重复描述。旧方案中“Stage → Gate → 发布 → Complete”容易误导：**Requirement 的远端发布、远端 Gate/Commit 核验和 `analysis_review` 状态写入由 `rondo analysis complete` 实施**。
+**现状/问题**：[当前 Skill](skills/analysis-publish/SKILL.md) 存在对 CLI 内部字段校验和错误码处理的重复描述。旧方案中“Stage → Gate → 发布 → Complete”容易误导：**Requirement 的远端发布、远端 Gate/Commit 核验和 `analysis_review` 状态写入由 `rondo analysis publish` 实施**。
 
 **正确的执行依赖**：
 1. `rondo analysis stage`：输入**不带 `gate`** 的 Draft Facts，写入并回读当前 Issue Metadata。
 2. `rondo analysis validate`：执行 Gate，将真实结果写入当前 Change 的 `openspec/changes/<change_ref>/logs/analysis-gate-result.json`。
 3. Gate PASS 后，在 Facts 中填入真实 `gate.result`、`gate.reasons_ref`；只暂存、**本地 Git Commit 当前 Change 必要审核文件和 Gate Result**，避免包含无关变更。
-4. `rondo analysis complete --mode requirement`：由 Rondo 完成远端发布、固定来源核验、`analysis.source` 落账、`analysis_review` 状态变更与回读。不可在该步骤外再安排一套重复 Push 流程。
+4. `rondo analysis publish --mode requirement`：由 Rondo 完成远端发布、固定来源核验、`analysis.source` 落账、`analysis_review` 状态变更与回读。不可在该步骤外再安排一套重复 Push 流程。
 
 **精简边界**：仍保留上述不可交换顺序、CLI 必要命令及 `--workspace-id` / `--registry-config` / `--root-repo` 等实际参数、Gate 后工件变化需要重新 Gate、未知结果先回读再恢复。可删除冗长的内部哈希/metadata 算法描述和无依据的固定等待时间；不能据此推定 CLI 已提供完整自动恢复。`FAIL / UNKNOWN` 不得当成 PASS，不能无限重试或手工伪造 Metadata。
 
@@ -130,7 +130,7 @@ Professional Review 只判断 **Correctness、Consistency、Implementability、V
 | 文件 | 决策 | 最小动作 |
 | --- | --- | --- |
 | `skills/spec-preparation/SKILL.md` | **P0：局部精简** | 优先删机械实现重复描述；保留写入前提、语义审查和失败约束 |
-| `skills/analysis-completion/SKILL.md` | **P1：局部精简** | 正确说明本地 Commit 与 `complete` 发布职责；精简重复错误说明 |
+| `skills/analysis-publish/SKILL.md` | **P1：局部精简** | 正确说明本地 Commit 与 `complete` 发布职责；精简重复错误说明 |
 | `agents/workitem-analyst/instructions.md` | **按需** | 只有发现真正重复的 Verify 文案时微调 |
 | `codebase-explorer`、`bug-analysis`、`requirement-analysis`、`workspace-preparation` | **不改** | 已有适当专业自治及安全边界 |
 | `01`、`03`、OpenSpec Schema、Rondo、Gate、Binding | **不改** | 不新增机制或扩大本轮变更 |
@@ -161,13 +161,13 @@ Professional Review 只判断 **Correctness、Consistency、Implementability、V
 - [Workitem Analyst Instructions](agents/workitem-analyst/instructions.md)
 - [Skill Binding Manifest](workspace-config/provisioning.json)
 - [Spec Preparation](skills/spec-preparation/SKILL.md)
-- [Analysis Completion](skills/analysis-completion/SKILL.md)
+- [Analysis Publish](skills/analysis-publish/SKILL.md)
 - [Bug Analysis](skills/bug-analysis/SKILL.md)
 - [Requirement Analysis](skills/requirement-analysis/SKILL.md)
-- [Analysis Source Contract](skills/analysis-completion/references/analysis-source-contract.md)
+- [Analysis Source Contract](skills/analysis-publish/references/analysis-source-contract.md)
 - [03 Workitem Analysis Design](03-workitem-analysis-design.md)
 - [Rondo Identity Resolver](rondo/src/commands/change/resolve-identity.ts)
 - [Rondo Stage](rondo/src/commands/analysis/stage.ts)
 - [Rondo Gate](rondo/src/commands/analysis/validate.ts)
-- [Rondo Complete](rondo/src/commands/analysis/complete.ts)
+- [Rondo Complete](rondo/src/commands/analysis/publish.ts)
 - [Rondo Facts](rondo/src/commands/analysis/facts.ts)

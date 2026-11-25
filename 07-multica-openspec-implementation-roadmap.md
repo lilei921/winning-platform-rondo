@@ -220,12 +220,12 @@ Finalize 每次读取现实外部事实和已完成后置条件，只补缺失�
 
 #### Step 05 — Workitem Analyst 阶段实施
 
-**实施范围**：落实 Workitem Analyst 专业 Goal，当前以 `codebase-explorer`、`bug-analysis`、`requirement-analysis`、`spec-preparation` 按需组合，使用 `analysis-completion` / `delivery-gate` 收口；原 `workitem-analysis` 已退役但保留源文件。验证 Change Kind 判断、现有 Change 解析与 Schema 读取，不引入独立 Analysis Route 配置。首期跑通 Corrective，Wayfinder Evidence 按需复用，明确直接委派可绕过准入。
+**实施范围**：落实 Workitem Analyst 专业 Goal，当前以 `codebase-explorer`、`bug-analysis`、`requirement-analysis`、`spec-preparation` 按需组合，使用 `analysis-publish` / `delivery-gate` 收口；原 `workitem-analysis` 已退役但保留源文件。验证 Change Kind 判断、现有 Change 解析与 Schema 读取，不引入独立 Analysis Route 配置。首期跑通 Corrective，Wayfinder Evidence 按需复用，明确直接委派可绕过准入。
 
 **研发任务拆解（7 项）**：
 
 1. **核对并优化专业目标与场景入口**：评审当前 Workitem Analyst 的专业职责、按复杂度自主执行与现有证据增量复用；针对典型 Corrective / Intentional 用例验证专业结果，不将不同能力固定串行。
-2. **按证据提取可复用能力**：优先评估 `bug-analysis`、`requirement-analysis`，其他候选 Skill 仅在有独立复用收益时注册；保持 `analysis-completion` / Gate 的确定性交付能力，不复制 OpenSpec Schema。
+2. **按证据提取可复用能力**：优先评估 `bug-analysis`、`requirement-analysis`，其他候选 Skill 仅在有独立复用收益时注册；保持 `analysis-publish` / Gate 的确定性交付能力，不复制 OpenSpec Schema。
 3. 更新 Workitem Analyst Agent Instructions 的 `Goal`、职责和边界，按最终确认的真实 Skill 集合登记绑定与可访问性；不以设计候选目录视作已部署。
 4. 验证 Technical Change Kind 的语义判断、Multica Issue Metadata `analysis.change_kind` 的持久化与回读、Schema 首次选择及跨 Run 读取，并验证分类与 Schema 一致；不新增 Analysis Route 配置或映射脚本。
 5. 集成 Step 03 的 OpenSpec Contract，生成并校验 Corrective Proposal / Specs / Tasks，不重复实现 Schema。
@@ -503,7 +503,7 @@ Finalize 每次读取现实外部事实和已完成后置条件，只补缺失�
 **最终目标**：取消独立 Analysis Route 执行模型；保留 `analysis.change_kind` 作为 Multica Issue 的持久化专业分类事实（`corrective | intentional`），由 Analyst 判断、通过 `rondo analysis stage` 写入并回读。该字段用于交付追踪与统计，**不是** Workflow、Status、授权或 Schema 的替代品。
 
 1. **Facts / Stage / Gate / Complete**：`facts.json.change_kind` 为必填，服务端写入 `analysis.change_kind`；读取当前 Change 的 `.openspec.yaml.schema`，核对二者一致。Gate PASS 需携带本次 Issue / Workspace、Change Kind / Schema 和当前 Change 工件摘要（仅排除 Gate Result 自身）；Complete 回读真实 Gate Result，核对全部必要 PASS 检查项及工件未变化，保留 Intentional 的专业 AI Review、必要 Gate / Human Review 约束。
-2. **Finalize / Skill**：正常 Finalize 再次核对 `analysis.change_kind`、Schema 与完成条件；已 `done` 的幂等回放则先核对服务器端最小分类 / Gate 事实，再决定是否清理 `finalize.pending`，不依赖可能已卸载的归档根仓。同步 Analyst Instructions、`analysis-completion`、`delivery-gate` 及相关契约；不引入 `analysis-routing.yaml`、新状态或额外 Skill 链。
+2. **Finalize / Skill**：正常 Finalize 再次核对 `analysis.change_kind`、Schema 与完成条件；已 `done` 的幂等回放则先核对服务器端最小分类 / Gate 事实，再决定是否清理 `finalize.pending`，不依赖可能已卸载的归档根仓。同步 Analyst Instructions、`analysis-publish`、`delivery-gate` 及相关契约；不引入 `analysis-routing.yaml`、新状态或额外 Skill 链。
 3. **统计与分组**：`tfs.type` 代表来源管理类型，`analysis.change_kind` 代表技术变更性质。使用已有数据库直接查询 Multica Issue 及其 Metadata，并与真实 Issue `done` 等有效终态关联，按两字段组合统计数量、交付耗时、返工率与自动完成率。数据表与字段路径以现有数据库实际结构为准；**不评估 Multica 原生 Metadata 聚合查询能力**，不为此建立新的统计服务、状态或 Truth Store。
 4. **验收**：在独立 Workspace 验证 Corrective（Bug / Requirement）、Intentional、分类字段 Stage 写入和回读、Schema 冲突 FAIL、Review / Gate、返工、Finalize 与统计提取；CI 通过不替代真实 Workspace 验证。
 

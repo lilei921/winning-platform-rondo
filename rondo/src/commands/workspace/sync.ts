@@ -52,7 +52,7 @@ function initRoots(): void {
 }
 
 /** 消费 repo-registry.json 的 Skill；仅渲染本次同步范围内的配置。 */
-const REPO_REGISTRY_SKILLS = ["delivery-flow", "development-execution", "workitem-analysis", "analysis-completion", "spec-preparation", "workspace-preparation"];
+const REPO_REGISTRY_SKILLS = ["delivery-flow", "development-execution", "workitem-analysis", "analysis-publish", "spec-preparation", "workspace-preparation"];
 /** 消费 sync-config.json 的 Skill（渲染目标 ×1） */
 const TFS_SYNC_SKILL = "tfs-sync";
 

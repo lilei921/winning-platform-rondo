@@ -19,7 +19,7 @@ Native Workspace 已接管本地工作区准备，但分析发布、研发发布
 | 16:18:52 | Multica 根仓 Checkout 成功，Task Branch 为 agent/workitem-analyst/4b6808fe085f |
 | 16:20:24 | runtime check-checkout PASS |
 | 发布前 | OpenSpec 严格校验及 analysis validate 预检查 PASS；本地分析 Commit 已完成 |
-| 16:26:02 | analysis complete 首次返回 UNKNOWN: 请配置 RONDO_WORKSPACE_BRANCH 后再准备根仓 |
+| 16:26:02 | analysis publish 首次返回 UNKNOWN: 请配置 RONDO_WORKSPACE_BRANCH 后再准备根仓 |
 | 16:26:42 | 显式提供 --target-branch 后返回 FAIL: --target-branch 仅用于 Native Requirement 分析发布 |
 | 最终 | analysis.source 与 analysis.gate.result 未形成；Issue blocked，未进入 analysis_review |
 
@@ -27,11 +27,11 @@ Native Workspace 已接管本地工作区准备，但分析发布、研发发布
 
 ### 2.1 发布分支重复配置
 
-[analysis/complete.ts](rondo/src/commands/analysis/complete.ts) 在最终 Gate 前调用 `args.targetBranch || requirementBranch()`；[root-git.ts](rondo/src/commands/runtime/root-git.ts) 的 requirementBranch() 强制读取 RONDO_WORKSPACE_BRANCH。因此预检查 PASS 并不意味着最终发布 Gate 已执行。
+[analysis/publish.ts](rondo/src/commands/analysis/publish.ts) 在最终 Gate 前调用 `args.targetBranch || requirementBranch()`；[root-git.ts](rondo/src/commands/runtime/root-git.ts) 的 requirementBranch() 强制读取 RONDO_WORKSPACE_BRANCH。因此预检查 PASS 并不意味着最终发布 Gate 已执行。
 
 ### 2.2 工作区内部形态耦合
 
-analysis complete 显式 --target-branch 依赖 isDaemonCacheWorktree()；该判断读取 Git common dir 并匹配 .repos/<workspace-id>。root-git.ts 的 publishCommittedChange() 也使用相同判断选择 Native/非 Native 路径，并在非 Native 路径要求本地分支等于远端发布分支。
+analysis publish 显式 --target-branch 依赖 isDaemonCacheWorktree()；该判断读取 Git common dir 并匹配 .repos/<workspace-id>。root-git.ts 的 publishCommittedChange() 也使用相同判断选择 Native/非 Native 路径，并在非 Native 路径要求本地分支等于远端发布分支。
 
 [check-checkout.ts](rondo/src/commands/runtime/check-checkout.ts) 使用 validateNativeCheckout()，仅验证 Git 根仓和 AGENTS.md，支持普通 Checkout 与 linked worktree；后续 assertNativeTaskCheckout() 又要求 .git 文件、cache 布局等条件，导致前后契约不一致。
 
@@ -41,7 +41,7 @@ analysis complete 显式 --target-branch 依赖 isDaemonCacheWorktree()；该判
 
 Multica repo checkout 按执行 cwd 放置仓库。此前 Spike 从根仓内执行业务仓 Checkout，形成嵌套布局；LEI-53 在 Task workdir 中执行，形成平级布局。两者都是平台可产生的结果。
 
-原设计 §2.2 和真实 Spike §2、§3、§4.2 已证实两级布局可行：根仓与 frame/frame-web 的 Git 工作树独立，根仓不跟踪业务仓。当前 dev/native-prepare.ts 已在根仓 cwd 执行业务仓 Checkout；dev/prepare-workspace.ts、dev/pr-prepare.ts、dev/check-completion.ts、bug/git.ts 均消费原有两级布局。native-workspace 未明确只读业务仓原生 Checkout 的执行目录，导致 LEI-53 出现布局偏差。该偏差不是 analysis complete 阻塞的直接原因，无证据表明机制不支持两级布局，因此保留原设计，不重构下游路径消费。
+原设计 §2.2 和真实 Spike §2、§3、§4.2 已证实两级布局可行：根仓与 frame/frame-web 的 Git 工作树独立，根仓不跟踪业务仓。当前 dev/native-prepare.ts 已在根仓 cwd 执行业务仓 Checkout；dev/prepare-workspace.ts、dev/pr-prepare.ts、dev/check-completion.ts、bug/git.ts 均消费原有两级布局。native-workspace 未明确只读业务仓原生 Checkout 的执行目录，导致 LEI-53 出现布局偏差。该偏差不是 analysis publish 阻塞的直接原因，无证据表明机制不支持两级布局，因此保留原设计，不重构下游路径消费。
 
 ## 3. 核心设计决策
 
@@ -73,7 +73,7 @@ Multica Resource ref 原生语义是 Checkout 起点，并非平台天然定义�
 - 在 CLI 内根据当前 Task 的 Project Resource，按已验证根仓 URL 匹配唯一登记仓库；读取 resource_ref.ref，确认其为合法、实际存在的远端分支。
 - 可直接消费已注入的 .multica/project/resources.json；核对当前 Issue/Project 身份及根仓 Origin，避免使用其他项目或任意本地配置。
 - 缺失、歧义、非分支 ref 或远端不存在时报告具体原因；不回退 RONDO_WORKSPACE_BRANCH、当前 HEAD、默认 master 或其他猜测。
-- 当前 analysis/complete.ts 将 Requirement 必须使用 --mode requirement 的条件绑定于 RONDO_WORKSPACE_PATH / RONDO_WORKSPACE_BRANCH。删除此环境变量条件：TFS Requirement 无条件要求现有 Requirement 发布模式，漏传或传 legacy 不得走旧 publishChange 路径。保留现有 CLI 模式契约，不扩展类型重构。
+- 当前 analysis/publish.ts 将 Requirement 必须使用 --mode requirement 的条件绑定于 RONDO_WORKSPACE_PATH / RONDO_WORKSPACE_BRANCH。删除此环境变量条件：TFS Requirement 无条件要求现有 Requirement 发布模式，漏传或传 legacy 不得走旧 publishChange 路径。保留现有 CLI 模式契约，不扩展类型重构。
 - 正常 Native Requirement 不传 --target-branch；旧参数如仍有消费者，仅保留其适用旧入口，Native 不允许覆盖 Resource 权威。显式冲突不得静默回退。
 - 首次发布必须核实 Resource ref 与根仓实际 Checkout 基线一致。使用 Git 已有 upstream、远端分支与提交关系等可靠事实；不得仅凭 HEAD 与两个分支具有共同祖先认定基线相同。相同分支远端前进仍使用现有单 Change 并发发布机制；Resource ref 改成另一分支、Kept 保留旧基线或无法确认时停止受影响发布并报告，不自动切换、重置或改投其他分支。不新增 Resource Snapshot 或分支 Metadata。
 - 已进入 analysis_review 的相同 Facts 重放仍核对固定来源，不重做 Gate 或重新选择目标；部分成功与授权返工见 §4.5。
@@ -82,7 +82,7 @@ Multica Resource ref 原生语义是 Checkout 起点，并非平台天然定义�
 
 ### 4.2 Git 工作区校验与单 Change 发布
 
-涉及 native-checkout.ts、runtime/root-git.ts、analysis/complete.ts，及消费相同校验的下游入口。
+涉及 native-checkout.ts、runtime/root-git.ts、analysis/publish.ts，及消费相同校验的下游入口。
 
 - 统一普通 Checkout 和 linked worktree 的 Git 工作树语义，不强制 .git 为文件或 common dir 匹配 .repos 目录。
 - 保留并核实当前 Task workdir、平台上下文、仓库真实根路径、Origin/Push URL、Project Resource、工程映射及操作授权。不得将任意有效 Git 目录视为已授权 Native 工作区；路径越界、链接、身份冲突或授权不明仍拒绝。
@@ -167,12 +167,12 @@ Native 路径不消费 RONDO_WORKSPACE_BRANCH、RONDO_WORKSPACE_PATH；实际根
 
 Skill 仅保留必要命令、Resource/ref、执行目录和结果处理说明，使用跨平台表达，不解释 .git、daemon cache 或 common dir，不重复正式交付校验。
 
-### analysis-completion
+### analysis-publish
 
 继续使用现有正常命令，不新增参数或工作区类型说明：
 
 ```bash
-rondo analysis complete --mode requirement --issue <issue> --facts <facts.json> \
+rondo analysis publish --mode requirement --issue <issue> --facts <facts.json> \
   --registry-config "<config>" --workspace-id <workspace> --root-repo "<root>"
 ```
 
@@ -185,7 +185,7 @@ flowchart TD
   A[确定所需仓库] --> B[Multica 原生按需准备两级工作区]
   B --> C[分析与 OpenSpec 准备]
   C --> D[提交 Facts 与 Change Commit]
-  D --> E[analysis complete]
+  D --> E[analysis publish]
   E --> F[核对根仓身份及发布分支]
   F --> G[真实 Analysis Gate]
   G --> H{PASS?}
@@ -224,7 +224,7 @@ flowchart TD
 - TFS ID: 268376
 - 已提交本地分析 Commit: 0aaa37b2c8a5c80f74203f02f84d5f4c2bff6bc6
 
-修复并部署匹配版本的 CLI/Skill 后，如现有工作区与 Commit 仍保留，通过现有合法恢复流程恢复分析授权及 in_progress 状态后复用已有分析成果，重新执行 analysis complete 的真实 Gate 与发布，核实 master 上固定 Commit、analysis.source、Gate PASS 和 analysis_review，再提供 Human 审核摘要。不得直接复用旧预检查 PASS、手填 Metadata、强制清理工作区或未经确认重新生成分析工件。现有平级业务仓不影响根仓发布，不要求迁移。
+修复并部署匹配版本的 CLI/Skill 后，如现有工作区与 Commit 仍保留，通过现有合法恢复流程恢复分析授权及 in_progress 状态后复用已有分析成果，重新执行 analysis publish 的真实 Gate 与发布，核实 master 上固定 Commit、analysis.source、Gate PASS 和 analysis_review，再提供 Human 审核摘要。不得直接复用旧预检查 PASS、手填 Metadata、强制清理工作区或未经确认重新生成分析工件。现有平级业务仓不影响根仓发布，不要求迁移。
 
 ## 10. 实施顺序与范围约束
 

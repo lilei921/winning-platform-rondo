@@ -5,7 +5,7 @@
     { "name": "remote-ripgrep", "template": "remote-ripgrep.json" }
   ],
   "managed_skills": [
-    "analysis-completion",
+    "analysis-publish",
     "bug-analysis",
     "pull-request",
     "codebase-explorer",
@@ -57,7 +57,7 @@
         "bug-analysis",
         "requirement-analysis",
         "spec-preparation",
-        "analysis-completion",
+        "analysis-publish",
         "native-workspace"
       ]
     },

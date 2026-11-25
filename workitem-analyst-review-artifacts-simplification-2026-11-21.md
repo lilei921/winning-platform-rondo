@@ -92,12 +92,12 @@ openspec/changes/<change_ref>/
 
 **现状**：
 - `analysis/validate.ts` 的 `--out` 当前限定为 `logs/analysis-gate-result.json`。
-- `analysis/complete.ts`、`analysis/published-source.ts`、`analysis/gate-evidence.ts` 依赖固定文件、Check 集合、Metadata/Change Digest，并在远端 Git Commit 中重读。
+- `analysis/publish.ts`、`analysis/published-source.ts`、`analysis/gate-evidence.ts` 依赖固定文件、Check 集合、Metadata/Change Digest，并在远端 Git Commit 中重读。
 - 因此现在不能“删 JSON、保留原 CLI”而宣称 PASS。
 
 **目标**：
 1. `rondo analysis validate` 可保留为只读预检查：输出 `PASS / FAIL / UNKNOWN` 与直接原因，**不写入 OpenSpec**。
-2. **唯一最终可信 Gate 入口是 `rondo analysis complete`**：它必须对本次待发布的 Engineering Contract 执行真实 Gate；外部预检查结果和 Metadata 中的 `PASS` 均不能替代最终 Gate。
+2. **唯一最终可信 Gate 入口是 `rondo analysis publish`**：它必须对本次待发布的 Engineering Contract 执行真实 Gate；外部预检查结果和 Metadata 中的 `PASS` 均不能替代最终 Gate。
 3. 发布前核实 Issue / Workspace / Change / Schema / Analysis Facts 与被检查内容的一致性；发布时确认最终 Git Commit 的工程正文与本次 Gate 实际检查的正文一致，内容变化、远端冲突或身份不明时停止并返回 `FAIL/UNKNOWN`。
 4. 仅在固定 Commit 已回读且与 Gate 通过的内容一致后，记录 `analysis.gate.result=PASS` 与 `analysis.source`，再进入 Human Review；不得只写两个字段就声称已验证。
 5. Gate 未通过：直接反馈具体检查项及原因，不写 PASS、不进入 `analysis_review`，不保存失败 JSON。
@@ -238,13 +238,13 @@ Engineer
 - [01 统一设计原则](01-multica-openspec-design-guideline.md)
 - [Workitem Analyst Instructions](agents/workitem-analyst/instructions.md)
 - [Spec Preparation](skills/spec-preparation/SKILL.md)
-- [Analysis Completion](skills/analysis-completion/SKILL.md)
+- [Analysis Publish](skills/analysis-publish/SKILL.md)
 - [Change Development](skills/change-development/SKILL.md)
 - [Intentional Schema](openspec/schemas/intentional-change/schema.yaml)
 - [Corrective Schema](openspec/schemas/corrective-change/schema.yaml)
 - [Analysis Facts](rondo/src/commands/analysis/facts.ts)
 - [Analysis Validate](rondo/src/commands/analysis/validate.ts)
-- [Analysis Complete](rondo/src/commands/analysis/complete.ts)
+- [Analysis Complete](rondo/src/commands/analysis/publish.ts)
 - [Gate Evidence](rondo/src/commands/analysis/gate-evidence.ts)
 - [Published Source](rondo/src/commands/analysis/published-source.ts)
 - [Development Completion](rondo/src/commands/dev/change-completion.ts)

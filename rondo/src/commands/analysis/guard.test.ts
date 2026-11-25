@@ -37,7 +37,7 @@ test("TFS management type is classified independently of route", () => {
   assert.equal(classifyTfsType("Feature"), null);
 });
 
-// TFS 剥离（tfs-writeback-decoupling-plan）：analysis complete 不再回写 TFS，
+// TFS 剥离（tfs-writeback-decoupling-plan）：analysis publish 不再回写 TFS，
 // 任何类型都不再依赖 tfs_cli；Workspace 身份校验保留（tfs_cli 缺失不报错）。
 test("Registry Workspace identity is always validated; tfs_cli no longer required", () => {
   const dir = mkdtempSync(join(tmpdir(), "rondo-analysis-"));

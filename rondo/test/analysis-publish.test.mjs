@@ -122,7 +122,7 @@ function fixture(t, requirement = true, native = false) {
   const args = ["--issue", "issue-1", "--openspec-root", root,
     "--workspace-id", "ws-test", "--registry-config", config, "--multica", MOCK];
   const gate = () => runCli(["analysis", "validate", "--facts", factsPath, ...args], env);
-  const complete = (...extra) => runCli(["analysis", "complete",
+  const complete = (...extra) => runCli(["analysis", "publish",
     "--issue", "issue-1", "--facts", factsPath,
     "--workspace-id", "ws-test", "--registry-config", config, "--multica", MOCK,
     "--root-repo", root, ...(requirement ? ["--mode", "requirement"] : []), ...extra], env);
@@ -238,7 +238,7 @@ test("Requirement 必须使用 requirement 模式，禁止误选 legacy", t => {
   const f = fixture(t);
   f.env.RONDO_WORKSPACE_BRANCH = "";
   f.env.RONDO_WORKSPACE_PATH = "";
-  const result = runCli(["analysis", "complete", "--issue", "issue-1",
+  const result = runCli(["analysis", "publish", "--issue", "issue-1",
     "--facts", f.factsPath, "--workspace-id", "ws-test", "--registry-config", join(f.home, "registry.json"),
     "--multica", MOCK, "--root-repo", f.root], f.env);
   assert.equal(result.exit, 2);
