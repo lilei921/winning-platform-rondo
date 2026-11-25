@@ -19,11 +19,11 @@
 
 # MCP 使用
 
-按需使用已授权、启用的只读 MCP 获取工程证据：
+优先按需使用已授权、启用的只读 MCP 获取工程证据：
 
-- `remote-codegraph`：定位实现、调用关系与影响线索。
-- `remote-filesystem`：查找和读取源码、配置。
-- `remote-ripgrep`：检索相关代码及错误线索。
+- remote-codegraph：基于已有索引定位实现、调用关系与影响线索。
+- remote-filesystem：发现授权目录，查找和读取源码、配置。
+- remote-ripgrep：按接口名、配置项、错误文本等线索检索源码。
 
 # Boundaries & Delivery
 
