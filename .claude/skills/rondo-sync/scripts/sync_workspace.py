@@ -72,9 +72,22 @@ def restore_manifest_if_needed(root: Path, dry_run: bool = False) -> None:
         print(f"[WARN] 检测到上次分组供给中断，已从备份恢复 {manifest}", file=sys.stderr)
 
 
+def resolve_command(command: list[str]) -> list[str]:
+    """Windows 下 CLI 常以 .cmd/.ps1 shim 存在，CreateProcess 只按 .EXE 解析裸命令名，
+    这里按 PATHEXT（shutil.which）把首个元素解析为完整可执行路径；找不到时保持原样，
+    兼容 .exe 直装的命令与非 Windows 环境。"""
+    if os.name != "nt" or not command:
+        return command
+    resolved = shutil.which(command[0])
+    if resolved:
+        return [resolved, *command[1:]]
+    return command
+
+
 def run_json(command: list[str], cwd: Path) -> object:
     result = subprocess.run(
-        command, cwd=cwd, env=command_env(), check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        resolve_command(command), cwd=cwd, env=command_env(), check=True, stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
     return json.loads(result.stdout.decode("utf-8"))
 
@@ -98,7 +111,8 @@ def resolve_cli(root: Path) -> list[str]:
 def run_text(command: list[str], cwd: Path) -> str:
     """执行输出为普通文本的命令，返回 strip 后的 stdout。"""
     result = subprocess.run(
-        command, cwd=cwd, env=command_env(), check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        resolve_command(command), cwd=cwd, env=command_env(), check=True, stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
     return result.stdout.decode("utf-8").strip()
 

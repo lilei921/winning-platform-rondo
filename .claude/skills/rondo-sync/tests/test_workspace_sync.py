@@ -132,6 +132,20 @@ class WorkspaceSyncTests(unittest.TestCase):
             sync.install_rondo_cli(self.root)
         self.assertEqual(run_text.call_count, 2)
 
+    def test_resolve_command_resolves_shim_executable_on_windows(self):
+        with patch.object(sync.os, "name", "nt"), \
+                patch.object(sync.shutil, "which", return_value=r"C:\tools\npm.cmd"):
+            self.assertEqual(sync.resolve_command(["npm", "pack"]), [r"C:\tools\npm.cmd", "pack"])
+
+    def test_resolve_command_keeps_bare_when_unresolved_on_windows(self):
+        with patch.object(sync.os, "name", "nt"), \
+                patch.object(sync.shutil, "which", return_value=None):
+            self.assertEqual(sync.resolve_command(["npm", "pack"]), ["npm", "pack"])
+
+    def test_resolve_command_keeps_command_off_windows(self):
+        with patch.object(sync.os, "name", "posix"):
+            self.assertEqual(sync.resolve_command(["npm", "pack"]), ["npm", "pack"])
+
     def test_python_preflight_uses_current_interpreter_without_path_alias(self):
         with patch.object(sync.shutil, "which", return_value=None), patch.dict(sys.modules, {"yaml": object()}):
             sync.check_python()
