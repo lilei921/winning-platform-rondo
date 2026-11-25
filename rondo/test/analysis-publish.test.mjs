@@ -142,8 +142,10 @@ test("Preview → Complete without Stage: final Gate and fixed Git Contract; no 
   assert.equal(f.state().metadata["analysis.change_ref"], undefined);
   assert.equal(preview.body.change_digest, changeEvidenceDigest(f.change, before.metadata, undefined, true));
   assert.equal(existsSync(join(f.change, "logs", "analysis-gate-result.json")), false);
+  f.tfs.update(s => { s.requests = []; s.status = 503; });
   const result = f.complete();
   assert.equal(result.exit, 0, JSON.stringify(result));
+  assert.deepEqual(f.tfs.state().requests, []);
   const source = JSON.parse(f.state().metadata["analysis.source"]);
   assert.deepEqual(result.body.analysis_source, source);
   assert.equal(source.commit, git(f.remote, "rev-parse", "dev"));

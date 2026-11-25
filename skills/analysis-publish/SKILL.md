@@ -49,7 +49,7 @@ rondo analysis publish --mode requirement --issue <issue> --facts <facts.json> \
   --registry-config "<config>" --workspace-id <workspace> --root-repo "<root>"
 ```
 
-仅 TFS Requirement 使用 `--mode requirement`，其他流程沿用其适用入口。`validate` 仅在需要诊断时使用；`publish` 执行最终 Gate、Git 发布与审核登记。已处于 `analysis_review` 时核对已登记的审核事实，不重新执行 Gate 或读取工件。`publish` 不发布 Issue 评论。
+仅 TFS Requirement 使用 `--mode requirement`，其他流程沿用其适用入口。`validate` 仅在需要诊断时使用；`publish` 执行最终 Gate、Git 发布与审核登记。Requirement 已处于 `analysis_review` 时核对已登记的审核事实，不重新执行 Gate 或读取工件。`publish` 不发布 Issue 评论。
 
 `publish` 返回 `PASS` 后，使用返回的 `analysis_source` 固定来源，在当前 Issue Comment 提供简明审核摘要：目标/方案、影响范围、Independent Verify Recommendation 及依据、风险/待决、`change_ref`、完整 Commit 和 Gate。OpenSpec 工件通过固定 Git 来源引用，默认不重复导出或上传附件；Human 明确要求时除外。Comment 触发的 Run 回复本次触发线程；审核重放或评论发布结果不明时，先核对当前线程是否已有相同 `change_ref` 和 Commit 的摘要，已有则不重复发布；使用 `--content-file` 时以实际 cwd 解析路径；结果不明时回读确认，不重复发布。
 

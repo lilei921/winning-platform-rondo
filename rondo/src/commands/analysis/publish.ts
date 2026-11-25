@@ -210,9 +210,11 @@ async function main(rawArgs: string[]): Promise<number> {
                 const published = readContractAt(commit);
                 if (published.digest !== gateEvidence.change_digest) return false;
                 if (published.schema !== schema) throw new UnknownError("已保存来源的 Schema 与当前审核包不一致");
-                const local = readContractAt(localHead);
-                if (local.digest !== gateEvidence.change_digest || local.schema !== schema)
-                  throw new FailError("当前已提交分析工件与 Gate 不一致");
+                if (localHead !== commit) {
+                  const local = readContractAt(localHead);
+                  if (local.digest !== gateEvidence.change_digest || local.schema !== schema)
+                    throw new FailError("当前已提交分析工件与 Gate 不一致");
+                }
                 return true;
               }
             : undefined,
