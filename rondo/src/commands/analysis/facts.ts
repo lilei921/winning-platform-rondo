@@ -6,7 +6,7 @@
  */
 import { readFileSync } from "node:fs";
 import { UnknownError } from "../../cli/errors.js";
-import { CHANGE_KINDS, changeKindSchemaViolation, type ChangeKind, type ChangeSchema } from "./change-schema.js";
+import { CHANGE_KINDS, changeKindSchemaViolation, isStableChangeRef, type ChangeKind, type ChangeSchema } from "./change-schema.js";
 
 /** 来源管理类型，不用于推断 Technical Change Kind。 */
 export function classifyTfsType(value: unknown): "bug" | "requirement" | null {
@@ -45,7 +45,7 @@ export function validateDraftFields(f: Partial<DraftFacts>, schema?: ChangeSchem
     const violation = changeKindSchemaViolation(f.change_kind, schema);
     if (violation) missing.push(violation);
   }
-  if (typeof f.change_ref !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(f.change_ref) || f.change_ref === "." || f.change_ref === "..") missing.push("change_ref（稳定 Change ID，不得含路径）");
+  if (!isStableChangeRef(f.change_ref)) missing.push("change_ref（稳定 Change ID，不得含路径）");
   if (!f.verify_agent || !["required", "not_required"].includes(f.verify_agent.recommendation)) missing.push("verify_agent.recommendation");
   if (typeof f.verify_agent?.reason !== "string" || !f.verify_agent.reason.trim()) missing.push("verify_agent.reason");
   if (!Array.isArray(f.verify_agent?.focus_refs) || f.verify_agent.focus_refs.length === 0 ||

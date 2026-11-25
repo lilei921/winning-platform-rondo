@@ -6,7 +6,7 @@ import { UnknownError } from "../../cli/errors.js";
 import { ExitSignal, logLine, markLeafExecuted } from "../../cli/output.js";
 import { validateRootRepo } from "../../clients/runtime-paths.js";
 
-const USAGE = "用法: rondo runtime resolve-root-repo --root-repo <checkout 返回的根仓绝对路径>\n";
+const USAGE = "用法: rondo runtime resolve-root-repo --root-repo <根仓路径>\n";
 
 function main(rawArgs: string[]): void {
   if (rawArgs.includes("--help") || rawArgs.includes("-h")) {

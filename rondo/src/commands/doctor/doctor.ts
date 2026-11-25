@@ -2,9 +2,9 @@
  * doctor —— Multica 依赖环境体检（只读；rondo-doctor-env-check-plan）。
  *
  * 第一调用方是运维/交付人员手工执行：装机验收、故障排查、daemon 起不来时的第一站；
- * agent/skill 程序化调用用 --format json。
+ * agent/skill 程序化调用用 --output json（兼容 --format json）。
  *
- * 用法：rondo doctor [--require <check,...>] [--format text|json] [--expect-openspec <version>] [--workspace-id <id>]
+ * 用法：rondo doctor [--require <check,...>] [--output json | --format text|json] [--expect-openspec <version>] [--workspace-id <id>]
  * 退出码：0 PASS / 2 FAIL（--require 命中的项 WARN 按 FAIL 计）/ 3 检测自身异常 / 64 用法错误。
  * 默认 text：stdout 出人读报告；--format json：stdout 只出 JSON。日志走 stderr。
  */
@@ -15,7 +15,7 @@ import { CHECKS, selectChecks, type CheckContext, type CheckDef, type CheckOutco
 import { DEFAULT_EXPECTED_OPENSPEC_VERSION } from "./expectations.js";
 import { renderTextReport } from "./text-format.js";
 
-const USAGE = "用法: rondo doctor [--require <check,...>] [--format text|json] [--expect-openspec <version>] [--workspace-id <id> [--profile <name>]] [--network-sample <N> [--network-interval <ms>]]";
+const USAGE = "用法: rondo doctor [--require <check,...>] [--output json | --format text|json] [--expect-openspec <version>] [--workspace-id <id> [--profile <name>]] [--network-sample <N> [--network-interval <ms>]]";
 
 interface DoctorOptions {
   require?: string[];
@@ -39,8 +39,8 @@ function parsePositiveInt(flag: string, raw: string): number {
   return n;
 }
 
-function parseArgs(argv: string[]): DoctorOptions {
-  const opts: DoctorOptions = { format: "text", expectOpenspec: DEFAULT_EXPECTED_OPENSPEC_VERSION };
+function parseArgs(argv: string[], jsonOutput: boolean): DoctorOptions {
+  const opts: DoctorOptions = { format: jsonOutput ? "json" : "text", expectOpenspec: DEFAULT_EXPECTED_OPENSPEC_VERSION };
   let networkSampleCount: number | undefined;
   let networkIntervalMs: number | undefined;
   for (let i = 0; i < argv.length; i++) {
@@ -67,6 +67,10 @@ function parseArgs(argv: string[]): DoctorOptions {
       if (v !== "text" && v !== "json") {
         logLine(`--format 仅支持 text|json: ${v}`);
         logLine(USAGE);
+        throw new ExitSignal(64);
+      }
+      if (jsonOutput && v === "text") {
+        logLine("--output json 与 --format text 冲突");
         throw new ExitSignal(64);
       }
       opts.format = v;
@@ -128,8 +132,8 @@ export function aggregate(opts: Pick<DoctorOptions, "require">, outcomes: CheckO
   return { overall: "PASS", exitCode: 0 };
 }
 
-async function runDoctor(rawArgs: string[]): Promise<never> {
-  const opts = parseArgs(rawArgs);
+async function runDoctor(rawArgs: string[], jsonOutput: boolean): Promise<never> {
+  const opts = parseArgs(rawArgs, jsonOutput);
   let checks: CheckDef[];
   try {
     checks = selectChecks(opts.require);
@@ -189,6 +193,6 @@ export function registerDoctor(program: Command): void {
     .action(async (...cbArgs: unknown[]) => {
       markLeafExecuted();
       const cmd = cbArgs[cbArgs.length - 1] as Command;
-      await runDoctor(cmd.args);
+      await runDoctor(cmd.args, program.opts().output === "json");
     });
 }

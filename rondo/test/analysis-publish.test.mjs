@@ -122,13 +122,14 @@ function fixture(t, requirement = true, native = false) {
   const args = ["--issue", "issue-1", "--openspec-root", root,
     "--workspace-id", "ws-test", "--registry-config", config, "--multica", MOCK];
   const gate = () => runCli(["analysis", "validate", "--facts", factsPath, ...args], env);
-  const complete = (...extra) => runCli(["analysis", "publish",
+  const completeAt = (rootArg, cwd, ...extra) => runCli(["analysis", "publish",
     "--issue", "issue-1", "--facts", factsPath,
     "--workspace-id", "ws-test", "--registry-config", config, "--multica", MOCK,
-    "--root-repo", root, ...(requirement ? ["--mode", "requirement"] : []), ...extra], env);
+    "--root-repo", rootArg, ...(requirement ? ["--mode", "requirement"] : []), ...extra], env, cwd);
+  const complete = (...extra) => completeAt(root, undefined, ...extra);
   const state = () => JSON.parse(readFileSync(statePath, "utf8"));
   const setState = data => writeFileSync(statePath, JSON.stringify(data));
-  return { home, root, change, remote, report, tfs, env, gate, complete, state, setState, factsPath, metadata, taskBranch, resourcePath };
+  return { home, root, change, remote, report, tfs, env, gate, complete, completeAt, state, setState, factsPath, metadata, taskBranch, resourcePath };
 }
 
 test("Preview → Complete without Stage: final Gate and fixed Git Contract; no automatic Comment or Gate file", t => {
@@ -141,8 +142,15 @@ test("Preview → Complete without Stage: final Gate and fixed Git Contract; no 
   assert.equal(f.state().metadata["analysis.change_ref"], undefined);
   assert.equal(preview.body.change_digest, changeEvidenceDigest(f.change, before.metadata, undefined, true));
   assert.equal(existsSync(join(f.change, "logs", "analysis-gate-result.json")), false);
+  f.tfs.update(s => { s.requests = []; s.status = 503; });
+  const calls = join(f.home, "publish-calls.jsonl");
+  f.env.MOCK_SYNC_CALLS_FILE = calls;
   const result = f.complete();
   assert.equal(result.exit, 0, JSON.stringify(result));
+  assert.deepEqual(f.tfs.state().requests, []);
+  const commands = readFileSync(calls, "utf8").trim().split("\n").map(line => JSON.parse(line));
+  assert.equal(commands.filter(a => a.includes("issue") && a.includes("get")).length, 5);
+  assert.equal(commands.filter(a => a.includes("metadata") && a.includes("list")).length, 0);
   const source = JSON.parse(f.state().metadata["analysis.source"]);
   assert.deepEqual(result.body.analysis_source, source);
   assert.equal(source.commit, git(f.remote, "rev-parse", "dev"));
@@ -198,16 +206,19 @@ test("Git clean filter 修改工程正文，固定 Commit 不匹配时必须阻�
   assert.equal(f.state().metadata["analysis.source"], undefined);
 });
 
-test("Human Review 重放只读取固定 Git Commit，不再追随共享 HEAD 或自动新增 Comment", t => {
+test("Human Review 重放只消费已登记固定来源，不读取 REST 正文或追随 HEAD", t => {
   const f = fixture(t);
   assert.equal(f.complete().exit, 0);
   const saved = f.state().metadata["analysis.source"];
+  f.tfs.update(s => { s.requests = []; s.status = 503; });
   git(f.root, "-c", "user.email=test@example.invalid", "-c", "user.name=Test", "commit", "--allow-empty", "-m", "unrelated HEAD");
   writeFileSync(join(f.change, "proposal.md"), "local WIP unrelated to approved review");
   const replay = f.complete();
   assert.equal(replay.exit, 0, JSON.stringify(replay));
   assert.equal(f.state().metadata["analysis.source"], saved);
   assert.equal(replay.body.replayed, true);
+  assert.equal(replay.body.gate_reexecuted, false);
+  assert.deepEqual(f.tfs.state().requests, []);
   assert.equal(f.state().comments?.["issue-1"]?.length ?? 0, 0);
 });
 
@@ -234,6 +245,17 @@ test("Status 成功但响应丢失，重放校验固定来源且不自动新增 
   assert.equal(f.state().comments?.["issue-1"]?.length ?? 0, 0);
 });
 
+test("Legacy Publish 拒绝相对 RONDO_WORKSPACE_PATH，即使 cwd 是合法根仓", t => {
+  const f = fixture(t, false);
+  f.env.RONDO_WORKSPACE_PATH = ".";
+  const result = runCli(["analysis", "publish", "--issue", "issue-1",
+    "--facts", f.factsPath, "--workspace-id", "ws-test", "--registry-config", join(f.home, "registry.json"),
+    "--multica", MOCK], f.env, f.root);
+  assert.equal(result.exit, 3, JSON.stringify(result));
+  assert.match(result.body.reason, /绝对路径.*RONDO_WORKSPACE_PATH/);
+  assert.equal(f.state().metadata["analysis.source"], undefined);
+});
+
 test("Requirement 必须使用 requirement 模式，禁止误选 legacy", t => {
   const f = fixture(t);
   f.env.RONDO_WORKSPACE_BRANCH = "";
@@ -256,7 +278,7 @@ test("Native Analysis without Workspace variables: raw-SHA Task branch, remote a
   writeFileSync(join(f.root, "local.txt"), "not part of Change");
   git(f.root, "add", "local.txt");
   git(f.root, "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", "unrelated");
-  const result = f.complete();
+  const result = f.completeAt(".", f.root);
   assert.equal(result.exit, 0, JSON.stringify(result));
   const source = JSON.parse(f.state().metadata["analysis.source"]);
   assert.equal(source.branch, "dev");
@@ -443,14 +465,14 @@ test("Gate PASS 写入失败不切换审核，恢复复用固定来源", t => {
   const source = f.state().metadata["analysis.source"];
   assert.ok(source);
   delete f.env.MOCK_FAIL_METADATA_KEY;
-  f.tfs.update(s => { s.requests = []; });
+  f.tfs.update(s => { s.requests = []; s.status = 503; });
   const replay = f.complete();
   assert.equal(replay.exit, 0, JSON.stringify(replay));
   assert.equal(f.state().metadata["analysis.source"], source);
-  assert.equal(f.tfs.state().requests.filter(r => r.query.scopePath).length, 1);
+  assert.deepEqual(f.tfs.state().requests, []);
 });
 
-test("远端契约读取仅消费必要工件及明确引用", t => {
+test("Requirement 发布在 REST 正文不可用时仍以 Git 候选和可达性完成", t => {
   const f = fixture(t);
   mkdirSync(join(f.change, "logs"));
   writeFileSync(join(f.change, "logs", "debug.txt"), "unreferenced");
@@ -459,9 +481,100 @@ test("远端契约读取仅消费必要工件及明确引用", t => {
   // This log already exists remotely; normal publication must not introduce unauthorized files.
   git(f.root, "push", "origin", "dev");
   assert.equal(git(f.remote, "show", "dev:openspec/changes/" + CHANGE + "/logs/debug.txt"), "unreferenced");
+  f.tfs.update(s => { s.requests = []; s.status = 503; });
   const result = f.complete();
   assert.equal(result.exit, 0, JSON.stringify(result));
-  const paths = f.tfs.state().requests.map(r => r.query.path).filter(Boolean);
-  assert.ok(paths.some(path => path.endsWith("/proposal.md")));
-  assert.ok(!paths.some(path => path.endsWith("/logs/debug.txt")));
+  assert.equal(f.state().status, "analysis_review");
+  assert.equal(result.body.analysis_source.commit, git(f.remote, "rev-parse", "dev"));
+  assert.deepEqual(f.tfs.state().requests, []);
+});
+
+test("固定来源不再位于目标分支时拒绝恢复，不调用 REST 正文", t => {
+  const f = fixture(t);
+  f.env.MOCK_FAIL_STATUS = "1";
+  assert.equal(f.complete().exit, 3);
+  const saved = JSON.parse(f.state().metadata["analysis.source"]);
+  const parent = git(f.remote, "rev-parse", saved.commit + "^");
+  git(f.remote, "update-ref", "refs/heads/dev", parent);
+  delete f.env.MOCK_FAIL_STATUS;
+  f.tfs.update(s => { s.requests = []; s.status = 503; });
+  const result = f.complete();
+  assert.notEqual(result.exit, 0);
+  assert.match(result.body.reason, /不在原目标分支/);
+  assert.equal(f.state().status, "in_progress");
+  assert.equal(JSON.parse(f.state().metadata["analysis.source"]).commit, saved.commit);
+  assert.deepEqual(f.tfs.state().requests, []);
+});
+
+test("Git 发布后 Issue 已被阻塞时不登记审核事实", t => {
+  const f = fixture(t);
+  f.env.MOCK_STATUS_ON_ISSUE_READ = "2";
+  const result = f.complete();
+  assert.notEqual(result.exit, 0, JSON.stringify(result));
+  assert.equal(f.state().status, "blocked");
+  assert.equal(f.state().metadata["analysis.source"], undefined);
+  assert.equal(f.state().metadata["analysis.gate.result"], undefined);
+});
+
+test("本地硬条件失败时不执行 OpenSpec Strict Validation", t => {
+  const f = fixture(t);
+  // 如果错误地调用原生 CLI，它会返回不可解析结果（UNKNOWN）。
+  writeFileSync(f.report, "not-json");
+  writeFileSync(join(f.change, "tasks.md"), "no task checkbox\n");
+  const result = f.gate();
+  assert.equal(result.exit, 2, JSON.stringify(result));
+  assert.equal(result.body.checks.find(c => c.name === "tasks")?.result, "FAIL");
+  assert.ok(!result.body.checks.some(c => c.name === "openspec_validate" || c.name === "verify_recommendation"));
+});
+
+test("Git 发布后并发 Source 或 Facts 变化时不覆盖现有事实", async t => {
+  for (const [key, value] of [
+    ["analysis.source", JSON.stringify({ repo_url: "http://tfs.test/tfs/C/P/_git/root", branch: "dev", commit: "a".repeat(40), change_ref: CHANGE })],
+    ["tfs.id", "999999"],
+    ["analysis.verify_agent.reason", "另一流程已更新依据"],
+  ]) {
+    await t.test(key, t => {
+      const f = fixture(t);
+      f.env.MOCK_METADATA_ON_ISSUE_READ = "2";
+      f.env.MOCK_ISSUE_METADATA_PATCH = JSON.stringify({ [key]: value });
+      const result = f.complete();
+      assert.notEqual(result.exit, 0, JSON.stringify(result));
+      assert.equal(f.state().metadata[key], value);
+      assert.equal(f.state().metadata["analysis.gate.result"], undefined);
+      assert.equal(f.state().status, "in_progress");
+      if (key !== "analysis.source") assert.equal(f.state().metadata["analysis.source"], undefined);
+    });
+  }
+});
+
+test("审核 Facts 写入后出现不一致时不得登记 Gate PASS", t => {
+  const f = fixture(t);
+  f.env.MOCK_METADATA_ON_ISSUE_READ = "3";
+  f.env.MOCK_ISSUE_METADATA_PATCH = JSON.stringify({ "analysis.verify_agent.reason": "" });
+  const result = f.complete();
+  assert.notEqual(result.exit, 0, JSON.stringify(result));
+  assert.equal(f.state().metadata["analysis.verify_agent.reason"], "");
+  assert.equal(f.state().metadata["analysis.gate.result"], undefined);
+  assert.equal(f.state().status, "in_progress");
+});
+
+test("Change Schema 无法确认时不产生依赖检查的派生 FAIL", t => {
+  const f = fixture(t);
+  rmSync(join(f.change, ".openspec.yaml"));
+  const result = f.gate();
+  assert.equal(result.exit, 3, JSON.stringify(result));
+  assert.equal(result.body.checks.find(c => c.name === "change")?.result, "UNKNOWN");
+  assert.ok(!result.body.checks.some(c => ["tasks", "ai_review", "acceptance_contract", "openspec_validate"].includes(c.name)));
+});
+
+test("已知独立硬条件 FAIL 优先于其他检查 UNKNOWN", t => {
+  const f = fixture(t);
+  rmSync(join(f.change, ".openspec.yaml"));
+  const state = f.state();
+  delete state.metadata["tfs.id"];
+  f.setState(state);
+  const result = f.gate();
+  assert.equal(result.exit, 2, JSON.stringify(result));
+  assert.equal(result.body.checks.find(c => c.name === "identity")?.result, "FAIL");
+  assert.equal(result.body.checks.find(c => c.name === "change")?.result, "UNKNOWN");
 });

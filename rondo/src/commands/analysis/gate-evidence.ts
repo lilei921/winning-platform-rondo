@@ -10,7 +10,7 @@ import { UnknownError } from "../../cli/errors.js";
 
 export const ANALYSIS_GATE_CHECKS = [
   "identity", "change", "acceptance_contract", "tasks",
-  "verify_recommendation", "ai_review", "openspec_validate",
+  "ai_review", "openspec_validate",
 ] as const;
 
 /** JSON 对象键排序；保留数组顺序及所有业务字段，忽略无语义的缩进变化。 */

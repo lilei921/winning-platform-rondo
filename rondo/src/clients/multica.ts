@@ -27,6 +27,14 @@ export interface IssueRecord {
   metadata?: Record<string, string>;
 }
 
+/** issue get 原生响应包含同一 Issue 的 Metadata；缺失时不以空 Map 继续。 */
+export function requireIssueMetadata(issue: { metadata?: unknown } | Record<string, unknown>): Record<string, unknown> {
+  const metadata = issue.metadata;
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata))
+    throw new UnknownError("issue get 缺少有效 metadata");
+  return metadata as Record<string, unknown>;
+}
+
 export interface CommentRecord {
   id?: string;
   content?: string;
