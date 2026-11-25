@@ -1,4 +1,5 @@
 {
+  "type": "http",
   "url": "http://172.17.1.97:8011/mcp",
   "headers": {
     "Authorization": "Bearer a7ef22243572f6a256b1318739f4ed2731bcadb939379f9257fe4cadde8d6bee"

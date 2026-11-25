@@ -1,4 +1,5 @@
 {
+  "type": "http",
   "url": "http://172.16.9.115:8112/mcp",
   "headers": {
     "Authorization": "Bearer 72649a71c71df57c9f1e34f6200679dcdb5eb4a2195faede5c5b7a3832d523e4"
