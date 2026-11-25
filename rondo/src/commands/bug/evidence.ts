@@ -40,6 +40,7 @@ function refs(raw: unknown): boolean {
 /** Pure evidence validation; external I/O and Git identity are checked by pr-prepare. */
 export function validateBugEvidence(
   raw: unknown, identity: { issue: string; tfsId: number; repoKey: string; sha: string },
+  commandPending = false,
 ): string[] {
   const reasons: string[] = [];
   if (!record(raw)) return ["evidence 必须是 JSON 对象"];
@@ -63,7 +64,7 @@ export function validateBugEvidence(
   }
   for (const key of ["regression", "local_validation", "code_review"] as const) {
     const item = ev[key];
-    if (item?.result !== "PASS") reasons.push(key + ".result 必须为 PASS");
+    if (!(commandPending && key === "local_validation" && item?.result === undefined) && item?.result !== "PASS") reasons.push(key + ".result 必须为 PASS");
     if (!filled(item?.summary)) reasons.push(key + ".summary 缺失");
     if (!refs(item?.evidence_refs)) reasons.push(key + ".evidence_refs 缺少可核查依据");
   }

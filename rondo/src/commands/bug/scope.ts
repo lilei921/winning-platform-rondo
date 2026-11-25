@@ -12,6 +12,7 @@ interface RepoFact {
   target_branch?: string;
   candidate_commit?: string;
   tfs_id?: number;
+  local_validation?: { result?: string };
 }
 
 function parseArray<T>(raw: string | undefined, key: string): T[] {
@@ -58,6 +59,7 @@ export function assertBugReadyForPr(md: Record<string,string>): string[] {
   for (const key of required) {
     const p = prep.find(x=>x.repo_key === key)!;
     const d = delivery.find(x=>x.repo_key === key)!;
+    if (d.local_validation?.result === "FAIL") throw new FailError(key + ": Bug Candidate 验证失败，须重新验证");
     if (p.source_branch !== candidateBranch(tfsId) || !p.target_branch ||
         !d.source_branch || !d.target_branch ||
         !/^[0-9a-f]{40}$/i.test(p.candidate_commit ?? "") ||

@@ -41,7 +41,7 @@ Fetch 不执行合并。
 }
 ```
 
-按项目选择验证命令；Requirement 必须提供。提供命令时无需预填 `validation.result`，CLI 在 Candidate 中执行并登记实际结果；无需为满足输入格式重复执行。Bug 确无适用本地验证命令时可省略 command，此时须提供真实的 `result: PASS`、替代验证、证据引用及原因、范围、结果和局限；命令执行失败不得降级。未解决 Non-blocking Finding 需标明 `blocking:false` 并提供 `risk_note` 或 `risk_ref`。
+按项目选择验证命令；Requirement 必须提供。提供命令时无需预填 `validation.result`，CLI 在 Candidate 中执行并登记实际结果；无需为满足输入格式重复执行。Bug 确无适用本地验证命令时可省略 command，此时须提供真实的 `result: PASS`、替代验证、证据引用及原因、范围、结果和局限；命令执行失败不得降级；当前 Candidate 存在命令验证失败事实时须重新执行验证命令。未解决 Non-blocking Finding 需标明 `blocking:false` 并提供 `risk_note` 或 `risk_ref`。
 
 Bug 在同一 Facts 中补充 `expected_behavior`、`actual_behavior`、`fix_summary`、`root_cause`（confidence 为 confirmed/probable、summary、evidence_refs；probable 补充 remaining_risk）、`regression`（PASS、summary、evidence_refs），以及 validation / code_review 的 evidence_refs。证据应真实可核查；Regression、Code Review 等专业 PASS 必须有已确认的依据，不以尚未执行的命令作为成功证据。
 
@@ -59,7 +59,7 @@ rondo pr prepare --issue <KEY> --repo <repo_id> --root-repo "<root>" --candidate
 rondo pr materialize --issue <KEY>
 ```
 
-根据返回结果确认 PR 交付情况；出现异常时核实原因并处理。
+根据返回结果确认 PR 交付情况；出现异常时核实原因并处理，不通过手工修改交付事实绕过检查。
 
 # Abandoned PR Recovery（Bug）
 
@@ -74,4 +74,4 @@ rondo bug resume --issue <KEY> --human-comment-id <id> --next REWORK|RECREATE_PR
 - `REWORK`：重新诊断、修复及验证，再交付 PR。
 - `RECREATE_PR`：直接执行 `rondo pr materialize --issue <KEY>`。
 
-恢复意图不明确时向 Human 确认；异常按实际结果核实处理。
+恢复意图不明确时向 Human 确认；异常按实际结果核实处理，不手工修改 CLI 管理的交付事实。

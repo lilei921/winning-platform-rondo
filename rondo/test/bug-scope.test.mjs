@@ -26,6 +26,17 @@ test("Bug PR gate blocks incomplete preparation before any PR is created", () =>
   assert.throws(() => assertBugReadyForPr(md), /准备不完整/);
 });
 
+test("Bug PR gate rejects a failed validation without losing the repository scope", () => {
+  const md = valid();
+  const ev=JSON.parse(md["bug.delivery"]);
+  ev[0].local_validation={result:"FAIL"};
+  md["bug.delivery"]=JSON.stringify(ev);
+  assert.throws(()=>assertBugReadyForPr(md),/验证失败/);
+  ev[0].local_validation.result="PASS";
+  md["bug.delivery"]=JSON.stringify(ev);
+  assert.deepEqual(assertBugReadyForPr(md),["frame","frame-web"]);
+});
+
 test("Bug PR gate rejects unregistered, changed or duplicate repository scope", () => {
   assert.throws(() => requiredBugRepos(JSON.stringify(["frame","frame"])), /无重复/);
   assert.throws(() => requiredBugRepos(JSON.stringify(["../other"])), /非法/);

@@ -21,7 +21,9 @@ Engineer 依据真实成果使用 `rondo change update-progress` 更新 Tasks，
 - 有命令时：Agent 提供 `command`、`summary`（范围及必要局限）；无需预填 result，若提供则必须为真实 PASS。CLI 实际执行成功后形成 PASS、exit_code、Candidate 和 source；失败不得降级或登记成功事实。
 - Requirement 必须提供命令。Bug 确无适用本地命令时，必须提供真实替代验证 PASS、summary、evidence_refs 及原因、范围、结果和局限。
 - Bug Root Cause、Regression、Code Review、Evidence、Blocking Findings 等专业要求保持不变；不得以尚未执行的命令作为 Regression PASS 的唯一依据。研发调试及必要专业验证不受限制。
-- 保持现有 Metadata 结构、Candidate 核验、授权及下游 Gate；不新增验证命令、Skill、缓存或生命周期。
+- Bug 专业输入在执行验证命令前完整校验，仅允许待执行命令的 local_validation.result 缺省。
+- 实际命令非零退出后，重新核验授权、Candidate 及当前仓库事实，使用现有 local_validation 登记 FAIL 与真实退出码；Requirement 保留 pr_prep 仓库项，Bug 使用 bug.delivery 并保留已有诊断证据，避免多仓漏交付。首次明确失败也登记失败事实，不登记成功；Bug 首次准备按现有规则固定交付仓集合。Bug 同一 Candidate 的失败不得以无命令替代证据覆盖。写入未确认返回 UNKNOWN；输入错误或命令未能启动不伪造失败结果。
+- 保持现有 Metadata 结构、Candidate 核验、授权和 Gate；Bug readiness 拒绝明确失败的 Evidence，Requirement 复用现有 PASS Gate。不新增验证命令、Skill、缓存或生命周期。
 
 ### 2.3 PR Skill
 
@@ -35,18 +37,18 @@ Abandoned PR Recovery 根据 Human 明确决定调用 `rondo bug resume`。PASS 
 
 - `agents/engineer/instructions.md`
 - `skills/pull-request/SKILL.md`
-- `rondo/src/commands/pr/prepare.ts`
+- `rondo/src/commands/pr/prepare.ts`、`pr/validation.ts`、`bug/evidence.ts`、`bug/scope.ts`
 - `rondo/COMMANDS.md`（同步现有命令输入说明）
 - `rondo/test/workspace-preparation-assets.test.mjs`
 - `rondo/test/dev-pr-prep.test.mjs`
-- `rondo/test/bug-prepare-pr-cli.test.mjs`
+- `rondo/test/bug-prepare-pr-cli.test.mjs`、`rondo/test/bug-scope.test.mjs`
 
 不改变其他 Agent、Skill、Provisioning、OpenSpec Schema、Metadata、Git 工作区管理、PR Materialization、Delivery Closeout 或 Human Approval。静态断言保护必要归属和绑定，不以固定句式约束 LLM。
 
 ## 4. 验收
 
 1. Engineer 无需 PR Skill 即可更新和发布研发工件；非实质性 Design 与 Commit 条件不丢失。
-2. 命令验证无需预填 PASS；真实执行失败不得登记成功；Bug 替代证据和专业质量契约不弱化。
+2. 命令验证无需预填 PASS；真实执行失败必须登记明确 FAIL，既有 PASS 不得继续通过 Gate，多仓事实不丢失；Bug 替代证据和专业质量契约不弱化。
 3. 多仓准备完整、恢复 PASS/NOOP 与 RECREATE_PR 使用语义正确。
 4. 不新增命令、Skill、Metadata 或固定调用链。
 5. 执行现有构建和针对性测试（PR Preparation、Bug CLI、静态资产、研发发布、Completion、Recovery）；未能执行的测试或真实环境回放明确披露。
