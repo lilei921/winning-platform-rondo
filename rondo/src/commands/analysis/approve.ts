@@ -1,0 +1,125 @@
+import { Command } from "commander";
+import { FailError, UnknownError } from "../../cli/errors.js";
+import { markLeafExecuted } from "../../cli/output.js";
+import { MulticaClient } from "../../clients/multica.js";
+import { resolveMulticaRuntime } from "../../clients/runtime-context.js";
+import { parseAnalysisSource, readAnalysisSource, sameAnalysisSource } from "./source.js";
+import { assertProjectedVerifyDecision, readApprovedVerifyDecision } from "../delivery/verify-decision.js";
+
+interface ApprovalArgs {
+  issue: string;
+  commentId: string;
+  commit: string;
+  verifyRequired: string;
+}
+type ApprovalClient = Pick<MulticaClient, "getIssue" | "listComments" | "setMetadata" | "setStatusNoStart">;
+
+const APPROVAL = "analysis.human_approval";
+const VERIFY = "verify_agent.required";
+const FACTS = ["tfs.type", "tfs.id", "analysis.gate.result", "analysis.change_ref",
+  "analysis.source", APPROVAL, VERIFY, "dev.dispatch", "finalize.pending", "delivery.tfs_written"];
+
+/** Lead interprets the Human decision; CLI records and validates its exact source. */
+export function recordApproval(client: ApprovalClient, args: ApprovalArgs) {
+  if (!/^[0-9a-f]{40}$/.test(args.commit) || !["true", "false"].includes(args.verifyRequired) ||
+      !args.commentId.trim()) throw new FailError("需要完整获批 Commit、批准评论 ID 和明确的独立验收决定");
+  const issue = client.getIssue(args.issue);
+  const md = issue.metadata ?? {};
+  if (issue.parent_issue_id || md["tfs.type"] !== "需求" ||
+      !["analysis_review", "todo", "in_progress"].includes(issue.status ?? "")) {
+    throw new FailError("当前 Issue 不是可登记批准的 Requirement");
+  }
+  if (md["analysis.gate.result"] !== "PASS" || md["dev.dispatch"] !== undefined ||
+      md["finalize.pending"] || md["delivery.tfs_written"] === "true") {
+    throw new FailError("Analysis Gate 未通过或存在不允许批准的交付事实");
+  }
+  const tfsId = Number(md["tfs.id"]);
+  if (!Number.isSafeInteger(tfsId) || tfsId <= 0) throw new FailError("TFS Requirement ID 非法");
+  const source = readAnalysisSource(md);
+  if (source.commit !== args.commit) throw new FailError("获批 Commit 与当前 analysis.source 不一致");
+  const required = args.verifyRequired === "true";
+  const key = issue.identifier ?? issue.id;
+  const comment = client.listComments(key).find(c => c.id === args.commentId);
+  if (!comment?.content?.trim() || comment.author_type !== "member" || !comment.author_id) {
+    throw new FailError("批准依据必须是当前 Issue 的真实成员评论");
+  }
+  const at = comment.created_at;
+  if (typeof at !== "string" || Number.isNaN(Date.parse(at))) throw new UnknownError("无法确认批准评论时间");
+  const approval = { decision: "approved", by: comment.author_id, at: new Date(at).toISOString(),
+    comment_ref: args.commentId, verify_agent_required: required, source };
+  let saved = JSON.stringify(approval);
+  if (md[APPROVAL] !== undefined) {
+    let prior;
+    try { prior = JSON.parse(md[APPROVAL]); }
+    catch { throw new UnknownError("已有批准记录无法解析"); }
+    if (!prior || typeof prior !== "object" || typeof prior.comment_ref !== "string" ||
+        typeof prior.at !== "string" || Number.isNaN(Date.parse(prior.at))) {
+      throw new UnknownError("已有批准记录不完整");
+    }
+    const priorSource = parseAnalysisSource(prior.source);
+    if (prior.comment_ref === args.commentId) {
+      if (!sameAnalysisSource(priorSource, source) || prior.verify_agent_required !== required ||
+          prior.by !== approval.by || Date.parse(prior.at) !== Date.parse(approval.at)) {
+        throw new FailError("同一批准评论不得改变已登记的决定或版本");
+      }
+      readApprovedVerifyDecision(md, args.commentId);
+      saved = md[APPROVAL];
+    } else {
+      if (Date.parse(approval.at) <= Date.parse(prior.at)) throw new FailError("不得用更早的批准覆盖现有决定");
+      if (!sameAnalysisSource(priorSource, source) && issue.status !== "analysis_review") {
+        throw new FailError("变更批准版本必须重新进入分析审核");
+      }
+    }
+  }
+  const expected = {...md};
+  let status = issue.status;
+  const fresh = () => {
+    const latest = client.getIssue(key);
+    if (latest.id !== issue.id || latest.status !== status ||
+        FACTS.some(k => latest.metadata?.[k] !== expected[k])) {
+      throw new UnknownError("批准登记期间 Issue 状态或交付事实变化，请重新核对");
+    }
+    return latest;
+  };
+  // Validate the exact record with the same reader used by downstream gates.
+  assertProjectedVerifyDecision({...md, [APPROVAL]: saved, [VERIFY]: String(required)}, args.commentId);
+  let changed = false;
+  fresh();
+  for (const [field, value] of [[APPROVAL, saved], [VERIFY, String(required)]]) {
+    if (expected[field] !== value) {
+      client.setMetadata(issue.id, field, value);
+      expected[field] = value;
+      changed = true;
+    }
+  }
+  assertProjectedVerifyDecision(fresh().metadata ?? {}, args.commentId);
+  if (status === "analysis_review") {
+    client.setStatusNoStart(issue.id, "in_progress");
+    status = "in_progress";
+    changed = true;
+    fresh();
+  }
+  return { result: changed ? "PASS" : "NOOP", issue: key, status,
+    change_ref: source.change_ref, commit: source.commit, comment_ref: args.commentId,
+    verify_agent_required: required };
+}
+
+export function registerAnalysisApprove(group: Command): void {
+  group.command("approve").description("登记已明确的 Human Approval（不启动 Run）")
+    .requiredOption("--issue <key>", "当前 Requirement Issue")
+    .requiredOption("--comment-id <id>", "Human 批准评论 ID")
+    .requiredOption("--commit <sha>", "Human 获批完整 Commit")
+    .requiredOption("--verify-required <boolean>", "明确的独立验收决定 true|false")
+    .action((args: ApprovalArgs) => {
+      markLeafExecuted();
+      try {
+        const result = recordApproval(new MulticaClient(resolveMulticaRuntime()), args);
+        process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+      } catch (err) {
+        const failed = err instanceof FailError;
+        process.stdout.write(JSON.stringify({ result: failed ? "FAIL" : "UNKNOWN",
+          reason: err instanceof Error ? err.message : String(err) }, null, 2) + "\n");
+        process.exitCode = failed ? 2 : 3;
+      }
+    });
+}

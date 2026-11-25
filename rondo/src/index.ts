@@ -26,6 +26,7 @@ import { registerAnalysisValidate } from "./commands/analysis/validate.js";
 import { registerAnalysisComplete } from "./commands/analysis/complete.js";
 import { registerAnalysisStage } from "./commands/analysis/stage.js";
 import { registerAnalysisRead } from "./commands/analysis/read.js";
+import { registerAnalysisApprove } from "./commands/analysis/approve.js";
 import { registerDevMaterialize } from "./commands/dev/materialize.js";
 import { registerDevPrepare } from "./commands/dev/prepare.js";
 import { registerDevCheckCompletion } from "./commands/dev/check-completion.js";
@@ -87,6 +88,7 @@ registerAnalysisStage(analysis);
 registerAnalysisValidate(analysis);
 registerAnalysisComplete(analysis);
 registerAnalysisRead(analysis);
+registerAnalysisApprove(analysis);
 
 const dev = bareGroup(program.command("dev").description("Development 派发与完成检查(02 §7/§8)"));
 registerDevMaterialize(dev);

@@ -8,7 +8,6 @@
     "analysis-completion",
     "bug-analysis",
     "pull-request",
-    "change-handoff",
     "codebase-explorer",
     "diagnosing-bugs",
     "delivery-closeout",
@@ -25,7 +24,7 @@
       "dir": "delivery-lead",
       "name": "Delivery Lead",
       "visibility": "workspace",
-      "skills": ["change-handoff"]
+      "skills": []
     },
     {
       "dir": "wayfinder-agent",
