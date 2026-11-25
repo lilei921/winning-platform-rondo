@@ -1,0 +1,113 @@
+{
+  "collected_at": "2026-11-25T18:04:50+08:00",
+  "profile": "",
+  "server_url": null,
+  "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+  "issue_id": "01a211df-205a-7e3c-8598-dac06f6a59c0",
+  "read_only_commands": [
+    [
+      "multica",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "issue",
+      "get",
+      "LEI-64",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "issue",
+      "runs",
+      "01a211df-205a-7e3c-8598-dac06f6a59c0",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "agent",
+      "get",
+      "3068117f-163c-4ba9-86bf-fae3bfc1f6bf",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "agent",
+      "get",
+      "3c1c3ac1-a922-4e7b-abdf-07a6268398a3",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "agent",
+      "get",
+      "46e4b7dd-d186-470e-beb3-2c2d322871e1",
+      "--output",
+      "json"
+    ]
+  ],
+  "sessions": [
+    {
+      "verification_schema": "claude_public_messages",
+      "coverage_granularity": "public text + tool_use/tool_result",
+      "invalid_jsonl_lines": 0,
+      "identity_mismatch_files": [],
+      "conflicting_uuids": [],
+      "source_public_tool_count": 28,
+      "exported_tool_count": 28,
+      "source_user_messages": 1,
+      "source_assistant_messages": 2,
+      "messages_match": true,
+      "missing_tool_ids": [],
+      "extra_tool_ids": [],
+      "tool_order_matches": true,
+      "tool_results_match": true,
+      "missing_tool_results": [],
+      "orphan_tool_results": [],
+      "duplicate_tool_ids": [],
+      "duplicate_tool_results": [],
+      "unsupported_events": {},
+      "complete": true,
+      "session_id": "dd5f99e6-2b3f-4640-953d-94772df48946",
+      "subagents": [],
+      "inline_sidechain_records": 0,
+      "missing_subagent_ids": [],
+      "provider": "claude",
+      "sources": [
+        {
+          "path": "C:\\Users\\lilei\\.claude\\projects\\D--Multica-default-winning-lil-b39bad65de56-lei-64-6446308f1528-workdir\\dd5f99e6-2b3f-4640-953d-94772df48946.jsonl",
+          "size_bytes": 976074,
+          "sha256": "d74e15b0dba759ec16fbab744a48165902003c92dbe8b6111d74f3b8d8cb0c07"
+        }
+      ],
+      "run_coverage": {
+        "method": "claude_public_request_and_completion",
+        "run_intervals": {
+          "01a21212-f13c-7b0f-a94a-6446308f1528": [
+            {
+              "started_at": "2026-11-25T09:39:19.899Z",
+              "completed_at": "2026-11-25T09:41:06.879Z",
+              "message_id": "a6d036bf-1755-4330-801a-d28a039f647e",
+              "matched_by": "platform_final_output"
+            }
+          ]
+        },
+        "uncovered_run_ids": [],
+        "complete": true
+      },
+      "sources_stable": true
+    }
+  ],
+  "coverage": "partial",
+  "verified_at": "2026-11-25T18:05:19+08:00"
+}
