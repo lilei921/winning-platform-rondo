@@ -46,9 +46,9 @@ test("顶层叶子 query:缺 --wiql exit 64,用法走 stderr,stdout 纯净", () 
   assert.ok(r.stderr.includes("--wiql"));
 });
 
-test("命令总数 = 47", () => {
+test("命令总数 = 45", () => {
   const total = Object.values(TREE).reduce((n, leaves) => n + leaves.length, 0) + 2 /* query + doctor */;
-  assert.equal(total, 47);
+  assert.equal(total, 45);
 });
 
 test("--version 输出 JSON:name/version/node/sea,exit 0", () => {
@@ -141,12 +141,15 @@ test("retired stage and handoff are not public commands", () => {
   for (const args of [["analysis", "validate"], ["analysis", "publish"], ["delivery", "admission"]]) assert.equal(runCli([...args, "--help"]).status, 0);
 });
 
- test("P0 退役独立进度与完成检查，研发命令不再接受 Change 参数", () => {
+test("P0 退役独立进度与完成检查，研发命令不再接受 Change 参数", () => {
   for (const args of [["change", "update-progress"], ["dev", "check-change"]]) assert.notEqual(runCli(args).status, 0, args.join(" "));
   for (const command of ["prepare", "publish"]) {
     const help = runCli(["dev", command, "--help"]);
     assert.equal(help.status, 0);
     assert.doesNotMatch(help.stdout + help.stderr, /--change-ref/);
-    assert.notEqual(runCli(["dev", command, "--issue", "X", "--repo", "biz", "--change-ref", "old"]).status, 0);
+    const args = ["dev", command, "--issue", "X", ...(command === "prepare" ? ["--repo", "biz"] : []), "--change-ref", "old"];
+    const rejected = runCli(args);
+    assert.equal(rejected.status, 64, args.join(" "));
+    assert.match(rejected.stderr, /--change-ref/);
   }
 });
