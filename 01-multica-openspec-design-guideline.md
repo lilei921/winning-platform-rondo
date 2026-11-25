@@ -248,7 +248,7 @@ Squad      = Delivery Squad
 
 `TFS Sync Agent` 与 `PR Status Sync Agent` 都在 Delivery Squad 外通过 Multica Autopilot 运行；分别绑定 `tfs-sync` 与 `pr-status-sync` Skill。后者负责已登记 PR 的状态核对与有界 Finalize，并在满足条件的 Requirement Closeout 中规划 TFS 子任务及估时；不负责创建 / 合并 PR 或解释 Review 意见。
 
-`Wayfinder Agent` 独立于 Delivery Squad，是自动 TFS 入口的默认 Intake Triage：使用独立的 `codebase-explorer` 调查准入所需工程证据，再通过 `workitem-triage` 判断 Delivery Eligibility；`eligible` 后按 TFS 来源类型交给 `Bug Fix Agent` 或 `Delivery Squad`，确定性映射与交接通过 `rondo delivery handoff` 完成。明确直接委派的 Analysis 可以不经过 Wayfinder；Wayfinder Decision 不作为所有 Analysis 的强制 Gate。它不替代 `Workitem Analyst` 的 Change Kind / Analysis Route、Root Cause、需求方案和 OpenSpec Preparation。`codebase-explorer` 参考原有 `context-analysis` 的定位方法，但独立绑定、独立演进；两者仅通过 Evidence References 交接，不共享 Skill 及完成标准。准入、交接和异常由 [Delivery 主方案 §4.1.1](02-multica-delivery-lifecycle-design.md#delivery-intake) 维护，Evidence 增量复用由 [03 §6](03-workitem-analysis-design.md#analysis-section-06) 维护。
+`Wayfinder Agent` 独立于 Delivery Squad，是自动 TFS 入口的默认 Intake Triage：按需使用 `codebase-explorer` 调查准入所需工程证据，由 Wayfinder Instructions 维护准入判断；`accepted` 后按 TFS 来源类型交给 `Bug Fix Agent` 或 `Delivery Squad`，三种 Decision 的确定性执行通过 `rondo delivery admission` 完成。明确直接委派的 Analysis 可以不经过 Wayfinder；Wayfinder Decision 不作为所有 Analysis 的强制 Gate。它不替代 `Workitem Analyst` 的 Change Kind / Analysis Route、Root Cause、需求方案和 OpenSpec Preparation。`codebase-explorer` 参考原有 `context-analysis` 的定位方法，但独立绑定、独立演进；两者仅通过 Evidence References 交接，不共享 Skill 及完成标准。准入、交接和异常由 [Delivery 主方案 §4.1.1](02-multica-delivery-lifecycle-design.md#delivery-intake) 维护，Evidence 增量复用由 [03 §6](03-workitem-analysis-design.md#analysis-section-06) 维护。
 
 PR 生命周期与异常处理由 [Delivery 主方案 §11](02-multica-delivery-lifecycle-design.md#pr-status-sync) 维护。
 
@@ -394,7 +394,7 @@ unsupported
 done
 ```
 
-Wayfinder 的准入结论 `eligible | needs_human | unsupported` 属于 **Triage Decision**，并非三种同名 Issue Status：`eligible` 经 `rondo delivery handoff` 单次 Assignment Update 交给 `todo + Bug Fix Agent / Delivery Squad`，由 Multica 启动对应下游 Run；`needs_human` 使用 `blocked` 等待人工补充并显式恢复；`unsupported` 对应上表的自定义 Issue Status `unsupported`。
+Wayfinder 的准入结论 `accepted | needs_human | unsupported` 属于 **Triage Decision**，并非三种同名 Issue Status：`accepted` 经 `rondo delivery admission --decision accepted` 单次 Assignment Update 交给 `todo + Bug Fix Agent / Delivery Squad`，由 Multica 启动对应下游 Run；`needs_human` 使用 `blocked` 等待人工补充；`unsupported` 对应上表的自定义 Issue Status `unsupported`。二者均由 `rondo delivery admission` 设置状态，保留 Wayfinder 指派且不启动新 Run。
 
 `unsupported` 表示**当前能力、授权或自动化边界下不支持交付**，不是执行失败，也不是永久不支持；必须有可追溯的排除证据，单纯信息不足应归入 `needs_human`。该状态只终止 Multica 当前自动交付路径，不完成或关闭原始 TFS Work Item；能力或授权变化后，Human 在原 Issue 回复必要信息，并在保留 Wayfinder Assignee 的情况下将状态改为 `todo` 触发重新准入；不要求解除、重新指派或 `@mention`。使用前须按当前安装版本回读 Workspace 的自定义状态配置及其终态行为。准入不授权编码，也不替代 Human Analysis Review。
 
@@ -402,7 +402,7 @@ Wayfinder 的准入结论 `eligible | needs_human | unsupported` 属于 **Triage
 
 #### 1.4.8 Technical Change Kind 与自动处理边界
 
-`corrective` 表示恢复有证据支持的既定行为；`intentional` 表示主动改变预期行为、业务规则或能力。Workitem Analyst 负责基于证据判断，并将结果通过 `rondo analysis stage` 写入 Multica Issue Metadata `analysis.change_kind`（string）；Gate 和 Complete 核对该分类与当前 OpenSpec Change 的 `.openspec.yaml.schema` 一致。技术分类是专业判断及统计维度，不是 Workflow、Skill 链或自动化授权。
+`corrective` 表示恢复有证据支持的既定行为；`intentional` 表示主动改变预期行为、业务规则或能力。Workitem Analyst 负责基于证据判断，并将结果在存在工程增量时通过 `rondo analysis complete` 写入 Multica Issue Metadata `analysis.change_kind`（string）；Gate 和 Complete 核对该分类与当前 OpenSpec Change 的 `.openspec.yaml.schema` 一致。技术分类是专业判断及统计维度，不是 Workflow、Skill 链或自动化授权。
 
 超出授权、证据或当前自动处理能力的复杂变更须停止并交 Delivery Lead / Human；不另建复杂度 Route。紧急程度与排期由 Human 管理，不创建 `hotfix` 分类。执行分类与方法边界由 [03 §5](03-workitem-analysis-design.md#analysis-section-05) 维护，Schema 归属由 [05](05-openspec-schema-implementation-design.md) 维护。
 
@@ -631,7 +631,7 @@ Key 在创建状态时确定，修改 Display Name 不改变 Key；部署和调�
 
 来源：[Comments](#source-comments)、[Mention / Reply 路由](#source-mentions)、[Squads](#source-squads)，文档核对日期 2026-09-29。实际触发以当前上下文、预览、Access 和安装版本为准，不复制完整原生触发表。
 
-**本项目约定：** 人审决定仍来自真实 Human 意见；评论触发不是批准。领域方案定义审核入口与原始反馈引用，成员 Skill 定义输出和停止条件。Wayfinder 以同一 Issue 的 `/note` Comment 持久化**准入结论、关键 Evidence References、未知项和交接建议**：首次或人工状态触发的 Wayfinder Run 可以发布顶层 `/note`；存在明确 Human 补充评论时，可在对应线程使用 `--parent` 关联回复，不凭空要求评论父 ID。写入并回读后，`eligible` 通过 `rondo delivery handoff` 按当前 `tfs.type` 执行单次 `status=todo + assignee=<目标 ID>` Update，走原生 Assignment Trigger；`/note` 的静默行为还须核查 `comment.created` Wakeup 规则。`/note` 的非触发语义参见 [官方 Mention / Comment 路由](https://multica.ai/docs/mentioning-agents)，具体 CLI / API 仍以安装版本实测为准。Comment 是 Supporting Evidence / Delivery Handoff，不是独立 Engineering Truth，也不替代 OpenSpec Change。
+**本项目约定：** 人审决定仍来自真实 Human 意见；评论触发不是批准。领域方案定义审核入口与原始反馈引用，成员 Skill 定义输出和停止条件。Wayfinder 以同一 Issue 的 `/note` Comment 持久化**准入结论、关键 Evidence References、未知项和交接建议**：首次或人工状态触发的 Wayfinder Run 可以发布顶层 `/note`；存在明确 Human 补充评论时，可在对应线程使用 `--parent` 关联回复，不凭空要求评论父 ID。确认有效 Decision 已记录后，`accepted` 通过 `rondo delivery admission --decision accepted` 按当前 `tfs.type` 执行单次 `status=todo + assignee=<目标 ID>` Update，走原生 Assignment Trigger；`/note` 的静默行为还须核查 `comment.created` Wakeup 规则。`/note` 的非触发语义参见 [官方 Mention / Comment 路由](https://multica.ai/docs/mentioning-agents)，具体 CLI / API 仍以安装版本实测为准。Comment 是 Supporting Evidence / Delivery Handoff，不是独立 Engineering Truth，也不替代实际工程变更的 OpenSpec Change。无需工程增量时，Analysis 专业结论直接记录在当前 Issue Comment，复用原生回流，不创建工程契约或研发批准事实。
 
 <a id="mechanism-cli-version"></a>
 
