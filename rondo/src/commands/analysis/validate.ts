@@ -276,8 +276,11 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
     const { check: change, changeDir, schema, rawMetadata } = checkChange(openspecRoot, meta);
     checks.push(checkIdentity(meta, schema));
     checks.push(change);
-    checks.push(checkTasks(changeDir));
-    checks.push(checkAiReview(schema, meta));
+    // Change 不可确认时不执行依赖该目录/Schema 的检查，避免派生 FAIL。
+    if (change.result === "PASS") {
+      checks.push(checkTasks(changeDir));
+      checks.push(checkAiReview(schema, meta));
+    }
     // 本地硬条件已失败时，不再执行可能启动外部 CLI 的 Acceptance 检查或 Strict Validation。
     // Verify Recommendation 的字段合法性由 loadValidatedFacts 负责。
     if (checks.every(c => c.result === "PASS")) {
@@ -302,8 +305,8 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
   }
 
   let result: CheckResult = "PASS";
-  if (checks.some((c) => c.result === "UNKNOWN")) result = "UNKNOWN";
-  else if (checks.some((c) => c.result === "FAIL")) result = "FAIL";
+  if (checks.some((c) => c.result === "FAIL")) result = "FAIL";
+  else if (checks.some((c) => c.result === "UNKNOWN")) result = "UNKNOWN";
   const reasons = checks.flatMap((c) => c.reasons.map((r) => `[${c.name}] ${r}`));
   const code = result === "PASS" ? 0 : result === "FAIL" ? 2 : 3;
   if (result === "PASS") {

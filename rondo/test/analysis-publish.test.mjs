@@ -526,3 +526,55 @@ test("本地硬条件失败时不执行 OpenSpec Strict Validation", t => {
   assert.equal(result.body.checks.find(c => c.name === "tasks")?.result, "FAIL");
   assert.ok(!result.body.checks.some(c => c.name === "openspec_validate" || c.name === "verify_recommendation"));
 });
+
+test("Git 发布后并发 Source 或 Facts 变化时不覆盖现有事实", async t => {
+  for (const [key, value] of [
+    ["analysis.source", JSON.stringify({ repo_url: "http://tfs.test/tfs/C/P/_git/root", branch: "dev", commit: "a".repeat(40), change_ref: CHANGE })],
+    ["tfs.id", "999999"],
+    ["analysis.verify_agent.reason", "另一流程已更新依据"],
+  ]) {
+    await t.test(key, t => {
+      const f = fixture(t);
+      f.env.MOCK_METADATA_ON_ISSUE_READ = "2";
+      f.env.MOCK_ISSUE_METADATA_PATCH = JSON.stringify({ [key]: value });
+      const result = f.complete();
+      assert.notEqual(result.exit, 0, JSON.stringify(result));
+      assert.equal(f.state().metadata[key], value);
+      assert.equal(f.state().metadata["analysis.gate.result"], undefined);
+      assert.equal(f.state().status, "in_progress");
+      if (key !== "analysis.source") assert.equal(f.state().metadata["analysis.source"], undefined);
+    });
+  }
+});
+
+test("审核 Facts 写入后出现不一致时不得登记 Gate PASS", t => {
+  const f = fixture(t);
+  f.env.MOCK_METADATA_ON_ISSUE_READ = "3";
+  f.env.MOCK_ISSUE_METADATA_PATCH = JSON.stringify({ "analysis.verify_agent.reason": "" });
+  const result = f.complete();
+  assert.notEqual(result.exit, 0, JSON.stringify(result));
+  assert.equal(f.state().metadata["analysis.verify_agent.reason"], "");
+  assert.equal(f.state().metadata["analysis.gate.result"], undefined);
+  assert.equal(f.state().status, "in_progress");
+});
+
+test("Change Schema 无法确认时不产生依赖检查的派生 FAIL", t => {
+  const f = fixture(t);
+  rmSync(join(f.change, ".openspec.yaml"));
+  const result = f.gate();
+  assert.equal(result.exit, 3, JSON.stringify(result));
+  assert.equal(result.body.checks.find(c => c.name === "change")?.result, "UNKNOWN");
+  assert.ok(!result.body.checks.some(c => ["tasks", "ai_review", "acceptance_contract", "openspec_validate"].includes(c.name)));
+});
+
+test("已知独立硬条件 FAIL 优先于其他检查 UNKNOWN", t => {
+  const f = fixture(t);
+  rmSync(join(f.change, ".openspec.yaml"));
+  const state = f.state();
+  delete state.metadata["tfs.id"];
+  f.setState(state);
+  const result = f.gate();
+  assert.equal(result.exit, 2, JSON.stringify(result));
+  assert.equal(result.body.checks.find(c => c.name === "identity")?.result, "FAIL");
+  assert.equal(result.body.checks.find(c => c.name === "change")?.result, "UNKNOWN");
+});

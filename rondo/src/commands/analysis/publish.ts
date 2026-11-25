@@ -237,7 +237,8 @@ async function main(rawArgs: string[]): Promise<number> {
       if (!requirement && changeEvidenceDigest(changeDir, effectiveMeta, undefined, true) !== gateEvidence.change_digest) {
         throw new UnknownError("根仓 Commit/Push 后 Change 工件发生变化，必须重新执行 Analysis Gate");
       }
-      if (!requirement && !recovered && canonicalRepositoryIdentity(pushRepositoryUrl(root)) !== canonicalRepositoryIdentity(String(rootCommit.repo_url))) {
+      // Git 使用 origin 执行；确认发布期间该配置未发生可观测的目标漂移。
+      if (!recovered && canonicalRepositoryIdentity(pushRepositoryUrl(root)) !== canonicalRepositoryIdentity(String(rootCommit.repo_url))) {
         throw new UnknownError("推送期间 origin 地址已变化，无法确定规范来源");
       }
       const source = recovered ?? parseAnalysisSource({ repo_url: rootCommit.repo_url, branch: rootCommit.branch,

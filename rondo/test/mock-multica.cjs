@@ -88,9 +88,15 @@ function findIssue(ref) {
 }
 
 if (a[0] === "issue" && a[1] === "get") {
-  if (process.env.MOCK_STATUS_ON_ISSUE_READ) {
+  if (process.env.MOCK_STATUS_ON_ISSUE_READ || process.env.MOCK_METADATA_ON_ISSUE_READ) {
     st.issue_reads = (st.issue_reads || 0) + 1;
     if (st.issue_reads === Number(process.env.MOCK_STATUS_ON_ISSUE_READ)) st.status = "blocked";
+    if (st.issue_reads === Number(process.env.MOCK_METADATA_ON_ISSUE_READ)) {
+      // 模拟当前 Issue 的同一快照中发生并发 Facts/Source 更新。
+      const patch = JSON.parse(process.env.MOCK_ISSUE_METADATA_PATCH);
+      const target = st.issues ? findIssue(a[2]) : st;
+      target.metadata = { ...target.metadata, ...patch };
+    }
     save();
   }
   injectReadFail();
