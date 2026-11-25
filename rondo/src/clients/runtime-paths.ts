@@ -43,9 +43,9 @@ export interface RuntimePaths {
   gitRemoteUrl?: string;
 }
 
-/** §4.6 路径校验：绝对路径 → 目录存在 → Git 根仓（rev-parse --show-toplevel 归一化比对）。 */
+/** 显式 CLI 路径按当前 cwd 归一化；配置或运行环境中的持久根仓仍要求绝对路径。随后校验目录及 Git 根仓。 */
 export function validateRootRepo(rootRepo: string, origin: string): string {
-  if (!isAbsolute(rootRepo)) {
+  if (origin !== "--root-repo" && !isAbsolute(rootRepo)) {
     throw new UnknownError(`根仓路径不是当前系统语义下的绝对路径（${origin}）: ${rootRepo}`);
   }
   const resolvedRoot = resolve(rootRepo);

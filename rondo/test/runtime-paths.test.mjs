@@ -54,7 +54,7 @@ test("非 Git 目录、文件和不存在的目录均拒绝", (t) => {
   for (const candidate of [dir, file, join(dir, "missing")]) {
     assert.throws(() => validateRootRepo(candidate, "测试"), UnknownError);
   }
-  assert.throws(() => validateRootRepo("relative", "测试"), /不是当前系统语义下的绝对路径/);
+  assert.throws(() => validateRootRepo("relative", "RONDO_WORKSPACE_PATH"), /不是当前系统语义下的绝对路径/);
 });
 
 test("linked worktree 的 .git 文件仍被识别为合法根仓", (t) => {
@@ -117,6 +117,15 @@ test("本地根仓 CLI 无需平台配置即可解析；缺少显式路径不尝
   const r = spawnSync(process.execPath, [CLI, "runtime", "resolve-root-repo", "--root-repo", repo], { encoding: "utf8" });
   assert.equal(r.status, 0, r.stderr);
   assert.equal(JSON.parse(r.stdout).root_repo, git(repo, "rev-parse", "--show-toplevel"));
+  for (const [cwd, arg] of [[repo, "."], [dirname(repo), "中文 repo"]]) {
+    const relative = spawnSync(process.execPath, [CLI, "runtime", "resolve-root-repo", "--root-repo", arg], { cwd, encoding: "utf8" });
+    assert.equal(relative.status, 0, relative.stderr);
+    assert.deepEqual(JSON.parse(relative.stdout), JSON.parse(r.stdout));
+  }
+  mkdirSync(join(repo, "nested"));
+  const nested = spawnSync(process.execPath, [CLI, "runtime", "resolve-root-repo", "--root-repo", "nested"], { cwd: repo, encoding: "utf8" });
+  assert.equal(nested.status, 3);
+  assert.match(JSON.parse(nested.stdout).reason, /不是 Git 根仓/);
   const missing = spawnSync(process.execPath, [CLI, "runtime", "resolve-root-repo"], { encoding: "utf8" });
   assert.equal(missing.status, 64);
   assert.match(missing.stderr, /--root-repo/);

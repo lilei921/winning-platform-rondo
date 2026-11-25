@@ -42,7 +42,7 @@ git add -- openspec/changes/<change_ref>/proposal.md
 git commit --only -m "analysis: <change_ref>" -- openspec/changes/<change_ref>/proposal.md
 ```
 
-按本次实际工件选择提交路径。使用已准备的实际根仓绝对路径（`--root-repo` 不接受 `.`），发布 TFS Requirement 审核版本：
+按本次实际工件选择提交路径。使用已准备的实际根仓路径（当前 cwd 已是根仓时可用 `.`），发布 TFS Requirement 审核版本：
 
 ```bash
 rondo analysis publish --mode requirement --issue <issue> --facts <facts.json> \

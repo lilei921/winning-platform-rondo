@@ -103,9 +103,12 @@ function parseArgs(argv: string[]): Args {
       case "--change-ref": changeRef = next(); break;
       case "--tfs-id": tfsId = next(); break;
       case "--expect-schema": expectSchema = next(); break;
+      case "--output":
+        if (next() !== "json") usage("--output only supports json");
+        break;
       case "--help": case "-h":
         process.stdout.write(
-          "usage: rondo change resolve-identity --openspec-root <root> [--change-ref <id>] [--tfs-id <id>] [--expect-schema <name>]\n",
+          "usage: rondo change resolve-identity --openspec-root <root> [--change-ref <id>] [--tfs-id <id>] [--expect-schema <name>] [--output json]\n",
         );
         process.exit(0);
       default:

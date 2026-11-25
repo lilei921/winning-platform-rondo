@@ -122,13 +122,14 @@ function fixture(t, requirement = true, native = false) {
   const args = ["--issue", "issue-1", "--openspec-root", root,
     "--workspace-id", "ws-test", "--registry-config", config, "--multica", MOCK];
   const gate = () => runCli(["analysis", "validate", "--facts", factsPath, ...args], env);
-  const complete = (...extra) => runCli(["analysis", "publish",
+  const completeAt = (rootArg, cwd, ...extra) => runCli(["analysis", "publish",
     "--issue", "issue-1", "--facts", factsPath,
     "--workspace-id", "ws-test", "--registry-config", config, "--multica", MOCK,
-    "--root-repo", root, ...(requirement ? ["--mode", "requirement"] : []), ...extra], env);
+    "--root-repo", rootArg, ...(requirement ? ["--mode", "requirement"] : []), ...extra], env, cwd);
+  const complete = (...extra) => completeAt(root, undefined, ...extra);
   const state = () => JSON.parse(readFileSync(statePath, "utf8"));
   const setState = data => writeFileSync(statePath, JSON.stringify(data));
-  return { home, root, change, remote, report, tfs, env, gate, complete, state, setState, factsPath, metadata, taskBranch, resourcePath };
+  return { home, root, change, remote, report, tfs, env, gate, complete, completeAt, state, setState, factsPath, metadata, taskBranch, resourcePath };
 }
 
 test("Preview → Complete without Stage: final Gate and fixed Git Contract; no automatic Comment or Gate file", t => {
@@ -256,7 +257,7 @@ test("Native Analysis without Workspace variables: raw-SHA Task branch, remote a
   writeFileSync(join(f.root, "local.txt"), "not part of Change");
   git(f.root, "add", "local.txt");
   git(f.root, "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", "unrelated");
-  const result = f.complete();
+  const result = f.completeAt(".", f.root);
   assert.equal(result.exit, 0, JSON.stringify(result));
   const source = JSON.parse(f.state().metadata["analysis.source"]);
   assert.equal(source.branch, "dev");

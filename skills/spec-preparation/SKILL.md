@@ -12,7 +12,7 @@ description: 使用项目 OpenSpec CLI 与当前 Schema / Artifact Instruction �
 
 ## Method（按需选择，不是固定流水线）
 
-- **Inspect & Resolve**：查看当前 Change、Artifact 和未满足的契约，复用可信结论及有效工件。使用 `rondo change resolve-identity --openspec-root <root> [--change-ref <stable-id>] [--tfs-id <tfs.id>] [--expect-schema <schema>]`，仅传已知参数；两个身份已知时同时传入。命令默认输出 JSON，无需 `--output json`；身份及查询范围未变化时复用已有查询结果。`ACTIVE_FOUND` 复用（旧引用失效时可按 TFS ID 恢复并报告）；`ARCHIVED_FOUND` / `CONFLICT` / `INVALID` / UNKNOWN 停止，不新建规避冲突。
+- **Inspect & Resolve**：查看当前 Change、Artifact 和未满足的契约，复用可信结论及有效工件。使用 `rondo change resolve-identity --openspec-root <root> [--change-ref <stable-id>] [--tfs-id <tfs.id>] [--expect-schema <schema>]`，仅传已知参数；两个身份已知时同时传入。命令默认输出 JSON，也接受 `--output json`；身份及查询范围未变化时复用已有查询结果。`ACTIVE_FOUND` 复用（旧引用失效时可按 TFS ID 恢复并报告）；`ARCHIVED_FOUND` / `CONFLICT` / `INVALID` / UNKNOWN 停止，不新建规避冲突。
 - **Create / Complete**：仅在 `NOT_FOUND` 且身份、Schema 与创建授权明确时新建。存在可信数字型 `tfs.id` 时，Change ID 使用 kebab-case `<semantic-slug>-<tfs.id>`，以 TFS ID 为末尾独立段；核对 ID 后执行 `openspec new change <id> --schema <schema>`。按当前 Artifact State 补齐实际需要的工件；无需修改时只返回有效状态。
 - **Revise & Reconcile**：根据明确的返工反馈只修改受影响工件，检查相关上下游内容与验证要求，保留仍有效的结论；授权范围内的普通修订不逐文件重复确认。
 
