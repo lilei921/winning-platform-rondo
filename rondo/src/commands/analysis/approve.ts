@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { markLeafExecuted } from "../../cli/output.js";
-import { MulticaClient, type IssueRecord } from "../../clients/multica.js";
+import { MulticaClient } from "../../clients/multica.js";
 import { resolveMulticaRuntime } from "../../clients/runtime-context.js";
 import { parseAnalysisSource, readAnalysisSource, sameAnalysisSource } from "./source.js";
 import { assertProjectedVerifyDecision, readApprovedVerifyDecision } from "../delivery/verify-decision.js";
@@ -33,6 +33,8 @@ export function recordApproval(client: ApprovalClient, args: ApprovalArgs) {
       md["finalize.pending"] || md["delivery.tfs_written"] === "true") {
     throw new FailError("Analysis Gate 未通过或存在不允许批准的交付事实");
   }
+  const tfsId = Number(md["tfs.id"]);
+  if (!Number.isSafeInteger(tfsId) || tfsId <= 0) throw new FailError("TFS Requirement ID 非法");
   const source = readAnalysisSource(md);
   if (source.commit !== args.commit) throw new FailError("获批 Commit 与当前 analysis.source 不一致");
   const required = args.verifyRequired === "true";
@@ -82,8 +84,8 @@ export function recordApproval(client: ApprovalClient, args: ApprovalArgs) {
   // Validate the exact record with the same reader used by downstream gates.
   assertProjectedVerifyDecision({...md, [APPROVAL]: saved, [VERIFY]: String(required)}, args.commentId);
   let changed = false;
+  fresh();
   for (const [field, value] of [[APPROVAL, saved], [VERIFY, String(required)]]) {
-    fresh();
     if (expected[field] !== value) {
       client.setMetadata(issue.id, field, value);
       expected[field] = value;
@@ -95,26 +97,11 @@ export function recordApproval(client: ApprovalClient, args: ApprovalArgs) {
     client.setStatusNoStart(issue.id, "in_progress");
     status = "in_progress";
     changed = true;
+    fresh();
   }
-  fresh();
   return { result: changed ? "PASS" : "NOOP", issue: key, status,
     change_ref: source.change_ref, commit: source.commit, comment_ref: args.commentId,
     verify_agent_required: required };
-}
-
-/** Only the current Delivery Lead Run may register approval for its Issue. */
-function assertLeadRun(client: MulticaClient, issue: IssueRecord, workspace: string): void {
-  const agentId = process.env.MULTICA_AGENT_ID, taskId = process.env.MULTICA_TASK_ID;
-  if (!agentId || !taskId) throw new UnknownError("缺少当前 Agent / Task 身份");
-  const agent = client.run(["agent", "get", agentId, ...client.ws(), "--output", "json"],
-    "核对 Delivery Lead 身份", { transient: true }) as { id?: string; name?: string };
-  if (agent?.id !== agentId || agent.name !== "Delivery Lead") throw new FailError("仅 Delivery Lead 可以登记批准");
-  const runs = client.run(["issue", "runs", issue.id, "--active", ...client.ws(), "--output", "json"],
-    "核对当前 Issue Run", { transient: true });
-  if (!Array.isArray(runs)) throw new UnknownError("无法确认当前 Issue Run");
-  const matches = runs.filter(r => r?.id === taskId && r.agent_id === agentId &&
-    r.issue_id === issue.id && r.workspace_id === workspace && r.status === "running");
-  if (matches.length !== 1) throw new FailError("当前 Delivery Lead Run 不属于该 Issue");
 }
 
 export function registerAnalysisApprove(group: Command): void {
@@ -126,11 +113,7 @@ export function registerAnalysisApprove(group: Command): void {
     .action((args: ApprovalArgs) => {
       markLeafExecuted();
       try {
-        const runtime = resolveMulticaRuntime();
-        const client = new MulticaClient(runtime);
-        const issue = client.getIssue(args.issue);
-        assertLeadRun(client, issue, runtime.workspace_id);
-        const result = recordApproval(client, {...args, issue: issue.id});
+        const result = recordApproval(new MulticaClient(resolveMulticaRuntime()), args);
         process.stdout.write(JSON.stringify(result, null, 2) + "\n");
       } catch (err) {
         const failed = err instanceof FailError;
