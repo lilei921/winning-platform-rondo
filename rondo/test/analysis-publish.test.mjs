@@ -199,16 +199,19 @@ test("Git clean filter 修改工程正文，固定 Commit 不匹配时必须阻�
   assert.equal(f.state().metadata["analysis.source"], undefined);
 });
 
-test("Human Review 重放只读取固定 Git Commit，不再追随共享 HEAD 或自动新增 Comment", t => {
+test("Human Review 重放只消费已登记固定来源，不读取 REST 正文或追随 HEAD", t => {
   const f = fixture(t);
   assert.equal(f.complete().exit, 0);
   const saved = f.state().metadata["analysis.source"];
+  f.tfs.update(s => { s.requests = []; s.status = 503; });
   git(f.root, "-c", "user.email=test@example.invalid", "-c", "user.name=Test", "commit", "--allow-empty", "-m", "unrelated HEAD");
   writeFileSync(join(f.change, "proposal.md"), "local WIP unrelated to approved review");
   const replay = f.complete();
   assert.equal(replay.exit, 0, JSON.stringify(replay));
   assert.equal(f.state().metadata["analysis.source"], saved);
   assert.equal(replay.body.replayed, true);
+  assert.equal(replay.body.gate_reexecuted, false);
+  assert.deepEqual(f.tfs.state().requests, []);
   assert.equal(f.state().comments?.["issue-1"]?.length ?? 0, 0);
 });
 
@@ -455,14 +458,14 @@ test("Gate PASS 写入失败不切换审核，恢复复用固定来源", t => {
   const source = f.state().metadata["analysis.source"];
   assert.ok(source);
   delete f.env.MOCK_FAIL_METADATA_KEY;
-  f.tfs.update(s => { s.requests = []; });
+  f.tfs.update(s => { s.requests = []; s.status = 503; });
   const replay = f.complete();
   assert.equal(replay.exit, 0, JSON.stringify(replay));
   assert.equal(f.state().metadata["analysis.source"], source);
-  assert.equal(f.tfs.state().requests.filter(r => r.query.scopePath).length, 1);
+  assert.deepEqual(f.tfs.state().requests, []);
 });
 
-test("远端契约读取仅消费必要工件及明确引用", t => {
+test("Requirement 发布在 REST 正文不可用时仍以 Git 候选和可达性完成", t => {
   const f = fixture(t);
   mkdirSync(join(f.change, "logs"));
   writeFileSync(join(f.change, "logs", "debug.txt"), "unreferenced");
@@ -471,9 +474,27 @@ test("远端契约读取仅消费必要工件及明确引用", t => {
   // This log already exists remotely; normal publication must not introduce unauthorized files.
   git(f.root, "push", "origin", "dev");
   assert.equal(git(f.remote, "show", "dev:openspec/changes/" + CHANGE + "/logs/debug.txt"), "unreferenced");
+  f.tfs.update(s => { s.requests = []; s.status = 503; });
   const result = f.complete();
   assert.equal(result.exit, 0, JSON.stringify(result));
-  const paths = f.tfs.state().requests.map(r => r.query.path).filter(Boolean);
-  assert.ok(paths.some(path => path.endsWith("/proposal.md")));
-  assert.ok(!paths.some(path => path.endsWith("/logs/debug.txt")));
+  assert.equal(f.state().status, "analysis_review");
+  assert.equal(result.body.analysis_source.commit, git(f.remote, "rev-parse", "dev"));
+  assert.deepEqual(f.tfs.state().requests, []);
+});
+
+test("固定来源不再位于目标分支时拒绝恢复，不调用 REST 正文", t => {
+  const f = fixture(t);
+  f.env.MOCK_FAIL_STATUS = "1";
+  assert.equal(f.complete().exit, 3);
+  const saved = JSON.parse(f.state().metadata["analysis.source"]);
+  const parent = git(f.remote, "rev-parse", saved.commit + "^");
+  git(f.remote, "update-ref", "refs/heads/dev", parent);
+  delete f.env.MOCK_FAIL_STATUS;
+  f.tfs.update(s => { s.requests = []; s.status = 503; });
+  const result = f.complete();
+  assert.notEqual(result.exit, 0);
+  assert.match(result.body.reason, /不在原目标分支/);
+  assert.equal(f.state().status, "in_progress");
+  assert.equal(JSON.parse(f.state().metadata["analysis.source"]).commit, saved.commit);
+  assert.deepEqual(f.tfs.state().requests, []);
 });

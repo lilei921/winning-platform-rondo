@@ -1240,13 +1240,13 @@ Workitem Analyst 只可在当前授权分析任务的提交环节写入 `analysi
 ```text
 确认本次 OpenSpec Change、专业 Facts 与必要 Evidence；限定范围 Commit
 → rondo analysis publish（直接消费本次 Facts）
-→ CLI 内部最终真实 Gate、候选及远端固定 Git 契约核验
+→ CLI 内部最终真实 Gate、候选 Git 契约一致性及发布可达性核验
 → CLI 核对冲突事实；替换旧审核时先使旧 PASS 失效，登记 Facts、Source、本次 PASS 与 analysis_review 并确认结果
 → PASS 后使用返回的 analysis_source 发布原生审核 Comment
 → 结束本轮分析，等待 Human Review
 ```
 
-Gate 只返回 `PASS / FAIL / UNKNOWN`，不修改 Issue 状态。`publish` 在内存中使用本次 Facts 与当前来源事实执行 Gate，候选及远端契约使用同一份专业 Facts，外部副作用前后核对相关事实；最终发布并确认固定来源和审核状态后返回 PASS。正常流程不需要 stage 或显式 validate；按需使用 `rondo analysis validate --facts <facts.json>` 只读诊断。Gate 不生成持久化文件，也不信任调用方自报 PASS。`publish` 已确认 PASS 时不再机械核对其后置条件，Comment 发布失败仅恢复评论。
+Gate 只返回 `PASS / FAIL / UNKNOWN`，不修改 Issue 状态。`publish` 在内存中使用本次 Facts 与当前来源事实执行 Gate，Requirement 候选 Git 契约使用同一份专业 Facts，Git 确认候选 Commit 已进入正确目标分支后直接登记固定来源，不重复使用 TFS REST 读取正文或计算摘要；外部副作用边界核对必要身份、Facts 和审核状态后返回 PASS。已登记的 Requirement 审核重放只消费固定来源及审核事实，不重新读取工件；下游按实际需要读取固定 SHA。正常流程不需要 stage 或显式 validate；按需使用 `rondo analysis validate --facts <facts.json>` 只读诊断。Gate 不生成持久化文件，也不信任调用方自报 PASS。`publish` 已确认 PASS 时不再机械核对其后置条件，Comment 发布失败仅恢复评论。
 
 <a id="analysis-summary"></a>
 

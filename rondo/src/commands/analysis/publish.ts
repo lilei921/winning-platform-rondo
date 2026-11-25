@@ -99,23 +99,29 @@ async function main(rawArgs: string[]): Promise<number> {
     // 根仓资源查询与 Issue 读写使用同一环境，包含显式 --profile/--multica 覆盖。
     cfg.runtime = runtime;
 
-    // 审核中的重放只核验已发布来源，不用当前工作树或已前进的 HEAD 改写审核基线。
+    const requirement = args.mode === "requirement";
+    // Requirement 审核重放只消费已登记的 PASS、Facts 和固定来源，不重读工件。
     if (!assertAnalysisWritable(before, priorMeta, entries)) {
       if (removeReview) throw new UnknownError("当前审核版本含有不同的 Review Verdict，不能重放");
       const source = readAnalysisSource(priorMeta);
       if (priorMeta["analysis.gate.result"] !== "PASS") throw new UnknownError("已审核 Issue 缺少可信的 PASS 状态，不能重放");
-      const published = await readPublishedContract(source, priorMeta);
-      const violation = sourceSchemaViolation(tfsKind, published.schema);
-      if (violation) throw new PreconditionError(violation);
-      const invalid = changeKindSchemaViolation(facts.change_kind, published.schema) ?? reviewVerdictViolation(published.schema, facts.ai_review?.verdict);
-      if (invalid) throw new PreconditionError(invalid);
-      // Idempotent replay checks the existing pinned source; it does not claim a new Gate execution.
-      const latest = runJson([...MC, "issue", "get", args.issue, ...ws, "--output", "json"], "重放后核对审核状态") as Record<string, unknown>;
-      const current = runJson([...MC, "issue", "metadata", "list", args.issue, ...ws, "--output", "json"], "重放后核对来源") as Record<string, unknown>;
-      if (String(latest.status ?? latest.status_name ?? "") !== TARGET_STATUS ||
-          !sameIssueOwner(before, latest) || !sameDeliveryFacts(priorMeta, current) ||
-          current[GATE_RESULT] !== "PASS" || !sameAnalysisSource(source, readAnalysisSource(current)) || metadataEvidenceDigest(current) !== metadataEvidenceDigest(priorMeta) ||
-          Object.entries(entries).some(([k, v]) => current[k] !== v)) throw new UnknownError("审核重放期间状态或来源已变化，停止放行");
+      if (requirement) {
+        if (facts.change_kind === "intentional" && facts.ai_review?.verdict !== "APPROVED")
+          throw new PreconditionError("Intentional 审核版本缺少 APPROVED Review Verdict");
+      } else {
+        const published = await readPublishedContract(source, priorMeta);
+        const violation = sourceSchemaViolation(tfsKind, published.schema);
+        if (violation) throw new PreconditionError(violation);
+        const invalid = changeKindSchemaViolation(facts.change_kind, published.schema) ?? reviewVerdictViolation(published.schema, facts.ai_review?.verdict);
+        if (invalid) throw new PreconditionError(invalid);
+        // Legacy 路径尚未采用相同的 Git 候选证明，保留原有读取及读后状态核验。
+        const latest = runJson([...MC, "issue", "get", args.issue, ...ws, "--output", "json"], "重放后核对审核状态") as Record<string, unknown>;
+        const current = runJson([...MC, "issue", "metadata", "list", args.issue, ...ws, "--output", "json"], "重放后核对来源") as Record<string, unknown>;
+        if (String(latest.status ?? latest.status_name ?? "") !== TARGET_STATUS ||
+            !sameIssueOwner(before, latest) || !sameDeliveryFacts(priorMeta, current) ||
+            current[GATE_RESULT] !== "PASS" || !sameAnalysisSource(source, readAnalysisSource(current)) || metadataEvidenceDigest(current) !== metadataEvidenceDigest(priorMeta) ||
+            Object.entries(entries).some(([k, v]) => current[k] !== v)) throw new UnknownError("审核重放期间状态或来源已变化，停止放行");
+      }
       process.stdout.write(JSON.stringify({ result: "PASS", issue: args.issue, status: TARGET_STATUS,
         replayed: true, gate_reexecuted: false,
         metadata_keys: [...Object.keys(entries), "analysis.source"], analysis_source: source,
@@ -124,7 +130,6 @@ async function main(rawArgs: string[]): Promise<number> {
     }
 
     // Complete itself executes the final Gate. A prior validate or Metadata PASS is only a preview.
-    const requirement = args.mode === "requirement";
     const root = requirement ? requirementRoot(args.rootRepo) : resolveRuntimePaths(cfg, {
       issue: before as { project_id?: string | null }, rootRepoArg: args.rootRepo || process.env.RONDO_WORKSPACE_PATH,
       rootRepoOrigin: args.rootRepo ? "--root-repo" : "RONDO_WORKSPACE_PATH",
@@ -175,23 +180,11 @@ async function main(rawArgs: string[]): Promise<number> {
     const gateEvidence = { change_digest: gate.payload.change_digest!, metadata_digest: gate.payload.metadata_digest! };
     let rootCommit: Record<string, unknown> | null = null;
     {
-      // Recover only from a previously pinned, byte-identical remote contract.
+      // Requirement 恢复使用 publishChange 已 Fetch 的固定 Git 对象。
+      // Legacy 保留原有远端契约读取。
       let recovered: AnalysisSource | undefined;
-      let recoverCommit: string | undefined;
       let checkedSource: AnalysisSource | undefined;
       let checkedContract: Awaited<ReturnType<typeof readPublishedContract>> | undefined;
-      if (requirement && pinned && metadataEvidenceDigest(priorMeta) === gateEvidence.metadata_digest) {
-        const published = await readPublishedContract(pinned, effectiveMeta);
-        checkedSource = pinned;
-        checkedContract = published;
-        if (published.digest === gateEvidence.change_digest) {
-          if (published.schema !== schema) throw new UnknownError("已保存来源的 Schema 与当前审核包不一致");
-          const local = readContractAt(gitOk(root, ["rev-parse", "HEAD"], "核对当前已提交的分析工件"));
-          if (local.digest !== gateEvidence.change_digest || local.schema !== schema)
-            throw new FailError("当前已提交分析工件与 Gate 不一致");
-          recoverCommit = pinned.commit;
-        }
-      }
       if (!requirement && priorMeta["analysis.source"] !== undefined && metadataEvidenceDigest(priorMeta) === gateEvidence.metadata_digest) {
         const saved = parseAnalysisSource(priorMeta["analysis.source"]);
         if (saved.change_ref === facts.change_ref) {
@@ -211,7 +204,18 @@ async function main(rawArgs: string[]): Promise<number> {
         const tfsId = String(priorMeta["tfs.id"] ?? "").trim();
         const subject = `analysis: ${facts.change_ref} (${args.issue}${tfsId ? ` / tfs ${tfsId}` : ""})`;
         const result = requirement ? await publishChange(root, facts.change_ref, args.issue, ANALYSIS_CONTRACT_FILE, subject, {
-          repoUrl: rootRepositoryUrl(root), expectedBranch: publicationBranch!, recoverCommit, fixedSourceCommit: pinned?.commit,
+          repoUrl: rootRepositoryUrl(root), expectedBranch: publicationBranch!, fixedSourceCommit: pinned?.commit,
+          canRecoverFixedSource: pinned && metadataEvidenceDigest(priorMeta) === gateEvidence.metadata_digest
+            ? (commit: string, localHead: string) => {
+                const published = readContractAt(commit);
+                if (published.digest !== gateEvidence.change_digest) return false;
+                if (published.schema !== schema) throw new UnknownError("已保存来源的 Schema 与当前审核包不一致");
+                const local = readContractAt(localHead);
+                if (local.digest !== gateEvidence.change_digest || local.schema !== schema)
+                  throw new FailError("当前已提交分析工件与 Gate 不一致");
+                return true;
+              }
+            : undefined,
           validateTree: (commit: string) => {
             const candidate = readContractAt(commit);
             if (candidate.schema !== schema || candidate.digest !== gateEvidence.change_digest) {
@@ -224,20 +228,22 @@ async function main(rawArgs: string[]): Promise<number> {
       if (!requirement && changeEvidenceDigest(changeDir, effectiveMeta, undefined, true) !== gateEvidence.change_digest) {
         throw new UnknownError("根仓 Commit/Push 后 Change 工件发生变化，必须重新执行 Analysis Gate");
       }
-      if (!recovered && canonicalRepositoryIdentity(pushRepositoryUrl(root)) !== canonicalRepositoryIdentity(String(rootCommit.repo_url))) {
+      if (!requirement && !recovered && canonicalRepositoryIdentity(pushRepositoryUrl(root)) !== canonicalRepositoryIdentity(String(rootCommit.repo_url))) {
         throw new UnknownError("推送期间 origin 地址已变化，无法确定规范来源");
       }
       const source = recovered ?? parseAnalysisSource({ repo_url: rootCommit.repo_url, branch: rootCommit.branch,
         commit: String(rootCommit.commit), change_ref: facts.change_ref }, facts.change_ref);
-      const publishedContract = checkedSource && checkedContract && sameAnalysisSource(checkedSource, source)
-        ? checkedContract : await readPublishedContract(source, effectiveMeta);
-      const localBlob = gitOk(root, ["rev-parse", `${source.commit}:openspec/changes/${facts.change_ref}/tasks.md`], "核对任务快照");
-      if (publishedContract.tasksObjectId !== localBlob) throw new UnknownError("远端规范与最终 Git commit 不一致");
-      if (publishedContract.schema !== schema || publishedContract.digest !== gateEvidence.change_digest) {
-        throw new UnknownError("最终固定 Git Commit 与本次真实 Gate 检查的工程契约不一致");
+      if (!requirement) {
+        const publishedContract = checkedSource && checkedContract && sameAnalysisSource(checkedSource, source)
+          ? checkedContract : await readPublishedContract(source, effectiveMeta);
+        const localBlob = gitOk(root, ["rev-parse", `${source.commit}:openspec/changes/${facts.change_ref}/tasks.md`], "核对任务快照");
+        if (publishedContract.tasksObjectId !== localBlob) throw new UnknownError("远端规范与最终 Git commit 不一致");
+        if (publishedContract.schema !== schema || publishedContract.digest !== gateEvidence.change_digest) {
+          throw new UnknownError("最终固定 Git Commit 与本次真实 Gate 检查的工程契约不一致");
+        }
+        assertCommittedContractFiles(root, source, effectiveMeta, gateEvidence.change_digest);
       }
-      if (!requirement) assertCommittedContractFiles(root, source, effectiveMeta, gateEvidence.change_digest);
-      // HEAD 是共享的；实际发布版本由本次路径 Commit SHA 和远端读取确认。
+      // Requirement 的候选契约及远端可达性已由 publishChange 确认；直接消费固定 SHA。
       rootCommit.commit = source.commit;
       rootCommit.repo_url = source.repo_url;
       entries["analysis.source"] = JSON.stringify(source);
