@@ -57,9 +57,15 @@ function fixture(t, { skip = false, schema = "intentional-change", estimate = tr
   writeFileSync(configPath, JSON.stringify({ runtime: {
     multica_cli: MOCK, workspace_id: "ws-test", multica_profile: "private", multica_server_url: "https://private.example",
   } }));
+  const factsPath = join(root, "facts.json");
+  writeFileSync(factsPath, JSON.stringify({
+    change_kind: schema === "corrective-change" ? "corrective" : "intentional", change_ref: "d1-internal-1234",
+    verify_agent: { recommendation: "not_required", reason: "No isolated review needed for internal refactor", focus_refs: ["openspec/changes/d1-internal-1234/proposal.md"] },
+    ai_review: { verdict: "APPROVED" },
+  }));
   function gate() {
     const r = spawnSync(process.execPath, [
-      CLI, "analysis", "validate", "--issue", "issue-1", "--openspec-root", root,
+      CLI, "analysis", "validate", "--facts", factsPath, "--issue", "issue-1", "--openspec-root", root,
       "--workspace-id", "ws-test", "--multica", MOCK, "--registry-config", configPath,
     ], {
       encoding: "utf8", env: { ...process.env, MOCK_STATE: statePath, MOCK_EXPECT_PROFILE: "private", MOCK_EXPECT_SERVER: "https://private.example" }, timeout: 30_000,
@@ -177,11 +183,10 @@ for (const [operation, delta, expected] of [
   });
 }
 
-test("D3-A: corrective-change enforces Corrective Proposal instead of Intentional specs skip", { skip: !usable }, (t) => {
+test("D3-A: corrective-change has no English keyword Gate", { skip: !usable }, (t) => {
   const f = fixture(t, { skip: true, schema: "corrective-change" });
   const r = f.gate();
-  assert.equal(acceptance(r).result, "FAIL", JSON.stringify(r.body));
-  assert.match(acceptance(r).reasons.join("\n"), /Expected Behavior|Root Cause/);
+  assert.equal(acceptance(r).result, "PASS", JSON.stringify(r.body));
 });
 
 test("D3-B: Requirement Analysis Gate PASS does not require TFS work estimate", { skip: !usable }, t => {

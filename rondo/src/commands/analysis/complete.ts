@@ -1,7 +1,6 @@
 /** Verify the reviewed Change, publish it and record its immutable remote source before review. */
 import { analysisRuntime } from "./runtime.js";
 import { multicaPrefix } from "../../clients/multica-environment.js";
-import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
@@ -14,7 +13,7 @@ import { assertNativeTaskCheckout, nativeCheckoutExpected } from "../../clients/
 import { gitOk } from "../../clients/git.js";
 import { publishChange, requirementBranch, requirementRoot, rootRepositoryUrl, resolveProjectRootBranch } from "../runtime/root-git.js";
 import { assertAnalysisWritable } from "./guard.js";
-import { readChangeSchema, sourceSchemaViolation } from "./change-schema.js";
+import { sourceSchemaViolation } from "./change-schema.js";
 import { changeEvidenceDigest, metadataEvidenceDigest } from "./gate-evidence.js";
 import { evaluateAnalysisGate } from "./validate.js";
 import { parseAnalysisSource, readAnalysisSource, repositoryUrl, sameAnalysisSource, type AnalysisSource } from "./source.js";
@@ -69,19 +68,6 @@ function pushRepositoryUrl(root: string): string {
   return repositoryUrl(urls[0]).href;
 }
 
-/** Workspace 配置始终校验（身份一致即可）；TFS 剥离后不再依赖 TFS CLI。 */
-export function assertRegistryWorkspace(path: string, workspaceId: string): void {
-  let cfg: { runtime?: { workspace_id?: string } };
-  try {
-    cfg = JSON.parse(readFileSync(path, "utf8"));
-  } catch (exc) {
-    throw new UnknownError(`无法读取 Analysis Registry: ${exc}`);
-  }
-  if (cfg.runtime?.workspace_id !== workspaceId) {
-    throw new UnknownError("Analysis Registry 的 runtime.workspace_id 与 --workspace-id 不一致");
-  }
-}
-
 async function main(rawArgs: string[]): Promise<number> {
   if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis complete [--mode requirement] --issue <issue-id> --facts <facts.json> --registry-config <path> --workspace-id <id> [--root-repo <path>] [--target-branch <branch>] [--multica <cli>] [--profile <name>]\n"); return 0; }
   const args = parseArgs(rawArgs);
@@ -105,13 +91,14 @@ async function main(rawArgs: string[]): Promise<number> {
     }
     if (!tfsKind) throw new UnknownError(`tfs.type 缺失或不支持: ${String(priorMeta["tfs.type"] ?? "")}`);
     const effectiveMeta = submissionMetadata(priorMeta, facts);
-    if (facts.ai_review === undefined && priorMeta["analysis.ai_review.verdict"] !== undefined) entries["analysis.ai_review.verdict"] = "";
+    const removeReview = facts.ai_review === undefined && priorMeta["analysis.ai_review.verdict"] !== undefined;
     const cfg = loadConfig<BaseRegistryConfig>(args.registryConfig!, { requireRegistry: false, requireTfs: false });
     // 根仓资源查询与 Issue 读写使用同一环境，包含显式 --profile/--multica 覆盖。
     cfg.runtime = runtime;
 
     // 审核中的重放只核验已发布来源，不用当前工作树或已前进的 HEAD 改写审核基线。
-    if (!assertAnalysisWritable(before, priorMeta, "complete", entries)) {
+    if (!assertAnalysisWritable(before, priorMeta, entries)) {
+      if (removeReview) throw new UnknownError("当前审核版本含有不同的 Review Verdict，不能重放");
       const source = readAnalysisSource(priorMeta);
       if (priorMeta["analysis.gate.result"] !== "PASS") throw new UnknownError("已审核 Issue 缺少可信的 PASS 状态，不能重放");
       const published = await readPublishedContract(source, priorMeta);
@@ -166,11 +153,6 @@ async function main(rawArgs: string[]): Promise<number> {
     }
     const changeDir = join(root, "openspec", "changes", facts.change_ref);
     const readContractAt = (commit: string) => committedContract(root, commit, facts, effectiveMeta);
-    const schema = readChangeSchema(changeDir);
-    const schemaIssues = validateDraftFields(facts, schema);
-    if (schemaIssues.length > 0) throw new PreconditionError(`当前 Schema 的 Facts 校验失败: ${schemaIssues.join("; ")}`);
-    const violation = sourceSchemaViolation(tfsKind, schema);
-    if (violation) throw new PreconditionError(violation);
     // Shared real Gate, independent of caller-supplied PASS or old Metadata.
     const gate = evaluateAnalysisGate({ issue: args.issue, openspecRoot: root, workspaceId: args.workspaceId!, runtime, facts, snapshot: { issue: before, metadata: priorMeta } });
     if (gate.exitCode !== 0 || gate.payload.result !== "PASS") {
@@ -178,8 +160,9 @@ async function main(rawArgs: string[]): Promise<number> {
       if (gate.payload.result === "FAIL") throw new FailError(reason);
       throw new UnknownError(reason);
     }
-    if (gate.payload.issue_id !== String(before.id) || gate.payload.workspace_id !== args.workspaceId ||
-        gate.payload.change_ref !== facts.change_ref || gate.payload.schema !== schema ||
+    const schema = gate.payload.schema;
+    if (!schema || gate.payload.issue_id !== String(before.id) || gate.payload.workspace_id !== args.workspaceId ||
+        gate.payload.change_ref !== facts.change_ref ||
         gate.payload.metadata_digest !== metadataEvidenceDigest(effectiveMeta) ||
         !/^[a-f0-9]{64}$/.test(gate.payload.change_digest ?? "")) {
       throw new UnknownError("本次真实 Gate 与 Analysis 身份、Facts 或 Change 摘要不一致");
@@ -190,7 +173,7 @@ async function main(rawArgs: string[]): Promise<number> {
       // Recover only from a previously pinned, byte-identical remote contract.
       let recovered: AnalysisSource | undefined;
       let recoverCommit: string | undefined;
-      if (requirement && pinned) {
+      if (requirement && pinned && metadataEvidenceDigest(priorMeta) === gateEvidence.metadata_digest) {
         const published = await readPublishedContract(pinned, effectiveMeta);
         if (published.digest === gateEvidence.change_digest) {
           if (published.schema !== schema) throw new UnknownError("已保存来源的 Schema 与当前审核包不一致");
@@ -200,7 +183,7 @@ async function main(rawArgs: string[]): Promise<number> {
           recoverCommit = pinned.commit;
         }
       }
-      if (!requirement && priorMeta["analysis.source"] !== undefined) {
+      if (!requirement && priorMeta["analysis.source"] !== undefined && metadataEvidenceDigest(priorMeta) === gateEvidence.metadata_digest) {
         const saved = parseAnalysisSource(priorMeta["analysis.source"]);
         if (saved.change_ref === facts.change_ref) {
           const published = await readPublishedContract(saved, effectiveMeta);
@@ -253,6 +236,7 @@ async function main(rawArgs: string[]): Promise<number> {
       }
       const liveIssue = runJson([...MC, "issue", "get", args.issue, ...ws, "--output", "json"], "发布前核对 Issue 状态") as Record<string, unknown>;
       if (String(liveIssue.status ?? liveIssue.status_name ?? "") !== "in_progress") throw new UnknownError("收口期间 Issue 已离开 in_progress，停止发布审核");
+      if (removeReview) runJson([...MC, "issue", "metadata", "delete", args.issue, "--key", "analysis.ai_review.verdict", ...ws, "--output", "json"], "删除不适用的旧 Review Verdict");
       for (const [k, v] of Object.entries(entries)) {
         if (latestMeta[k] === v) continue;
         runJson([...MC, "issue", "metadata", "set", args.issue,
@@ -261,7 +245,7 @@ async function main(rawArgs: string[]): Promise<number> {
       }
       // 来源在切换审核状态前必须回读成功，避免 Human 看到没有版本指针的审核包。
       const published = runJson([...MC, "issue", "metadata", "list", args.issue, ...ws, "--output", "json"], "回读审核来源") as Record<string, unknown>;
-      if (Object.entries(entries).some(([k, v]) => String(published[k]) !== v)) throw new UnknownError("审核 metadata 回读不一致，未进入 analysis_review");
+      if ((facts.ai_review === undefined && published["analysis.ai_review.verdict"] !== undefined) || Object.entries(entries).some(([k, v]) => String(published[k]) !== v)) throw new UnknownError("审核 metadata 回读不一致，未进入 analysis_review");
       const statusCp = runCommand([...MC, "issue", "status", args.issue, TARGET_STATUS, "--no-start", ...ws, "--output", "json"]);
       if (statusCp.status !== 0) {
         throw new UnknownError(`写入状态失败 rc=${statusCp.status}: ${statusCp.stderr.trim()}`);
@@ -273,6 +257,7 @@ async function main(rawArgs: string[]): Promise<number> {
     const meta = runJson([...MC, "issue", "metadata", "list", args.issue, ...ws, "--output", "json"], "回读 metadata", undefined, { transient: true }) as Record<string, unknown>;
     const mismatches: string[] = [];
     const statusNow = String(issue.status ?? issue.status_name ?? "");
+    if (facts.ai_review === undefined && meta["analysis.ai_review.verdict"] !== undefined) mismatches.push("旧 Review Verdict 未清除");
     if (statusNow !== TARGET_STATUS) mismatches.push(`status=${statusNow}（期望 ${TARGET_STATUS}）`);
     for (const [k, v] of Object.entries(entries)) {
       if (String(meta[k]) !== v) mismatches.push(`metadata ${k} 回读不一致`);

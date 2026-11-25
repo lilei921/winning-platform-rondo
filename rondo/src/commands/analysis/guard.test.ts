@@ -4,30 +4,30 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { assertAnalysisWritable } from "./guard.js";
-import { assertRegistryWorkspace } from "./complete.js";
+import { analysisRuntime } from "./runtime.js";
 import { classifyTfsType } from "./facts.js";
 
 test("Analysis requires in_progress; blocked is not automatic reanalysis permission", () => {
-  assert.equal(assertAnalysisWritable({ status: "in_progress" }, {}, "stage"), true);
+  assert.equal(assertAnalysisWritable({ status: "in_progress" }, {}), true);
   for (const status of ["blocked", "done", "todo", "in_review"]) {
-    assert.throws(() => assertAnalysisWritable({ status }, {}, "stage"));
-    assert.throws(() => assertAnalysisWritable({ status }, {}, "complete", {}));
+    assert.throws(() => assertAnalysisWritable({ status }, {}));
+    assert.throws(() => assertAnalysisWritable({ status }, {}, {}));
   }
 });
 
 test("historical Human Approval does not permanently prevent authorized reanalysis", () => {
   const historical = { "analysis.human_approval": '{"decision":"approved"}' };
-  assert.equal(assertAnalysisWritable({ status: "in_progress" }, historical, "stage"), true);
-  assert.equal(assertAnalysisWritable({ status: "in_progress" }, historical, "complete", {}), true);
+  assert.equal(assertAnalysisWritable({ status: "in_progress" }, historical), true);
+  assert.equal(assertAnalysisWritable({ status: "in_progress" }, historical, {}), true);
 });
 
 test("complete reuses identical review facts without replaying delivery writes", () => {
   const facts = { "analysis.route": "bug-fix", "analysis.change_ref": "fix-123" };
-  assert.equal(assertAnalysisWritable({ status: "analysis_review" }, facts, "complete", facts), false);
+  assert.equal(assertAnalysisWritable({ status: "analysis_review" }, facts, facts), false);
   assert.throws(() => assertAnalysisWritable(
-    { status: "analysis_review" }, facts, "complete", { ...facts, "analysis.change_ref": "stale-123" },
+    { status: "analysis_review" }, facts, { ...facts, "analysis.change_ref": "stale-123" },
   ));
-  assert.throws(() => assertAnalysisWritable({ status: "analysis_review" }, facts, "stage"));
+  assert.throws(() => assertAnalysisWritable({ status: "analysis_review" }, facts));
 });
 
 test("TFS management type is classified independently of route", () => {
@@ -44,10 +44,10 @@ test("Registry Workspace identity is always validated; tfs_cli no longer require
   const path = join(dir, "registry.json");
   try {
     writeFileSync(path, JSON.stringify({ runtime: { workspace_id: "workspace-a" } }));
-    assert.doesNotThrow(() => assertRegistryWorkspace(path, "workspace-a"));
-    assert.throws(() => assertRegistryWorkspace(path, "workspace-b"));
+    assert.doesNotThrow(() => analysisRuntime(["--registry-config", path], "multica", "workspace-a"));
+    assert.throws(() => analysisRuntime(["--registry-config", path], "multica", "workspace-b"));
     writeFileSync(path, JSON.stringify({ runtime: { workspace_id: "workspace-a", tfs_cli: ["tfs-cli"] } }));
-    assert.doesNotThrow(() => assertRegistryWorkspace(path, "workspace-a"));
+    assert.doesNotThrow(() => analysisRuntime(["--registry-config", path], "multica", "workspace-a"));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

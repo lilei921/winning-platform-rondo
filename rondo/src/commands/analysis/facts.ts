@@ -80,7 +80,6 @@ export function draftMetadataEntries(f: DraftFacts): Record<string, string> {
 /** This submission replaces previous professional fields; source facts stay unchanged. */
 export function submissionMetadata(meta: Record<string, unknown>, facts: DraftFacts): Record<string, unknown> {
   const next: Record<string, unknown> = { ...meta, ...draftMetadataEntries(facts) };
-  if (facts.ai_review === undefined && meta["analysis.ai_review.verdict"] !== undefined)
-    next["analysis.ai_review.verdict"] = "";
+  if (facts.ai_review === undefined) delete next["analysis.ai_review.verdict"];
   return next;
 }

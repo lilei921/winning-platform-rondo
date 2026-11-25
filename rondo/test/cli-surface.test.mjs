@@ -16,12 +16,12 @@ function runCli(args, env = {}) {
 /** 当前完整命令树；包含 analysis read 和顶层叶子 query/doctor。 */
 const TREE = {
   change: ["resolve-identity", "update-progress"],
-  analysis: ["stage", "validate", "complete", "read"],
+  analysis: ["validate", "complete", "read"],
   dev: ["check-dispatch", "materialize", "git", "prepare", "check-completion", "check-change", "publish", "contract-hash"],
   bug: ["resume"],
   tfs: ["writeback", "materialize-tasks", "resolve-tasks", "reconcile-workitem"],
   pr: ["prepare", "materialize", "worktree", "reconcile-status", "create", "get", "list"],
-  delivery: ["route-decision", "finalize", "root-prepare", "handoff"],
+  delivery: ["route-decision", "finalize", "root-prepare", "admission"],
   workspace: ["provision", "sync", "migrate-repo-keys", "check-daemon"],
   runtime: ["resolve-root-repo","prepare-root","get-context","check-checkout"],
   repo: ["get"],
