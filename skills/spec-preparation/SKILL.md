@@ -31,12 +31,12 @@ description: 使用项目 OpenSpec CLI 与当前 Schema / Artifact Instruction �
 - **按需一致性核对**：修改后仅核对受影响 Artifact 的内容与依赖；发现专业结论、授权或关键决策冲突时报告调用方，不自行给出 Review Verdict 或新增 Gate。
 - **授权边界**：Change 存在或 Issue 为 `in_progress` 不等于写入授权。返工若需要新增未授权业务选择，或实质改变已批准的 Goal / Scope / Acceptance / Verification，停止越界写入并返回调用方走既有 Lead / Human 决策；不自行批准。
 
-## Validation / Recovery
+## Diagnosis / Recovery
 
-- 在同一根仓按实际需要使用 `openspec status --change <id> --json` 核对必要 Artifact、合法省略、内容一致性及来源；需要诊断（如 Delta 归档兼容性、规格迁移或已发现冲突）时，在审核提交前执行 `openspec validate <id> --type change --strict --no-interactive --json`，结合退出码和结构化结果判断。最终 Analysis Gate 必须执行原生 Strict Validation。出现 `Archive would refuse this delta` 等归档冲突提示时核实并报告，不仅凭 CLI PASS 推断归档一定成功，也不将所有 INFO 自动视为阻断。FAIL / UNKNOWN 或来源不符时保留现场并报告；CLI PASS 不代替专业 Review、Analysis Gate 或 Human Approval。
+- 按需使用 OpenSpec CLI 核实 Artifact State、依赖、合法省略、来源及工件一致性；发现具体问题（如 Delta 归档兼容性或规格冲突）时进行针对性诊断和修订，无法解决时报告实际阻断原因。
 - 创建结果未知时用已知身份回查 Change 和目录；写入结果未知时先回读实际 Artifact，确认缺失后才恢复，不能盲目重试。只用已授权 CLI / Schema，不调用 `/opsx:*` 或 OpenSpec 原生 AI Skill/Command。
 
 ## Output / Stop
 
-- 返回唯一 `change_ref`、已核实根仓、实际新增或修订的具体 Artifact 路径、原生状态、实际执行时的 Validation 结果、合法省略依据、Evidence 引用与未决事项；不另建 Preparation Result、Metadata Schema 或 Multica Stage。
+- 返回唯一 `change_ref`、已核实根仓、实际新增或修订的具体 Artifact 路径、原生状态、合法省略依据、Evidence 引用与未决事项；不另建 Preparation Result、Metadata Schema 或 Multica Stage。
 - 本 Skill 仅准备当前 OpenSpec Change 工件，不执行生产代码修改、Issue 审批/状态变更、Archive、Commit 或 Push。
