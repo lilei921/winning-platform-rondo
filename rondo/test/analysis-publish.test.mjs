@@ -387,7 +387,7 @@ test("Native Analysis recovers a lost source write on the original Resource with
   assert.equal(JSON.parse(f.state().metadata["analysis.source"]).commit, published);
 });
 
-test("Current Facts replace stale analysis fields; validate is read-only and complete clears old Review", t => {
+test("Current Facts replace stale analysis fields; retired Review is ignored without migration", t => {
   const f = fixture(t);
   const old = f.state();
   old.metadata["analysis.change_ref"] = "stale-change";
@@ -399,7 +399,7 @@ test("Current Facts replace stale analysis fields; validate is read-only and com
   const result = f.complete();
   assert.equal(result.exit, 0, JSON.stringify(result));
   assert.equal(f.state().metadata["analysis.change_ref"], CHANGE);
-  assert.equal(f.state().metadata["analysis.ai_review.verdict"], undefined);
+  assert.equal(f.state().metadata["analysis.ai_review.verdict"], "APPROVED");
   assert.deepEqual(result.body.analysis_source, JSON.parse(f.state().metadata["analysis.source"]));
   assert.equal(f.complete().exit, 0);
 });
@@ -524,7 +524,7 @@ test("本地硬条件失败时不执行 OpenSpec Strict Validation", t => {
   const result = f.gate();
   assert.equal(result.exit, 2, JSON.stringify(result));
   assert.equal(result.body.checks.find(c => c.name === "tasks")?.result, "FAIL");
-  assert.ok(!result.body.checks.some(c => c.name === "openspec_validate" || c.name === "verify_recommendation"));
+  assert.ok(!result.body.checks.some(c => c.name === "openspec_validate" || c.name === "verify_recommendation" || c.name === "ai_review"));
 });
 
 test("Git 发布后并发 Source 或 Facts 变化时不覆盖现有事实", async t => {
@@ -564,7 +564,7 @@ test("Change Schema 无法确认时不产生依赖检查的派生 FAIL", t => {
   const result = f.gate();
   assert.equal(result.exit, 3, JSON.stringify(result));
   assert.equal(result.body.checks.find(c => c.name === "change")?.result, "UNKNOWN");
-  assert.ok(!result.body.checks.some(c => ["tasks", "ai_review", "acceptance_contract", "openspec_validate"].includes(c.name)));
+  assert.ok(!result.body.checks.some(c => ["tasks", "acceptance_contract", "openspec_validate"].includes(c.name)));
 });
 
 test("已知独立硬条件 FAIL 优先于其他检查 UNKNOWN", t => {
@@ -577,4 +577,36 @@ test("已知独立硬条件 FAIL 优先于其他检查 UNKNOWN", t => {
   assert.equal(result.exit, 2, JSON.stringify(result));
   assert.equal(result.body.checks.find(c => c.name === "identity")?.result, "FAIL");
   assert.equal(result.body.checks.find(c => c.name === "change")?.result, "UNKNOWN");
+});
+
+test("Intentional 发布与审核重放无需自报 Review Verdict", t => {
+  const f = fixture(t);
+  writeFileSync(f.factsPath, JSON.stringify({ ...FACTS, change_kind: "intentional" }));
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [root]\n");
+  mkdirSync(join(f.change, "specs", "feature"), { recursive: true });
+  writeFileSync(join(f.change, "specs", "feature", "spec.md"), "## ADDED Requirements\n### Requirement: Feature\nThe system SHALL support feature.\n#### Scenario: Success\n- **WHEN** invoked\n- **THEN** succeeds\n");
+  git(f.root, "add", "openspec/changes/" + CHANGE);
+  git(f.root, "commit", "-m", "intentional contract");
+  const gate = f.gate();
+  assert.equal(gate.exit, 0, JSON.stringify(gate));
+  assert.ok(!gate.body.checks.some(c => c.name === "ai_review"));
+  const result = f.complete();
+  assert.equal(result.exit, 0, JSON.stringify(result));
+  assert.equal(f.state().metadata["analysis.change_kind"], "intentional");
+  assert.equal(f.state().metadata["analysis.ai_review.verdict"], undefined);
+  assert.equal(f.complete().body.replayed, true);
+});
+
+test("显式 --root-repo 缺值或为空时不回退环境变量", t => {
+  const f = fixture(t);
+  const args = ["analysis", "publish", "--mode", "requirement", "--issue", "issue-1",
+    "--facts", f.factsPath, "--workspace-id", "ws-test", "--registry-config", join(f.home, "registry.json"),
+    "--multica", MOCK];
+  for (const flags of [["--root-repo"], ["--root-repo", ""], ["--root-repo", "--target-branch", "dev"]]) {
+    const r = spawnSync(process.execPath, [CLI, ...args, ...flags], { encoding: "utf8", cwd: f.root,
+      env: { ...process.env, ...f.env, RONDO_WORKSPACE_PATH: f.root } });
+    assert.equal(r.status, 64, r.stderr);
+    assert.match(r.stderr, /--root-repo/);
+    assert.equal(f.state().metadata["analysis.source"], undefined);
+  }
 });

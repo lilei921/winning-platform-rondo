@@ -24,7 +24,6 @@ import {
   draftMetadataEntries,
   submissionMetadata,
   loadValidatedFacts,
-  reviewVerdictViolation,
   type Facts,
 } from "./facts.js";
 
@@ -59,6 +58,10 @@ function parseArgs(argv: string[]): { issue: string; facts: string; cli: string;
     const i = argv.indexOf(flag);
     return i !== -1 && i + 1 < argv.length ? argv[i + 1] : null;
   };
+  if (argv.includes("--root-repo") && (!get("--root-repo")?.trim() || get("--root-repo")!.startsWith("--"))) {
+    process.stderr.write("--root-repo 必须提供非空路径\n");
+    process.exit(64);
+  }
   const issue = get("--issue");
   const facts = get("--facts");
   if (!issue || !facts || !get("--workspace-id") || !get("--registry-config")) {
@@ -100,7 +103,6 @@ async function main(rawArgs: string[]): Promise<number> {
     }
     if (!tfsKind) throw new UnknownError(`tfs.type 缺失或不支持: ${String(priorMeta["tfs.type"] ?? "")}`);
     const effectiveMeta = submissionMetadata(priorMeta, facts);
-    const removeReview = facts.ai_review === undefined && priorMeta["analysis.ai_review.verdict"] !== undefined;
     const cfg = loadConfig<BaseRegistryConfig>(args.registryConfig!, { requireRegistry: false, requireTfs: false });
     // 根仓资源查询与 Issue 读写使用同一环境，包含显式 --profile/--multica 覆盖。
     cfg.runtime = runtime;
@@ -108,17 +110,13 @@ async function main(rawArgs: string[]): Promise<number> {
     const requirement = args.mode === "requirement";
     // Requirement 审核重放只消费已登记的 PASS、Facts 和固定来源，不重读工件。
     if (!assertAnalysisWritable(before, priorMeta, entries)) {
-      if (removeReview) throw new UnknownError("当前审核版本含有不同的 Review Verdict，不能重放");
       const source = readAnalysisSource(priorMeta);
       if (priorMeta["analysis.gate.result"] !== "PASS") throw new UnknownError("已审核 Issue 缺少可信的 PASS 状态，不能重放");
-      if (requirement) {
-        if (facts.change_kind === "intentional" && facts.ai_review?.verdict !== "APPROVED")
-          throw new PreconditionError("Intentional 审核版本缺少 APPROVED Review Verdict");
-      } else {
+      if (!requirement) {
         const published = await readPublishedContract(source, priorMeta);
         const violation = sourceSchemaViolation(tfsKind, published.schema);
         if (violation) throw new PreconditionError(violation);
-        const invalid = changeKindSchemaViolation(facts.change_kind, published.schema) ?? reviewVerdictViolation(published.schema, facts.ai_review?.verdict);
+        const invalid = changeKindSchemaViolation(facts.change_kind, published.schema);
         if (invalid) throw new PreconditionError(invalid);
         // Legacy 路径尚未采用相同的 Git 候选证明，保留原有读取及读后状态核验。
         const latest = getIssue("重放后核对审核事实");
@@ -126,7 +124,6 @@ async function main(rawArgs: string[]): Promise<number> {
         if (String(latest.status ?? latest.status_name ?? "") !== TARGET_STATUS ||
             !sameIssueOwner(before, latest) || !sameDeliveryFacts(priorMeta, current) || !sameSourceFacts(priorMeta, current) ||
             !sameAnalysisSource(source, readAnalysisSource(current)) ||
-            (facts.ai_review === undefined && current["analysis.ai_review.verdict"] !== undefined) ||
             Object.entries(entries).some(([k, v]) => current[k] !== v)) throw new UnknownError("审核重放期间状态或来源已变化，停止放行");
       }
       process.stdout.write(JSON.stringify({ result: "PASS", issue: args.issue, status: TARGET_STATUS,
@@ -138,8 +135,8 @@ async function main(rawArgs: string[]): Promise<number> {
 
     // Complete itself executes the final Gate. A prior validate or Metadata PASS is only a preview.
     const root = requirement ? requirementRoot(args.rootRepo) : resolveRuntimePaths(cfg, {
-      issue: before as { project_id?: string | null }, rootRepoArg: args.rootRepo || process.env.RONDO_WORKSPACE_PATH,
-      rootRepoOrigin: args.rootRepo ? "--root-repo" : "RONDO_WORKSPACE_PATH",
+      issue: before as { project_id?: string | null }, rootRepoArg: args.rootRepo ?? process.env.RONDO_WORKSPACE_PATH,
+      rootRepoOrigin: args.rootRepo !== null ? "--root-repo" : "RONDO_WORKSPACE_PATH",
       need: ["openspec"],
     }).rootRepo;
     const native = requirement && nativeCheckoutExpected(root);
@@ -268,7 +265,7 @@ async function main(rawArgs: string[]): Promise<number> {
       if (metadataEvidenceDigest(latestMeta) !== metadataEvidenceDigest(priorMeta) || !sameDeliveryFacts(priorMeta, latestMeta) || latestMeta[GATE_RESULT] !== priorMeta[GATE_RESULT]) {
         throw new UnknownError("根仓 Commit/Push 期间 Analysis Facts 发生变化，必须重新执行 Analysis Gate");
       }
-      const replacing = removeReview || Object.entries(entries).some(([k, v]) => k !== GATE_RESULT && latestMeta[k] !== v);
+      const replacing = Object.entries(entries).some(([k, v]) => k !== GATE_RESULT && latestMeta[k] !== v);
       if (replacing && latestMeta[GATE_RESULT] === "PASS") {
         runJson([...MC, "issue", "metadata", "delete", args.issue, "--key", GATE_RESULT, ...ws, "--output", "json"], "撤销被替换审核版本的 Gate PASS");
         const invalidatedIssue = getIssue("确认旧 Gate 已失效");
@@ -279,7 +276,6 @@ async function main(rawArgs: string[]): Promise<number> {
         }
         latestMeta = invalidated;
       }
-      if (removeReview) runJson([...MC, "issue", "metadata", "delete", args.issue, "--key", "analysis.ai_review.verdict", ...ws, "--output", "json"], "删除不适用的旧 Review Verdict");
       for (const [k, v] of Object.entries(entries)) {
         if (k === GATE_RESULT || latestMeta[k] === v) continue;
         runJson([...MC, "issue", "metadata", "set", args.issue,
@@ -288,7 +284,6 @@ async function main(rawArgs: string[]): Promise<number> {
       }
       const matchesReview = (meta: Record<string, unknown>, expectedGate: unknown): boolean =>
         sameSourceFacts(priorMeta, meta) && sameDeliveryFacts(priorMeta, meta) &&
-        (facts.ai_review !== undefined || meta["analysis.ai_review.verdict"] === undefined) &&
         Object.entries(entries).every(([k, v]) => meta[k] === (k === GATE_RESULT ? expectedGate : v));
       // 只有实际写入了 Facts/Source 才需要新的快照；PASS 不得先于完整审核事实。
       let published = latestMeta;
@@ -317,7 +312,6 @@ async function main(rawArgs: string[]): Promise<number> {
     const meta = requireIssueMetadata(issue);
     const mismatches: string[] = [];
     const statusNow = String(issue.status ?? issue.status_name ?? "");
-    if (facts.ai_review === undefined && meta["analysis.ai_review.verdict"] !== undefined) mismatches.push("旧 Review Verdict 未清除");
     if (!sameIssueOwner(before, issue) || !sameDeliveryFacts(priorMeta, meta) || !sameSourceFacts(priorMeta, meta)) mismatches.push("审核身份或来源事实发生变化");
     if (statusNow !== TARGET_STATUS) mismatches.push(`status=${statusNow}（期望 ${TARGET_STATUS}）`);
     for (const [k, v] of Object.entries(entries)) {

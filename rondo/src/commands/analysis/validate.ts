@@ -24,7 +24,7 @@ import { runCommand } from "../../clients/spawn.js";
 import { MulticaClient, requireIssueMetadata } from "../../clients/multica.js";
 import { commandExists } from "../../clients/which.js";
 import { resolveOpenspecRootDir } from "../../clients/runtime-paths.js";
-import { classifyTfsType, loadValidatedFacts, PreconditionError, reviewVerdictViolation, submissionMetadata, type DraftFacts } from "./facts.js";
+import { classifyTfsType, loadValidatedFacts, PreconditionError, submissionMetadata, type DraftFacts } from "./facts.js";
 import { taskReferences } from "./source.js";
 import { parseRepositoryScope } from "./repository-scope.js";
 import { changeEvidenceDigest, metadataEvidenceDigest } from "./gate-evidence.js";
@@ -222,12 +222,6 @@ function checkTasks(changeDir: string | null): Check {
   return { name: "tasks", result: reasons.length ? "FAIL" : "PASS", reasons };
 }
 
-export function checkAiReview(schema: ChangeSchema | null, meta: Record<string, unknown>): Check {
-  if (schema !== "intentional-change") return { name: "ai_review", result: schema ? "PASS" : "FAIL", reasons: schema ? ["Corrective 无强制 AI Review"] : ["Schema 未确认"] };
-  const violation = reviewVerdictViolation(schema, meta["analysis.ai_review.verdict"]);
-  return { name: "ai_review", result: violation ? "FAIL" : "PASS", reasons: violation ? [violation] : [] };
-}
-
 function checkOpenSpecValidate(changeDir: string | null, openspecRoot: string): Check {
   const name = "openspec_validate";
   if (!changeDir) return { name, result: "FAIL", reasons: ["前置检查未通过"] };
@@ -279,7 +273,6 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
     // Change 不可确认时不执行依赖该目录/Schema 的检查，避免派生 FAIL。
     if (change.result === "PASS") {
       checks.push(checkTasks(changeDir));
-      checks.push(checkAiReview(schema, meta));
     }
     // 本地硬条件已失败时，不再执行可能启动外部 CLI 的 Acceptance 检查或 Strict Validation。
     // Verify Recommendation 的字段合法性由 loadValidatedFacts 负责。
@@ -307,7 +300,8 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
   let result: CheckResult = "PASS";
   if (checks.some((c) => c.result === "FAIL")) result = "FAIL";
   else if (checks.some((c) => c.result === "UNKNOWN")) result = "UNKNOWN";
-  const reasons = checks.flatMap((c) => c.reasons.map((r) => `[${c.name}] ${r}`));
+  const reasons = checks.filter(c => result === "PASS" || c.result !== "PASS")
+    .flatMap(c => c.reasons.map(r => `[${c.name}] ${r}`));
   const code = result === "PASS" ? 0 : result === "FAIL" ? 2 : 3;
   if (result === "PASS") {
     if (!context) return gateOutcome({ result: "UNKNOWN", checks, reasons: ["Gate 缺少可核验的 Change 身份"] }, 3, null);

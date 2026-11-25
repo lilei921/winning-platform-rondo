@@ -10,7 +10,7 @@ import { UnknownError } from "../../cli/errors.js";
 
 export const ANALYSIS_GATE_CHECKS = [
   "identity", "change", "acceptance_contract", "tasks",
-  "ai_review", "openspec_validate",
+  "openspec_validate",
 ] as const;
 
 /** JSON 对象键排序；保留数组顺序及所有业务字段，忽略无语义的缩进变化。 */
@@ -29,8 +29,7 @@ function canonicalJson(value: unknown): string {
 /** 只绑定 Gate 消费的来源和分析字段；后续 gate/human_approval 等流程写入不使结果失效。 */
 export function metadataEvidenceDigest(meta: Record<string, unknown>): string {
   const keys = ["tfs.id", "tfs.type", "analysis.change_ref", "analysis.change_kind",
-    "analysis.verify_agent.recommendation", "analysis.verify_agent.reason", "analysis.verify_agent.focus_refs",
-    "analysis.ai_review.verdict"];
+    "analysis.verify_agent.recommendation", "analysis.verify_agent.reason", "analysis.verify_agent.focus_refs"];
   return createHash("sha256").update(canonicalJson(Object.fromEntries(keys.map(key => [key, meta[key] ?? null])))).digest("hex");
 }
 

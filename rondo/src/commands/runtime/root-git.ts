@@ -32,9 +32,10 @@ function run(root: string, args: string[], operation: string): string {
 }
 
 function rootPath(arg?: string | null): string {
-  const specified = arg || process.env.RONDO_WORKSPACE_PATH;
+  if (arg != null) return validateRootRepo(arg, "--root-repo");
+  const specified = process.env.RONDO_WORKSPACE_PATH;
   if (!specified) throw new UnknownError("请通过 --root-repo 或 RONDO_WORKSPACE_PATH 指定持久根仓");
-  return validateRootRepo(specified, arg ? "--root-repo" : "RONDO_WORKSPACE_PATH");
+  return validateRootRepo(specified, "RONDO_WORKSPACE_PATH");
 }
 
 const rootMapping = "docs/config/repo-context.yaml";

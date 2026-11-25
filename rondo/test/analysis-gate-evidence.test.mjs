@@ -17,17 +17,15 @@ function fixture(t) {
   writeFileSync(join(dir, "proposal.md"), "## Why\nProblem\n## What Changes\nFix\n");
   writeFileSync(join(dir, "tasks.md"), "- [ ] 1.1 Fix and verify\n");
   const facts = { change_kind: "intentional", change_ref: "fixture-123",
-    verify_agent: { recommendation: "not_required", reason: "reviewed", focus_refs: ["proposal.md"] },
-    ai_review: { verdict: "APPROVED" } };
+    verify_agent: { recommendation: "not_required", reason: "reviewed", focus_refs: ["proposal.md"] } };
   const meta = { "tfs.id": "123", "tfs.type": "需求", ...draftMetadataEntries(facts) };
   return { root, dir, facts, meta };
 }
 
-test("Intentional AI Review 只要求 verdict，findings_ref 不再是必需字段", t => {
+test("Intentional Facts 无需自报专业审查结果", t => {
   const f = fixture(t);
   assert.deepEqual(validateDraftFields(f.facts, "intentional-change"), []);
-  assert.equal(f.meta["analysis.ai_review.findings_ref"], undefined);
-  assert.ok(validateDraftFields({ ...f.facts, ai_review: { verdict: "NEEDS_REVISION" } }, "intentional-change").length);
+  assert.ok(!Object.keys(f.meta).some(key => key.startsWith("analysis.ai_review")));
 });
 
 test("Gate 摘要只绑定工程契约，不依赖派生 Handoff 或 Gate JSON", t => {
@@ -53,11 +51,12 @@ test("每个引用的真实 Change 内容改变后，重新计算不同 digest",
   assert.notEqual(changeEvidenceDigest(f.dir, f.meta), bound);
 });
 
-test("Metadata 摘要绑定 Verdict，不要求已退役的 findings_ref", t => {
+test("Metadata 摘要只绑定实际 Facts，忽略已退役的 Review 字段", t => {
   const f = fixture(t);
   const before = metadataEvidenceDigest(f.meta);
   assert.equal(metadataEvidenceDigest({ ...f.meta, "analysis.ai_review.findings_ref": "legacy.md" }), before);
-  assert.notEqual(metadataEvidenceDigest({ ...f.meta, "analysis.ai_review.verdict": "NEEDS_REVISION" }), before);
+  assert.equal(metadataEvidenceDigest({ ...f.meta, "analysis.ai_review.verdict": "NEEDS_REVISION" }), before);
+  assert.notEqual(metadataEvidenceDigest({ ...f.meta, "analysis.verify_agent.reason": "new reason" }), before);
 });
 
 test("拒绝不存在的、跨 Change、不安全或自引用的内部证据路径", t => {

@@ -16,7 +16,6 @@ import {
 } from "../dist/commands/analysis/facts.js";
 import {
   checkAcceptanceContract,
-  checkAiReview,
   checkChange,
   checkIdentity,
 } from "../dist/commands/analysis/validate.js";
@@ -70,21 +69,10 @@ test("来源管理类型不自动推断 Schema，但拒绝 Bug + Intentional 自
   assert.ok(validateDraftFields(draft({ change_kind: "corrective" }), "intentional-change").some(x => x.includes("Schema")));
 });
 
-test("Intentional 的 AI Review 为硬约束，Corrective 无强制 AI Review", () => {
-  const meta = {};
-  assert.equal(checkAiReview("corrective-change", meta).result, "PASS");
-  assert.equal(checkAiReview("intentional-change", meta).result, "FAIL");
-  assert.ok(validateDraftFields(draft(), "intentional-change").some((x) => x.includes("ai_review.verdict")));
-  const approved = { verdict: "APPROVED", findings_ref: "review/findings.md" };
-  assert.deepEqual(validateDraftFields(draft({ change_kind: "intentional", ai_review: approved }), "intentional-change"), []);
-  assert.equal(checkAiReview("intentional-change", {
-    "analysis.ai_review.verdict": "APPROVED",
-    "analysis.ai_review.findings_ref": approved.findings_ref,
-  }).result, "PASS");
-  assert.ok(validateDraftFields(draft({ change_kind: "intentional", ai_review: { verdict: "NEEDS_REVISION", findings_ref: "review/findings.md" } }), "intentional-change").length);
-  assert.equal(checkAiReview("intentional-change", {
-    "analysis.ai_review.verdict": "NEEDS_REVISION", "analysis.ai_review.findings_ref": "review/findings.md",
-  }).result, "FAIL");
+test("Corrective 和 Intentional 共用 Facts 输入契约", () => {
+  assert.deepEqual(validateDraftFields(draft(), "corrective-change"), []);
+  assert.deepEqual(validateDraftFields(draft({ change_kind: "intentional" }), "intentional-change"), []);
+  assert.ok(!Object.keys(draftMetadataEntries(draft({ change_kind: "intentional" }))).some(key => key.startsWith("analysis.ai_review")));
 });
 
 test("Acceptance Contract 根据 Schema 选择而非 Issue 分类字段", () => {

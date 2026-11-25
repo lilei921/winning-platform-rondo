@@ -45,8 +45,6 @@ function fixture(t, { skip = false, schema = "intentional-change", estimate = tr
     metadata: {
       "tfs.type": "需求", "tfs.id": "1234",
       "analysis.change_kind": schema === "corrective-change" ? "corrective" : "intentional", "analysis.change_ref": "d1-internal-1234",
-      "analysis.ai_review.verdict": "APPROVED",
-      "analysis.ai_review.findings_ref": "openspec/changes/d1-internal-1234/proposal.md",
       "analysis.verify_agent.recommendation": "not_required",
       "analysis.verify_agent.reason": "No isolated review needed for internal refactor",
       "analysis.verify_agent.focus_refs": JSON.stringify(["openspec/changes/d1-internal-1234/proposal.md"]),
@@ -61,7 +59,6 @@ function fixture(t, { skip = false, schema = "intentional-change", estimate = tr
   writeFileSync(factsPath, JSON.stringify({
     change_kind: schema === "corrective-change" ? "corrective" : "intentional", change_ref: "d1-internal-1234",
     verify_agent: { recommendation: "not_required", reason: "No isolated review needed for internal refactor", focus_refs: ["openspec/changes/d1-internal-1234/proposal.md"] },
-    ai_review: { verdict: "APPROVED" },
   }));
   function gate() {
     const r = spawnSync(process.execPath, [

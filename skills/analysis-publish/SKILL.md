@@ -7,9 +7,9 @@ description: 将已完成的 OpenSpec 工程契约发布为固定 Git 审核版�
 
 ## Inputs / Preconditions
 
-- 当前 Issue 已获授权，专业分析和唯一 OpenSpec Change 已完成。
+- 当前 Issue 已获授权，专业分析、专业审查和唯一 OpenSpec Change 已完成。
 - 根仓已基于适用工程版本准备就绪。
-- `<facts.json>` 是 Change 目录外的临时 CLI 输入，包含 `change_kind`、`change_ref`、`verify_agent`；Intentional 还需 `ai_review.verdict`。
+- `<facts.json>` 是 Change 目录外的临时 CLI 输入，包含 `change_kind`、`change_ref`、`verify_agent`。
 - `<config>` 为本 Skill 的 `config/repo-registry.json`；`runtime.workspace_id` 与当前 Workspace 一致。
 
 ## Execution
@@ -24,8 +24,7 @@ description: 将已完成的 OpenSpec 工程契约发布为固定 Git 审核版�
     "recommendation": "not_required",
     "reason": "当前开发侧验证可覆盖已识别风险",
     "focus_refs": ["tasks.md"]
-  },
-  "ai_review": { "verdict": "APPROVED" }
+  }
 }
 ```
 
