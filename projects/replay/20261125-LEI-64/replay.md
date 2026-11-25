@@ -3,13 +3,14 @@
 - 任务：[TFS 268376] 公版研发_DF集成调度_作业迁移日志没有打印详细日志，失败时无法排查失败原因，需输出详细日志
 - 采集时间：2026-11-25T18:27:59+08:00；平台状态快照：`in_progress`。
 - Profile：``；Workspace：`a9469044-700c-4206-80d2-b39bad65de56`。
-- 覆盖：**partial**；3 次 Run，2 个已导出 session，主会话 148 次工具调用，子代理 0 次。
+- 覆盖：**partial**；3 次 Run，2 个原生 session + 1 个平台 Run 回放，共 155 次工具调用，子代理 0 次。
 
 ## 会话入口
 
 | Agent / Provider | 执行时间（北京时间） | Run 数 | 工具调用 | 回放 | 时间线 | 核验 |
 | --- | --- | ---: | ---: | --- | --- | --- |
 | Wayfinder Agent / claude | 2026-11-25 17:39:21 — 2026-11-25 17:41:12 | 1 | 28 | [回放](wayfinder/20261125-1739-dd5f99e6/replay.md) | [时间线](wayfinder/20261125-1739-dd5f99e6/timeline.md) | PASS |
+| Delivery Lead / claude（平台消息） | 2026-11-25 17:41:00 — 2026-11-25 17:41:54 | 1 | 7 | [回放](delivery-lead/20261125-1741-40363905/replay.md) | [时间线](delivery-lead/20261125-1741-40363905/timeline.md) | PARTIAL |
 | Workitem Analyst / claude | 2026-11-25 17:41:43 — 2026-11-25 18:02:52 | 1 | 120 | [回放](workitem-analyst/20261125-1741-e5e21a79/replay.md) | [时间线](workitem-analyst/20261125-1741-e5e21a79/timeline.md) | PARTIAL |
 
 ## Run 与 session 对应
@@ -28,12 +29,12 @@
 
 ## 覆盖缺口
 
-- session 40363905-7d72-482c-b131-13b3031c2b65 导出失败：未找到声明的 claude 日志，可补充 --claude-home
-- session e5e21a79-0b80-4966-a4a9-e10983a87439 完整性核验未通过，详见 source-manifest.json
+- Delivery Lead session 40363905-7d72-482c-b131-13b3031c2b65 的原生 Claude transcript 位于不可访问的远端 Linux runtime；已导出 61 条平台 run-messages 作为平台级回放，未完成原生日志核验
+- Workitem Analyst session e5e21a79-0b80-4966-a4a9-e10983a87439 被人工取消：120 次工具调用均已导出，但最后 1 次工具调用没有结果且无最终回复，因此保持 PARTIAL
 
 ## 证据与边界
 
-- [任务索引](issue-replay.json)、[Issue 快照](evidence/issue.json)、[Run 快照](evidence/runs.json)、[Agent 名称快照](evidence/agents.json)、[来源与核验](evidence/source-manifest.json)。
+- [任务索引](issue-replay.json)、[Issue 快照](evidence/issue.json)、[Run 快照](evidence/runs.json)、[Agent 名称快照](evidence/agents.json)、[来源与核验](evidence/source-manifest.json)、[Delivery Lead 平台消息](evidence/run-messages-01a21214-7418-7b62-bbfd-865fe530e42a.json)。
 - 完成消息来自平台历史记录，本次未重新执行业务测试；Run 完成不等于 Issue 已合并、部署或验收。
 - Codex 按 item_completed、Claude 按公开消息与 tool_use/tool_result 核验；编排外壳和注入上下文不重复计数。默认截断长文本，FileChange 补丁等受共享导出器限制，非原始日志逐字副本。
 - 不导出隐藏推理；hook 审计可用性以各 session 回放为准。运行中的 Run 仅记录采集时快照。
