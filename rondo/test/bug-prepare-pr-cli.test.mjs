@@ -124,8 +124,14 @@ process.exit(r.status ?? 1);
   assert.equal(state().issues['I-1'].metadata.pr_prep, undefined);
   writeFileSync(callsPath, '');
   const before = readdirSync(hub).sort();
-  result(run(JSON.stringify({...evidence,validation:{...evidence.validation,command:[process.execPath,'-e','process.exit(9)']}})),2);
+  const commandEvidence = { ...evidence, validation: { summary: '定向测试范围', evidence_refs: evidence.validation.evidence_refs, command: [process.execPath, '-e', 'process.exit(0)'] } };
+  result(run(JSON.stringify({...commandEvidence,validation:{...commandEvidence.validation,command:[process.execPath,'-e','process.exit(9)']}})),2);
   assert.equal(state().issues['I-1'].metadata.pr_prep,undefined);
+  assert.equal(state().issues['I-1'].metadata['bug.delivery'],undefined);
+  assert.equal(result(run(JSON.stringify(commandEvidence)), 0).ready_for_pr, true);
+  assert.deepEqual(JSON.parse(state().issues['I-1'].metadata['bug.delivery'])[0].local_validation, {
+    ...commandEvidence.validation, result: 'PASS', exit_code: 0, candidate_commit: sha, source: 'rondo pr prepare',
+  });
   const completed = result(run(JSON.stringify(evidence)), 0);
   assert.equal(completed.ready_for_pr, true);
   const md = state().issues['I-1'].metadata;

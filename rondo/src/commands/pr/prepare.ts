@@ -14,7 +14,7 @@ const filled = (v: unknown): v is string => typeof v === "string" && !!v.trim();
 type Fact = { result: "PASS"; summary: string; command?: string[]; evidence_refs?: string[] };
 type Finding = { resolved?: boolean; blocking?: boolean; risk_note?: string; risk_ref?: string };
 interface Facts {
-  validation: Fact; code_review: Fact & { findings: Finding[] };
+  validation: Omit<Fact, "result"> & { result?: "PASS" }; code_review: Fact & { findings: Finding[] };
   blockers: string[]; description: string;
   expected_behavior?: string; actual_behavior?: string; root_cause?: unknown; fix_summary?: string; regression?: Fact;
 }
@@ -22,10 +22,12 @@ interface Facts {
 export function validatePrFacts(raw: unknown, bug: boolean): Facts {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new FailError("Facts 必须是 JSON 对象");
   const f = raw as Facts, v = f.validation, review = f.code_review;
-  if (v?.result !== "PASS" || !filled(v.summary)) throw new FailError("Validation 缺少 PASS 或 summary");
+  if (!v || !filled(v.summary)) throw new FailError("Validation 缺少 summary");
+  if (v.result !== undefined && v.result !== "PASS") throw new FailError("Validation result 如提供必须为 PASS");
   if ((v.command !== undefined || !bug) &&
       (!Array.isArray(v.command) || !v.command.length || v.command.some(x => !filled(x))))
     throw new FailError("Validation command 必须是非空合法命令数组");
+  if (v.command === undefined && v.result !== "PASS") throw new FailError("无验证命令的 Bug 必须提供真实 Validation PASS");
   if (review?.result !== "PASS" || !filled(review.summary)) throw new FailError("Code Review 缺少 PASS 或 summary");
   const findings = review.findings === undefined ? [] : review.findings;
   if (!Array.isArray(findings) || findings.some(x => !x || typeof x !== "object" || Array.isArray(x) ||
@@ -67,15 +69,8 @@ export function registerPrPrepare(group: Command): void {
         let required: string[] = [];
         const review = {result:"PASS", summary:facts.code_review.summary, findings:facts.code_review.findings,
           candidate_commit:sha, ...(bug && {evidence_refs:facts.code_review.evidence_refs})};
-        const validation = {result:"PASS", summary:facts.validation.summary, ...(bug && {evidence_refs:facts.validation.evidence_refs}),
-          ...(facts.validation.command && {command:facts.validation.command, exit_code:0, candidate_commit:sha, source:"rondo pr prepare"})};
-        let delivery: Record<string, unknown> | undefined;
         checkLocalCandidate(current.head);
         if (bug) {
-          const raw = {expected_behavior:facts.expected_behavior, actual_behavior:facts.actual_behavior, root_cause:facts.root_cause,
-            fix_summary:facts.fix_summary, regression:facts.regression, local_validation:validation, code_review:review, blockers:facts.blockers};
-          const problems = validateBugEvidence(raw,{issue:issue.identifier??issue.id,tfsId,repoKey:opts.repo,sha});
-          if (problems.length) throw new FailError(problems.join("；"));
           required = opts.requiredRepos !== undefined ? requiredBugRepos(JSON.stringify(opts.requiredRepos.split(",").map(x=>x.trim()))) :
             md["bug.required_repos"] ? requiredBugRepos(md["bug.required_repos"]) : [opts.repo];
           if (!required.includes(opts.repo) || (md["bug.required_repos"] && JSON.stringify(required)!==JSON.stringify(requiredBugRepos(md["bug.required_repos"]))))
@@ -83,8 +78,6 @@ export function registerPrPrepare(group: Command): void {
           for(const key of required) validatePrepareRepo(registry[key],loadTfsConfig().serverUrl);
           const refs = gitOk(path,["show","-s","--format=%B",sha],"读取 Candidate Commit").split(/\r?\n/).filter(x=>/^Refs:\s*/i.test(x));
           if (refs.length!==1 || refs[0].trim()!=="Refs: #"+tfsId) throw new FailError("Candidate 必须包含唯一 Refs: #"+tfsId);
-          const {blockers:_, ...professional} = raw;
-          delivery = {...professional,repo_key:opts.repo,source_branch:branch,target_branch:repo.default_target_branch,candidate_commit:sha,tfs_id:tfsId};
         }
         function checkLocalCandidate(head:string) {
           if(head!==sha || gitOk(path,["status","--porcelain","--untracked-files=no"],"核对 Candidate 工作树"))
@@ -104,6 +97,17 @@ export function registerPrPrepare(group: Command): void {
           ["analysis.source","analysis.human_approval","analysis.change_ref","analysis.gate.result","tfs.id","tfs.type","tfs.url","bug.required_repos","current_pr","finalize.pending","delivery.tfs_written"]
             .some(k=>fresh.md[k]!==md[k])) throw new UnknownError("Validation 期间授权或仓库事实变化");
         checkCandidate(fresh.head);
+        const validation = {result:"PASS", summary:facts.validation.summary, ...(bug && {evidence_refs:facts.validation.evidence_refs}),
+          ...(facts.validation.command && {command:facts.validation.command, exit_code:0, candidate_commit:sha, source:"rondo pr prepare"})};
+        let delivery: Record<string, unknown> | undefined;
+        if (bug) {
+          const raw = {expected_behavior:facts.expected_behavior, actual_behavior:facts.actual_behavior, root_cause:facts.root_cause,
+            fix_summary:facts.fix_summary, regression:facts.regression, local_validation:validation, code_review:review, blockers:facts.blockers};
+          const problems = validateBugEvidence(raw,{issue:issue.identifier??issue.id,tfsId,repoKey:opts.repo,sha});
+          if (problems.length) throw new FailError(problems.join("；"));
+          const {blockers:_, ...professional} = raw;
+          delivery = {...professional,repo_key:opts.repo,source_branch:branch,target_branch:repo.default_target_branch,candidate_commit:sha,tfs_id:tfsId};
+        }
         const replace = (field:string,entry:Record<string,unknown>) => {
           const before=list(md[field],field), after=list(fresh.md[field],field);
           if(JSON.stringify(before.find(x=>x.repo_key===opts.repo))!==JSON.stringify(after.find(x=>x.repo_key===opts.repo)))

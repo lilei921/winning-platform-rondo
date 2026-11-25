@@ -6,12 +6,16 @@ import { join } from "node:path";
 import { execFileSync } from "node:child_process";
 import { validatePrFacts } from "../dist/commands/pr/prepare.js";
 import { verifyAndExecuteValidation } from "../dist/commands/pr/validation.js";
-const valid=()=>({validation:{result:"PASS",command:[process.execPath,"-e","process.exit(0)"],summary:"actual validation"},code_review:{result:"PASS",summary:"review"},blockers:[],description:"professional description"});
+const valid=()=>({validation:{command:[process.execPath,"-e","process.exit(0)"],summary:"actual validation"},code_review:{result:"PASS",summary:"review"},blockers:[],description:"professional description"});
 test("common Facts enforce actual command for Requirement, allow Bug evidence-only",()=>{
   assert.deepEqual(validatePrFacts(valid(),false).code_review.findings,[]);
   const f=valid();delete f.validation.command;
   assert.throws(()=>validatePrFacts(f,false),/command/);
+  assert.throws(()=>validatePrFacts(f,true),/PASS/);
+  f.validation.result="PASS";
   assert.doesNotThrow(()=>validatePrFacts(f,true));
+  assert.equal(validatePrFacts(valid(),false).validation.result,undefined);
+  assert.equal(validatePrFacts(valid(),true).validation.result,undefined);
   for(const bad of [null,[],[""],["node",42]]) {f.validation.command=bad;assert.throws(()=>validatePrFacts(f,true),/command/);}
 });
 test("public PR Facts reject FAIL, unresolved blockers and nonblocking risk without evidence",()=>{

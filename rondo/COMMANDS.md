@@ -166,7 +166,7 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 
 | 命令 | 功能 |
 | --- | --- |
-| `pr prepare` | 核对授权、Candidate、验证与专业 Facts，登记 PR Preparation |
+| `pr prepare` | 核对授权、Candidate 与专业 Facts，执行提供的验证命令并登记 PR Preparation；有命令时无需预填 `validation.result`，Bug 无命令时须提供真实替代验证 PASS |
 | `pr materialize` | 核验适用 Gate，创建或复用 PR 并确认 Work Item 关联；in_review 仅核验已登记事实 |
 | `pr worktree` | 使用 `create`、`remove`、`prune` 管理本地 Git Worktree |
 | `pr reconcile-status` | 从当前 Run Workspace 扫描 Issue 的 `current_pr`，核实 `completed` / `abandoned` 等外部状态，不使用 Registry |
