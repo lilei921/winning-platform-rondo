@@ -55,6 +55,7 @@ test("非 Git 目录、文件和不存在的目录均拒绝", (t) => {
     assert.throws(() => validateRootRepo(candidate, "测试"), UnknownError);
   }
   assert.throws(() => validateRootRepo("relative", "RONDO_WORKSPACE_PATH"), /不是当前系统语义下的绝对路径/);
+  assert.throws(() => validateRootRepo("", "--root-repo"), /根仓路径为空/);
 });
 
 test("linked worktree 的 .git 文件仍被识别为合法根仓", (t) => {
@@ -86,6 +87,12 @@ test("显式根仓不读取 Multica 配置或运行身份，并按需派生 Open
 test("缺少显式根仓直接拒绝，不查询 Project 挂载或隐式沿用 cwd", () => {
   const cfg = { get runtime() { throw new Error("不得尝试平台发现"); } };
   assert.throws(() => resolveRuntimePaths(cfg, { issue: { project_id: "project" } }), /必须显式传入 --root-repo/);
+});
+
+test("持久环境路径要求绝对路径", (t) => {
+  const { repo } = fixture(t);
+  assert.equal(resolveRuntimePaths({}, { rootRepoArg: repo, rootRepoOrigin: "RONDO_WORKSPACE_PATH" }).rootRepo, git(repo, "rev-parse", "--show-toplevel"));
+  assert.throws(() => resolveRuntimePaths({}, { rootRepoArg: ".", rootRepoOrigin: "RONDO_WORKSPACE_PATH" }), /绝对路径.*RONDO_WORKSPACE_PATH/);
 });
 
 test("调用需要 OpenSpec 时拒绝缺少该目录的根仓", (t) => {

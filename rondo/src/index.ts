@@ -15,7 +15,7 @@
  * 保证 stdout JSON、退出码与用法错误消息逐字节等价。
  */
 
-import { Command, CommanderError } from "commander";
+import { Command, CommanderError, Option } from "commander";
 import { isSea } from "node:sea";
 import { ExitSignal, hasLeafExecuted, logLine } from "./cli/output.js";
 import { TOOL_VERSION } from "./cli/version.js";
@@ -62,7 +62,8 @@ const program = new Command();
 
 program
   .name("rondo")
-  .description("rondo —— Multica 交付流水线统一 CLI(stdout 只出 JSON;退出码 0/2/3/64)")
+  .description("rondo —— Multica 交付流水线统一 CLI(业务结果默认 JSON;退出码 0/2/3/64)")
+  .addOption(new Option("--output <format>", "显式请求 JSON 输出（业务命令默认 JSON）").choices(["json"]))
   // --version 输出 JSON(方案 §4.4,沿用 tfs-cli 字段形状)
   .version(
     JSON.stringify({ name: "@winning/rondo", version: TOOL_VERSION, node: process.version, sea: isSea() }, null, 2),

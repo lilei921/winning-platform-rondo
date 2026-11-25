@@ -127,6 +127,7 @@ async function main(rawArgs: string[]): Promise<number> {
     const requirement = args.mode === "requirement";
     const root = requirement ? requirementRoot(args.rootRepo) : resolveRuntimePaths(cfg, {
       issue: before as { project_id?: string | null }, rootRepoArg: args.rootRepo || process.env.RONDO_WORKSPACE_PATH,
+      rootRepoOrigin: args.rootRepo ? "--root-repo" : "RONDO_WORKSPACE_PATH",
       need: ["openspec"],
     }).rootRepo;
     const native = requirement && nativeCheckoutExpected(root);

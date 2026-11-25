@@ -95,6 +95,7 @@ test("相对 OpenSpec 根路径和显式 JSON 输出与默认输出等价，拒�
   for (const flags of [["--output", "table"], ["--output"]]) {
     const invalid = runCli([...args, ...flags], repo);
     assert.equal(invalid.status, 64);
-    assert.equal(JSON.parse(invalid.stdout).result, "INVALID");
+    assert.equal(invalid.stdout, "");
+    assert.match(invalid.stderr, /--output/);
   }
 });

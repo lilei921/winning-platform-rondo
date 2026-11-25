@@ -235,6 +235,17 @@ test("Status 成功但响应丢失，重放校验固定来源且不自动新增 
   assert.equal(f.state().comments?.["issue-1"]?.length ?? 0, 0);
 });
 
+test("Legacy Publish 拒绝相对 RONDO_WORKSPACE_PATH，即使 cwd 是合法根仓", t => {
+  const f = fixture(t, false);
+  f.env.RONDO_WORKSPACE_PATH = ".";
+  const result = runCli(["analysis", "publish", "--issue", "issue-1",
+    "--facts", f.factsPath, "--workspace-id", "ws-test", "--registry-config", join(f.home, "registry.json"),
+    "--multica", MOCK], f.env, f.root);
+  assert.equal(result.exit, 3, JSON.stringify(result));
+  assert.match(result.body.reason, /绝对路径.*RONDO_WORKSPACE_PATH/);
+  assert.equal(f.state().metadata["analysis.source"], undefined);
+});
+
 test("Requirement 必须使用 requirement 模式，禁止误选 legacy", t => {
   const f = fixture(t);
   f.env.RONDO_WORKSPACE_BRANCH = "";

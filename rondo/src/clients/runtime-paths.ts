@@ -45,6 +45,7 @@ export interface RuntimePaths {
 
 /** 显式 CLI 路径按当前 cwd 归一化；配置或运行环境中的持久根仓仍要求绝对路径。随后校验目录及 Git 根仓。 */
 export function validateRootRepo(rootRepo: string, origin: string): string {
+  if (!rootRepo.trim()) throw new UnknownError(`根仓路径为空（${origin}）`);
   if (origin !== "--root-repo" && !isAbsolute(rootRepo)) {
     throw new UnknownError(`根仓路径不是当前系统语义下的绝对路径（${origin}）: ${rootRepo}`);
   }
@@ -73,11 +74,12 @@ export function resolveRuntimePaths(
     issue?: { project_id?: string | null };
     projectId?: string;
     rootRepoArg?: string;
+    rootRepoOrigin?: "--root-repo" | "RONDO_WORKSPACE_PATH";
     need?: Array<"openspec">;
   },
 ): RuntimePaths {
   if (!opts.rootRepoArg) throw new UnknownError("必须显式传入 --root-repo，使用本次 checkout 返回的根仓路径");
-  const root = validateRootRepo(opts.rootRepoArg, "--root-repo");
+  const root = validateRootRepo(opts.rootRepoArg, opts.rootRepoOrigin ?? "--root-repo");
   const paths: RuntimePaths = {
     rootRepo: root,
     openspecRoot: join(root, "openspec"),
