@@ -31,12 +31,12 @@ rondo doctor --help
 | 命令组 | 子命令 | 主要用途 |
 | --- | --- | --- |
 | `change` | `resolve-identity`、`update-progress` | Change 身份解析、任务进度 |
-| `analysis` | `stage`、`validate`、`complete`、`read`、`approve` | 分析事实、Gate、审核提交、工件读取和批准登记 |
+| `analysis` | `validate`、`complete`、`read`、`approve` | 分析事实、Gate、审核提交、工件读取和批准登记 |
 | `dev` | `materialize`、`prepare`、`check-dispatch`、`check-completion`、`check-change`、`publish`、`pr-prepare`、`contract-hash` | 旧派发与新 Change 研发准备、发布、验证 |
 | `bug` | `pr-prepare`、`git`、`resume` | 独立 TFS Bug 修复交付 |
 | `tfs` | `writeback`、`materialize-tasks`、`resolve-tasks`、`reconcile-workitem` | TFS 工作项同步与交付回写 |
 | `pr` | `materialize`、`worktree`、`reconcile-status`、`create`、`get`、`list` | PR 创建、查询、状态对账及 Worktree |
-| `delivery` | `handoff`、`route-decision`、`finalize` | 准入交接、人工决策路由与交付收口 |
+| `delivery` | `admission`、`route-decision`、`finalize` | 准入交接、人工决策路由与交付收口 |
 | `workspace` | `provision`、`sync`、`migrate-repo-keys`、`check-daemon` | Workspace 资源供给、同步及检查 |
 | `runtime` | `get-context`、`resolve-root-repo`、`check-checkout`、`prepare-root` | 当前 Run 上下文查询、根仓库就绪检查及准备 |
 | `repo` | `get` | 查询 TFS Git 仓库 |
@@ -132,7 +132,7 @@ rondo delivery root-prepare --issue <KEY>
 
 | 命令 | 功能 |
 | --- | --- |
-| `delivery admission` | Wayfinder 准入通过后依据 Issue 的 `tfs.type` 将 Issue 交给目标 Agent / Squad，并回读原生 Run |
+| `delivery admission` | 执行 Wayfinder 已记录的 Decision：通过时按 `tfs.type` 交接并回读原生 Run，其他结果保留 Wayfinder 并设置对应状态 |
 | `delivery route-decision` | 根据已确定的 Human Decision 执行交付返工、重建 PR 等确定性动作 |
 | `delivery finalize` | `prepare` 核验交付并准备收口；`complete` 在外部回写完成后核验并结束交付 |
 | `delivery root-prepare` | 在 Task `workdir/<repo-name>` 复用 Multica Checkout，建立 Task 独立本地归档分支，返回 `root_repo` |
@@ -257,6 +257,8 @@ rondo workspace check-daemon --workspace-id <id> [--project-id <id>]
 | `workspace check-daemon` | 检查 Daemon 环境变量、Runtime 注册、挂载唯一性和交付亲和条件 |
 
 `workspace provision` 的 `--dry-run` 只预览；`workspace sync --local-only` 只生成本地配置，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。只有绑定 `workspace-preparation` 的 Workitem Analyst / Engineer 才接收 `project.workspace_branch` 对应的 `RONDO_WORKSPACE_BRANCH`；不修改其他 Agent 的既有环境变量。
+
+受管 Skill 或 Agent 绑定发生变化时，先执行 `rondo workspace provision --workspace <name>` 更新绑定和 Overlay，再执行 `rondo workspace sync --workspace <name>` 同步内容。此次 `workitem-triage` 退役后，核对 Wayfinder 仅绑定 `codebase-explorer`、Overlay 不再登记旧 Skill；不自动删除其他未受管平台 Skill。
 
 研发 Agent（Engineer / Bug Fix Agent）绑定 `native-workspace`。执行 provision 前核实 CLI、实际 TFS 根仓映射及批准版本；供给并同步 Skill 后验证实际交付。其他仍支持旧准备方式的 Agent 可按实际情况使用既有 Overlay。
 

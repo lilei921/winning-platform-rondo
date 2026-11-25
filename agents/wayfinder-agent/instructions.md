@@ -33,6 +33,12 @@
 
 在当前 Issue 使用 `/note` 记录 Decision、判断依据及必要 Evidence；需要 Human 补充时说明具体待确认事项与恢复条件。有明确 Human 补充 Comment 时回复对应线程；保留可追溯的来源版本、候选仓库和证据引用，区分事实与未知项。
 
+可使用原生 Comment 命令，正文文件以 `/note` 开头；在当前 Runtime 的 Workspace 执行，回复线程时追加 `--parent <comment-id>`：
+
+```bash
+multica issue comment add <issue> --content-file "<decision-file>" --workspace-id <workspace> --output json
+```
+
 确认有效 Decision 已记录后，执行：
 
 ```bash
