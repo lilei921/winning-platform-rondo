@@ -9,7 +9,7 @@
  * TFS 2018：写操作走 raw HTTP PATCH/POST + api-version=4.1（SDK 内部 7.1-preview 不支持）。
  * set-state 幂等：当前已是目标状态 → { changed:false } exit 0。
  *   状态路由（2026-10-30 裁定，tfs-writeback-decoupling-plan）：TFS 工作流不允许跨态直连（HTTP 400），
- *   按工作项类型的有序链逐跳中转——任务/Bug：已建议→活动→已解决；需求：已建议→活动→已分析→已解决。
+ *   按工作项类型的有序链逐跳中转——Bug：已建议→活动；需求：已建议→活动→已分析→已解决；任务：已建议→活动→已解决→已关闭。
  *   当前态与目标态都在链上且目标靠后时逐跳补齐（输出带 via:string[]）；
  *   不在链上或目标不靠后 → 直连 PATCH（非法跳态由 TFS 拒绝，如实 UNKNOWN，不猜测绕行）。
  * create：创建前只读核对父项（存在性 + 类型为'需求'/'Bug'），父不存在 → FailError(exit 2)；
@@ -156,8 +156,7 @@ export async function cmdWorkItemSetState(opts: { id: number; state: string; pro
   const wiType: string | null = current.fields?.['System.WorkItemType'] ?? null;
   const target = resolveState(opts.state);
 
-  // 用户裁定（2026-10-20，docs/tfs-state-writeback-plan.md §4.3）：已解决 ⇒
-  // CompletedWork=OriginalEstimate、RemainingWork=0，同一 PATCH 落库（取代"CompletedWork 不写"旧结论）。
+  // --complete-with-estimate：CompletedWork=OriginalEstimate、RemainingWork=0，与最终状态同一 PATCH 落库。
   // 幂等：状态已是目标态仍核对工时字段，不齐则补（CW 派生自当前 OE；OE 缺失 → 只写 RW=0 并标注 estimateMissing）。
   let doc: any[];
   if (previousState === target || previousState === opts.state) {
@@ -439,7 +438,7 @@ export async function cmdWorkItemCreate(opts: {
     doc.push({ op: 'add', path: '/fields/System.Description', value: html });
   }
   // 预估工时（docs/tfs-state-writeback-plan.md §4.7）：OriginalEstimate 与 RemainingWork 同写 N；
-  // CompletedWork 创建时不写——在任务置"已解决"时由 set-state --complete-with-estimate 确定性落库 CW=OE（§4.3 裁定）。
+  // CompletedWork 创建时不写；任务收口时由 set-state --complete-with-estimate 落库 CW=OE。
   if (opts.estimate !== undefined) {
     doc.push({ op: 'add', path: '/fields/Microsoft.VSTS.Scheduling.OriginalEstimate', value: opts.estimate });
     doc.push({ op: 'add', path: '/fields/Microsoft.VSTS.Scheduling.RemainingWork', value: opts.estimate });

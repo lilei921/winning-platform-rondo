@@ -1,5 +1,5 @@
 /**
- * resolve-tasks.ts — TFS 任务批量置"已解决"（02 §9 Lead 汇总点，用户裁定②）。
+ * resolve-tasks.ts — TFS 任务批量置"已关闭"（02 §9 Lead 汇总点，用户裁定②）。
  * 方案：archive/docs-2026-10-26/tfs-state-writeback-plan.md §4.3（历史溯源）。
  *
  * 裁决 D3 修订：自 rondo 收编起，实现位置为 @winning/skill-flow 包内
@@ -15,10 +15,10 @@
  *   3. 全部 active 条目 task_refs 并集每个 ref 都有 tfs_task_ids 映射（任意 dispatch 条目
  *      记录即可，含失效条目；缺 → FAIL，提示先重跑 materialize-tfs-tasks 补齐）。
  *
- * 流程：ID 并集去重 → 逐任务 set-state 已解决（幂等，单个失败不中断；带 --complete-with-estimate
+ * 流程：ID 并集去重 → 逐任务 set-state 已关闭（幂等，单个失败不中断；带 --complete-with-estimate
  * 同一 PATCH 落库 CompletedWork=OriginalEstimate、RemainingWork=0，用户裁定 2026-10-20 §4.3）
  * → WIQL 回读核对（state + 工时字段）。
- * 输出 { result, resolved: {ref: id}, failed: [...], estimate_missing: [...] }；全部已解决且工时齐 → exit 0；
+ * 输出 { result, resolved: {ref: id}, failed: [...], estimate_missing: [...] }；全部已关闭且工时齐 → exit 0；
  * 任一置态失败/回读不符 → exit 3 UNKNOWN（部分成功如实列明，重跑幂等自愈）。
  * OE 缺失的任务只写 RW=0、不核对 CW，列入 estimate_missing 如实回流（不视为失败）。
  * 不写防重 metadata（set-state 幂等 + 回读核对已提供确定性验证，§4.3 裁定）。
@@ -39,6 +39,7 @@ import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
 import { loadConfig } from "../../clients/config.js";
 import { MulticaClient, type IssueRecord } from "../../clients/multica.js";
 import { TfsClient } from "../../clients/tfs.js";
+import { TASK_TARGET_STATE } from "./writeback.js";
 
 interface RegistryConfig {
   runtime: { multica_cli: string; workspace_id?: string; tfs_cli?: string[] };
@@ -186,7 +187,7 @@ async function main(rawArgs: string[]): Promise<number> {
 
     for (const id of uniqueIds) {
       try {
-        const out = await clients.tfsSetState(id, "已解决");
+        const out = await clients.tfsSetState(id, TASK_TARGET_STATE);
         if (out.estimateMissing) {
           estimateMissing.push({ ref: refById.get(id), id, note: "OriginalEstimate 缺失，仅落库 RemainingWork=0" });
         }
@@ -195,7 +196,7 @@ async function main(rawArgs: string[]): Promise<number> {
       }
     }
 
-    // --- 回读核对：state 不为"已解决"或工时字段不齐（RW≠0；OE 存在而 CW≠OE）的列入 failed
+    // --- 回读核对：state 不为"已关闭"或工时字段不齐（RW≠0；OE 存在而 CW≠OE）的列入 failed
     // （置态已失败的 id 不重复列；OE 缺失不核对 CW，已在 estimate_missing 标注） ---
     const failedIds = new Set(failed.map((f) => f.id as number));
     const readback = await clients.tfsQuery(
@@ -211,7 +212,7 @@ async function main(rawArgs: string[]): Promise<number> {
         failed.push({ ref: refById.get(id), id, error: "回读未找到该任务（不存在或不可读）" });
         continue;
       }
-      if (wi.state !== "已解决") {
+      if (wi.state !== TASK_TARGET_STATE) {
         failed.push({ ref: refById.get(id), id, state: wi.state ?? null });
         continue;
       }
@@ -228,7 +229,7 @@ async function main(rawArgs: string[]): Promise<number> {
     if (failed.length > 0) {
       process.stdout.write(JSON.stringify({
         result: "UNKNOWN",
-        reason: "部分任务未达'已解决'或工时未落齐（如实列明；修复后重跑本脚本幂等补齐）",
+        reason: `部分任务未达${TASK_TARGET_STATE}或工时未落齐（如实列明；修复后重跑本脚本幂等补齐）`,
         resolved,
         failed,
         estimate_missing: estimateMissing,
@@ -254,7 +255,7 @@ async function main(rawArgs: string[]): Promise<number> {
 export function registerTfsResolveTasks(group: Command): void {
   group
     .command("resolve-tasks")
-    .description("[deprecated] TFS 任务批量置已解决——新流程由 tfs writeback 在 PR 通过后统一执行（tfs-writeback-decoupling-plan）；本命令仅作在途交付恢复入口")
+    .description("[deprecated] TFS 任务批量置已关闭——新流程由 tfs writeback 在 PR 通过后统一执行（tfs-writeback-decoupling-plan）；本命令仅作在途交付恢复入口")
     .helpOption(false)
     .allowUnknownOption(true)
     .allowExcessArguments(true)
