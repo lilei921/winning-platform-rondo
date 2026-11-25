@@ -7,7 +7,7 @@ description: 使用项目 OpenSpec CLI 与当前 Schema / Artifact Instruction �
 
 ## Inputs / Preconditions
 
-- 当前 Issue 的身份、写入授权、已确认的 Technical Change Kind、当前 Change 的 Schema、可追溯专业结论与 Evidence，以及已知的 `change_ref`、`tfs.id`。首次准备时按项目契约确定并持久化 Schema。
+- 已明确存在需要实施的工程增量；当前 Issue 的身份、写入授权、已确认的 Technical Change Kind、当前 Change 的 Schema、可追溯专业结论与 Evidence，以及已知的 `change_ref`、`tfs.id`。首次准备时按项目契约确定并持久化 Schema。
 - 本 Skill 的 `config/repo-registry.json` 由 `rondo workspace sync` 按 Workspace 发布；确认可读取且 `runtime.workspace_id` 与当前 Issue 所在 Workspace 一致，否则停止，不借用其他 Skill 配置或猜测路径。
 - 根仓 `root_repo` 已基于适用工程版本准备就绪。所有 `openspec` 命令均以该根仓为 `cwd`。
 
@@ -29,10 +29,10 @@ description: 使用项目 OpenSpec CLI 与当前 Schema / Artifact Instruction �
 
 ## Validation / Recovery
 
-- 完成前在同一根仓执行 `openspec validate <id> --type change --strict --no-interactive --json` 并回读 `openspec status --change <id> --json`；结合退出码、结构化结果、诊断信息和实际文件核对必要 Artifact、合法省略、内容一致性及来源。出现 `Archive would refuse this delta` 等归档冲突提示时核实并报告，不仅凭 CLI PASS 推断归档一定成功，也不将所有 INFO 自动视为阻断。FAIL / UNKNOWN 或来源不符时保留现场并报告；CLI PASS 不代替专业 Review、Analysis Gate 或 Human Approval。
+- 在同一根仓按实际需要使用 `openspec status --change <id> --json` 核对必要 Artifact、合法省略、内容一致性及来源；需要诊断时执行 `openspec validate <id> --type change --strict --no-interactive --json`，结合退出码和结构化结果判断。最终 Analysis Gate 必须执行原生 Strict Validation。出现 `Archive would refuse this delta` 等归档冲突提示时核实并报告，不仅凭 CLI PASS 推断归档一定成功，也不将所有 INFO 自动视为阻断。FAIL / UNKNOWN 或来源不符时保留现场并报告；CLI PASS 不代替专业 Review、Analysis Gate 或 Human Approval。
 - 创建结果未知时用已知身份回查 Change 和目录；写入结果未知时先回读实际 Artifact，确认缺失后才恢复，不能盲目重试。只用已授权 CLI / Schema，不调用 `/opsx:*` 或 OpenSpec 原生 AI Skill/Command。
 
 ## Output / Stop
 
-- 返回唯一 `change_ref`、已核实根仓、实际新增或修订的具体 Artifact 路径、原生状态、Validation 结果、合法省略依据、Evidence 引用与未决事项；不另建 Preparation Result、Metadata Schema 或 Multica Stage。
+- 返回唯一 `change_ref`、已核实根仓、实际新增或修订的具体 Artifact 路径、原生状态、实际执行时的 Validation 结果、合法省略依据、Evidence 引用与未决事项；不另建 Preparation Result、Metadata Schema 或 Multica Stage。
 - 本 Skill 仅准备当前 OpenSpec Change 工件，不执行生产代码修改、Issue 审批/状态变更、Archive、Commit 或 Push。

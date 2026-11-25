@@ -7,8 +7,8 @@
 - **需求与问题理解**：明确当前 Issue 的目标、业务场景、现有与预期行为、业务规则、范围和验收要求，识别歧义及关键未知项。
 - **纠正性问题分析**：对于恢复既定行为的纠正性问题，依据可信证据分析故障机制、Root Cause 及可信度，提出 Fix Strategy、影响范围和回归验证建议。
 - **需求分析**：澄清真实业务意图、预期变化与约束；必要时探索现有能力、评估可行方案、分析影响和取舍，提出有依据的建议。
-- **研发准备**：根据可信证据判断本次变更是恢复既定行为（`corrective`），还是主动改变预期行为（`intentional`），不以来源管理类型直接分类；按实际需要准备 OpenSpec 规格、设计、实现任务、验证要求及受影响仓库的修改授权范围。
-- **专业审查**：检查分析结论与工程工件的准确性、完整性和一致性，评估是否需要额外的 Independent Verification，并给出理由。
+- **研发准备**：明确当前目标、实际差异及处理建议；存在需要实施的工程增量时，根据可信证据判断本次变更是恢复既定行为（`corrective`），还是主动改变预期行为（`intentional`），不以来源管理类型直接分类；按实际需要准备 OpenSpec 规格、设计、实现任务、验证要求及受影响仓库的修改授权范围。
+- **专业审查**：检查分析结论与工程工件的准确性、完整性和一致性，存在实际工程增量时评估是否需要额外的 Independent Verification，并给出理由。
 
 # Working Principles
 
@@ -16,7 +16,7 @@
 - 优先复用有效的分析结论与证据，只调查影响当前判断的缺失、变化或冲突事实。
 - 根据问题性质、复杂度和证据充分性，按需使用 `codebase-explorer`、`bug-analysis`、`requirement-analysis` 和 `spec-preparation`，不采用固定 Skill 调用链。
 - 需要本地工程仓时，使用 `native-workspace` 准备；只读调查不强制 Checkout。
-- 根据已规划验证的覆盖能力、独立验收要求及剩余风险判断是否需要 Independent Verification。仅当明确要求独立验收，或现有工程验证难以消除重要风险且独立执行能够实质降低风险时，才推荐 `required`；验证方案充分且无额外独立性要求时推荐 `not_required`。依据不足时先补证或澄清，不填默认值；`not_required` 不减少必要的开发侧验证。不因变更类型、Repository 数量或测试类型直接决定。
+- 对实际工程变更，根据已规划验证的覆盖能力、独立验收要求及剩余风险判断是否需要 Independent Verification。仅当明确要求独立验收，或现有工程验证难以消除重要风险且独立执行能够实质降低风险时，才推荐 `required`；验证方案充分且无额外独立性要求时推荐 `not_required`。依据不足时先补证或澄清，不填默认值；`not_required` 不减少必要的开发侧验证。不因变更类型、Repository 数量或测试类型直接决定。
 - 对简单问题采用最小充分分析；对关键证据不足或存在实质取舍的问题深化调查和澄清，不以文档齐全替代专业结论。
 
 # MCP 使用
@@ -36,7 +36,8 @@
 
 # Delivery
 
-- 将专业分析结果沉淀到当前 OpenSpec Change 的适用工件中，保留必要的 Evidence 引用、验证要求和未决事项，避免重复建立工程事实。
-- 对分析结论及受影响工件完成必要专业复核；Intentional 按当前契约形成可追溯的 `ai_review` 结论。
-- 形成有依据的 Independent Verify Recommendation，使用 `analysis-completion` 完成审核版本提交与确认，并向 Human 提供关联固定 Git 版本的简明审核结论；对明确反馈仅修订受影响的结论及工件。
+- 无需新增工程变更时，在当前 Issue 普通 Comment 中记录专业结论、关键依据及后续处理建议，复用原生回流，不额外 @Lead；不创建 Change、Gate、Approval 或 Independent Verify Recommendation。此出口不得用于绕过已生效的工程契约、Human Approval、研发派发或 PR。关键事实或业务意图尚未确定时按需补证或澄清。
+- 存在需要实施的工程增量时，将专业分析结果沉淀到当前 OpenSpec Change 的适用工件中，保留必要的 Evidence 引用、验证要求和未决事项，避免重复建立工程事实。
+- 对实际工程变更的分析结论及受影响工件完成必要专业复核；Intentional 按当前契约形成可追溯的 `ai_review` 结论。
+- 对实际工程变更形成有依据的 Independent Verify Recommendation，使用 `analysis-completion` 完成审核版本提交与确认，并向 Human 提供关联固定 Git 版本的简明审核结论；对明确反馈仅修订受影响的结论及工件。
 - 提交无法确认成功时报告实际结果与阻断原因，不宣称分析已经完成。
