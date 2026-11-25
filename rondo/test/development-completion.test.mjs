@@ -44,13 +44,11 @@ function fixture(t) {
   return { dir, root, tasksPath, evidence, save, check };
 }
 
-test("Check PASS precedes Patch; missing/duplicate/invalid Task identities fail", (t) => {
+test("Completion check tolerates direct checkbox edits; missing/duplicate/invalid Task identities fail", (t) => {
   const f = fixture(t);
   assert.equal(f.check().body.result, "PASS");
   assert.match(readFileSync(f.tasksPath, "utf8"), /- \[ \] 1\.1/);
-  const patched = runCli(["change", "update-progress", "--openspec-root", f.root,
-    "--change-ref", "sample", "--check", "1.1"]);
-  assert.equal(patched.body.result, "UPDATED");
+  writeFileSync(f.tasksPath, readFileSync(f.tasksPath, "utf8").replace("- [ ] 1.1", "- [x] 1.1"));
   assert.match(readFileSync(f.tasksPath, "utf8"), /- \[x\] 1\.1/);
   assert.equal(f.check().body.result, "PASS");
   for (const invalid of ["- [ ] 1.2 Wrong\n", "- [ ] 1.1 A\n- [x] 1.1 B\n", "- [-] 1.1 Invalid\n"]) {

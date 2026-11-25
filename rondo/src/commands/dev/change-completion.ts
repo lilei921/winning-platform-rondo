@@ -6,6 +6,7 @@ import { MulticaClient } from "../../clients/multica.js";
 import { RemoteArtifactReader } from "../delivery/remote-artifacts.js";
 import { normalizeContractText } from "../delivery/contract-files.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
+import { sameAnalysisSource, type AnalysisSource } from "../analysis/source.js";
 import { approvedChange, readDevelopmentCommit } from "./requirement-guard.js";
 
 export interface PrPrep {
@@ -87,11 +88,13 @@ export function validateChangeDelivery(prep: PrPrep[], scope: string[], tfsId: n
 
 /** Re-read a single pinned TFS Git snapshot, never mix approved content with another Runtime's worktree. */
 export async function checkPublishedChange(
-  cfg: BaseRegistryConfig, multica: MulticaClient, issueKey: string, changeRef: string,
+  cfg: BaseRegistryConfig, multica: MulticaClient, issueKey: string, expectedSource: AnalysisSource,
   readerFactory: (url: string) => RemoteArtifactReader = url => new RemoteArtifactReader(url),
 ): Promise<Completion> {
-  const change = await approvedChange(cfg, multica, issueKey, changeRef, true);
+  const change = await approvedChange(cfg, multica, issueKey, true);
   const source = change.source;
+  if (!sameAnalysisSource(source, expectedSource)) throw new UnknownError("批准来源在读取映射期间变化");
+  const changeRef = source.change_ref;
   const reader = readerFactory(source.repo_url);
   const md = change.issue.metadata ?? {};
   const commit = readDevelopmentCommit(md, source);

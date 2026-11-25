@@ -10,6 +10,8 @@
 > Analysis Baseline（分析输入）: [03-workitem-analysis-design.md](03-workitem-analysis-design.md)\
 > Related Implementation Baseline（实施契约）: [05-openspec-schema-implementation-design.md](05-openspec-schema-implementation-design.md)、[06-method-skill-library-implementation-design.md](06-method-skill-library-implementation-design.md)
 
+当前统一 Engineer 的研发契约以 [09](09-unified-engineer-development-design.md) 为准，Tasks 直接编辑与发布见 [05 §11](05-openspec-schema-implementation-design.md#openspec-schema-section-11)。本文的 Task Set 相关设计属于尚待退役的旧路线，不作为当前 Engineer 的执行要求。
+
 **文档定位**：本文设计 Engineer / Development 的专业过程与实施契约，不是单个 `SKILL.md`，也不是 Multica Delivery Lifecycle（交付生命周期）或新建的 Workflow Runtime。专业活动不独立构成新的 Agent、Run、Multica Stage、Gate 或 Artifact。
 
 **权威归属**：[01](01-multica-openspec-design-guideline.md) 维护统一架构、术语与配置约定；[02](02-multica-delivery-lifecycle-design.md) 维护跨角色交付、审批、任务投影、独立验证、PR / Finalize；[03](03-workitem-analysis-design.md) 维护需求 / Bug 分析及研发准备；[04](04-engineer-development-design.md) 维护已批准 Task Set 的工程方法、工程质量、Evidence 和专业交接；[05](05-openspec-schema-implementation-design.md) 维护 OpenSpec Schema、Change / Task Identity、写权限、Task Progress；[06](06-method-skill-library-implementation-design.md) 维护 Internal Method Module 的组织与来源治理。**同一规则只维护一个 Owner（One Rule, One Owner）**。
@@ -222,7 +224,7 @@ Assigned Task Set + Approved Engineering Baseline
         ↓
 9. Publish Development Evidence
         ↓
-10. Development Completion Check → Task Progress Patch / Readback → Completion Handoff（根仓 Git 在最终 Finalize 提交）
+10. Development Completion Check → Tasks 完成状态更新 → Completion Handoff（根仓 Git 在最终 Finalize 提交）
 ```
 
 **统一方法**：Spec / Corrective Contract 定义要实现什么、怎样证明行为正确；Feedback-Driven Development 定义如何通过小步修改与持续检查收敛。所有获准自动交付的 Change 共享该执行模型，不引入第二套 Runtime 或独立的 Task State Machine。
@@ -597,7 +599,7 @@ Development Evidence 要证明**某个已批准工程契约范围，在某个当
 
 **Engineer 必须形成可结构化读取、可恢复的 Development Result / Evidence Index（研发结果与证据索引）**，将 `change_ref`、当前 `task_refs`、批准基线、Candidate Commit、Verification / Review Result、必要 Evidence Refs 与 PR Preparation 关联起来。承载方式可使用现有 Multica Run / Issue 的结构化结果与稳定引用，以及按需 Supporting Artifact / 原始 Test Report；**不强制一个 Task Set 生成独立 `development-evidence.md`，也不新建 Evidence Store**。仅写“测试已通过，见日志”而没有明确 Task / Candidate / Check 关联，不满足本契约。
 
-技术证据优先留在代码仓、OpenSpec 或适当 Supporting Artifact；Multica 保存本次 Task Set Result、可解析索引 / 引用与运行事实。最终 `READY | BLOCKED | UNKNOWN` 是当前 Task Set 的专业交付结果，不是新的全局 Status Key。**Evidence Collection 与 Result Publication 分开**：在 Completion Check 前允许逐步形成 Evidence Index，此时**不填写最终 `development.result`**，不新增 `PENDING` 等过渡枚举；Check 与必要的 Task Progress Patch / Readback 完成后才发布 `READY`。这里的 Task Progress Persistence 指当前共享工作区的受控写入与回读，**不要求最终根仓 Git Commit 已完成**；根仓 Commit 由最终 Finalize 负责。无法满足 Check / Patch 条件时，记录已有的 `BLOCKED` / `UNKNOWN` 与原因，不误写 READY。
+技术证据优先留在代码仓、OpenSpec 或适当 Supporting Artifact；Multica 保存本次 Task Set Result、可解析索引 / 引用与运行事实。最终 `READY | BLOCKED | UNKNOWN` 是当前 Task Set 的专业交付结果，不是新的全局 Status Key。**Evidence Collection 与 Result Publication 分开**：在 Completion Check 前允许逐步形成 Evidence Index，此时**不填写最终 `development.result`**，不新增 `PENDING` 等过渡枚举；Check 与必要的 Tasks 完成状态更新 完成后才发布 `READY`。这里的 Task Progress Persistence 指当前共享工作区的受控写入与回读，**不要求最终根仓 Git Commit 已完成**；根仓 Commit 由最终 Finalize 负责。无法满足 Check / Tasks 更新条件时，记录已有的 `BLOCKED` / `UNKNOWN` 与原因，不误写 READY。
 
 ## 10.2 最小逻辑 Evidence Contract
 
@@ -704,7 +706,7 @@ Engineer 不负责将父 Delivery `done`、决定是否启用 Verify Agent、创
 
 ## 11.2 Development Completion Check 与 Task Progress 更新
 
-[02 §8](02-multica-delivery-lifecycle-design.md#development-execution) 定义 `Development Completion Check` 的业务硬条件；[05 §11](05-openspec-schema-implementation-design.md#openspec-schema-section-11) 定义 `update-task-progress.py` 等确定性任务进度写入契约。[04](04-engineer-development-design.md) 不创建 `Development Readiness Check`、第二套完成状态或另一个中央 Task Writer。
+[02 §8](02-multica-delivery-lifecycle-design.md#development-execution) 定义 `Development Completion Check` 的业务硬条件；[05 §11](05-openspec-schema-implementation-design.md#openspec-schema-section-11) 定义当前 Tasks 完成状态更新契约。[04](04-engineer-development-design.md) 不创建 `Development Readiness Check`、第二套完成状态或另一个中央 Task Writer。
 
 **两个不同的完成概念：**
 
@@ -720,9 +722,7 @@ Engineer 完成 Implementation / Verification / Review
 → Development Completion Check（只依据 Engineering Contract 与当前 Evidence）
    FAIL → Targeted Rework / Blocked（不得标记 Task Complete）
    UNKNOWN → Report / Escalate（不得隐式 PASS）
-   PASS → 调用 05 的受控 Task Progress Patch
-→ 在 Change-scoped Single-writer Critical Section 内更新共享工作区
-→ 回读 tasks.md，核对已分配 Task Ref 的 checkbox / identity
+   PASS → 根据真实结果更新 tasks.md 的 checkbox，保持任务正文与编号
    失败 / 写入结果 UNKNOWN → 恢复 / 报告，不能发表最终 READY
 → 发布前核对 Candidate Commit、工程契约和派工范围仍与 Check 依据一致
    发现相关变化 → 不发布 READY，重新检查受影响部分
@@ -733,9 +733,9 @@ Engineer 完成 Implementation / Verification / Review
 
 `Development Completion Check` 不能将“`tasks.md` 已为 `- [x]`”作为此次 PASS 的必要条件，否则会与“Check PASS 后才允许 Patch”形成循环依赖。原本已勾选的 Task 同样须由当前 Candidate / Contract / Evidence 重新确认有效性；单靠持久化进度不得重新放行。
 
-发布前核对直接使用本轮已有的 Candidate、Contract 和派工事实，不增加版本状态机、锁或专门校验机制。受控 Patch 只处理当前仍需执行且已满足完成条件的任务；已批准取消 / 替换项保留记录，不虚假勾选。单纯 checkbox 更新不属于使本轮检查依据失效的契约变化。
+发布前核对直接使用本轮已有的 Candidate、Contract 和派工事实，不增加版本状态机、锁或专门校验机制。Tasks 更新只处理当前仍需执行且已满足完成条件的任务；已批准取消 / 替换项保留记录，不虚假勾选。单纯 checkbox 更新不属于使本轮检查依据失效的契约变化。
 
-**并发边界**：不同 Repository 的 Engineer / Verify Agent 可以按既定任务分工并行实现或验证；同一 Issue / Repository 唯一有效 Engineer，同一 Task Set 不重复派发。`tasks.md` checkbox 继续使用 [05](05-openspec-schema-implementation-design.md) 已有的 change-scoped serialized write，不新增锁机制。写入结果 UNKNOWN 时先回读当前共享工作区；工作区修改丢失或关键证据不可读时按 [§9.1](#section-9-1) 停止自动推进，交 Delivery Lead 协调处理，不自动重放 checkbox。根仓最终 Git Commit 由 Finalize 负责，与单个 Task Set 的 Patch Lock 是不同边界，必须避免误提交其他 Delivery Change。
+**并发边界**：当前 Change 由唯一获授权 Engineer 负责，Tasks 更新及并发保护按 [05 §11](05-openspec-schema-implementation-design.md#openspec-schema-section-11) 执行。保留 Git 发布冲突保护与专业验证证据。
 
 `Development Completion Check` 校验 Contract 和 Evidence，不只是文件存在与字段非空；真正专业正确性仍以代码 / 测试 / Review 的实际结果支撑。原生 OpenSpec Validation 或 checkbox PASS 不能替代此 Check。
 
@@ -743,7 +743,7 @@ Engineer 完成 Implementation / Verification / Review
 
 ## 11.3 当前 Issue 的完成交接
 
-当前 Task Set 的 Check PASS、Task Progress Patch / Readback 成功后，Engineer 将 `task_refs` 对应的 Completion / Evidence Facts 返回当前 Issue，结束本轮 Run。单个 Task Set 完成不能关闭整个 Issue，后续聚合、Verify 和 PR 由 Delivery Lead 协调。
+当前 Task Set 的 Check PASS、Tasks 完成状态更新 成功后，Engineer 将 `task_refs` 对应的 Completion / Evidence Facts 返回当前 Issue，结束本轮 Run。单个 Task Set 完成不能关闭整个 Issue，后续聚合、Verify 和 PR 由 Delivery Lead 协调。
 
 已有完成事实只有在共享工作区、Candidate 和 Evidence 仍有效时才可复用。重复 `@mention` 不应使已完成的专业工作无依据地重跑；Candidate 或工程契约发生实质变化时，重新核对受影响部分。恢复和聚合遵循 [02 §7](02-multica-delivery-lifecycle-design.md#development-materialization)–[§9](02-multica-delivery-lifecycle-design.md#verification-rework)。
 
@@ -944,7 +944,7 @@ Domain Skill 负责“这个技术领域如何正确实现”；`development-exe
 3. 实施 Incremental Implementation、Required Verification、Local Validation、Code Review / Finding Rework，并接入所需 Internal Methods 与 Domain Skills。
 4. 实施业务代码仓必要 Commit / Push、Candidate Commit Identity、PR Preparation（含 TFS / Delivery 关联）及错误恢复；核对同一 Issue / Repository 唯一 Engineer；纯验证按 [§7.1](#section-7-1) 复用有效事实。
 5. 实施可结构化读取的 Development Result / Evidence Index 与当前 Candidate / Check 的 Evidence Freshness 核验。
-6. 对齐 Development Completion Check（只判当前 required Tasks 的 Engineering Completion）→ [05](05-openspec-schema-implementation-design.md) Task Progress Patch / Shared Workspace Readback → 发布前核对检查依据 → READY / Parent 回流；不要求本阶段对根仓 Git Commit，不新增版本状态机或锁。
+6. 对齐 Development Completion Check（只判当前 required Tasks 的 Engineering Completion）→ [05](05-openspec-schema-implementation-design.md) Tasks 完成状态更新 → 发布前核对检查依据 → READY / Parent 回流；不要求本阶段对根仓 Git Commit，不新增版本状态机或锁。
 7. 明确父级 Finalize 最终 Git Commit 的交接事实，以及工作区修改 / 关键 Evidence 丢失时停止并交 Lead 的处理边界；完成 [§14](#development-section-14) 的正向、负向、并发、恢复测试，未验证的设计不得标记为已部署。
 
 **后续实施依赖**：[05](05-openspec-schema-implementation-design.md) 的 Native First 任务定位 / 受控进度脚本及其回归、实际 Evidence 字段映射、[06](06-method-skill-library-implementation-design.md) 诊断 Method 的可读入口仍须落地验证。派工、共享工作区与最终提交规则由 [02](02-multica-delivery-lifecycle-design.md) 维护；OpenSpec 执行方式及 Native Verify 策略按 [§7.3](#section-7-3) / [05 §9.4](05-openspec-schema-implementation-design.md#section-9-4) 执行。
@@ -1037,7 +1037,7 @@ Delivery Lead（已批准交接 + 当前 Roster）
                       ↓
              Development Completion Check
                       ↓ PASS
-             Change-scoped Task Progress Patch / Shared Workspace Readback
+             Tasks 完成状态更新
                        ↓
              核对检查依据；有相关变化则重新检查受影响部分
                        ↓

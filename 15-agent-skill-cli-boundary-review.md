@@ -12,7 +12,7 @@ Agent 对专业结果负责；Skill 提供可复用场景方法及必要工具�
 
 ### 2.1 Requirement 研发工件
 
-Engineer 依据真实成果使用 `rondo change update-progress` 更新 Tasks，提交当前 Change 的研发工件并使用 `rondo dev publish` 发布；非实质性 Design 细化使用 `--minor-design`。保持现有批准边界；具体参数按需使用 CLI Help，Native 根仓发布须提供实际根仓路径。删除 pull-request 中的 Requirement Artifact Publication，不新增 Skill。Tasks 可随研发进度更新；PR Materialization 前全部 Tasks 完成且研发工件已发布，不人为固定发布与 PR Preparation 的顺序。
+Engineer 依据真实研发与验证结果直接更新 `tasks.md` 的完成状态，保持已批准的任务正文和编号，提交当前 Change 的研发工件并使用 `rondo dev publish` 发布；非实质性 Design 细化使用 `--minor-design`。保持现有批准边界；具体参数按需使用 CLI Help，Native 根仓发布须提供实际根仓路径。删除 pull-request 中的 Requirement Artifact Publication，不新增 Skill。Tasks 可随研发进度更新；PR Materialization 前全部 Tasks 完成且研发工件已发布，不人为固定发布与 PR Preparation 的顺序。
 
 ### 2.2 专业验证与 CLI 验证
 

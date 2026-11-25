@@ -36,7 +36,7 @@ multica repo checkout <business-url> --ref <resource-ref>
 rondo dev prepare --workspace native --issue <KEY> --repo <repo_id> --root-repo "<root>" --resource-ref <resource-ref>
 ```
 
-Requirement 追加 `--change-ref <change_ref>`。已有远端 Candidate 时可省略 `--resource-ref`；无 Candidate 时必须提供已核实的初始分支。
+已有远端 Candidate 时可省略 `--resource-ref`；无 Candidate 时必须提供已核实的初始分支。
 
 使用命令返回的 `path` 作为代码修改、验证及提交的工作区；`branch` 为远端 Candidate，`local_branch` 为 Multica 管理的本地 Task Branch。已有同一业务仓的只读 Checkout 时，由此命令核验并复用兼容的工作树。
 

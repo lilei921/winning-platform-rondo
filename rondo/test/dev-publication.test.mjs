@@ -67,7 +67,7 @@ function fixture(t, { previousTasks, approvedTasks = "- [ ] 1.1 Verify\n", desig
     assert.equal(proc.status, expected, proc.stdout + "\n" + proc.stderr);
     return JSON.parse(proc.stdout);
   }
-  const publish = (expected, ...options) => run(expected, "dev", "publish", "--change-ref", "alpha", ...options);
+  const publish = (expected, ...options) => run(expected, "dev", "publish", ...options);
   const metadata = () => JSON.parse(readFileSync(state, "utf8")).metadata;
   return { root, bare, analyst, work, approved, proposal, source, state, metadata, run, publish };
 }

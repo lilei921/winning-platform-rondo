@@ -39,7 +39,7 @@ export async function authorizedCheckout(issueKey: string, repoKey: string, root
   } else throw new FailError("不支持当前 TFS Type");
   const registry = readNativeRepoMapping(root, revision, server);
   if (!bug) {
-    const approved = await guardRepository({ runtime, registry }, client, issueKey, md["analysis.change_ref"], repoKey);
+    const approved = await guardRepository({ runtime, registry }, client, issueKey, repoKey);
     if (approved.source.commit !== revision || approved.issue.metadata?.["analysis.source"] !== md["analysis.source"] ||
         approved.issue.metadata?.["analysis.human_approval"] !== md["analysis.human_approval"] || approved.tfsId !== tfsId)
       throw new UnknownError("批准来源在授权期间变化");

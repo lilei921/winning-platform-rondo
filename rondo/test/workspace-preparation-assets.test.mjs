@@ -44,8 +44,11 @@ test("workspace preparation is owned by one Skill; delivery contracts remain in 
   assert.ok(analysis.includes("rondo analysis validate") && analysis.includes("rondo analysis publish"));
   const dev = read("agents/engineer/instructions.md");
   assert.ok(dev.includes("rondo analysis read") && dev.includes("pull-request"));
+  assert.ok(dev.includes("更新 `tasks.md` 的完成状态"));
+  assert.doesNotMatch(dev, /rondo change update-progress|--change-ref/);
+  assert.doesNotMatch(read("skills/native-workspace/SKILL.md"), /--change-ref/);
   assert.ok(bugAgent.includes("pull-request"));
-  for (const command of ["rondo change update-progress", "rondo dev publish"]) {
+  for (const command of ["rondo dev publish"]) {
     assert.ok(dev.includes(command), command);
     assert.ok(!bug.includes(command), command);
   }
