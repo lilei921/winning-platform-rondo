@@ -5,7 +5,7 @@ import { loadMcpSpecs, reconcileMcpServers, reconcileMcpBindings, type McpDeps, 
 const template = { connection_file: "test.local.json", enabled_tools: ["search"], default_tools_approval_mode: "approve" };
 const manifest = { mcp_servers: [{ name: "remote-ripgrep", template: "remote-ripgrep.json" }], agents: [
   { name: "Wayfinder", mcp_servers: ["remote-ripgrep"] },
-  { name: "Analyst", mcp_servers: ["remote-ripgrep"], mcp_phase: "08-b" as const },
+  { name: "Analyst", mcp_servers: ["remote-ripgrep"] },
 ] };
 const secret = JSON.stringify({ url: "https://example.test/mcp/private-token", headers: { Authorization: "Bearer private-secret" } });
 
@@ -13,6 +13,7 @@ const secret = JSON.stringify({ url: "https://example.test/mcp/private-token", h
 function fixture(overlay: McpOverlay = {}) {
   const servers: any[] = [];
   const bindings: any[] = [];
+  const analystBindings: any[] = [];
   const calls: { args: string[]; input?: string; transient?: boolean }[] = [];
   const deps: McpDeps = {
     cli: ["multica", "--profile", "test"], workspaceId: "ws-1", dryRun: false,
@@ -24,30 +25,32 @@ function fixture(overlay: McpOverlay = {}) {
         if (args.includes("add")) { servers.push({ id: "mcp-1", name: "remote-ripgrep" }); return servers[0]; }
         if (args.includes("update")) return servers[0];
       } else {
-        if (args.includes("list")) return structuredClone(bindings);
-        if (args.includes("add")) { bindings.push({ id: "mcp-1", name: "remote-ripgrep", enabled: true }); return {}; }
-        if (args.includes("enable")) { bindings[0].enabled = true; return {}; }
+        const current = args.includes("a-2") ? analystBindings : bindings;
+        if (args.includes("list")) return structuredClone(current);
+        if (args.includes("add")) { current.push({ id: "mcp-1", name: "remote-ripgrep", enabled: true }); return {}; }
+        if (args.includes("enable")) { current[0].enabled = true; return {}; }
       }
       throw new Error("unexpected call");
     },
   };
   const specs = loadMcpSpecs(manifest, overlay, () => template);
-  return { deps, specs, calls, servers, bindings };
+  return { deps, specs, calls, servers, bindings, analystBindings };
 }
 
 test("创建、持久化 ID、绑定并回读；重复执行不覆盖连接配置", () => {
   const f = fixture();
   reconcileMcpServers(f.specs, f.deps, () => secret);
-  reconcileMcpBindings(manifest.agents, { Wayfinder: "a-1" }, f.specs, f.deps);
+  reconcileMcpBindings(manifest.agents, { Wayfinder: "a-1", Analyst: "a-2" }, f.specs, f.deps);
   assert.equal(f.deps.overlay.mcp_servers?.["remote-ripgrep"].id, "mcp-1");
   assert.equal(f.bindings[0].enabled, true);
+  assert.equal(f.analystBindings[0].enabled, true);
   const write = f.calls.find(c => c.input)!;
   assert.deepEqual(JSON.parse(write.input!), { ...JSON.parse(secret), enabled_tools: ["search"], default_tools_approval_mode: "approve" });
   assert.ok(write.args.includes("--server-config-stdin"));
   assert.ok(!JSON.stringify(f.deps.overlay).includes("private-"));
   f.calls.length = 0;
   reconcileMcpServers(f.specs, f.deps, () => "");
-  reconcileMcpBindings(manifest.agents, { Wayfinder: "a-1" }, f.specs, f.deps);
+  reconcileMcpBindings(manifest.agents, { Wayfinder: "a-1", Analyst: "a-2" }, f.specs, f.deps);
   assert.ok(f.calls.every(c => c.args.includes("list")));
 });
 
@@ -61,18 +64,19 @@ test("缺凭据在任何 MCP 写入前停止；错误不包含秘密", () => {
 test("dry-run 无凭据也能预演缺失配置，overlay 和平台零写入", () => {
   const f = fixture(); f.deps.dryRun = true;
   reconcileMcpServers(f.specs, f.deps, () => "");
-  reconcileMcpBindings(manifest.agents, { Wayfinder: "a-1" }, f.specs, f.deps);
+  reconcileMcpBindings(manifest.agents, { Wayfinder: "a-1", Analyst: "a-2" }, f.specs, f.deps);
   assert.deepEqual(f.deps.overlay, {});
   assert.deepEqual(f.servers, []);
   assert.ok(f.deps.created.includes("mcp/remote-ripgrep"));
   assert.ok(f.deps.created.includes("agent/Wayfinder/mcp/remote-ripgrep"));
+  assert.ok(f.deps.created.includes("agent/Analyst/mcp/remote-ripgrep"));
 });
 
 test("接管唯一同名条目，启用已有禁用绑定，不覆盖配置或无关条目", () => {
   const f = fixture(); f.servers.push({ id: "mcp-1", name: "remote-ripgrep" }, { id: "other", name: "unmanaged" });
   f.bindings.push({ id: "mcp-1", name: "remote-ripgrep", enabled: false });
   reconcileMcpServers(f.specs, f.deps, () => "");
-  reconcileMcpBindings(manifest.agents, { Wayfinder: "a-1" }, f.specs, f.deps);
+  reconcileMcpBindings(manifest.agents, { Wayfinder: "a-1", Analyst: "a-2" }, f.specs, f.deps);
   assert.equal(f.bindings[0].enabled, true);
   assert.ok(f.calls.every(c => !c.input));
   assert.ok(f.deps.unmanaged.includes("mcp/unmanaged"));
@@ -98,16 +102,15 @@ test("显式更新保留 ID；更新失败不输出平台回显的凭据", () =>
   assert.throws(() => reconcileMcpServers(f.specs, f.deps, () => secret, ["remote-ripgrep"]), e => /结果未知/.test(String(e)) && !String(e).includes("private-"));
 });
 
-test("08-B 绑定仅在显式选择阶段时生效；缺 Agent 报告未完成", () => {
-  const f = fixture({ mcp_phase: "08-b" });
+test("所有声明 MCP 的 Agent 均需绑定；缺 Agent 报告未完成", () => {
+  const f = fixture();
   f.servers.push({ id: "mcp-1", name: "remote-ripgrep" });
   reconcileMcpServers(f.specs, f.deps, () => "");
   assert.throws(() => reconcileMcpBindings(manifest.agents, { Wayfinder: "a-1" }, f.specs, f.deps), /Analyst/);
 });
 
-test("模板路径、引用、阶段和凭据覆盖严格校验", () => {
+test("模板路径、引用和凭据覆盖严格校验", () => {
   assert.throws(() => loadMcpSpecs({ ...manifest, mcp_servers: [{ name: "x", template: "../secret.json" }] }, {}, () => template));
-  assert.throws(() => loadMcpSpecs(manifest, { mcp_phase: "oops" } as any, () => template));
   assert.throws(() => loadMcpSpecs({ ...manifest, agents: [{ name: "x", mcp_servers: ["missing"] }] }, {}, () => template));
   const f = fixture();
   assert.throws(() => reconcileMcpServers(f.specs, f.deps, () => JSON.stringify({ url: "https://example.test", enabled_tools: ["write_file"] })));
@@ -128,7 +131,7 @@ test("文件读取异常脱敏，workspace 可引用专用连接文件", () => {
 test("MCP 读命令标记为可重试，写命令不标记", () => {
   const f = fixture();
   reconcileMcpServers(f.specs, f.deps, () => secret);
-  reconcileMcpBindings(manifest.agents, { Wayfinder: "a-1" }, f.specs, f.deps);
+  reconcileMcpBindings(manifest.agents, { Wayfinder: "a-1", Analyst: "a-2" }, f.specs, f.deps);
   // 幂等读（清单读取、绑定读取）允许传输层重试。
   for (const call of f.calls.filter(c => c.args.includes("list"))) {
     assert.equal(call.transient, true, call.args.join(" "));

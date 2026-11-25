@@ -45,11 +45,6 @@ function fixture(t, { skip = false, schema = "intentional-change", estimate = tr
     metadata: {
       "tfs.type": "需求", "tfs.id": "1234",
       "analysis.change_kind": schema === "corrective-change" ? "corrective" : "intentional", "analysis.change_ref": "d1-internal-1234",
-      "analysis.ai_review.verdict": "APPROVED",
-      "analysis.ai_review.findings_ref": "openspec/changes/d1-internal-1234/proposal.md",
-      "analysis.verify_agent.recommendation": "not_required",
-      "analysis.verify_agent.reason": "No isolated review needed for internal refactor",
-      "analysis.verify_agent.focus_refs": JSON.stringify(["openspec/changes/d1-internal-1234/proposal.md"]),
     },
   }));
   chmodSync(MOCK, 0o755);
@@ -59,7 +54,7 @@ function fixture(t, { skip = false, schema = "intentional-change", estimate = tr
   } }));
   function gate() {
     const r = spawnSync(process.execPath, [
-      CLI, "analysis", "validate", "--issue", "issue-1", "--openspec-root", root,
+      CLI, "analysis", "validate", "--change-ref", "d1-internal-1234", "--issue", "issue-1", "--openspec-root", root,
       "--workspace-id", "ws-test", "--multica", MOCK, "--registry-config", configPath,
     ], {
       encoding: "utf8", env: { ...process.env, MOCK_STATE: statePath, MOCK_EXPECT_PROFILE: "private", MOCK_EXPECT_SERVER: "https://private.example" }, timeout: 30_000,
@@ -177,11 +172,10 @@ for (const [operation, delta, expected] of [
   });
 }
 
-test("D3-A: corrective-change enforces Corrective Proposal instead of Intentional specs skip", { skip: !usable }, (t) => {
+test("D3-A: corrective-change has no English keyword Gate", { skip: !usable }, (t) => {
   const f = fixture(t, { skip: true, schema: "corrective-change" });
   const r = f.gate();
-  assert.equal(acceptance(r).result, "FAIL", JSON.stringify(r.body));
-  assert.match(acceptance(r).reasons.join("\n"), /Expected Behavior|Root Cause/);
+  assert.equal(acceptance(r).result, "PASS", JSON.stringify(r.body));
 });
 
 test("D3-B: Requirement Analysis Gate PASS does not require TFS work estimate", { skip: !usable }, t => {

@@ -54,7 +54,8 @@ test("非 Git 目录、文件和不存在的目录均拒绝", (t) => {
   for (const candidate of [dir, file, join(dir, "missing")]) {
     assert.throws(() => validateRootRepo(candidate, "测试"), UnknownError);
   }
-  assert.throws(() => validateRootRepo("relative", "测试"), /不是当前系统语义下的绝对路径/);
+  assert.throws(() => validateRootRepo("relative", "RONDO_WORKSPACE_PATH"), /不是当前系统语义下的绝对路径/);
+  assert.throws(() => validateRootRepo("", "--root-repo"), /根仓路径为空/);
 });
 
 test("linked worktree 的 .git 文件仍被识别为合法根仓", (t) => {
@@ -88,6 +89,12 @@ test("缺少显式根仓直接拒绝，不查询 Project 挂载或隐式沿用 c
   assert.throws(() => resolveRuntimePaths(cfg, { issue: { project_id: "project" } }), /必须显式传入 --root-repo/);
 });
 
+test("持久环境路径要求绝对路径", (t) => {
+  const { repo } = fixture(t);
+  assert.equal(resolveRuntimePaths({}, { rootRepoArg: repo, rootRepoOrigin: "RONDO_WORKSPACE_PATH" }).rootRepo, git(repo, "rev-parse", "--show-toplevel"));
+  assert.throws(() => resolveRuntimePaths({}, { rootRepoArg: ".", rootRepoOrigin: "RONDO_WORKSPACE_PATH" }), /绝对路径.*RONDO_WORKSPACE_PATH/);
+});
+
 test("调用需要 OpenSpec 时拒绝缺少该目录的根仓", (t) => {
   const { repo } = fixture(t);
   assert.throws(() => resolveRuntimePaths({}, { rootRepoArg: repo, need: ["openspec"] }), /openspec\/ 目录不存在/);
@@ -117,6 +124,15 @@ test("本地根仓 CLI 无需平台配置即可解析；缺少显式路径不尝
   const r = spawnSync(process.execPath, [CLI, "runtime", "resolve-root-repo", "--root-repo", repo], { encoding: "utf8" });
   assert.equal(r.status, 0, r.stderr);
   assert.equal(JSON.parse(r.stdout).root_repo, git(repo, "rev-parse", "--show-toplevel"));
+  for (const [cwd, arg] of [[repo, "."], [dirname(repo), "中文 repo"]]) {
+    const relative = spawnSync(process.execPath, [CLI, "runtime", "resolve-root-repo", "--root-repo", arg], { cwd, encoding: "utf8" });
+    assert.equal(relative.status, 0, relative.stderr);
+    assert.deepEqual(JSON.parse(relative.stdout), JSON.parse(r.stdout));
+  }
+  mkdirSync(join(repo, "nested"));
+  const nested = spawnSync(process.execPath, [CLI, "runtime", "resolve-root-repo", "--root-repo", "nested"], { cwd: repo, encoding: "utf8" });
+  assert.equal(nested.status, 3);
+  assert.match(JSON.parse(nested.stdout).reason, /不是 Git 根仓/);
   const missing = spawnSync(process.execPath, [CLI, "runtime", "resolve-root-repo"], { encoding: "utf8" });
   assert.equal(missing.status, 64);
   assert.match(missing.stderr, /--root-repo/);
@@ -144,4 +160,13 @@ test("现场只读业务仓可通过子进程 cwd 读取分支且不改变 Lead 
   assert.equal(result.stdout.trim(), git(hub, "rev-parse", "--abbrev-ref", "HEAD"));
   assert.notEqual(result.stdout.trim(), "");
   assert.equal(process.cwd(), before);
+});
+
+test("prepare-root 显式空路径不回退持久环境变量", t => {
+  const { repo } = fixture(t);
+  const r = spawnSync(process.execPath, [CLI, "runtime", "prepare-root", "--root-repo", ""], {
+    cwd: repo, encoding: "utf8", env: { ...process.env, RONDO_WORKSPACE_PATH: repo, RONDO_WORKSPACE_BRANCH: "dev" },
+  });
+  assert.equal(r.status, 3, r.stderr);
+  assert.match(JSON.parse(r.stdout).reason, /根仓路径为空/);
 });

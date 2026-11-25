@@ -1,7 +1,7 @@
 import { loadConfig, type BaseRegistryConfig, type RuntimeConfig } from "../../clients/config.js";
 import { UnknownError } from "../../cli/errors.js";
 
-/** Analysis 三个步骤共用配置身份；在读取或写入 Issue 之前验证工作区和环境。 */
+/** Analysis 命令共用配置身份；在读取或写入 Issue 之前验证工作区和环境。 */
 export function analysisRuntime(argv: string[], cli: string, workspaceId: string | null): RuntimeConfig {
   const arg = (name: string): string | undefined => {
     const i = argv.indexOf(name);

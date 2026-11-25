@@ -83,7 +83,7 @@ Analysis 和 Development 在常驻根仓编辑工件。每次正式发布以一�
 1. 在选定的根仓保存本次编辑。按阶段检查适用的工件、Validation 和 Gate，核对本次已提交差异。保存当前 Change 时保留其他需求的暂存和工作区内容。切换分支前保存各需求的操作另见 §3.2。
 2. 仅提取 `openspec/changes/<change_ref>/` 内本次已提交的新增、修改和删除。即使同一本地 Commit 同时包含 A 和 B，发布 A 时也只取 A 的差异。未提交内容、其他需求和目录外共享文件留在本地。
 3. Fetch 远端同名分支，以其最新提交为基线应用上述差异。用普通 Push 发布本次结果。远端基线为 R、本地历史为 R → B → A 时，可以生成远端 R → A′ 并保留本地 B 和 A。其他需求的本地提交无需先行清理、审核或推送。
-4. 回读远端历史与工件，登记本次实际发布的 SHA。分析交接记录在 `analysis.source`，研发阶段的新 SHA 记录在本次交付中，原批准版本保持固定。
+4. Git Fetch 确认候选 Commit 在正确目标分支可达，登记本次实际发布的 SHA。Analysis 在 Push 前核对候选契约与本次 Gate 一致，发布后不重复通过 REST 读取工件正文。分析交接记录在 `analysis.source`，研发阶段的新 SHA 记录在本次交付中，原批准版本保持固定。
 
 不同 Change 共享 Git Index。遇到短暂 `index.lock` 等本地写锁竞争时，沿用单次 Git 写命令最多 3 次尝试（含首次）的约定。每次重试前确认上次操作结果，保留持续占用的锁及工作区。远端分支竞争按下表处理。
 
@@ -153,7 +153,7 @@ Instructions 仅表达长期专业职责与结果边界；不写 Workspace、Squ
 | `requirement-analysis` | 保留并轻量优化 | 澄清 Intentional 业务目标、规则、Scenario、范围、Repository 影响与必要方案取舍；不负责 OpenSpec 写入、Git 或 Multica 状态 |
 | `codebase-explorer` | 直接复用 | 按需通过只读 MCP 定位业务实现、接口和影响，事实够用即停止 |
 | `spec-preparation` | 重点优化 | 消费已确认的专业结论与项目级 Artifact Contract，使用 OpenSpec CLI New / Prepare / Revise 当前 Change；根仓路径由 Rondo 提供，不再要求 Multica 原生 checkout；不负责 Commit / Push |
-| `analysis-completion` | 重点优化 | 调用 Analysis Stage / Gate / Complete，确认远端 Change 已发布、固定 `analysis.source` 和 `analysis_review` 已回读；Git 锁、Push 历史与重试算法属于 Rondo，不复制进 Skill |
+| `analysis-publish` | 重点优化 | 调用 Analysis Stage / Gate / Complete，确认远端 Change 已发布、固定 `analysis.source` 和 `analysis_review` 已回读；Git 锁、Push 历史与重试算法属于 Rondo，不复制进 Skill |
 | `bug-analysis` | 按需保留 | 仅在 Requirement 实质为 Corrective 时进行根因诊断；不强制普通 Intentional 使用 |
 | `workitem-analysis` | 继续 Retired | 不恢复旧的综合 Workflow Skill |
 
@@ -176,7 +176,7 @@ openspec validate <change_ref> --type change --strict --no-interactive --json
 # 已有：提交审核入口；Analysis Complete 需完成 §3.1 改造后使用
 rondo analysis stage --issue <issue> --facts <facts.json> --workspace-id <workspace-id> --registry-config "<config>"
 rondo analysis validate --issue <issue> --openspec-root "<root>" --workspace-id <workspace-id> --registry-config "<config>" --out openspec/changes/<change_ref>/logs/analysis-gate-result.json
-rondo analysis complete --mode requirement --issue <issue> --facts <facts.json> --workspace-id <workspace-id> --registry-config "<config>" --root-repo "<root>"
+rondo analysis publish --mode requirement --issue <issue> --facts <facts.json> --workspace-id <workspace-id> --registry-config "<config>" --root-repo "<root>"
 rondo analysis read --config "<config>" --issue <issue> --file tasks.md
 ~~~
 
@@ -265,7 +265,7 @@ Independent Verify 新闭环本期暂不实施：`verify_agent.required=false` �
 | --- | --- |
 | Runtime / Agent 配置 | 复用目录选择优先级，统一下发 `RONDO_WORKSPACE_BRANCH`，按 §3.2 准备常驻根仓 |
 | Analysis 和 Development 发布 / Rondo | 共享 §3.1 的单 Change 差异发布与回读，分别登记分析批准来源和研发交付 SHA |
-| Workitem Analyst / Analysis Skills | 聚焦需求分析和工程契约；定向修订现有 Instructions、`requirement-analysis`、`spec-preparation`、`analysis-completion`，保留 MCP 与 `codebase-explorer`；不处理 TFS 任务拆分、合并和数量 |
+| Workitem Analyst / Analysis Skills | 聚焦需求分析和工程契约；定向修订现有 Instructions、`requirement-analysis`、`spec-preparation`、`analysis-publish`，保留 MCP 与 `codebase-explorer`；不处理 TFS 任务拆分、合并和数量 |
 | OpenSpec Change Metadata | `.openspec.yaml` 的 `x-repositories` 明确唯一 Repository Scope；`tasks.md` 按工程需要表达 PR 前任务，不因 TFS 数量调整；项目级 Schema 随根仓 Git 管理，必要时同步修订 03 / 05 |
 | 新 `Engineer` / `change-development` | 新建独立 Agent、Skill 与绑定；通过 Rondo 完成 Change 级研发、发布、Completion 和 PR，不依赖旧 Agent / Skills |
 | Engineer 开工入口 | Fetch、可安全时 Fast-forward；否则按批准 Commit 安全读取当前 Change，不破坏其他 WIP |

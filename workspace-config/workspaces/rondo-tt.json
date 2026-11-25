@@ -2,7 +2,7 @@
   "multica_server_url": "https://api.multica.ai",
   "workspace_id": "3158546f-5b79-4042-baec-20cdac7d9d31",
   "skills": {
-    "analysis-completion": "c25e279c-1ef1-47b7-952f-dfb2b9df4485",
+    "analysis-publish": "c25e279c-1ef1-47b7-952f-dfb2b9df4485",
     "backend-engineering": "ffda0bfc-79b0-45f8-8965-a79b72cf51e6",
     "bug-analysis": "d0d22fa4-fe83-4273-b923-22c265eba61d",
     "bug-delivery": "4909190c-75e7-44c5-bc73-66f84395d43f",

@@ -2,7 +2,7 @@
   "multica_server_url": "http://172.17.1.97:8080",
   "workspace_id": "8ee59678-1124-4196-a8b7-1093bafb9af0",
   "skills": {
-    "analysis-completion": "f992b472-135b-4595-9429-fdbe41310e7e",
+    "analysis-publish": "f992b472-135b-4595-9429-fdbe41310e7e",
     "backend-engineering": "71163e0c-cad5-4fbd-bd89-d72d4ec25020",
     "bug-analysis": "c59650b9-e5e6-423d-a0a4-90b8379c7664",
     "bug-delivery": "4a530b55-f46d-48c3-a8b7-93c0e75ba413",

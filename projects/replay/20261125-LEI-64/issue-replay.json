@@ -1,0 +1,94 @@
+{
+  "schema": "multica-issue-replay/v2",
+  "profile": "",
+  "server_url": null,
+  "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+  "issue_id": "01a211df-205a-7e3c-8598-dac06f6a59c0",
+  "identifier": "LEI-64",
+  "collected_at": "2026-11-25T18:27:59+08:00",
+  "coverage": "partial",
+  "sessions": [
+    {
+      "session_id": "dd5f99e6-2b3f-4640-953d-94772df48946",
+      "provider": "claude",
+      "run_ids": [
+        "01a21212-f13c-7b0f-a94a-6446308f1528"
+      ],
+      "agent_ids": [
+        "3068117f-163c-4ba9-86bf-fae3bfc1f6bf"
+      ],
+      "started_at": "2026-11-25T17:39:21+08:00",
+      "completed_at": "2026-11-25T17:41:12+08:00",
+      "tool_calls_total": 28,
+      "replay": "wayfinder/20261125-1739-dd5f99e6/replay.json",
+      "timeline": "wayfinder/20261125-1739-dd5f99e6/timeline.md",
+      "verification": "PASS"
+    },
+    {
+      "session_id": "e5e21a79-0b80-4966-a4a9-e10983a87439",
+      "provider": "claude",
+      "run_ids": [
+        "01a21215-1c34-7b04-849e-78560194775c"
+      ],
+      "agent_ids": [
+        "46e4b7dd-d186-470e-beb3-2c2d322871e1"
+      ],
+      "started_at": "2026-11-25T17:41:43+08:00",
+      "completed_at": "2026-11-25T18:02:52+08:00",
+      "tool_calls_total": 120,
+      "replay": "workitem-analyst/20261125-1741-e5e21a79/replay.json",
+      "timeline": "workitem-analyst/20261125-1741-e5e21a79/timeline.md",
+      "verification": "PARTIAL"
+    },
+    {
+      "session_id": "40363905-7d72-482c-b131-13b3031c2b65",
+      "provider": "claude",
+      "evidence_type": "platform_run_messages",
+      "run_ids": [
+        "01a21214-7418-7b62-bbfd-865fe530e42a"
+      ],
+      "agent_ids": [
+        "3c1c3ac1-a922-4e7b-abdf-07a6268398a3"
+      ],
+      "started_at": "2026-11-25T17:41:00+08:00",
+      "completed_at": "2026-11-25T17:41:54+08:00",
+      "tool_calls_total": 7,
+      "replay": "delivery-lead/20261125-1741-40363905/replay.json",
+      "timeline": "delivery-lead/20261125-1741-40363905/timeline.md",
+      "verification": "PARTIAL"
+    }
+  ],
+  "agents": [
+    {
+      "id": "3068117f-163c-4ba9-86bf-fae3bfc1f6bf",
+      "name": "Wayfinder Agent"
+    },
+    {
+      "id": "3c1c3ac1-a922-4e7b-abdf-07a6268398a3",
+      "name": "Delivery Lead"
+    },
+    {
+      "id": "46e4b7dd-d186-470e-beb3-2c2d322871e1",
+      "name": "Workitem Analyst"
+    }
+  ],
+  "agent_warnings": [],
+  "agent_directories": {
+    "3068117f-163c-4ba9-86bf-fae3bfc1f6bf": "wayfinder",
+    "3c1c3ac1-a922-4e7b-abdf-07a6268398a3": "delivery-lead",
+    "46e4b7dd-d186-470e-beb3-2c2d322871e1": "workitem-analyst"
+  },
+  "session_directories": {
+    "dd5f99e6-2b3f-4640-953d-94772df48946": "wayfinder/20261125-1739-dd5f99e6",
+    "e5e21a79-0b80-4966-a4a9-e10983a87439": "workitem-analyst/20261125-1741-e5e21a79",
+    "40363905-7d72-482c-b131-13b3031c2b65": "delivery-lead/20261125-1741-40363905"
+  },
+  "run_count": 3,
+  "active_run_count": 0,
+  "tool_calls_total": 155,
+  "subagent_tool_calls_total": 0,
+  "gaps": [
+    "Delivery Lead session 40363905-7d72-482c-b131-13b3031c2b65 的原生 Claude transcript 位于不可访问的远端 Linux runtime；已导出 61 条平台 run-messages 作为平台级回放，未完成原生日志核验",
+    "Workitem Analyst session e5e21a79-0b80-4966-a4a9-e10983a87439 被人工取消：120 次工具调用均已导出，但最后 1 次工具调用没有结果且无最终回复，因此保持 PARTIAL"
+  ]
+}

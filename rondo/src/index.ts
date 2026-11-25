@@ -15,7 +15,7 @@
  * 保证 stdout JSON、退出码与用法错误消息逐字节等价。
  */
 
-import { Command, CommanderError } from "commander";
+import { Command, CommanderError, Option } from "commander";
 import { isSea } from "node:sea";
 import { ExitSignal, hasLeafExecuted, logLine } from "./cli/output.js";
 import { TOOL_VERSION } from "./cli/version.js";
@@ -23,8 +23,7 @@ import { registerTfsApiLeaf } from "./tfs/runner.js";
 import { registerResolveIdentity } from "./commands/change/resolve-identity.js";
 import { registerUpdateProgress } from "./commands/change/update-progress.js";
 import { registerAnalysisValidate } from "./commands/analysis/validate.js";
-import { registerAnalysisComplete } from "./commands/analysis/complete.js";
-import { registerAnalysisStage } from "./commands/analysis/stage.js";
+import { registerAnalysisPublish } from "./commands/analysis/publish.js";
 import { registerAnalysisRead } from "./commands/analysis/read.js";
 import { registerAnalysisApprove } from "./commands/analysis/approve.js";
 import { registerDevMaterialize } from "./commands/dev/materialize.js";
@@ -39,7 +38,7 @@ import { registerRuntimeCheckCheckout } from "./commands/runtime/check-checkout.
 import { registerRuntimePrepareRoot } from "./commands/runtime/prepare-root.js";
 import { registerRuntimeGetContext } from "./commands/runtime/get-context.js";
 import { registerBugResume } from "./commands/bug/resume.js";
-import { registerDeliveryHandoff } from "./commands/delivery/handoff.js";
+import { registerDeliveryAdmission } from "./commands/delivery/handoff.js";
 import { registerTfsMaterializeTasks } from "./commands/tfs/materialize-tasks.js";
 import { registerTfsResolveTasks } from "./commands/tfs/resolve-tasks.js";
 import { registerTfsReconcileWorkitem } from "./commands/tfs/reconcile-workitem.js";
@@ -57,12 +56,14 @@ import { registerWorkspaceMigrateRepoKeys } from "./commands/workspace/migrate-r
 import { registerWorkspaceCheckDaemon } from "./commands/workspace/check-daemon.js";
 import { registerRuntimeResolveRootRepo } from "./commands/runtime/resolve-root-repo.js";
 import { registerDoctor } from "./commands/doctor/doctor.js";
+import { registerOpenspecInstall } from "./commands/openspec/install.js";
 
 const program = new Command();
 
 program
   .name("rondo")
-  .description("rondo —— Multica 交付流水线统一 CLI(stdout 只出 JSON;退出码 0/2/3/64)")
+  .description("rondo —— Multica 交付流水线统一 CLI(业务结果默认 JSON;退出码 0/2/3/64)")
+  .addOption(new Option("--output <format>", "显式请求 JSON 输出（业务命令默认 JSON）").choices(["json"]))
   // --version 输出 JSON(方案 §4.4,沿用 tfs-cli 字段形状)
   .version(
     JSON.stringify({ name: "@winning/rondo", version: TOOL_VERSION, node: process.version, sea: isSea() }, null, 2),
@@ -84,9 +85,8 @@ registerResolveIdentity(change);
 registerUpdateProgress(change);
 
 const analysis = bareGroup(program.command("analysis").description("Analysis Gate 与收口(02 §5.4/§12.1)"));
-registerAnalysisStage(analysis);
 registerAnalysisValidate(analysis);
-registerAnalysisComplete(analysis);
+registerAnalysisPublish(analysis);
 registerAnalysisRead(analysis);
 registerAnalysisApprove(analysis);
 
@@ -121,7 +121,7 @@ registerTfsApiLeaf(pr, "list", ["pr", "list"], "列出 TFS PR(--status/--source-
 
 const delivery = bareGroup(program.command("delivery").description("入口交接、Human Decision 路由与交付收口(02 §4.1/§11.2/§12)"));
 registerDeliveryRouteDecision(delivery);
-registerDeliveryHandoff(delivery);
+registerDeliveryAdmission(delivery);
 registerDeliveryFinalize(delivery);
 registerCloseoutRoot(delivery);
 
@@ -138,6 +138,10 @@ registerRuntimeResolveRootRepo(runtime);
 registerRuntimeCheckCheckout(runtime);
 registerRuntimePrepareRoot(runtime);
 registerRuntimeGetContext(runtime);
+
+// openspec 组：Schema 安装（随包分发，用户级全局目录）
+const openspec = bareGroup(program.command("openspec").description("OpenSpec Schema 安装"));
+registerOpenspecInstall(openspec);
 
 // TFS API 叶子(原 tfs-cli):query 顶级;repo/branch/workitem 各自成组
 registerTfsApiLeaf(program, "query", ["query"], "WIQL 查询(--wiql 必填)");

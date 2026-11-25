@@ -80,7 +80,7 @@ Internal Method Module（内部方法模块）
 3. 独立抽取是否减少耦合与重复，而不是增加固定流程、隐式跨 Skill 调用或启动成本？
 4. 该内容是专业能力还是单个 Skill 内的工程技巧 / 可确定性脚本？后者优先保留为 Internal Method / Script。
 
-当前 `bug-analysis`、`requirement-analysis`、`codebase-explorer`、`spec-preparation` 已作为独立 Skill 源文件由 Workitem Analyst 按需组合；`analysis-completion` 负责提交并调用 Analysis Gate；Workitem Analyst 不需要额外绑定 `delivery-gate`。原 `workitem-analysis` 已退役并保留历史源文件；`requirement-review` 属按需专业活动，不因历史命名自动注册独立 Skill。新增 Skill 不强制引入新的 Run、Stage、Method Registry 或 Artifact。
+当前 `bug-analysis`、`requirement-analysis`、`codebase-explorer`、`spec-preparation` 已作为独立 Skill 源文件由 Workitem Analyst 按需组合；`analysis-publish` 负责提交并调用 Analysis Gate；Workitem Analyst 不需要额外绑定 `delivery-gate`。原 `workitem-analysis` 已退役并保留历史源文件；`requirement-review` 属按需专业活动，不因历史命名自动注册独立 Skill。新增 Skill 不强制引入新的 Run、Stage、Method Registry 或 Artifact。
 
 **Right-sized Execution**：Agent 按证据充分性、变更影响和风险决定调查深度与可选方法；Skill 内完整 Procedure 仅在存在真实依赖时定义硬顺序。批准、必要验证、可靠 Evidence、Gate 和有副作用的状态写入仍是 Hard Constraints，不能因小任务省略。
 

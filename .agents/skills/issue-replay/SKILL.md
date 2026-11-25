@@ -83,6 +83,7 @@ python .agents/skills/issue-replay/scripts/autopilot_replay.py <autopilot-uuid> 
 - 退出码 `0`：快照覆盖完整；`2`：已落盘但有缺口；`1`：采集、身份校验或写入失败。
 - `source-manifest.json` 记录来源路径、大小、SHA-256、公开工具事件 ID/次数/顺序、消息比对、各 provider 的 Run 执行区间覆盖、坏行、未支持事件和子代理核验。导出前后来源哈希变化时不报告完整。
 - 运行中的 Run、缺失 session/log、不支持的 provider 或日志格式均明确报告 `partial`。旧版非 `item_completed` 日志可由共享导出器导出，但当前完整性核验不支持，不能标为完整。
+- 暂停/取消等未完成 Run 的平台 `result` 不写 session_id 时，按 `work_dir` 的 Claude 编码目录与 Run 执行时间窗口关联本地会话并导出已有记录，回放标记 `partial`；无法定位或匹配到多个会话时保留缺口，不用目录名或最新会话替代证据。
 - Codex 完整性按 `item_completed` 粒度及 `task_started/task_complete` 执行区间核验。`response_item` 中的 `exec` 编排外壳单独统计，注入的运行上下文不重复算作用户消息；只含旧格式的 rollout 或未被完成事件覆盖的其他旧工具/Assistant 消息标为缺口。
 - Claude 复用 `.claude/skills/session-replay/scripts/session-export.py`，核验公开消息、`tool_use/tool_result` 的顺序、结果与错误标志，并合并恢复日志、检查子代理。每个 Run 必须匹配执行窗口内的公开请求与最终回复（首请求允许平台开始登记最多延迟 5 秒）；优先与平台最终输出比对，平台无输出时要求原生 `end_turn`。缺失结果、身份不符、未知事件、重复冲突或 Run 证据缺失均为 `partial`，不伪造 Codex 任务边界。
 - `complete` 表示采集到的 Run 与公开完成事件覆盖通过，不表示 Issue 业务完成，也不表示回放是原始日志逐字副本。工具失败次数不等于回放生成失败。

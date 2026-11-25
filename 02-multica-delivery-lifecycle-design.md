@@ -43,7 +43,7 @@
 
 整个研发任务默认作为一个完整的 **Issue** 管理。
 
-一个配置范围内的 TFS Work Item 默认对应一个 Issue。**自动 TFS 同步入口**先由 Wayfinder Agent 探索和准入，`eligible` 后根据 `tfs.type` 交 Bug Fix Agent 或 Delivery Squad；明确直接委派给 Squad / Workitem Analyst 的 Analysis 可以绕过 Wayfinder，不将其作为所有 Analysis 的强制 Gate。后续 Analysis Gate 与 Human Approval 规则不变。
+一个配置范围内的 TFS Work Item 默认对应一个 Issue。**自动 TFS 同步入口**先由 Wayfinder Agent 探索和准入，`accepted` 后根据 `tfs.type` 交 Bug Fix Agent 或 Delivery Squad；明确直接委派给 Squad / Workitem Analyst 的 Analysis 可以绕过 Wayfinder，不将其作为所有 Analysis 的强制 Gate。存在实际工程增量时，后续 Analysis Gate 与 Human Approval 规则不变；无需工程增量时，Analyst 在当前 Issue Comment 记录专业结论、关键依据和处理建议，复用原生回流，不生成 Change、Gate 或研发批准，不得借此绕过已生效的工程契约。
 
 研发过程中：
 
@@ -53,7 +53,7 @@
 - Regression / Integration / E2E 是 Verification Method；责任执行者由 Runtime Projection（运行时投影） 确定为 Engineer，或在已批准 Independent Verification（独立验证） 与 Verification Task 范围重合时为 Verify Agent；CI / script / test runner 仅作为执行机制；
 - Verify Agent 是按需参与的 **Independent Verification Executor**，只有 `verify_agent.required=true` 时才增加独立验收者；
 - 本期默认不创建 Development Sub-Issue；当前 Issue 内通过 `@mention + task_refs` 分工，多个 Tasks、Engineer、Repository 或 PR 不需要拆分 Issue；
-- **Workitem Analyst 负责需求与问题分析及研发准备，澄清目标、业务场景、行为规则、范围和验收要求，形成后续研发依据，并在 `analysis-completion` 中提交审核、回读确认；Human 作出决定，Delivery Lead 理解意见并组织后续协作；**
+- **Workitem Analyst 负责需求与问题分析及研发准备，澄清目标、业务场景、行为规则、范围和验收要求，形成后续研发依据，并在 `analysis-publish` 中提交审核、回读确认；Human 作出决定，Delivery Lead 理解意见并组织后续协作；**
 - **获准自动交付的 Corrective / Intentional 均采用 OpenSpec Change Model；Corrective 使用专用轻量产物契约，Intentional 保留规格驱动分析与实施；Multica 继续负责独立 Agent Run、运行与协作；**
 - **Delivery Lead 在已批准的需求、方案与验收边界内，结合当前 Roster 正常承担成员选择、工作分工与交接；独立工作使用 Assignment，当前 Issue 内协作使用 `@mention`；**
 - **启动、Assignment、`@mention` 与 Parent / Stage 回流优先复用 Multica；简单成员分工由协作规则表达，业务硬条件、物化、副作用与幂等由必要的 Script / Gate 承担；**
@@ -77,19 +77,21 @@ Issue（同步初始化完成后保持 backlog + Wayfinder Agent）
                          │ Human 手动改 todo，保留 Wayfinder 指派
                          ▼
 Wayfinder Agent（Squad 外）
-   workitem-triage → codebase-explorer（按需深入探索）
-   Triage Decision + Evidence → /note Comment → 回读
+   Wayfinder Instructions；按需 codebase-explorer
+   Triage Decision + Evidence → 确认 /note 已记录 → admission
                          │
          ┌───────────────┼────────────────┐
          ▼               ▼                ▼
-      eligible       needs_human       unsupported
+      accepted       needs_human       unsupported
          │           blocked + Wayfinder   unsupported（终止状态）
          │           Human Comment → Wayfinder    当前自动交付终止
          ▼
 Delivery Squad（status = todo；Assignment Trigger 自动启动）
-         │ 仅已激活 eligible Issue
+         │ 仅已激活 accepted Issue
          ▼
 Delivery Lead → @Workitem Analyst
+         ▼
+Analysis（无工程增量 → 当前 Issue Comment；下方仅实际工程增量）
          ▼
 Analysis Package → Analysis Gate → analysis_review
          ▼
@@ -112,7 +114,7 @@ PR Materialization → PR Status Sync → Finalize / Archive
 TFS Close / Issue Done
 ```
 
-上述自动 TFS 入口只有在 `eligible` 且满足启动条件时才继续对应交付路径（Requirement 进入 Squad 分析、Bug 进入独立修复）；明确直接委派的 Analysis 可不经 Wayfinder，仍遵守 Analysis Gate 与 Human Approval。其他准入结论不是正常 Delivery Review。准入事实、Decision、Comment 与恢复的权威规则见 [§4.1.1](#delivery-intake)，下游生命周期见 [§5](#section-5)–[§12](#section-12)。
+上述自动 TFS 入口只有在 `accepted` 且满足启动条件时才继续对应交付路径（Requirement 进入 Squad 分析、Bug 进入独立修复）；明确直接委派的 Analysis 可不经 Wayfinder，实际工程增量仍遵守 Analysis Gate 与 Human Approval。其他准入结论不是正常 Delivery Review。准入事实、Decision、Comment 与恢复的权威规则见 [§4.1.1](#delivery-intake)，下游生命周期见 [§5](#section-5)–[§12](#section-12)。
 
 ## 2.1 Agent（智能体）定位与介绍
 
@@ -121,13 +123,13 @@ TFS Close / Issue Done
 | Agent | 在交付中的位置 | 定位与主要工作 | 交付与边界 |
 |---|---|---|---|
 | **Delivery Lead** | Delivery Squad 的 Leader；父 Delivery 的协调入口 | 理解人工审核意见中的决定、条件与反馈；读取批准边界、当前 Roster 和执行事实，组织成员分工、委派与交接；处理跨角色问题 | 形成可执行的协作安排并持续协调；不重复专业分析、不编写生产代码、不替代验收或 Human Approval（人工批准），也不管理底层 Run 调度 |
-| **Workitem Analyst** | Squad 分析成员 | 澄清需求与问题的目标、业务场景、行为规则、范围及验收要求；结合现有系统分析 Solution / Root Cause / Fix Strategy、影响与约束，按 Change Kind 形成适用规格或修复依据及其他研发准备 | 交付可审核、能支撑研发与验证的逻辑 Analysis Package 及 Verify Agent Recommendation；在 `analysis-completion` 中提交审核并确认状态；不得自行批准、启动研发或关闭 Delivery，不负责最终成员分工 |
+| **Workitem Analyst** | Squad 分析成员 | 澄清需求与问题的目标、业务场景、行为规则、范围及验收要求；结合现有系统分析 Solution / Root Cause / Fix Strategy、影响与约束，按 Change Kind 形成适用规格或修复依据及其他研发准备 | 交付可审核、能支撑研发与验证的逻辑 Analysis Package 及 Verify Agent Recommendation；在 `analysis-publish` 中提交审核并确认状态；不得自行批准、启动研发或关闭 Delivery，不负责最终成员分工 |
 | **Backend Engineer** | 后端专业成员 | 在已批准范围与当前 Task Set 内完成后端实现、Local Validation、Code Review 和整改 | 交付 Commit / Push、PR Preparation 与 Development Evidence（研发证据）；不重新定义需求或决定整个 Delivery 的分工 |
 | **Frontend Engineer** | 前端专业成员 | 在已批准范围与当前 Task Set 内完成前端实现、本地与必要浏览器验证、Code Review 和整改 | 交付当前 Task Set 的工程成果与 Evidence；不把技术步骤自行扩展成新的交付任务 |
 | **Flink Engineer** | Flink / 流处理专业成员 | 在已批准范围与当前 Task Set 内完成流处理实现、相关行为验证、Code Review 和整改 | 交付当前 Task Set 的工程成果与 Evidence；涉及已批准 Contract / Scope 的实质变更时升级 |
 | **Verify Agent** | 按需参与的 Delivery-level 独立验证成员 | 在 `verify_agent.required=true` 时消费已批准 OpenSpec Acceptance / Verification Contract（验证契约），对固定候选 Commit Set 做 independent verification 并归因 Finding | 交付 Verification Report 与失败证据；不拥有 Requirement / Scenario / Verification Task 的 Engineering Contract；可在批准范围内承担 assigned Verification Task 的 Runtime Execution，不替代 Engineer 的 Task Verification / Local Validation / Code Review |
 | **TFS Sync Agent** | Squad 外的 Autopilot Thin Adapter | 通过 `tfs-sync` 获取 TFS 原始事实、调用确定性同步并汇总结果 | 新建 Issue 由 Wayfinder 持有并在完整初始化后受控激活；不做准入语义判断或直接启动 Squad 研发 |
-| **Wayfinder Agent** | Squad 外的 Intake Triage Agent | 使用独立的 `codebase-explorer` 按需深入探索 Repository、代码、调用链与 Spec；通过 `workitem-triage` 形成 `eligible / needs_human / unsupported` 结论 | 写入并回读 `/note` Comment 后受控交接；不做正式 Root Cause / Technical Change Kind 判断 / OpenSpec Preparation |
+| **Wayfinder Agent** | Squad 外的 Intake Triage Agent | 使用独立的 `codebase-explorer` 按需深入探索 Repository、代码、调用链与 Spec；依据 Wayfinder Instructions 形成 `accepted / needs_human / unsupported` 结论 | 确认 `/note` Comment 已记录后受控交接；不做正式 Root Cause / Technical Change Kind 判断 / OpenSpec Preparation |
 | **PR Status Sync Agent** | PR 状态核实与同步 | 核实已登记 PR 的外部状态，使用 `pr-status-sync` 完成状态对账并交付异常与待处理事项 | 对状态事实的准确性负责；不解释 Review 意见、不推断 abandoned 原因或替代交付决策 |
 
 ### 2.1.1 Professional Goal 与 Capability Composition（专业目标和能力组合）
@@ -136,8 +138,8 @@ TFS Close / Issue Done
 
 | Agent | Professional Goal（专业目标） | 可组合能力（已实现 / 候选） | 结果责任 |
 |---|---|---|---|
-| Wayfinder Agent | 依据证据判断 Issue 是否具备进入自动交付分析的条件 | 已实现：`codebase-explorer`（调查）、`workitem-triage`（准入分类） | 准入 Decision、`/note` Evidence 与受控交接 |
-| Workitem Analyst | 将 Work Item 转化为准确、可实施、可验证的分析与工程准备成果 | 当前源文件：`codebase-explorer`、`bug-analysis`、`requirement-analysis`、`spec-preparation`、`analysis-completion` | 可信根因或需求、OpenSpec Change、Verify 推荐与审核提交 |
+| Wayfinder Agent | 依据证据判断 Issue 是否具备进入自动交付分析的条件 | `codebase-explorer`（调查）；Wayfinder Instructions（准入分类） | 准入 Decision、`/note` Evidence 与受控交接 |
+| Workitem Analyst | 将 Work Item 转化为准确、可实施、可验证的分析与工程准备成果 | 当前源文件：`codebase-explorer`、`bug-analysis`、`requirement-analysis`、`spec-preparation`、`analysis-publish` | 可信根因或需求、OpenSpec Change、Verify 推荐与审核提交 |
 | Backend / Frontend Engineer | 在批准范围内完成正确、可维护、可验证的实现 | 已实现：`development-execution`、对应领域 Skill；按需使用 Internal Methods | Task Set 实现、验证、Evidence 与 PR Preparation |
 
 Agent 对专业结果负责并按任务选取能力；Skill 仅负责局部 Capability Outcome。候选 Skill 是否提取应由 [03 §14](03-workitem-analysis-design.md#analysis-section-14) 与 [06](06-method-skill-library-implementation-design.md) 的独立复用证据决定。必要 Gate 与授权、外部副作用顺序不因自主选择方法而改变。
@@ -148,7 +150,7 @@ Agent 对专业结果负责并按任务选取能力；Skill 仅负责局部 Capa
 
 Workitem Analyst 与 Engineer 保持不同 Agent / Run，经已持久化且获批准的产物交接；不为节省 Token 合并角色、假定共享会话或取消必要文档。需求与问题分析、协作安排和工程实现分别承担专业职责，不要求新增三份计划文档。需求结论、必要方案和研发准备按 Owner 保留在 OpenSpec Change / Multica delivery facts / Supporting Evidence（补充证据） References；协作安排保存在当前 Issue 的成员交接和派发事实中；详细实现由 Engineer 在批准边界内决定。
 
-Workitem Analyst 的完整职责与分析完成标准见 [03 §1](03-workitem-analysis-design.md#analysis-stage-scope)，角色契约见 [§2](03-workitem-analysis-design.md#analysis-agent-model)，专业分析与工程准备见 [§6–§9](03-workitem-analysis-design.md#analysis-section-06)；Verify 推荐、提交与 Summary、Analysis Gate 分别见 [§10](03-workitem-analysis-design.md#verify-recommendation)、[§12.1](03-workitem-analysis-design.md#analysis-completion)、[§11.2](03-workitem-analysis-design.md#analysis-gate)。
+Workitem Analyst 的完整职责与分析完成标准见 [03 §1](03-workitem-analysis-design.md#analysis-stage-scope)，角色契约见 [§2](03-workitem-analysis-design.md#analysis-agent-model)，专业分析与工程准备见 [§6–§9](03-workitem-analysis-design.md#analysis-section-06)；Verify 推荐、提交与 Summary、Analysis Gate 分别见 [§10](03-workitem-analysis-design.md#verify-recommendation)、[§12.1](03-workitem-analysis-design.md#analysis-publish)、[§11.2](03-workitem-analysis-design.md#analysis-gate)。
 
 Engineer 的完整职责与完成标准见 [04 §1](04-engineer-development-design.md#engineering-stage-scope)，角色契约见 [§2](04-engineer-development-design.md#development-section-02)，输入、工程执行、Evidence 与 Completion 见 [§3–§11](04-engineer-development-design.md#engineering-input)；技术决策权限与停止边界见 [§12](04-engineer-development-design.md#development-section-12)。
 
@@ -177,10 +179,10 @@ status = todo（同步完成后自动启动）
 Wayfinder Intake Triage（codebase-explorer 深入探索）
  ↓
 /note Comment 持久化并回读确认 → 准入结论
- ├─ eligible → rondo delivery handoff（按 tfs.type 单次 todo + Bug Fix Agent / Delivery Squad Update）
+ ├─ accepted → rondo delivery admission（按 tfs.type 单次 todo + Bug Fix Agent / Delivery Squad Update）
  ├─ needs_human → status = blocked + assignee = Wayfinder（Human Comment 唤醒后重评）
  └─ unsupported → unsupported（终止当前自动交付路径）
- （仅 eligible 且满足启动条件时继续）
+ （仅 accepted 且满足启动条件时继续）
  ↓
 Multica 启动 Delivery Lead（通过准入且被激活）
  ↓
@@ -191,7 +193,7 @@ Analysis Package（逻辑集合）
 + Analysis Handoff Facts
 + Supporting Evidence（按需）
  ↓
-Workitem Analyst 提交并确认 analysis_review，结束本轮分析
+有工程增量时 Workitem Analyst 提交并确认 analysis_review；无工程增量时直接 Comment 回流，结束本轮分析
  ↓
 Human 自然语言审核意见
  ↓
@@ -273,12 +275,12 @@ Merge 后正常 QA / 测试发现的新问题形成新的 TFS Bug / Requirement�
 
 以下 Run 0–1 按研发测试阶段的手动入口描述；目标态将首次 `backlog → todo` 交给 TFS Sync 自动执行，后续准入和交接职责不变，见 [入口阶段约定](#wayfinder-entry-stages)。
 
-**场景假设：** 一个单 Repository、单 Backend Engineer、单 PR 的 Intentional Change，Wayfinder 一次判为 `eligible` 且 `/note` Comment 回读成功；`eligible` 固定自动启动；Analysis 一次审核通过，Human 确认 `verify_agent.required=false`；研发、PR 均一次成功，使用 Parent Issue Runtime。
+**场景假设：** 一个单 Repository、单 Backend Engineer、单 PR 的 Intentional Change，Wayfinder 一次判为 `accepted` 且 `/note` Comment 回读成功；`accepted` 固定自动启动；Analysis 一次审核通过，Human 确认 `verify_agent.required=false`；研发、PR 均一次成功，使用 Parent Issue Runtime。
 
 - **Run 0 — TFS Sync Agent：** 创建 `backlog` Issue，写入并回读 TFS 来源事实，设置 `assignee=Wayfinder Agent` 并确认初始化；保持 `backlog`，不激活 Wayfinder 或 Squad。
-- **Run 1 — Wayfinder Agent：** Human 手动将 Issue 改为 `todo` 并保留 Wayfinder 指派，由原生 Status Trigger 启动 Run；执行 `workitem-triage`，按需使用 `codebase-explorer`；给出 `eligible`，持久化并回读同一 Issue 的顶层 `/note` Comment；通过一次 `todo + Squad` Assignment Update 自动唤醒 Leader。
+- **Run 1 — Wayfinder Agent：** Human 手动将 Issue 改为 `todo` 并保留 Wayfinder 指派，由原生 Status Trigger 启动 Run；依据 Wayfinder Instructions，按需使用 `codebase-explorer`；给出 `accepted`，确认同一 Issue 的顶层 `/note` Comment 已记录；通过一次 `todo + Squad` Assignment Update 自动唤醒 Leader。
 - **Run 2 — Delivery Lead：** 读取有效准入事实与当前 Owner / Status，`@Workitem Analyst`，结束协调 Run。
-- **Run 3 — Workitem Analyst：** 增量复核 Wayfinder Evidence，完成 Intentional Analysis、OpenSpec Preparation、Analysis Gate；通过 `analysis-completion` 提交并回读 `analysis_review`。
+- **Run 3 — Workitem Analyst：** 增量复核 Wayfinder Evidence，完成 Intentional Analysis、OpenSpec Preparation、Analysis Gate；通过 `analysis-publish` 提交并回读 `analysis_review`。
 - **Run 4 — Delivery Lead：** Human 明确批准后，核对批准事实、提交根仓初始基线，确定 `task_refs` 和 Backend Engineer；`in_progress` 回读后 `@Backend Engineer`。
 - **Run 5 — Backend Engineer：** 实现、Task Verification、Local Validation、Code Review、Commit / Push、PR Preparation、Development Evidence 与 Completion Check；Task Progress Patch / 回读后发布 READY。
 - **Run 6 — Delivery Lead：** 聚合当前有效结果；本例不需独立 Verify，满足 PR Gate 后调用确定性 PR Materialization，进入 `in_review`。
@@ -286,7 +288,7 @@ Merge 后正常 QA / 测试发现的新问题形成新的 TFS Bug / Requirement�
 
 **数量口径：** 此例合计 **8 次关键 Agent Run**，其中 Squad 内 **5 次**，Squad 外的 TFS Sync、Wayfinder、PR Status Sync **3 次**。若 `verify_agent.required=true`，且增加一次 Verify Agent Run 与一次结果回流 Lead Run，此例相应为 **10 次**。TFS 批量同步、PR `active` 轮询、失败重试和恢复均可改变实际数量；Multica Agent Run 不等同于 CLI Session。
 
-`eligible` 按 `tfs.type` 交给 Bug Fix Agent 或 Delivery Squad，由原生 Assignment Trigger 启动对应 Run，不设置 `manual_start` 分支。
+`accepted` 按 `tfs.type` 交给 Bug Fix Agent 或 Delivery Squad，由原生 Assignment Trigger 启动对应 Run，不设置 `manual_start` 分支。
 
 ---
 
@@ -360,7 +362,7 @@ Members
 └── Verify Agent
 ```
 
-自动 TFS 入口通过 Wayfinder 准入且满足启动条件后，由 `rondo delivery handoff` 将 Issue 交给 Bug Fix Agent 或 Delivery Squad；准入之前由 Wayfinder Agent 持有，不触发 Squad Leader。明确直接委派的 Analysis 不要求先经过 Wayfinder；两种入口的 Human Analysis Review 均不改变。Leader-first、Instructions 与 Roster 的接收范围见 [指导手册：Squad](01-multica-openspec-design-guideline.md#mechanism-squad)。
+自动 TFS 入口通过 Wayfinder 准入且满足启动条件后，由 `rondo delivery admission` 将 Issue 交给 Bug Fix Agent 或 Delivery Squad；准入之前由 Wayfinder Agent 持有，不触发 Squad Leader。明确直接委派的 Analysis 不要求先经过 Wayfinder；两种入口的 Human Analysis Review 均不改变。Leader-first、Instructions 与 Roster 的接收范围见 [指导手册：Squad](01-multica-openspec-design-guideline.md#mechanism-squad)。
 
 ---
 
@@ -435,7 +437,7 @@ Workitem Analyst
     = 结合现有系统形成必要方案、根因 / 修复策略、影响与约束
     = 按适用 Schema 准备规格、设计、任务或修复依据
     = 提出 Verify Agent Recommendation 与待确认事项
-    = 通过 analysis-completion 提交审核、确认 analysis_review 后结束本轮分析
+    = 通过 analysis-publish 提交审核、确认 analysis_review 后结束本轮分析
     = 按需提出技术拆分建议，不决定最终小队分工
 
 Backend / Frontend / Flink Engineer
@@ -638,7 +640,7 @@ TFS Sync Agent 不自行做同步业务判断，主要负责调用确定性能�
 | **当前研发测试阶段** | TFS Sync 保持 `backlog + Wayfinder Agent`；Human 手动将 Status 改为 `todo`，保留 Wayfinder 指派，由原生 Status Trigger 启动 Run | 便于分别观察来源同步、Wayfinder 准入及下游交接；手动改状态替代的仅是首次自动激活动作，不使用 `@mention` 代替该入口 |
 | **研发结束后的自动驱动目标态** | 来源、附件和 Owner 初始化并回读成功后，由 TFS Sync 单次自动执行 `backlog → todo`，保留 Wayfinder 指派，原生启动准入 | 继续保留自动化目标；切换前独立验证自动激活、真实 Run 回读及失败恢复，不要求 Human 逐项改状态 |
 
-**评审口径**：当前停留 `backlog` 是便于研发测试的过渡安排，不是取消自动驱动；方案中的自动 `todo` 描述属于目标态，不应仅因当前采用手动入口就判为旧规则。手动测试通过也不等于自动入口已通过。两阶段均不改变 Wayfinder 的判断、`eligible` 后按 `tfs.type` 路由或 Direct Assignment 的例外。
+**评审口径**：当前停留 `backlog` 是便于研发测试的过渡安排，不是取消自动驱动；方案中的自动 `todo` 描述属于目标态，不应仅因当前采用手动入口就判为旧规则。手动测试通过也不等于自动入口已通过。两阶段均不改变 Wayfinder 的判断、`accepted` 后按 `tfs.type` 路由或 Direct Assignment 的例外。
 
 两种入口都须回读实际 Wayfinder Run；TFS Sync 来源同步成功不等于准入完成。自动化切换与重试不得重新激活已处理的 Issue，结果未知时先对账。阶段结果分别记录；本次仅修订文档，未启用自动激活或改变当前 Runtime / Skill 行为。
 
@@ -652,7 +654,7 @@ tfs.url: "<url>"
 tfs.changed_at: "<changed-date>"
 ```
 
-来源初始化完成后先进入下述 Wayfinder Intake Triage；`eligible` 后由 `rondo delivery handoff` 按 `tfs.type` 移交：Requirement 的 Squad-owned Issue 启动 Delivery Lead，Bug Issue 启动 Bug Fix Agent。`backlog → todo` 的具体触发与首次处理、失败恢复分别见 [§4.1.1](#delivery-intake) 和 [§4.2](#delivery-start)。
+来源初始化完成后先进入下述 Wayfinder Intake Triage；`accepted` 后由 `rondo delivery admission` 按 `tfs.type` 移交：Requirement 的 Squad-owned Issue 启动 Delivery Lead，Bug Issue 启动 Bug Fix Agent。`backlog → todo` 的具体触发与首次处理、失败恢复分别见 [§4.1.1](#delivery-intake) 和 [§4.2](#delivery-start)。
 
 ---
 
@@ -664,32 +666,32 @@ tfs.changed_at: "<changed-date>"
 
 **目标**：判断当前 TFS 工作项是否具备进入相应自动交付路径的条件，**不是承诺一定实现成功**。入口准入独立于 Workitem Analyst 的 Technical Change Kind 和 Human Approval。
 
-- **执行主体**：Squad 外的 `Wayfinder Agent`，Canonical Entry 为 `workitem-triage`；独立绑定 `codebase-explorer` Project Skill，与 Workitem Analyst 按需复用 `codebase-explorer` 的可追溯工程证据；CodeGraph、源码、Spec 的权限须单独配置和验证，**不影响 Workitem Analyst 现有 Skill 绑定与执行规则**。
-- **执行方式**：`workitem-triage` 按需调用 `codebase-explorer`；根据当前工作项的不确定性深入 Repository Mapping → CodeGraph / Exact Source → 跨仓调用链、数据流和现有 Specs；不要求每项完整调查根因。找到第一个候选仓库不表示调查结束，直到可判断准入的关键证据足够或已说明无法确认的原因。
-- **判断内容**：依 [Workitem Triage Skill](skills/workitem-triage/SKILL.md) 的准入维度与结论语义判断；不得将“找到 Repository”等同于交付成功，也不得以 TFS Type、仓库数量或修改文件数推断专业变更性质。
+- **执行主体**：Squad 外的 `Wayfinder Agent`，准入规则由自身 Instructions 维护；独立绑定 `codebase-explorer` Project Skill，与 Workitem Analyst 按需复用 `codebase-explorer` 的可追溯工程证据；CodeGraph、源码、Spec 的权限须单独配置和验证，**不影响 Workitem Analyst 现有 Skill 绑定与执行规则**。
+- **执行方式**：按需使用 `codebase-explorer`；根据当前工作项的不确定性选择调查方式，证据足以支持准入即可停止，不要求完整调查根因、调用链或最终修改范围。
+- **判断内容**：依 [Wayfinder Instructions](agents/wayfinder-agent/instructions.md) 的准入维度与结论语义判断；不得将“找到 Repository”等同于交付成功，也不得以 TFS Type、仓库数量或修改文件数推断专业变更性质。
 - **停止边界**：不写生产代码、不创建 OpenSpec Change、不形成正式 Root Cause / Solution / Acceptance Contract，不替代 Analyst / Human 的决定。
 
 ### 准入判断维度（Delivery Eligibility Dimensions）
 
-准入维度、证据充分性与未知项的处理标准以 [Workitem Triage Skill](skills/workitem-triage/SKILL.md) 为唯一执行依据。本项目自动 TFS 入口依当前 Issue 的业务归属、候选 Repository、访问权限和处理能力等信息判断准入；按需通过 `codebase-explorer` 补充工程证据，不要求在准入阶段完成 Root Cause 或技术方案。
+准入维度、证据充分性与未知项的处理标准以 [Wayfinder Instructions](agents/wayfinder-agent/instructions.md) 为唯一执行依据。准入依据 Business Scope、Repository Discovery、Processing Capability 三项条件；Bug、需求中的 Bug 类问题及现有功能优化支持，新增业务功能暂不支持；按需通过 `codebase-explorer` 补充工程证据，不要求在准入阶段完成 Root Cause 或技术方案。
 
-### Triage Decision 判定顺序
+### Triage Decision
 
-`eligible`、`needs_human`、`unsupported` 的语义及判断顺序由 [Workitem Triage Skill](skills/workitem-triage/SKILL.md) 定义。本项目典型场景：已定位授权 Repository 但 Root Cause 未明，可进入后续专业分析；多候选系统无法消歧或权限待授权，需 Human 补充；外部封闭系统已确认禁止修改且无可行授权路径，则属于明确硬性排除。复杂度、Repository 数量或单一工具故障不能独立证明不支持。
+`accepted`、`needs_human`、`unsupported` 的语义由 [Wayfinder Instructions](agents/wayfinder-agent/instructions.md) 定义。本项目典型场景：已定位授权 Repository 但 Root Cause 未明，可进入后续专业分析；多候选系统无法消歧或权限待授权，需 Human 补充；外部封闭系统已确认禁止修改且无可行授权路径，则属于明确硬性排除。复杂度、Repository 数量或单一工具故障不能独立证明不支持。
 
-**交接顺序**：先按 [Workitem Triage Skill](skills/workitem-triage/SKILL.md) 将 Decision 写入 `/note` 并回读确认，再按准入结论交接；目标映射、Assignment 与 Run 校验由 `rondo delivery handoff` 负责。
+**交接顺序**：先按 [Wayfinder Instructions](agents/wayfinder-agent/instructions.md) 确认有效 Decision 已记录在 `/note`，再执行 `rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsupported>`。CLI 不解析 Comment 正文；仅 accepted 执行目标映射、Assignment 与 Run 校验，其他分支保留 Wayfinder Assignee，分别设置 blocked / unsupported，不启动新 Run。
 
-Decision Comment 的内容、来源版本引用和有效性判断统一遵循 [Workitem Triage Skill](skills/workitem-triage/SKILL.md)。本场景以原 Issue 的 `/note` 为交付事实入口，按需引用工程 Evidence，不新增独立 Triage Artifact 或平行事实源。
+Decision Comment 的内容、来源版本引用和有效性判断统一遵循 [Wayfinder Instructions](agents/wayfinder-agent/instructions.md)。本场景以原 Issue 的 `/note` 为交付事实入口，按需引用工程 Evidence，不新增独立 Triage Artifact 或平行事实源。
 
-**Decision 消费：** Workitem Analyst 读取当前有效 `/note` Decision 及 Evidence 时遵循 [Workitem Triage Skill](skills/workitem-triage/SKILL.md)，不得凭 Comment 自述推断 Root Cause 或已获研发批准。明确直接委派、未经过准入的 Analysis 不需要补造 Decision。
+**Decision 消费：** Workitem Analyst 读取当前有效 `/note` Decision 及 Evidence 时遵循 [Wayfinder Instructions](agents/wayfinder-agent/instructions.md)，不得凭 Comment 自述推断 Root Cause 或已获研发批准。明确直接委派、未经过准入的 Analysis 不需要补造 Decision。
 
-交接前核对来源版本并确认 `/note` 持久化；目标更新、预期 Run 回读及 UNKNOWN 恢复由 `rondo delivery handoff` 执行。未经确认不报告交接成功。
+交接前核对来源版本并确认 `/note` 持久化；目标更新、预期 Run 回读及 UNKNOWN 恢复由 `rondo delivery admission` 执行。未经确认不报告交接成功。
 
 初版不自动重评估已移交 Squad、`needs_human` 或 `unsupported` 的 Issue；TFS Changed Date 增量同步只更新来源字段。
 
 **来源实质变更复核（不新增 Gate）**：Workitem Analyst 在提交 `analysis_review` 前、Delivery Lead 在依据 Human APPROVED 提交批准基线或启动 Development 前，应核对当前 `tfs.changed_at` 与本轮 Analysis 所依据的来源版本。版本发生变化时，读取来源差异并判断：仅备注、排期等不影响 Engineering Contract 的管理变更，记录差异后可继续；影响需求目标、Expected Behavior、交付范围、系统归属、授权或验收要求的实质变更，必须先复核或更新 Analysis / OpenSpec Contract，并按既有 Human Review 规则处理受影响的批准边界，不得基于旧结论启动研发。无法确认变化性质时停止推进并澄清。不要求自动重跑 Wayfinder，也不增加独立状态、脚本或 Gate。
 
-人工补充或能力扩展后的重新准入沿用原 Issue。Human 补充 Comment 后通过 Multica 原生 Comment Trigger 唤醒 Wayfinder；Wayfinder 增量评估、在触发线程发布并回读新 `/note`，仅当新 Decision 为 `eligible` 时，由 Wayfinder 调用 `rondo delivery handoff` 受控交接。Human 不需先改 `todo`。
+人工补充或能力扩展后的重新准入沿用原 Issue。Human 补充 Comment 后通过 Multica 原生 Comment Trigger 唤醒 Wayfinder；Wayfinder 增量评估、在触发线程记录新 `/note`，结果不明时回读，由 Wayfinder 调用 `rondo delivery admission` 执行本次 Decision。Human 不需先改 `todo`。
 
 **`unsupported` 恢复边界**：以当前 Workspace 实际有效的终止 Status 为准（当前 Manifest 将 `unsupported` 定义为 `cancelled` Category）；该分支的 Comment 唤醒与恢复仍需独立验证，结果不明时停止。
 
@@ -699,12 +701,12 @@ Decision Comment 的内容、来源版本引用和有效性判断统一遵循 [W
 
 ## 4.2 Issue（交付事项）启动
 
-自动 TFS 入口的 Issue 需有已确认的 `eligible` Decision，再由 Wayfinder 调用 `rondo delivery handoff` 完成 Assignment Trigger 交接，启动 Bug Fix Agent 或 Delivery Lead；此动作只进入 Analysis，不构成 Human Approval 或编码授权。明确直接委派的 Analysis 不以 Wayfinder Decision 为前置。
+自动 TFS 入口的 Issue 需有已确认的 `accepted` Decision，再由 Wayfinder 调用 `rondo delivery admission` 完成 Assignment Trigger 交接，启动 Bug Fix Agent 或 Delivery Lead；此动作只进入 Analysis，不构成 Human Approval 或编码授权。明确直接委派的 Analysis 不以 Wayfinder Decision 为前置。
 
 已通过准入的 Requirement `todo + Squad` Issue 由 Multica 原生 Assignment Trigger 自动启动 Lead。Bug Issue 则直接启动 Bug Fix Agent，不进入下述 Squad 分析路径。首次进入交付流程且尚未开展 Analysis 的 Issue，由 Delivery Lead 直接通过 `@mention` 将专业分析工作交给 Workitem Analyst：
 
 ```text
-Issue（Wayfinder eligible + Comment 已验证）
+Issue（Wayfinder accepted + Comment 已验证）
 assignee = Delivery Squad
         ↓
 单次 Assignment Update 自动启动
@@ -738,7 +740,7 @@ Analysis Gate
 
 已有 Analysis、Review、Development 或其他执行进展的 Issue，再次唤醒 Delivery Lead 时应根据当前事实继续协调，不因重新进入 Leader Run 而重复启动首次 Analysis。
 
-Delivery Lead 遵循 Multica Squad 原生协议处理当前协调与派发，派发后结束本次 Run。Workitem Analyst 在 `analysis-completion` 中拥有提交审核状态的有限写入职责，见 [§5.4](#section-5-4)；Issue 的 Squad Ownership 不要求每次状态写入都重新唤醒 Leader。项目不复制额外的启动状态机。
+Delivery Lead 遵循 Multica Squad 原生协议处理当前协调与派发，派发后结束本次 Run。Workitem Analyst 在 `analysis-publish` 中拥有提交审核状态的有限写入职责，见 [§5.4](#section-5-4)；Issue 的 Squad Ownership 不要求每次状态写入都重新唤醒 Leader。项目不复制额外的启动状态机。
 
 ---
 
@@ -760,7 +762,7 @@ backlog
 → done
 ```
 
-入口准入例外：`needs_human → blocked`；`unsupported → unsupported`（自定义终止状态，当前 Manifest 为 `cancelled`）。`eligible` 不是状态 Key，成功交接后对应目标 Agent / Squad 持有的 `todo` Issue。二者与正常 Human Analysis Review 的 `analysis_review` 互不替代，禁止把审核等待改为 `blocked`。未创建并回读自定义 `unsupported` Status 前不得假设其在 Workspace 已可用。
+入口准入例外：`needs_human → blocked`；`unsupported → unsupported`（自定义终止状态，当前 Manifest 为 `cancelled`）。`accepted` 不是状态 Key，成功交接后对应目标 Agent / Squad 持有的 `todo` Issue。二者与正常 Human Analysis Review 的 `analysis_review` 互不替代，禁止把审核等待改为 `blocked`。未创建并回读自定义 `unsupported` Status 前不得假设其在 Workspace 已可用。
 
 其中：
 
@@ -772,7 +774,7 @@ analysis_review
 
 正常 Human Analysis Review 使用 `analysis_review`，不使用 `blocked`。
 
-Issue Status 与 Agent Run 生命周期分离（[原生机制](01-multica-openspec-design-guideline.md#mechanism-issue-run)）；Run 完成不等于 Issue 自动完成。进入 `analysis_review` 由 Workitem Analyst 的 `analysis-completion` 写入并确认；人工审核后的离开动作由 Delivery Lead 组织。批准研发与退回分析都可能写入 `in_progress`，该状态本身不能证明已经获准编码；具体授权依据和状态转换以 [§6.1](#section-6-1) Human Approve 与 [§6.2](#section-6-2) Human Reject 为准。
+Issue Status 与 Agent Run 生命周期分离（[原生机制](01-multica-openspec-design-guideline.md#mechanism-issue-run)）；Run 完成不等于 Issue 自动完成。进入 `analysis_review` 由 Workitem Analyst 的 `analysis-publish` 写入并确认；人工审核后的离开动作由 Delivery Lead 组织。批准研发与退回分析都可能写入 `in_progress`，该状态本身不能证明已经获准编码；具体授权依据和状态转换以 [§6.1](#section-6-1) Human Approve 与 [§6.2](#section-6-2) Human Reject 为准。
 
 ---
 
@@ -846,32 +848,21 @@ Analysis Handoff Facts 不是新对象，只表示使用 Multica 原生 Issue / 
 
 ```yaml
 analysis:
-  change_kind: corrective | intentional  # Workitem Analyst 判断；写入 Multica Issue Metadata analysis.change_kind
+  change_kind: corrective | intentional  # 从当前 Change Schema 推导并登记
   change_ref: ...
 
-  verify_agent:
-    recommendation: required | not_required
-    reason: ...
-    focus_refs:
-      - <requirement-or-scenario-ref>
-      - <task-number: 1.1>
-
-  ai_review:
-    verdict: APPROVED | NEEDS_REVISION
-    findings_ref: ...
 
   gate:
-    result: PASS | FAIL | UNKNOWN
-    reasons_ref: ...
+    result: PASS  # complete 最终真实 Gate 通过后登记
 ```
 
-`analysis.change_kind` 由 `rondo analysis stage` 按本次专业结论写入并回读，供跨 Run 交接及完成任务统计；Analysis Gate / Complete / Finalize 必须核对其与当前 Change Schema 一致。它是持久化分类结果，不决定 Skill 顺序或自动化授权。统计完成工作须结合 Issue 的有效完成状态，不以分类字段存在作为完成证据。
+实际工程增量的 `analysis.change_kind` 由 `rondo analysis publish` 从通过最终 Gate 的当前 Change Schema 确定性推导并登记、回读，供跨 Run 交接及完成任务统计。它是持久化分类结果，不决定 Skill 顺序或自动化授权。统计完成工作须结合 Issue 的有效完成状态，不以分类字段存在作为完成证据。
 
-`focus_refs` 只引用当前 OpenSpec Acceptance / Verification Contract，不复制正文，也不建立 AC / VR ID；依据 [05](05-openspec-schema-implementation-design.md) 的 Native First 契约，以 Capability Spec 路径和原生 Requirement / Scenario 标题定位，必要时以当前 Change 内的已批准任务编号定位。Human Review 后形成的 `verify_agent.required`、Independent Verification Result、Assignment / Owner / Status / Runtime Projection 等继续属于 Multica Delivery Truth。
+专业审查结论与 Independent Verify Recommendation、理由及必要验证重点进入当前 Issue 审核 Comment，不要求结构化 Review Verdict 或 Focus 引用数组。Human Review 后形成的 `verify_agent.required`、Independent Verification Result、Assignment / Owner / Status / Runtime Projection 继续属于 Multica Delivery Truth。
 
 `codebase-explorer`、`requirement-analysis`、`bug-analysis` 与适用专业 Review 表示可组合的专业能力，不要求生成同名 Markdown。Corrective 的 `bug-analysis` Method 将最终确认事实沉淀到 `proposal.md`；Intentional 的 `requirement-analysis` 直接把工程结论沉淀到 Proposal / Specs / Tasks，并仅在 Conditional Design 条件满足时维护 `design.md`。
 
-Verify Agent Recommendation 是所有自动 Analysis 的必需输出，但它只决定是否建议增加 **Independent Verify Agent**。`not_required` 不取消 Task Verification、Change-level Verification、Local Validation 或 Code Review。OpenSpec Native Verify 不是默认强制步骤，仅在当前 Project / Change Contract 明确要求或需要 Change-level consistency audit 时执行。
+Verify Agent Recommendation 是实际工程变更的必需输出，但它只决定是否建议增加 **Independent Verify Agent**。`not_required` 不取消 Task Verification、Change-level Verification、Local Validation 或 Code Review。OpenSpec Native Verify 不是默认强制步骤，仅在当前 Project / Change Contract 明确要求或需要 Change-level consistency audit 时执行。
 
 <a id="section-5-3"></a>
 
@@ -918,8 +909,8 @@ Technical Change Kind = intentional → schema = intentional-change
 
 | Technical Change Kind | 分析与工件准备能力（按需） | OpenSpec Schema | 交付依据与检查重点 |
 |---|---|---|---|
-| `corrective` | `bug-analysis`、`spec-preparation`、`analysis-completion` | `corrective-change` | 已确认 Expected / Actual、Root Cause / Evidence、Fix Strategy、Regression Scope；Specs 可合法跳过，Tasks 承载实施与验证 |
-| `intentional` | `requirement-analysis`、`spec-preparation`、必要专业 Review、`analysis-completion` | `intentional-change` | Proposal、适用 Specs / Design、Tasks 与 Verification Contract；仅在原生契约允许且行为没有变化时才能跳过 Specs |
+| `corrective` | `bug-analysis`、`spec-preparation`、`analysis-publish` | `corrective-change` | 已确认 Expected / Actual、Root Cause / Evidence、Fix Strategy、Regression Scope；Specs 可合法跳过，Tasks 承载实施与验证 |
+| `intentional` | `requirement-analysis`、`spec-preparation`、必要专业 Review、`analysis-publish` | `intentional-change` | Proposal、适用 Specs / Design、Tasks 与 Verification Contract；仅在原生契约允许且行为没有变化时才能跳过 Specs |
 
 Corrective 是否形成 Delta 取决于是否需要补录长期行为规格；主动改变 Expected Behavior 必须重新确认 Change Kind、适用 Schema 和 Human 批准边界。所有 Change 均由项目根仓版本管理：
 ```text
@@ -978,9 +969,9 @@ OpenSpec 根仓产物 → Git 跟踪与 Commit，不创建独立 PR，不进入 
 
 ## 5.4 Analysis Gate（分析门禁）
 
-Workitem Analyst 在 `analysis-completion` 中调用 Analysis Gate。Gate 只返回检查结果；发布分析结果和写入审核状态由 Workitem Analyst 在同一收口方法内负责，详细执行契约见 [03 §12.1 Analysis Completion](03-workitem-analysis-design.md#analysis-completion)。
+存在实际工程增量时，Workitem Analyst 使用 `analysis-publish`，由 `rondo analysis publish` 执行最终真实 Gate、发布固定来源及写入审核状态；按需使用只读 `validate` 诊断。Gate 本身只返回检查结果，详细执行契约见 [03 §12.1 Analysis Publish](03-workitem-analysis-design.md#analysis-publish)。
 
-Analysis Gate 的公共检查和不同 Change Contract 的细项统一引用 [03 Analysis 方案 §11.2](03-workitem-analysis-design.md#analysis-gate)。公共契约至少确认：
+Analysis Gate 的公共检查和不同 Change Contract 的细项统一引用 [03 Analysis 方案 §11.2](03-workitem-analysis-design.md#analysis-gate)。整体专业准备与确定性检查至少应满足以下条件（并非 CLI 逐项自动检查）：
 
 ```text
 Delivery / TFS identity、Change Kind 与已持久化 Schema 一致
@@ -988,15 +979,15 @@ Delivery / TFS identity、Change Kind 与已持久化 Schema 一致
 Development Scope / Repository Scope 可读取
 当前 Acceptance Contract 可读取：Intentional 为 Requirement / Scenario；Corrective 为 Proposal Expected Behavior / Regression Scope，存在 Specs 时一并读取
 每个 Implementation Task 有验证方式；需要组合验证时存在 Change-level Verification Task
-Verify Recommendation / Reason / Verification Focus 完整且引用有效
+审核 Comment 提供有依据的独立验证建议及必要验证重点
 Evidence References 可追溯
 适用 OpenSpec Artifact 与原生 Validation 满足当前 Schema
-专业 Review / Consistency Result 可读取且无 unresolved blocker
+Analyst 已完成适用专业 Review / Consistency Check，无未解决的关键问题
 ```
 
-Corrective 额外检查 Proposal 中的 Expected / Actual、Root Cause / Evidence、Fix Strategy、Fix / Regression Scope 与 Tasks / Verification 一致；Intentional 额外检查 Proposal / Specs / Tasks、Conditional Design 判断及结构化 AI Review Result。Gate 不要求 `bug-analysis.md`、`acceptance.md`、`verification-requirements.md` 等重复载体。
+Corrective 的 Expected / Actual、Root Cause / Evidence、Fix Strategy、Fix / Regression Scope 与 Tasks / Verification 一致性，以及 Intentional 的 Proposal / Specs / Tasks、Conditional Design 判断，由 Analyst 专业复核；CLI 只检查适用的确定性条件，不消费 Analyst 自报的专业审查结果。Gate 不要求 `bug-analysis.md`、`acceptance.md`、`verification-requirements.md` 等重复载体。
 
-Gate 消费已有专业结论，不能凭 Artifact 存在、Validation PASS 或推荐字段齐全替代语义判断。Gate 的 PASS 结果须能核对 Issue / Workspace、Change Kind / Schema 与当前 Change 工件摘要；Complete 回读已落盘的 Gate Result，确认全部必需检查项 PASS、工件未变化后方可提交 `analysis_review`。结果引用与摘要只是本次确定性校验证据，不创建新的审批状态、版本对象或重复技术事实。成员选择及 `task_refs` 分工在 Human Review 后由 Delivery Lead 处理，不作为 Analysis 的必交输入。
+专业结论由 Analyst 负责；Artifact 存在或 Validation PASS 不替代语义判断。Gate 的 PASS 结果须能核对 Issue / Workspace、Change Kind / Schema 与当前 Change 工件摘要；Publish 直接消费指定 Change，执行真实 Gate 并确认候选 Git 契约一致及发布可达性；核对服务端冲突事实后登记 Facts、Source 和本次 PASS，再提交 `analysis_review`。不落盘 Gate Result。结果引用与摘要只是本次确定性校验证据，不创建新的审批状态、版本对象或重复技术事实。成员选择及 `task_refs` 分工在 Human Review 后由 Delivery Lead 处理，不作为 Analysis 的必交输入。
 
 统一结果：
 
@@ -1017,7 +1008,7 @@ UNKNOWN
 
 PASS
 → Workitem Analyst 发布逻辑 Analysis Package 的引用、Multica Analysis Handoff Facts 与 Gate 结果
-→ 在 analysis-completion 中写入 Issue.status = analysis_review
+→ 在 analysis-publish 中写入 Issue.status = analysis_review
 → 回读确认状态与产物引用
 → 结束本轮分析执行，等待 Human Review；不得自动进入研发
 ```
@@ -1145,7 +1136,7 @@ Workitem Analyst 消费原始反馈和明确修正要求，按 [03 Analysis 方�
 修正完成后重新：
 
 ```text
-Workitem Analyst 执行 analysis-completion
+Workitem Analyst 执行 analysis-publish
 → 当前 Change 的 Analysis Gate PASS
 → 发布修订结果并写入 analysis_review，回读确认
 → 结束本轮返工，等待 Human Analysis Review
@@ -1181,7 +1172,7 @@ Reject 不触发整套 Analysis 无差别重跑。针对已经批准的 Analysis
 | 主体 | 承担的职责 |
 |---|---|
 | Human | 作出批准、退回以及必须由人确认的取舍 |
-| Workitem Analyst / `analysis-completion` | 当前分析通过 Gate 后发布产物，写入并确认 `analysis_review`，结束本轮分析；提交细节见 [03 §12.1 Analysis Completion](03-workitem-analysis-design.md#analysis-completion) |
+| Workitem Analyst / `analysis-publish` | 实际工程增量通过 Gate 后发布固定来源，写入并确认 `analysis_review`；无需工程增量直接记录普通 Comment，提交细节见 [03 §12.1 Analysis Publish](03-workitem-analysis-design.md#analysis-publish) |
 | Delivery Lead / `delivery-flow` | 理解人审意见及条件，保留来源和必要摘要，组织批准后的研发或退回后的分析修正 |
 | Gate | 检查当前适用的硬条件并返回结果；不修改审核状态、不批准分析 |
 | 原生工具 / 必要执行封装 | 核对可确认的身份、来源、状态和已执行动作；完成已明确授权的 Git / 状态写入并回读，不解释自然语言或替代 Human 决定 |
@@ -1580,15 +1571,7 @@ Regression / Integration / E2E 都是 Verification Method，不与某个 Agent �
 
 ## 9.1 是否需要 Verify Agent（验证智能体）
 
-Workitem Analyst 在 Analysis 中形成：
-
-```yaml
-analysis:
-  verify_agent:
-    recommendation: required | not_required
-    reason: ...
-    focus_refs: [...]
-```
+Workitem Analyst 在 Analysis 中形成是否建议 Independent Verification 的专业结论、理由及必要验证重点，并通过当前 Issue 审核 Comment 提交。
 
 Workitem Analyst 是首次专业判断者：根据当前 Acceptance / Verification Contract、Task-level / Change-level Verification 的可闭合性、候选风险与是否需要实现者之外的独立性，形成 Recommendation、Reason 与 Focus。Human Analysis Review 是最终决定者，可以接受或 override 该 Recommendation。
 
@@ -2657,30 +2640,20 @@ Artifact
 
 入口准入依据由同一 Issue 的 `/note` Comment 保留（首次可顶层，Human Comment 触发的恢复 Run 必须线程回复；含 Decision、TFS 来源版本、Evidence References、未决问题），Status / Assignee 表达当前交接结果；不新增 Triage Artifact 或并行 Truth Store。权威细则见 [§4.1.1](#delivery-intake)。
 
-Analysis 阶段只在 Multica 保存最小 Delivery Facts；这些事实不组成新的 `analysis_result` Domain Object。具体使用 metadata、custom property、comment 或 run result 的字段映射留待后续实现统一确定：
+存在工程增量时，Analysis 在 Multica Issue Metadata 中保存最小 Delivery Facts，不新增 `analysis_result` Domain Object；无需工程增量仅保留原生 Comment。以下为已提交审核的逻辑字段视图：
 
 ```yaml
 analysis:
-  # 不维护独立 Analysis Route 字段
+  change_kind: corrective | intentional
   change_ref: ...
+  source: ... # 固定 repo_url / branch / commit / change_ref
 
-  verify_agent:
-    recommendation: required | not_required
-    reason: ...
-    focus_refs:
-      - <requirement-or-scenario-ref>
-      - <task-number: 1.1>
-
-  ai_review:
-    verdict: APPROVED | NEEDS_REVISION
-    findings_ref: ...
 
   gate:
-    result: PASS | FAIL | UNKNOWN
-    reasons_ref: ...
+    result: PASS
 ```
 
-Acceptance Contract、Verification Contract、Development / Repository Scope、技术风险 / 依赖 / Open Decision 与 Evidence 均保留在各自权威 OpenSpec / Supporting Artifact 中；Multica Handoff Facts 只保存 Delivery 决策与必要引用，不复制工程契约。Analysis Gate 的 PASS / FAIL / UNKNOWN 属于 Multica Runtime Fact，可由 Analysis Package 引用，不需要创建 `gate-result.md` 或独立 Gate Result 对象。
+Acceptance Contract、Verification Contract、Development / Repository Scope、技术风险 / 依赖 / Open Decision 与 Evidence 均保留在各自权威 OpenSpec / Supporting Artifact 中；Multica Handoff Facts 只保存 Delivery 决策与必要引用，不复制工程契约。Analysis Gate 以 stdout 返回 PASS / FAIL / UNKNOWN；仅发布成功的 PASS 登记为 Issue Metadata，不创建 `gate-result.md` 或独立 Gate Result 对象。
 
 对于一次 Engineer Task Set 执行，建议在当前 Run / Issue 上保存最小 Engineering Facts，并以 `task_refs` 标识覆盖范围：
 
@@ -2731,7 +2704,7 @@ verification:
 其中：
 
 ```text
-verify_agent.recommendation
+审核 Comment 中的 Independent Verify Recommendation
 = Workitem Analyst 提出的分析建议
 
 verify_agent.required
@@ -2779,7 +2752,7 @@ Multica、Agent、Script 分别承担运行、语义工作与明确动作保障�
 
 | 当前问题 | 正常处理方式 | 边界 |
 |---|---|---|
-| TFS Work Item 是否具备进入小队的业务归属、仓库、授权与自动化可行性 | Wayfinder Agent 使用 `workitem-triage` / `codebase-explorer` 形成 Evidence-backed Triage Decision；Script 保障写入和回读 | `eligible` 不是编码授权；未知不默认 `unsupported`，不替代 Analyst / Human Review |
+| TFS Work Item 是否具备进入小队的业务归属、仓库、授权与自动化可行性 | Wayfinder Agent 依据自身 Instructions，按需使用 `codebase-explorer` 形成 Evidence-backed Triage Decision；Script 保障写入和回读 | `accepted` 不是编码授权；未知不默认 `unsupported`，不替代 Analyst / Human Review |
 | 当前工作适合哪个成员、是否需要独立工作项 | Delivery Lead 结合批准范围与 Roster；已有明确安排时复用 | 不要求 Workitem Analyst 预先选择全部角色，不以 Router 返回 UNKNOWN 为前提 |
 | 需求目标、场景、规则与范围是否清楚，Root Cause / Solution 是否成立，研发需遵守哪些约束 | Workitem Analyst；新工程事实由相应 Specialist 提供 | 不交 Leader 重做专业分析；需人工决定的关键取舍由 Human 确认 |
 | 当前 Task Set 的实现细节、反馈方法与工程整改 | Engineer | 不擅自改动批准范围或整体协作安排 |
@@ -2823,7 +2796,7 @@ Delivery Completion / TFS Close / Issue Done
 
 #### Wayfinder Agent（入口准入智能体）
 
-在 Squad 外 Intake Triage 阶段调查 Business Scope、Repository Discovery / Accessibility、Agent Capability 与 Automation Boundary；基于可复核 Evidence 判定 `eligible | needs_human | unsupported`，持久化 `/note` Comment 并受控交接。不得代替 Analyst 的 Change Kind 判断、Root Cause / OpenSpec Preparation、Human Approval 或 Squad 内成员派工，详见 [§4.1.1](#delivery-intake)。
+在 Squad 外 Intake Triage 阶段调查 Business Scope、Repository Discovery 与 Processing Capability；基于可复核 Evidence 判定 `accepted | needs_human | unsupported`，持久化 `/note` Comment 并受控交接。不得代替 Analyst 的 Change Kind 判断、Root Cause / OpenSpec Preparation、Human Approval 或 Squad 内成员派工，详见 [§4.1.1](#delivery-intake)。
 
 #### Workitem Analyst（工作项分析员）
 
@@ -2936,7 +2909,7 @@ ANALYSIS / ENGINEERING / RECREATE_PR / CANCEL_DELIVERY
 
 > **Development 默认使用父 Issue + `@Engineer` + `task_refs`；Development Sub-Issue 只用于需要独立 persistent runtime state 的执行范围。**
 
-> **TFS Sync 初始化新 Issue 为 `backlog + Wayfinder Agent`，来源 / Owner 回读后受控激活；Wayfinder 结论 `/note` 持久化且 `eligible` 后按 `tfs.type` 交给 Bug Fix Agent 或 Delivery Squad；职责明确的 Development Sub-Issue 默认直接由对应 Specialist Agent 持有。**
+> **TFS Sync 初始化新 Issue 为 `backlog + Wayfinder Agent`，来源 / Owner 回读后受控激活；Wayfinder 结论 `/note` 持久化且 `accepted` 后按 `tfs.type` 交给 Bug Fix Agent 或 Delivery Squad；职责明确的 Development Sub-Issue 默认直接由对应 Specialist Agent 持有。**
 
 > **只有 Development Sub-Issue 本身需要持续多角色协调或无法由单一 Specialist 长期持有时，才由 Delivery Squad 持有。**
 
@@ -2948,7 +2921,7 @@ ANALYSIS / ENGINEERING / RECREATE_PR / CANCEL_DELIVERY
 
 > **OpenSpec 初始批准基线先提交根仓；研发受控修改保存于持久共享工作区，最终由 Finalize 统一提交。它不作为业务 Repository Change，不创建独立 PR，也不进入 required PR 集合；关键内容丢失时停止并交 Lead 恢复。**
 
-> **Workitem Analyst 通过 `analysis-completion` 提交审核并回读确认状态；Human 作出决定；Delivery Lead 理解自然语言意见并落实。Gate 检查与工具写入不代替人工决定，也不替代其语义理解。**
+> **实际工程增量由 Workitem Analyst 通过 `analysis-publish` 提交审核；无需工程增量直接记录普通 Comment。Human 作出工程契约批准决定；Delivery Lead 理解自然语言意见并落实。Gate 检查与工具写入不代替人工决定，也不替代其语义理解。**
 
 > **Human 批准需求、方案与验收边界；Leader 在边界内组织协作。需要改变 Expected Behavior、Contract、Scope 或降低验收要求时，返回既有 Analysis / Human Review。**
 
@@ -3033,12 +3006,12 @@ Workitem Analyst 的需求与问题分析不依赖当前 Roster 或具体 Agent 
 | Agent | Squad Role | 主要 Skill |
 |---|---|---|
 | Delivery Lead | Leader | delivery-flow / delivery-gate / development-task-materialization / pull-request / task-close |
-| Workitem Analyst | Member | 当前：codebase-explorer / bug-analysis / requirement-analysis / spec-preparation / analysis-completion |
+| Workitem Analyst | Member | 当前：codebase-explorer / bug-analysis / requirement-analysis / spec-preparation / analysis-publish |
 | Backend Engineer | Member / Sub-Issue Owner | development-execution / backend-engineering |
 | Frontend Engineer | Member / Sub-Issue Owner | development-execution / frontend-engineering |
 | Flink Engineer | Member / Sub-Issue Owner | development-execution / flink-engineering |
 | Verify Agent | Member | acceptance-verification |
-| Wayfinder Agent | Squad 外 Intake Triage | workitem-triage / codebase-explorer |
+| Wayfinder Agent | Squad 外 Intake Triage | codebase-explorer |
 | TFS Sync Agent | Squad 外 Thin Adapter | tfs-sync |
 | PR Status Sync Agent | Squad 外 Thin Adapter | pr-status-sync |
 
@@ -3046,7 +3019,7 @@ Workitem Analyst 的需求与问题分析不依赖当前 Roster 或具体 Agent 
 
 - 表中候选能力与已实现绑定不得混淆；以 `workspace-config/provisioning.json` 为当前仓内配置权威，不以概念图要求创建七个 Analysis Skills。
 - Delivery Lead 正常承担父 Delivery 的成员选择、工作分工、委派与交接；已有安排直接复用，明确硬条件使用 Gate / Check，不以 `UNKNOWN` 作为协作判断的准入条件。
-- Workitem Analyst 输出需求与问题分析结论及研发准备，并在 `analysis-completion` 中提交审核、确认状态后结束；Delivery Lead 理解后续 Human 意见，组织返工或获准研发，最终成员与 Sub-Issue 分工仍由 Lead 负责。
+- Workitem Analyst 输出需求与问题分析结论及研发准备，并在 `analysis-publish` 中提交审核、确认状态后结束；Delivery Lead 理解后续 Human 意见，组织返工或获准研发，最终成员与 Sub-Issue 分工仍由 Lead 负责。
 - 职责明确的 Development Sub-Issue 默认直接分配给对应 Specialist Agent；只有 Task Set 本身需要持续多角色协调时才 Squad-owned。
 - Specialist 按 [§8](#development-execution) 完成各 Task Set 的 Check → Patch / 回读 → 发布；Development Sub-Issue 承接的全部当前 required Task Sets 均 READY 后进入完成状态，父级回流使用 Multica 原生父子 / Stage 机制。
 - TFS Sync Agent / PR Status Sync Agent 作为 Multica Autopilot 的 Thin Adapter；真正同步与 reconcile 逻辑放在确定性脚本中。
@@ -3068,7 +3041,6 @@ workspace-skills/
 │   └── scripts/
 │       └── reconcile-workitem.py
 │
-├── workitem-triage/          # Issue 准入评估与 Decision 记录方法
 ├── codebase-explorer/        # Wayfinder 独立代码库探索
 ├── workitem-analysis/   # Retired：历史源文件，不参与新绑定
 ├── codebase-explorer/       # 当前专业调查 Skill
@@ -3076,7 +3048,7 @@ workspace-skills/
 ├── bug-analysis/             # 候选：Corrective 诊断能力
 ├── spec-preparation/         # 候选：独立复用时提取
 ├── requirement-review/       # 候选：独立 Review 确有价值时提取
-├── analysis-completion/
+├── analysis-publish/
 │
 ├── development-task-materialization/
 ├── development-execution/
@@ -3399,7 +3371,7 @@ Multica 机制及官方 URL 统一在 [指导手册来源索引](01-multica-open
 
 ## v1.4.9 变更摘要
 
-- 明确 Workitem Analyst 在 `analysis-completion` 中发布分析、写入并确认 `analysis_review`；Gate PASS、状态生效与 Run 结束分别确认，提交后等待人工，不启动研发。
+- 明确 Workitem Analyst 在 `analysis-publish` 中发布分析、写入并确认 `analysis_review`；Gate PASS、状态生效与 Run 结束分别确认，提交后等待人工，不启动研发。
 - 人工分析审核采用自然语言，由 Delivery Lead / `delivery-flow` 理解决定与条件；取消 `apply-analysis-review.py` 必经解析入口，工具仅保障明确后的检查、写入和恢复；保留版本号及 PR Abandoned 专用路由。
 - 创建 / 更新 / 激活所需的输入、Owner、关联与依赖检查归入现有操作入口；Gate 名称和推荐脚本目录同步收敛，保留 Fix Strategy、OpenSpec Tasks 与必要 Stage。
 - 将 Workitem Analyst 统一定位为需求与问题分析及研发准备，补齐目标、场景、规则、范围与验收在角色、审核和交接中的表达。

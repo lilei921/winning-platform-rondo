@@ -61,7 +61,7 @@ Skill 只说明**何时准备、调用哪个现有入口、如何使用结果及
 | `agents/bug-fix-agent/instructions.md` | 删除 Checkout 具体步骤；保留需要本地修复时使用 `workspace-preparation` 的简短入口 |
 | `workspace-skills/bug-delivery/SKILL.md` | 移除业务仓准备方法；保留 Git Fetch/Push、Candidate 与 PR Preparation |
 | `workspace-skills/spec-preparation/SKILL.md` | 移除根仓准备方法；保留 OpenSpec `cwd`、Schema、Artifact 和 Validation 的自身校验 |
-| `workspace-skills/analysis-completion/SKILL.md` | 移除根仓准备方法；保留 Analysis Gate、Commit、Publish 与结果回读 |
+| `workspace-skills/analysis-publish/SKILL.md` | 移除根仓准备方法；保留 Analysis Gate、Commit、Publish 与结果回读 |
 | `workspace-skills/change-development/SKILL.md` | 移除根仓和业务 Worktree 准备方法；保留研发、验证、Evidence、Git 交付与 PR |
 
 Workitem Analyst、Engineer 的 Instructions 仅在确有必要时增加一句本地工作区使用提示，不复制完整 Procedure。

@@ -1,7 +1,7 @@
 {
   "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
   "skills": {
-    "analysis-completion": "7a47b7b0-8f6d-46ac-8a07-0d34b6412d9d",
+    "analysis-publish": "93dfdeb9-65df-4b52-b722-dd2c5330fe24",
     "bug-analysis": "283a02ff-5a9a-4cbb-b667-7dfeb2b8210b",
     "codebase-explorer": "3ee1db3e-63d5-4a12-8c49-da2d72dd670e",
     "delivery-closeout": "83b72fe2-b559-43cc-a1c0-ef3a134a9283",
@@ -12,7 +12,6 @@
     "requirement-analysis": "8f4b09c3-2b46-42bd-98ea-1ce2ab6c1a21",
     "spec-preparation": "9258f32a-3351-4c4f-b39f-a4a1d2ec77c6",
     "tfs-sync": "8dfb6ec3-3ffe-4fd8-bcf0-2203e038a1aa",
-    "workitem-triage": "0c4840d7-c10b-4e25-9bb4-3a1494e923f0",
     "workspace-preparation": "45232195-30eb-4c54-983a-67897bba06c5"
   },
   "delivery_squad_id": "03665e95-a7bd-48f0-afe3-c0860ebac5fc",

@@ -8,8 +8,8 @@ import { fileURLToPath } from "node:url";
 
 const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
 
-function runCli(args) {
-  const result = spawnSync(process.execPath, [CLI, ...args], { encoding: "utf8" });
+function runCli(args, cwd) {
+  const result = spawnSync(process.execPath, [CLI, ...args], { encoding: "utf8", cwd });
   assert.equal(result.error, undefined, result.error?.message);
   return result;
 }
@@ -81,4 +81,21 @@ test("changes/ 下 tfs-id 后缀命中：ACTIVE_FOUND exit 0（既有行为回�
   assert.equal(out.result, "ACTIVE_FOUND");
   assert.equal(out.change_ref, "fix-metadata-collect-datasource-type-263181");
   assert.equal(out.schema, "corrective-change");
+});
+
+test("相对 OpenSpec 根路径和显式 JSON 输出与默认输出等价，拒绝其他格式", (t) => {
+  const repo = fixture(t);
+  mkdirSync(join(repo, "openspec", "changes"), { recursive: true });
+  const args = ["change", "resolve-identity", "--openspec-root", ".", "--tfs-id", "263181"];
+  const implicit = runCli(args, repo);
+  const explicit = runCli([...args, "--output", "json"], repo);
+  assert.equal(implicit.status, 0);
+  assert.equal(explicit.status, 0);
+  assert.equal(explicit.stdout, implicit.stdout);
+  for (const flags of [["--output", "table"], ["--output"]]) {
+    const invalid = runCli([...args, ...flags], repo);
+    assert.equal(invalid.status, 64);
+    assert.equal(invalid.stdout, "");
+    assert.match(invalid.stderr, /--output/);
+  }
 });

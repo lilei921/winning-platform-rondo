@@ -1,10 +1,9 @@
 /** Workspace MCP 供给：仓内保存期望配置，平台保存连接；完整配置只写，不能声称回读无漂移。 */
 import { UnknownError } from "../../cli/errors.js";
 
-export interface McpAgent { name: string; mcp_servers?: string[]; mcp_phase?: "08-a" | "08-b"; }
+export interface McpAgent { name: string; mcp_servers?: string[]; }
 export interface McpManifest { mcp_servers?: { name: string; template: string; connection_file?: string }[]; agents: McpAgent[]; }
 export interface McpOverlay {
-  mcp_phase?: "08-a" | "08-b";
   mcp_servers?: Record<string, { id?: string; connection_file?: string }>;
 }
 export interface McpSpec {
@@ -35,7 +34,6 @@ const fileOk = (v: unknown): v is string => typeof v === "string" && /^[a-z0-9][
 
 /** 模板只允许公开策略和凭据引用，禁止把连接内容混入 Git。 */
 export function loadMcpSpecs(manifest: McpManifest, overlay: McpOverlay, readTemplate: (file: string) => unknown): McpSpec[] {
-  if (overlay.mcp_phase !== undefined && !["08-a", "08-b"].includes(overlay.mcp_phase)) throw new UnknownError("mcp_phase 仅支持 08-a / 08-b");
   if (manifest.mcp_servers !== undefined && !Array.isArray(manifest.mcp_servers)) throw new UnknownError("mcp_servers 必须为数组");
   const names = new Set<string>();
   const specs = (manifest.mcp_servers ?? []).map(entry => {
@@ -70,7 +68,6 @@ export function loadMcpSpecs(manifest: McpManifest, overlay: McpOverlay, readTem
     }
   }
   for (const agent of manifest.agents) {
-    if (agent.mcp_phase !== undefined && !["08-a", "08-b"].includes(agent.mcp_phase)) throw new UnknownError(`Agent ${agent.name} MCP 阶段非法`);
     if (agent.mcp_servers !== undefined && (!Array.isArray(agent.mcp_servers)
         || agent.mcp_servers.some(name => !names.has(name)) || new Set(agent.mcp_servers).size !== agent.mcp_servers.length)) {
       throw new UnknownError(`Agent ${agent.name} MCP 引用非法或重复`);
@@ -152,9 +149,9 @@ function assignments(deps: McpDeps, agentId: string): { id: string; enabled: boo
   return mapped;
 }
 
-/** 只收敛显式受管绑定；08-B 未启用时不修改其 Agent，也不移除用户另行绑定的 MCP。 */
+/** 只收敛 manifest 声明的受管绑定，不移除用户另行绑定的 MCP。 */
 export function reconcileMcpBindings(agents: McpAgent[], agentIds: Record<string, string>, specs: McpSpec[], deps: McpDeps): void {
-  const active = agents.filter(a => a.mcp_servers?.length && (a.mcp_phase !== "08-b" || deps.overlay.mcp_phase === "08-b"));
+  const active = agents.filter(a => a.mcp_servers?.length);
   for (const a of active) if (!agentIds[a.name] && !(deps.dryRun && deps.allowMissingAgents)) throw new UnknownError(`MCP 绑定缺少 Agent ${a.name}，请先完整 provision`);
   for (const a of active) {
     const agentId = agentIds[a.name];

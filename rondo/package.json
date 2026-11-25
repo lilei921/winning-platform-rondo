@@ -11,7 +11,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "build:exe": "node scripts/build-exe.mjs",
-    "prepack": "npm run build",
+    "prepack": "npm run build && node scripts/copy-schemas.mjs",
     "pack": "npm pack",
     "test": "node --test test/*.test.mjs \"dist/**/*.test.js\""
   },
@@ -34,6 +34,7 @@
   },
   "files": [
     "dist",
+    "openspec/schemas",
     "README.md",
     "COMMANDS.md"
   ]

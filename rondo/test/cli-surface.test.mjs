@@ -16,12 +16,12 @@ function runCli(args, env = {}) {
 /** 当前完整命令树；包含 analysis read 和顶层叶子 query/doctor。 */
 const TREE = {
   change: ["resolve-identity", "update-progress"],
-  analysis: ["stage", "validate", "complete", "read"],
+  analysis: ["validate", "publish", "read", "approve"],
   dev: ["check-dispatch", "materialize", "git", "prepare", "check-completion", "check-change", "publish", "contract-hash"],
   bug: ["resume"],
   tfs: ["writeback", "materialize-tasks", "resolve-tasks", "reconcile-workitem"],
   pr: ["prepare", "materialize", "worktree", "reconcile-status", "create", "get", "list"],
-  delivery: ["route-decision", "finalize", "root-prepare", "handoff"],
+  delivery: ["route-decision", "finalize", "root-prepare", "admission"],
   workspace: ["provision", "sync", "migrate-repo-keys", "check-daemon"],
   runtime: ["resolve-root-repo","prepare-root","get-context","check-checkout"],
   repo: ["get"],
@@ -99,4 +99,44 @@ test("PR Preparation 命名统一，Closeout 拒绝旧配置参数", () => {
   for (const args of [["dev", "pr-prepare"], ["bug", "pr-prepare"], ["bug", "git"], ["dev", "pr-prep"], ["bug", "prepare-pr"], ["pr","materialize","--issue","X","--config","unused"], ["delivery", "finalize", "--phase", "prepare", "--issue", "X", "--config", "unused"], ["tfs", "writeback", "--issue", "X", "--config", "unused"]]) {
     assert.notEqual(runCli(args).status, 0, args.join(" "));
   }
+});
+
+test("全局 --output json 由 Commander 统一消费，不改变子命令输出和退出码", () => {
+  for (const args of [["change", "update-progress", "--help"], ["dev", "contract-hash", "--help"], ["runtime", "resolve-root-repo"], ["query"]]) {
+    const implicit = runCli(args);
+    for (const explicitArgs of [["--output=json", ...args], [...args, "--output", "json"]]) {
+      const explicit = runCli(explicitArgs);
+      assert.equal(explicit.status, implicit.status, explicitArgs.join(" "));
+      assert.equal(explicit.stdout, implicit.stdout, explicitArgs.join(" "));
+    }
+  }
+  for (const args of [["change", "update-progress"], ["runtime", "check-checkout"], ["query"], ["doctor"]]) {
+    for (const flags of [["--output", "table"], ["--output"]]) {
+      const result = runCli([...args, ...flags]);
+      assert.equal(result.status, 64);
+      assert.equal(result.stdout, "");
+      assert.match(result.stderr, /--output/);
+    }
+  }
+});
+
+test("doctor 默认文本，统一 JSON 输出兼容原 --format json，冲突拒绝", () => {
+  const args = ["doctor", "--require", "node_runtime"];
+  const plain = runCli(args);
+  const explicit = runCli([...args, "--output", "json"]);
+  const legacy = runCli([...args, "--format", "json"]);
+  assert.equal(explicit.status, legacy.status);
+  assert.equal(plain.status, legacy.status);
+  assert.throws(() => JSON.parse(plain.stdout));
+  const { duration_ms: _a, ...actual } = JSON.parse(explicit.stdout);
+  const { duration_ms: _b, ...expected } = JSON.parse(legacy.stdout);
+  assert.deepEqual(actual, expected);
+  const conflict = runCli([...args, "--output", "json", "--format", "text"]);
+  assert.equal(conflict.status, 64);
+  assert.match(conflict.stderr, /冲突/);
+});
+
+test("retired stage and handoff are not public commands", () => {
+  for (const args of [["analysis", "stage"], ["delivery", "handoff"]]) assert.notEqual(runCli(args).status, 0);
+  for (const args of [["analysis", "validate"], ["analysis", "publish"], ["delivery", "admission"]]) assert.equal(runCli([...args, "--help"]).status, 0);
 });

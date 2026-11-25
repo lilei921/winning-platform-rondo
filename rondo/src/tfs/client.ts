@@ -116,9 +116,10 @@ export class TfsClient {
     return new Promise((resolve, reject) => {
       const mod = isHttps ? https : http;
       const req = mod.request(options, (res) => {
-        let data = '';
-        res.on('data', (c) => (data += c));
-        res.on('end', () => resolve({ statusCode: res.statusCode || 0, body: data }));
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        // UTF-8 字符可能跨 HTTP Chunk，完整拼接后再解码。
+        res.on('end', () => resolve({ statusCode: res.statusCode || 0, body: Buffer.concat(chunks).toString('utf8') }));
       });
       req.setTimeout(REQUEST_TIMEOUT_MS, () => {
         req.destroy();

@@ -1,9 +1,9 @@
 /**
  * analysis validate — Analysis Gate 确定性检查（02 §5.4）。
  *
- * 用法: rondo analysis validate --issue <issue-id> --openspec-root <path> --workspace-id <id> [--multica <cli>]
+ * 用法: rondo analysis validate --issue <issue-id> --change-ref <id> --openspec-root <path> --workspace-id <id> [--registry-config <path>] [--multica <cli>] [--profile <name>]
  *
- * 输入：Issue（metadata 已含 analysis.* 事实）+ OpenSpec Change 目录。
+ * 输入：当前 Issue 来源事实、Change ID及 OpenSpec Change 目录。
  * 输出：{ result: PASS | FAIL | UNKNOWN, checks: [...], reasons: [...] }
  * 退出码：0 = PASS，2 = FAIL，3 = UNKNOWN。
  *
@@ -13,20 +13,21 @@
 
 import { analysisRuntime } from "./runtime.js";
 import type { RuntimeConfig } from "../../clients/config.js";
-import { existsSync, readFileSync, realpathSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, readdirSync, lstatSync } from "node:fs";
 import { basename, dirname, isAbsolute, join } from "node:path";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
-import { assertStableChangeRef, readChangeSchema, sourceSchemaViolation, changeKindSchemaViolation, type ChangeSchema } from "./change-schema.js";
+import { assertStableChangeRef, readChangeMetadata, parseChangeSchema, sourceSchemaViolation, changeKindFromSchema, type ChangeSchema } from "./change-schema.js";
 import { markLeafExecuted } from "../../cli/output.js";
 import { TOOL_VERSION } from "../../cli/version.js";
 import { runCommand } from "../../clients/spawn.js";
-import { MulticaClient } from "../../clients/multica.js";
+import { MulticaClient, requireIssueMetadata } from "../../clients/multica.js";
 import { commandExists } from "../../clients/which.js";
 import { resolveOpenspecRootDir } from "../../clients/runtime-paths.js";
-import { classifyTfsType } from "./facts.js";
+import { classifyTfsType, analysisMetadataEntries } from "./facts.js";
+import { taskReferences } from "./source.js";
 import { parseRepositoryScope } from "./repository-scope.js";
-import { ANALYSIS_GATE_CHECKS, changeEvidenceDigest, metadataEvidenceDigest } from "./gate-evidence.js";
+import { changeEvidenceDigest, metadataEvidenceDigest } from "./gate-evidence.js";
 
 type CheckResult = "PASS" | "FAIL" | "UNKNOWN";
 interface Check { name: string; result: CheckResult; reasons: string[] }
@@ -36,18 +37,19 @@ function readText(path: string): string | null {
   try { return readFileSync(path, "utf8"); } catch { return null; }
 }
 
-function listMarkdown(dir: string): string[] {
-  if (!existsSync(dir)) return [];
-  const out: string[] = [];
-  for (const e of readdirSync(dir)) {
-    const p = join(dir, e);
-    if (statSync(p).isDirectory()) out.push(...listMarkdown(p));
-    else if (e.endsWith(".md")) out.push(p);
+function hasMarkdown(dir: string): boolean {
+  const info = lstatSync(dir, { throwIfNoEntry: false });
+  if (!info) return false;
+  if (!info.isDirectory()) throw new UnknownError("Specs 不是普通目录: " + dir);
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isSymbolicLink()) throw new UnknownError("Specs 包含不可验证的链接: " + entry.name);
+    if (entry.isDirectory() && hasMarkdown(join(dir, entry.name))) return true;
+    if (entry.isFile() && entry.name.endsWith(".md")) return true;
   }
-  return out;
+  return false;
 }
 
-interface Args { issue: string; openspecRoot: string; cli: string; workspaceId: string | null; out: string | null }
+interface Args { issue: string; openspecRoot: string; cli: string; workspaceId: string | null; out: string | null; changeRef: string }
 
 function parseArgs(argv: string[]): Args {
   const get = (flag: string): string | null => {
@@ -56,11 +58,12 @@ function parseArgs(argv: string[]): Args {
   };
   const issue = get("--issue");
   const openspecRoot = get("--openspec-root");
-  if (!issue || !openspecRoot || !get("--workspace-id")) {
-    process.stderr.write("用法: rondo analysis validate --issue <issue-id> --openspec-root <path> --workspace-id <id> [--multica <cli>]\n");
+  const changeRef = get("--change-ref");
+  if (!issue || !openspecRoot || !get("--workspace-id") || !changeRef) {
+    process.stderr.write("用法: rondo analysis validate --issue <issue-id> --change-ref <id> --openspec-root <path> --workspace-id <id> [--registry-config <path>] [--multica <cli>] [--profile <name>]\n");
     process.exit(64);
   }
-  return { issue, openspecRoot, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), out: get("--out") };
+  return { issue, openspecRoot, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), out: get("--out"), changeRef };
 }
 
 /** Gate is a read-only check; stdout and Complete share this in-memory result. */
@@ -87,30 +90,6 @@ export function emitResult(payload: unknown, exitCode: number, _outPath: string 
   return exitCode;
 }
 
-class Cli {
-  private client: MulticaClient;
-
-  constructor(runtime: RuntimeConfig) {
-    this.client = new MulticaClient(runtime);
-  }
-
-  private ws(): string[] {
-    return this.client.ws();
-  }
-
-  getIssue(issueId: string): Record<string, unknown> {
-    // 特化形态（what 文案与缺失 id 的判定在调用方），用 run 透传而非 MulticaClient.getIssue
-    // transient：读命令，空 stdout（传输层瞬态）由 spawn 层重试一次再判 UNKNOWN（P0）
-    return this.client.run(["issue", "get", issueId, ...this.ws(), "--output", "json"], `读取 Issue(${issueId})`, { transient: true }) as Record<string, unknown>;
-  }
-
-  getMetadata(issueId: string): Record<string, unknown> {
-    const out = this.client.run(["issue", "metadata", "list", issueId, ...this.ws(), "--output", "json"], `读取 metadata(issue=${issueId})`, { transient: true });
-    if (out && typeof out === "object" && !Array.isArray(out)) return out as Record<string, unknown>;
-    throw new UnknownError("metadata list 输出形状不可识别");
-  }
-}
-
 export function checkIdentity(meta: Record<string, unknown>, schema: ChangeSchema | null): Check {
   const reasons: string[] = [];
   const tfsId = meta["tfs.id"];
@@ -120,16 +99,12 @@ export function checkIdentity(meta: Record<string, unknown>, schema: ChangeSchem
   if (schema) {
     const violation = sourceSchemaViolation(tfsKind, schema);
     if (violation && tfsKind) reasons.push(violation);
-    const mismatch = changeKindSchemaViolation(meta["analysis.change_kind"], schema);
-    if (mismatch) reasons.push(mismatch);
-  } else if (meta["analysis.change_kind"] !== "corrective" && meta["analysis.change_kind"] !== "intentional") {
-    reasons.push("analysis.change_kind 缺失或非法（corrective/intentional）");
   }
   return { name: "identity", result: reasons.length ? "FAIL" : "PASS", reasons };
 }
 
 export function checkChange(openspecRoot: string, meta: Record<string, unknown>): {
-  check: Check; changeDir: string | null; schema: ChangeSchema | null;
+  check: Check; changeDir: string | null; schema: ChangeSchema | null; rawMetadata?: string;
 } {
   const changeRef = meta["analysis.change_ref"];
   try {
@@ -142,8 +117,9 @@ export function checkChange(openspecRoot: string, meta: Record<string, unknown>)
     return { check: { name: "change", result: "FAIL", reasons: [`Change 目录不存在: ${changeDir}`] }, changeDir: null, schema: null };
   }
   try {
-    const schema = readChangeSchema(changeDir);
-    return { check: { name: "change", result: "PASS", reasons: [] }, changeDir, schema };
+    const rawMetadata = readChangeMetadata(changeDir);
+    const schema = parseChangeSchema(rawMetadata);
+    return { check: { name: "change", result: "PASS", reasons: [] }, changeDir, schema, rawMetadata };
   } catch (exc) {
     const kind: CheckResult = exc instanceof FailError ? "FAIL" : "UNKNOWN";
     return { check: { name: "change", result: kind, reasons: [(exc as Error).message] }, changeDir: null, schema: null };
@@ -204,37 +180,26 @@ function nativeSpecsSkipStatus(openspecRoot: string, changeDir: string): { resul
   return { result: "PASS", reason: "" };
 }
 
-export function checkAcceptanceContract(schema: ChangeSchema | null, changeDir: string | null, openspecRoot: string): Check {
+export function checkAcceptanceContract(schema: ChangeSchema | null, changeDir: string | null, openspecRoot: string, rawMetadata?: string): Check {
   const reasons: string[] = [];
   if (!schema || !changeDir) return { name: "acceptance_contract", result: "FAIL", reasons: ["前置检查未通过"] };
   const proposal = readText(join(changeDir, "proposal.md"));
   if (!proposal) reasons.push("缺少 proposal.md 或不可读");
   try {
-    parseRepositoryScope(readText(join(changeDir, ".openspec.yaml")) ?? "");
+    parseRepositoryScope(rawMetadata ?? readText(join(changeDir, ".openspec.yaml")) ?? "");
   } catch (error) {
     if (!(error instanceof FailError)) throw error;
     reasons.push(error.message);
   }
 
-  if (schema === "intentional-change") {
+  if (!reasons.length && schema === "intentional-change") {
     // 已有 Delta 的格式由 openspec_validate 按操作类型检查；只有缺少 Delta 才需核实 skipped。
-    if (listMarkdown(join(changeDir, "specs")).length === 0) {
+    if (!hasMarkdown(join(changeDir, "specs"))) {
       const native = nativeSpecsSkipStatus(openspecRoot, changeDir);
       if (native.result === "UNKNOWN") {
         return { name: "acceptance_contract", result: "UNKNOWN", reasons: [...reasons, native.reason] };
       }
       if (native.result === "FAIL") reasons.push(native.reason);
-    }
-  } else {
-    // Corrective：Expected/Actual、Root Cause、Fix Strategy、Regression Scope
-    const text = proposal ?? "";
-    for (const [label, pattern] of [
-      ["Expected Behavior", /expected/i],
-      ["Root Cause", /root\s*cause/i],
-      ["Fix Strategy", /fix\s*strategy/i],
-      ["Regression Scope", /regression\s*scope/i],
-    ] as const) {
-      if (!pattern.test(text)) reasons.push(`proposal.md 缺少 ${label}`);
     }
   }
   return { name: "acceptance_contract", result: reasons.length ? "FAIL" : "PASS", reasons };
@@ -245,40 +210,13 @@ function checkTasks(changeDir: string | null): Check {
   if (!changeDir) return { name: "tasks", result: "FAIL", reasons: ["前置检查未通过"] };
   const tasks = readText(join(changeDir, "tasks.md"));
   if (!tasks) return { name: "tasks", result: "FAIL", reasons: ["缺少 tasks.md"] };
-  if (!/- \[[ x]\]/i.test(tasks)) reasons.push("tasks.md 未找到任何任务项");
-  if (!/verification|验证/i.test(tasks)) reasons.push("tasks.md 未找到 Verification / 验证内容（每个 Implementation Task 必须有验证方式）");
-  return { name: "tasks", result: reasons.length ? "FAIL" : "PASS", reasons };
-}
-
-function checkVerifyRecommendation(meta: Record<string, unknown>): Check {
-  const reasons: string[] = [];
-  const rec = meta["analysis.verify_agent.recommendation"];
-  if (rec !== "required" && rec !== "not_required") reasons.push(`verify_agent.recommendation 缺失或非法: ${String(rec)}`);
-  const reason = meta["analysis.verify_agent.reason"];
-  if (typeof reason !== "string" || reason.trim() === "") reasons.push("verify_agent.reason 缺失");
-  const focusRefs = meta["analysis.verify_agent.focus_refs"];
-  if (typeof focusRefs !== "string" || focusRefs.trim() === "") {
-    reasons.push("verify_agent.focus_refs 缺失");
-  } else {
-    try {
-      const parsed = JSON.parse(focusRefs);
-      if (!Array.isArray(parsed) || parsed.length === 0 || parsed.some((ref: unknown) => typeof ref !== "string" || !ref.trim())) {
-        reasons.push("verify_agent.focus_refs 须为非空字符串引用数组");
-      }
-    } catch {
-      reasons.push("verify_agent.focus_refs 不是合法 JSON 数组");
-    }
+  try {
+    if (!taskReferences(tasks).length) reasons.push("tasks.md 未找到任何可引用任务项");
+  } catch (error) {
+    if (!(error instanceof FailError)) throw error;
+    reasons.push(error.message);
   }
-  return { name: "verify_recommendation", result: reasons.length ? "FAIL" : "PASS", reasons };
-}
-
-export function checkAiReview(schema: ChangeSchema | null, meta: Record<string, unknown>): Check {
-  if (schema !== "intentional-change") return { name: "ai_review", result: schema ? "PASS" : "FAIL", reasons: schema ? ["Corrective 无强制 AI Review"] : ["Schema 未确认"] };
-  const verdict = meta["analysis.ai_review.verdict"];
-  const reasons: string[] = [];
-  if (verdict === "NEEDS_REVISION") reasons.push("ai_review.verdict=NEEDS_REVISION");
-  else if (verdict !== "APPROVED") reasons.push(`ai_review.verdict 缺失或非法: ${String(verdict)}`);
-  return { name: "ai_review", result: reasons.length ? "FAIL" : "PASS", reasons };
+  return { name: "tasks", result: reasons.length ? "FAIL" : "PASS", reasons };
 }
 
 function checkOpenSpecValidate(changeDir: string | null, openspecRoot: string): Check {
@@ -290,7 +228,7 @@ function checkOpenSpecValidate(changeDir: string | null, openspecRoot: string): 
   const changeRef = basename(changeDir);
   let cp;
   try {
-    cp = runCommand(["openspec", "validate", changeRef, "--type", "change", "--strict", "--json"], dirname(openspecRoot));
+    cp = runCommand(["openspec", "validate", changeRef, "--type", "change", "--strict", "--no-interactive", "--json"], dirname(openspecRoot));
   } catch (error) {
     return { name, result: "UNKNOWN", reasons: [`openspec validate 无法执行: ${String(error)}`] };
   }
@@ -308,38 +246,41 @@ function checkOpenSpecValidate(changeDir: string | null, openspecRoot: string): 
   if (cp.status !== (item.valid ? 0 : 1)) {
     return { name, result: "UNKNOWN", reasons: [`openspec validate 退出码 ${cp.status} 与校验结果不一致`] };
   }
-  if (item.valid) return { name, result: "PASS", reasons: [] };
   const issues: { level: string; path: string; message: string }[] = Array.isArray(item.issues) ? item.issues : [];
+  if (item.valid) return { name, result: "PASS", reasons: issues.filter(issue => issue && typeof issue.message === "string").map(issue => `${issue.level}: ${issue.path}: ${issue.message}`) };
   const details = issues.filter(issue => issue?.level === "ERROR" || issue?.level === "WARNING")
     .map(issue => `${issue.path}: ${issue.message}`).join("\n").slice(0, 500);
   return { name, result: "FAIL", reasons: [`openspec validate --strict 失败: ${details || changeRef}`] };
 }
 
-export function evaluateAnalysisGate(input: { issue: string; openspecRoot: string; workspaceId: string; runtime: RuntimeConfig }): GateOutcome {
+export function evaluateAnalysisGate(input: { issue: string; openspecRoot: string; workspaceId: string; runtime: RuntimeConfig; changeRef: string; snapshot?: { issue: Record<string, unknown>; metadata: Record<string, unknown> } }): GateOutcome {
   const args = input;
   const checks: Check[] = [];
   let context: { issue_id: string; workspace_id: string; change_ref: string; change_kind: "corrective" | "intentional"; schema: ChangeSchema; change_dir: string; metadata_digest: string; metadata: Record<string, unknown> } | null = null;
   try {
-    const cli = new Cli(input.runtime);
-    // 先确认 Issue 在当前工作区可读取（防止静默读错工作区）
-    const issue = cli.getIssue(args.issue);
+    // 先确认 Issue 在当前工作区可读取；复用同一原生响应中的 Metadata。
+    const issue = input.snapshot?.issue ?? new MulticaClient(input.runtime).getIssue(args.issue);
     if (!issue.id) throw new UnknownError(`Issue ${args.issue} 不可读取（不存在或不属于当前工作区）`);
-    const meta = cli.getMetadata(args.issue);
+    const sourceMeta = input.snapshot?.metadata ?? requireIssueMetadata(issue);
     // --openspec-root 语义统一：根仓路径自动归一到其 openspec/ 子目录
     const openspecRoot = resolveOpenspecRootDir(args.openspecRoot);
-    const { check: change, changeDir, schema } = checkChange(openspecRoot, meta);
+    const { check: change, changeDir, schema, rawMetadata } = checkChange(openspecRoot, { "analysis.change_ref": input.changeRef });
+    const meta = schema ? { ...sourceMeta, ...analysisMetadataEntries(input.changeRef, schema) } : sourceMeta;
     checks.push(checkIdentity(meta, schema));
     checks.push(change);
-    checks.push(checkAcceptanceContract(schema, changeDir, openspecRoot));
-    checks.push(checkTasks(changeDir));
-    checks.push(checkVerifyRecommendation(meta));
-    checks.push(checkAiReview(schema, meta));
-    checks.push(checkOpenSpecValidate(changeDir, openspecRoot));
-    if (schema && changeDir && typeof meta["analysis.change_ref"] === "string" &&
-        (meta["analysis.change_kind"] === "corrective" || meta["analysis.change_kind"] === "intentional")) {
+    // Change 不可确认时不执行依赖该目录/Schema 的检查，避免派生 FAIL。
+    if (change.result === "PASS") {
+      checks.push(checkTasks(changeDir));
+    }
+    // 本地硬条件已失败时，不再执行可能启动外部 CLI 的 Acceptance 检查或 Strict Validation。
+    if (checks.every(c => c.result === "PASS")) {
+      checks.push(checkAcceptanceContract(schema, changeDir, openspecRoot, rawMetadata));
+      if (checks.every(c => c.result === "PASS")) checks.push(checkOpenSpecValidate(changeDir, openspecRoot));
+    }
+    if (schema && changeDir) {
       context = {
         issue_id: String(issue.id), workspace_id: args.workspaceId!,
-        change_ref: meta["analysis.change_ref"], change_kind: meta["analysis.change_kind"],
+        change_ref: input.changeRef, change_kind: changeKindFromSchema(schema),
         schema, change_dir: changeDir, metadata_digest: metadataEvidenceDigest(meta), metadata: meta,
       };
     }
@@ -353,17 +294,11 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
   }
 
   let result: CheckResult = "PASS";
-  if (checks.some((c) => c.result === "UNKNOWN")) result = "UNKNOWN";
-  else if (checks.some((c) => c.result === "FAIL")) result = "FAIL";
-  const reasons = checks.flatMap((c) => c.reasons.map((r) => `[${c.name}] ${r}`));
+  if (checks.some((c) => c.result === "FAIL")) result = "FAIL";
+  else if (checks.some((c) => c.result === "UNKNOWN")) result = "UNKNOWN";
+  const reasons = checks.filter(c => result === "PASS" || c.result !== "PASS").flatMap((c) => c.reasons.map((r) => `[${c.name}] ${r}`));
   const code = result === "PASS" ? 0 : result === "FAIL" ? 2 : 3;
   if (result === "PASS") {
-    // 以同一份必需检查项契约约束 Gate 产出和 Complete 消费。
-    const names = new Set(checks.map((check) => check.name));
-    if (checks.length !== ANALYSIS_GATE_CHECKS.length || names.size !== ANALYSIS_GATE_CHECKS.length ||
-        ANALYSIS_GATE_CHECKS.some((name) => !names.has(name))) {
-      return gateOutcome({ result: "UNKNOWN", checks, reasons: ["Analysis Gate 必需检查项集合不完整"] }, 3, null);
-    }
     if (!context) return gateOutcome({ result: "UNKNOWN", checks, reasons: ["Gate 缺少可核验的 Change 身份"] }, 3, null);
     try {
       const { change_dir, metadata, ...identity } = context;
@@ -381,15 +316,21 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
 
 /** Preview never persists a file. Complete invokes the same check again before publication. */
 function main(rawArgs: string[]): number {
+  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis validate --issue <issue-id> --change-ref <id> --openspec-root <path> --workspace-id <id> [--registry-config <path>] [--multica <cli>] [--profile <name>]\n"); return 0; }
   const args = parseArgs(rawArgs);
   if (args.out) return emitResult({ result: "FAIL", checks: [], reasons: ["--out 已退役；Analysis Gate 结果不再持久化"] }, 2, null);
-  const outcome = evaluateAnalysisGate({
-    issue: args.issue,
-    openspecRoot: args.openspecRoot,
-    workspaceId: args.workspaceId!,
-    runtime: analysisRuntime(rawArgs, args.cli, args.workspaceId),
-  });
-  return emitResult(outcome.payload, outcome.exitCode, null);
+  try {
+    const outcome = evaluateAnalysisGate({
+      issue: args.issue,
+      openspecRoot: args.openspecRoot,
+      workspaceId: args.workspaceId!,
+      runtime: analysisRuntime(rawArgs, args.cli, args.workspaceId), changeRef: args.changeRef,
+    });
+    return emitResult(outcome.payload, outcome.exitCode, null);
+  } catch (error) {
+    if (error instanceof UnknownError) return emitResult({ result: "UNKNOWN", checks: [], reasons: [error.message] }, 3, null);
+    throw error;
+  }
 }
 
 /** commander 注册：group=analysis；参数解析沿用原脚本实现以保证契约逐字节等价。 */

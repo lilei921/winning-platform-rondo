@@ -8,7 +8,7 @@
 
 | Skill | 主要用途 |
 | --- | --- |
-| [analysis-completion](analysis-completion/SKILL.md) | 分析门禁通过后的事实发布与 Analysis 收口 |
+| [analysis-publish](analysis-publish/SKILL.md) | 分析门禁通过后的事实发布与 Analysis 收口 |
 | [bug-analysis](bug-analysis/SKILL.md) | Corrective 问题根因与修复建议分析 |
 | [bug-delivery](bug-delivery/SKILL.md) | Bug 修复的 Git 交付与 PR 准备 |
 | [change-development](change-development/SKILL.md) | Engineer 对完整 Change 的实现、验证及 PR 交付 |
@@ -19,7 +19,6 @@
 | [requirement-analysis](requirement-analysis/SKILL.md) | Intentional 需求澄清与方案分析 |
 | [spec-preparation](spec-preparation/SKILL.md) | 通过 OpenSpec CLI 准备和修订 Change 工件 |
 | [tfs-sync](tfs-sync/SKILL.md) | TFS Work Item 与 Issue 同步 |
-| [workitem-triage](workitem-triage/SKILL.md) | Work Item 准入评估 |
 | [workspace-preparation](workspace-preparation/SKILL.md) | Bug / Requirement 需要的 Git 工作区准备与复用 |
 
 ## 已归档或保留但不受管

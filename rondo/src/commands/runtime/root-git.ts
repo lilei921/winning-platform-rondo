@@ -19,8 +19,9 @@ interface PublishOptions {
   repoUrl: string;
   expectedBranch: string;
   approvedCommit?: string;
-  recoverCommit?: string;
   fixedSourceCommit?: string;
+  /** 在固定来源已 Fetch 且可达后，按当前契约决定是否恢复该版本。 */
+  canRecoverFixedSource?: (commit: string, localHead: string) => boolean;
   remote?: RootRemote;
   validateTree?: (commit: string) => void | Promise<void>;
 }
@@ -31,9 +32,10 @@ function run(root: string, args: string[], operation: string): string {
 }
 
 function rootPath(arg?: string | null): string {
-  const specified = arg || process.env.RONDO_WORKSPACE_PATH;
+  if (arg != null) return validateRootRepo(arg, "--root-repo");
+  const specified = process.env.RONDO_WORKSPACE_PATH;
   if (!specified) throw new UnknownError("请通过 --root-repo 或 RONDO_WORKSPACE_PATH 指定持久根仓");
-  return validateRootRepo(specified, arg ? "--root-repo" : "RONDO_WORKSPACE_PATH");
+  return validateRootRepo(specified, "RONDO_WORKSPACE_PATH");
 }
 
 const rootMapping = "docs/config/repo-context.yaml";
@@ -369,24 +371,23 @@ async function publishCommittedChange(
   const isAncestor = (older: string, newer: string): boolean =>
     git(root, ["merge-base", "--is-ancestor", older, newer]).status === 0;
   let remoteTip = fetch();
-  // A fixed published source is verified against the original remote branch.
-  // Exact recovery needs no proof of the checkout's historical starting ref.
-  if (native && !options.approvedCommit && !options.recoverCommit) assertNativeCheckoutBaseline(root, branch);
   for (let attempt = 0; attempt < 3; attempt++) {
     if (options.fixedSourceCommit && !isAncestor(options.fixedSourceCommit, remoteTip))
       throw new UnknownError("已有 analysis.source.commit 不在原目标分支，停止发布");
+    if (attempt === 0) {
+      // 固定来源已可达；按本次契约判断是否恢复，不需要重复读取或校验候选。
+      const fixed = options.fixedSourceCommit;
+      if (fixed && options.canRecoverFixedSource?.(fixed, head)) {
+        if (changeTree(root, remoteTip, path) !== changeTree(root, fixed, path))
+          throw new UnknownError("原目标分支的 Change 已变化，不能复用旧审核版本");
+        return result(fixed);
+      }
+      if (native && !options.approvedCommit) assertNativeCheckoutBaseline(root, branch);
+    }
     const approved = options.approvedCommit;
     const descendsFromApproval = (commit: string): boolean =>
       !approved || isAncestor(approved, commit);
     if (!descendsFromApproval(remoteTip)) throw new FailError("目标分支不含批准的 Analysis SHA: " + approved);
-    if (options.recoverCommit) {
-      if (!shaPattern.test(options.recoverCommit) || !isAncestor(options.recoverCommit, remoteTip))
-        throw new UnknownError("已固定的分析发布 Commit 不在原目标分支，停止恢复");
-      if (changeTree(root, remoteTip, path) !== changeTree(root, options.recoverCommit, path))
-        throw new UnknownError("原目标分支的 Change 已变化，不能复用旧审核版本");
-      await options.validateTree?.(options.recoverCommit);
-      return result(options.recoverCommit);
-    }
     const receipts = remoteReceipts(root, remoteTip, changeRef);
     const sourceIsRemote = isAncestor(source, remoteTip);
     // A fresh clone can contain a zero-diff receipt after its last path-changing commit.
