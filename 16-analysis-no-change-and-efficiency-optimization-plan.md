@@ -193,6 +193,8 @@ flowchart TD
 
 ## 5. 修改方案
 
+**收敛边界（实施约束）：** 精简的目标是减少无效执行和工具探索，而不是减少提示词字数。仅删除已确认的职责错位、重复校验或无实际价值的强制步骤；保留能够直接指导 LLM 正确执行的适用条件、具体命令、必要参数、配置来源、原生机制、结果判断、失败处理和专业决策依据。不得将明确有效的执行指导替换为泛化描述，迫使 LLM 反查 CLI 源码、历史工件或反复尝试命令。Lead、Independent Verification 与 spec-preparation 采用定向最小修改，不进行整体重写或泛化精简。对无法证明冗余的有效指导，默认保留。
+
 ### 5.1 Workitem Analyst — 核心职责
 
 文件：agents/workitem-analyst/instructions.md。
@@ -205,7 +207,7 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 
 > 存在需要实施的工程变更时，完成适用的 OpenSpec 工件及专业复核，提交研发契约审核。无需新增工程变更时，在当前 Issue Comment 中记录专业结论、关键依据及后续处理建议。关键事实或意图尚未确定时，说明影响判断的证据缺口或待决定事项。
 
-无需显式 @Lead，复用 Multica 原生 Comment 回流。现有证据复用、最小充分分析、按需调用 Skill 及专业复核原则已足够，不重复增加限制。变更分类、Intentional Review、Independent Verify Recommendation 保留在实际工程契约场景。
+无需显式 @Lead，复用 Multica 原生 Comment 回流。现有证据复用、最小充分分析、按需调用 Skill 及专业复核原则已足够，不重复增加限制。变更分类、Intentional Review、Independent Verify Recommendation 保留在实际工程契约场景。同步局部调整 Core Responsibilities、Working Principles 和 Delivery 中的适用条件，避免无工程增量时仍要求评估或输出 Independent Verify Recommendation。真实工程变更场景的现有独立验收判断标准、理由、风险和验证覆盖要求完整保留，不简化为由 LLM 自行探索的笼统建议。
 
 ### 5.2 spec-preparation
 
@@ -213,7 +215,7 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 
 以已明确需要实施的工程增量为适用场景；保留原生 Change Identity、Schema、Artifact Instruction、授权规则。现有最小创建命令 openspec new change <id> --schema <schema> 已正确，保持即可，不增加 --description 或额外工件。合法 skip_specs 与 Conditional Design 以原生 Schema 和专业判断为准。
 
-保留必要 Artifact 状态、依赖和实际工件核实；独立 Strict Validation 调整为按需执行，最终发布的真实 Gate 必须执行原生 Strict Validation。不得因省略准备阶段的重复校验而遗漏归档冲突等必要诊断：最终 CLI 应保留有意义的原生诊断信息，专业判断交 Analyst。Skill 不维护额外白名单，不决定是否需要研发。
+保留必要 Artifact 状态、依赖和实际工件核实；独立 Strict Validation 调整为按需执行，最终发布的真实 Gate 必须执行原生 Strict Validation。不得因省略准备阶段的重复校验而遗漏归档冲突等必要诊断：最终 CLI 应保留有意义的原生诊断信息，专业判断交 Analyst。Skill 不维护额外白名单，不决定是否需要研发。同步将 Output 中的 Validation Result 改为仅在实际执行时返回；保留 Change Identity 查询、原生命令及参数、Schema 来源、Artifact 依赖、Repository Scope、合法省略、授权与恢复指引。现有 Registry 配置及 Workspace 核验仅在确认无实际用途或已有等价确定性保护时局部删除，不借此改造配置体系。
 
 ### 5.3 analysis-completion
 
@@ -238,21 +240,21 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 }
 ```
 
-实际值来自专业判断；Corrective 按适用契约提供字段。不新增 Review、Handoff 或 Gate 文件；临时 Facts 不提交 Git。必要专业复核依据使用适用工件或可信引用。正常流程不要求 stage 或 validate，validate 按需诊断。审核摘要引用 CLI 返回的固定 Git 版本；复用原生 Comment 与实际 cwd（使用 content-file 时）。命令示例与 CLI/COMMANDS.md 保持一致，保留现有必要参数。
+实际值来自专业判断；Corrective 按适用契约提供字段。不新增 Review、Handoff 或 Gate 文件；临时 Facts 不提交 Git。必要专业复核依据使用适用工件或可信引用。正常流程不要求 stage 或 validate，validate 按需诊断。审核摘要引用 CLI 返回的固定 Git 版本；复用原生 Comment 与实际 cwd（使用 content-file 时）。命令示例与 CLI/COMMANDS.md 保持一致，保留现有必要参数及配置来源，提供可直接执行的 complete 与按需 validate 完整示例（含本次 --facts）。统一 complete 首次成功与审核重放的 analysis_source 返回结构，使 Skill 可直接引用固定来源，不依赖猜测 root_commit 或额外查询。保留明确的 PASS / FAIL / UNKNOWN 处理指导，仅删除 CLI 已确认成功后的机械重复检查。
 
 ### 5.4 Delivery Lead
 
 文件：agents/delivery-lead/instructions.md。
 
-现有 Working Principles 已支持根据当前目标、成果、未解决问题和可用成员判断下一步。仅在需要澄清适用范围时局部替换：
+现有 Working Principles 已支持根据当前目标、成果、未解决问题和可用成员判断下一步，无需新增 No Change 专属职责或重写现有协调指引。仅将现有批准规则的适用对象明确为工程契约：
 
-> 根据专业分析结论及当前 Issue 的实际情况，协调后续处理及必要的 Human 决策。
+> 根据 Human 对工程契约的明确批准意见，使用 `rondo analysis approve` 登记批准决定，并协调获批 Change 的实施。
 
 无工程增量直接消费 Analyst 的原生 Comment；不要求额外 @mention、不定义 No Change 专用状态转换或固定流程。Lead 根据实际情况决定是否补充分析、协调现场版本确认、交 Human 决策或按授权结束。无需研发不等于现场已解决或 TFS 已关闭。Lead 不承担 TFS 机械操作，不调用依赖 PR 完成事实的 Closeout。现有能力不支持非研发终止时由 Human 处理，不为此提前设计 TFS 写回或取消处理框架。
 
 ### 5.5 Wayfinder — 准入职责收敛
 
-当前 workitem-triage 仅绑定 Wayfinder（workspace-config/provisioning.json），其主要内容为准入语义、Decision 有效性、记录和结果处理，属于 Wayfinder 自身角色职责。建议合并到 agents/wayfinder-agent/instructions.md，取消独立 workitem-triage Skill，不新增替代 Skill 或兼容层；codebase-explorer 保持可复用工程调查方法。
+当前 workitem-triage 仅绑定 Wayfinder（workspace-config/provisioning.json），但绑定数量不是合并依据。其主要内容为准入语义、Decision 有效性、记录和结果处理，属于 Wayfinder 自身角色职责，独立的工程调查方法已由 codebase-explorer 提供。建议合并到 agents/wayfinder-agent/instructions.md，取消独立 workitem-triage Skill，不新增替代 Skill 或兼容层；codebase-explorer 保持可复用工程调查方法。
 
 已确认收敛方向：
 - 删除 Repository Accessibility 和 Admission Boundary 两个独立评估维度；保留 Business Scope、Repository Discovery、Processing Capability，按下述已确认的准入规则判断。实际访问异常与已明确的授权/排除规则仍按实际影响处理，不要求常规逐项调查权限或限制。
@@ -267,7 +269,7 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 | 维度 | 准入条件 |
 | --- | --- |
 | Business Scope | 必须明确 Issue 所属业务范围，且属于当前支持的业务范围。 |
-| Repository Discovery | 必须定位与当前 Issue 相关的工程仓库；无需确定最终修改文件、Symbol、完整调用链或技术实现方案。 |
+| Repository Discovery | 必须定位能够支撑后续专业处理的相关工程仓库；无需确定全部可能修改的仓库、最终修改文件、Symbol、完整调用链或技术实现方案。 |
 | Processing Capability | 依据 TFS Work Item 类型和实际诉求判断当前支持范围，不额外调查 Agent、工具或技术实现能力。 |
 
 当前支持规则：
@@ -305,7 +307,7 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 满足以下条件方可进入后续处理：
 
 - Business Scope：明确 Issue 所属业务范围，且属于当前支持的业务范围。
-- Repository Discovery：定位与当前 Issue 相关的工程仓库。
+- Repository Discovery：定位能够支撑后续处理的相关工程仓库。
 - Processing Capability：
   - Bug：支持。
   - 需求：支持现有功能优化及 Bug 类问题，暂不支持新增业务功能。
@@ -314,9 +316,11 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 
 # Decision
 
-- accepted：满足准入条件。
+- accepted：满足准入条件，且无明确授权阻断。
 - needs_human：影响准入判断的关键事项需要 Human 补充或确认。
-- unsupported：有明确依据表明不属于当前支持范围。
+- unsupported：有明确依据表明不属于当前支持范围，或已确认无法获得必要授权。
+
+不将证据不足或暂时的工具故障直接认定为不支持。
 
 # Delivery
 
@@ -327,6 +331,14 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsupported>
 
 根据命令结果处理后续事项。操作结果不明确时核实实际结果，不重复执行已确认成功的操作。
+
+# MCP 使用
+
+优先按需使用已授权、启用的只读 MCP 获取工程证据：
+
+- remote-codegraph：基于已有索引定位实现、调用关系与影响线索。
+- remote-filesystem：发现授权目录，查找和读取源码、配置。
+- remote-ripgrep：按接口名、配置项、错误文本等线索检索源码。
 ```
 
 Decision 是专业结论，Comment 是专业内容的原生载体；CLI 不消费或解释 Comment 正文。已有有效 Decision 可复用，不强制重新发布。若已有明确硬性授权阻断，不因满足常规三项条件而越权推进。
@@ -347,7 +359,7 @@ rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsuppor
 
 当前 handoff.ts 并不传递专业内容；下游在同一 Issue 消费原始信息和 /note Evidence。新入口仅执行 Agent 已给出的 Decision，不判定准入语义，不解析评论，不增加 Metadata 或状态机，不修改 TFS Work Item。
 
-最小实现：复用现有 Runtime 身份、Issue 归属、来源与状态校验，以及 MulticaClient.setStatusNoStart；非 accepted 分支无需查询下游目标或 Run。状态已符合时返回 NOOP；不覆盖已移交下游的 Issue。保留原 handoff 的单次触发及不确定结果恢复语义，未知状态或目标不明时返回真实错误。unsupported 已在 Manifest 定义为 cancelled category；实际 Workspace 配置和原生恢复行为以安装版本为准，不另造状态。核实现有 blocked / unsupported 恢复及运行中状态，不增加泛化恢复框架。
+最小实现：复用现有 Runtime 身份、Issue 归属、来源与状态校验，以及 MulticaClient.setStatusNoStart；非 accepted 分支无需查询下游目标或 Run。状态已符合时返回 NOOP；不覆盖已移交下游的 Issue。保留原 handoff 的单次触发及不确定结果恢复语义，未知状态或目标不明时返回真实错误。unsupported 已在 Manifest 定义为 cancelled category；实际 Workspace 配置和原生恢复行为以安装版本为准，不另造状态。当前 handoff.ts 的 isWayfinderOwned 仅允许 todo / in_progress；实施时验证 Human 补充后的 blocked / unsupported 原生唤醒及状态行为，按真实可恢复状态局部调整，确保合法重评不被旧状态校验阻断，也不允许已移交 Issue 回退。目标路由的 tfs.type 支持性检查仅用于 accepted 分支，不得阻断 unsupported 或 needs_human 的状态处理；必要来源身份检查仍保留。不增加泛化恢复框架。
 
 同步替换 handoff 的现有消费者、Decision 枚举、CLI 参数、Agent Instructions、Comment 示例、COMMANDS.md、相关测试和有效设计引用；不保留重复公开命令（除非存在经核实且不可同步迁移的实际消费者，需明确说明）。不扩展到其他 delivery 命令。
 
@@ -355,23 +367,23 @@ rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsuppor
 
 ### 5.6 Rondo CLI
 
-常规发布仅使用 analysis complete。优先直接消费本次专业 Facts，而不是将 stage 包装进 complete。
+常规发布仅使用 analysis complete。优先直接消费本次专业 Facts，而不是将 stage 包装进 complete。独立 analysis validate 增加 --facts <facts.json> 输入，直接消费本次未持久化的 Facts，复用相同 Gate，仅执行只读诊断；不得依赖已退役 stage 或旧 draft。保留现有实际需要的其他参数，并同步 COMMANDS.md 与 Skill 示例。
 
 #### 最小执行模型
 
 1. 读取当前 Issue 及 Metadata，核实适用身份、状态、Runtime；对已处于 analysis_review 的相同提交沿用固定版本重放，不重新执行 Gate。
 2. 将本次 Analysis Facts 投影到当前来源事实的内存视图；共享 Gate 直接消费这份待提交视图，执行最终真实校验。专业字段由本次输入提供，不继承过期 Review Verdict。保留初始服务端事实作为冲突核验依据。
-3. 使用现有 Git 发布能力核对候选版本与 Gate 摘要、实际发布路径及远端固定 Commit；不改 Git 发布算法。
+3. 使用现有 Git 发布能力核对候选版本与 Gate 摘要、实际发布路径及远端固定 Commit；Gate、候选 Commit 与远端契约的 digest 计算统一消费本次 Facts（包括 verify_agent.focus_refs），不混用旧 Metadata。不改 Git 发布算法。
 4. 在写入最终 Facts、Gate、Source 前核对相关服务端事实及状态未发生冲突；只写变化字段，保留原有来源回读、状态写入及最终结果确认。部分成功与响应丢失依靠现有固定来源/发布恢复语义，不新增持久化事务。
 
-待提交视图与初始服务端快照必须区分；最终 Gate 摘要绑定本次提交，冲突比较基于初始实际事实，不能要求旧 draft 与新输入相同。旧字段不适用时明确处理，不复用旧 ai_review。保留现有身份/授权及实际外部操作边界核验。若直接消费 Facts 经实现验证反而显著增加恢复复杂度，则采用最小的现有 stage 逻辑复用，不强行重构。
+待提交视图与初始服务端快照仅作为现有函数中的普通数据及参数传递，不新增独立类型体系、Snapshot Manager、Facts Store、事务管理或恢复状态机。两者必须区分；最终 Gate 摘要绑定本次提交，冲突比较基于初始实际事实，不能要求旧 draft 与新输入相同。旧字段不适用时明确处理，不复用旧 ai_review。保留现有身份/授权及实际外部操作边界核验。若直接消费 Facts 经实现验证反而显著增加恢复复杂度，则采用最小的现有 stage 逻辑复用，不强行重构。
 
 #### 删除或合并的检查
 
 | 当前操作 | 目标调整 |
 | --- | --- |
 | 常规 stage 中间 Metadata 写入/回读 | 删除；确认独立消费者后退役 stage 命令 |
-| Gate 再读取同一 Issue 与 Metadata | 直接消费 complete 已读取的事实；独立 validate 保留自身读入 |
+| Gate 再读取同一 Issue 与 Metadata | 直接消费 complete 已读取的事实和本次 Facts；独立 validate 自行读入当前 Issue 与 --facts，不依赖 stage |
 | validateDraftFields 与 Gate 字段检查 | 统一必要字段校验，避免同一输入重复判断 |
 | analysisRuntime 与 assertRegistryWorkspace 重复 Workspace 校验 | 统一由现有 Runtime 解析负责；保留真实配置身份检查 |
 | 同一初始快照重复 assertAnalysisWritable | 删除重复调用；外部写入前状态核实仍保留 |
@@ -385,7 +397,7 @@ rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsuppor
 
 不新增 Artifact Preflight Gate 或命令，不创建第二份白名单；现有发布约束针对实际发布差异，不能改为拒绝整个 Change 目录。能够低成本确定的错误适当前移即可；不为提前失败重构发布流程。
 
-保留 --registry-config 等现有真实参数，修复相关 leaf --help 和 COMMANDS.md 说明。validate 保留按需诊断；approve、read 保持不变。确认 findings_ref、旧 gate 输入等字段确无实际消费者后才删除。保持明确的结构化失败原因与必要原生诊断，不重构全局输出系统。补充现有回归测试覆盖正常发布、输入变化、远端不一致、部分成功恢复与审核重放。
+保留 --registry-config 等现有真实参数，修复相关 leaf --help 和 COMMANDS.md 说明。validate 支持 --facts 按需只读诊断；complete 首次成功与重放统一返回 analysis_source；approve、read 保持不变。确认 findings_ref、旧 gate 输入等字段确无实际消费者后才删除。保持明确的结构化失败原因与必要原生诊断，不重构全局输出系统。补充现有回归测试覆盖正常发布、输入变化、远端不一致、部分成功恢复与审核重放。
 
 ### 5.7 工程调查与 Native Workspace
 
@@ -395,7 +407,7 @@ rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsuppor
 
 ### 5.8 设计文档
 
-仅修改 02、03 中真实工程契约与无工程增量出口、正常发布及 Wayfinder 资产的有效规范和必要引用；01 设计原则、05 Schema 无需增加规则，其他设计仅同步受合并影响的当前有效引用。不改历史记录或扩大设计重构。
+仅修改 02、03 中真实工程契约与无工程增量出口、正常发布及 Wayfinder 资产的有效规范和必要引用；01 §1.4.1 等当前有效的 workitem-triage、eligible、delivery handoff 引用同步更新，不增加或改变 01 设计原则；05 Schema 无需调整，其他设计仅同步受合并影响的当前有效引用。不改历史记录或扩大设计重构。
 
 ### 5.9 职责归属
 
@@ -447,15 +459,16 @@ Wayfinder 明确受支持的业务范围、定位相关工程仓库，判断需�
 功能验收：
 - 无工程增量：直接发布 Comment，原生回流，由 Lead 协调，不虚构 Change/Gate/Approval/PR/TFS 事实；现场版本未知不等于已解决；已有有效契约不被静默取消。
 - 真实工程增量：正常 complete 直接消费本次 Facts，保留专业复核、原生 Strict Validation、必要 Gate、Git 固定来源、Human Approval；必要诊断仍可执行。
-- CLI 回归：输入缺失或不合法、发布路径越界、身份或事实冲突、候选/远端不一致、部分成功恢复与审核重放；不得降低已有保护或增加无意义校验。
+- CLI 回归：首次发布前 validate 直接消费本次 Facts（无 stage、无 Metadata 写入）；Gate、候选及远端契约使用一致的 Facts；输入缺失或不合法、发布路径越界、身份或事实冲突、候选/远端不一致、部分成功恢复与审核重放；首次发布与重放返回一致的固定来源字段。不得降低已有保护或增加无意义校验。
 - Wayfinder：Business Scope 与 Repository Discovery 必须满足；Bug 满足前两项即可准入，需求仅支持 Bug 类及现有功能优化，新增业务功能暂不支持，关键性质不明时按需澄清。有效 Decision 先记录再执行 admission；三个分支分别验证原生交接/blocked/unsupported、Assignee、是否触发 Run、重复执行和已移交保护，不修改 TFS；删除两个独立准入维度，不取消真实授权边界；合并实施后确认绑定及当前原生评论契约。
 - 工程调查：远端路径和证据版本真实，按需使用工具；不强制重复 Checkout。
+- Agent / Skill 指导可直接消费：保留真实命令、参数、配置来源、专业判断依据与必要失败处理；正常执行无需反查 CLI 内部实现或历史工件来补齐契约。Lead 仅局部明确批准对象，Independent Verification 仅调整适用范围，spec-preparation 保留有效原生执行指引；不以提示词缩短作为验收目标。
 - 效率仅作回放观察，不写入 Agent Instructions、Gate 或固定限时、配额。Runtime 取消与等待独立调查，不作为功能实现验收条件。
 
 ## 8. 实施范围
 
 - 模块一：Analysis 职责优化。Analysis / Change 解耦、直接 Comment 回流、Lead 按实际情况协调、最小工件与按需准备校验。
-- 模块二：Analysis Completion 收敛。直接消费本次 Facts、删除常规 Stage 与重复/伪语义校验、保留必要 Gate 与发布后置条件、精简 Skill 和真实 CLI 使用契约。
+- 模块二：Analysis Completion 收敛。complete 与按需 validate 直接消费本次 Facts、删除常规 Stage 与重复/伪语义校验、保留必要 Gate 与发布后置条件、统一固定来源返回、保留可直接执行的 Skill 与 CLI 使用契约。
 - 模块三：Wayfinder 职责收敛。合并 workitem-triage、明确三项准入条件、按目标稿收敛 Instructions、确认有效 Decision 后通过统一 admission 执行结果、修正远端 MCP 路径语义。
 
 Runtime 取消及等待问题独立排查，不阻塞上述模块，不预设新调度机制。遵循 01 原则，按实际需要局部修改，不新增概念、Skill、Schema、状态机或执行框架。
