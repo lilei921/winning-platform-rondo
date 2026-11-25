@@ -45,9 +45,6 @@ function fixture(t, { skip = false, schema = "intentional-change", estimate = tr
     metadata: {
       "tfs.type": "需求", "tfs.id": "1234",
       "analysis.change_kind": schema === "corrective-change" ? "corrective" : "intentional", "analysis.change_ref": "d1-internal-1234",
-      "analysis.verify_agent.recommendation": "not_required",
-      "analysis.verify_agent.reason": "No isolated review needed for internal refactor",
-      "analysis.verify_agent.focus_refs": JSON.stringify(["openspec/changes/d1-internal-1234/proposal.md"]),
     },
   }));
   chmodSync(MOCK, 0o755);
@@ -55,14 +52,9 @@ function fixture(t, { skip = false, schema = "intentional-change", estimate = tr
   writeFileSync(configPath, JSON.stringify({ runtime: {
     multica_cli: MOCK, workspace_id: "ws-test", multica_profile: "private", multica_server_url: "https://private.example",
   } }));
-  const factsPath = join(root, "facts.json");
-  writeFileSync(factsPath, JSON.stringify({
-    change_kind: schema === "corrective-change" ? "corrective" : "intentional", change_ref: "d1-internal-1234",
-    verify_agent: { recommendation: "not_required", reason: "No isolated review needed for internal refactor", focus_refs: ["openspec/changes/d1-internal-1234/proposal.md"] },
-  }));
   function gate() {
     const r = spawnSync(process.execPath, [
-      CLI, "analysis", "validate", "--facts", factsPath, "--issue", "issue-1", "--openspec-root", root,
+      CLI, "analysis", "validate", "--change-ref", "d1-internal-1234", "--issue", "issue-1", "--openspec-root", root,
       "--workspace-id", "ws-test", "--multica", MOCK, "--registry-config", configPath,
     ], {
       encoding: "utf8", env: { ...process.env, MOCK_STATE: statePath, MOCK_EXPECT_PROFILE: "private", MOCK_EXPECT_SERVER: "https://private.example" }, timeout: 30_000,

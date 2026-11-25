@@ -14,17 +14,14 @@ import { assertNativeTaskCheckout, nativeCheckoutExpected } from "../../clients/
 import { gitOk } from "../../clients/git.js";
 import { publishChange, requirementBranch, requirementRoot, rootRepositoryUrl, resolveProjectRootBranch } from "../runtime/root-git.js";
 import { assertAnalysisWritable } from "./guard.js";
-import { sourceSchemaViolation, changeKindSchemaViolation } from "./change-schema.js";
+import { sourceSchemaViolation, changeKindSchemaViolation, assertStableChangeRef, CHANGE_KINDS } from "./change-schema.js";
 import { changeEvidenceDigest, metadataEvidenceDigest } from "./gate-evidence.js";
 import { evaluateAnalysisGate } from "./validate.js";
 import { parseAnalysisSource, readAnalysisSource, repositoryUrl, sameAnalysisSource, type AnalysisSource } from "./source.js";
 import {
   PreconditionError,
   classifyTfsType,
-  draftMetadataEntries,
-  submissionMetadata,
-  loadValidatedFacts,
-  type Facts,
+  analysisMetadataEntries,
 } from "./facts.js";
 
 import { committedContract, readPublishedContract, assertCommittedContractFiles } from "./published-source.js";
@@ -46,29 +43,23 @@ function sameIssueOwner(before: Record<string, unknown>, after: Record<string, u
 }
 const ANALYSIS_CONTRACT_FILE = /^(?:\.openspec\.yaml|proposal\.md|tasks\.md|design\.md|specs\/.+\.md)$/;
 
-function metadataEntries(f: Facts): Record<string, string> {
-  return {
-    ...draftMetadataEntries(f),
-    "analysis.gate.result": "PASS",
-  };
-}
-
-function parseArgs(argv: string[]): { issue: string; facts: string; cli: string; workspaceId: string | null; registryConfig: string | null; rootRepo: string | null; targetBranch: string | null; mode: string } {
+function parseArgs(argv: string[]): { issue: string; changeRef: string; cli: string; workspaceId: string | null; registryConfig: string | null; rootRepo: string | null; targetBranch: string | null; mode: string } {
   const get = (flag: string): string | null => {
     const i = argv.indexOf(flag);
     return i !== -1 && i + 1 < argv.length ? argv[i + 1] : null;
   };
-  if (argv.includes("--root-repo") && (!get("--root-repo")?.trim() || get("--root-repo")!.startsWith("--"))) {
+  const rootRepo = get("--root-repo");
+  if (argv.includes("--root-repo") && (!rootRepo?.trim() || rootRepo.startsWith("--"))) {
     process.stderr.write("--root-repo 必须提供非空路径\n");
     process.exit(64);
   }
   const issue = get("--issue");
-  const facts = get("--facts");
-  if (!issue || !facts || !get("--workspace-id") || !get("--registry-config")) {
-    process.stderr.write("用法: rondo analysis publish --issue <issue-id> --facts <facts.json> --registry-config <repo-registry.json> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>]\n");
+  const changeRef = get("--change-ref");
+  if (!issue || !changeRef || !get("--workspace-id") || !get("--registry-config")) {
+    process.stderr.write("用法: rondo analysis publish --issue <issue-id> --change-ref <id> --registry-config <repo-registry.json> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>]\n");
     process.exit(64);
   }
-  return { issue, facts, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), registryConfig: get("--registry-config"), rootRepo: get("--root-repo"), targetBranch: get("--target-branch"), mode: get("--mode") ?? "legacy" };
+  return { issue, changeRef, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), registryConfig: get("--registry-config"), rootRepo, targetBranch: get("--target-branch"), mode: get("--mode") ?? "legacy" };
 }
 
 /** 读取唯一推送地址；拒绝凭据 URL，避免在 metadata 中保存认证信息。 */
@@ -79,14 +70,14 @@ function pushRepositoryUrl(root: string): string {
 }
 
 async function main(rawArgs: string[]): Promise<number> {
-  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis publish [--mode requirement] --issue <issue-id> --facts <facts.json> --registry-config <path> --workspace-id <id> [--root-repo <path>] [--target-branch <branch>] [--multica <cli>] [--profile <name>]\n"); return 0; }
+  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis publish [--mode requirement] --issue <issue-id> --change-ref <id> --registry-config <path> --workspace-id <id> [--root-repo <path>] [--target-branch <branch>] [--multica <cli>] [--profile <name>]\n"); return 0; }
   const args = parseArgs(rawArgs);
   const ws = ["--workspace-id", args.workspaceId!];
   try {
     const runtime = analysisRuntime(rawArgs, args.cli, args.workspaceId);
     const MC = multicaPrefix(runtime);
-    const facts = loadValidatedFacts(args.facts);
-    const entries = metadataEntries(facts);
+    assertStableChangeRef(args.changeRef);
+    const entries: Record<string, string> = { "analysis.change_ref": args.changeRef, [GATE_RESULT]: "PASS" };
 
     const getIssue = (what: string): Record<string, unknown> => {
       const issue = runJson([...MC, "issue", "get", args.issue, ...ws, "--output", "json"], what, undefined, { transient: true }) as Record<string, unknown>;
@@ -102,7 +93,6 @@ async function main(rawArgs: string[]): Promise<number> {
       throw new PreconditionError("Requirement 必须显式使用 --mode requirement，禁止绕过发布身份核验");
     }
     if (!tfsKind) throw new UnknownError(`tfs.type 缺失或不支持: ${String(priorMeta["tfs.type"] ?? "")}`);
-    const effectiveMeta = submissionMetadata(priorMeta, facts);
     const cfg = loadConfig<BaseRegistryConfig>(args.registryConfig!, { requireRegistry: false, requireTfs: false });
     // 根仓资源查询与 Issue 读写使用同一环境，包含显式 --profile/--multica 覆盖。
     cfg.runtime = runtime;
@@ -112,11 +102,14 @@ async function main(rawArgs: string[]): Promise<number> {
     if (!assertAnalysisWritable(before, priorMeta, entries)) {
       const source = readAnalysisSource(priorMeta);
       if (priorMeta["analysis.gate.result"] !== "PASS") throw new UnknownError("已审核 Issue 缺少可信的 PASS 状态，不能重放");
+      if (!(CHANGE_KINDS as readonly unknown[]).includes(priorMeta["analysis.change_kind"]))
+        throw new UnknownError("已审核 Issue 缺少有效 Change Kind，不能重放");
+      entries["analysis.change_kind"] = String(priorMeta["analysis.change_kind"]);
       if (!requirement) {
         const published = await readPublishedContract(source, priorMeta);
         const violation = sourceSchemaViolation(tfsKind, published.schema);
         if (violation) throw new PreconditionError(violation);
-        const invalid = changeKindSchemaViolation(facts.change_kind, published.schema);
+        const invalid = changeKindSchemaViolation(priorMeta["analysis.change_kind"], published.schema);
         if (invalid) throw new PreconditionError(invalid);
         // Legacy 路径尚未采用相同的 Git 候选证明，保留原有读取及读后状态核验。
         const latest = getIssue("重放后核对审核事实");
@@ -142,7 +135,7 @@ async function main(rawArgs: string[]): Promise<number> {
     const native = requirement && nativeCheckoutExpected(root);
     const saved = requirement && priorMeta["analysis.source"] !== undefined
       ? parseAnalysisSource(priorMeta["analysis.source"]) : undefined;
-    const pinned = saved?.change_ref === facts.change_ref ? saved : undefined;
+    const pinned = saved?.change_ref === args.changeRef ? saved : undefined;
     if (pinned && canonicalRepositoryIdentity(rootRepositoryUrl(root)) !== canonicalRepositoryIdentity(pinned.repo_url))
       throw new FailError("根仓与已有 analysis.source 仓库不一致");
     let publicationBranch: string | undefined;
@@ -165,18 +158,22 @@ async function main(rawArgs: string[]): Promise<number> {
       if (args.targetBranch) throw new PreconditionError("--target-branch 仅用于 Native Requirement 分析发布");
       publicationBranch = requirement ? pinned?.branch ?? requirementBranch() : undefined;
     }
-    const changeDir = join(root, "openspec", "changes", facts.change_ref);
-    const readContractAt = (commit: string) => committedContract(root, commit, facts, effectiveMeta);
+    const changeDir = join(root, "openspec", "changes", args.changeRef);
     // Shared real Gate, independent of caller-supplied PASS or old Metadata.
-    const gate = evaluateAnalysisGate({ issue: args.issue, openspecRoot: root, workspaceId: args.workspaceId!, runtime, facts, snapshot: { issue: before, metadata: effectiveMeta } });
+    const gate = evaluateAnalysisGate({ issue: args.issue, openspecRoot: root, workspaceId: args.workspaceId!, runtime, changeRef: args.changeRef, snapshot: { issue: before, metadata: priorMeta } });
     if (gate.exitCode !== 0 || gate.payload.result !== "PASS") {
       const reason = gate.payload.reasons.join("; ") || "Analysis Gate 未通过";
       if (gate.payload.result === "FAIL") throw new FailError(reason);
       throw new UnknownError(reason);
     }
     const schema = gate.payload.schema;
-    if (!schema || gate.payload.issue_id !== String(before.id) || gate.payload.workspace_id !== args.workspaceId ||
-        gate.payload.change_ref !== facts.change_ref ||
+    if (!schema) throw new UnknownError("本次 Gate 缺少 Change Schema");
+    const derived = analysisMetadataEntries(args.changeRef, schema);
+    Object.assign(entries, derived);
+    const effectiveMeta = { ...priorMeta, ...derived };
+    const readContractAt = (commit: string) => committedContract(root, commit, args.changeRef, effectiveMeta);
+    if (gate.payload.issue_id !== String(before.id) || gate.payload.workspace_id !== args.workspaceId ||
+        gate.payload.change_ref !== args.changeRef ||
         gate.payload.metadata_digest !== metadataEvidenceDigest(effectiveMeta) ||
         !/^[a-f0-9]{64}$/.test(gate.payload.change_digest ?? "")) {
       throw new UnknownError("本次真实 Gate 与 Analysis 身份、Facts 或 Change 摘要不一致");
@@ -191,7 +188,7 @@ async function main(rawArgs: string[]): Promise<number> {
       let checkedContract: Awaited<ReturnType<typeof readPublishedContract>> | undefined;
       if (!requirement && priorMeta["analysis.source"] !== undefined && metadataEvidenceDigest(priorMeta) === gateEvidence.metadata_digest) {
         const saved = parseAnalysisSource(priorMeta["analysis.source"]);
-        if (saved.change_ref === facts.change_ref) {
+        if (saved.change_ref === args.changeRef) {
           const published = await readPublishedContract(saved, effectiveMeta);
           checkedSource = saved;
           checkedContract = published;
@@ -206,8 +203,8 @@ async function main(rawArgs: string[]): Promise<number> {
           committed: "skipped_no_changes", pushed: true, reused_source: true };
       } else {
         const tfsId = String(priorMeta["tfs.id"] ?? "").trim();
-        const subject = `analysis: ${facts.change_ref} (${args.issue}${tfsId ? ` / tfs ${tfsId}` : ""})`;
-        const result = requirement ? await publishChange(root, facts.change_ref, args.issue, ANALYSIS_CONTRACT_FILE, subject, {
+        const subject = `analysis: ${args.changeRef} (${args.issue}${tfsId ? ` / tfs ${tfsId}` : ""})`;
+        const result = requirement ? await publishChange(root, args.changeRef, args.issue, ANALYSIS_CONTRACT_FILE, subject, {
           repoUrl: rootRepositoryUrl(root), expectedBranch: publicationBranch!, fixedSourceCommit: pinned?.commit,
           canRecoverFixedSource: pinned && metadataEvidenceDigest(priorMeta) === gateEvidence.metadata_digest
             ? (commit: string, localHead: string) => {
@@ -228,7 +225,7 @@ async function main(rawArgs: string[]): Promise<number> {
               throw new FailError("候选发布版本与本次真实 Analysis Gate 工程契约不一致");
             }
           },
-        }) : publishChange(root, facts.change_ref, args.issue, ANALYSIS_CONTRACT_FILE, subject);
+        }) : publishChange(root, args.changeRef, args.issue, ANALYSIS_CONTRACT_FILE, subject);
         rootCommit = { ...result };
       }
       if (!requirement && changeEvidenceDigest(changeDir, effectiveMeta, undefined, true) !== gateEvidence.change_digest) {
@@ -239,11 +236,11 @@ async function main(rawArgs: string[]): Promise<number> {
         throw new UnknownError("推送期间 origin 地址已变化，无法确定规范来源");
       }
       const source = recovered ?? parseAnalysisSource({ repo_url: rootCommit.repo_url, branch: rootCommit.branch,
-        commit: String(rootCommit.commit), change_ref: facts.change_ref }, facts.change_ref);
+        commit: String(rootCommit.commit), change_ref: args.changeRef }, args.changeRef);
       if (!requirement) {
         const publishedContract = checkedSource && checkedContract && sameAnalysisSource(checkedSource, source)
           ? checkedContract : await readPublishedContract(source, effectiveMeta);
-        const localBlob = gitOk(root, ["rev-parse", `${source.commit}:openspec/changes/${facts.change_ref}/tasks.md`], "核对任务快照");
+        const localBlob = gitOk(root, ["rev-parse", `${source.commit}:openspec/changes/${args.changeRef}/tasks.md`], "核对任务快照");
         if (publishedContract.tasksObjectId !== localBlob) throw new UnknownError("远端规范与最终 Git commit 不一致");
         if (publishedContract.schema !== schema || publishedContract.digest !== gateEvidence.change_digest) {
           throw new UnknownError("最终固定 Git Commit 与本次真实 Gate 检查的工程契约不一致");

@@ -848,23 +848,17 @@ Analysis Handoff Facts 不是新对象，只表示使用 Multica 原生 Issue / 
 
 ```yaml
 analysis:
-  change_kind: corrective | intentional  # Workitem Analyst 判断；写入 Multica Issue Metadata analysis.change_kind
+  change_kind: corrective | intentional  # 从当前 Change Schema 推导并登记
   change_ref: ...
 
-  verify_agent:
-    recommendation: required | not_required
-    reason: ...
-    focus_refs:
-      - <requirement-or-scenario-ref>
-      - <task-number: 1.1>
 
   gate:
     result: PASS  # complete 最终真实 Gate 通过后登记
 ```
 
-实际工程增量的 `analysis.change_kind` 由 `rondo analysis publish` 按本次专业 Facts 经最终 Gate 后写入并回读，供跨 Run 交接及完成任务统计；Analysis Gate / Publish / Finalize 必须核对其与当前 Change Schema 一致。它是持久化分类结果，不决定 Skill 顺序或自动化授权。统计完成工作须结合 Issue 的有效完成状态，不以分类字段存在作为完成证据。
+实际工程增量的 `analysis.change_kind` 由 `rondo analysis publish` 从通过最终 Gate 的当前 Change Schema 确定性推导并登记、回读，供跨 Run 交接及完成任务统计。它是持久化分类结果，不决定 Skill 顺序或自动化授权。统计完成工作须结合 Issue 的有效完成状态，不以分类字段存在作为完成证据。
 
-`focus_refs` 只引用当前 OpenSpec Acceptance / Verification Contract，不复制正文，也不建立 AC / VR ID；依据 [05](05-openspec-schema-implementation-design.md) 的 Native First 契约，以 Capability Spec 路径和原生 Requirement / Scenario 标题定位，必要时以当前 Change 内的已批准任务编号定位。Human Review 后形成的 `verify_agent.required`、Independent Verification Result、Assignment / Owner / Status / Runtime Projection 等继续属于 Multica Delivery Truth。
+专业审查结论与 Independent Verify Recommendation、理由及必要验证重点进入当前 Issue 审核 Comment，不要求结构化 Review Verdict 或 Focus 引用数组。Human Review 后形成的 `verify_agent.required`、Independent Verification Result、Assignment / Owner / Status / Runtime Projection 继续属于 Multica Delivery Truth。
 
 `codebase-explorer`、`requirement-analysis`、`bug-analysis` 与适用专业 Review 表示可组合的专业能力，不要求生成同名 Markdown。Corrective 的 `bug-analysis` Method 将最终确认事实沉淀到 `proposal.md`；Intentional 的 `requirement-analysis` 直接把工程结论沉淀到 Proposal / Specs / Tasks，并仅在 Conditional Design 条件满足时维护 `design.md`。
 
@@ -985,7 +979,7 @@ Delivery / TFS identity、Change Kind 与已持久化 Schema 一致
 Development Scope / Repository Scope 可读取
 当前 Acceptance Contract 可读取：Intentional 为 Requirement / Scenario；Corrective 为 Proposal Expected Behavior / Regression Scope，存在 Specs 时一并读取
 每个 Implementation Task 有验证方式；需要组合验证时存在 Change-level Verification Task
-Verify Recommendation / Reason / Verification Focus 完整且引用有效
+审核 Comment 提供有依据的独立验证建议及必要验证重点
 Evidence References 可追溯
 适用 OpenSpec Artifact 与原生 Validation 满足当前 Schema
 Analyst 已完成适用专业 Review / Consistency Check，无未解决的关键问题
@@ -993,7 +987,7 @@ Analyst 已完成适用专业 Review / Consistency Check，无未解决的关键
 
 Corrective 的 Expected / Actual、Root Cause / Evidence、Fix Strategy、Fix / Regression Scope 与 Tasks / Verification 一致性，以及 Intentional 的 Proposal / Specs / Tasks、Conditional Design 判断，由 Analyst 专业复核；CLI 只检查适用的确定性条件，不消费 Analyst 自报的专业审查结果。Gate 不要求 `bug-analysis.md`、`acceptance.md`、`verification-requirements.md` 等重复载体。
 
-Gate 消费已有专业结论，不能凭 Artifact 存在、Validation PASS 或推荐字段齐全替代语义判断。Gate 的 PASS 结果须能核对 Issue / Workspace、Change Kind / Schema 与当前 Change 工件摘要；Complete 直接消费本次 Facts，执行真实 Gate 并确认候选与远端固定 Git 契约一致；核对服务端冲突事实后登记 Facts、Source 和本次 PASS，再提交 `analysis_review`。不落盘 Gate Result。结果引用与摘要只是本次确定性校验证据，不创建新的审批状态、版本对象或重复技术事实。成员选择及 `task_refs` 分工在 Human Review 后由 Delivery Lead 处理，不作为 Analysis 的必交输入。
+专业结论由 Analyst 负责；Artifact 存在或 Validation PASS 不替代语义判断。Gate 的 PASS 结果须能核对 Issue / Workspace、Change Kind / Schema 与当前 Change 工件摘要；Publish 直接消费指定 Change，执行真实 Gate 并确认候选 Git 契约一致及发布可达性；核对服务端冲突事实后登记 Facts、Source 和本次 PASS，再提交 `analysis_review`。不落盘 Gate Result。结果引用与摘要只是本次确定性校验证据，不创建新的审批状态、版本对象或重复技术事实。成员选择及 `task_refs` 分工在 Human Review 后由 Delivery Lead 处理，不作为 Analysis 的必交输入。
 
 统一结果：
 
@@ -1577,15 +1571,7 @@ Regression / Integration / E2E 都是 Verification Method，不与某个 Agent �
 
 ## 9.1 是否需要 Verify Agent（验证智能体）
 
-Workitem Analyst 在 Analysis 中形成：
-
-```yaml
-analysis:
-  verify_agent:
-    recommendation: required | not_required
-    reason: ...
-    focus_refs: [...]
-```
+Workitem Analyst 在 Analysis 中形成是否建议 Independent Verification 的专业结论、理由及必要验证重点，并通过当前 Issue 审核 Comment 提交。
 
 Workitem Analyst 是首次专业判断者：根据当前 Acceptance / Verification Contract、Task-level / Change-level Verification 的可闭合性、候选风险与是否需要实现者之外的独立性，形成 Recommendation、Reason 与 Focus。Human Analysis Review 是最终决定者，可以接受或 override 该 Recommendation。
 
@@ -2662,12 +2648,6 @@ analysis:
   change_ref: ...
   source: ... # 固定 repo_url / branch / commit / change_ref
 
-  verify_agent:
-    recommendation: required | not_required
-    reason: ...
-    focus_refs:
-      - <requirement-or-scenario-ref>
-      - <task-number: 1.1>
 
   gate:
     result: PASS
@@ -2724,7 +2704,7 @@ verification:
 其中：
 
 ```text
-verify_agent.recommendation
+审核 Comment 中的 Independent Verify Recommendation
 = Workitem Analyst 提出的分析建议
 
 verify_agent.required
