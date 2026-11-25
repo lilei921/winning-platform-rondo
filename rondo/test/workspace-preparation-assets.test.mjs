@@ -40,8 +40,8 @@ test("workspace preparation is owned by one Skill; delivery contracts remain in 
 
   const spec = read("skills/spec-preparation/SKILL.md");
   assert.ok(spec.includes("openspec schema which") && spec.includes("cwd"));
-  const analysis = read("skills/analysis-completion/SKILL.md");
-  assert.ok(analysis.includes("rondo analysis validate") && analysis.includes("rondo analysis complete"));
+  const analysis = read("skills/analysis-publish/SKILL.md");
+  assert.ok(analysis.includes("rondo analysis validate") && analysis.includes("rondo analysis publish"));
   const dev = read("agents/engineer/instructions.md");
   assert.ok(dev.includes("rondo analysis read") && dev.includes("pull-request"));
   assert.ok(bugAgent.includes("pull-request"));

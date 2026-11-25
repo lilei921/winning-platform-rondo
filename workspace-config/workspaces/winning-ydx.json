@@ -1,7 +1,7 @@
 {
   "workspace_id": "6322ff4d-a509-49a9-bdfc-269f8e559200",
   "skills": {
-    "analysis-completion": "3a268868-9f0c-4512-9bcf-78040395725f",
+    "analysis-publish": "3a268868-9f0c-4512-9bcf-78040395725f",
     "backend-engineering": "fc8b5b04-8143-4008-ba3a-6410eec72aa4",
     "bug-analysis": "f85b9e33-a19c-4a15-8caa-b121524c50ce",
     "bug-delivery": "007595c5-8aa0-494f-8cb2-4ad712a295c2",
@@ -23,7 +23,7 @@
   "project": "87333eab-95db-4968-ac8d-105c19ffef4f",
   "multica_server_url": "http://172.17.1.97:8080",
   "provisioning_required": [
-    "analysis-completion",
+    "analysis-publish",
     "backend-engineering",
     "bug-analysis",
     "bug-delivery",

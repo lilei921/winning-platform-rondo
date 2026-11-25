@@ -402,7 +402,7 @@ Wayfinder 的准入结论 `accepted | needs_human | unsupported` 属于 **Triage
 
 #### 1.4.8 Technical Change Kind 与自动处理边界
 
-`corrective` 表示恢复有证据支持的既定行为；`intentional` 表示主动改变预期行为、业务规则或能力。Workitem Analyst 负责基于证据判断，并将结果在存在工程增量时通过 `rondo analysis complete` 写入 Multica Issue Metadata `analysis.change_kind`（string）；Gate 和 Complete 核对该分类与当前 OpenSpec Change 的 `.openspec.yaml.schema` 一致。技术分类是专业判断及统计维度，不是 Workflow、Skill 链或自动化授权。
+`corrective` 表示恢复有证据支持的既定行为；`intentional` 表示主动改变预期行为、业务规则或能力。Workitem Analyst 负责基于证据判断，并将结果在存在工程增量时通过 `rondo analysis publish` 写入 Multica Issue Metadata `analysis.change_kind`（string）；Gate 和 Publish 核对该分类与当前 OpenSpec Change 的 `.openspec.yaml.schema` 一致。技术分类是专业判断及统计维度，不是 Workflow、Skill 链或自动化授权。
 
 超出授权、证据或当前自动处理能力的复杂变更须停止并交 Delivery Lead / Human；不另建复杂度 Route。紧急程度与排期由 Human 管理，不创建 `hotfix` 分类。执行分类与方法边界由 [03 §5](03-workitem-analysis-design.md#analysis-section-05) 维护，Schema 归属由 [05](05-openspec-schema-implementation-design.md) 维护。
 

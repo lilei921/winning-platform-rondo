@@ -8,7 +8,7 @@
 
 | Skill | 主要用途 |
 | --- | --- |
-| [analysis-completion](analysis-completion/SKILL.md) | 分析门禁通过后的事实发布与 Analysis 收口 |
+| [analysis-publish](analysis-publish/SKILL.md) | 分析门禁通过后的事实发布与 Analysis 收口 |
 | [bug-analysis](bug-analysis/SKILL.md) | Corrective 问题根因与修复建议分析 |
 | [bug-delivery](bug-delivery/SKILL.md) | Bug 修复的 Git 交付与 PR 准备 |
 | [change-development](change-development/SKILL.md) | Engineer 对完整 Change 的实现、验证及 PR 交付 |

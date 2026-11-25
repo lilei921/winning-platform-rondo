@@ -31,7 +31,7 @@ rondo doctor --help
 | 命令组 | 子命令 | 主要用途 |
 | --- | --- | --- |
 | `change` | `resolve-identity`、`update-progress` | Change 身份解析、任务进度 |
-| `analysis` | `validate`、`complete`、`read`、`approve` | 分析事实、Gate、审核提交、工件读取和批准登记 |
+| `analysis` | `validate`、`publish`、`read`、`approve` | 分析事实、Gate、审核提交、工件读取和批准登记 |
 | `dev` | `materialize`、`prepare`、`check-dispatch`、`check-completion`、`check-change`、`publish`、`pr-prepare`、`contract-hash` | 旧派发与新 Change 研发准备、发布、验证 |
 | `bug` | `pr-prepare`、`git`、`resume` | 独立 TFS Bug 修复交付 |
 | `tfs` | `writeback`、`materialize-tasks`、`resolve-tasks`、`reconcile-workitem` | TFS 工作项同步与交付回写 |
@@ -62,7 +62,7 @@ rondo change update-progress --openspec-root <path> --change-ref <ref> --check <
 
 ```bash
 rondo analysis validate --issue <id> --facts <facts.json> --openspec-root <path> --workspace-id <id> [--registry-config <repo-registry.json>] [--multica <cli>] [--profile <name>]
-rondo analysis complete [--mode requirement] --issue <id> --facts <facts.json> --registry-config <repo-registry.json> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>] [--profile <name>]
+rondo analysis publish [--mode requirement] --issue <id> --facts <facts.json> --registry-config <repo-registry.json> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>] [--profile <name>]
 rondo analysis read --issue <KEY> --file <Change内相对路径>
 rondo analysis approve --issue <KEY> --comment-id <ID> --commit <SHA> --verify-required true|false
 ```
@@ -70,13 +70,13 @@ rondo analysis approve --issue <KEY> --comment-id <ID> --commit <SHA> --verify-r
 | 命令 | 功能 |
 | --- | --- |
 | `analysis validate` | 核对 Analysis Facts，在指定根仓对当前 Change 运行 OpenSpec 严格校验，并核实返回的根仓和 Change 身份 |
-| `analysis complete` | Requirement 使用 `--mode requirement` 核验 Gate，向已确认的项目根仓分支发布当前 Change 已提交的审核工件（Native 首次发布取当前根仓 Project Resource ref；已有同 Change 来源使用固定分支，`--target-branch` 不得覆盖），并登记可回读的 `analysis.source` |
+| `analysis publish` | Requirement 使用 `--mode requirement` 核验 Gate，向已确认的项目根仓分支发布当前 Change 已提交的审核工件（Native 首次发布取当前根仓 Project Resource ref；已有同 Change 来源使用固定分支，`--target-branch` 不得覆盖），并登记可回读的 `analysis.source` |
 | `analysis read` | 按 Issue 中的 `analysis.source` 读取指定版本的 `tasks.md`、`proposal.md`、`design.md` 或 Spec，属于只读操作 |
 | `analysis approve` | 登记已确认的 Human Approval 与独立验收决定，核对 Gate、当前审核版本及真实成员评论，回读事实后按需以 `--no-start` 进入 `in_progress`。使用当前 Multica Runtime，无 Registry、Agent 或 Run 身份参数，不发 Mention、不启动 Run；同一批准可幂等重试。 |
 
-`stage`、`validate`、`complete` 面向当前分析事实；涉及 `--workspace-id` 的命令需保证其与配置中的 Workspace 身份一致。
+`validate`、`publish` 面向当前分析事实；涉及 `--workspace-id` 的命令需保证其与配置中的 Workspace 身份一致。
 
-Requirement 的 `analysis complete` 和 `dev publish` 使用 Git 2.45 或更高版本，依赖 `git merge-tree` 对三个目录树的三方合并支持。
+Requirement 的 `analysis publish` 和 `dev publish` 使用 Git 2.45 或更高版本，依赖 `git merge-tree` 对三个目录树的三方合并支持。
 
 远端已包含本次改动但无法从历史确定其本地来源时，首次发布会创建一笔文件差异为零的 Git 提交，记录来源 SHA。重试会复用这笔提交的远端 SHA。
 

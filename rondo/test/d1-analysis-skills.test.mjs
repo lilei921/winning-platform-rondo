@@ -150,7 +150,7 @@ test("D2 skill contracts: archive legacy and bind composable Analyst methods", (
   const analyst = manifest.agents.find((a) => a.name === "Workitem Analyst");
   assert.deepEqual(analyst.skills, [
     "codebase-explorer", "bug-analysis", "requirement-analysis", "spec-preparation",
-    "analysis-completion", "native-workspace",
+    "analysis-publish", "native-workspace",
   ]);
   assert.equal(manifest.managed_skills.includes("workitem-analysis"), false);
   assert.ok(manifest.agents.every((agent) => !(agent.skills ?? []).includes("workitem-analysis")));

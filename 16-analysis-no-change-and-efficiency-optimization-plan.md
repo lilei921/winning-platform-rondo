@@ -179,7 +179,7 @@ LEI-61/62 的首次 Lead 和 Analyst 均出现时间接近的取消。两份回�
 flowchart TD
   A[Workitem Analyst 专业分析] --> B{是否有需要实施的工程增量}
   B -->|有| C[准备适用 OpenSpec Change]
-  C --> D[现有 Analysis Completion / Gate / Human Review]
+  C --> D[现有 Analysis Publish / Gate / Human Review]
   B -->|无| E[当前 Issue Comment：专业结论及必要依据]
   E --> F[Multica 原生回流：Lead 按实际情况协调]
   B -->|尚未确定| G[补充证据或澄清关键事项]
@@ -217,11 +217,11 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 
 保留必要 Artifact 状态、依赖和实际工件核实；独立 Strict Validation 调整为按需执行，最终发布的真实 Gate 必须执行原生 Strict Validation。不得因省略准备阶段的重复校验而遗漏归档冲突等必要诊断：最终 CLI 应保留有意义的原生诊断信息，专业判断交 Analyst。Skill 不维护额外白名单，不决定是否需要研发。同步将 Output 中的 Validation Result 改为仅在实际执行时返回；保留 Change Identity 查询、原生命令及参数、Schema 来源、Artifact 依赖、Repository Scope、合法省略、授权与恢复指引。现有 Registry 配置及 Workspace 核验仅在确认无实际用途或已有等价确定性保护时局部删除，不借此改造配置体系。
 
-### 5.3 analysis-completion
+### 5.3 analysis-publish
 
-文件：skills/analysis-completion/SKILL.md。
+文件：skills/analysis-publish/SKILL.md。
 
-仅承担已完成工程契约的审核提交。保留必要输入、当前 Change 的限定范围 Commit、analysis complete 调用、结构化结果处理和原生审核 Comment。不复制 CLI 的 Workspace、Gate、Source、Metadata 和状态检查；CLI 已返回确认成功时不默认重新校验，结果不明时按实际事实核实和恢复。Comment 失败只补齐评论，不重跑已成功发布。
+仅承担已完成工程契约的审核提交。保留必要输入、当前 Change 的限定范围 Commit、analysis publish 调用、结构化结果处理和原生审核 Comment。不复制 CLI 的 Workspace、Gate、Source、Metadata 和状态检查；CLI 已返回确认成功时不默认重新校验，结果不明时按实际事实核实和恢复。Comment 失败只补齐评论，不重跑已成功发布。
 
 提供一个合法的最小 Facts 示例（Intentional 场景，非默认专业结论）：
 
@@ -240,7 +240,7 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 }
 ```
 
-实际值来自专业判断；Corrective 按适用契约提供字段。不新增 Review、Handoff 或 Gate 文件；临时 Facts 不提交 Git。必要专业复核依据使用适用工件或可信引用。正常流程不要求 stage 或 validate，validate 按需诊断。审核摘要引用 CLI 返回的固定 Git 版本；复用原生 Comment 与实际 cwd（使用 content-file 时）。命令示例与 CLI/COMMANDS.md 保持一致，保留现有必要参数及配置来源，提供可直接执行的 complete 与按需 validate 完整示例（含本次 --facts）。统一 complete 首次成功与审核重放的 analysis_source 返回结构，使 Skill 可直接引用固定来源，不依赖猜测 root_commit 或额外查询。保留明确的 PASS / FAIL / UNKNOWN 处理指导，仅删除 CLI 已确认成功后的机械重复检查。
+实际值来自专业判断；Corrective 按适用契约提供字段。不新增 Review、Handoff 或 Gate 文件；临时 Facts 不提交 Git。必要专业复核依据使用适用工件或可信引用。正常流程不要求 stage 或 validate，validate 按需诊断。审核摘要引用 CLI 返回的固定 Git 版本；复用原生 Comment 与实际 cwd（使用 content-file 时）。命令示例与 CLI/COMMANDS.md 保持一致，保留现有必要参数及配置来源，提供可直接执行的 publish 与按需 validate 完整示例（含本次 --facts）。统一 publish 首次成功与审核重放的 analysis_source 返回结构，使 Skill 可直接引用固定来源，不依赖猜测 root_commit 或额外查询。保留明确的 PASS / FAIL / UNKNOWN 处理指导，仅删除 CLI 已确认成功后的机械重复检查。
 
 ### 5.4 Delivery Lead
 
@@ -367,7 +367,7 @@ rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsuppor
 
 ### 5.6 Rondo CLI
 
-常规发布仅使用 analysis complete。优先直接消费本次专业 Facts，而不是将 stage 包装进 complete。独立 analysis validate 增加 --facts <facts.json> 输入，直接消费本次未持久化的 Facts，复用相同 Gate，仅执行只读诊断；不得依赖已退役 stage 或旧 draft。保留现有实际需要的其他参数，并同步 COMMANDS.md 与 Skill 示例。
+常规发布仅使用 analysis publish。优先直接消费本次专业 Facts，而不是将 stage 包装进 publish。独立 analysis validate 增加 --facts <facts.json> 输入，直接消费本次未持久化的 Facts，复用相同 Gate，仅执行只读诊断；不得依赖已退役 stage 或旧 draft。保留现有实际需要的其他参数，并同步 COMMANDS.md 与 Skill 示例。
 
 #### 最小执行模型
 
@@ -383,7 +383,7 @@ rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsuppor
 | 当前操作 | 目标调整 |
 | --- | --- |
 | 常规 stage 中间 Metadata 写入/回读 | 删除；确认独立消费者后退役 stage 命令 |
-| Gate 再读取同一 Issue 与 Metadata | 直接消费 complete 已读取的事实和本次 Facts；独立 validate 自行读入当前 Issue 与 --facts，不依赖 stage |
+| Gate 再读取同一 Issue 与 Metadata | 直接消费 publish 已读取的事实和本次 Facts；独立 validate 自行读入当前 Issue 与 --facts，不依赖 stage |
 | validateDraftFields 与 Gate 字段检查 | 统一必要字段校验，避免同一输入重复判断 |
 | analysisRuntime 与 assertRegistryWorkspace 重复 Workspace 校验 | 统一由现有 Runtime 解析负责；保留真实配置身份检查 |
 | 同一初始快照重复 assertAnalysisWritable | 删除重复调用；外部写入前状态核实仍保留 |
@@ -397,7 +397,7 @@ rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsuppor
 
 不新增 Artifact Preflight Gate 或命令，不创建第二份白名单；现有发布约束针对实际发布差异，不能改为拒绝整个 Change 目录。能够低成本确定的错误适当前移即可；不为提前失败重构发布流程。
 
-保留 --registry-config 等现有真实参数，修复相关 leaf --help 和 COMMANDS.md 说明。validate 支持 --facts 按需只读诊断；complete 首次成功与重放统一返回 analysis_source；approve、read 保持不变。确认 findings_ref、旧 gate 输入等字段确无实际消费者后才删除。保持明确的结构化失败原因与必要原生诊断，不重构全局输出系统。补充现有回归测试覆盖正常发布、输入变化、远端不一致、部分成功恢复与审核重放。
+保留 --registry-config 等现有真实参数，修复相关 leaf --help 和 COMMANDS.md 说明。validate 支持 --facts 按需只读诊断；publish 首次成功与重放统一返回 analysis_source；approve、read 保持不变。确认 findings_ref、旧 gate 输入等字段确无实际消费者后才删除。保持明确的结构化失败原因与必要原生诊断，不重构全局输出系统。补充现有回归测试覆盖正常发布、输入变化、远端不一致、部分成功恢复与审核重放。
 
 ### 5.7 工程调查与 Native Workspace
 
@@ -419,7 +419,7 @@ rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsuppor
 | codebase-explorer | 针对证据缺口获取工程事实 |
 | native-workspace | 本地工程仓准备（保持现状） |
 | spec-preparation | 准备真实工程变更的工件 |
-| analysis-completion | 提交已完成的研发契约 |
+| analysis-publish | 提交已完成的研发契约 |
 | Rondo CLI | 确定性操作、校验、事实管理；执行准入 Decision 对应的 Issue 流转 |
 
 ## 6. LEI-61 目标行为
@@ -442,7 +442,7 @@ Issue Comment 示例（仅示意，不定义固定模板或新契约）：
 
 Wayfinder 明确受支持的业务范围、定位相关工程仓库，判断需求属于现有功能优化，记录已定位的 DfJobMigration / OdrJobMigration 证据。Analyst 复用定位结果，核查日志实际消费链、现有异常记录方式、凭据安全与验收边界；必要时核实前端/API 是否需要调整，证据充分即可结束调查。保持 API 与前端不变是当前回放的分析结论，不是对所有日志需求的固定约束。
 
-确认真实增量后准备当前 Schema 所需最小 OpenSpec（是否需要 Design、Spec Delta 按原生 Schema 与专业判断决定），完成专业复核、本次 Change 的本地 Commit，调用一次常规 analysis complete，发布固定审核版本及 Comment。无需创建额外 AI Review 文档、在正常流程反查 CLI 内部实现或执行 stage；validate 和准备阶段 Strict Validation 按需执行，最终 Gate 仍执行原生严格校验。Human Approval、必要开发侧验证及脱敏要求保持。
+确认真实增量后准备当前 Schema 所需最小 OpenSpec（是否需要 Design、Spec Delta 按原生 Schema 与专业判断决定），完成专业复核、本次 Change 的本地 Commit，调用一次常规 analysis publish，发布固定审核版本及 Comment。无需创建额外 AI Review 文档、在正常流程反查 CLI 内部实现或执行 stage；validate 和准备阶段 Strict Validation 按需执行，最终 Gate 仍执行原生严格校验。Human Approval、必要开发侧验证及脱敏要求保持。
 
 ## 7. 验收与收益
 
@@ -454,11 +454,11 @@ Wayfinder 明确受支持的业务范围、定位相关工程仓库，判断需�
 | Analyst 成功 Run | 7m04s / 83 次 | 11m36s / 116 次 | 减少无效工件及机械操作 |
 | 成功主要 Run 合计 | 14m53s / 156 次 | 16m08s / 175 次 | 比较真实回放 |
 | 准入至最后 Lead 完成 | 35m06s | 42m11s | 区分专业执行、等待与取消 |
-| 工件/发布返工 | README | ai-review.md、重复 stage/validate/complete | 消除可避免返工 |
+| 工件/发布返工 | README | ai-review.md、重复 stage/validate/publish | 消除可避免返工 |
 
 功能验收：
 - 无工程增量：直接发布 Comment，原生回流，由 Lead 协调，不虚构 Change/Gate/Approval/PR/TFS 事实；现场版本未知不等于已解决；已有有效契约不被静默取消。
-- 真实工程增量：正常 complete 直接消费本次 Facts，保留专业复核、原生 Strict Validation、必要 Gate、Git 固定来源、Human Approval；必要诊断仍可执行。
+- 真实工程增量：正常 publish 直接消费本次 Facts，保留专业复核、原生 Strict Validation、必要 Gate、Git 固定来源、Human Approval；必要诊断仍可执行。
 - CLI 回归：首次发布前 validate 直接消费本次 Facts（无 stage、无 Metadata 写入）；Gate、候选及远端契约使用一致的 Facts；输入缺失或不合法、发布路径越界、身份或事实冲突、候选/远端不一致、部分成功恢复与审核重放；首次发布与重放返回一致的固定来源字段。不得降低已有保护或增加无意义校验。
 - Wayfinder：Business Scope 与 Repository Discovery 必须满足；Bug 满足前两项即可准入，需求仅支持 Bug 类及现有功能优化，新增业务功能暂不支持，关键性质不明时按需澄清。有效 Decision 先记录再执行 admission；三个分支分别验证原生交接/blocked/unsupported、Assignee、是否触发 Run、重复执行和已移交保护，不修改 TFS；删除两个独立准入维度，不取消真实授权边界；合并实施后确认绑定及当前原生评论契约。
 - 工程调查：远端路径和证据版本真实，按需使用工具；不强制重复 Checkout。
@@ -468,7 +468,7 @@ Wayfinder 明确受支持的业务范围、定位相关工程仓库，判断需�
 ## 8. 实施范围
 
 - 模块一：Analysis 职责优化。Analysis / Change 解耦、直接 Comment 回流、Lead 按实际情况协调、最小工件与按需准备校验。
-- 模块二：Analysis Completion 收敛。complete 与按需 validate 直接消费本次 Facts、删除常规 Stage 与重复/伪语义校验、保留必要 Gate 与发布后置条件、统一固定来源返回、保留可直接执行的 Skill 与 CLI 使用契约。
+- 模块二：Analysis Publish 收敛。publish 与按需 validate 直接消费本次 Facts、删除常规 Stage 与重复/伪语义校验、保留必要 Gate 与发布后置条件、统一固定来源返回、保留可直接执行的 Skill 与 CLI 使用契约。
 - 模块三：Wayfinder 职责收敛。合并 workitem-triage、明确三项准入条件、按目标稿收敛 Instructions、确认有效 Decision 后通过统一 admission 执行结果、修正远端 MCP 路径语义。
 
 Runtime 取消及等待问题独立排查，不阻塞上述模块，不预设新调度机制。遵循 01 原则，按实际需要局部修改，不新增概念、Skill、Schema、状态机或执行框架。

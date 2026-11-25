@@ -57,7 +57,7 @@ function parseArgs(argv: string[]): { issue: string; facts: string; cli: string;
   const issue = get("--issue");
   const facts = get("--facts");
   if (!issue || !facts || !get("--workspace-id") || !get("--registry-config")) {
-    process.stderr.write("用法: rondo analysis complete --issue <issue-id> --facts <facts.json> --registry-config <repo-registry.json> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>]\n");
+    process.stderr.write("用法: rondo analysis publish --issue <issue-id> --facts <facts.json> --registry-config <repo-registry.json> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>]\n");
     process.exit(64);
   }
   return { issue, facts, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), registryConfig: get("--registry-config"), rootRepo: get("--root-repo"), targetBranch: get("--target-branch"), mode: get("--mode") ?? "legacy" };
@@ -71,7 +71,7 @@ function pushRepositoryUrl(root: string): string {
 }
 
 async function main(rawArgs: string[]): Promise<number> {
-  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis complete [--mode requirement] --issue <issue-id> --facts <facts.json> --registry-config <path> --workspace-id <id> [--root-repo <path>] [--target-branch <branch>] [--multica <cli>] [--profile <name>]\n"); return 0; }
+  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis publish [--mode requirement] --issue <issue-id> --facts <facts.json> --registry-config <path> --workspace-id <id> [--root-repo <path>] [--target-branch <branch>] [--multica <cli>] [--profile <name>]\n"); return 0; }
   const args = parseArgs(rawArgs);
   const ws = ["--workspace-id", args.workspaceId!];
   try {
@@ -86,7 +86,7 @@ async function main(rawArgs: string[]): Promise<number> {
 
     const priorMeta = runJson([...MC, "issue", "metadata", "list", args.issue, ...ws, "--output", "json"], "核对当前分析身份", undefined, { transient: true }) as Record<string, unknown>;
     if (!priorMeta || typeof priorMeta !== "object" || Array.isArray(priorMeta)) throw new UnknownError("metadata list 输出形状不可识别");
-    if (!["legacy", "requirement"].includes(args.mode)) throw new PreconditionError("analysis complete --mode 仅支持 requirement 或省略");
+    if (!["legacy", "requirement"].includes(args.mode)) throw new PreconditionError("analysis publish --mode 仅支持 requirement 或省略");
     const tfsKind = classifyTfsType(priorMeta["tfs.type"]);
     if (args.mode === "requirement" && tfsKind !== "requirement") throw new PreconditionError("Requirement 模式仅适用于 TFS 需求");
     if (tfsKind === "requirement" && args.mode !== "requirement") {
@@ -330,10 +330,10 @@ async function main(rawArgs: string[]): Promise<number> {
 }
 
 /** commander 注册：group=analysis；参数解析沿用原脚本实现以保证契约逐字节等价。 */
-export function registerAnalysisComplete(group: Command): void {
+export function registerAnalysisPublish(group: Command): void {
   group
-    .command("complete")
-    .description("analysis-completion 的确定性收口（02 §5.4）：提交推送当前 Change 后写入 analysis_review")
+    .command("publish")
+    .description("发布工程契约审核版本（02 §5.4）：提交推送当前 Change 后写入 analysis_review")
     .helpOption(false)
     .allowUnknownOption(true)
     .allowExcessArguments(true)
