@@ -250,15 +250,15 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 
 无工程增量直接消费 Analyst 的原生 Comment；不要求额外 @mention、不定义 No Change 专用状态转换或固定流程。Lead 根据实际情况决定是否补充分析、协调现场版本确认、交 Human 决策或按授权结束。无需研发不等于现场已解决或 TFS 已关闭。Lead 不承担 TFS 机械操作，不调用依赖 PR 完成事实的 Closeout。现有能力不支持非研发终止时由 Human 处理，不为此提前设计 TFS 写回或取消处理框架。
 
-### 5.5 Wayfinder — 准入职责收敛（Instructions 正文待讨论）
+### 5.5 Wayfinder — 准入职责收敛
 
 当前 workitem-triage 仅绑定 Wayfinder（workspace-config/provisioning.json），其主要内容为准入语义、Decision 有效性、记录和结果处理，属于 Wayfinder 自身角色职责。建议合并到 agents/wayfinder-agent/instructions.md，取消独立 workitem-triage Skill，不新增替代 Skill 或兼容层；codebase-explorer 保持可复用工程调查方法。
 
 已确认收敛方向：
 - 删除 Repository Accessibility 和 Admission Boundary 两个独立评估维度；保留 Business Scope、Repository Discovery、Processing Capability，按下述已确认的准入规则判断。实际访问异常与已明确的授权/排除规则仍按实际影响处理，不要求常规逐项调查权限或限制。
-- 保持 eligible / needs_human / unsupported 的现有语义及必要结果处理；已有有效 Decision 可直接复用。先记录并确认有效 Decision，再执行原有 rondo delivery handoff --issue <KEY>；不新增 Decision Gate、参数或自然语言解析。
-- 减少重复职责、MCP 方法及不必要的调查限制，保留可追溯的 Evidence、增量重评和必要原生 Comment 使用说明。/note、supersedes、resume_ref 等当前记录语义是否简化，在 Instructions 正文讨论时核实实际消费者。
-- 正文采用 Role & Goal、Working Principles、Admission Criteria、Decision、Delivery 的精简结构。Admission Criteria 已确认，其他正文措辞待讨论；不把本方案的举例或历史说明直接拼入 Instructions。
+- 保留 eligible / needs_human / unsupported 三种专业决策。先确认有效 Decision 已记录，再通过统一的 rondo delivery admission 执行确定性结果处理；不新增 Decision Gate 或自然语言解析。
+- 保留 /note 原生静默评论、必要 Evidence 与增量重评；不要求固定 JSON 或 Markdown 字段。取消 supersedes、resume_ref 的固定字段要求，使用原生 Comment 上下文和必要引用；当前 handoff 不解析 Decision 正文，其他实际消费者在实施时核实。写入已明确成功时不强制额外回读，结果不明时先核实。
+- 正文采用 Role & Goal、Working Principles、Admission Criteria、Decision、Delivery 的精简结构；不把方案中的历史说明、内部 CLI 实现或固定调查步骤写入 Instructions。
 
 #### Admission Criteria（已确认）
 
@@ -286,7 +286,72 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 
 准入规则直接维护在 Wayfinder Instructions 中，不新增配置文件、规则引擎、CLI 语义 Gate 或固定调查顺序。
 
-实施时同步清理 workspace-config/provisioning.json 的 Skill 发布及绑定、Wayfinder README、受影响设计文档与 Manifest 测试（rondo/test/d1-analysis-skills.test.mjs 已断言当前绑定）。确认实际 Workspace 解绑/退役能力，避免遗留活动 Skill；不改历史 Replay。正文与合并实施细节经讨论确认后再研发。
+#### Wayfinder Instructions 目标稿
+
+```markdown
+# Role & Goal
+
+你是 Wayfinder Agent，负责当前 Issue 的交付准入评估、Decision 记录及后续处理。
+
+# Working Principles
+
+- 根据当前 Issue、适用业务规则和可信证据进行准入判断。
+- 按需使用 codebase-explorer 获取工程证据，自主选择调查方式与深度，证据充分即可形成结论。
+- 优先复用有效 Decision 和已有 Evidence，根据实际变化增量重评。
+- 不替代正式需求分析、根因诊断、技术设计或研发实施。
+
+# Admission Criteria
+
+满足以下条件方可进入后续处理：
+
+- Business Scope：明确 Issue 所属业务范围，且属于当前支持的业务范围。
+- Repository Discovery：定位与当前 Issue 相关的工程仓库。
+- Processing Capability：
+  - Bug：支持。
+  - 需求：支持现有功能优化及 Bug 类问题，暂不支持新增业务功能。
+
+依据实际业务诉求判断需求性质，不以是否需要新增代码作为新增业务功能的判断标准。
+
+# Decision
+
+- eligible：满足准入条件。
+- needs_human：影响准入判断的关键事项需要 Human 补充或确认。
+- unsupported：有明确依据表明不属于当前支持范围。
+
+# Delivery
+
+在当前 Issue 使用 /note 记录 Decision、判断依据及必要 Evidence；需要 Human 补充时说明具体待确认事项。
+
+确认有效 Decision 已记录后，执行：
+
+rondo delivery admission --issue <KEY> --decision <eligible|needs_human|unsupported>
+
+根据命令结果处理后续事项。操作结果不明确时核实实际结果，不重复执行已确认成功的操作。
+```
+
+Decision 是专业结论，Comment 是专业内容的原生载体；CLI 不消费或解释 Comment 正文。已有有效 Decision 可复用，不强制重新发布。若已有明确硬性授权阻断，不因满足常规三项条件而越权推进。
+
+#### 准入结果的确定性执行
+
+将现有 rondo delivery handoff 收敛为唯一公开入口：
+
+```bash
+rondo delivery admission --issue <KEY> --decision <eligible|needs_human|unsupported>
+```
+
+| Decision | CLI 操作 |
+| --- | --- |
+| eligible | 复用现有 handoff：按 tfs.type 将原 Issue 指派给 Bug Fix Agent 或 Delivery Squad，单次原生 Update 设置 todo 并确认下游 Run |
+| needs_human | 保留 Wayfinder Assignee，设置 blocked，不启动新 Run |
+| unsupported | 保留 Wayfinder Assignee，设置当前 Workspace 已有效配置的 unsupported，不启动新 Run |
+
+当前 handoff.ts 并不传递专业内容；下游在同一 Issue 消费原始信息和 /note Evidence。新入口仅执行 Agent 已给出的 Decision，不判定准入语义，不解析评论，不增加 Metadata 或状态机，不修改 TFS Work Item。
+
+最小实现：复用现有 Runtime 身份、Issue 归属、来源与状态校验，以及 MulticaClient.setStatusNoStart；非 eligible 分支无需查询下游目标或 Run。状态已符合时返回 NOOP；不覆盖已移交下游的 Issue。保留原 eligible 的单次触发及不确定结果恢复语义，未知状态或目标不明时返回真实错误。unsupported 已在 Manifest 定义为 cancelled category；实际 Workspace 配置和原生恢复行为以安装版本为准，不另造状态。核实现有 blocked / unsupported 恢复及运行中状态，不增加泛化恢复框架。
+
+同步替换 handoff 的现有消费者、COMMANDS.md、相关测试和有效设计引用；不保留重复公开命令（除非存在经核实且不可同步迁移的实际消费者，需明确说明）。不扩展到其他 delivery 命令。
+
+实施时同步清理 workspace-config/provisioning.json 的 Skill 发布及绑定、Wayfinder README、受影响设计文档与 Manifest 测试（rondo/test/d1-analysis-skills.test.mjs 已断言当前绑定）。确认实际 Workspace 解绑/退役能力，避免遗留活动 Skill；不改历史 Replay。按上述目标稿和准入执行契约研发，验证实际消费者及原生机制。
 
 ### 5.6 Rondo CLI
 
@@ -343,7 +408,7 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 | native-workspace | 本地工程仓准备（保持现状） |
 | spec-preparation | 准备真实工程变更的工件 |
 | analysis-completion | 提交已完成的研发契约 |
-| Rondo CLI | 确定性操作、校验、事实管理 |
+| Rondo CLI | 确定性操作、校验、事实管理；执行准入 Decision 对应的 Issue 流转 |
 
 ## 6. LEI-61 目标行为
 
@@ -383,7 +448,7 @@ Wayfinder 明确受支持的业务范围、定位相关工程仓库，判断需�
 - 无工程增量：直接发布 Comment，原生回流，由 Lead 协调，不虚构 Change/Gate/Approval/PR/TFS 事实；现场版本未知不等于已解决；已有有效契约不被静默取消。
 - 真实工程增量：正常 complete 直接消费本次 Facts，保留专业复核、原生 Strict Validation、必要 Gate、Git 固定来源、Human Approval；必要诊断仍可执行。
 - CLI 回归：输入缺失或不合法、发布路径越界、身份或事实冲突、候选/远端不一致、部分成功恢复与审核重放；不得降低已有保护或增加无意义校验。
-- Wayfinder：Business Scope 与 Repository Discovery 必须满足；Bug 满足前两项即可准入，需求仅支持 Bug 类及现有功能优化，新增业务功能暂不支持，关键性质不明时按需澄清。有效 Decision 先记录再交接；删除两个独立准入维度，不取消真实授权边界；合并实施后确认绑定及当前原生评论契约。
+- Wayfinder：Business Scope 与 Repository Discovery 必须满足；Bug 满足前两项即可准入，需求仅支持 Bug 类及现有功能优化，新增业务功能暂不支持，关键性质不明时按需澄清。有效 Decision 先记录再执行 admission；三个分支分别验证原生交接/blocked/unsupported、Assignee、是否触发 Run、重复执行和已移交保护，不修改 TFS；删除两个独立准入维度，不取消真实授权边界；合并实施后确认绑定及当前原生评论契约。
 - 工程调查：远端路径和证据版本真实，按需使用工具；不强制重复 Checkout。
 - 效率仅作回放观察，不写入 Agent Instructions、Gate 或固定限时、配额。Runtime 取消与等待独立调查，不作为功能实现验收条件。
 
@@ -391,10 +456,10 @@ Wayfinder 明确受支持的业务范围、定位相关工程仓库，判断需�
 
 - 模块一：Analysis 职责优化。Analysis / Change 解耦、直接 Comment 回流、Lead 按实际情况协调、最小工件与按需准备校验。
 - 模块二：Analysis Completion 收敛。直接消费本次 Facts、删除常规 Stage 与重复/伪语义校验、保留必要 Gate 与发布后置条件、精简 Skill 和真实 CLI 使用契约。
-- 模块三：Wayfinder 职责收敛。合并 workitem-triage、精简评估维度、确认有效 Decision 后交接、远端 MCP 路径语义。Wayfinder Instructions 正文待讨论确认后实施。
+- 模块三：Wayfinder 职责收敛。合并 workitem-triage、明确三项准入条件、按目标稿收敛 Instructions、确认有效 Decision 后通过统一 admission 执行结果、修正远端 MCP 路径语义。
 
 Runtime 取消及等待问题独立排查，不阻塞上述模块，不预设新调度机制。遵循 01 原则，按实际需要局部修改，不新增概念、Skill、Schema、状态机或执行框架。
 
 ## 9. 限制
 
-两次回放覆盖均为 partial；首次取消 Analyst 的完整日志及 Lead session 未导出，部分 CLI 错误输出截断；未重新执行真实业务测试。现场版本、实际问题是否仍复现、无 Change 的 TFS 适用终态仍需实际确认。CLI 独立 stage 的实际消费者、可删除字段及校验等价性应在实施时核实；直接消费 Facts 的恢复复杂度需由回归测试确认。Wayfinder Instructions 正文待讨论，原生 Comment 回流采用用户确认的现有 Multica 机制，未在本次方案更新中重新实测。效率改善未实测。原已发布的 LEI-61/62 审核事实不自动改写。本方案为待评审设计，不表示已实现或修改任何 Agent、Skill、CLI、业务源码、Issue 或 TFS 数据。
+两次回放覆盖均为 partial；首次取消 Analyst 的完整日志及 Lead session 未导出，部分 CLI 错误输出截断；未重新执行真实业务测试。现场版本、实际问题是否仍复现、无 Change 的 TFS 适用终态仍需实际确认。CLI 独立 stage 的实际消费者、可删除字段及校验等价性应在实施时核实；直接消费 Facts 的恢复复杂度需由回归测试确认。Wayfinder 目标稿与 admission 契约已纳入设计；Decision 字段的其他消费者、原生终态恢复和 CLI 回归仍需实施时验证。原生 Comment 回流采用用户确认的现有 Multica 机制，未在本次方案更新中重新实测。效率改善未实测。原已发布的 LEI-61/62 审核事实不自动改写。本方案为待评审设计，不表示已实现或修改任何 Agent、Skill、CLI、业务源码、Issue 或 TFS 数据。
