@@ -128,6 +128,12 @@ LEI-64 resolve-identity 使用未知 --output 参数；正确示例现已存在�
 
 [PR #69](https://github.com/lilei921/winning-platform-rondo/pull/69) 独立处理 Analysis `facts.json` 退役及专业审查字段收敛，本节不重复实施该 PR。Analysis 发布前尚无已批准的 `analysis.source`，需要显式 Change 身份；不要把研发阶段删除重复参数误扩展到 Analysis 阶段。
 
+### 9.1.1 P0 实施状态（2026-11-25）
+
+- [PR #67](https://github.com/lilei921/winning-platform-rondo/pull/67)、[#69](https://github.com/lilei921/winning-platform-rondo/pull/69)、[#70](https://github.com/lilei921/winning-platform-rondo/pull/70) 均已合并；Analysis facts.json、AI Review 机器契约及相应 Gate、路径和输出修复不重复实施。
+- [PR #71](https://github.com/lilei921/winning-platform-rondo/pull/71) 已提交 §9.2–9.3 P0 代码：退役进度 Patch 与独立完成检查入口，研发命令从 Issue 批准来源获取 Change，跨映射读取检查完整来源（包括 change_ref），保留内部 Gate 和原有批准边界。P0 尚待审核合并、Build/Test 及真实 Multica 回放验证。
+- §9.4 旧 Task Set 退役及本次 Review 提出的研发 Publish REST 对账、PR 重复读取与 Tasks 解析对齐均留待 P1，不包含在 PR #71 中。
+
 ### 9.2 P0 — 取消独立 Task Progress Patch
 
 [update-progress.ts](rondo/src/commands/change/update-progress.ts) 仅负责本地 `tasks.md` 编号定位、checkbox patch、进程级锁及幂等处理，并不判断任务真正完成。当前单 Engineer 负责整个 Change，原多 Engineer 并发写同一 Tasks 的设计前提已不存在（仍须维持当前 Issue 同一时点不重复有效委派及 Git 发布冲突保护）。保留工程事实，不保留额外进度写入体系。
@@ -201,4 +207,4 @@ rondo pr materialize --issue <KEY>
 - 退役入口不再出现在 CLI Help / COMMANDS / 活跃 Agent 或 Skill；保留的内部 Gate、共享归一化逻辑、Human Approval、Independent Verify 安全边界、PR 状态同步与 TFS 归档写回通过回归。
 - 以实际调用图及引用搜索确认无旧机制的未处理活跃消费者，运行 Rondo build/test；必要时验证实际 Multica Requirement 与 Bug Fix 回放。分别记录已验证事实和未执行项，不以方案保存视为实施完成。
 
-本节是后续未实施事项的独立增量，P0 与 P1 可分别实施和审核；不重新实施 PR #67 已合并内容，不吞并 PR #69，不进行无关全局 CLI 或 Metadata 重构。
+本节是独立增量，P0 实施状态见 §9.1.1，P1 尚未实施，分别审核；不重新实施 PR #67 已合并内容，不吞并 PR #69，不进行无关全局 CLI 或 Metadata 重构。
