@@ -185,8 +185,12 @@ async function main(rawArgs: string[]): Promise<number> {
       // Recover only from a previously pinned, byte-identical remote contract.
       let recovered: AnalysisSource | undefined;
       let recoverCommit: string | undefined;
+      let checkedSource: AnalysisSource | undefined;
+      let checkedContract: Awaited<ReturnType<typeof readPublishedContract>> | undefined;
       if (requirement && pinned && metadataEvidenceDigest(priorMeta) === gateEvidence.metadata_digest) {
         const published = await readPublishedContract(pinned, effectiveMeta);
+        checkedSource = pinned;
+        checkedContract = published;
         if (published.digest === gateEvidence.change_digest) {
           if (published.schema !== schema) throw new UnknownError("已保存来源的 Schema 与当前审核包不一致");
           const local = readContractAt(gitOk(root, ["rev-parse", "HEAD"], "核对当前已提交的分析工件"));
@@ -199,6 +203,8 @@ async function main(rawArgs: string[]): Promise<number> {
         const saved = parseAnalysisSource(priorMeta["analysis.source"]);
         if (saved.change_ref === facts.change_ref) {
           const published = await readPublishedContract(saved, effectiveMeta);
+          checkedSource = saved;
+          checkedContract = published;
           if (published.digest === gateEvidence.change_digest) {
             if (published.schema !== schema) throw new UnknownError("已保存来源的 Schema 与当前审核包不一致");
             recovered = saved;
@@ -230,7 +236,8 @@ async function main(rawArgs: string[]): Promise<number> {
       }
       const source = recovered ?? parseAnalysisSource({ repo_url: rootCommit.repo_url, branch: rootCommit.branch,
         commit: String(rootCommit.commit), change_ref: facts.change_ref }, facts.change_ref);
-      const publishedContract = await readPublishedContract(source, effectiveMeta);
+      const publishedContract = checkedSource && checkedContract && sameAnalysisSource(checkedSource, source)
+        ? checkedContract : await readPublishedContract(source, effectiveMeta);
       const localBlob = gitOk(root, ["rev-parse", `${source.commit}:openspec/changes/${facts.change_ref}/tasks.md`], "核对任务快照");
       if (publishedContract.tasksObjectId !== localBlob) throw new UnknownError("远端规范与最终 Git commit 不一致");
       if (publishedContract.schema !== schema || publishedContract.digest !== gateEvidence.change_digest) {
