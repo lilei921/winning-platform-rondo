@@ -1132,7 +1132,7 @@ Review 通过或退回时引用实际被审 OpenSpec Artifact；不复制 Propos
 
 ## 11.2 Analysis Gate：确定性检查与返回
 
-Analysis Gate 只执行确定性检查并返回结果，不发布产物、不修改 Issue Status、不授予研发权限。完整 Analysis 质量要求同时包含 Workitem Analyst 的专业 Review 与现有 Gate；不能把专业判断都描述为已由 CLI 自动检查。`rondo analysis validate --facts <facts.json>` 按需只读诊断，与 `publish` 共享真实 Gate，主要检查身份 / Change Kind 与 Schema、Change 和 Proposal / Specs / Tasks 的基本存在及格式、合法原生 Specs skip、可消费 Task 项、Verify 推荐字段、Intentional `ai_review` 结果字段及 OpenSpec Validation。它**不逐一核对 Proposal 声明的 Capability Spec 文件集合，不判定 Conditional Design 是否必要，也不评价 Root Cause、Task Verification 或 AI Review 的专业语义质量**。准备与 Review 应先完成这些必要判断，再由 Gate 约束它实际可核实的事实。**即使确定性 Gate PASS，只要必要的专业审查未通过，Workitem Analyst 仍不得调用 `analysis-publish` 宣称分析完成或提交审核**；超出自动范围按原有停止规则处理。
+Analysis Gate 只执行确定性检查并返回结果，不发布产物、不修改 Issue Status、不授予研发权限。完整 Analysis 质量要求同时包含 Workitem Analyst 的专业 Review 与现有 Gate；不能把专业判断都描述为已由 CLI 自动检查。`rondo analysis validate --facts <facts.json>` 按需只读诊断，与 `publish` 共享真实 Gate，主要检查身份 / Change Kind 与 Schema、Change 和 Proposal / Specs / Tasks 的基本存在及格式、合法原生 Specs skip、可消费 Task 项、Intentional `ai_review` 结果字段及 OpenSpec Validation。Verify 推荐字段由 Facts 输入契约一次校验；本地硬条件失败时不再执行外部原生校验。它**不逐一核对 Proposal 声明的 Capability Spec 文件集合，不判定 Conditional Design 是否必要，也不评价 Root Cause、Task Verification 或 AI Review 的专业语义质量**。准备与 Review 应先完成这些必要判断，再由 Gate 约束它实际可核实的事实。**即使确定性 Gate PASS，只要必要的专业审查未通过，Workitem Analyst 仍不得调用 `analysis-publish` 宣称分析完成或提交审核**；超出自动范围按原有停止规则处理。
 
 ### Analysis 完成条件（专业审查 + 当前确定性检查）
 
@@ -1246,7 +1246,7 @@ Workitem Analyst 只可在当前授权分析任务的提交环节写入 `analysi
 → 结束本轮分析，等待 Human Review
 ```
 
-Gate 只返回 `PASS / FAIL / UNKNOWN`，不修改 Issue 状态。`publish` 在内存中使用本次 Facts 与当前来源事实执行 Gate，Requirement 候选 Git 契约使用同一份专业 Facts，Git 确认候选 Commit 已进入正确目标分支后直接登记固定来源，不重复使用 TFS REST 读取正文或计算摘要；外部副作用边界核对必要身份、Facts 和审核状态后返回 PASS。已登记的 Requirement 审核重放只消费固定来源及审核事实，不重新读取工件；下游按实际需要读取固定 SHA。正常流程不需要 stage 或显式 validate；按需使用 `rondo analysis validate --facts <facts.json>` 只读诊断。Gate 不生成持久化文件，也不信任调用方自报 PASS。`publish` 已确认 PASS 时不再机械核对其后置条件，Comment 发布失败仅恢复评论。
+Gate 只返回 `PASS / FAIL / UNKNOWN`，不修改 Issue 状态。`publish` 在内存中使用本次 Facts 与当前来源事实执行 Gate，Requirement 候选 Git 契约使用同一份专业 Facts，Git 确认候选 Commit 已进入正确目标分支后直接登记固定来源，不重复使用 TFS REST 读取正文或计算摘要；外部副作用边界复用 `issue get` 的同一 Issue/Metadata 快照，核对必要身份、Facts 和审核状态后返回 PASS；同一快照不重复计算已经逐项比较的 Facts 摘要。已登记的 Requirement 审核重放只消费固定来源及审核事实，不重新读取工件；下游按实际需要读取固定 SHA。正常流程不需要 stage 或显式 validate；按需使用 `rondo analysis validate --facts <facts.json>` 只读诊断。Gate 不生成持久化文件，也不信任调用方自报 PASS。`publish` 已确认 PASS 时不再机械核对其后置条件，Comment 发布失败仅恢复评论。
 
 <a id="analysis-summary"></a>
 

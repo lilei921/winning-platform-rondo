@@ -13,15 +13,15 @@
 
 import { analysisRuntime } from "./runtime.js";
 import type { RuntimeConfig } from "../../clients/config.js";
-import { existsSync, readFileSync, realpathSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, readdirSync, lstatSync } from "node:fs";
 import { basename, dirname, isAbsolute, join } from "node:path";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
-import { assertStableChangeRef, readChangeSchema, sourceSchemaViolation, changeKindSchemaViolation, type ChangeSchema } from "./change-schema.js";
+import { assertStableChangeRef, readChangeMetadata, parseChangeSchema, sourceSchemaViolation, changeKindSchemaViolation, type ChangeSchema } from "./change-schema.js";
 import { markLeafExecuted } from "../../cli/output.js";
 import { TOOL_VERSION } from "../../cli/version.js";
 import { runCommand } from "../../clients/spawn.js";
-import { MulticaClient } from "../../clients/multica.js";
+import { MulticaClient, requireIssueMetadata } from "../../clients/multica.js";
 import { commandExists } from "../../clients/which.js";
 import { resolveOpenspecRootDir } from "../../clients/runtime-paths.js";
 import { classifyTfsType, loadValidatedFacts, PreconditionError, reviewVerdictViolation, submissionMetadata, type DraftFacts } from "./facts.js";
@@ -37,15 +37,16 @@ function readText(path: string): string | null {
   try { return readFileSync(path, "utf8"); } catch { return null; }
 }
 
-function listMarkdown(dir: string): string[] {
-  if (!existsSync(dir)) return [];
-  const out: string[] = [];
-  for (const e of readdirSync(dir)) {
-    const p = join(dir, e);
-    if (statSync(p).isDirectory()) out.push(...listMarkdown(p));
-    else if (e.endsWith(".md")) out.push(p);
+function hasMarkdown(dir: string): boolean {
+  const info = lstatSync(dir, { throwIfNoEntry: false });
+  if (!info) return false;
+  if (!info.isDirectory()) throw new UnknownError("Specs 不是普通目录: " + dir);
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isSymbolicLink()) throw new UnknownError("Specs 包含不可验证的链接: " + entry.name);
+    if (entry.isDirectory() && hasMarkdown(join(dir, entry.name))) return true;
+    if (entry.isFile() && entry.name.endsWith(".md")) return true;
   }
-  return out;
+  return false;
 }
 
 interface Args { issue: string; openspecRoot: string; cli: string; workspaceId: string | null; out: string | null; facts: string | null }
@@ -88,30 +89,6 @@ export function emitResult(payload: unknown, exitCode: number, _outPath: string 
   return exitCode;
 }
 
-class Cli {
-  private client: MulticaClient;
-
-  constructor(runtime: RuntimeConfig) {
-    this.client = new MulticaClient(runtime);
-  }
-
-  private ws(): string[] {
-    return this.client.ws();
-  }
-
-  getIssue(issueId: string): Record<string, unknown> {
-    // 特化形态（what 文案与缺失 id 的判定在调用方），用 run 透传而非 MulticaClient.getIssue
-    // transient：读命令，空 stdout（传输层瞬态）由 spawn 层重试一次再判 UNKNOWN（P0）
-    return this.client.run(["issue", "get", issueId, ...this.ws(), "--output", "json"], `读取 Issue(${issueId})`, { transient: true }) as Record<string, unknown>;
-  }
-
-  getMetadata(issueId: string): Record<string, unknown> {
-    const out = this.client.run(["issue", "metadata", "list", issueId, ...this.ws(), "--output", "json"], `读取 metadata(issue=${issueId})`, { transient: true });
-    if (out && typeof out === "object" && !Array.isArray(out)) return out as Record<string, unknown>;
-    throw new UnknownError("metadata list 输出形状不可识别");
-  }
-}
-
 export function checkIdentity(meta: Record<string, unknown>, schema: ChangeSchema | null): Check {
   const reasons: string[] = [];
   const tfsId = meta["tfs.id"];
@@ -130,7 +107,7 @@ export function checkIdentity(meta: Record<string, unknown>, schema: ChangeSchem
 }
 
 export function checkChange(openspecRoot: string, meta: Record<string, unknown>): {
-  check: Check; changeDir: string | null; schema: ChangeSchema | null;
+  check: Check; changeDir: string | null; schema: ChangeSchema | null; rawMetadata?: string;
 } {
   const changeRef = meta["analysis.change_ref"];
   try {
@@ -143,8 +120,9 @@ export function checkChange(openspecRoot: string, meta: Record<string, unknown>)
     return { check: { name: "change", result: "FAIL", reasons: [`Change 目录不存在: ${changeDir}`] }, changeDir: null, schema: null };
   }
   try {
-    const schema = readChangeSchema(changeDir);
-    return { check: { name: "change", result: "PASS", reasons: [] }, changeDir, schema };
+    const rawMetadata = readChangeMetadata(changeDir);
+    const schema = parseChangeSchema(rawMetadata);
+    return { check: { name: "change", result: "PASS", reasons: [] }, changeDir, schema, rawMetadata };
   } catch (exc) {
     const kind: CheckResult = exc instanceof FailError ? "FAIL" : "UNKNOWN";
     return { check: { name: "change", result: kind, reasons: [(exc as Error).message] }, changeDir: null, schema: null };
@@ -205,21 +183,21 @@ function nativeSpecsSkipStatus(openspecRoot: string, changeDir: string): { resul
   return { result: "PASS", reason: "" };
 }
 
-export function checkAcceptanceContract(schema: ChangeSchema | null, changeDir: string | null, openspecRoot: string): Check {
+export function checkAcceptanceContract(schema: ChangeSchema | null, changeDir: string | null, openspecRoot: string, rawMetadata?: string): Check {
   const reasons: string[] = [];
   if (!schema || !changeDir) return { name: "acceptance_contract", result: "FAIL", reasons: ["前置检查未通过"] };
   const proposal = readText(join(changeDir, "proposal.md"));
   if (!proposal) reasons.push("缺少 proposal.md 或不可读");
   try {
-    parseRepositoryScope(readText(join(changeDir, ".openspec.yaml")) ?? "");
+    parseRepositoryScope(rawMetadata ?? readText(join(changeDir, ".openspec.yaml")) ?? "");
   } catch (error) {
     if (!(error instanceof FailError)) throw error;
     reasons.push(error.message);
   }
 
-  if (schema === "intentional-change") {
+  if (!reasons.length && schema === "intentional-change") {
     // 已有 Delta 的格式由 openspec_validate 按操作类型检查；只有缺少 Delta 才需核实 skipped。
-    if (listMarkdown(join(changeDir, "specs")).length === 0) {
+    if (!hasMarkdown(join(changeDir, "specs"))) {
       const native = nativeSpecsSkipStatus(openspecRoot, changeDir);
       if (native.result === "UNKNOWN") {
         return { name: "acceptance_contract", result: "UNKNOWN", reasons: [...reasons, native.reason] };
@@ -289,22 +267,23 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
   const checks: Check[] = [];
   let context: { issue_id: string; workspace_id: string; change_ref: string; change_kind: "corrective" | "intentional"; schema: ChangeSchema; change_dir: string; metadata_digest: string; metadata: Record<string, unknown> } | null = null;
   try {
-    const cli = new Cli(input.runtime);
-    // 先确认 Issue 在当前工作区可读取（防止静默读错工作区）
-    const issue = input.snapshot?.issue ?? cli.getIssue(args.issue);
+    // 先确认 Issue 在当前工作区可读取；复用同一原生响应中的 Metadata。
+    const issue = input.snapshot?.issue ?? new MulticaClient(input.runtime).getIssue(args.issue);
     if (!issue.id) throw new UnknownError(`Issue ${args.issue} 不可读取（不存在或不属于当前工作区）`);
-    const meta = input.snapshot?.metadata ?? submissionMetadata(cli.getMetadata(args.issue), input.facts);
+    const meta = input.snapshot?.metadata ?? submissionMetadata(requireIssueMetadata(issue), input.facts);
     // --openspec-root 语义统一：根仓路径自动归一到其 openspec/ 子目录
     const openspecRoot = resolveOpenspecRootDir(args.openspecRoot);
-    const { check: change, changeDir, schema } = checkChange(openspecRoot, meta);
+    const { check: change, changeDir, schema, rawMetadata } = checkChange(openspecRoot, meta);
     checks.push(checkIdentity(meta, schema));
     checks.push(change);
-    checks.push(checkAcceptanceContract(schema, changeDir, openspecRoot));
     checks.push(checkTasks(changeDir));
-    // Both entrypoints have already validated the current Facts, including Verify Recommendation.
-    checks.push({ name: "verify_recommendation", result: "PASS", reasons: [] });
     checks.push(checkAiReview(schema, meta));
-    checks.push(checkOpenSpecValidate(changeDir, openspecRoot));
+    // 本地硬条件已失败时，不再执行可能启动外部 CLI 的 Acceptance 检查或 Strict Validation。
+    // Verify Recommendation 的字段合法性由 loadValidatedFacts 负责。
+    if (checks.every(c => c.result === "PASS")) {
+      checks.push(checkAcceptanceContract(schema, changeDir, openspecRoot, rawMetadata));
+      if (checks.every(c => c.result === "PASS")) checks.push(checkOpenSpecValidate(changeDir, openspecRoot));
+    }
     if (schema && changeDir && typeof meta["analysis.change_ref"] === "string" &&
         (meta["analysis.change_kind"] === "corrective" || meta["analysis.change_kind"] === "intentional")) {
       context = {

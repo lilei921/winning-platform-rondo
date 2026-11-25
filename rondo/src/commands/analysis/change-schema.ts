@@ -25,21 +25,27 @@ export function changeKindSchemaViolation(kind: unknown, schema: ChangeSchema): 
   return null;
 }
 
+export function isStableChangeRef(ref: unknown): ref is string {
+  return typeof ref === "string" && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(ref);
+}
+
 export function assertStableChangeRef(ref: unknown): asserts ref is string {
-  if (typeof ref !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(ref) || ref === "." || ref === "..") {
+  if (!isStableChangeRef(ref)) {
     throw new FailError("analysis.change_ref 非法：必须是稳定 Change ID，不能包含目录分隔符或路径跳转");
   }
 }
 
 /** 使用项目已经持久化的 Schema；未知/遗留 Schema 不静默重映射。 */
-export function readChangeSchema(changeDir: string): ChangeSchema {
-  let raw: string;
+export function readChangeMetadata(changeDir: string): string {
   try {
-    raw = readFileSync(join(changeDir, ".openspec.yaml"), "utf8");
+    return readFileSync(join(changeDir, ".openspec.yaml"), "utf8");
   } catch (exc) {
     throw new UnknownError(`无法读取 Change 的 .openspec.yaml: ${String(exc)}`);
   }
-  return parseChangeSchema(raw);
+}
+
+export function readChangeSchema(changeDir: string): ChangeSchema {
+  return parseChangeSchema(readChangeMetadata(changeDir));
 }
 
 /** 本地文件与远端固定版本共用同一 Schema 解析规则。 */

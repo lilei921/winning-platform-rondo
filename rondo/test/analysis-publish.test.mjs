@@ -143,9 +143,14 @@ test("Preview → Complete without Stage: final Gate and fixed Git Contract; no 
   assert.equal(preview.body.change_digest, changeEvidenceDigest(f.change, before.metadata, undefined, true));
   assert.equal(existsSync(join(f.change, "logs", "analysis-gate-result.json")), false);
   f.tfs.update(s => { s.requests = []; s.status = 503; });
+  const calls = join(f.home, "publish-calls.jsonl");
+  f.env.MOCK_SYNC_CALLS_FILE = calls;
   const result = f.complete();
   assert.equal(result.exit, 0, JSON.stringify(result));
   assert.deepEqual(f.tfs.state().requests, []);
+  const commands = readFileSync(calls, "utf8").trim().split("\n").map(line => JSON.parse(line));
+  assert.equal(commands.filter(a => a.includes("issue") && a.includes("get")).length, 5);
+  assert.equal(commands.filter(a => a.includes("metadata") && a.includes("list")).length, 0);
   const source = JSON.parse(f.state().metadata["analysis.source"]);
   assert.deepEqual(result.body.analysis_source, source);
   assert.equal(source.commit, git(f.remote, "rev-parse", "dev"));
@@ -499,4 +504,25 @@ test("固定来源不再位于目标分支时拒绝恢复，不调用 REST 正�
   assert.equal(f.state().status, "in_progress");
   assert.equal(JSON.parse(f.state().metadata["analysis.source"]).commit, saved.commit);
   assert.deepEqual(f.tfs.state().requests, []);
+});
+
+test("Git 发布后 Issue 已被阻塞时不登记审核事实", t => {
+  const f = fixture(t);
+  f.env.MOCK_STATUS_ON_ISSUE_READ = "2";
+  const result = f.complete();
+  assert.notEqual(result.exit, 0, JSON.stringify(result));
+  assert.equal(f.state().status, "blocked");
+  assert.equal(f.state().metadata["analysis.source"], undefined);
+  assert.equal(f.state().metadata["analysis.gate.result"], undefined);
+});
+
+test("本地硬条件失败时不执行 OpenSpec Strict Validation", t => {
+  const f = fixture(t);
+  // 如果错误地调用原生 CLI，它会返回不可解析结果（UNKNOWN）。
+  writeFileSync(f.report, "not-json");
+  writeFileSync(join(f.change, "tasks.md"), "no task checkbox\n");
+  const result = f.gate();
+  assert.equal(result.exit, 2, JSON.stringify(result));
+  assert.equal(result.body.checks.find(c => c.name === "tasks")?.result, "FAIL");
+  assert.ok(!result.body.checks.some(c => c.name === "openspec_validate" || c.name === "verify_recommendation"));
 });
