@@ -161,3 +161,12 @@ test("现场只读业务仓可通过子进程 cwd 读取分支且不改变 Lead 
   assert.notEqual(result.stdout.trim(), "");
   assert.equal(process.cwd(), before);
 });
+
+test("prepare-root 显式空路径不回退持久环境变量", t => {
+  const { repo } = fixture(t);
+  const r = spawnSync(process.execPath, [CLI, "runtime", "prepare-root", "--root-repo", ""], {
+    cwd: repo, encoding: "utf8", env: { ...process.env, RONDO_WORKSPACE_PATH: repo, RONDO_WORKSPACE_BRANCH: "dev" },
+  });
+  assert.equal(r.status, 3, r.stderr);
+  assert.match(JSON.parse(r.stdout).reason, /根仓路径为空/);
+});

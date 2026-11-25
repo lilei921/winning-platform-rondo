@@ -858,9 +858,6 @@ analysis:
       - <requirement-or-scenario-ref>
       - <task-number: 1.1>
 
-  ai_review:
-    verdict: APPROVED | NEEDS_REVISION
-
   gate:
     result: PASS  # complete 最终真实 Gate 通过后登记
 ```
@@ -991,10 +988,10 @@ Development Scope / Repository Scope 可读取
 Verify Recommendation / Reason / Verification Focus 完整且引用有效
 Evidence References 可追溯
 适用 OpenSpec Artifact 与原生 Validation 满足当前 Schema
-专业 Review / Consistency Result 可读取且无 unresolved blocker
+Analyst 已完成适用专业 Review / Consistency Check，无未解决的关键问题
 ```
 
-Corrective 的 Expected / Actual、Root Cause / Evidence、Fix Strategy、Fix / Regression Scope 与 Tasks / Verification 一致性，以及 Intentional 的 Proposal / Specs / Tasks、Conditional Design 判断，由 Analyst 专业复核；CLI 只检查适用的确定性条件及 Intentional Review Verdict。Gate 不要求 `bug-analysis.md`、`acceptance.md`、`verification-requirements.md` 等重复载体。
+Corrective 的 Expected / Actual、Root Cause / Evidence、Fix Strategy、Fix / Regression Scope 与 Tasks / Verification 一致性，以及 Intentional 的 Proposal / Specs / Tasks、Conditional Design 判断，由 Analyst 专业复核；CLI 只检查适用的确定性条件，不消费 Analyst 自报的专业审查结果。Gate 不要求 `bug-analysis.md`、`acceptance.md`、`verification-requirements.md` 等重复载体。
 
 Gate 消费已有专业结论，不能凭 Artifact 存在、Validation PASS 或推荐字段齐全替代语义判断。Gate 的 PASS 结果须能核对 Issue / Workspace、Change Kind / Schema 与当前 Change 工件摘要；Complete 直接消费本次 Facts，执行真实 Gate 并确认候选与远端固定 Git 契约一致；核对服务端冲突事实后登记 Facts、Source 和本次 PASS，再提交 `analysis_review`。不落盘 Gate Result。结果引用与摘要只是本次确定性校验证据，不创建新的审批状态、版本对象或重复技术事实。成员选择及 `task_refs` 分工在 Human Review 后由 Delivery Lead 处理，不作为 Analysis 的必交输入。
 
@@ -2671,9 +2668,6 @@ analysis:
     focus_refs:
       - <requirement-or-scenario-ref>
       - <task-number: 1.1>
-
-  ai_review:
-    verdict: APPROVED # Intentional 必需
 
   gate:
     result: PASS
