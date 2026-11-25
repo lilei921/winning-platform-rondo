@@ -405,7 +405,7 @@ Change Kind 首次准备时映射到 `corrective-change` / `intentional-change` 
 
 ## 5.5 分类结果与执行约束
 
-Workitem Analyst 以 Issue、来源事实、既定行为依据和 Evidence 支撑语义判断，并在 Handoff Facts 中提供 `change_kind`；`rondo analysis publish` 将其持久化到服务端 `analysis.change_kind`，供统计和交接。不新增 `analysis-routing.yaml`、`resolve-analysis-route.py` 或独立 `analysis.route`。复用当前 Change Schema，校验分类与 Schema 一致。结果不覆盖 `tfs.type`、审批、Gate 或 Task 管理规则。
+Workitem Analyst 以 Issue、来源事实、既定行为依据和 Evidence 支撑语义判断，并选择适用 Change Schema；`rondo analysis publish` 从 Schema 推导并登记服务端 `analysis.change_kind`，供统计和交接。不新增 `analysis-routing.yaml`、`resolve-analysis-route.py` 或独立 `analysis.route`。以当前 Change Schema 为权威。结果不覆盖 `tfs.type`、审批、Gate 或 Task 管理规则。
 
 ## 5.6 混合变更与澄清
 
@@ -611,7 +611,7 @@ Preparation 提交前在当前 Workitem Analyst 的专业执行中检查：
 - Design / Delta（如有）与既定行为和修复范围一致；有 Specs 时 Requirement / Scenario 可测试，省略理由与原生支持一致；
 - 当前 Change、Evidence 引用和 Independent Verify Recommendation 可读取；发现偏差时仅修正命中内容及其必要关联。
 
-Corrective 一致性检查只返回 `PASS / NEEDS_REVISION` 与必要 Findings，并记录到当前 Multica Run Result / Comment 等原生事实中，同时引用实际命中的 OpenSpec Artifact；不创建独立 `Corrective Consistency Result` 对象，也不强制新增 `corrective-review.md`、Preparation Result Markdown、独立 Review Agent、Stage 或 Gate。Gate 消费这些原生事实与引用，不自行证明根因或规格正确。
+Corrective 一致性检查只返回 `PASS / NEEDS_REVISION` 与必要 Findings，并记录到当前 Multica Run Result / Comment 等原生事实中，同时引用实际命中的 OpenSpec Artifact；不创建独立 `Corrective Consistency Result` 对象，也不强制新增 `corrective-review.md`、Preparation Result Markdown、独立 Review Agent、Stage 或 Gate。专业审查结论由 Analyst 消费；Gate 只核对实际确定性工件与必要引用。
 
 ```text
 bug-analysis Method 的证据验证
@@ -1112,7 +1112,7 @@ Development Scope / Repository Scope 可从 OpenSpec Artifact 读取
 审核 Comment 提供有依据的独立验证建议及必要验证重点
 Evidence References 可追溯；需要 Supporting Evidence 时对应资料可读取
 当前 Schema 的必需 Artifact、合法 skip 与 OpenSpec Validation 一致
-适用于当前分析内容的专业 Review / Consistency Result 可读取且通过，无 unresolved blocker
+Analyst 完成适用专业 Review / Consistency Check，无未解决关键问题
 ```
 
 Gate 不要求固定 `bug-analysis.md`、`acceptance.md`、`verification-requirements.md`、`context-pack.md`、`requirement-analysis.md`、`requirement-review.md`、Preparation Result Markdown、`analysis-package.md` 或 `gate-result.md`。它检查这些概念对应的真实 OpenSpec Artifact / Multica Runtime Fact / 引用。
@@ -1143,7 +1143,7 @@ Spec / Delta Spec 以 Requirement / Scenario 表达 Expected Behavior / Rules / 
 Design Decision 已按 Conditional Design 规则处理：条件满足则 `design.md` 存在且内容充分；条件不满足则有明确省略依据且不制造空文档
 Tasks 覆盖当前 Requirement / Scenario，且每个 Implementation Task 有验证方式
 组合行为需要 Change-level Verification 时已有对应 Task
-Structured AI Review Result = APPROVED
+Workitem Analyst 已完成专业审查并修正发现的关键问题
 无未解决关键语义 Finding / blocker
 ```
 
@@ -1356,7 +1356,7 @@ Workitem Analyst 对总体分析质量负责：从实际任务、证据与变更
 
 Workitem Analyst 依据当前 Issue 与可信证据判断 `corrective | intentional`；`tfs.type` 保留来源管理语义。首次准备时确定当前 OpenSpec Schema，之后所有 Run 从当前 Change 的原生状态读取；映射与 Artifact 依赖由 [05](05-openspec-schema-implementation-design.md) 维护。
 
-不建立 Analysis Route 配置、路由脚本或新的 Skill 调度表；专业 Skill 按需调用。**现行契约**：仅实际工程增量需要 `change_kind`，`analysis publish` 消费本次 Facts，通过真实 Gate 后登记并回读 Multica Issue Metadata；Gate / Publish / Finalize 核对其与当前 Change Schema 一致。实际 CLI 发布和 Agent/Skill 加载仍须隔离 Workspace 验证。项目尚未上线，无历史数据迁移任务。
+不建立 Analysis Route 配置、路由脚本或新的 Skill 调度表；专业 Skill 按需调用。**现行契约**：仅实际工程增量需要 `change_kind`，`analysis publish` 消费指定 Change，从 Schema 推导分类，通过真实 Gate 后登记并回读 Multica Issue Metadata；Gate / Publish / Finalize 核对其与当前 Change Schema 一致。实际 CLI 发布和 Agent/Skill 加载仍须隔离 Workspace 验证。项目尚未上线，无历史数据迁移任务。
 
 ```text
 Issue / Evidence → Analyst 判断 Change Kind
@@ -1428,8 +1428,8 @@ Agent Instructions 与相关 Skill 的职责收敛已通过 #83 合并；`rondo 
 | 极小 Bug 只有少量修复 / 回归动作 | Proposal 简短、Tasks 最小充分，Corrective Proposal 证据不降级；不强制额外的需求分析或 Review Skill |
 | 简单单仓任务 Evidence 很少 | 不强制生成 `context-pack.md`；Evidence References 足够可追溯即可 |
 | Intentional 完成需求分析 | 更新 Proposal / Tasks、有 Delta 时更新 Specs、按条件更新 Design，并更新 Multica Analysis Handoff Facts；不要求固定 `requirement-analysis.md` |
-| Intentional 专业 Review APPROVED | 保存结构化 AI Review Result / Findings 与被审 Artifact 引用；不要求 `requirement-review.md` |
-| Human Review 读取 Analysis Package | 读取逻辑集合中的 Change / Result / Evidence / Review Facts；不要求存在 `analysis-package.md` 或 `analysis-summary.md` |
+| Intentional 专业 Review 完成 | 修正关键问题，必要依据引用实际 Artifact 或写入审核 Comment；无自报机器字段或独立 Review 文件 |
+| Human Review 读取 Analysis Package | 读取逻辑集合中的 Change / Delivery Facts / Evidence / 审核摘要；不要求存在 `analysis-package.md` 或 `analysis-summary.md` |
 | 分析与编码在不同 Agent / Run | 当前 Change、批准基线、Tasks / task_refs 和证据可读，Engineer 不依赖 Workitem Analyst 会话或临时目录 |
 | Change 归档后读取 Corrective Proposal / 证据 | 内部相对引用与外部持久化引用有效；现有 Issue 当前路径已回填 |
 | 同一 Delivery 分析退回两次 | 定向更新同一 Change，不重做全部分析或复制两套 Tasks |
@@ -1456,8 +1456,8 @@ Agent Instructions 与相关 Skill 的职责收敛已通过 #83 合并；`rondo 
 | Semantic Review 通过但 Gate 所需身份或引用未知 | Analysis Gate 返回 `UNKNOWN` 而不是 PASS；不得写入 `analysis_review` |
 | Gate PASS 但 Human 尚未批准 | 只能提交 Human Review；不得生成批准后的 `verify_agent.required` 或启动 Engineer |
 | `probable` 有可靠 Trace，Expected Behavior / 范围明确，修复与验证方案有据且残余风险已说明 | Analyst 依 [§7.3](#analysis-root-cause-confidence) 判断足以提交并取得一致性检查 `PASS`；全部 Gate 条件满足后可提交人审，根因状态仍为 `probable`，研发等待正式批准 |
-| `probable` 的替代解释尚可能改变 Fix Strategy，当前验证方案不能区分原因 | 可继续调查或保存草稿；一致性检查为 `NEEDS_REVISION`、Gate FAIL，不提交为待审成功 |
-| Corrective 一致性检查为 `NEEDS_REVISION`，但没有 blocker | Gate FAIL；不能只凭 blocker 数量为零放行，须完成复核并取得 PASS |
+| `probable` 的替代解释尚可能改变 Fix Strategy，当前验证方案不能区分原因 | 可继续调查或保存草稿；一致性检查为 `NEEDS_REVISION`，不得提交审核 |
+| Corrective 一致性检查为 `NEEDS_REVISION`，但没有 blocker | 不得提交审核；不能只凭 blocker 数量为零放行，须完成专业复核 |
 | 必需检查结果缺失 / 已确认失效，或当前结果无法读取 / 适用性未知 | 前者 FAIL，后者 UNKNOWN；两者均不写入 `analysis_review` |
 | 初次分析尚未获得 Human Approval | Verify 推荐可引用当前待审契约；Preparation 按批准后可消费性检查，不提前要求批准或启动 Engineer |
 | Human Review 通过后形成研发分派 | Lead 从已批准 Change / Tasks 组织 Task Set 并形成 `task_refs`，不要求事先存在单独批准的分派引用 |
@@ -1512,7 +1512,7 @@ Human Analysis Review → Delivery Lead
 | OpenSpec Change Identity | 每个自动 Delivery 默认维护一个稳定 active Change；Change 创建时持久化 Schema，Rework 复用，不新增多 Delivery 共用可写 Change |
 | New / Modified Capability | 都可生成 Spec / Delta Spec |
 | Corrective 无 Spec-level 行为变化 | `corrective-change` 使用原生 `skip_specs`；Intentional / `intentional-change` 不允许用 skip 掩盖 Intentional Behavior Change |
-| Requirement Review | 仅 Intentional；输出结构化 AI Review Result / Findings，不要求独立 Review Skill 或 `requirement-review.md`；Corrective 采用 [§7.2](#section-7-2) 内部一致性检查；均不替代 Human Review |
+| Requirement Review | 仅 Intentional；由 Analyst 专业审查并修正问题，不要求结构化 Verdict、独立 Review Skill 或 `requirement-review.md`；Corrective 采用 [§7.2](#section-7-2) 内部一致性检查；均不替代 Human Review |
 | TFS Task | 只看原始 `tfs.type` |
 | Workitem Analyst | 需求与问题分析及研发准备；不替代 Human 决策，不修改 TFS 管理类型或承担最终成员分工 |
 | Analysis 完成标准 | [§1.2](#analysis-readiness)：需求与问题清楚、必要研发依据充分；不要求预先冻结全部实现细节 |

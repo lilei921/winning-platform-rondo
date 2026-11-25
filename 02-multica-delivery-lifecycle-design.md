@@ -848,7 +848,7 @@ Analysis Handoff Facts 不是新对象，只表示使用 Multica 原生 Issue / 
 
 ```yaml
 analysis:
-  change_kind: corrective | intentional  # Workitem Analyst 判断；写入 Multica Issue Metadata analysis.change_kind
+  change_kind: corrective | intentional  # 从当前 Change Schema 推导并登记
   change_ref: ...
 
 
@@ -979,15 +979,15 @@ Delivery / TFS identity、Change Kind 与已持久化 Schema 一致
 Development Scope / Repository Scope 可读取
 当前 Acceptance Contract 可读取：Intentional 为 Requirement / Scenario；Corrective 为 Proposal Expected Behavior / Regression Scope，存在 Specs 时一并读取
 每个 Implementation Task 有验证方式；需要组合验证时存在 Change-level Verification Task
-Verify Recommendation / Reason / Verification Focus 完整且引用有效
+审核 Comment 提供有依据的独立验证建议及必要验证重点
 Evidence References 可追溯
 适用 OpenSpec Artifact 与原生 Validation 满足当前 Schema
-专业 Review / Consistency Result 可读取且无 unresolved blocker
+Analyst 已完成适用专业 Review / Consistency Check，无未解决的关键问题
 ```
 
-Corrective 的 Expected / Actual、Root Cause / Evidence、Fix Strategy、Fix / Regression Scope 与 Tasks / Verification 一致性，以及 Intentional 的 Proposal / Specs / Tasks、Conditional Design 判断，由 Analyst 专业复核；CLI 只检查适用的确定性条件及 Intentional Review Verdict。Gate 不要求 `bug-analysis.md`、`acceptance.md`、`verification-requirements.md` 等重复载体。
+Corrective 的 Expected / Actual、Root Cause / Evidence、Fix Strategy、Fix / Regression Scope 与 Tasks / Verification 一致性，以及 Intentional 的 Proposal / Specs / Tasks、Conditional Design 判断，由 Analyst 专业复核；CLI 只检查适用的确定性条件，不消费 Analyst 自报的专业审查结果。Gate 不要求 `bug-analysis.md`、`acceptance.md`、`verification-requirements.md` 等重复载体。
 
-Gate 消费已有专业结论，不能凭 Artifact 存在、Validation PASS 或推荐字段齐全替代语义判断。Gate 的 PASS 结果须能核对 Issue / Workspace、Change Kind / Schema 与当前 Change 工件摘要；Complete 直接消费本次 Facts，执行真实 Gate 并确认候选与远端固定 Git 契约一致；核对服务端冲突事实后登记 Facts、Source 和本次 PASS，再提交 `analysis_review`。不落盘 Gate Result。结果引用与摘要只是本次确定性校验证据，不创建新的审批状态、版本对象或重复技术事实。成员选择及 `task_refs` 分工在 Human Review 后由 Delivery Lead 处理，不作为 Analysis 的必交输入。
+专业结论由 Analyst 负责；Artifact 存在或 Validation PASS 不替代语义判断。Gate 的 PASS 结果须能核对 Issue / Workspace、Change Kind / Schema 与当前 Change 工件摘要；Publish 直接消费指定 Change，执行真实 Gate 并确认候选 Git 契约一致及发布可达性；核对服务端冲突事实后登记 Facts、Source 和本次 PASS，再提交 `analysis_review`。不落盘 Gate Result。结果引用与摘要只是本次确定性校验证据，不创建新的审批状态、版本对象或重复技术事实。成员选择及 `task_refs` 分工在 Human Review 后由 Delivery Lead 处理，不作为 Analysis 的必交输入。
 
 统一结果：
 
@@ -2704,7 +2704,7 @@ verification:
 其中：
 
 ```text
-verify_agent.recommendation
+审核 Comment 中的 Independent Verify Recommendation
 = Workitem Analyst 提出的分析建议
 
 verify_agent.required

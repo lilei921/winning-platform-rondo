@@ -576,3 +576,35 @@ test("已知独立硬条件 FAIL 优先于其他检查 UNKNOWN", t => {
   assert.equal(result.body.checks.find(c => c.name === "identity")?.result, "FAIL");
   assert.equal(result.body.checks.find(c => c.name === "change")?.result, "UNKNOWN");
 });
+
+test("Intentional 发布与审核重放无需自报 Review Verdict", t => {
+  const f = fixture(t);
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [root]\n");
+  mkdirSync(join(f.change, "specs", "feature"), { recursive: true });
+  writeFileSync(join(f.change, "specs", "feature", "spec.md"), "## ADDED Requirements\n### Requirement: Feature\nThe system SHALL support feature.\n#### Scenario: Success\n- **WHEN** invoked\n- **THEN** succeeds\n");
+  git(f.root, "add", "openspec/changes/" + CHANGE);
+  git(f.root, "commit", "-m", "intentional contract");
+  const gate = f.gate();
+  assert.equal(gate.exit, 0, JSON.stringify(gate));
+  assert.equal(gate.body.change_kind, "intentional");
+  assert.ok(!gate.body.checks.some(c => c.name === "ai_review"));
+  const result = f.complete();
+  assert.equal(result.exit, 0, JSON.stringify(result));
+  assert.equal(f.state().metadata["analysis.change_kind"], "intentional");
+  assert.equal(f.state().metadata["analysis.ai_review.verdict"], undefined);
+  assert.equal(f.complete().body.replayed, true);
+});
+
+test("显式 --root-repo 缺值或为空时不回退环境变量", t => {
+  const f = fixture(t);
+  const args = ["analysis", "publish", "--mode", "requirement", "--issue", "issue-1",
+    "--change-ref", CHANGE, "--workspace-id", "ws-test", "--registry-config", join(f.home, "registry.json"),
+    "--multica", MOCK];
+  for (const flags of [["--root-repo"], ["--root-repo", ""], ["--root-repo", "--target-branch", "dev"]]) {
+    const r = spawnSync(process.execPath, [CLI, ...args, ...flags], { encoding: "utf8", cwd: f.root,
+      env: { ...process.env, ...f.env, RONDO_WORKSPACE_PATH: f.root } });
+    assert.equal(r.status, 64, r.stderr);
+    assert.match(r.stderr, /--root-repo/);
+    assert.equal(f.state().metadata["analysis.source"], undefined);
+  }
+});

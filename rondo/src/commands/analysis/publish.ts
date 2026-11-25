@@ -48,13 +48,18 @@ function parseArgs(argv: string[]): { issue: string; changeRef: string; cli: str
     const i = argv.indexOf(flag);
     return i !== -1 && i + 1 < argv.length ? argv[i + 1] : null;
   };
+  const rootRepo = get("--root-repo");
+  if (argv.includes("--root-repo") && (!rootRepo?.trim() || rootRepo.startsWith("--"))) {
+    process.stderr.write("--root-repo 必须提供非空路径\n");
+    process.exit(64);
+  }
   const issue = get("--issue");
   const changeRef = get("--change-ref");
   if (!issue || !changeRef || !get("--workspace-id") || !get("--registry-config")) {
     process.stderr.write("用法: rondo analysis publish --issue <issue-id> --change-ref <id> --registry-config <repo-registry.json> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>]\n");
     process.exit(64);
   }
-  return { issue, changeRef, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), registryConfig: get("--registry-config"), rootRepo: get("--root-repo"), targetBranch: get("--target-branch"), mode: get("--mode") ?? "legacy" };
+  return { issue, changeRef, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), registryConfig: get("--registry-config"), rootRepo, targetBranch: get("--target-branch"), mode: get("--mode") ?? "legacy" };
 }
 
 /** 读取唯一推送地址；拒绝凭据 URL，避免在 metadata 中保存认证信息。 */
@@ -123,8 +128,8 @@ async function main(rawArgs: string[]): Promise<number> {
 
     // Complete itself executes the final Gate. A prior validate or Metadata PASS is only a preview.
     const root = requirement ? requirementRoot(args.rootRepo) : resolveRuntimePaths(cfg, {
-      issue: before as { project_id?: string | null }, rootRepoArg: args.rootRepo || process.env.RONDO_WORKSPACE_PATH,
-      rootRepoOrigin: args.rootRepo ? "--root-repo" : "RONDO_WORKSPACE_PATH",
+      issue: before as { project_id?: string | null }, rootRepoArg: args.rootRepo ?? process.env.RONDO_WORKSPACE_PATH,
+      rootRepoOrigin: args.rootRepo !== null ? "--root-repo" : "RONDO_WORKSPACE_PATH",
       need: ["openspec"],
     }).rootRepo;
     const native = requirement && nativeCheckoutExpected(root);
