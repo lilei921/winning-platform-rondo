@@ -395,3 +395,30 @@ test("Partial Facts write failure can resume without Stage", t => {
   assert.equal(result.exit, 0, JSON.stringify(result));
   assert.equal(f.state().status, "analysis_review");
 });
+
+
+test("返工 Facts 写入失败时旧 Gate PASS 不得继续生效", t => {
+  const f = fixture(t);
+  assert.equal(f.complete().exit, 0);
+  const prior = f.state();
+  prior.status = "in_progress";
+  f.setState(prior);
+  writeFileSync(f.factsPath, JSON.stringify({ ...FACTS, verify_agent: { ...FACTS.verify_agent, reason: "本轮复核后的新依据" } }));
+  f.env.MOCK_FAIL_METADATA_KEY = "analysis.verify_agent.reason";
+  assert.notEqual(f.complete().exit, 0);
+  assert.equal(f.state().metadata["analysis.gate.result"], undefined);
+  assert.equal(f.state().status, "in_progress");
+  delete f.env.MOCK_FAIL_METADATA_KEY;
+  assert.equal(f.complete().exit, 0);
+  assert.equal(f.state().metadata["analysis.gate.result"], "PASS");
+  assert.equal(f.state().metadata["analysis.verify_agent.reason"], "本轮复核后的新依据");
+});
+
+test("重复任务引用在最终 Gate 被拒绝，未发布审核", t => {
+  const f = fixture(t);
+  writeFileSync(join(f.change, "tasks.md"), "- [ ] 1.1 A\n- [ ] 1.1 B\n");
+  const result = f.complete();
+  assert.equal(result.exit, 2, JSON.stringify(result));
+  assert.match(result.body.reason, /重复/);
+  assert.equal(f.state().metadata["analysis.source"], undefined);
+});

@@ -30,6 +30,16 @@ import {
 import { committedContract, readPublishedContract, assertCommittedContractFiles } from "./published-source.js";
 
 const TARGET_STATUS = "analysis_review";
+const GATE_RESULT = "analysis.gate.result";
+const DELIVERY_FACTS = ["tfs.changed_at", "analysis.human_approval", "verify_agent.required", "dev.dispatch", "finalize.pending", "delivery.tfs_written"];
+
+function sameDeliveryFacts(before: Record<string, unknown>, after: Record<string, unknown>): boolean {
+  return DELIVERY_FACTS.every(key => before[key] === after[key]);
+}
+
+function sameIssueOwner(before: Record<string, unknown>, after: Record<string, unknown>): boolean {
+  return ["id", "assignee_id", "assignee_type", "project_id"].every(key => before[key] === after[key]);
+}
 const ANALYSIS_CONTRACT_FILE = /^(?:\.openspec\.yaml|proposal\.md|tasks\.md|design\.md|specs\/.+\.md)$/;
 
 function loadFacts(path: string): Facts {
@@ -111,7 +121,8 @@ async function main(rawArgs: string[]): Promise<number> {
       const latest = runJson([...MC, "issue", "get", args.issue, ...ws, "--output", "json"], "重放后核对审核状态") as Record<string, unknown>;
       const current = runJson([...MC, "issue", "metadata", "list", args.issue, ...ws, "--output", "json"], "重放后核对来源") as Record<string, unknown>;
       if (String(latest.status ?? latest.status_name ?? "") !== TARGET_STATUS ||
-          !sameAnalysisSource(source, readAnalysisSource(current)) || metadataEvidenceDigest(current) !== metadataEvidenceDigest(priorMeta) ||
+          !sameIssueOwner(before, latest) || !sameDeliveryFacts(priorMeta, current) ||
+          current[GATE_RESULT] !== "PASS" || !sameAnalysisSource(source, readAnalysisSource(current)) || metadataEvidenceDigest(current) !== metadataEvidenceDigest(priorMeta) ||
           Object.entries(entries).some(([k, v]) => current[k] !== v)) throw new UnknownError("审核重放期间状态或来源已变化，停止放行");
       process.stdout.write(JSON.stringify({ result: "PASS", issue: args.issue, status: TARGET_STATUS,
         replayed: true, gate_reexecuted: false,
@@ -232,21 +243,39 @@ async function main(rawArgs: string[]): Promise<number> {
       entries["analysis.source"] = JSON.stringify(source);
       const latestMeta = runJson([...MC, "issue", "metadata", "list", args.issue, ...ws, "--output", "json"], "提交审核前核对 Facts") as Record<string, unknown>;
       if (latestMeta["analysis.source"] !== priorMeta["analysis.source"]) throw new UnknownError("收口期间 analysis.source 已被其他流程更新，停止覆盖");
-      if (metadataEvidenceDigest(latestMeta) !== metadataEvidenceDigest(priorMeta) || latestMeta["tfs.changed_at"] !== priorMeta["tfs.changed_at"]) {
+      if (metadataEvidenceDigest(latestMeta) !== metadataEvidenceDigest(priorMeta) || !sameDeliveryFacts(priorMeta, latestMeta) || latestMeta[GATE_RESULT] !== priorMeta[GATE_RESULT]) {
         throw new UnknownError("根仓 Commit/Push 期间 Analysis Facts 发生变化，必须重新执行 Analysis Gate");
       }
       const liveIssue = runJson([...MC, "issue", "get", args.issue, ...ws, "--output", "json"], "发布前核对 Issue 状态") as Record<string, unknown>;
-      if (String(liveIssue.status ?? liveIssue.status_name ?? "") !== "in_progress") throw new UnknownError("收口期间 Issue 已离开 in_progress，停止发布审核");
+      if (String(liveIssue.status ?? liveIssue.status_name ?? "") !== "in_progress" || !sameIssueOwner(before, liveIssue)) throw new UnknownError("收口期间 Issue 状态或负责人已变化，停止发布审核");
+      const replacing = removeReview || Object.entries(entries).some(([k, v]) => k !== GATE_RESULT && latestMeta[k] !== v);
+      if (replacing && latestMeta[GATE_RESULT] === "PASS") {
+        runJson([...MC, "issue", "metadata", "delete", args.issue, "--key", GATE_RESULT, ...ws, "--output", "json"], "撤销被替换审核版本的 Gate PASS");
+        const invalidated = runJson([...MC, "issue", "metadata", "list", args.issue, ...ws, "--output", "json"], "确认旧 Gate 已失效") as Record<string, unknown>;
+        if (invalidated[GATE_RESULT] === "PASS" || !sameDeliveryFacts(priorMeta, invalidated) || metadataEvidenceDigest(invalidated) !== metadataEvidenceDigest(latestMeta) || invalidated["analysis.source"] !== latestMeta["analysis.source"]) {
+          throw new UnknownError("旧 Gate 失效结果或审核事实无法确认");
+        }
+        delete latestMeta[GATE_RESULT];
+      }
       if (removeReview) runJson([...MC, "issue", "metadata", "delete", args.issue, "--key", "analysis.ai_review.verdict", ...ws, "--output", "json"], "删除不适用的旧 Review Verdict");
       for (const [k, v] of Object.entries(entries)) {
-        if (latestMeta[k] === v) continue;
+        if (k === GATE_RESULT || latestMeta[k] === v) continue;
         runJson([...MC, "issue", "metadata", "set", args.issue,
                  "--key", k, "--value", v, "--type", "string", ...ws, "--output", "json"],
                 `写入 metadata(key=${k})`);
       }
       // 来源在切换审核状态前必须回读成功，避免 Human 看到没有版本指针的审核包。
       const published = runJson([...MC, "issue", "metadata", "list", args.issue, ...ws, "--output", "json"], "回读审核来源") as Record<string, unknown>;
-      if ((facts.ai_review === undefined && published["analysis.ai_review.verdict"] !== undefined) || Object.entries(entries).some(([k, v]) => String(published[k]) !== v)) throw new UnknownError("审核 metadata 回读不一致，未进入 analysis_review");
+      if ((facts.ai_review === undefined && published["analysis.ai_review.verdict"] !== undefined) ||
+          Object.entries(entries).some(([k, v]) => k !== GATE_RESULT && published[k] !== v) ||
+          metadataEvidenceDigest(published) !== gateEvidence.metadata_digest || !sameDeliveryFacts(priorMeta, published) ||
+          published[GATE_RESULT] !== latestMeta[GATE_RESULT]) throw new UnknownError("审核 metadata 回读不一致，未进入 analysis_review");
+      const ready = runJson([...MC, "issue", "get", args.issue, ...ws, "--output", "json"], "切换审核前核对 Issue") as Record<string, unknown>;
+      if (String(ready.status ?? ready.status_name ?? "") !== "in_progress" || !sameIssueOwner(before, ready))
+        throw new UnknownError("审核状态或负责人已变化，停止发布");
+      if (published[GATE_RESULT] !== "PASS") {
+        runJson([...MC, "issue", "metadata", "set", args.issue, "--key", GATE_RESULT, "--value", "PASS", "--type", "string", ...ws, "--output", "json"], "登记本次 Gate PASS");
+      }
       const statusCp = runCommand([...MC, "issue", "status", args.issue, TARGET_STATUS, "--no-start", ...ws, "--output", "json"]);
       if (statusCp.status !== 0) {
         throw new UnknownError(`写入状态失败 rc=${statusCp.status}: ${statusCp.stderr.trim()}`);
@@ -259,6 +288,7 @@ async function main(rawArgs: string[]): Promise<number> {
     const mismatches: string[] = [];
     const statusNow = String(issue.status ?? issue.status_name ?? "");
     if (facts.ai_review === undefined && meta["analysis.ai_review.verdict"] !== undefined) mismatches.push("旧 Review Verdict 未清除");
+    if (!sameIssueOwner(before, issue) || !sameDeliveryFacts(priorMeta, meta) || metadataEvidenceDigest(meta) !== metadataEvidenceDigest(effectiveMeta)) mismatches.push("审核身份或来源事实发生变化");
     if (statusNow !== TARGET_STATUS) mismatches.push(`status=${statusNow}（期望 ${TARGET_STATUS}）`);
     for (const [k, v] of Object.entries(entries)) {
       if (String(meta[k]) !== v) mismatches.push(`metadata ${k} 回读不一致`);

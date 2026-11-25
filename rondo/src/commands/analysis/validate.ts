@@ -25,6 +25,7 @@ import { MulticaClient } from "../../clients/multica.js";
 import { commandExists } from "../../clients/which.js";
 import { resolveOpenspecRootDir } from "../../clients/runtime-paths.js";
 import { classifyTfsType, loadFactsFile, validateDraftFields, submissionMetadata, type DraftFacts } from "./facts.js";
+import { taskReferences } from "./source.js";
 import { parseRepositoryScope } from "./repository-scope.js";
 import { changeEvidenceDigest, metadataEvidenceDigest } from "./gate-evidence.js";
 
@@ -234,7 +235,12 @@ function checkTasks(changeDir: string | null): Check {
   if (!changeDir) return { name: "tasks", result: "FAIL", reasons: ["前置检查未通过"] };
   const tasks = readText(join(changeDir, "tasks.md"));
   if (!tasks) return { name: "tasks", result: "FAIL", reasons: ["缺少 tasks.md"] };
-  if (!/- \[[ x]\]/i.test(tasks)) reasons.push("tasks.md 未找到任何任务项");
+  try {
+    if (!taskReferences(tasks).length) reasons.push("tasks.md 未找到任何可引用任务项");
+  } catch (error) {
+    if (!(error instanceof FailError)) throw error;
+    reasons.push(error.message);
+  }
   return { name: "tasks", result: reasons.length ? "FAIL" : "PASS", reasons };
 }
 
@@ -278,7 +284,7 @@ function checkOpenSpecValidate(changeDir: string | null, openspecRoot: string): 
   const changeRef = basename(changeDir);
   let cp;
   try {
-    cp = runCommand(["openspec", "validate", changeRef, "--type", "change", "--strict", "--json"], dirname(openspecRoot));
+    cp = runCommand(["openspec", "validate", changeRef, "--type", "change", "--strict", "--no-interactive", "--json"], dirname(openspecRoot));
   } catch (error) {
     return { name, result: "UNKNOWN", reasons: [`openspec validate 无法执行: ${String(error)}`] };
   }
