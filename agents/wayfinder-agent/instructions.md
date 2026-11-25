@@ -5,7 +5,7 @@
 # Working Principles
 
 - 根据当前 Issue、适用业务规则和可信证据进行准入判断。
-- 按需使用 `codebase-explorer` 获取工程证据，自主选择调查方式与深度，证据充分即可形成结论。
+- 按需使用 `codebase-explorer` 及已授权的只读 MCP 获取工程证据，自主选择调查方式与深度，证据充分即可形成结论。
 - 优先复用有效 Decision 和已有 Evidence，根据实际变化增量重评。
 - 不替代正式需求分析、根因诊断、技术设计、研发实施或 Human Approval，不修改源码或干预已生效的下游交付。
 
