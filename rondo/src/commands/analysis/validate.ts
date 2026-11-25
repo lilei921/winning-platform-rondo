@@ -24,7 +24,7 @@ import { runCommand } from "../../clients/spawn.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { commandExists } from "../../clients/which.js";
 import { resolveOpenspecRootDir } from "../../clients/runtime-paths.js";
-import { classifyTfsType, loadFactsFile, validateDraftFields, submissionMetadata, type DraftFacts } from "./facts.js";
+import { classifyTfsType, loadValidatedFacts, PreconditionError, reviewVerdictViolation, submissionMetadata, type DraftFacts } from "./facts.js";
 import { taskReferences } from "./source.js";
 import { parseRepositoryScope } from "./repository-scope.js";
 import { changeEvidenceDigest, metadataEvidenceDigest } from "./gate-evidence.js";
@@ -244,35 +244,10 @@ function checkTasks(changeDir: string | null): Check {
   return { name: "tasks", result: reasons.length ? "FAIL" : "PASS", reasons };
 }
 
-function checkVerifyRecommendation(meta: Record<string, unknown>): Check {
-  const reasons: string[] = [];
-  const rec = meta["analysis.verify_agent.recommendation"];
-  if (rec !== "required" && rec !== "not_required") reasons.push(`verify_agent.recommendation 缺失或非法: ${String(rec)}`);
-  const reason = meta["analysis.verify_agent.reason"];
-  if (typeof reason !== "string" || reason.trim() === "") reasons.push("verify_agent.reason 缺失");
-  const focusRefs = meta["analysis.verify_agent.focus_refs"];
-  if (typeof focusRefs !== "string" || focusRefs.trim() === "") {
-    reasons.push("verify_agent.focus_refs 缺失");
-  } else {
-    try {
-      const parsed = JSON.parse(focusRefs);
-      if (!Array.isArray(parsed) || parsed.length === 0 || parsed.some((ref: unknown) => typeof ref !== "string" || !ref.trim())) {
-        reasons.push("verify_agent.focus_refs 须为非空字符串引用数组");
-      }
-    } catch {
-      reasons.push("verify_agent.focus_refs 不是合法 JSON 数组");
-    }
-  }
-  return { name: "verify_recommendation", result: reasons.length ? "FAIL" : "PASS", reasons };
-}
-
 export function checkAiReview(schema: ChangeSchema | null, meta: Record<string, unknown>): Check {
   if (schema !== "intentional-change") return { name: "ai_review", result: schema ? "PASS" : "FAIL", reasons: schema ? ["Corrective 无强制 AI Review"] : ["Schema 未确认"] };
-  const verdict = meta["analysis.ai_review.verdict"];
-  const reasons: string[] = [];
-  if (verdict === "NEEDS_REVISION") reasons.push("ai_review.verdict=NEEDS_REVISION");
-  else if (verdict !== "APPROVED") reasons.push(`ai_review.verdict 缺失或非法: ${String(verdict)}`);
-  return { name: "ai_review", result: reasons.length ? "FAIL" : "PASS", reasons };
+  const violation = reviewVerdictViolation(schema, meta["analysis.ai_review.verdict"]);
+  return { name: "ai_review", result: violation ? "FAIL" : "PASS", reasons: violation ? [violation] : [] };
 }
 
 function checkOpenSpecValidate(changeDir: string | null, openspecRoot: string): Check {
@@ -326,7 +301,8 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
     checks.push(change);
     checks.push(checkAcceptanceContract(schema, changeDir, openspecRoot));
     checks.push(checkTasks(changeDir));
-    checks.push(checkVerifyRecommendation(meta));
+    // Both entrypoints have already validated the current Facts, including Verify Recommendation.
+    checks.push({ name: "verify_recommendation", result: "PASS", reasons: [] });
     checks.push(checkAiReview(schema, meta));
     checks.push(checkOpenSpecValidate(changeDir, openspecRoot));
     if (schema && changeDir && typeof meta["analysis.change_ref"] === "string" &&
@@ -373,9 +349,7 @@ function main(rawArgs: string[]): number {
   const args = parseArgs(rawArgs);
   if (args.out) return emitResult({ result: "FAIL", checks: [], reasons: ["--out 已退役；Analysis Gate 结果不再持久化"] }, 2, null);
   try {
-    const facts = loadFactsFile(args.facts!) as DraftFacts;
-    const missing = facts && typeof facts === "object" ? validateDraftFields(facts) : ["facts 必须为对象"];
-    if (missing.length) return emitResult({ result: "FAIL", checks: [], reasons: missing }, 2, null);
+    const facts = loadValidatedFacts(args.facts!);
     const outcome = evaluateAnalysisGate({
       issue: args.issue,
       openspecRoot: args.openspecRoot,
@@ -384,6 +358,7 @@ function main(rawArgs: string[]): number {
     });
     return emitResult(outcome.payload, outcome.exitCode, null);
   } catch (error) {
+    if (error instanceof PreconditionError) return emitResult({ result: "FAIL", checks: [], reasons: [error.message] }, 2, null);
     if (error instanceof UnknownError) return emitResult({ result: "UNKNOWN", checks: [], reasons: [error.message] }, 3, null);
     throw error;
   }

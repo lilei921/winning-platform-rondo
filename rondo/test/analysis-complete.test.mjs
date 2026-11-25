@@ -422,3 +422,13 @@ test("重复任务引用在最终 Gate 被拒绝，未发布审核", t => {
   assert.match(result.body.reason, /重复/);
   assert.equal(f.state().metadata["analysis.source"], undefined);
 });
+
+
+test("invalid professional Facts never reach Gate or write metadata", t => {
+  const f = fixture(t);
+  const before = f.state();
+  writeFileSync(f.factsPath, JSON.stringify({ ...FACTS, verify_agent: { ...FACTS.verify_agent, focus_refs: [] } }));
+  assert.equal(f.gate().exit, 2);
+  assert.equal(f.complete().exit, 2);
+  assert.deepEqual(f.state(), before);
+});

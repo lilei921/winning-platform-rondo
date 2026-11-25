@@ -13,7 +13,7 @@ import { assertNativeTaskCheckout, nativeCheckoutExpected } from "../../clients/
 import { gitOk } from "../../clients/git.js";
 import { publishChange, requirementBranch, requirementRoot, rootRepositoryUrl, resolveProjectRootBranch } from "../runtime/root-git.js";
 import { assertAnalysisWritable } from "./guard.js";
-import { sourceSchemaViolation } from "./change-schema.js";
+import { sourceSchemaViolation, changeKindSchemaViolation } from "./change-schema.js";
 import { changeEvidenceDigest, metadataEvidenceDigest } from "./gate-evidence.js";
 import { evaluateAnalysisGate } from "./validate.js";
 import { parseAnalysisSource, readAnalysisSource, repositoryUrl, sameAnalysisSource, type AnalysisSource } from "./source.js";
@@ -22,8 +22,8 @@ import {
   classifyTfsType,
   draftMetadataEntries,
   submissionMetadata,
-  loadFactsFile,
-  validateDraftFields,
+  loadValidatedFacts,
+  reviewVerdictViolation,
   type Facts,
 } from "./facts.js";
 
@@ -41,14 +41,6 @@ function sameIssueOwner(before: Record<string, unknown>, after: Record<string, u
   return ["id", "assignee_id", "assignee_type", "project_id"].every(key => before[key] === after[key]);
 }
 const ANALYSIS_CONTRACT_FILE = /^(?:\.openspec\.yaml|proposal\.md|tasks\.md|design\.md|specs\/.+\.md)$/;
-
-function loadFacts(path: string): Facts {
-  const f = loadFactsFile(path) as Partial<Facts>;
-  const missing = f && typeof f === "object" ? validateDraftFields(f) : ["facts 必须为对象"];
-  if (missing.length > 0) throw new PreconditionError(`facts 字段缺失或非法: ${missing.join("; ")}`);
-  // Caller-supplied Gate status is never trusted. Complete re-runs the real Gate.
-  return f as Facts;
-}
 
 function metadataEntries(f: Facts): Record<string, string> {
   return {
@@ -85,7 +77,7 @@ async function main(rawArgs: string[]): Promise<number> {
   try {
     const runtime = analysisRuntime(rawArgs, args.cli, args.workspaceId);
     const MC = multicaPrefix(runtime);
-    const facts = loadFacts(args.facts);
+    const facts = loadValidatedFacts(args.facts);
     const entries = metadataEntries(facts);
 
     // 0. 确认 Issue 在当前工作区可读取（transient：空 stdout 瞬态重试一次，P0）
@@ -115,8 +107,8 @@ async function main(rawArgs: string[]): Promise<number> {
       const published = await readPublishedContract(source, priorMeta);
       const violation = sourceSchemaViolation(tfsKind, published.schema);
       if (violation) throw new PreconditionError(violation);
-      const missing = validateDraftFields(facts, published.schema);
-      if (missing.length) throw new PreconditionError(missing.join("; "));
+      const invalid = changeKindSchemaViolation(facts.change_kind, published.schema) ?? reviewVerdictViolation(published.schema, facts.ai_review?.verdict);
+      if (invalid) throw new PreconditionError(invalid);
       // Idempotent replay checks the existing pinned source; it does not claim a new Gate execution.
       const latest = runJson([...MC, "issue", "get", args.issue, ...ws, "--output", "json"], "重放后核对审核状态") as Record<string, unknown>;
       const current = runJson([...MC, "issue", "metadata", "list", args.issue, ...ws, "--output", "json"], "重放后核对来源") as Record<string, unknown>;
