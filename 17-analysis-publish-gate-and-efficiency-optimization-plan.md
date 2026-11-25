@@ -12,7 +12,7 @@ baseline: cd9273de916e4482a04e4640fffaf57009beb47b
 
 以 [LEI-64 本次回放](projects/replay/20261125-LEI-64/replay.md) 为唯一运行事实，对照当前 main 源码及 [01 设计原则](01-multica-openspec-design-guideline.md)，解决 Analysis 执行时间过长、发布错误阻断与职责偏移。遵循 First Principles、KISS、YAGNI、Specialist Focus、Native First、One Rule One Owner、Minimal Sufficient。
 
-核心决策（已确认）：最小校验、信任 Git 原生完整性机制。首次 Requirement Analysis Publish 使用 Git 原生的固定 Commit 及远端分支可达性证明发布结果，不再用 TFS REST API 逐文件回读正文、重复计算 Digest。保留真实 Analysis Gate、候选工程契约一致性、授权、并发保护、固定来源、Human Approval。此次仅保存方案，不实施代码或 Skill 改造。
+核心决策（已确认）：最小校验、信任 Git 原生完整性机制。首次 Requirement Analysis Publish 使用 Git 原生的固定 Commit 及远端分支可达性证明发布结果，不再用 TFS REST API 逐文件回读正文、重复计算 Digest。保留真实 Analysis Gate、候选工程契约一致性、授权、并发保护、固定来源、Human Approval。原方案仅保存设计；PR #67 合并后的实施状态及后续未完成增量见 §9。
 
 ## 2. 回放事实与耗时
 
@@ -113,4 +113,92 @@ LEI-64 resolve-identity 使用未知 --output 参数；正确示例现已存在�
 - 基础设施异常不引导 Analyst 排障工具内部，不机械重试；回流真实结果。
 - 同等复杂度回放：消除 655s 异常排障链，首次 publish 前 614s 作为对照基线；4–6 分钟为优化目标而非硬约束或已验证指标，不能以耗时换取工程质量下降。
 
-本方案不新增 Gate、Agent、Skill、Workflow、Metadata Schema 或机械执行上限；不改 no-change、Bug Fix、TFS Closeout、PR 等无关业务。本次只保存方案，未执行回归或真实 Multica 回放。
+本方案不新增 Gate、Agent、Skill、Workflow、Metadata Schema 或机械执行上限；不改 no-change、Bug Fix、TFS Closeout、PR 等无关业务。原方案记录时尚未执行回归或真实 Multica 回放；后续实施状态见 §9。
+
+
+## 9. 后续增量 — 研发 Change 参数收敛与旧 Task Set 退役
+
+### 9.1 最新实现核对与范围
+
+复核基线：[main a60fbfe](https://github.com/lilei921/winning-platform-rondo/commit/a60fbfee1df4a35f97d5a1734287d42d52804124)。本节依据当前源码、[LEI-49 Engineer 实际执行记录](projects/replay/20261123-LEI-49/engineer/20261121-1443-01a1fcd8/timeline.md#L92-L114) 及当前原生 Issue 交接契约，不将历史回放当作新版本的运行验证。
+
+[PR #67](https://github.com/lilei921/winning-platform-rondo/pull/67) 已合并：§3 Requirement 发布/恢复/审核重放的 REST 正文重复对账已删除（Legacy 路径保留原校验）；§4 HTTP 文本 Buffer 一次性 UTF-8 解码、§5 异常回流、§6 证据/Identity 复用与按需 validate、§7 显式根仓相对路径和全局 `--output json` 已有实现。未完成真实 Multica 回放和耗时目标验证，不把静态核对等同于回归通过。§2–8 保留为 LEI-64 的原始问题、决策及验收依据，不重复实施已合并修复。
+
+当前 [Engineer Instructions](agents/engineer/instructions.md) 仍明确要求 `rondo change update-progress`；[native-workspace](skills/native-workspace/SKILL.md) 仍要求 Requirement prepare 追加 `--change-ref`。Lead 已使用原生 `@mention`，Engineer 消费整个已批准的 Change，不再按 `change_ref + task_refs + engineer_id` 分派 Task Set。Rondo 仍注册旧命令，09 方案也仍保留旧路线兼容设计。此次只收敛尚未修改的研发参数与退役机制，区分活跃命令和旧兼容路径；不改变 Bug Fix、Human Approval、Independent Verify、PR/Closeout 的有效业务能力。
+
+[PR #69](https://github.com/lilei921/winning-platform-rondo/pull/69) 独立处理 Analysis `facts.json` 退役及专业审查字段收敛，本节不重复实施该 PR。Analysis 发布前尚无已批准的 `analysis.source`，需要显式 Change 身份；不要把研发阶段删除重复参数误扩展到 Analysis 阶段。
+
+### 9.2 P0 — 取消独立 Task Progress Patch
+
+[update-progress.ts](rondo/src/commands/change/update-progress.ts) 仅负责本地 `tasks.md` 编号定位、checkbox patch、进程级锁及幂等处理，并不判断任务真正完成。当前单 Engineer 负责整个 Change，原多 Engineer 并发写同一 Tasks 的设计前提已不存在（仍须维持当前 Issue 同一时点不重复有效委派及 Git 发布冲突保护）。保留工程事实，不保留额外进度写入体系。
+
+- Engineer 根据实际研发与验证结果，直接使用原生文件编辑能力更新 `tasks.md` 完成状态，保持已批准任务正文、编号及范围不变；允许随进度更新，不要求一次性批量勾选，不规定工具或固定执行顺序。
+- 退役 `rondo change update-progress`、专属 patch-lock 实现及命令注册/Help/专属测试；不新增替代命令、Skill、锁、Metadata 或 Task ID。
+- 复用 `dev publish` 的批准契约一致性检查（`normalizeContractText` 允许 checkbox 变化但保留任务正文）与 PR Materialization 内部的 `checkedTaskProgress`（编号、格式、重复、全部完成）及实际 Candidate / Validation / Code Review Gate。不得将 checkbox 当作工程正确性的充分证据，不因去掉 patch 命令放宽发布授权或完成条件。
+- Engineer Instructions 建议改为：“根据实际研发与验证结果更新 `tasks.md` 的完成状态，保持已批准的任务内容不变。提交研发工件并使用 `rondo dev publish --root-repo <实际根仓路径>` 发布；非实质性 Design 细化时使用 `--minor-design`。” 其他专业职责不变。
+
+### 9.3 P0 — 以 Issue 为研发入口，消除重复 Change 参数
+
+当前 [COMMANDS.md](rondo/COMMANDS.md) 和 [index.ts](rondo/src/index.ts) 确认以下 9 个命令接受 `--change-ref`：
+
+| 命令 | 当前用途 | 目标 |
+|---|---|---|
+| change resolve-identity | Analysis Change 定位/恢复 | 保留可选参数及 TFS ID 定位 |
+| change update-progress | 本地 Tasks checkbox patch | 删除，见 §9.2 |
+| dev materialize | 旧派发物化 | P1 退役 |
+| dev check-dispatch | 旧派发核验 | P1 退役 |
+| dev check-completion | 旧 Task Set / Evidence 完成校验 | P1 退役 |
+| dev contract-hash | 旧 Evidence 契约哈希 | P1 核实消费者后退役 |
+| dev prepare | 研发业务仓准备 | 删除重复 `--change-ref` |
+| dev publish | 研发工件发布 | 删除重复 `--change-ref` |
+| dev check-change | 独立 Change 完成校验 | 删除独立入口，保留内部 Gate |
+
+已批准的 Change 使用 Issue 中固定的 `analysis.source`；[requirement-guard.ts](rondo/src/commands/dev/requirement-guard.ts) 已读取该来源并检查 Human Approval、Actor/Run、Scope 等事实。无需 Agent 再获取、传递同一个 Change ID。
+
+目标命令（保持现有其他必要参数）：
+
+```text
+rondo dev prepare --workspace native --issue <KEY> --repo <repo_id> --root-repo <root> --resource-ref <ref>
+rondo dev publish --issue <KEY> --root-repo <root> [--minor-design]
+rondo pr materialize --issue <KEY>
+```
+
+- `dev prepare` 的 Requirement / Bug 分流仍依据权威 Work Item 类型；已有远端 Candidate 时按现有契约可省略 resource-ref。仍有效的其他 prepare 入口同步收敛，不另造兼容分流；旧入口是否退役按 §9.4 实际消费者核实。
+- `approvedChange`、`guardRepository` 等内部实现直接消费解析出的 source.change_ref，保持当前有效批准、授权、仓库映射、固定 SHA、状态及跨副作用来源变化保护；不以省参数为由取消一致性检查，不因重读得到另一个 Change 而静默继续执行。
+- `dev publish` 消费同一获批来源定位工件及登记现有 dev.publication，保留候选契约验证和远端发布回读。§3 的 Analysis REST 去重不自动推广至研发发布。
+- `pr materialize` 已内部调用 [checkPublishedChange](rondo/src/commands/dev/change-completion.ts)（[调用点](rondo/src/commands/pr/materialize.ts#L158)）；移除 `dev check-change` CLI 包装层及重复前置调用，不删内部检查或改变 PR 创建条件。实际消费者须核实后迁移，不新增另一个独立 Gate。
+- 同步 native-workspace、COMMANDS、CLI Help 及受影响回归测试。保留 `change resolve-identity` 的可选显式 Change ID；PR #69 的 Analysis validate/publish 输入不在本节删除范围内。
+
+### 9.4 P1 — 旧 Task Set 机制彻底退役
+
+以下仍存在于 main，但不属于原生 Issue 整体 Change 研发链路。以旧 Backend/Frontend Engineer Task Set 路线确认不再使用为实施前提；先核实 workspace provisioning、在途 Issue、生产入口和实际消费者。如仍有真实使用或在途交付，明确报告并限定退役范围，不静默破坏其运行。不为假想兼容场景长期维护双路线。
+
+| 旧入口/模块 | 处理 |
+|---|---|
+| dev materialize / materialize.ts | 删除独立派发物化 |
+| dev check-dispatch / check-dispatch.ts | 删除旧派发预检 |
+| dev check-completion / check-completion.ts | 删除旧 Task Set Evidence 校验 |
+| dev contract-hash / contract-hash.ts | 核实无当前消费者后删除旧哈希入口及专属逻辑 |
+| dev/dispatch-entry.ts、dev/dispatch-facts.ts | 删除旧派发专属数据契约及逻辑 |
+| tfs materialize-tasks、tfs resolve-tasks | 删除基于 dev.dispatch 的旧入口及专属实现 |
+| delivery route-decision | 清理 ENGINEERING 的 affected-task-refs / dispatch 恢复分支；其他有效决策能力逐项核实保留 |
+
+- 清理 `dev.dispatch`、`dispatch_key`、Task Set Owner、`task_refs` 的派发语义及旧 Evidence 依赖；现有 verify-decision、analysis approve/publish、requirement-mode、PR 等模块中对旧派发的兼容分支/冲突保护仅在确认旧数据及有效调用不再依赖后清理，不能误删新路线授权或回流机制。
+- 保留 [contract-files.ts](rondo/src/commands/delivery/contract-files.ts) 中当前 dev publish / PR Gate 使用的 normalizeContractText 等共享能力；旧 hash 函数按真实调用关系裁剪。
+- 保留 OpenSpec 原生任务编号、checkbox、TFS Closeout 的 source_refs、实际 Commit 关联、任务规划与 writeback；不是删除所有包含 task_refs 字样的代码。TFS 子任务收口流程继续使用现有 delivery finalize / tfs writeback，不引入新的派发层。
+- 对照 agents/backend-engineer、agents/frontend-engineer、agents/README、workspace provisioning 与 squads 确认退役范围；只删除不再使用的 Agent/配置，不修改无关角色。同步 01/02/04/05/09/15 及实际引用的当前设计文档，删除双路线与 Patch Lock 活跃契约；archive、历史回放与历史验证证据不重写。
+- 清理 CLI 注册、Help、COMMANDS、专属测试和已失效兼容描述；共享测试中仍覆盖有效行为的断言迁移至当前入口，不通过整体删除测试规避回归。
+
+### 9.5 暂不处理
+
+保留内部 Change 身份。现有 `analysis.change_ref` 与 `analysis.source.change_ref` 重复存储值得后续评估，但当前 Analysis Validation / Approval、Closeout、TFS Writeback 仍依赖前者，本次不重构 Metadata，不迁移历史字段。保留固定来源及 `finalize.pending.prepared_change_ref` 归档完成事实；不新增 Change ID、事实文件、流程状态或替代派发机制。
+
+### 9.6 增量验收
+
+- Requirement 正常路径：原生 @Engineer 交接；依据 Issue 读取已批准工件、准备业务仓、研发与验证、直接编辑 Tasks、提交及发布研发工件、PR Prepare/Materialization。研发命令无需显式 change-ref；Publish 与 PR Prepare 无人为固定先后顺序。
+- Tasks checkbox 可正常发布；任务正文/编号/范围漂移被拒绝；未完成任务、重复编号、非法 checkbox、缺失或失效 Candidate / Validation / Review 仍阻止 PR Materialization；不得创建无实际代码 Candidate 的 PR。
+- Issue/Run/审批来源错误、Repository Scope 越权、发布期间来源变化、Git 冲突或错误目标仍按原契约拒绝；Bug Fix 原路径不引入 OpenSpec 参数或 Gate。
+- 退役入口不再出现在 CLI Help / COMMANDS / 活跃 Agent 或 Skill；保留的内部 Gate、共享归一化逻辑、Human Approval、Independent Verify 安全边界、PR 状态同步与 TFS 归档写回通过回归。
+- 以实际调用图及引用搜索确认无旧机制的未处理活跃消费者，运行 Rondo build/test；必要时验证实际 Multica Requirement 与 Bug Fix 回放。分别记录已验证事实和未执行项，不以方案保存视为实施完成。
+
+本节是后续未实施事项的独立增量，P0 与 P1 可分别实施和审核；不重新实施 PR #67 已合并内容，不吞并 PR #69，不进行无关全局 CLI 或 Metadata 重构。
