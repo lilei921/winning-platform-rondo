@@ -99,7 +99,6 @@ export function checkIdentity(meta: Record<string, unknown>, schema: ChangeSchem
   if (schema) {
     const violation = sourceSchemaViolation(tfsKind, schema);
     if (violation && tfsKind) reasons.push(violation);
-
   }
   return { name: "identity", result: reasons.length ? "FAIL" : "PASS", reasons };
 }

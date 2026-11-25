@@ -167,7 +167,7 @@ async function main(rawArgs: string[]): Promise<number> {
     Object.assign(entries, derived);
     const effectiveMeta = { ...priorMeta, ...derived };
     const readContractAt = (commit: string) => committedContract(root, commit, args.changeRef, effectiveMeta);
-    if ( gate.payload.issue_id !== String(before.id) || gate.payload.workspace_id !== args.workspaceId ||
+    if (gate.payload.issue_id !== String(before.id) || gate.payload.workspace_id !== args.workspaceId ||
         gate.payload.change_ref !== args.changeRef ||
         gate.payload.metadata_digest !== metadataEvidenceDigest(effectiveMeta) ||
         !/^[a-f0-9]{64}$/.test(gate.payload.change_digest ?? "")) {

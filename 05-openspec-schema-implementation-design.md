@@ -227,7 +227,7 @@ change_kind = intentional
 - Change ID 在首次 Preparation 时确定；
 - 后续 Analysis Rework / Development Rework 使用同一个 Change；
 - Schema 不在不同 Agent / Run 中重新选择。
-- 同一次专业分类以 `analysis.change_kind=corrective|intentional` 持久化到 Multica Issue Metadata，供统计使用；Gate 校验其与当前 Change 的 Schema 一致。它不写入 `.openspec.yaml` 作为额外字段，也不新增执行 Route。
+- `analysis.change_kind=corrective|intentional` 由 `rondo analysis publish` 从通过 Gate 的当前 Change Schema 推导并持久化到 Multica Issue Metadata，供统计使用；Agent 不重复传入分类字段。它不写入 `.openspec.yaml` 作为额外字段，也不新增执行 Route。
 
 ---
 

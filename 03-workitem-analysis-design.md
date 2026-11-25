@@ -191,23 +191,14 @@ analysis:
   change_ref: ...
   source: ... # 固定 repo_url / branch / commit / change_ref
 
-  verify_agent:
-    recommendation: required | not_required
-    reason: ...
-    focus_refs:
-      - <requirement-or-scenario-ref>
-      - <task-number: 1.1>
-
-  ai_review:
-    verdict: APPROVED # Intentional 必需
 
   gate:
     result: PASS
 ```
 
-`analysis.change_kind` 是 Workitem Analyst 的专业分类结论，由 `rondo analysis publish` 在最终 Gate 通过并核验固定 Git 来源后登记并回读。它供交付追溯和统计；OpenSpec Schema 仍只由当前 Change 持有。Gate / Publish 校验两者对应；该字段不能作为独立 Route、Human Approval 或自动处理授权。
+`analysis.change_kind` 由 `rondo analysis publish` 从当前 Change Schema 确定性推导，在最终 Gate 通过并核验固定 Git 来源后登记并回读，供交付追溯和统计；不由 Agent 重复填写，也不作为独立 Route、Human Approval 或自动处理授权。
 
-`focus_refs` 只引用当前 OpenSpec Acceptance / Verification Contract（验证契约），不复制正文；可使用 Capability Spec 路径 + 原生 Requirement / Scenario 标题、Corrective Proposal 现有 Heading，或当前 Change 的可读任务编号（例如 `1.1`）定位。具体精确引用与唯一性检查由 [05](05-openspec-schema-implementation-design.md) 的 Native First 契约维护，不另造 Acceptance / Verification Identity。技术 Risk、Dependency、Open Decision、Evidence、Development Scope 等不因为跨 Run 交接而复制成第二份结构化技术合同。
+专业审查结论、Independent Verification 建议及必要验证重点通过 Issue 审核 Comment 表达；工程验证契约仍由 OpenSpec 持有，不建立第二份结构化技术合同。
 
 ---
 
@@ -254,7 +245,7 @@ Agent Instructions 依据[指导手册](01-multica-openspec-design-guideline.md)
 | Boundaries | 不代替业务方作未经授权的产品决策，不将推断写成已确认事实；不擅自改变已批准工程要求；不负责生产代码实现、成员分工、外部工作项管理或人工批准。 |
 | Escalation, Communication & Delivery | 影响正确分析的关键事实或授权无法确认时明确缺口与影响；形成可追溯的工程工件、必要专业 Review 和 Verify Recommendation，通过 `analysis-publish` 提交并确认审核状态；反馈返工仅修订受影响内容。 |
 
-Description 的展示边界、Instructions 的接收范围分别见 [指导手册：Description](01-multica-openspec-design-guideline.md#mechanism-agent-description)、[Instructions](01-multica-openspec-design-guideline.md#mechanism-agent-instructions)。详细诊断方法、工件编写、Verify Recommendation 字段和提交操作以对应 Skill 及实施契约为准。
+Description 的展示边界、Instructions 的接收范围分别见 [指导手册：Description](01-multica-openspec-design-guideline.md#mechanism-agent-description)、[Instructions](01-multica-openspec-design-guideline.md#mechanism-agent-instructions)。详细诊断方法、工件编写、Verify Recommendation 与提交操作以对应 Skill 及实施契约为准。
 ---
 
 <a id="tfs-management-background"></a>
@@ -697,7 +688,7 @@ Risks / Open Decisions
 | Implementation Task、每 Task Verify、按需 Change-level Verification Task | `tasks.md` |
 | Development Scope / Repository Scope | `proposal.md` / `design.md` / `tasks.md` 中按实际职责表达；不另建第二份技术范围 |
 | Technical Risks / Dependencies / Open Decisions | 需要独立 Technical Design 时进入 `design.md`；否则保留在其自然 Owner（Proposal / Spec / Tasks / Evidence），未决 blocker 不靠 Handoff Facts 掩盖 |
-| Verify Recommendation / Reason / Focus References | Multica Analysis Handoff Facts；只引用当前 OpenSpec Acceptance / Verification Contract |
+| Verify Recommendation / Reason / Focus References | 当前 Issue 审核 Comment；按需引用 OpenSpec Acceptance / Verification Contract |
 | Evidence References | 对应 OpenSpec Artifact / Supporting Evidence；Analysis Package 只引用，不复制 |
 | 大量复杂调查上下文 | `context-pack.md`，仅在 [§6](#analysis-section-06) 条件满足时生成 |
 
@@ -807,7 +798,7 @@ Corrective 无 Specs 时，OpenSpec Native Verify 的 Spec-dependent checks 不�
 
 `openspec/config.yaml` 的公共 context / rules 与各 Schema 专属 instruction / template 的边界遵循 [05 §2.6 公共配置与 Schema 专属规则](05-openspec-schema-implementation-design.md#shared-config-schema-rules)，避免两套 Schema 共享 Artifact ID 时发生规则串扰。
 
-[05](05-openspec-schema-implementation-design.md) P0-2 已按 Native First 收口：不使用强制 `T-xxx` / `Verify:` Grammar，也不建立 `AC-xxx` / `VR-xxx` Identity。`focus_refs` 按现有 Spec 路径 / Heading 与当前已批准任务编号定位，具体校验归 [05](05-openspec-schema-implementation-design.md)；本阶段不重复实现 Parser。
+[05](05-openspec-schema-implementation-design.md) P0-2 已按 Native First 收口：不使用强制 `T-xxx` / `Verify:` Grammar，也不建立 `AC-xxx` / `VR-xxx` Identity。验证重点按需引用现有 Spec 路径 / Heading 或任务编号，不增加结构化引用数组及独立 Parser。
 
 <a id="analysis-task-contract"></a>
 
@@ -920,7 +911,7 @@ Human Review 通过后，Delivery Lead 依据已批准 Change / Tasks、技术�
 
 | 产物 | 内容 / 权威归属 | 不重复维护 |
 |---|---|---|
-| `proposal.md` | Problem / Scenario、Expected vs Actual 与预期来源、Failure Path、Root Cause / Status / Evidence、Fix Strategy / Fix Scope、Repository Scope、Regression Scope、Impact / Specification Relation | 不塞入完整调试日志；具体工程 checklist 只在 Tasks；Independent Verify Recommendation 进入 Multica Handoff Facts |
+| `proposal.md` | Problem / Scenario、Expected vs Actual 与预期来源、Failure Path、Root Cause / Status / Evidence、Fix Strategy / Fix Scope、Repository Scope、Regression Scope、Impact / Specification Relation | 不塞入完整调试日志；具体工程 checklist 只在 Tasks；Independent Verify Recommendation 进入审核 Comment |
 | `tasks.md` | Implementation Tasks、每 Task Verification、按需 Change-level Regression / Integration / E2E Verification Tasks | 不复制 Root Cause 论证，不塞入审批、等待 Agent、PR / Archive |
 | `specs/<capability>/spec.md`（条件性） | 本次需要长期保留的既定行为补录 / 澄清，以 Requirement + Scenario 表达；无规格级变化时使用合法 `skip_specs` | 不写故障日志、代码行、诊断过程，不为通过校验制造 Delta |
 | `context-pack.md`（条件性 Supporting Evidence） | 仅在 [§6](#analysis-section-06) 的复杂上下文 / 长 Evidence Chain 场景生成 | 不作为每个 Corrective Change 的固定文件，不复制完整会话或大日志 |
@@ -944,7 +935,7 @@ openspec/changes/<change-id>/
 
 有 Specs 时，以 Requirement + Scenario 作为 Acceptance Contract；无 Specs 时，以 Proposal 的 Expected Behavior / Regression Scope 与 Tasks 的 Verification 形成修复验收依据。不得另建 `acceptance.md`、`verification-requirements.md` 或 `AC-xxx` / `VR-xxx` Identity。
 
-Multica Analysis Handoff Facts 只保存 Change 引用、Independent Verify Recommendation / Reason / Focus 引用、Review / Gate 等 Delivery Facts；技术 Risk / Open Decision 与 Evidence 继续由对应 OpenSpec / Supporting Artifact 作为唯一技术事实来源。
+Multica Issue Metadata 只保存 Change 身份、固定发布来源和 Gate 等机器消费的 Delivery Facts；专业结论、Review 与独立验证建议进入审核 Comment；技术 Risk / Open Decision 与 Evidence 继续由对应 OpenSpec / Supporting Artifact 作为唯一技术事实来源。
 
 交接必须让独立 Engineer Run 读到当前 Change / 已批准基线、自己的 Tasks 与 Repository / `task_refs` 范围、Root Cause / Fix Strategy、Regression Scope 以及当前 Verification Contract。只依赖 Workitem Analyst 会话、临时目录或不可定位的相对路径不满足交接。
 
@@ -964,17 +955,16 @@ Analysis Package
 │   ├── design.md                CONDITIONAL # 仅存在真实 Technical Design Decision 时生成
 │   └── tasks.md                 REQUIRED  # Implementation + task-level / change-level Verification
 ├── Multica Analysis Handoff Facts
-│   ├── Change Kind / Change Reference
-│   ├── Independent Verify Recommendation / Reason / Focus References
-│   ├── AI Review Verdict / Findings Reference
-│   └── Analysis Gate Result / Reasons Reference
+│   ├── Change Kind（由 Schema 推导） / Change Reference / 固定来源
+│   └── Analysis Gate Result
+├── Issue 审核 Comment（专业审查结论、独立验证建议及依据）
 └── Supporting Evidence References（按需）
     └── context-pack.md / external evidence 等
 ```
 
-Intentional 有 Delta 时以 Requirement + Scenario 为行为与验收契约；合法跳过 Delta 时依照批准 Proposal、适用现行长期 Specs 和 Tasks 的验证要求，不制造新的 Spec Coverage。验证执行要求由 Tasks 承载。Multica Analysis Handoff Facts 只保存 Independent Verify 决策与必要引用，不复制规格正文。
+Intentional 有 Delta 时以 Requirement + Scenario 为行为与验收契约；合法跳过 Delta 时依照批准 Proposal、适用现行长期 Specs 和 Tasks 的验证要求，不制造新的 Spec Coverage。验证执行要求由 Tasks 承载。专业验证建议与理由通过审核 Comment 表达；Human 最终独立验证决定才是机器消费的 Delivery Fact，不复制规格正文。
 
-`requirement-analysis` 提供专业需求结论，`spec-preparation` 将已确认内容写入上述权威工件，不要求 `requirement-analysis.md`。Workitem Analyst 的 Intentional 专业 Review 输出最小 AI Review Verdict / Findings，并记录为 Multica 原生 delivery fact；不要求 `requirement-review.md`，也不建立独立 Review Result 生命周期。
+`requirement-analysis` 提供专业需求结论，`spec-preparation` 将已确认内容写入上述权威工件，不要求 `requirement-analysis.md`。Workitem Analyst 对工程契约开展专业审查，修正发现的问题，并在审核 Comment 中说明必要结论；不要求 `requirement-review.md`，也不建立独立 Review Result 生命周期。
 
 OpenSpec Artifact 是后续规格驱动实现与验证的主要技术依据。Multica 只保存必要 Result、引用与 Review / Delivery 事实，不复制整套 OpenSpec 内容。
 
@@ -997,23 +987,13 @@ OpenSpec Artifact 是后续规格驱动实现与验证的主要技术依据。Mu
 
 ## 10.1 Verify Agent Recommendation
 
-Workitem Analyst 在本轮 Analysis 中提出是否需要 **Independent Verify Agent** 的建议。Recommendation 是 Multica Analysis Handoff Fact；它不定义“验什么”，只决定是否需要在 Engineer 已借助必要 CI / deterministic tooling 完成开发侧 Verification 之外，再增加一个独立验证执行者。
+Workitem Analyst 在本轮 Analysis 中提出是否需要 **Independent Verify Agent** 的建议。Recommendation 是提交 Human 的专业建议，不是独立验证的执行决定；它评估是否需要在 Engineer 已完成开发侧 Verification 之外增加独立验证执行者。
 
 Verification Contract 由 OpenSpec Engineering Truth 提供：Intentional 主要来自 Requirement / Scenario 与 Tasks；Corrective 主要来自 Proposal 的 Expected Behavior / Regression Scope、条件性 Specs 与 Tasks。`analysis-publish` 只汇集已有 Recommendation，不在收口时首次补做专业判断。
 
 ### 输出契约
 
-```yaml
-analysis:
-  verify_agent:
-    recommendation: required | not_required
-    reason: ...
-    focus_refs:
-      - <requirement-or-scenario-ref>
-      - <task-number: 1.1>
-```
-
-`recommendation` 表示是否建议增加独立 Verify Agent；`reason` 说明独立性的工程理由；`focus_refs` 引用当前分析版本、待提交审核的 OpenSpec Acceptance / Verification Contract，不以预先取得 Human Approval 为条件，不复制正文，也不创建 `AC-xxx` / `VR-xxx` Identity。批准后的执行按获批契约消费引用；返工导致相关内容变化时按 [§10.1](#section-10-1) 的检查与修订规则复核。Requirement / Scenario 使用现有 Spec 路径及原生 Heading 组合定位；按需引用的任务使用 `change_ref` + 当前可读编号，不要求 `T-xxx`。
+在当前 Issue 审核 Comment 中说明是否建议 Independent Verification（required / not_required）、实际理由及必要验证重点；需要定位工程验证要求时按需引用当前 OpenSpec 工件或任务。无需机器字段或固定引用数组。
 
 Workitem Analyst 是 `verify_agent` 的首次专业判断者，只输出 Recommendation、Reason 与 Focus，不预先写最终 `verify_agent.required`。Human Analysis Review 拥有最终决定权，可以接受或 override Recommendation；批准后的 Development Materialization 根据 Human 最终决定生成 `verify_agent.required=true|false`。因此 `verify_agent.required` 不要求与原 Recommendation 相同；`verification.result` 仅在 `verify_agent.required=true` 时表示 Independent Verification（独立验证） 的结果。批准、转换及执行边界见 [主方案 §9.1](02-multica-delivery-lifecycle-design.md#verify-agent-decision) 与 [§13.1](02-multica-delivery-lifecycle-design.md#delivery-facts)。
 
@@ -1042,11 +1022,11 @@ Workitem Analyst 根据当前已确认的 Acceptance / Verification Contract 与
 
 **输出要求：**
 
-- `recommendation=not_required`：`reason` 简述为什么现有计划中的工程验证足够、没有额外独立性需求；`focus_refs` 指向支撑此判断的当前 Acceptance / Verification Contract。
-- `recommendation=required`：`reason` 说明为什么 Engineer 使用现有可靠测试手段仍不足，以及**独立执行者**所需的职责隔离或实际风险降低价值；`focus_refs` 指向必须独立确认的行为、风险或验证要求。
+- `recommendation=not_required`：`reason` 简述为什么现有计划中的工程验证足够、没有额外独立性需求；按需引用支撑此判断的 Acceptance / Verification Contract。
+- `recommendation=required`：`reason` 说明为什么 Engineer 使用现有可靠测试手段仍不足，以及**独立执行者**所需的职责隔离或实际风险降低价值；说明必须独立确认的行为、风险或验证要求。
 - **事实不足**：先按专业职责补充必要 Evidence / Verification Task，或返回待授权的业务澄清；尚无法形成有依据的 Recommendation 时，不得为了满足字段检查强行提交 `required` 或 `not_required`。
 
-`focus_refs` 沿用当前非空引用数组契约；两种 Recommendation 都引用当前有效的 OpenSpec Acceptance / Verification Contract，不创建新的风险分数字段、验收对象或独立报告。Recommendation 发生实质变化时按现有 Stage / Gate / Review 契约更新，不复用失效的 Evidence。
+两种 Recommendation 都以当前有效的工程契约为依据，不新增风险分数字段、验收对象、强制引用数组或独立报告。
 
 `not_required` **仅表示不增加 Independent Verify Agent**。全部必需 Task Verification、Change-level Verification、Local Validation、Code Review 和合同要求的其他验证仍必须按实际执行结果完成；任何人不得因为该推荐值减掉既有 Verification Contract。
 
@@ -1066,7 +1046,7 @@ verify_agent.required = materialized Human Decision
 
 ### 检查与修订
 
-Recommendation 与当前 Goal、Scope、Requirement / Scenario、Corrective Regression Scope、Tasks 和风险保持一致；这些事实发生实质变化时同步复核 Recommendation。语义充分性由专业分析 / Review 处理，Analysis Gate 只检查字段、取值、必要引用和已有结果，不凭字段存在证明推荐正确。
+Recommendation 与当前 Goal、Scope、Requirement / Scenario、Corrective Regression Scope、Tasks 和风险保持一致；这些事实发生实质变化时同步复核 Recommendation。语义充分性由专业分析 / Review 处理，Analysis Gate 不校验专业推荐结论、理由或引用数组。
 
 ---
 
@@ -1111,28 +1091,13 @@ Tasks 不包含等待审批、等待独立 Verify Agent、PR 合并或归档等�
 Verify 推荐的理由与 Verification Focus 对应当前行为、Verification Tasks 与风险
 ```
 
-输出最小 AI Review Verdict / Findings，并记录到 Multica 当前 Issue / Run Result / Comment 等原生事实中；不创建 `requirement-review.md`，也不定义独立 Review Result 对象生命周期。例如:
-
-```yaml
-ai_review:
-  verdict: APPROVED | NEEDS_REVISION
-  findings:
-    - id: RF-...
-      severity: blocker | major | minor
-      target_ref: proposal | spec | design | task | verification
-      description: ...
-  unresolved_blockers: 0
-```
-
-Review 通过或退回时引用实际被审 OpenSpec Artifact；不复制 Proposal / Spec / Design / Tasks 的正文。按 Finding 和新证据决定必要复核深度。`NEEDS_REVISION` 只对 Finding 命中的 OpenSpec Artifact / Multica Handoff Fact 及其必要关联内容做 targeted rework，继续使用同一个 active OpenSpec Change，不新建平行 Change。
-
-`ai_review.verdict=APPROVED` 只表示 Workitem Analyst 的 AI Review 通过；最终仍必须进入 Human Analysis Review。
+专业审查发现的问题在提交审核前定向修正，必要时在当前 Issue 审核 Comment 中说明结论、风险与相关依据。不要求单独 AI Review Verdict / Findings 机器字段，不创建独立 Review Artifact。专业审查通过不等于 Human 批准。
 
 <a id="analysis-gate"></a>
 
 ## 11.2 Analysis Gate：确定性检查与返回
 
-Analysis Gate 只执行确定性检查并返回结果，不发布产物、不修改 Issue Status、不授予研发权限。完整 Analysis 质量要求同时包含 Workitem Analyst 的专业 Review 与现有 Gate；不能把专业判断都描述为已由 CLI 自动检查。`rondo analysis validate --facts <facts.json>` 按需只读诊断，与 `publish` 共享真实 Gate，主要检查身份 / Change Kind 与 Schema、Change 和 Proposal / Specs / Tasks 的基本存在及格式、合法原生 Specs skip、可消费 Task 项、Intentional `ai_review` 结果字段及 OpenSpec Validation。Verify 推荐字段由 Facts 输入契约一次校验；本地硬条件失败时不再执行外部原生校验。它**不逐一核对 Proposal 声明的 Capability Spec 文件集合，不判定 Conditional Design 是否必要，也不评价 Root Cause、Task Verification 或 AI Review 的专业语义质量**。准备与 Review 应先完成这些必要判断，再由 Gate 约束它实际可核实的事实。**即使确定性 Gate PASS，只要必要的专业审查未通过，Workitem Analyst 仍不得调用 `analysis-publish` 宣称分析完成或提交审核**；超出自动范围按原有停止规则处理。
+Analysis Gate 只执行确定性检查并返回结果，不发布产物、不修改 Issue Status、不授予研发权限。完整 Analysis 质量要求同时包含 Workitem Analyst 的专业 Review 与现有 Gate；不能把专业判断都描述为已由 CLI 自动检查。`rondo analysis validate --change-ref <id>` 按需只读诊断，与 `publish` 共享真实 Gate，主要检查Issue / Change 身份、Schema、Change 和 Proposal / Specs / Tasks 的基本存在及格式、合法原生 Specs skip、可消费 Task 项及 OpenSpec Validation。Change Kind 由 Schema 推导；不检查 AI Review Verdict 或独立验证推荐字段；本地硬条件失败时不再执行外部原生校验。它**不逐一核对 Proposal 声明的 Capability Spec 文件集合，不判定 Conditional Design 是否必要，也不评价 Root Cause、Task Verification 或 AI Review 的专业语义质量**。准备与 Review 应先完成这些必要判断，再由 Gate 约束它实际可核实的事实。**即使确定性 Gate PASS，只要必要的专业审查未通过，Workitem Analyst 仍不得调用 `analysis-publish` 宣称分析完成或提交审核**；超出自动范围按原有停止规则处理。
 
 ### Analysis 完成条件（专业审查 + 当前确定性检查）
 
@@ -1144,7 +1109,7 @@ Issue / TFS identity、Change Kind 与当前 Change Schema 一致
 Development Scope / Repository Scope 可从 OpenSpec Artifact 读取
 当前 Acceptance Contract 可读取：Intentional 为 Requirement / Scenario；Corrective 为 Proposal Expected Behavior / Regression Scope，存在 Specs 时一并读取
 每个 Implementation Task 有验证方式；需要组合验证时存在 Change-level Verification Task
-analysis.verify_agent.recommendation / reason / focus_refs 完整且引用有效
+审核 Comment 提供有依据的独立验证建议及必要验证重点
 Evidence References 可追溯；需要 Supporting Evidence 时对应资料可读取
 当前 Schema 的必需 Artifact、合法 skip 与 OpenSpec Validation 一致
 适用于当前分析内容的专业 Review / Consistency Result 可读取且通过，无 unresolved blocker
@@ -1201,7 +1166,7 @@ Corrective 一致性检查为 `NEEDS_REVISION`、关键结论已失效或 `root_
 | 判断 | Owner | 可依据什么判断 | 不能代替 |
 |---|---|---|---|
 | Semantic Quality（语义质量） | Corrective 的 `bug-analysis` / 内部一致性检查，或 Workitem Analyst 的 Intentional 专业 Review | Expected Behavior、Root Cause / Evidence、方案与 Spec / Tasks 的准确性、一致性 | 不能仅凭 Artifact 存在或 CLI PASS 认定专业质量 |
-| Deterministic Readiness（确定性准备） | Analysis Gate | Issue / Change 身份、必要字段 / 引用、Artifact 状态、原生 Validation、已产生的专业 Verdict 与未解 blocker | 不自行裁决业务需求、根因、方案或批准 |
+| Deterministic Readiness（确定性准备） | Analysis Gate | Issue / Change 身份、可消费的工程工件与 Repository Scope、原生 Validation | 不自行裁决业务需求、根因、方案或批准 |
 | Approval（人工批准） | Human；解释与后续流转由 [02](02-multica-delivery-lifecycle-design.md) 的 Delivery Lead 处理 | 人工对当前 Analysis 基线的有效决定 | 不等同于 AI Review、Analysis Gate PASS 或 `analysis_review` 状态 |
 
 这三类判断允许顺序消费结果，但**不能相互替代**；不为此新增 Review Agent、Gate 或审批字段。
@@ -1210,11 +1175,11 @@ Corrective 一致性检查为 `NEEDS_REVISION`、关键结论已失效或 `root_
 
 | 条件 | 专业方法形成的依据 | Gate 的确定性责任 |
 |---|---|---|
-| 是否需要组合验证、Tasks 是否覆盖当前行为 | Corrective 一致性检查或 Intentional Review 的结论及命中 Artifact / Task 引用 | 核对当前检查通过；依据已确认引用检查对应 Task 与验证描述可读取 |
-| Conditional Design 是否适用、内容是否充分 | Preparation 的生成 / 省略依据与适用专业检查结论 | 核对依据及当前结果可读取；按已确认结论检查必要 Design / 引用存在，不自行裁决复杂度 |
-| 根因、方案、范围与验证是否一致 | 当前一致性检查 / Review Verdict、Findings 与 Evidence 引用 | 核对通过条件、必要引用及未解 blocker，不自行证明专业结论正确 |
+| 是否需要组合验证、Tasks 是否覆盖当前行为 | Corrective 一致性检查或 Intentional Review 的结论及命中 Artifact / Task 引用 | 检查 Tasks 工件可读取及可引用的任务项；不检查专业结论 |
+| Conditional Design 是否适用、内容是否充分 | Preparation 的生成 / 省略依据与适用专业检查结论 | 不判定 Design 是否需要；依据当前 Schema 和专业审查 |
+| 根因、方案、范围与验证是否一致 | 当前一致性检查 / Review Verdict、Findings 与 Evidence 引用 | 不校验专业 Verdict 或 Findings，由 Agent 负责 |
 
-Verification Focus 是展示概念，Analysis 推荐的机器字段统一使用 `analysis.verify_agent.focus_refs`，不新增 `verification_focus` 别名。具体字段持久化适配与引用解析沿用 [02](02-multica-delivery-lifecycle-design.md) / [05](05-openspec-schema-implementation-design.md) 的权威契约；不另造 Markdown Grammar 或 Task Identity。
+Verification Focus 按需在 OpenSpec 或审核 Comment 中表达，不新增机器字段或专用引用解析。
 
 ---
 
@@ -1227,26 +1192,26 @@ Verification Focus 是展示概念，Analysis 推荐的机器字段统一使用 
 
 ## 12.1 `analysis-publish`：发布与提交审核
 
-`analysis-publish` 由 **Workitem Analyst** 在已完成真实工程契约时使用，消费本次专业 Facts，经 `rondo analysis publish` 执行最终 Gate、固定 Git 发布与审核登记，再发布原生审核摘要。无需工程增量不调用本 Skill。
+`analysis-publish` 由 **Workitem Analyst** 在已完成真实工程契约时使用，直接指定当前 Change ID，经 `rondo analysis publish` 执行最终 Gate、固定 Git 发布与审核登记，再发布原生审核摘要。无需工程增量不调用本 Skill。
 
 ### 输入与有限权限
 
-读取当前 Issue、当前 Change 与来源类型、[§1.2](#analysis-readiness) 的专业准备结果、当前 OpenSpec Change、Multica Analysis Handoff Facts、AI Review Result、[§10](#analysis-section-10) 的 Verify 推荐和关联 Evidence；发现专业缺口交回对应分析方法，不在组装步骤重做完整需求分析。
+读取当前 Issue、当前 Change 与来源类型、[§1.2](#analysis-readiness) 的专业准备结果、当前 OpenSpec Change、专业审查结论、[§10](#analysis-section-10) 的 Verify 推荐和关联 Evidence；发现专业缺口交回对应分析方法，不在组装步骤重做完整需求分析。
 
 Workitem Analyst 只可在当前授权分析任务的提交环节写入 `analysis_review`，保持 `assignee = Delivery Squad`。不得自行批准、把提交审核当作研发授权，或将父 Delivery 置为 `done`。
 
 ### 执行步骤
 
 ```text
-确认本次 OpenSpec Change、专业 Facts 与必要 Evidence；限定范围 Commit
-→ rondo analysis publish（直接消费本次 Facts）
+确认本次 OpenSpec Change、专业结论与必要 Evidence；限定范围 Commit
+→ rondo analysis publish --change-ref <id>
 → CLI 内部最终真实 Gate、候选 Git 契约一致性及发布可达性核验
 → CLI 核对冲突事实；替换旧审核时先使旧 PASS 失效，登记 Facts、Source、本次 PASS 与 analysis_review 并确认结果
 → PASS 后使用返回的 analysis_source 发布原生审核 Comment
 → 结束本轮分析，等待 Human Review
 ```
 
-Gate 只返回 `PASS / FAIL / UNKNOWN`，不修改 Issue 状态。`publish` 在内存中使用本次 Facts 与当前来源事实执行 Gate，Requirement 候选 Git 契约使用同一份专业 Facts，Git 确认候选 Commit 已进入正确目标分支后直接登记固定来源，不重复使用 TFS REST 读取正文或计算摘要；外部副作用边界复用 `issue get` 的同一 Issue/Metadata 快照，核对必要身份、Facts 和审核状态后返回 PASS；同一快照不重复计算已经逐项比较的 Facts 摘要。已登记的 Requirement 审核重放只消费固定来源及审核事实，不重新读取工件；下游按实际需要读取固定 SHA。正常流程不需要 stage 或显式 validate；按需使用 `rondo analysis validate --facts <facts.json>` 只读诊断。Gate 不生成持久化文件，也不信任调用方自报 PASS。`publish` 已确认 PASS 时不再机械核对其后置条件，Comment 发布失败仅恢复评论。
+Gate 只返回 `PASS / FAIL / UNKNOWN`，不修改 Issue 状态。`publish` 读取指定 Change 和当前 Issue 来源事实执行 Gate，按 Schema 推导 Change Kind，Requirement 候选 Git 契约与本次 Gate 工程摘要一致后，Git 确认候选 Commit 已进入正确目标分支后直接登记固定来源，不重复使用 TFS REST 读取正文或计算摘要；外部副作用边界复用 `issue get` 的同一 Issue/Metadata 快照，核对必要身份、Facts 和审核状态后返回 PASS；同一快照不重复计算已经逐项比较的 Facts 摘要。已登记的 Requirement 审核重放只消费固定来源及审核事实，不重新读取工件；下游按实际需要读取固定 SHA。正常流程不需要 stage 或显式 validate；按需使用 `rondo analysis validate --change-ref <id>` 只读诊断。Gate 不生成持久化文件，也不信任调用方自报 PASS。`publish` 已确认 PASS 时不再机械核对其后置条件，Comment 发布失败仅恢复评论。
 
 <a id="analysis-summary"></a>
 
