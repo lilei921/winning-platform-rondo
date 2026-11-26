@@ -41,6 +41,7 @@ export function validatePrFacts(raw: unknown, bug: boolean): Facts {
 
 export function registerPrPrepare(group: Command): void {
   group.command("prepare").description("准备已授权 Candidate 的 PR 事实")
+    .exitOverride()
     .requiredOption("--issue <key>").requiredOption("--repo <key>").requiredOption("--root-repo <path>")
     .requiredOption("--candidate-commit <sha>").requiredOption("--facts <file|->").requiredOption("--title <title>")
     .option("--validation-cwd <path>").option("--required-repos <repos>")

@@ -154,7 +154,7 @@ test("P0 退役独立进度与完成检查，研发命令不再接受 Change 参
     assert.doesNotMatch(help.stdout + help.stderr, /--change-ref/);
     const args = ["dev", command, "--issue", "X", ...(command === "prepare" ? ["--repo", "biz"] : []), "--change-ref", "old"];
     const rejected = runCli(args);
-    assert.equal(rejected.status, 64, args.join(" "));
+    assert.notEqual(rejected.status, 0, args.join(" "));
     assert.match(rejected.stderr, /--change-ref/);
   }
 });

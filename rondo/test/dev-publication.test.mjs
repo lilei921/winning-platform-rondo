@@ -280,7 +280,7 @@ test("dev publish 拒绝来源不一致及读取期间批准变化；Push 后变
 
 test("Native Requirement 续跑 prepare 从 Issue 取得 Change，拒绝同 SHA 的其他 Change 和批准变化", t => {
   const { root, bare, source, state, metadata, runWithEnv, bizUrl } = fixture(t, { secondChange: true });
-  const dir = dirname(root), hub = join(root, "biz"), remote = join(dir, "biz.git");
+  const dir = dirname(root), hub = join(dir, "biz"), remote = join(dir, "biz.git");
   const taskId = "01234567-abcd-ef12-3456-000000000000";
   const branch = "agent/engineer/abcdef123456";
   git(root, "pull", "--ff-only", bare, "integration");
@@ -291,7 +291,7 @@ test("Native Requirement 续跑 prepare 从 Issue 取得 Change，拒绝同 SHA 
     managed_by: "multica-daemon-task", issue_id: "issue-1", agent_id: "engineer",
   }));
   git(dir, "init", "--bare", remote);
-  git(root, "init", "-b", "integration", hub);
+  git(dir, "init", "-b", "integration", hub);
   writeFileSync(join(hub, "code.txt"), "fixture");
   git(hub, "add", ".");
   git(hub, "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", "fixture");

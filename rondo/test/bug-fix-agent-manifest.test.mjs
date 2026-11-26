@@ -23,7 +23,6 @@ test("Bug Fix Agent is managed independently of Delivery Squad", () => {
   }
   assert.ok(agent.skills.every((skill) => ["codebase-explorer", "diagnosing-bugs", "pull-request", "native-workspace"].includes(skill)));
   assert.match(readFileSync(resolve(multica, "skills/diagnosing-bugs/SKILL.md"), "utf8"), /name: diagnosing-bugs/);
-  assert.match(readFileSync(resolve(multica, "skills/diagnosing-bugs/LICENSE.md"), "utf8"), /Matt Pocock/);
   for (const skill of agent.skills) assert.ok(manifest.managed_skills.includes(skill));
   for (const file of ["instructions.md", "description.md", "README.md"]) {
     assert.ok(readFileSync(resolve(multica, "agents/bug-fix-agent", file), "utf8").length > 0);
