@@ -19,7 +19,7 @@ type ApprovalClient = Pick<MulticaClient, "getIssue" | "listComments" | "setMeta
 const APPROVAL = "analysis.human_approval";
 const VERIFY = "verify_agent.required";
 const FACTS = ["tfs.type", "tfs.id", "analysis.gate.result", "analysis.change_ref",
-  "analysis.source", APPROVAL, VERIFY, "dev.dispatch", "finalize.pending", "delivery.tfs_written"];
+  "analysis.source", APPROVAL, VERIFY, "finalize.pending", "delivery.tfs_written"];
 
 /** Lead interprets the Human decision; CLI records and validates its exact source. */
 export async function recordApproval(client: ApprovalClient, args: ApprovalArgs, readArtifact = readAnalysisArtifact) {
@@ -31,7 +31,7 @@ export async function recordApproval(client: ApprovalClient, args: ApprovalArgs,
       !["analysis_review", "todo", "in_progress"].includes(issue.status ?? "")) {
     throw new FailError("当前 Issue 不是可登记批准的 Requirement");
   }
-  if (md["analysis.gate.result"] !== "PASS" || md["dev.dispatch"] !== undefined ||
+  if (md["analysis.gate.result"] !== "PASS" ||
       md["finalize.pending"] || md["delivery.tfs_written"] === "true") {
     throw new FailError("Analysis Gate 未通过或存在不允许批准的交付事实");
   }

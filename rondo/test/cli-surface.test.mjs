@@ -17,9 +17,9 @@ function runCli(args, env = {}) {
 const TREE = {
   change: ["resolve-identity"],
   analysis: ["validate", "publish", "read", "approve"],
-  dev: ["check-dispatch", "materialize", "git", "prepare", "publish"],
+  dev: ["git", "prepare", "publish"],
   bug: ["resume"],
-  tfs: ["writeback", "materialize-tasks", "resolve-tasks", "reconcile-workitem"],
+  tfs: ["writeback", "reconcile-workitem"],
   pr: ["prepare", "materialize", "worktree", "reconcile-status", "create", "get", "list"],
   delivery: ["route-decision", "finalize", "root-prepare", "admission"],
   workspace: ["provision", "sync", "migrate-repo-keys", "check-daemon"],
@@ -46,9 +46,9 @@ test("顶层叶子 query:缺 --wiql exit 64,用法走 stderr,stdout 纯净", () 
   assert.ok(r.stderr.includes("--wiql"));
 });
 
-test("命令总数 = 43", () => {
+test("命令总数 = 39", () => {
   const total = Object.values(TREE).reduce((n, leaves) => n + leaves.length, 0) + 2 /* query + doctor */;
-  assert.equal(total, 43);
+  assert.equal(total, 39);
 });
 
 test("--version 输出 JSON:name/version/node/sea,exit 0", () => {
@@ -157,5 +157,12 @@ test("P0 退役独立进度与完成检查，研发命令不再接受 Change 参
     const rejected = runCli(args);
     assert.equal(rejected.status, 64, args.join(" "));
     assert.match(rejected.stderr, /--change-ref/);
+  }
+});
+
+test("retired Task Set commands are not registered", () => {
+  for (const args of [["dev","materialize"],["dev","check-dispatch"],["tfs","materialize-tasks"],["tfs","resolve-tasks"]]) {
+    assert.equal(runCli(args).status,64);
+    assert.doesNotMatch(runCli([args[0]]).stderr,new RegExp("  "+args[1]+"(?: |\\n)"));
   }
 });

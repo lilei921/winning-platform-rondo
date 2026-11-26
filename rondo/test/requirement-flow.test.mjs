@@ -275,13 +275,12 @@ test("Completion 消费完整发布回执，只读取批准 Scope 和固定研�
   }
 });
 
-test("Requirement 和旧 Task Set 明确分开，不隐式从缺少 dispatch 推断",()=>{
+test("Requirement 交付识别核对 Candidate Branch",()=>{
   const newMd={"tfs.id":"42","tfs.type":"需求","analysis.source":"{}",
     pr_prep:JSON.stringify([prep("frame",sha1)])};
   assert.equal(isRequirementChangeDelivery(newMd),true);
   const legacy={...newMd,pr_prep:JSON.stringify([{...prep("frame",sha1),source_branch:"feat/42"}])};
   assert.throws(()=>isRequirementChangeDelivery(legacy),/Candidate Branch/);
-  assert.throws(()=>isRequirementChangeDelivery({...newMd,"dev.dispatch":"[]"}),/dev.dispatch/);
   assert.throws(()=>isRequirementChangeDelivery({...newMd,pr_prep:JSON.stringify([prep("frame",sha1),{...prep("web",sha2),source_branch:"feat/42"}])}),/Candidate Branch/);
 });
 

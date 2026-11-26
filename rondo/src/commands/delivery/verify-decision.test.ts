@@ -2,11 +2,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readApprovedVerifyDecision, assertProjectedVerifyDecision } from "./verify-decision.js";
 
+const source = { repo_url: "https://tfs.example/tfs/C/P/_git/R", branch: "dev", commit: "a".repeat(40), change_ref: "fix-1" };
 const md = (recommended: string, approved: boolean, required = approved, comment = "comment-1"): Record<string, string> => ({
   "analysis.verify_agent.recommendation": recommended,
+  "analysis.source": JSON.stringify(source),
+  "analysis.change_ref": source.change_ref,
   "analysis.human_approval": JSON.stringify({
     decision: "approved", by: "human", at: "2026-11-08T00:00:00Z",
-    comment_ref: comment, verify_agent_required: approved,
+    comment_ref: comment, verify_agent_required: approved, source,
   }),
   "verify_agent.required": String(required),
 });
@@ -55,28 +58,14 @@ test("tampered or inconsistent projection is rejected", () => {
   assert.throws(() => assertProjectedVerifyDecision(input), /字符串 true\/false/);
 });
 
-test("仅真正的旧数据允许无来源收口，新派发丢失来源不能退化成 legacy", () => {
-  const source = { repo_url: "https://tfs.example/tfs/C/P/_git/R", branch: "dev", commit: "a".repeat(40), change_ref: "fix-1" };
-  const old = md("not_required", false);
-  old["dev.dispatch"] = JSON.stringify([{ active: true, change_ref: "fix-1" }]);
-  assert.equal(assertProjectedVerifyDecision(old), false);
-  const damaged = { ...old, "analysis.change_ref": "fix-1", "dev.dispatch": JSON.stringify([{ active: true, analysis_source: source }]) };
-  assert.throws(() => assertProjectedVerifyDecision(damaged), /source|来源/);
-});
-
-test("收口拒绝混入旧版本 active 派发，但允许保留失效的历史来源", () => {
-  const source = { repo_url: "https://tfs.example/tfs/C/P/_git/R", branch: "dev", commit: "a".repeat(40), change_ref: "fix-1" };
+test("approval must match the current fixed source", () => {
   const input = md("not_required", false);
-  input["analysis.change_ref"] = source.change_ref;
+  const approval = JSON.parse(input["analysis.human_approval"]);
+  delete input["analysis.source"];
+  assert.throws(() => readApprovedVerifyDecision(input), /source/);
   input["analysis.source"] = JSON.stringify(source);
-  input["analysis.human_approval"] = JSON.stringify({ ...JSON.parse(input["analysis.human_approval"]), source });
-  const older = { ...source, commit: "b".repeat(40) };
-  for (const record of [{ active: true }, { active: true, analysis_source: older }]) {
-    input["dev.dispatch"] = JSON.stringify([record]);
-    assert.throws(() => assertProjectedVerifyDecision(input));
-  }
-  input["dev.dispatch"] = JSON.stringify([{ active: false, analysis_source: older }, { active: true, analysis_source: source }]);
-  assert.equal(assertProjectedVerifyDecision(input), false);
+  input["analysis.human_approval"] = JSON.stringify({...approval, source: {...source, commit: "b".repeat(40)}});
+  assert.throws(() => readApprovedVerifyDecision(input), /不一致/);
 });
 
 test("waivers are version-bound; missing means empty and malformed metadata fails closed", () => {
@@ -84,7 +73,7 @@ test("waivers are version-bound; missing means empty and malformed metadata fail
   const input=md("not_required",false);
   assert.deepEqual(readApprovedVerifyDecision(input).waivedTasks,[]);
   const approval=JSON.parse(input["analysis.human_approval"]);
-  input["analysis.human_approval"]=JSON.stringify({...approval,waived_tasks:["3.1"]});
+  input["analysis.human_approval"]=JSON.stringify({...approval,source:undefined,waived_tasks:["3.1"]});
   assert.throws(()=>readApprovedVerifyDecision(input),/Source/);
   input["analysis.change_ref"]=source.change_ref;
   input["analysis.source"]=JSON.stringify(source);

@@ -1,63 +1,11 @@
-/**
- * delivery route-decision — PR Abandoned 后 Human Decision 的确定性路由（02 §11.2 的确定性投影）。
- *
- * 收编说明（裁决 D3 修订）：自 rondo 收编起，实现位置为 @winning/skill-flow 包内
- * commands/delivery/route-decision.ts，原 projects/multica/workspace-skills/delivery-flow/scripts/
- * route-human-decision.ts 路径在迁移窗口期保持有效。
- *
- * 调用方：Delivery Lead（被 blocked Issue 上的 Human 评论唤醒后）。
- * 语义/确定性分界（02 §6.3–§6.4、§11.2）：Lead 负责理解自然语言评论并得出结构化 --next；
- *   本脚本只消费结构化输入做前置校验、确定性状态写入与路由指令输出，不解析自然语言。
- *
- * 前置校验（不过 → UNKNOWN exit 3，零写入）：
- *   Issue 当前 blocked；metadata 有 pr.abandoned；--comment-id 指向的评论存在；
- *   同 comment_id 已在 dev.decision → NOOP（exit 0，单次触发，02 §11.2）。
- *
- * 路由（先写 dev.decision，后执行状态动作——persist-before-act）：
- *   ANALYSIS       → Issue blocked→in_progress（--no-start）→ 指令 mention_analyst
- *   ENGINEERING    → --affected-task-refs 须恰好命中一条 active dev.dispatch（不唯一/不存在 → UNKNOWN）；
- *                    该 dispatch active:false + invalidated_by；parent 投影 → Issue →in_progress（--no-start）
- *                    → 指令 rework_parent_mention；sub_issue 投影 → 原 Sub-Issue 发结构化返工评论 +
- *                    重开 done→in_progress（本脚本唯一不带 --no-start 的写入，即返工启动信号）
- *                    → 指令 rework_sub_issue_activated
- *   RECREATE_PR    → 逐 abandoned 仓核对分支 HEAD == pr_prep.candidate_commit（tfs-cli branch get）；
- *                    全部未变 → 从 current_pr 移除已 abandoned 条目 → 指令 rematerialize_pr；
- *                    任一已变 → 指令 needs_engineering（语义修改属 Engineer，脚本不处置，02 §11.2 边界）
- *   CANCEL_DELIVERY→ 零写入（02 §11.2：取消专项契约未定义）→ 指令 hold_for_human
- *
- * 用法：rondo delivery route-decision --config <repo-registry.json> --issue <KEY>
- *   --comment-id <uuid> --next ANALYSIS|ENGINEERING|RECREATE_PR|CANCEL_DELIVERY
- *   [--reason REJECTED|DISCARDED] [--affected-task-refs 1.1,1.2]
- * 退出码：0 PASS/NOOP / 2 FAIL（用法级前置不满足）/ 3 UNKNOWN / 64 用法错误。stdout 只出 JSON；日志走 stderr。
- */
-
+/** Human-authorized Requirement recovery; semantic work is coordinated in the current Issue. */
 import { Command } from "commander";
 import { UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
-import { runCommand } from "../../clients/spawn.js";
 import { loadConfig, type BaseRegistryConfig, type RuntimeConfig } from "../../clients/config.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { FailError } from "../../tfs/client.js";
 import { dispatchTfs, UsageError } from "../../tfs/dispatch.js";
-// DispatchEntry / buildReworkDispatch 在 ../dev/dispatch-entry.js（writer 侧唯一权威形状，M1/F1）
-import { buildReworkDispatch, type DispatchEntry } from "../dev/dispatch-entry.js";
-import { parseAnalysisSource, readAnalysisSource, sameAnalysisSource } from "../analysis/source.js";
-
-/** 真正无来源的历史派发保留旧路径；新记录不能在来源丢失或变更后恢复旧轮次。 */
-function assertReworkSource(md: Record<string, unknown>, target: DispatchEntry, history: DispatchEntry[]): void {
-  let approval: unknown;
-  if (md["analysis.human_approval"] !== undefined) {
-    try { approval = JSON.parse(String(md["analysis.human_approval"])); }
-    catch { throw new UnknownError("批准记录无法解析，不能确认旧数据兼容范围"); }
-  }
-  const hasApprovalSource = !!approval && typeof approval === "object" && "source" in approval;
-  if (md["analysis.source"] === undefined && !hasApprovalSource && !("analysis_source" in target) && !history.some(d => "analysis_source" in d)) return;
-  const current = readAnalysisSource(md);
-  if (!sameAnalysisSource(current, parseAnalysisSource(target.analysis_source, target.change_ref))) {
-    throw new UnknownError("返工派发与当前 analysis.source 不一致，不能恢复旧来源");
-  }
-}
-
 interface RegistryConfig extends BaseRegistryConfig {
   runtime: RuntimeConfig;
   registry: Record<string, { repo_path: string; tfs_repo?: string; tfs_project?: string; default_target_branch?: string }>;
@@ -67,11 +15,8 @@ interface DecisionEntry {
   comment_id: string;
   reason: string | null;
   next: string;
-  affected_task_refs: string[] | null;
   routed_to: string;
   applied_at: string;
-  /** 记录动作前的原派发，恢复时不得误认同任务的新派发。 */
-  target_dispatch?: DispatchEntry;
   /** 本脚本负责的路由副作用已完成；重跑不得重新启动已完成的返工。 */
   completed_at?: string;
 }
@@ -136,40 +81,6 @@ function setStatusNoStart(client: MulticaClient, issueId: string, status: string
   client.setStatusNoStart(issueId, status);
 }
 
-/** Sub-Issue 返工重开：唯一不带 --no-start 的写入（done→in_progress 即返工启动信号）。 */
-function reopenWithStart(client: MulticaClient, issueId: string): void {
-  client.setStatusWithStart(issueId, "in_progress", `Sub-Issue ${issueId} 重开 done→in_progress（触发返工 Run）`);
-}
-
-function addComment(client: MulticaClient, issueId: string, content: string): void {
-  client.addCommentContent(issueId, content);
-}
-
-/** Sub-Issue 结构化返工评论正文（fresh 路径与 NOOP 修复路径共用，保证补发内容一致）。 */
-function reworkCommentBody(issueKey: string, commentId: string, affected: string[], target: DispatchEntry, reason: string | undefined): string {
-  return [
-    `返工输入（delivery-flow route-human-decision 路由，02 §11.2）：`,
-    ``,
-    `- 触发评论: ${issueKey} 评论 ${commentId}`,
-    `- 受影响 Task refs: ${affected.join(", ")}`,
-    `- Change: openspec/changes/${target.change_ref}/`,
-    `- 原因类别: ${reason ?? "未提供"}`,
-    ``,
-    `原完成结论（dev.dispatch ${target.dispatch_key}）已失效；历史 Evidence 保留在 Change 目录不动。修正方向见 Parent Issue 触发评论上下文。`,
-  ].join("\n");
-}
-
-/** 评论存在性按内容匹配（NOOP 修复路径核对"返工评论是否已补发"；按 id 的精确核对走 commentExists）。 */
-function commentMentions(client: MulticaClient, issueRef: string, needle: string): boolean {
-  const out = client.run(
-    ["issue", "comment", "list", issueRef, "--full", ...client.ws(), "--output", "json"],
-    `读取 Issue ${issueRef} 评论列表`,
-    { transient: true },
-  );
-  const arr = Array.isArray(out) ? out : [];
-  return arr.some((c) => typeof (c as { content?: unknown }).content === "string" && (c as { content: string }).content.includes(needle));
-}
-
 function parseArgs(argv: string[]): Record<string, string> {
   const out: Record<string, string> = {};
   for (let i = 0; i < argv.length; i++) {
@@ -198,7 +109,7 @@ async function main(argv: string[]): Promise<number> {
     process.stderr.write(
       "用法: rondo delivery route-decision --config <repo-registry.json> --issue <KEY>\n" +
       "  --comment-id <uuid> --next ANALYSIS|ENGINEERING|RECREATE_PR|CANCEL_DELIVERY\n" +
-      "  [--reason REJECTED|DISCARDED] [--affected-task-refs 1.1,1.2]\n",
+      "  [--reason REJECTED|DISCARDED]\n",
     );
     return 64;
   }
@@ -207,6 +118,7 @@ async function main(argv: string[]): Promise<number> {
     return 64;
   }
   const next = args.next as Next;
+  if (argv.includes("--affected-task-refs")) return 64;
 
   try {
     const cfg = loadConfig<RegistryConfig>(args.config);
@@ -240,7 +152,7 @@ async function main(argv: string[]): Promise<number> {
       // 旧回调不能影响后续轮次；completed_at 只表示本脚本的路由动作已完成。
       if (prior.completed_at || issue.status === "done") return noop(prior);
       const later = decisions.slice(decisions.indexOf(prior) + 1);
-      if (later.some(d => !d.affected_task_refs || d.affected_task_refs.some(ref => prior.affected_task_refs?.includes(ref)))) return noop(prior);
+      if (later.length) return noop(prior);
       // 后置条件核对（M1/F1）：同 comment_id 已处理 ≠ 路由动作全部落地——首次执行可能在
       // persist-before-act 的中途断连（决策已写、动作未做/未做完）。按 prior.routed_to 逐项核对
       // 并补缺（恢复路径）；全部满足 → 输出与修复前完全相同的 NOOP JSON（正常路径零变化）。
@@ -252,63 +164,6 @@ async function main(argv: string[]): Promise<number> {
           throw new UnknownError("历史 ANALYSIS Decision 未标记完成，当前 blocked 的来源不可确认；禁止旧评论自动解除阻塞");
         }
         return noop(prior);
-      } else if (prior.routed_to === "rework_parent_mention" || prior.routed_to === "rework_sub_issue_activated") {
-        const affected = [...(prior.affected_task_refs ?? [])].sort();
-        const dispatches = parseJsonArray<DispatchEntry>(md["dev.dispatch"], "dev.dispatch", issueKey);
-        const invalidated = dispatches.filter(
-          (d) => !d.active && d.invalidated_by === args["comment-id"] && [...d.task_refs].sort().join(",") === affected.join(","),
-        );
-        let target = invalidated.length === 1 ? invalidated[0] : undefined;
-        if (invalidated.length > 1) throw new UnknownError("同一返工决定命中多个失效派发，不能恢复");
-        if (!target) {
-          // Decision 已写而 dispatch 尚未写：只认持久化快照中的原目标。
-          // 旧格式无快照时，要求仍 blocked 且只有一条早于该决定的匹配派发。
-          const snapshot = prior.target_dispatch;
-          const candidates = dispatches.filter(d => d.active && [...d.task_refs].sort().join(",") === affected.join(",") &&
-            d.projection === (prior.routed_to === "rework_parent_mention" ? "parent" : "sub_issue") &&
-            (snapshot ? d.dispatch_key === snapshot.dispatch_key && d.dispatched_at === snapshot.dispatched_at &&
-              d.change_ref === snapshot.change_ref && d.engineer_id === snapshot.engineer_id &&
-              d.approved_comment_ref === snapshot.approved_comment_ref && d.sub_issue_ref === snapshot.sub_issue_ref
-              : issue.status === "blocked" && Date.parse(d.dispatched_at) <= Date.parse(prior.applied_at)));
-          if (candidates.length !== 1) throw new UnknownError("Decision 已记录但无法唯一确认原目标派发，停止恢复");
-          target = candidates[0];
-        }
-        assertReworkSource(md, target, dispatches);
-        if (prior.target_dispatch) assertReworkSource(md, prior.target_dispatch, dispatches);
-        const active = dispatches.filter(d => d.dispatch_key === target.dispatch_key && d.active);
-        const restored = active.find(d => d.rework_comment_ref === args["comment-id"]);
-        if (restored) assertReworkSource(md, restored, dispatches);
-        if (active.length > 1 || (active.length === 1 && !restored && active[0] !== target)) {
-          throw new UnknownError("原派发已被其他 active 派发替换，不能恢复旧轮次");
-        }
-        if (!restored) {
-          const history = dispatches.map(d => d === target ? { ...d, active: false, invalidated_by: args["comment-id"] } : d);
-          client.setMetadata(issue.id, "dev.dispatch", JSON.stringify([...history, buildReworkDispatch(target, args["comment-id"])]));
-          repairs.push("dispatch");
-        }
-        if (prior.routed_to === "rework_parent_mention") {
-          if (issue.status === "blocked") {
-            setStatusNoStart(client, issue.id, "in_progress");
-            repairs.push("status");
-          }
-        } else {
-          // sub_issue：先补 dispatch（上面），再补返工评论，最后重开——保持 persist-before-act 顺序
-          if (!target.sub_issue_ref) throw new UnknownError("失效 dispatch 为 sub_issue 投影但缺 sub_issue_ref（事实破损）");
-          const sub = client.getIssue(target.sub_issue_ref);
-          const hasComment = commentMentions(client, sub.identifier ?? sub.id, args["comment-id"]);
-          if (restored && hasComment && sub.status === "done") {
-            throw new UnknownError("返工派发和评论已存在，但 Sub-Issue 为 done 且缺少路由完成标记；不能猜测是否已经完成返工并再次启动");
-          }
-          if (!hasComment) {
-            addComment(client, sub.id, reworkCommentBody(issueKey, args["comment-id"], affected, target, prior.reason ?? undefined));
-            repairs.push("comment");
-          }
-          if (sub.status === "done") {
-            reopenWithStart(client, sub.id);
-            repairs.push("reopen");
-          }
-        }
-        completeDecision();
       } else if (prior.routed_to === "rematerialize_pr") {
         const abandoned = parseJsonArray<AbandonedEntry>(md["pr.abandoned"], "pr.abandoned", issueKey);
         const currentPr = parseJsonArray<CurrentPrEntry>(md["current_pr"], "current_pr", issueKey);
@@ -333,77 +188,31 @@ async function main(argv: string[]): Promise<number> {
       throw new UnknownError(`Issue ${issueKey} 缺少 metadata pr.abandoned——无 PR Abandoned 事实，不属于本脚本场景`);
     }
 
-    const recordDecision = (routedTo: string, affected: string[] | null, target?: DispatchEntry): void => {
+    const recordDecision = (routedTo: string): void => {
       const entry: DecisionEntry = {
         comment_id: args["comment-id"],
         reason: args.reason ?? null,
         next,
-        affected_task_refs: affected,
         routed_to: routedTo,
         applied_at: new Date().toISOString(),
-        ...(target ? { target_dispatch: target } : {}),
       };
       client.setMetadata(issue.id, "dev.decision", JSON.stringify([...decisions, entry]));
     };
 
     // --- ANALYSIS ---
     if (next === "ANALYSIS") {
-      recordDecision("mention_analyst", null);
+      recordDecision("mention_analyst");
       setStatusNoStart(client, issue.id, "in_progress");
+      completeDecision();
       process.stdout.write(JSON.stringify({ result: "PASS", next, directive: "mention_analyst", issue: issueKey, status: "in_progress" }, null, 2) + "\n");
       return 0;
     }
 
-    // --- ENGINEERING ---
+    // Lead coordinates Change-level rework using current native Issue/Run facts.
+    // No automatic reset of candidate or PR authorization is implied.
     if (next === "ENGINEERING") {
-      if (!args["affected-task-refs"]) {
-        throw new UnknownError("NEXT=ENGINEERING 缺少 --affected-task-refs（受影响 Task Set 不明，02 §11.2 UNKNOWN）");
-      }
-      const affected = args["affected-task-refs"].split(",").map((s) => s.trim()).filter(Boolean).sort();
-      if (affected.length === 0) throw new UnknownError("--affected-task-refs 解析后为空");
-      const dispatches = parseJsonArray<DispatchEntry>(md["dev.dispatch"], "dev.dispatch", issueKey);
-      const hits = dispatches.filter((d) => d.active && [...d.task_refs].sort().join(",") === affected.join(","));
-      if (hits.length !== 1) {
-        throw new UnknownError(`--affected-task-refs ${affected.join(",")} 命中 active dispatch ${hits.length} 条（须恰好 1 条；不唯一/不存在 → UNKNOWN，02 §11.2）`);
-      }
-      const target = hits[0];
-      assertReworkSource(md, target, dispatches);
-      const invalidated = dispatches.map((d) => d === target ? { ...d, active: false, invalidated_by: args["comment-id"] } : d);
-
-      if (target.projection === "sub_issue") {
-        if (!target.sub_issue_ref) throw new UnknownError("命中 dispatch 为 sub_issue 投影但缺 sub_issue_ref（事实破损）");
-        const sub = client.getIssue(target.sub_issue_ref);
-        if (sub.status !== "done") {
-          throw new UnknownError(`Sub-Issue ${target.sub_issue_ref} 状态 ${sub.status}（非 done，原完成结论不可确认，交 Lead）`);
-        }
-        // persist-before-act：先写 dev.decision + dispatch（失效+同 key 新 active 一笔写完，消除
-        // "零 active 派发"窗口期，M1/F1），再发评论，最后重开（启动信号放最后）
-        recordDecision("rework_sub_issue_activated", affected, target);
-        client.setMetadata(issue.id, "dev.dispatch", JSON.stringify([...invalidated, buildReworkDispatch(target, args["comment-id"])]));
-        addComment(client, sub.id, reworkCommentBody(issueKey, args["comment-id"], affected, target, args.reason));
-        reopenWithStart(client, sub.id);
-        completeDecision();
-        process.stdout.write(JSON.stringify({
-          result: "PASS", next, directive: "rework_sub_issue_activated",
-          sub_issue: target.sub_issue_ref, invalidated_dispatch: target.dispatch_key,
-        }, null, 2) + "\n");
-        return 0;
-      }
-
-      // parent 投影：失效+恢复一笔写完（同 dispatch_key 新 active 条目，消除"零 active 派发"窗口期，
-      // M1/F1——语义上是恢复同一派发而非重复派发）；Issue 回转 in_progress（--no-start），单次返工 @mention 由 Lead 发
-      recordDecision("rework_parent_mention", affected, target);
-      const redispatched = buildReworkDispatch(target, args["comment-id"]);
-      client.setMetadata(issue.id, "dev.dispatch", JSON.stringify([...invalidated, redispatched]));
-      setStatusNoStart(client, issue.id, "in_progress");
-      completeDecision();
-      process.stdout.write(JSON.stringify({
-        result: "PASS", next, directive: "rework_parent_mention",
-        issue: issueKey, status: "in_progress",
-        invalidated_dispatch: target.dispatch_key,
-        redispatched: { dispatch_key: redispatched.dispatch_key, active: redispatched.active, rework_comment_ref: redispatched.rework_comment_ref },
-        rework_target: { engineer_id: target.engineer_id, engineer_name: target.engineer_name, task_refs: target.task_refs },
-      }, null, 2) + "\n");
+      process.stdout.write(JSON.stringify({ result: "PASS", next, directive: "needs_engineering",
+        detail: "由 Delivery Lead 核对当前批准、PR 事实与 Human 返工要求，使用原生协作安排研发；未解除交付阻塞" }, null, 2) + "\n");
       return 0;
     }
 
@@ -439,7 +248,7 @@ async function main(argv: string[]): Promise<number> {
       }
 
       if (changed.length > 0) {
-        recordDecision("needs_engineering", null);
+        recordDecision("needs_engineering");
         process.stdout.write(JSON.stringify({
           result: "PASS", next, directive: "needs_engineering",
           detail: "候选提交已变化，语义修改属 Engineer（02 §11.2 RECREATE_PR 边界）",
@@ -451,7 +260,7 @@ async function main(argv: string[]): Promise<number> {
       // 候选未变：从 current_pr 移除已 abandoned 条目（确定性：这些 PR 已确认 abandoned），
       // 使 pull-request materialize-pr 可重新物化；active 条目保留复用。
       const remaining = currentPr.filter((p) => !abandoned.some((a) => a.repo_key === p.repo_key && a.pr_id === p.pr_id));
-      recordDecision("rematerialize_pr", null);
+      recordDecision("rematerialize_pr");
       client.setMetadata(issue.id, "current_pr", JSON.stringify(remaining));
       process.stdout.write(JSON.stringify({
         result: "PASS", next, directive: "rematerialize_pr",

@@ -45,7 +45,6 @@ test("rejects invalid source, gate, non-Human comment, missing time and invalid 
     f=>f.issue.status="done",
     f=>f.issue.metadata["tfs.type"]="Bug",
     f=>delete f.issue.metadata["tfs.id"],
-    f=>f.issue.metadata["dev.dispatch"]="[]",
     f=>f.issue.metadata["finalize.pending"]="true",
   ]) {
     const f=fixture();mutate(f);

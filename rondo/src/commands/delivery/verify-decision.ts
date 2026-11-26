@@ -64,28 +64,9 @@ export function readApprovedVerifyDecision(
   if (waivedTasks.length && (!md["analysis.source"] || !a.source)) {
     throw new UnknownError("Task Waiver 缺少获批 Analysis Source");
   }
-  // 新来源的批准必须携带同一快照；无来源的历史收口保持兼容，派发入口另行强制来源。
-  let sourceAwareDispatch = false;
-  let dispatchRecords: Record<string, unknown>[] = [];
-  if (md["dev.dispatch"] !== undefined) {
-    let dispatches: unknown;
-    try { dispatches = JSON.parse(String(md["dev.dispatch"])); }
-    catch { throw new UnknownError("dev.dispatch 无法解析，不能判定旧数据兼容范围"); }
-    if (!Array.isArray(dispatches) || dispatches.some(d => !d || typeof d !== "object" || Array.isArray(d))) throw new UnknownError("dev.dispatch 非法，不能按旧数据放行");
-    dispatchRecords = dispatches;
-    sourceAwareDispatch = dispatches.some(d => "analysis_source" in d);
-  }
-  if (md["analysis.source"] !== undefined || a.source !== undefined || sourceAwareDispatch) {
-    const source = readAnalysisSource(md);
-    if (!sameAnalysisSource(source, parseAnalysisSource(a.source, source.change_ref))) {
-      throw new UnknownError("Human 批准的规范版本与 analysis.source 不一致，须重新审核");
-    }
-    // 不允许新批准覆盖仍在生效的旧派发；失效历史条目保留，不参与当前版本判断。
-    for (const dispatch of dispatchRecords.filter(d => d.active === true)) {
-      if (!sameAnalysisSource(source, parseAnalysisSource(dispatch.analysis_source, source.change_ref))) {
-        throw new UnknownError("active 派发的规范来源与当前批准不一致，停止收口或派发");
-      }
-    }
+  const source = readAnalysisSource(md);
+  if (!sameAnalysisSource(source, parseAnalysisSource(a.source, source.change_ref))) {
+    throw new UnknownError("Human 批准的规范版本与 analysis.source 不一致，须重新审核");
   }
   return { required: a.verify_agent_required, commentRef: a.comment_ref, waivedTasks };
 }

@@ -157,7 +157,7 @@ export function registerPrMaterialize(group: Command): void {
           const fresh=multica.getIssue(issue.id), facts=fresh.metadata??{};
           if(fresh.status!==issue.status||fresh.assignee_id!==issue.assignee_id||
             ["tfs.id","tfs.type","tfs.url","analysis.source","analysis.human_approval","analysis.change_ref","analysis.gate.result",
-              "dev.publication","pr_prep","bug.delivery","bug.required_repos","finalize.pending","delivery.tfs_written","dev.dispatch","verify_agent.required"]
+              "dev.publication","pr_prep","bug.delivery","bug.required_repos","finalize.pending","delivery.tfs_written","verify_agent.required"]
               .some(k=>facts[k]!==md[k]) || facts.current_pr!==expectedCurrentPr) throw new UnknownError("PR 物化期间授权或准备事实变化");
           if(!["todo","in_progress","in_review"].includes(fresh.status??"")||facts["finalize.pending"]||facts["delivery.tfs_written"]==="true")
             throw new FailError("当前 Issue 状态不允许 PR 物化");

@@ -37,7 +37,7 @@ export function readDevelopmentCommit(md: Record<string, string>, source: Analys
   return receipt.commit;
 }
 
-/** Native @Engineer Change delegation is authorized by the live Multica Run, not by dev.dispatch. */
+/** Native @Engineer Change delegation is authorized by the live Multica Run. */
 export function assertEngineerExecution(multica: MulticaClient, issue: IssueRecord, workspaceId?: string): void {
   const taskId = process.env.MULTICA_TASK_ID;
   const agentId = process.env.MULTICA_AGENT_ID;
@@ -84,7 +84,6 @@ export async function approvedChange(cfg: BaseRegistryConfig, multica: MulticaCl
   if (md["analysis.gate.result"] !== "PASS") {
     throw new FailError("Analysis Gate 未通过");
   }
-  if (md["dev.dispatch"] !== undefined) throw new FailError("Change 级 Engineer 不允许与旧 dev.dispatch 同时生效");
   if (md["finalize.pending"] || md["delivery.tfs_written"] === "true") throw new FailError("当前 Change 已进入收口，禁止写入");
   const tfsId = Number(md["tfs.id"]);
   if (!Number.isSafeInteger(tfsId) || tfsId <= 0) throw new FailError("TFS Requirement ID 非法");

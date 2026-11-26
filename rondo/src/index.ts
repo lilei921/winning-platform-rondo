@@ -25,18 +25,14 @@ import { registerAnalysisValidate } from "./commands/analysis/validate.js";
 import { registerAnalysisPublish } from "./commands/analysis/publish.js";
 import { registerAnalysisRead } from "./commands/analysis/read.js";
 import { registerAnalysisApprove } from "./commands/analysis/approve.js";
-import { registerDevMaterialize } from "./commands/dev/materialize.js";
 import { registerDevPrepare } from "./commands/dev/prepare.js";
 import { registerDevPublish } from "./commands/dev/publish.js";
-import { registerDevCheckDispatch } from "./commands/dev/check-dispatch.js";
 import { registerDevGit } from "./commands/dev/git.js";
 import { registerRuntimeCheckCheckout } from "./commands/runtime/check-checkout.js";
 import { registerRuntimePrepareRoot } from "./commands/runtime/prepare-root.js";
 import { registerRuntimeGetContext } from "./commands/runtime/get-context.js";
 import { registerBugResume } from "./commands/bug/resume.js";
 import { registerDeliveryAdmission } from "./commands/delivery/handoff.js";
-import { registerTfsMaterializeTasks } from "./commands/tfs/materialize-tasks.js";
-import { registerTfsResolveTasks } from "./commands/tfs/resolve-tasks.js";
 import { registerTfsReconcileWorkitem } from "./commands/tfs/reconcile-workitem.js";
 import { registerTfsWriteback } from "./commands/tfs/writeback.js";
 import { registerPrMaterialize } from "./commands/pr/materialize.js";
@@ -86,19 +82,15 @@ registerAnalysisRead(analysis);
 registerAnalysisApprove(analysis);
 
 const dev = bareGroup(program.command("dev").description("Development 研发准备、Git 与发布"));
-registerDevMaterialize(dev);
 registerDevPrepare(dev);
 registerDevGit(dev);
-registerDevCheckDispatch(dev);
 registerDevPublish(dev);
 
 const bug = bareGroup(program.command("bug").description("无 OpenSpec 的 TFS Bug 修复交付入口"));
 registerBugResume(bug);
 
-const tfs = bareGroup(program.command("tfs").description("TFS 统一回写(writeback)/ 对账;旧物化与置态命令仅作在途恢复入口"));
+const tfs = bareGroup(program.command("tfs").description("TFS 统一回写(writeback)/ 对账"));
 registerTfsWriteback(tfs);
-registerTfsMaterializeTasks(tfs);
-registerTfsResolveTasks(tfs);
 registerTfsReconcileWorkitem(tfs);
 
 // pr 组:flow(materialize/worktree/reconcile-status)+ TFS API(create/get/list)合并,子命令名不交叠(方案 §3.1)

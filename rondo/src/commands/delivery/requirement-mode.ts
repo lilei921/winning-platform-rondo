@@ -20,10 +20,6 @@ export function isRequirementChangeDelivery(md: Record<string, string>): boolean
   if (!prep.every(v => v && typeof v === "object" && (v as {source_branch?: string}).source_branch === candidateBranch(tfsId))) {
     throw new FailError("Requirement Candidate Branch 与 TFS ID 不一致");
   }
-  if (md["dev.dispatch"]) {
-    // Existing dispatch is a different delivery authority. No implicit downgrade or mixed settlement.
-    throw new FailError("Requirement Change 不能同时使用旧 dev.dispatch 派发事实");
-  }
   return true;
 }
 
