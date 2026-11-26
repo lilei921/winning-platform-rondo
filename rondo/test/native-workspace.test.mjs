@@ -5,9 +5,8 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, realpathSy
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parsePlatformCheckoutOutput, assertNativeTaskCheckout, assertNativeCheckoutBaseline } from "../dist/clients/native-checkout.js";
-import { removePublishedRequirementWorktree, verifiedRequirementWorktree } from "../dist/commands/dev/requirement-worktree.js";
-import { readNativeRepoMapping, prepareNativeBusiness } from "../dist/commands/dev/native-prepare.js";
-import { resolveNativeBusinessPath } from "../dist/commands/dev/prepare-workspace.js";
+import { readNativeRepoMapping } from "../dist/commands/dev/native-prepare.js";
+import { resolveNativeBusinessPath, validateBusinessCheckout } from "../dist/commands/dev/prepare-workspace.js";
 
 const branch = "agent/engineer/abcdef123456";
 test("Native Checkout parser recognizes Windows paths and Kept; rejects ambiguous output", () => {
@@ -20,7 +19,7 @@ test("Native Checkout parser recognizes Windows paths and Kept; rejects ambiguou
   assert.throws(() => parsePlatformCheckoutOutput(p + "\nD:\\other", "(branch: " + branch + ")"));
 });
 
-for (const linked of [true, false]) test(`Native ${linked ? "linked worktree" : "isolated checkout"}: committed mapping, first checkout, Kept, dirty protection and divergent candidate`, () => {
+for (const linked of [true, false]) test(`Native ${linked ? "linked worktree" : "isolated checkout"}: committed mapping, identity, baseline and WIP preservation`, () => {
   const temp = realpathSync(mkdtempSync(join(tmpdir(), "rondo-native-")));
   const keys = ["MULTICA_TASK_ID", "MULTICA_WORKSPACE_ID", "MULTICA_AGENT_ID"];
   const saved = Object.fromEntries(keys.map(k => [k, process.env[k]]));
@@ -60,28 +59,13 @@ for (const linked of [true, false]) test(`Native ${linked ? "linked worktree" : 
     mkdirSync(join(task, ".multica"), { recursive: true });
     mkdirSync(cache, { recursive: true });
     writeFileSync(join(task, ".multica", "daemon_task_context.json"), JSON.stringify({ managed_by: "multica-daemon-task", issue_id: "issue-1", agent_id: "engineer" }));
-    const rootSeed = seed("root", rootUrl, { "AGENTS.md": "# root", ".gitignore": "/legacy/\n/legacy-42/\n", "docs/config/repo-context.yaml": JSON.stringify({ repos: [{ repo_id: "root", repo_path: ".", repo_url: rootUrl }, { repo_id: "frame", repo_path: "frame", repo_url: repoUrl, tfs_project: "project", default_target_branch: "dev" }] }) });
+    const rootSeed = seed("root", rootUrl, { "AGENTS.md": "# root", "docs/config/repo-context.yaml": JSON.stringify({ repos: [{ repo_id: "root", repo_path: ".", repo_url: rootUrl }, { repo_id: "frame", repo_path: "frame", repo_url: repoUrl, tfs_project: "project", default_target_branch: "dev" }] }) });
     const child = seed("frame", repoUrl, { "source.txt": "initial" });
     checkoutSeed(rootSeed, root, branch, rootUrl);
     assert.equal(assertNativeTaskCheckout(root, task), branch);
     const mapping = readNativeRepoMapping(root, "HEAD", url);
     assert.equal(mapping.frame.default_target_branch, "dev");
     const repo = mapping.frame;
-    const runtime = { multica_cli: "multica", workspace_id: "workspace" };
-    let candidate = null, count = 0;
-    const remote = () => ({ status: 0, stderr: "", stdout: child.sha + "\trefs/heads/dev\n" + (candidate ? candidate + "\trefs/heads/feature/42\n" : "") });
-    const checkout = (argv, cwd) => {
-      assert.equal(cwd, task);
-      assert.equal(argv.at(-1), candidate ? "feature/42" : "dev");
-      if (count++ === 0) {
-        checkoutSeed(child, business, branch, repoUrl);
-        git(business, "config", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*");
-        git(business, "update-ref", "refs/remotes/origin/dev", child.sha);
-        if (linked) git(business, "branch", "--set-upstream-to=origin/dev", branch);
-        return { status: 0, stdout: business, stderr: "Checked out -> " + business + "\n(branch: " + branch + ")" };
-      }
-      return { status: 0, stdout: business, stderr: "Kept the existing checkout (branch: " + branch + ", this task's branch; 2 uncommitted files, 0 unpushed commits)" };
-    };
     assert.throws(() => resolveNativeBusinessPath(root, { repo_path: '../outside' }), /路径/);
     assert.throws(() => resolveNativeBusinessPath(root, { repo_path: 'root' }), /冲突/);
     // A nested checkout with uncommitted work must never be replaced by a new sibling.
@@ -89,43 +73,27 @@ for (const linked of [true, false]) test(`Native ${linked ? "linked worktree" : 
     checkoutSeed(child, nested, 'agent/engineer/old-layout', repoUrl);
     writeFileSync(join(nested, 'source.txt'), 'nested WIP');
     assert.throws(() => assertNativeTaskCheckout(nested, task), /工作树/);
-    assert.throws(() => prepareNativeBusiness(root, repo, 'feature/42', runtime, 'dev', remote, checkout), /根仓内仍存在/);
-    assert.equal(count, 0);
+    assert.throws(() => resolveNativeBusinessPath(root, repo), /根仓内仍存在/);
     assert.equal(readFileSync(join(nested, 'source.txt'), 'utf8'), 'nested WIP');
     if (linked) git(child.bare, 'worktree', 'remove', '--force', nested);
     else rmSync(nested, { recursive: true, force: true });
-    const first = prepareNativeBusiness(root, repo, "feature/42", runtime, "dev", remote, checkout);
-    assert.equal(first.path, business);
-    assert.equal(first.changed, true);
-    assert.equal(first.head, child.sha);
-    assert.equal(first.local_branch, branch);
+    assert.equal(resolveNativeBusinessPath(root, repo), business);
+    checkoutSeed(child, business, branch, repoUrl);
+    git(business, "config", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*");
+    git(business, "update-ref", "refs/remotes/origin/dev", child.sha);
+    if (linked) git(business, "branch", "--set-upstream-to=origin/dev", branch);
+    assert.equal(validateBusinessCheckout(business, repo, "feature/42", task), child.sha);
     assert.doesNotThrow(() => assertNativeCheckoutBaseline(business, "dev"));
     assert.throws(() => assertNativeCheckoutBaseline(business, "other"));
     writeFileSync(join(business, "source.txt"), "dirty");
     writeFileSync(join(business, "untracked.txt"), "keep");
-    const beforePublish = prepareNativeBusiness(root, repo, "feature/42", runtime, "dev", remote, checkout);
-    assert.equal(beforePublish.changed, false);
-    assert.throws(() => prepareNativeBusiness(root, repo, "feature/42", runtime, "dev", remote,
-      () => ({ status: 0, stdout: business, stderr: "Kept (branch: " + branch + ") fetch_error" })));
-    candidate = child.sha;
-    const again = prepareNativeBusiness(root, repo, "feature/42", runtime, undefined, remote, checkout);
-    assert.equal(again.changed, false);
+    assert.equal(validateBusinessCheckout(business, repo, "feature/42", task), child.sha);
     assert.equal(readFileSync(join(business, "source.txt"), "utf8"), "dirty");
-    assert.equal(readFileSync(join(business, "untracked.txt"), "utf8"), "keep");
-    // Native root + old Requirement hub/worktree still cleans only the legacy checkout.
-    const legacy = join(root, "legacy"), legacyWorktree = join(root, "legacy-42");
-    git(root, "clone", child.bare, legacy);
-    git(legacy, "remote", "set-url", "origin", repoUrl);
-    git(legacy, "worktree", "add", "-b", "feature/42", legacyWorktree, child.sha);
-    assert.equal(verifiedRequirementWorktree(root, { repo_path: "legacy", repo_url: repoUrl }, 42), legacyWorktree);
-    assert.throws(() => verifiedRequirementWorktree(root, repo, 42));
-    assert.equal(removePublishedRequirementWorktree(root, { repo_path: "legacy", repo_url: repoUrl }, 42, child.sha), "legacy-42");
-    assert.equal(existsSync(legacyWorktree), false);
     assert.equal(readFileSync(join(business, "untracked.txt"), "utf8"), "keep");
     git(business, "add", "source.txt");
     git(business, "-c", "user.name=Test", "-c", "user.email=test@example.test", "commit", "-m", "local WIP");
     const unpushed = git(business, "rev-parse", "HEAD");
-    assert.equal(prepareNativeBusiness(root, repo, "feature/42", runtime, undefined, remote, checkout).head, unpushed);
+    assert.equal(validateBusinessCheckout(business, repo, "feature/42", task), unpushed);
     assert.equal(readFileSync(join(business, "untracked.txt"), "utf8"), "keep");
     // Multica can retain both working trees when a new Run continues the same task workdir.
     const creationTask = process.env.MULTICA_TASK_ID;
@@ -136,7 +104,7 @@ for (const linked of [true, false]) test(`Native ${linked ? "linked worktree" : 
     const manifest = { task_id: creationTask, workspace_id: "workspace", checkout_branch: branch, checkout_mode: "isolated" };
     writeFileSync(manifestPath, JSON.stringify(manifest));
     assert.equal(assertNativeTaskCheckout(business, task, branch, "issue-1"), branch);
-    assert.equal(prepareNativeBusiness(root, repo, "feature/42", runtime, undefined, remote, checkout).head, unpushed);
+    assert.equal(validateBusinessCheckout(business, repo, "feature/42", task), unpushed);
     assert.equal(git(business, "symbolic-ref", "--short", "HEAD"), branch);
     assert.equal(readFileSync(join(business, "untracked.txt"), "utf8"), "keep");
     assert.throws(() => assertNativeTaskCheckout(root, task, undefined, "other-issue"), /Issue/);
@@ -158,19 +126,12 @@ for (const linked of [true, false]) test(`Native ${linked ? "linked worktree" : 
     process.env.MULTICA_TASK_ID = "01234567-abcd-ef12-3456-000000000001";
     checkoutSeed(rootSeed, otherRoot, otherBranch, rootUrl);
     assert.equal(assertNativeTaskCheckout(otherRoot, otherTask), otherBranch);
-    const resumed = prepareNativeBusiness(otherRoot, repo, "feature/42", runtime, undefined, remote, (argv, cwd) => {
-      assert.equal(cwd, otherTask);
-      assert.equal(argv.at(-1), "feature/42");
-      checkoutSeed(child, otherBusiness, otherBranch, repoUrl, candidate);
-      return { status: 0, stdout: otherBusiness, stderr: "(branch: " + otherBranch + ")" };
-    });
-    assert.equal(resumed.head, child.sha);
+    checkoutSeed(child, otherBusiness, otherBranch, repoUrl, child.sha);
+    assert.equal(validateBusinessCheckout(otherBusiness, repo, "feature/42", otherTask), child.sha);
     assert.equal(existsSync(join(otherBusiness, "untracked.txt")), false);
     assert.equal(git(business, "rev-parse", "HEAD"), unpushed);
     process.env.MULTICA_TASK_ID = "01234567-abcd-ef12-3456-abcdef123456";
-    candidate = "f".repeat(40);
-    assert.throws(() => prepareNativeBusiness(root, repo, "feature/42", runtime, undefined, remote, checkout));
-    assert.throws(() => prepareNativeBusiness(root, repo, "feature/42", runtime, undefined, () => ({ status: 1, stdout: "", stderr: "network" }), checkout));
+    assert.throws(() => validateBusinessCheckout(business, { ...repo, repo_url: repoUrl + "-wrong" }, "feature/42", task), /origin/);
     assert.throws(() => assertNativeTaskCheckout(business, otherTask), /工作树/);
   } finally {
     for (const k of keys) if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k];

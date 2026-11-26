@@ -88,7 +88,6 @@ interface Overlay extends MulticaEnvironment, McpOverlay {
   delivery_squad_id?: string;
   project?: string;
   skills?: Record<string, string>;
-  workspace_preparation_skill?: "native-workspace" | "workspace-preparation";
   [k: string]: unknown;
 }
 
@@ -108,31 +107,6 @@ function readText(path: string, what: string): string {
 /** 文本一致性比对：忽略行尾空白差异（平台回读可能无尾换行） */
 function sameText(a: string, b: string): boolean {
   return a.replace(/\s+$/g, "") === b.replace(/\s+$/g, "");
-}
-
-// 仅仍绑定常驻根仓准备 Skill 的 Analyst / Engineer 需要分支变量。
-const RONDO_BRANCH_AGENTS = new Set(["Workitem Analyst", "Engineer"]);
-
-/** Multica 的 env set 替换整张表；其他键用原生保留标记，避免传递已有凭据。 */
-function reconcileWorkspaceBranch(cli: string[], workspaceArgs: string[], id: string, branch: string, dryRun: boolean): boolean {
-  const common = [id, ...workspaceArgs, "--output", "json"];
-  try {
-    const { agent_id, custom_env } = runJson([...cli, "agent", "env", "get", ...common], "读取 Agent 环境") as
-      { agent_id: string; custom_env: Record<string, string> };
-    if (agent_id !== id || !custom_env || typeof custom_env !== "object" || Array.isArray(custom_env)) throw new Error();
-    if (custom_env.RONDO_WORKSPACE_BRANCH === branch) return false;
-    if (!dryRun) {
-      const env = Object.fromEntries(Object.keys(custom_env).map(k => [k, "****"]));
-      env.RONDO_WORKSPACE_BRANCH = branch;
-      const result = runJsonStdin([...cli, "agent", "env", "set", ...common, "--custom-env-stdin"],
-        "设置 Agent 根仓分支", JSON.stringify(env)) as { agent_id: string; custom_env: Record<string, string> };
-      if (result.agent_id !== id || result.custom_env?.RONDO_WORKSPACE_BRANCH !== branch) throw new Error();
-    }
-    return true;
-  } catch {
-    // env 端点的原始响应可能含凭据。
-    throw new UnknownError(`无法确认 Agent ${id} 的 RONDO_WORKSPACE_BRANCH，请核对 agent env 访问权限后重试`);
-  }
 }
 
 // --- 仓内事实源 ---
@@ -233,22 +207,6 @@ function main(rawArgs: string[]): number {
     if (group) {
       manifest.project = { ...manifest.project, ...group.project };
       if (group.mcp_servers !== undefined) manifest.mcp_servers = group.mcp_servers;
-    }
-    // Deployment binding only; this does not select a runtime execution mode.
-    const preparationSkill = overlay.workspace_preparation_skill;
-    if (preparationSkill !== undefined && preparationSkill !== "native-workspace" && preparationSkill !== "workspace-preparation") {
-      throw new UnknownError("workspace_preparation_skill 必须是已支持的工作区准备 Skill");
-    }
-    if (preparationSkill !== undefined) {
-      for (const agent of manifest.agents) {
-        if (agent.name === "Engineer" || agent.name === "Bug Fix Agent") continue;
-        agent.skills = agent.skills?.map(skill => skill === "native-workspace" || skill === "workspace-preparation" ? preparationSkill : skill);
-      }
-    }
-    const branchAgent = (a: ManifestAgent) => RONDO_BRANCH_AGENTS.has(a.name) && a.skills?.includes("workspace-preparation");
-    const branch = manifest.agents.some(branchAgent) ? manifest.project?.workspace_branch : undefined;
-    if (branch !== undefined && (typeof branch !== "string" || !branch.trim() || branch !== branch.trim())) {
-      throw new UnknownError("project.workspace_branch 必须是非空分支名");
     }
     const mcpSpecs = loadMcpSpecs(manifest, overlay, file => readJson(join(REPO_ROOT, "mcps", file), "MCP 模板"));
     if (mcpOnly && !mcpSpecs.length) throw new UnknownError("manifest 尚未登记受管 MCP");
@@ -479,7 +437,6 @@ function main(rawArgs: string[]): number {
         } else {
           const cp = runJson(
             [...MC, "agent", "create", ...WS, "--name", a.name, "--runtime-id", runtimeId,
-              ...(branch && branchAgent(a) ? ["--custom-env", JSON.stringify({ RONDO_WORKSPACE_BRANCH: branch })] : []),
               "--description", desc, "--instructions", instr, "--visibility", wantVisibility, "--output", "json"],
             `agent create ${a.name}`,
           ) as any;
@@ -494,9 +451,6 @@ function main(rawArgs: string[]): number {
         continue;
       }
       agentIds[a.name] = hit.id;
-      const branchChanged = branch && branchAgent(a)
-        && reconcileWorkspaceBranch(MC, WS, hit.id, branch, dryRun);
-      if (branchChanged) updated.push(`agent/${a.name} (RONDO_WORKSPACE_BRANCH)`);
       const drift: string[] = [];
       if (!sameText(hit.instructions ?? "", instr)) drift.push("instructions");
       if ((hit.description ?? "") !== desc) drift.push("description");
@@ -522,7 +476,7 @@ function main(rawArgs: string[]): number {
           updated.push(`agent/${a.name} (skills)`);
         }
       }
-      if (!branchChanged && drift.length === 0 && JSON.stringify(hasSkills) === JSON.stringify(wantSkills)) unchanged.push(`agent/${a.name}`);
+      if (drift.length === 0 && JSON.stringify(hasSkills) === JSON.stringify(wantSkills)) unchanged.push(`agent/${a.name}`);
     }
     const manifestAgentNames = new Set(manifest.agents.map((a) => a.name));
     for (const ra of remoteAgents) if (!manifestAgentNames.has(ra.name)) unmanaged.push(`agent/${ra.name}`);

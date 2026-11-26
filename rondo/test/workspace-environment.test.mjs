@@ -19,7 +19,7 @@ function fixture(t, scenario = "normal", extraEnv = {}) {
   const shared = "workspace-config/";
   const overlay = write(shared + "workspaces/pilot.json", { workspace_id: "ws-1" });
   const branchScenario = ["branch", "group", "native-branch"].includes(scenario);
-  const preparation = scenario === "native-branch" ? "native-workspace" : "workspace-preparation";
+  const preparation = "native-workspace";
   const agents = [{ dir: "analyst", name: "Workitem Analyst", skills: ["spec-preparation", ...(branchScenario ? [preparation] : [])] }];
   if (["branch", "native-branch"].includes(scenario)) agents.push(
     { dir: "engineer", name: "Engineer", skills: [preparation] },
@@ -57,7 +57,7 @@ if(key==='workspace list') out=[];
 else if(key==='workspace create') out={id:'new-ws'};
 else if(key==='workflow get') out=['bad','new-bad'].includes(process.env.MC_SCENARIO)?{}:{steps:[{status_key:'todo'},{status_key:'analysis_review'},{status_key:'done'}]};
 else if(key==='runtime list') out=process.env.MC_SCENARIO==='no-runtime'?[]:[{id:'runtime-1'}];
-else if(key==='skill list') out=process.env.MC_SCENARIO==='skill-create'?[]:[{id:'skill-1',name:'spec-preparation'}, ...(['branch','group','native-branch'].includes(process.env.MC_SCENARIO)?[{id:'skill-2',name:process.env.MC_SCENARIO==='native-branch'?'native-workspace':'workspace-preparation'}]:[])];
+else if(key==='skill list') out=process.env.MC_SCENARIO==='skill-create'?[]:[{id:'skill-1',name:'spec-preparation'}, ...(['branch','group','native-branch'].includes(process.env.MC_SCENARIO)?[{id:'skill-2',name:'native-workspace'}]:[])];
 else if(key==='skill create') {
   if(!args.includes('--content-stdin')) throw new Error('expected UTF-8 stdin');
   fs.writeFileSync(process.env.MC_TRACE+'.skill',fs.readFileSync(0)); out={id:'skill-1'};
@@ -93,7 +93,7 @@ else if(key==='skill files') {
   } else throw new Error('unexpected skill files operation');
 }
 else if(key==='agent list') {
-  const preparation=['branch','group','native-branch'].includes(process.env.MC_SCENARIO)?[{name:process.env.MC_SCENARIO==='native-branch'?'native-workspace':'workspace-preparation'}]:[];
+  const preparation=['branch','group','native-branch'].includes(process.env.MC_SCENARIO)?[{name:'native-workspace'}]:[];
   out=[{id:'agent-1',name:'Workitem Analyst',instructions:'instructions',description:'description',visibility:'workspace',skills:[{name:'spec-preparation'},...preparation]}];
   if(fs.existsSync(process.env.MC_TRACE+'.agent-2')) out.push({...out[0],id:'agent-2',name:'Engineer',skills:preparation});
   if(['branch','native-branch'].includes(process.env.MC_SCENARIO)) out.push({...out[0],id:'agent-3',name:'Delivery Lead',skills:[]});
@@ -140,7 +140,7 @@ console.log(JSON.stringify(out));
   return { overlay, run, calls, write, shared, trace };
 }
 
-test("根目录供给按分组选择 Project、继承默认分支且不改写 manifest", t => {
+test("根目录供给按分组选择 Project 且不改写 manifest", t => {
   const f = fixture(t, "group");
   const manifest = join(dirname(f.overlay), "..", "provisioning.json");
   const before = readFileSync(manifest, "utf8");
@@ -150,7 +150,7 @@ test("根目录供给按分组选择 Project、继承默认分支且不改写 ma
     assert.ok(r.body.unchanged.includes("project/BI Project"));
     assert.equal(readFileSync(manifest, "utf8"), before);
   }
-  assert.equal(JSON.parse(readFileSync(f.trace + ".agent-1", "utf8")).RONDO_WORKSPACE_BRANCH, "release");
+  assert.ok(!f.calls().some(args => args.includes("env") || args.some(arg => arg.includes("RONDO_WORKSPACE_BRANCH"))));
 });
 
 test("创建 Project 时下发 manifest 中的 description", t => {
@@ -179,28 +179,6 @@ test("已有 Project 的描述漂移支持预检和更新", t => {
   assert.ok(update);
   assert.ok(update.includes("project-1"));
   assert.equal(update[update.indexOf("--description") + 1], "项目描述");
-});
-
-test("项目分支仅下发至 Analyst / Engineer，保留其他变量且再次供给无写入", t => {
-  const f = fixture(t, "branch");
-  const provision = (...flags) => f.run("workspace", "provision", "--workspace", "pilot", "--skip-workflow", ...flags);
-  const preview = provision("--dry-run");
-  assert.equal(preview.code, 0, preview.stderr);
-  assert.ok(preview.body.updated.includes("agent/Workitem Analyst (RONDO_WORKSPACE_BRANCH)"));
-  assert.ok(!f.calls().some(args => args.includes("set") || args.includes("create")));
-  const first = provision();
-  assert.equal(first.code, 0, first.stderr);
-  assert.deepEqual(JSON.parse(readFileSync(f.trace + ".agent-1")), { RONDO_WORKSPACE_BRANCH: "release", OTHER: "fixture-private-value" });
-  assert.deepEqual(JSON.parse(readFileSync(f.trace + ".agent-2")), { RONDO_WORKSPACE_BRANCH: "release" });
-  // Delivery Lead 不是根仓 Agent：不读不写其 env，也不因新建参数携带分支。
-  assert.equal(existsSync(f.trace + ".agent-3"), false);
-  assert.ok(!f.calls().some(args => args.includes("env") && args.includes("agent-3")));
-  assert.doesNotMatch(first.stderr + JSON.stringify(first.body) + readFileSync(f.trace, "utf8"), /fixture-private-value/);
-  const before = f.calls().length;
-  const again = provision();
-  assert.equal(again.code, 0, again.stderr);
-  assert.deepEqual(again.body.updated, []);
-  assert.ok(!f.calls().slice(before).some(args => args.includes("set") || args.includes("create")));
 });
 
 for (const scenario of ["old", "bad", "unsupported"]) test(`供给前拒绝 ${scenario} workflow，平台和 overlay 零写入`, t => {

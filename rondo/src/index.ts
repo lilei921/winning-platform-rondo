@@ -26,7 +26,6 @@ import { registerAnalysisPublish } from "./commands/analysis/publish.js";
 import { registerAnalysisRead } from "./commands/analysis/read.js";
 import { registerAnalysisApprove } from "./commands/analysis/approve.js";
 import { registerDevMaterialize } from "./commands/dev/materialize.js";
-import { registerDevPrepare } from "./commands/dev/prepare.js";
 import { registerDevPublish } from "./commands/dev/publish.js";
 import { registerDevCheckDispatch } from "./commands/dev/check-dispatch.js";
 import { registerDevGit } from "./commands/dev/git.js";
@@ -87,7 +86,6 @@ registerAnalysisApprove(analysis);
 
 const dev = bareGroup(program.command("dev").description("Development 研发准备、Git 与发布"));
 registerDevMaterialize(dev);
-registerDevPrepare(dev);
 registerDevGit(dev);
 registerDevCheckDispatch(dev);
 registerDevPublish(dev);

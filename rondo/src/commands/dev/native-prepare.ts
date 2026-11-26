@@ -1,18 +1,12 @@
-/** Native business checkout: reuse existing authorization and platform worktrees. */
-import { existsSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+/** 已提交的工程仓库映射，供交付命令共用。 */
 import { parse } from "yaml";
 import { FailError, UnknownError } from "../../cli/errors.js";
-import { git, gitOk } from "../../clients/git.js";
-import { runAuthenticatedGit, assertTfsRepository } from "../../clients/authenticated-git.js";
-import { runCommand } from "../../clients/spawn.js";
-import { multicaPrefix } from "../../clients/multica-environment.js";
-import type { MulticaRuntime } from "../../clients/runtime-context.js";
-import { parsePlatformCheckoutOutput, assertNativeCheckoutBaseline } from "../../clients/native-checkout.js";
+import { gitOk } from "../../clients/git.js";
+import { assertTfsRepository } from "../../clients/authenticated-git.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 import { RemoteArtifactReader } from "../delivery/remote-artifacts.js";
 import type { AnalysisSource } from "../analysis/source.js";
-import { validatePrepareRepo, resolveNativeBusinessPath, validateBusinessCheckout, type PrepareRepo } from "./prepare-workspace.js";
+import { validatePrepareRepo, type PrepareRepo } from "./prepare-workspace.js";
 
 /** Read committed engineering mappings, not mutable working files or a second registry. */
 export function readNativeRepoMapping(root: string, revision: string, serverUrl: string): Record<string, PrepareRepo> {
@@ -56,57 +50,6 @@ export function parseRepoMapping(content: string, rootUrl: string, serverUrl: st
     throw new FailError("根仓与已提交仓库映射不一致");
   return result;
 }
-
-export function prepareNativeBusiness(root: string, repo: PrepareRepo, branch: string, runtime: MulticaRuntime,
-  resourceRef?: string, remote = runAuthenticatedGit, checkout = runCommand): Record<string, unknown> {
-  const workdir = dirname(root);
-  const path = resolveNativeBusinessPath(root, repo);
-  const existing = existsSync(path);
-  if (existing) validateBusinessCheckout(path, repo, branch, workdir);
-  const candidateRef = "refs/heads/" + branch;
-  const targetRef = "refs/heads/" + repo.default_target_branch;
-  for (const ref of [candidateRef, targetRef]) {
-    if (git(root, ["check-ref-format", ref]).status !== 0) throw new FailError("候选或目标分支非法");
-  }
-  if (candidateRef === targetRef) throw new FailError("候选分支不得等于交付目标分支");
-  // Spike verified branch refs. Never use target branch as an implicit Resource ref.
-  const initialRef = resourceRef ? "refs/heads/" + resourceRef : undefined;
-  if (initialRef && (resourceRef!.startsWith("-") || resourceRef!.startsWith("refs/") ||
-      git(root, ["check-ref-format", initialRef]).status !== 0)) throw new FailError("Resource ref 必须为已核实的分支名");
-  const requested = [...new Set([candidateRef, targetRef, ...(initialRef ? [initialRef] : [])])];
-  const refs = remote(repo.repo_url, ["ls-remote", repo.repo_url, ...requested], root);
-  if (refs.status !== 0) throw new UnknownError("读取候选及基线失败，保留现场");
-  const observed = new Map<string, string>();
-  for (const line of refs.stdout.trim().split(/\r?\n/).filter(Boolean)) {
-    const m = /^([0-9a-f]{40})\s+(refs\/heads\/\S+)$/.exec(line);
-    if (!m || !requested.includes(m[2]) || observed.has(m[2])) throw new UnknownError("远端 ref 响应无法确认");
-    observed.set(m[2], m[1]);
-  }
-  if (!observed.has(targetRef)) throw new FailError("交付目标分支不存在");
-  const candidate = observed.get(candidateRef);
-  if (!candidate && (!initialRef || !observed.has(initialRef))) throw new UnknownError("缺少已确认的 Project Resource 初始分支");
-  const ref = candidate ? branch : resourceRef!;
-  const result = checkout([...multicaPrefix(runtime), "repo", "checkout", repo.repo_url, "--ref", ref], workdir, undefined, 600_000);
-  if (result.status !== 0 || /fetch[_ -]error|fetch (?:failed|failure)/i.test(result.stdout + "\n" + result.stderr))
-    throw new UnknownError("Multica Native Checkout 或 Fetch 未确认成功，保留现场");
-  const reported = parsePlatformCheckoutOutput(result.stdout, result.stderr);
-  const same = (a: string, b: string) => process.platform === "win32"
-    ? resolve(a).toLowerCase() === resolve(b).toLowerCase() : resolve(a) === resolve(b);
-  if (!same(reported.root, path) || !same(resolveNativeBusinessPath(root, repo), path)) throw new FailError("Native Checkout 实际路径与仓库映射不一致");
-  const head = validateBusinessCheckout(path, repo, branch, workdir);
-  const localBranch = gitOk(path, ["symbolic-ref", "--short", "HEAD"], "核对 Task Branch");
-  if (localBranch !== reported.branch) throw new FailError("Native 当前分支与平台返回不一致");
-  if (!existing && head !== (candidate ?? observed.get(initialRef!)))
-    throw new UnknownError("首次 Checkout HEAD 与已确认基线不一致，保留现场");
-  if (existing && !candidate) {
-    // Kept does not switch refs. Verify the original upstream rather than requiring the latest remote tip.
-    assertNativeCheckoutBaseline(path, resourceRef!);
-  }
-  if (candidate && git(path, ["merge-base", "--is-ancestor", candidate, head]).status !== 0)
-    throw new UnknownError("当前工作树未包含已发布 Candidate，保留现场");
-  return { result: "PASS", path, repo_url: repo.repo_url, branch, local_branch: localBranch, head, changed: !existing };
-}
-
 
 /** Ensure remaining delivery commands consume the same repository and target as Native prepare. */
 export function assertNativeDeliveryMapping(root: string, revision: string, key: string,

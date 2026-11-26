@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, realpathSync, symlinkSync, existsSync, unlinkSync, renameSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, realpathSync, existsSync, unlinkSync, renameSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { prepareBusinessWorkspace, validatePrepareRepo } from '../dist/commands/dev/prepare-workspace.js';
+import { validatePrepareRepo } from '../dist/commands/dev/prepare-workspace.js';
 import { validateNativeCheckout, platformCheckoutMode, platformTaskSuffix, assertPlatformCheckoutIdentity, readPlatformCheckoutManifest, nativeCheckoutExpected, readDaemonTaskContext } from '../dist/clients/native-checkout.js';
 import { assertBugExecution, assertBugStart, assertBugSource } from '../dist/commands/bug/authorization.js';
 import { ensureDeliverySummary } from '../dist/commands/delivery/summary.js';
@@ -30,60 +30,8 @@ function fixture(t, { rootName = 'winning-platform-monorepo', rootOrigin = rootU
   git(root, 'add', '.gitignore', 'AGENTS.md');
   git(root, '-c', 'user.name=test', '-c', 'user.email=test@example.test', 'commit', '-m', 'fixture');
   git(root, 'push', remote, 'main'); git(root, 'remote', 'add', 'origin', rootOrigin);
-  // 只有传输适配为本地 bare fixture，clone / checkout / origin / 分支校验均运行真实 Git。
-  const transport = (_url, args, cwd) => {
-    const r = spawnSync('git', args.map(a => a === url ? remote : a), { cwd, encoding: 'utf8' });
-    if (args[0] === 'clone' && r.status === 0) git(args.at(-1), 'remote', 'set-url', 'origin', url);
-    return { status: r.status, stdout: r.stdout, stderr: r.stderr };
-  };
-  return { dir, root, remote, transport, rootOrigin };
+  return { dir, root, remote, rootOrigin };
 }
-
-test('首次 clone；dirty 与未 push Commit 重入逐字保留', t => {
-  const f = fixture(t); const first = prepareBusinessWorkspace(f.root, repo, 12, f.transport);
-  assert.equal(first.changed, true); assert.equal(first.branch, 'feature/12');
-  writeFileSync(join(first.path, 'fix.txt'), '修复'); git(first.path, 'add', 'fix.txt');
-  git(first.path, '-c', 'user.name=test', '-c', 'user.email=test@example.test', 'commit', '-m', 'fix');
-  writeFileSync(join(first.path, 'fix.txt'), '保留未提交修改');
-  const before = git(first.path, 'rev-parse', 'HEAD');
-  const again = prepareBusinessWorkspace(f.root, repo, 12, () => { throw Error('不应 fetch'); });
-  assert.equal(again.changed, false); assert.equal(again.head, before);
-  assert.equal(readFileSync(join(first.path, 'fix.txt'), 'utf8'), '保留未提交修改');
-  assert.throws(() => prepareBusinessWorkspace(f.root, repo, 13, f.transport), /分支/);
-  git(first.path, 'remote', 'set-url', 'origin', url.replace('/biz', '/other'));
-  assert.throws(() => prepareBusinessWorkspace(f.root, repo, 12, f.transport), /origin/);
-});
-
-test('跨 Task 从远端同 Bug 候选续接，不从目标分支重新开始', t => {
-  const f = fixture(t); git(f.root, 'push', f.remote, 'HEAD:refs/heads/feature/12');
-  const r = prepareBusinessWorkspace(f.root, repo, 12, f.transport);
-  assert.equal(r.branch, 'feature/12'); assert.equal(r.head, git(f.root, 'rev-parse', 'HEAD'));
-});
-
-test('越界、junction、未忽略目录和不完整 clone 保留现场且拒绝', t => {
-  const f = fixture(t);
-  assert.throws(() => prepareBusinessWorkspace(f.root, { ...repo, repo_path: '../outside' }, 12, f.transport), /路径/);
-  assert.throws(() => prepareBusinessWorkspace(f.root, { ...repo, repo_path: 'other' }, 12, f.transport), /忽略/);
-  const outside = join(f.dir, 'outside'); mkdirSync(outside);
-  symlinkSync(outside, join(f.root, 'biz'), process.platform === 'win32' ? 'junction' : 'dir');
-  assert.throws(() => prepareBusinessWorkspace(f.root, repo, 12, f.transport), /链接/);
-  unlinkSync(join(f.root, 'biz')); mkdirSync(join(f.root, 'biz'));
-  writeFileSync(join(f.root, 'biz', 'partial'), 'keep');
-  assert.throws(() => prepareBusinessWorkspace(f.root, repo, 12, f.transport), /不是有效业务仓/);
-  assert.equal(readFileSync(join(f.root, 'biz', 'partial'), 'utf8'), 'keep');
-});
-
-test('clone 中断重试不删除现场或重复 clone', t => {
-  const f = fixture(t); let clones = 0;
-  const broken = (u, args, cwd) => {
-    if (args[0] !== 'clone') return f.transport(u, args, cwd);
-    clones++; mkdirSync(args.at(-1)); writeFileSync(join(args.at(-1), 'partial'), 'keep');
-    return { status: 128, stdout: '', stderr: 'network' };
-  };
-  assert.throws(() => prepareBusinessWorkspace(f.root, repo, 12, broken), /clone/);
-  assert.throws(() => prepareBusinessWorkspace(f.root, repo, 12, broken), /不是有效业务仓/);
-  assert.equal(clones, 1);
-});
 
 test('Registry 必须匹配 Collection、Project、Repository，拒绝凭据 URL', () => {
   assert.equal(validatePrepareRepo(repo, 'http://tfs.test/tfs/C'), repo);
@@ -260,29 +208,6 @@ test('TFS 2018 旧版来源只从配置 Collection 回读，拒绝错 pcguid 与
   issue.metadata['tfs.url'] = source.replace('collection-guid', 'wrong');
   await assert.rejects(() => assertBugSource(issue, 'http://tfs.test/tfs/C', client), /权威身份/);
   await assert.rejects(() => assertBugSource(issue, 'http://tfs.test/tfs/C', { rawRequest: async () => ({ statusCode: 503 }) }), /无法回读/);
-});
-
-test('真实 prepare CLI 使用平台 fixture 与独立 Git 仓，拒绝缺 Task / 错 Actor，零事实写入', t => {
-  const f = fixture(t); prepareBusinessWorkspace(f.root, repo, 12, f.transport);
-  mkdirSync(join(f.dir, '.multica', 'project'), { recursive: true });
-  const resource = { id: 'r', resource_type: 'github_repo', resource_ref: { url: rootUrl, ref: 'main' } };
-  writeFileSync(join(f.dir, '.multica', 'daemon_task_context.json'), JSON.stringify({ managed_by: 'multica-daemon-task', issue_id: 'i', agent_id: 'agent' }));
-  writeFileSync(join(f.dir, '.multica', 'project', 'resources.json'), JSON.stringify({ project_id: 'p', resources: [resource] }));
-  const state = { issues: { 'I-1': { id: 'i', identifier: 'I-1', project_id: 'p', status: 'todo', assignee_id: 'agent', metadata: {
-    'tfs.type': 'Bug', 'tfs.id': '12', 'tfs.url': 'http://tfs.test/tfs/C/P/_workitems?id=12' } } },
-    agents_list: [{ name: 'Bug Fix Agent', id: 'agent' }], project_resources: [resource],
-    runs: { i: [{ id: 'run', issue_id: 'i', agent_id: 'agent', workspace_id: 'ws', status: 'running', work_dir: f.dir }] } };
-  const statePath = join(f.dir, 'state.json'), config = join(f.dir, 'config.json');
-  writeFileSync(statePath, JSON.stringify(state));
-  writeFileSync(config, JSON.stringify({ runtime: { multica_cli: fileURLToPath(new URL('./mock-multica.cjs', import.meta.url)), workspace_id: 'ws' }, registry: { biz: repo } }));
-  const env = { ...process.env, MOCK_STATE: statePath, MULTICA_TASK_ID: 'run', MULTICA_AGENT_ID: 'agent', MULTICA_WORKSPACE_ID: 'ws',
-    MULTICA_TOKEN: 'fixture', MULTICA_DAEMON_PORT: '1', TFS_SERVER_URL: 'http://tfs.test/tfs/C', TFS_PAT: 'fixture' };
-  const run = extra => spawnSync(process.execPath, [fileURLToPath(new URL('../dist/index.js', import.meta.url)), 'dev', 'prepare', '--config', config,
-    '--issue', 'I-1', '--repo', 'biz', '--root-repo', f.root], { encoding: 'utf8', env: { ...env, ...extra } });
-  const result = run({}); assert.equal(result.status, 0, result.stdout + result.stderr); assert.equal(JSON.parse(result.stdout).changed, false);
-  const missing = run({ MULTICA_TASK_ID: '' }); assert.equal(missing.status, 3, missing.stdout + missing.stderr);
-  const wrong = run({ MULTICA_AGENT_ID: 'other' }); assert.equal(wrong.status, 2, wrong.stdout + wrong.stderr);
-  assert.deepEqual(JSON.parse(readFileSync(statePath, 'utf8')), state);
 });
 
 test('摘要发布后 ID 保存失败：重入直接复用，不补 ID；查询失败不发布', () => {

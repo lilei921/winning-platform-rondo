@@ -1,21 +1,21 @@
 # 12｜Multica Native Repo 工作区准备方案
 
-> **状态**：设计方案，待最小 Spike 验证（2026-11-20）；不代表 Runtime 或交付验收已通过。
+> **状态**：Native Checkout 已接入；当前工作区执行契约见 [Native Workspace](12-native-workspace-consumer-alignment-plan.md) 与 [Skill](skills/native-workspace/SKILL.md)。完整 Runtime 验收仍须在实际环境完成。
 >
 > **依据**：[01 统一原则](01-multica-openspec-design-guideline.md)、[11 Workspace Preparation](11-workspace-preparation-skill-design.md)、[08-B Requirement 交付](08b-requirement-remote-git-delivery.md)、[08-B 根仓发布](08b-requirement-root-branch-and-publish-plan.md)、[09 Engineer](09-unified-engineer-development-design.md)。
 
 ## 1. 目标与边界
 
-探索将 **Multica Native Repo Checkout** 作为现有 `workspace-preparation` Skill 的一种**环境准备 Method**，优先代替 Requirement 流程中 Rondo 自建的持久根仓与业务 Worktree 准备，不重构 Git 交付。
+使用 **Multica Native Repo Checkout** 统一按需准备根仓和业务仓，工作区方法由 `native-workspace` Skill 维护，不重构 Git 交付。
 
-**结论**：Multica 源码支持 Project 多 Git Resource、Task 内按需 Checkout、独立 Task Branch 和不同仓库的嵌套 Checkout；但与当前 Rondo 的本地分支、业务候选发布约束尚未端到端兼容。先验证再接入，不直接切换默认模式。
+**结论**：Multica 管理 Task 内平级多仓 Checkout 和独立 Task Branch；Rondo 保留授权的交付写入及候选身份校验。
 
 - **Multica**：创建、复用、隔离本地 Checkout / Task Branch。
 - **Rondo**：保留批准 Scope 校验、OpenSpec 单 Change 远端发布、Candidate Push/SHA 回读及 PR/TFS 交付。
 - **OpenSpec / Multica Issue**：继续分别作为 Engineering Truth / Delivery Truth；不建立第三套事实源。
 - **Skill**：按需选择准备方法、消费实际路径和报告 `PASS/FAIL/UNKNOWN`；不复制 Git 算法，也不要求固定 Skill 调用链。
 
-原有 Bug Fix Native Checkout + Rondo Clone、Requirement 持久根仓 + Rondo Worktree 暂不退役。本方案不新增 Agent、Manager、Runtime、Metadata、Schema、Gate 或独立工作流。
+Bug Fix 与 Requirement 均使用 Native Checkout，不再通过 Rondo 创建业务工作树。本方案不新增 Agent、Manager、Runtime、Metadata、Schema、Gate 或独立工作流。
 
 ## 2. 角色与工作区
 
@@ -24,7 +24,7 @@
 | Wayfinder | 无；通过只读 MCP 取证 | 准入判断，不操作本地 Git |
 | Workitem Analyst | 按需 Native Checkout 根仓 | 编辑、校验 OpenSpec；通过既有 Analysis Complete 发布 |
 | Engineer | 按需 Native Checkout 根仓，再按批准 Scope Checkout 业务仓 | 读取批准 SHA、实现、验证、Commit、通过既有交付入口发布 |
-| Bug Fix Agent | 保持现有模式 | 本方案不强制迁移 |
+| Bug Fix Agent | 按需 Native Checkout 根仓与业务仓 | 缺陷诊断、修复、验证及 PR |
 
 ### 2.1 Project Resource 与 Scope
 
@@ -44,7 +44,7 @@
 # 从 Task workdir Checkout 根仓；使用命令返回的实际路径
 multica repo checkout <root-url> --ref main
 
-# 只读业务仓同样在 Task workdir 执行；获授权研发使用 rondo dev prepare
+# 只读与获授权研发业务仓均在 Task workdir 执行
 multica repo checkout <business-url> --ref <verified-base-ref>
 ```
 
@@ -93,7 +93,7 @@ Engineer 跨 Run 必须读取已批准的 `analysis.source.commit`；`dev.public
 
 Engineer 在 Task Branch 完成 Commit 后，Rondo 仅负责最小必要的**受控远端 Candidate 发布**：验证仓库身份、批准 Scope、远端分支、提交关系及候选 SHA；只允许不覆盖已发布变更的安全 Push，禁止 force push；并发前进或历史分叉时停止并保留现场。发布成功后回读 `feature/<tfs.id>` 实际 HEAD/SHA，由现有 `rondo dev pr-prep`、PR/TFS 流程继续消费。
 
-**兼容点**：当前 `rondo dev prepare --mode requirement` 假定根仓下有完整业务基础 Clone、为每个 TFS ID 创建 sibling Worktree，不能直接用于 Native Checkout。Native 模式不重复 Clone/Worktree；仅适配现有准备/候选发布入口所需的路径与分支前提。Native `dev git` 与 `pr prepare` 复用授权路径解析，以 `<task-workdir>/<repo_path>` 定位业务仓，不重写 PR 契约。
+**交付边界**：本地 Checkout 使用 Multica；远端 Candidate 及 PR 由 Rondo 受控交付。Native `dev git` 与 `pr prepare` 复用授权路径解析，以 `<task-workdir>/<repo_path>` 定位业务仓，不重写 PR 契约。
 
 ## 5. 最小 Spike 与实施门槛
 
@@ -106,7 +106,7 @@ Engineer 在 Task Branch 完成 Commit 后，Rondo 仅负责最小必要的**受
 | S3：Engineer Candidate | 一次新 Candidate、一次从已有 Candidate 续接，并模拟远端前进 | `feature/<tfs.id>` SHA 可回读；失败不覆盖远端或本地；PR Preparation 可消费 |
 | S4：启用前回归 | 在拟启用 Runtime 上验证 08-B/09 的批准、研发发布、PR 和必要失败路径 | 与现有 Engineering/Delivery 契约一致；未测部分明确标记，不能宣布完整 PASS |
 
-**实施范围**：仅当 Spike 复现必要冲突时，最小调整 `workspace-preparation`、相关准备提示词和 Rondo 的局部分支/路径兼容点；现有 08-A、08-B 独立问题、Git 发布算法、TFS/Gate/Metadata 不借此扩散。若 Native 行为或安全交接无法证实，保留现有工作区准备方式。
+**实施范围**：统一 `native-workspace` 准备方法，保留现有交付授权、Git 发布算法、TFS/Gate/Metadata；遇到不兼容 Checkout 保留现场并按实际异常处理。
 
 ## 6. 设计判断与风险
 
@@ -123,7 +123,7 @@ Engineer 在 Task Branch 完成 Commit 后，Rondo 仅负责最小必要的**受
 
 ### 相关实现与官方依据
 
-- 本项目：[workspace-preparation/SKILL.md](workspace-skills/workspace-preparation/SKILL.md)、[root-git.ts](../../tools/rondo/src/commands/runtime/root-git.ts)、[requirement-worktree.ts](../../tools/rondo/src/commands/dev/requirement-worktree.ts)、[pr-prep.ts](../../tools/rondo/src/commands/dev/pr-prep.ts)。
+- 本项目：[native-workspace/SKILL.md](skills/native-workspace/SKILL.md)、[root-git.ts](rondo/src/commands/runtime/root-git.ts)、[authorized-checkout.ts](rondo/src/commands/dev/authorized-checkout.ts)、[pr/prepare.ts](rondo/src/commands/pr/prepare.ts)。
 - Multica：[Project Resources](https://github.com/multica-ai/multica/blob/main/apps/docs/content/docs/project-resources.mdx)、[Runtime Repo Checkout](https://github.com/multica-ai/multica/blob/main/server/internal/service/builtin_skills/multica-platform/references/runtimes.md)、[CLI](https://github.com/multica-ai/multica/blob/main/server/cmd/multica/cmd_repo.go)、[Cache/Worktree](https://github.com/multica-ai/multica/blob/main/server/internal/daemon/repocache/cache.go)。
 
 **验收说明**：本文件为方案及预期验收标准。未执行真实 Multica Runtime Checkout、Rondo Build、测试或 PR/TFS 端到端验证。

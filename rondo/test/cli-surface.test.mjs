@@ -17,7 +17,7 @@ function runCli(args, env = {}) {
 const TREE = {
   change: ["resolve-identity"],
   analysis: ["validate", "publish", "read", "approve"],
-  dev: ["check-dispatch", "materialize", "git", "prepare", "publish"],
+  dev: ["check-dispatch", "materialize", "git", "publish"],
   bug: ["resume"],
   tfs: ["writeback", "materialize-tasks", "resolve-tasks", "reconcile-workitem"],
   pr: ["prepare", "materialize", "worktree", "reconcile-status", "create", "get", "list"],
@@ -46,9 +46,9 @@ test("顶层叶子 query:缺 --wiql exit 64,用法走 stderr,stdout 纯净", () 
   assert.ok(r.stderr.includes("--wiql"));
 });
 
-test("命令总数 = 43", () => {
+test("命令总数 = 42", () => {
   const total = Object.values(TREE).reduce((n, leaves) => n + leaves.length, 0) + 2 /* query + doctor */;
-  assert.equal(total, 43);
+  assert.equal(total, 42);
 });
 
 test("--version 输出 JSON:name/version/node/sea,exit 0", () => {
@@ -148,11 +148,12 @@ test("P0 退役独立进度与完成检查，研发命令不再接受 Change 参
     assert.ok(!(help.stdout + help.stderr).includes(command));
   }
   for (const args of [["change", "update-progress"], ["dev", "check-change"]]) assert.notEqual(runCli(args).status, 0, args.join(" "));
-  for (const command of ["prepare", "publish"]) {
+  assert.doesNotMatch(help.stdout + help.stderr, /\bprepare\b/);
+  for (const command of ["publish"]) {
     const help = runCli(["dev", command, "--help"]);
     assert.equal(help.status, 0);
     assert.doesNotMatch(help.stdout + help.stderr, /--change-ref/);
-    const args = ["dev", command, "--issue", "X", ...(command === "prepare" ? ["--repo", "biz"] : []), "--change-ref", "old"];
+    const args = ["dev", command, "--issue", "X", "--change-ref", "old"];
     const rejected = runCli(args);
     assert.notEqual(rejected.status, 0, args.join(" "));
     assert.match(rejected.stderr, /--change-ref/);

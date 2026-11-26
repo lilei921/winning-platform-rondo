@@ -15,8 +15,7 @@
     "requirement-analysis",
     "spec-preparation",
     "tfs-sync",
-    "native-workspace",
-    "workspace-preparation"
+    "native-workspace"
   ],
   "agents": [
     {

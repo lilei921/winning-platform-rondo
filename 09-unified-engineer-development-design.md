@@ -155,8 +155,8 @@ description: 根据已批准的 OpenSpec Change 完成软件实现、开发侧�
 # 按批准来源读取工程任务
 rondo analysis read --issue <issue> --file tasks.md
 
-# 准备获授权的研发仓库
-rondo dev prepare --workspace native --issue <issue> --repo <repo_id> --root-repo "<root>" --resource-ref <ref>
+# 在 Task workdir 中按 native-workspace 准备获授权的研发仓库
+multica repo checkout <business-url> --ref <verified-ref>
 
 # 发布已提交的研发工件
 rondo dev publish --issue <issue> --root-repo "<root>"
@@ -167,7 +167,7 @@ rondo pr materialize --issue <issue>
 
 `analysis read` 读取批准版本，不等于最新执行进度；Engineer 根据实际验证结果直接更新本地 `tasks.md` 的 checkbox，保持批准任务正文与编号不变。继续执行前核对当前已发布的工件，交付前完成受控发布与回读。
 
-通过 Rondo 核对批准来源与授权。只读工件和派发消息时不操作 Git。进入研发、需要常驻根仓时，通过 Rondo 准备根仓和业务工作区。研发完成后发布当前 Change 的研发工件，`rondo pr materialize` 内部执行 Completion Check。按当前可用的 Change 级 CLI 入口执行，不自行拼装不受支持的参数。
+通过 Rondo 核对批准来源与授权。只读工件和派发消息时不操作 Git。进入研发时，按需使用 native-workspace 和 Multica 原生 Checkout 准备根仓及业务工作区。研发完成后发布当前 Change 的研发工件，`rondo pr materialize` 内部执行 Completion Check。按当前可用的 Change 级 CLI 入口执行，不自行拼装不受支持的参数。
 
 所需入口不存在、参数无法确认或 Gate 为 FAIL / UNKNOWN 时停止；外部操作结果未知时先回读，不盲目重试或覆盖成果。
 
@@ -207,7 +207,6 @@ Workspace 路径、分支准备与根仓 Git 发布以 08-B 的运行契约为�
 | `analysis read` | 已支持 | 按获批 `analysis.source` 读取固定版本 Change 工件 |
 | 原生 Tasks 编辑 | Engineer 直接维护 checkbox | 真实完成后更新，保持任务正文和编号；进度由研发发布固定 SHA |
 | `requirement-guard` | 已实现独立新路径，不复用旧 `dev.dispatch` | 新 Change 级模式仅只读核对当前 Multica Actor / Run、Human Approval、Change、Repository Scope；不物化新 `dev.dispatch` |
-| `dev prepare` | Native 准备及旧 Worktree 入口 | 从 Issue 批准来源定位 Change，不需要显式 Change ID；保留 Bug 原行为 |
 | `dev publish` | 受控 Git 发布与远端回读 | 从 Issue 批准来源定位 Change，发布已提交的 `tasks.md` 与适用的 Design 细化，登记研发 SHA，保留获批分析 SHA。 |
 | `pr prepare` / `pr materialize` 内部完成检查 | 无独立 Change 完成检查入口 | Change 级检查真实 Candidate、Evidence、原生 Tasks 全量进度与 PR Preparation，不使用派发 Task 编号集合 |
 | `pr materialize` | 已实现新模式且旧路径独立 | 新模式在创建任何 PR 前整体校验 Completion、批准和实际有代码变更仓库的 Candidate / `pr_prep` 对账；支持远端 PR 描述，逐仓幂等恢复 |
@@ -270,7 +269,7 @@ Engineer 对获批 `tasks.md` 的全部 Implementation Tasks 和 PR 前必要的
 | Analysis Workspace / 规范基线 | Analyst 与 Engineer 复用 `runtime prepare-root`。项目级 Schema / Specs 基线按 08-B 核对，根仓不按 Issue 建 Worktree。 |
 | Analysis / Change Git 发布 | Requirement 分析通过 `analysis complete --mode requirement` 发布当前 Change 差异。分析来源记录实际远端分支及该次发布 SHA，获批后供 Engineer 跨 Runtime 读取。 |
 | Analysis 专业执行资产 | 保留 Workitem Analyst，聚焦需求分析与可实施的 OpenSpec；定向优化 `requirement-analysis`、`spec-preparation` 和 `analysis-completion`，不参与 TFS 子任务拆分与数量控制 |
-| Requirement `dev prepare` / `dev pr-prepare` | 按 08-B 使用 `feature/<tfs.id>` Worktree 及授权 Repository；Bug 与 Requirement 均采用同一 Candidate Branch 规则 |
+| Requirement Native Checkout / `pr prepare` | Multica 管理 Task Branch；Bug 与 Requirement 均使用 `feature/<tfs.id>` 远端 Candidate 规则 |
 | Change 级 Completion / Progress / Evidence | 从当前获批 `tasks.md` 核验应由研发完成的任务、Candidate 和 Evidence；原生编号仅定位 checkbox，不要求新 Evidence 携带派发任务数组；发布后可跨 Runtime 回读 |
 | `rondo pr materialize` 的新入口 | 创建任何 PR 前校验 Change 级完成、Human Approval、当前 Engineer Run 与实际修改仓库的完整 Candidate / PR Preparation；保留幂等恢复及旧入口行为 |
 | PR 描述与跨 Runtime | 从已 Push 的 Change 读取 PR 描述，不能仅依赖上一个 Runtime 的本机 `file:` 路径；保持已有远端 Finalize 机制 |

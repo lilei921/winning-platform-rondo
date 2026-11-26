@@ -11,8 +11,7 @@
     "pull-request": "1cbb0636-44cf-4a83-a401-199410075de5",
     "requirement-analysis": "8f4b09c3-2b46-42bd-98ea-1ce2ab6c1a21",
     "spec-preparation": "9258f32a-3351-4c4f-b39f-a4a1d2ec77c6",
-    "tfs-sync": "8dfb6ec3-3ffe-4fd8-bcf0-2203e038a1aa",
-    "workspace-preparation": "45232195-30eb-4c54-983a-67897bba06c5"
+    "tfs-sync": "8dfb6ec3-3ffe-4fd8-bcf0-2203e038a1aa"
   },
   "delivery_squad_id": "03665e95-a7bd-48f0-afe3-c0860ebac5fc",
   "project": "68b81377-601e-4d6c-84fd-122c05f0308f",
