@@ -16,7 +16,7 @@ function fixture(t) {
   writeFileSync(join(dir, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [frame]\n");
   writeFileSync(join(dir, "proposal.md"), "## Why\nProblem\n## What Changes\nFix\n");
   writeFileSync(join(dir, "tasks.md"), "- [ ] 1.1 Fix and verify\n");
-  const meta = { "tfs.id": "123", "tfs.type": "需求", ...analysisMetadataEntries("fixture-123", "intentional-change") };
+  const meta = { "tfs.id": "123", "tfs.type": "需求", ...analysisMetadataEntries("intentional-change") };
   return { root, dir, meta };
 }
 
@@ -41,8 +41,9 @@ test("historical advice and review fields do not influence either digest", t => 
   const f = fixture(t);
   const meta = { ...f.meta, "analysis.verify_agent.focus_refs": JSON.stringify(["review/missing.md"]), "analysis.ai_review.verdict": "NEEDS_REVISION" };
   assert.equal(changeEvidenceDigest(f.dir, meta), changeEvidenceDigest(f.dir, f.meta));
-  assert.equal(metadataEvidenceDigest(meta), metadataEvidenceDigest(f.meta));
-  assert.notEqual(metadataEvidenceDigest({ ...f.meta, "analysis.change_kind": "corrective" }), metadataEvidenceDigest(f.meta));
+  assert.notEqual(metadataEvidenceDigest(meta, "other-123"), metadataEvidenceDigest(meta, "fixture-123"));
+  assert.equal(metadataEvidenceDigest(meta, "fixture-123"), metadataEvidenceDigest(f.meta, "fixture-123"));
+  assert.notEqual(metadataEvidenceDigest({ ...f.meta, "analysis.change_kind": "corrective" }, "fixture-123"), metadataEvidenceDigest(f.meta, "fixture-123"));
 });
 
 test("reject symbolic links in actual contract files", { skip: process.platform === "win32" }, t => {

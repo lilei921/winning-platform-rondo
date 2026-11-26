@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
+const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
 const schemaSource = join(repoRoot, "openspec", "schemas");
 const requireCli = process.env.OPENSPEC_D1_REQUIRED === "1";
 const version = spawnOpenspec(["--version"], { encoding: "utf8", timeout: 20_000 });

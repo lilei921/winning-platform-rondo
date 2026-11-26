@@ -1,3 +1,4 @@
+import { registeredPrs } from "../pr/facts.js";
 /** Bug 开工授权不要求候选 Commit/Evidence，也不提前固定仓库 Scope。 */
 import { FailError, UnknownError } from "../../cli/errors.js";
 import type { IssueRecord } from "../../clients/multica.js";
@@ -70,14 +71,11 @@ export function assertBugStart(client: MulticaClient, issue: IssueRecord, repoKe
   if (!Number.isSafeInteger(id) || id <= 0) throw new FailError("Bug tfs.id 无效");
   assertBugAgentAssignment(issue.assignee_id, client.run(["agent", "list", ...client.ws(), "--output", "json"], "核验 Bug Fix 指派", { transient: true }));
   if (!["todo", "in_progress"].includes(issue.status ?? "")) throw new FailError("Bug 当前状态不允许开工");
-  if (md["analysis.change_ref"] || md["analysis.gate.result"] ||
+  if (md["analysis.source"] !== undefined || md["analysis.gate.result"] ||
       md["finalize.pending"] || md["delivery.tfs_written"] === "true") {
     throw new FailError("存在冲突的交付或收口事实，不能准备业务仓");
   }
-  let prs: unknown;
-  try { prs = JSON.parse(md.current_pr ?? "[]"); } catch { throw new UnknownError("current_pr 非法，停止准备"); }
-  if (!Array.isArray(prs)) throw new UnknownError("current_pr 必须是数组");
-  if (prs.length) throw new FailError("已有当前 PR，需先完成或受控返工");
+  if (registeredPrs(md.pr).length) throw new FailError("已有当前 PR，需先完成或受控返工");
   if (md["bug.required_repos"] && !requiredBugRepos(md["bug.required_repos"]).includes(repoKey)) throw new FailError("仓库超出已固定 Bug Scope");
   return id;
 }

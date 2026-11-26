@@ -117,11 +117,10 @@ process.exit(r.status ?? 1);
   result(run(undefined, {}, join(dir, 'missing.json')), 3);
   assert.deepEqual(state(), initial);
 
-  const failedWrite = result(run(JSON.stringify(evidence), { MOCK_FAIL_METADATA_KEY: 'bug.delivery' }), 3);
+  const failedWrite = result(run(JSON.stringify(evidence), { MOCK_FAIL_METADATA_KEY: 'pr' }), 3);
   assert.match(failedWrite.reason, /injected metadata set failure/);
   assert.deepEqual(JSON.parse(state().issues['I-1'].metadata['bug.required_repos']), ['biz']);
-  assert.equal(state().issues['I-1'].metadata['bug.delivery'], undefined);
-  assert.equal(state().issues['I-1'].metadata.pr_prep, undefined);
+  assert.equal(state().issues['I-1'].metadata['pr'], undefined);
   writeFileSync(callsPath, '');
   const before = readdirSync(hub).sort();
   const commandEvidence = { ...evidence, validation: { summary: '定向测试范围', evidence_refs: evidence.validation.evidence_refs, command: [process.execPath, '-e', 'process.exit(0)'] } };
@@ -134,28 +133,24 @@ process.exit(r.status ?? 1);
   assert.ok(!readdirSync(dir).includes('validation-ran'));
   const failing={...commandEvidence,validation:{...commandEvidence.validation,command:[process.execPath,'-e','process.exit(9)']}};
   result(run(JSON.stringify(failing)),2);
-  assert.equal(state().issues['I-1'].metadata.pr_prep,undefined);
-  assert.equal(JSON.parse(state().issues['I-1'].metadata['bug.delivery'])[0].local_validation.result,'FAIL');
-  assert.equal(JSON.parse(state().issues['I-1'].metadata['bug.delivery'])[0].local_validation.exit_code,9);
+  assert.equal(JSON.parse(state().issues['I-1'].metadata['pr'])[0].local_validation.result,'FAIL');
+  assert.equal(JSON.parse(state().issues['I-1'].metadata['pr'])[0].local_validation.exit_code,9);
   result(run(JSON.stringify(evidence)),2);
   assert.equal(result(run(JSON.stringify(commandEvidence)), 0).ready_for_pr, true);
-  assert.deepEqual(JSON.parse(state().issues['I-1'].metadata['bug.delivery'])[0].local_validation, {
+  assert.deepEqual(JSON.parse(state().issues['I-1'].metadata['pr'])[0].local_validation, {
     ...commandEvidence.validation, result: 'PASS', exit_code: 0, candidate_commit: sha, source: 'rondo pr prepare',
   });
   const preparedState=state();
   const multi=state();
   const multiMd=multi.issues['I-1'].metadata;
-  const siblingPrep={...JSON.parse(multiMd.pr_prep)[0],repo_key:'sibling',repo_url:'http://tfs.test/tfs/C/P/_git/sibling'};
-  const siblingDelivery={...JSON.parse(multiMd['bug.delivery'])[0],repo_key:'sibling'};
+  const sibling={...JSON.parse(multiMd.pr)[0],repo_key:'sibling',repo_url:'http://tfs.test/tfs/C/P/_git/sibling'};
   multiMd['bug.required_repos']=JSON.stringify(['biz','sibling']);
-  multiMd.pr_prep=JSON.stringify([...JSON.parse(multiMd.pr_prep),siblingPrep]);
-  multiMd['bug.delivery']=JSON.stringify([...JSON.parse(multiMd['bug.delivery']),siblingDelivery]);
+  multiMd.pr=JSON.stringify([...JSON.parse(multiMd.pr),sibling]);
   writeFileSync(statePath,JSON.stringify(multi));
   result(run(JSON.stringify(failing)),2);
   const failedMd=state().issues['I-1'].metadata;
-  assert.deepEqual(JSON.parse(failedMd.pr_prep),JSON.parse(multiMd.pr_prep));
-  assert.equal(JSON.parse(failedMd['bug.delivery']).find(x=>x.repo_key==='biz').local_validation.result,'FAIL');
-  assert.deepEqual(JSON.parse(failedMd['bug.delivery']).find(x=>x.repo_key==='sibling'),siblingDelivery);
+  assert.equal(JSON.parse(failedMd['pr']).find(x=>x.repo_key==='biz').local_validation.result,'FAIL');
+  assert.deepEqual(JSON.parse(failedMd['pr']).find(x=>x.repo_key==='sibling'),sibling);
   assert.equal(failedMd['bug.required_repos'],multiMd['bug.required_repos']);
   result(run(JSON.stringify(evidence)),2);
   assert.equal(result(run(JSON.stringify(commandEvidence)),0).ready_for_pr,true);
@@ -164,15 +159,19 @@ process.exit(r.status ?? 1);
   assert.equal(completed.ready_for_pr, true);
   const md = state().issues['I-1'].metadata;
   assert.deepEqual(JSON.parse(md['bug.required_repos']), ['biz']);
-  assert.deepEqual(JSON.parse(md['bug.delivery']), [{
-    repo_key: 'biz', source_branch: 'feature/12', target_branch: 'main', candidate_commit: sha, tfs_id: 12,
-    root_cause: evidence.root_cause, expected_behavior: evidence.expected_behavior, actual_behavior: evidence.actual_behavior,
-    fix_summary: evidence.fix_summary, regression: evidence.regression, local_validation: evidence.validation, code_review: {...evidence.code_review, candidate_commit:sha},
-  }]);
-  assert.equal(JSON.parse(md.pr_prep)[0].candidate_commit, sha);
-  assert.equal(JSON.parse(md.pr_prep)[0].repo_url, repoUrl);
-  assert.equal(JSON.parse(md.pr_prep)[0].target_branch, 'main');
-  assert.equal(JSON.parse(md.pr_prep)[0].description, evidence.description);
+  const record=JSON.parse(md.pr)[0];
+  assert.equal(record.repo_key,'biz');
+  assert.equal(record.tfs_id,undefined);
+  assert.equal(record.blockers,undefined);
+  assert.equal(record.pr_id,undefined);
+  assert.deepEqual(record.root_cause,evidence.root_cause);
+  assert.deepEqual(record.regression,evidence.regression);
+  assert.deepEqual(record.local_validation,evidence.validation);
+  assert.deepEqual(record.code_review,{...evidence.code_review,candidate_commit:sha});
+  assert.equal(JSON.parse(md.pr)[0].candidate_commit, sha);
+  assert.equal(JSON.parse(md.pr)[0].repo_url, repoUrl);
+  assert.equal(JSON.parse(md.pr)[0].target_branch, 'main');
+  assert.equal(JSON.parse(md.pr)[0].description, evidence.description);
   assert.equal(md['analysis.change_kind'], undefined);
   const calls = readFileSync(callsPath, 'utf8').trim().split('\n').map(line => JSON.parse(line));
   assert.ok(calls.every(a => !a.some(x => /attachment|upload/.test(x))));

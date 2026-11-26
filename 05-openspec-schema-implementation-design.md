@@ -429,7 +429,7 @@ resolve
 → 使用 OpenSpec 1.14.2 创建指定 schema 的 Change
 → 回读 .openspec.yaml / status
 → 校验 change id + schema
-→ 写入 Multica analysis.change_ref
+→ 发布 Multica analysis.source（包含 change_ref）
 → 回读确认
 ```
 
@@ -752,10 +752,10 @@ OpenSpec Native Verify
 执行规则：
 
 ```text
-verify_agent.required = true
+analysis.human_approval.verify_agent_required = true
 → Verify Agent 在 Independent Verification 中执行或复用当前候选版本的有效 Native Verify 结果
 
-verify_agent.required = false
+analysis.human_approval.verify_agent_required = false
 → 默认不强制 Native Verify
 → 仅当 Project / Change Contract 明确要求，或 Engineer 需要 Change-level consistency audit 时按需执行一次
 ```
@@ -1199,11 +1199,11 @@ OpenSpec != 1.14.2
 普通 Change-level 任务 `3.1` 与最终 E2E 行为对应。
 
 ```text
-verify_agent.required = false
+analysis.human_approval.verify_agent_required = false
 → 3.1 assigned to Engineer
 → Engineer executes E2E using test/CI/runtime tooling
 
-verify_agent.required = true
+analysis.human_approval.verify_agent_required = true
 + 3.1 overlaps Independent Verification Focus
 → 3.1 may be assigned to Verify Agent
 → one execution may satisfy both 3.1 completion and the overlapping independent verification scope
@@ -1219,11 +1219,11 @@ verify_agent.required = true
 ## Case O（场景 O）— OpenSpec Native Verify Execution（OpenSpec 原生验证执行）
 
 ```text
-verify_agent.required = true
+analysis.human_approval.verify_agent_required = true
 → Verify Agent executes or reuses valid current-candidate `/opsx:verify`
 → then performs required independent Runtime / Integration / E2E checks
 
-verify_agent.required = false
+analysis.human_approval.verify_agent_required = false
 → no default mandatory `/opsx:verify`
 → run once only when Project / Change Contract explicitly requires it or a Change-level consistency audit is needed
 ```
@@ -1310,7 +1310,7 @@ Reference:
 - 明确 Verify Agent “可以执行 Verification Task，但不拥有 Verification Task 的定义权”；Task Contract 始终由 OpenSpec `tasks.md` 持有；
 - 当 Verify Agent 执行的 Change-level Verification Task 同时覆盖 Independent Verification Focus 时，允许一次执行同时满足 Task Completion 与对应独立验收范围，避免机械重复 E2E / Integration；
 - Task Progress 更新从 Engineer-only 表述收敛为 assigned executor，可由 Verify Agent 通过同一受控机制完成其 verification task_refs；
-- `/opsx:verify` 明确为可选 Change-level Artifact-to-Implementation Verification：`verify_agent.required=true` 时由 Verify Agent 执行或复用当前候选版本结果；`required=false` 时默认不强制，仅在 Project / Change Contract 明确要求或需要 Change-level consistency audit 时执行；
+- `/opsx:verify` 明确为可选 Change-level Artifact-to-Implementation Verification：`analysis.human_approval.verify_agent_required=true` 时由 Verify Agent 执行或复用当前候选版本结果；`required=false` 时默认不强制，仅在 Project / Change Contract 明确要求或需要 Change-level consistency audit 时执行；
 - Related baseline 更新到 Delivery、Analysis、Engineer、Guideline。
 
 ---

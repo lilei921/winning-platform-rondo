@@ -41,7 +41,7 @@ PR Status Sync → PR 终态核实 → Archive → TFS Writeback → Issue Done
 | 内容 | Owner / 权威来源 | 目标约束 |
 | --- | --- | --- |
 | Requirement / Scenario、Proposal / Specs / Design / `tasks.md`、研发验证依据 | OpenSpec Change | 当前 Change 是唯一工程工作单元，Engineer 读取所有适用研发任务 |
-| Human Approval、当前 Agent / Run、`current_pr`、Issue 状态 | Multica | Lead 使用原生 `@mention` 派发；新路线不新增 `dev.dispatch` 物化 |
+| Human Approval、当前 Agent / Run、`pr`、Issue 状态 | Multica | Lead 使用原生 `@mention` 派发；复用当前 Issue 原生 Run |
 | Repository Identity 与授权范围 | 已批准 `.openspec.yaml` 的 `x-repositories` + Rondo Registry | Scope 是授权上限；Engineer 决定实际修改仓库，Rondo 只校验身份和越权 |
 | 当前仓库真实实现/构建/测试/CI | 业务 Git Repository | Engineer 以当前工作树和 Candidate 为准，不按仓库类别猜测命令 |
 | Local Validation、Code Review、实现/PR 文案语义 | Engineer | 仅在批准边界内自主做技术决策 |
@@ -206,11 +206,11 @@ Workspace 路径、分支准备与根仓 Git 发布以 08-B 的运行契约为�
 | `runtime prepare-root` | 已有受控 TFS Git Fetch 入口，项目分支准备逻辑待修复 | Analysis / Development 共用常驻根仓准备。按项目配置的分支准备并 Fetch，安全时快进。历史分叉时保留本地提交和工作区，Engineer 仍按获批 SHA 读取。 |
 | `analysis read` | 已支持 | 按获批 `analysis.source` 读取固定版本 Change 工件 |
 | 原生 Tasks 编辑 | Engineer 直接维护 checkbox | 真实完成后更新，保持任务正文和编号；进度由研发发布固定 SHA |
-| `requirement-guard` | 已实现独立新路径，不复用旧 `dev.dispatch` | 新 Change 级模式仅只读核对当前 Multica Actor / Run、Human Approval、Change、Repository Scope；不物化新 `dev.dispatch` |
+| `requirement-guard` | 当前 Requirement 授权入口 | 新 Change 级模式仅只读核对当前 Multica Actor / Run、Human Approval、Change、Repository Scope |
 | `dev prepare` | Native 准备及旧 Worktree 入口 | 从 Issue 批准来源定位 Change，不需要显式 Change ID；保留 Bug 原行为 |
 | `dev publish` | 受控 Git 发布与远端回读 | 从 Issue 批准来源定位 Change，发布已提交的 `tasks.md` 与适用的 Design 细化，登记研发 SHA，保留获批分析 SHA。 |
 | `pr prepare` / `pr materialize` 内部完成检查 | 无独立 Change 完成检查入口 | Change 级检查真实 Candidate、Evidence、原生 Tasks 全量进度与 PR Preparation，不使用派发 Task 编号集合 |
-| `pr materialize` | 已实现新模式且旧路径独立 | 新模式在创建任何 PR 前整体校验 Completion、批准和实际有代码变更仓库的 Candidate / `pr_prep` 对账；支持远端 PR 描述，逐仓幂等恢复 |
+| `pr materialize` | 已实现新模式且旧路径独立 | 新模式在创建任何 PR 前整体校验 Completion、批准和实际有代码变更仓库的 Candidate / `pr` 对账；支持远端 PR 描述，逐仓幂等恢复 |
 
 可复用现有确定性实现，但新旧执行路径必须显式区分，不能靠缺失 `task_refs` 自动推断新模式。此表用于实施对齐，不作为 `SKILL.md` 的历史说明或额外执行流程。
 
@@ -219,8 +219,8 @@ Workspace 路径、分支准备与根仓 Git 发布以 08-B 的运行契约为�
 ### 4.1 Multica 原生派发与授权
 
 - 正常启动只使用当前 Issue 上的 `@Engineer(change_ref)`；Issue、Actor、Run 由 Multica 提供，不在消息中附加 Task 编号或仓库清单。
-- **新路线不创建额外 `dev.dispatch`**，也不要求 Lead 先执行 Rondo Materialize；Lead 确认已获 Human Approval 后直接通过原生 `@mention` 派发。
-- Rondo 仅在准备工作区、发布成果、Completion 与 PR 等关键操作前，校验当前 Multica Run / Engineer、`analysis.change_ref`、Approval 来源及获批 `.openspec.yaml` 的 `x-repositories`。无法确认时停止。
+- **复用 Multica 原生协作**；Lead 确认已获 Human Approval 后直接通过原生 `@mention` 派发。
+- Rondo 仅在准备工作区、发布成果、Completion 与 PR 等关键操作前，校验当前 Multica Run / Engineer、`analysis.source.change_ref`、Approval 来源及获批 `.openspec.yaml` 的 `x-repositories`。无法确认时停止。
 - 同一项目向所有 Agent 下发相同的 `RONDO_WORKSPACE_BRANCH`。Lead 派发和只读 Issue 均不操作 Git。Engineer 需要准备常驻根仓时才执行 08-B 的保存、切换与同步规则。显式 `--root-repo` 优先于 `RONDO_WORKSPACE_PATH`，项目分支配置优先于旧 `--branch`。业务仓复用基础仓及 `feature/<TFS ID>` Worktree，PR 目标仍由子仓配置决定，默认 `dev`。
 - `tasks.md` 负责定义全部工程任务与当前 checkbox。Repository Scope 是授权上限；Engineer 判断实际需要修改的仓库，Rondo 校验候选与 PR 事实，不做业务语义推断。
 
@@ -230,7 +230,7 @@ Engineer 对获批 `tasks.md` 的全部 Implementation Tasks 和 PR 前必要的
 
 **新路线的 `tasks.md` checkbox 只包含 PR 创建前应完成的研发和开发侧验证任务。** Analysis 应在任务编写时明确这条边界：能够在单 Task 内验证的行为直接写入该 Task，仅组合后的行为确有必要时另列 Change-level Verification Task。
 
-**本期只实施 PR 前研发验证**：Engineer 完成开发侧必要验证；PR 后 Independent Verify 属于后续独立交付能力，本期不实现新的 Verify / Merge Gate 自动闭环。不得把 PR 后才可能完成的独立验收或 CI 强制写成 PR 前 checkbox；`verify_agent.required=true` 保留既有安全阻断，不视为已可自动完成。
+**本期只实施 PR 前研发验证**：Engineer 完成开发侧必要验证；PR 后 Independent Verify 属于后续独立交付能力，本期不实现新的 Verify / Merge Gate 自动闭环。不得把 PR 后才可能完成的独立验收或 CI 强制写成 PR 前 checkbox；`analysis.human_approval.verify_agent_required=true` 保留既有安全阻断，不视为已可自动完成。
 
 技术栈由业务仓真实文件决定：
 
@@ -252,21 +252,21 @@ Engineer 对获批 `tasks.md` 的全部 Implementation Tasks 和 PR 前必要的
 
 ### 4.4 PR 创建与本期交付边界
 
-- Engineer 对**实际有代码变更**的授权业务仓分别准备 Branch、Candidate Commit、`pr_prep` 和技术描述；Repository Scope 内未修改的仓库不要求空 Commit 或空 PR。
+- Engineer 对**实际有代码变更**的授权业务仓分别准备 Branch、Candidate Commit、`pr` 和技术描述；Repository Scope 内未修改的仓库不要求空 Commit 或空 PR。
 - Rondo 创建任何 PR 前，先核对当前 Run / Approval、Change 级完成结果，并确认 Evidence 声明的所有实际代码变更仓库都有对应 Candidate / PR Preparation，且均在批准 Scope 内；不从自然语言推断必须修改的仓库。
-- Engineer 在原 Run 调用 `rondo pr materialize` 创建或复用所需 PR，登记 `current_pr` 并流转 `in_review`，不需要第二次 Lead 派发。
-- 本期自动闭环仅覆盖 `verify_agent.required=false` 的正常 PR Review / Merge；`required=true` 不实施新的 Verify 或合并阻断能力，沿用已有禁止无 PASS 自动 Finalize 的安全规则，后续单独处理。
+- Engineer 在原 Run 调用 `rondo pr materialize` 创建或复用所需 PR，登记 `pr` 并流转 `in_review`，不需要第二次 Lead 派发。
+- 本期自动闭环仅覆盖 `analysis.human_approval.verify_agent_required=false` 的正常 PR Review / Merge；`required=true` 不实施新的 Verify 或合并阻断能力，沿用已有禁止无 PASS 自动 Finalize 的安全规则，后续单独处理。
 - 无代码变更的合法 Change 不创建空 PR：Engineer 说明结果，交 Lead / Human 决定后续处理；本期不新增自动无 PR Finalize。
-- 多仓 PR 部分成功或 API 回执不明时先回读 TFS PR 与 `current_pr`，只补未完成项，不重复创建。
+- 多仓 PR 部分成功或 API 回执不明时先回读 TFS PR 与 `pr`，只补未完成项，不重复创建。
 
 ## 5. 新 Rondo 契约与旧路径隔离
 
-**新 Change 级执行路径不以修改旧 Agent / Skill 为代价。** 现有 Rondo 的 `--task-refs`、`dev.dispatch.task_refs` 等契约仍服务原 Backend / Frontend Engineer 路线。新 `Engineer` 采用显式可区分的 Change 级入口或模式，不以“缺少 `task_refs`”隐式推断新路线；共享 Git、TFS、PR 客户端与幂等能力可以复用，旧入口及 Bug Fix 路线必须保持可用。
+Requirement 使用统一 Engineer Change 级入口，复用 Git、TFS、PR 客户端及幂等能力；Bug Fix 保留独立专业契约。
 
 | 位置 | 新路线的最小要求 |
 | --- | --- |
 | Engineer / Workspace Provisioning | 在 01 Canonical Name 中增补新 `Engineer` 正式 Agent，独立注册并绑定 `change-development`。项目分支配置下发给每个 Agent，按 §4.1 的任务范围生效。 |
-| Change 级 Guard（不新增 Dispatch） | Lead 原生 `@Engineer(change_ref)`；Rondo 只读核对当前 Actor / Run、Approval、Change 和 Scope，不创建新 `dev.dispatch`；旧 Dispatch Contract 保持有效 |
+| Change 级 Guard（不新增 Dispatch） | Lead 原生 `@Engineer(change_ref)`；Rondo 只读核对当前 Actor / Run、Approval、Change 和 Scope，不创建额外派发事实 |
 | Analysis Workspace / 规范基线 | Analyst 与 Engineer 复用 `runtime prepare-root`。项目级 Schema / Specs 基线按 08-B 核对，根仓不按 Issue 建 Worktree。 |
 | Analysis / Change Git 发布 | Requirement 分析通过 `analysis complete --mode requirement` 发布当前 Change 差异。分析来源记录实际远端分支及该次发布 SHA，获批后供 Engineer 跨 Runtime 读取。 |
 | Analysis 专业执行资产 | 保留 Workitem Analyst，聚焦需求分析与可实施的 OpenSpec；定向优化 `requirement-analysis`、`spec-preparation` 和 `analysis-completion`，不参与 TFS 子任务拆分与数量控制 |

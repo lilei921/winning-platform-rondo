@@ -4,7 +4,7 @@ import { markLeafExecuted } from "../../cli/output.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { resolveMulticaRuntime } from "../../clients/runtime-context.js";
 import { parseAnalysisSource, readAnalysisArtifact, readAnalysisSource, sameAnalysisSource } from "./source.js";
-import { assertProjectedVerifyDecision, readApprovedVerifyDecision, parseWaivedTasks } from "../delivery/verify-decision.js";
+import { readApprovedVerifyDecision, parseWaivedTasks } from "../delivery/verify-decision.js";
 import { readTaskProgress, assertWaiverRefs } from "../dev/change-completion.js";
 
 interface ApprovalArgs {
@@ -17,9 +17,8 @@ interface ApprovalArgs {
 type ApprovalClient = Pick<MulticaClient, "getIssue" | "listComments" | "setMetadata" | "setStatusNoStart">;
 
 const APPROVAL = "analysis.human_approval";
-const VERIFY = "verify_agent.required";
-const FACTS = ["tfs.type", "tfs.id", "analysis.gate.result", "analysis.change_ref",
-  "analysis.source", APPROVAL, VERIFY, "dev.dispatch", "finalize.pending", "delivery.tfs_written"];
+const FACTS = ["tfs.type", "tfs.id", "analysis.gate.result",
+  "analysis.source", APPROVAL, "finalize.pending", "delivery.tfs_written"];
 
 /** Lead interprets the Human decision; CLI records and validates its exact source. */
 export async function recordApproval(client: ApprovalClient, args: ApprovalArgs, readArtifact = readAnalysisArtifact) {
@@ -31,7 +30,7 @@ export async function recordApproval(client: ApprovalClient, args: ApprovalArgs,
       !["analysis_review", "todo", "in_progress"].includes(issue.status ?? "")) {
     throw new FailError("当前 Issue 不是可登记批准的 Requirement");
   }
-  if (md["analysis.gate.result"] !== "PASS" || md["dev.dispatch"] !== undefined ||
+  if (md["analysis.gate.result"] !== "PASS" ||
       md["finalize.pending"] || md["delivery.tfs_written"] === "true") {
     throw new FailError("Analysis Gate 未通过或存在不允许批准的交付事实");
   }
@@ -96,17 +95,15 @@ export async function recordApproval(client: ApprovalClient, args: ApprovalArgs,
     return latest;
   };
   // Validate the exact record with the same reader used by downstream gates.
-  assertProjectedVerifyDecision({...md, [APPROVAL]: saved, [VERIFY]: String(required)}, args.commentId);
+  readApprovedVerifyDecision({...md, [APPROVAL]: saved}, args.commentId);
   let changed = false;
   fresh();
-  for (const [field, value] of [[APPROVAL, saved], [VERIFY, String(required)]]) {
-    if (expected[field] !== value) {
-      client.setMetadata(issue.id, field, value);
-      expected[field] = value;
-      changed = true;
-    }
+  if (expected[APPROVAL] !== saved) {
+    client.setMetadata(issue.id, APPROVAL, saved);
+    expected[APPROVAL] = saved;
+    changed = true;
   }
-  assertProjectedVerifyDecision(fresh().metadata ?? {}, args.commentId);
+  readApprovedVerifyDecision(fresh().metadata ?? {}, args.commentId);
   if (status === "analysis_review") {
     client.setStatusNoStart(issue.id, "in_progress");
     status = "in_progress";

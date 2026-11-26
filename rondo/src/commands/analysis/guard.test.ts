@@ -22,10 +22,10 @@ test("historical Human Approval does not permanently prevent authorized reanalys
 });
 
 test("complete reuses identical review facts without replaying delivery writes", () => {
-  const facts = { "analysis.route": "bug-fix", "analysis.change_ref": "fix-123" };
+  const facts = { "analysis.route": "bug-fix", "analysis.source": "fix-123" };
   assert.equal(assertAnalysisWritable({ status: "analysis_review" }, facts, facts), false);
   assert.throws(() => assertAnalysisWritable(
-    { status: "analysis_review" }, facts, { ...facts, "analysis.change_ref": "stale-123" },
+    { status: "analysis_review" }, facts, { ...facts, "analysis.source": "stale-123" },
   ));
   assert.throws(() => assertAnalysisWritable({ status: "analysis_review" }, facts));
 });

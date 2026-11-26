@@ -56,7 +56,7 @@ function fixture(t, requirement = true, native = false, commitChange = true) {
   } }));
   const metadata = {
     "tfs.type": requirement ? "需求" : "Bug", "tfs.id": "261056",
-    "analysis.change_kind": "corrective", "analysis.change_ref": CHANGE,
+    "analysis.change_kind": "corrective",
   };
   const statePath = join(home, "state.json");
   writeFileSync(statePath, JSON.stringify({ status: "in_progress", metadata }));
@@ -131,7 +131,7 @@ test("Preview → Complete without Stage: final Gate and fixed Git Contract; no 
   f.setState({ ...before, metadata: { "tfs.type": before.metadata["tfs.type"], "tfs.id": before.metadata["tfs.id"] } });
   const preview = f.gate();
   assert.equal(preview.exit, 0, JSON.stringify(preview));
-  assert.equal(preview.body.metadata_digest, metadataEvidenceDigest(before.metadata));
+  assert.equal(preview.body.metadata_digest, metadataEvidenceDigest(before.metadata, CHANGE));
   assert.equal(f.state().metadata["analysis.change_ref"], undefined);
   assert.equal(preview.body.change_digest, changeEvidenceDigest(f.change, before.metadata, undefined, true));
   assert.equal(existsSync(join(f.change, "logs", "analysis-gate-result.json")), false);
@@ -628,7 +628,6 @@ test("Native Analysis recovers a lost source write on the original Resource with
 test("Current Change replaces stale identity; historical advice is ignored, validate is read-only", t => {
   const f = fixture(t);
   const old = f.state();
-  old.metadata["analysis.change_ref"] = "stale-change";
   old.metadata["analysis.verify_agent.focus_refs"] = JSON.stringify(["./missing.md"]);
   old.metadata["analysis.ai_review.verdict"] = "APPROVED";
   f.setState(old);
@@ -636,7 +635,8 @@ test("Current Change replaces stale identity; historical advice is ignored, vali
   assert.deepEqual(f.state(), old);
   const result = f.complete();
   assert.equal(result.exit, 0, JSON.stringify(result));
-  assert.equal(f.state().metadata["analysis.change_ref"], CHANGE);
+  assert.equal(JSON.parse(f.state().metadata["analysis.source"]).change_ref, CHANGE);
+  assert.equal(f.state().metadata["analysis.change_ref"], undefined);
   assert.equal(f.state().metadata["analysis.change_kind"], "corrective");
   assert.equal(f.state().metadata["analysis.ai_review.verdict"], "APPROVED");
   assert.deepEqual(result.body.analysis_source, JSON.parse(f.state().metadata["analysis.source"]));

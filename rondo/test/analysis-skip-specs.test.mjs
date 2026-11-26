@@ -13,11 +13,11 @@ const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
 const MOCK = fileURLToPath(new URL("./mock-multica.cjs", import.meta.url));
 const requireCli = process.env.OPENSPEC_D1_REQUIRED === "1";
 const version = spawnOpenspec(["--version"], { encoding: "utf8", timeout: 20_000 });
-const usable = !version.error && version.status === 0 && version.stdout.trim() === "1.13.2";
+const usable = !version.error && version.status === 0 && version.stdout.trim() === "1.14.2";
 if (requireCli) {
   assert.equal(version.error, undefined);
   assert.equal(version.status, 0, "Pinned OpenSpec CLI not installed");
-  assert.equal(version.stdout.trim(), "1.13.2");
+  assert.equal(version.stdout.trim(), "1.14.2");
 }
 
 function fixture(t, { skip = false, schema = "intentional-change", estimate = true } = {}) {
@@ -46,7 +46,7 @@ function fixture(t, { skip = false, schema = "intentional-change", estimate = tr
     status: "in_progress",
     metadata: {
       "tfs.type": "需求", "tfs.id": "1234",
-      "analysis.change_kind": schema === "corrective-change" ? "corrective" : "intentional", "analysis.change_ref": "d1-internal-1234",
+      "analysis.change_kind": schema === "corrective-change" ? "corrective" : "intentional",
     },
   }));
   chmodSync(MOCK, 0o755);
@@ -90,7 +90,7 @@ test("D3-A: legal native skip_specs does not require Delta Specs", { skip: !usab
   assert.match(r.body.change_digest, /^[a-f0-9]{64}$/);
   assert.equal(r.body.change_digest, changeEvidenceDigest(f.change, JSON.parse(readFileSync(join(f.root, "state.json"), "utf8")).metadata));
   assert.equal(r.body.metadata_digest,
-    metadataEvidenceDigest(JSON.parse(readFileSync(join(f.root, "state.json"), "utf8")).metadata));
+    metadataEvidenceDigest(JSON.parse(readFileSync(join(f.root, "state.json"), "utf8")).metadata, "d1-internal-1234"));
   assert.equal(existsSync(join(f.change, "logs", "analysis-gate-result.json")), false);
   assert.equal(r.code, 0, JSON.stringify(r.body));
 });

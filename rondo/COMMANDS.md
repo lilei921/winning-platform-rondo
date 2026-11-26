@@ -33,11 +33,10 @@ rondo doctor --help
 | --- | --- | --- |
 | `change` | `resolve-identity` | Change 身份解析 |
 | `analysis` | `validate`、`publish`、`read`、`approve` | 分析事实、Gate、审核提交、工件读取和批准登记 |
-| `dev` | `materialize`、`prepare`、`check-dispatch`、`git`、`publish` | 研发准备、Git、发布及派发 |
-| `bug` | `pr-prepare`、`git`、`resume` | 独立 TFS Bug 修复交付 |
-| `tfs` | `writeback`、`materialize-tasks`、`resolve-tasks`、`reconcile-workitem` | TFS 工作项同步与交付回写 |
-| `pr` | `prepare`、`materialize`、`worktree`、`reconcile-status`、`create`、`get`、`list` | PR 准备、创建、查询、状态对账及 Worktree |
-| `delivery` | `admission`、`route-decision`、`finalize` | 准入交接、人工决策路由与交付收口 |
+| `dev` | `prepare`、`git`、`publish` | 研发准备、Git 与发布 |
+| `tfs` | `writeback`、`reconcile-workitem` | TFS 工作项同步与交付回写 |
+| `pr` | `prepare`、`materialize`、`resume`、`worktree`、`reconcile-status`、`create`、`get`、`list` | PR 准备、创建、查询、状态对账及 Worktree |
+| `delivery` | `admission`、`finalize` | 准入交接与交付收口 |
 | `workspace` | `provision`、`sync`、`migrate-repo-keys`、`check-daemon` | Workspace 资源供给、同步及检查 |
 | `runtime` | `get-context`、`resolve-root-repo`、`check-checkout`、`prepare-root` | 当前 Run 上下文查询、根仓库就绪检查及准备 |
 | `openspec` | `install` | 安装随包分发的 OpenSpec Schema 到用户全局目录 |
@@ -85,8 +84,6 @@ Requirement 的 `analysis publish` 和 `dev publish` 使用 Git 2.45 或更高�
 ### 4.1 `rondo dev`
 
 ```bash
-rondo dev materialize --config <repo-registry.json> --issue <KEY> --change-ref <ref> --task-refs <1.1,1.2> --engineer-id <uuid> --approved-comment-ref <uuid> [--projection parent|sub-issue] [--depends-on <issue-key>] [--activate] [--root-repo <path>]
-rondo dev check-dispatch --config <repo-registry.json> --issue <KEY> --task-refs <1.1,1.2> [--change-ref <ref>] [--engineer-id <uuid>]
 rondo dev git --operation fetch|push --issue <KEY> --repo <repo_id> --root-repo <path>
 rondo dev prepare --workspace native --issue <KEY> --repo <repo_id> --root-repo <path> [--resource-ref <branch>]
 rondo dev prepare --mode requirement --config <repo-registry.json> --issue <KEY> --repo <repo_key> [--root-repo <path>]
@@ -95,23 +92,9 @@ rondo dev publish --issue <KEY> [--root-repo <path>] [--minor-design]
 
 | 命令 | 功能 |
 | --- | --- |
-| `dev materialize` | 将已确定的 Task Set、Engineer 和依赖关系物化为研发派发事实，可选 Parent / Sub-Issue 投影 |
-| `dev check-dispatch` | 只读核对任务分工、当前有效派发和工程师身份 |
 | `dev git` | 受控 Fetch / 非强制 Push 当前授权 Candidate |
-| `dev prepare` | Native 使用 Multica Checkout；Requirement 从 Issue 的批准来源确定 Change，无远端 Candidate 时须提供已核实的 `--resource-ref`。旧入口仅保留兼容 |
+| `dev prepare` | Native 使用 Multica Checkout；Requirement 从 Issue 的批准来源确定 Change，并从已准备的固定批准 Commit 读取 Repository Scope；无远端 Candidate 时须提供已核实的 `--resource-ref`。旧入口仅保留兼容 |
 | `dev publish` | 按已批准的 `analysis.source.branch` 发布当前 Change 已提交的 Tasks / Design，确认远端 Git SHA 并登记绑定完整 `analysis.source` 的 `dev.publication`。非实质性 Design 细化使用 `--minor-design` |
-
-### 4.2 `rondo bug`
-
-```bash
-rondo bug resume --issue <KEY> --human-comment-id <id> --next REWORK|RECREATE_PR
-```
-
-| 命令 | 功能 |
-| --- | --- |
-| `bug resume` | 根据 Human Comment，对处于 `blocked` 且 PR 已确认 `abandoned` 的 Bug Issue 进行受控恢复 |
-
-`bug resume` 的 REWORK 表示重新修复，RECREATE_PR 仅复用未变 Candidate 与有效 Evidence。恢复状态不等于启动新 Run。
 
 ## 5. Delivery 与 PR
 
@@ -119,7 +102,6 @@ rondo bug resume --issue <KEY> --human-comment-id <id> --next REWORK|RECREATE_PR
 
 ```bash
 rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsupported>
-rondo delivery route-decision --config <repo-registry.json> --issue <KEY> --comment-id <uuid> --next ANALYSIS|ENGINEERING|RECREATE_PR|CANCEL_DELIVERY [--reason REJECTED|DISCARDED] [--affected-task-refs <1.1,1.2>]
 rondo delivery finalize --phase prepare|complete --issue <KEY> [--root-repo <path>]
 rondo delivery root-prepare --issue <KEY>
 ```
@@ -127,7 +109,6 @@ rondo delivery root-prepare --issue <KEY>
 | 命令 | 功能 |
 | --- | --- |
 | `delivery admission` | 执行 Wayfinder 已记录的 Decision：通过时按 `tfs.type` 交接并回读原生 Run，其他结果保留 Wayfinder 并设置对应状态 |
-| `delivery route-decision` | 根据已确定的 Human Decision 执行交付返工、重建 PR 等确定性动作 |
 | `delivery finalize` | `prepare` 核验交付并准备收口；`complete` 在外部回写完成后核验并结束交付 |
 | `delivery root-prepare` | 在 Task `workdir/<repo-name>` 复用 Multica Checkout，建立 Task 独立本地归档分支，返回 `root_repo` |
 
@@ -149,6 +130,7 @@ rondo delivery root-prepare --issue <KEY>
 ```bash
 rondo pr prepare --issue <KEY> --repo <repo_id> --root-repo <path> --candidate-commit <sha> --facts <json|-> --title <title> [--validation-cwd <path>] [--required-repos <repo1,repo2>]
 rondo pr materialize --issue <KEY>
+rondo pr resume --issue <KEY> --comment-id <id> --next REWORK|RECREATE_PR
 rondo pr worktree create --config <repo-registry.json> --issue <KEY> --repo <repo_key> --branch <branch> [--base <target>] [--root-repo <path>]
 rondo pr worktree remove --config <repo-registry.json> --issue <KEY> --repo <repo_key> [--root-repo <path>]
 rondo pr worktree prune --config <repo-registry.json> (--project-id <id> | --root-repo <path>)
@@ -161,9 +143,10 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 | 命令 | 功能 |
 | --- | --- |
 | `pr prepare` | 核对授权、Candidate 与专业 Facts，执行提供的验证命令并登记 PR Preparation；有命令时无需预填 `validation.result`，Bug 无命令时须提供真实替代验证 PASS |
-| `pr materialize` | 核验适用 Gate，逐仓创建或恢复已有 Active / Completed PR、确认 Work Item 关联并登记 current_pr；全部登记后进入 in_review，in_review 仅核验已登记事实 |
+| `pr materialize` | 核验适用 Gate，逐仓创建或恢复已有 Active / Completed PR、确认 Work Item 关联并在 pr 的对应仓库记录补充 pr_id / pr_url；全部登记后进入 in_review，in_review 仅核验已登记事实 |
+| `pr resume` | 根据 Human Comment 核验 abandoned PR 并恢复 PR Facts；不修改 Issue 状态或启动 Run |
 | `pr worktree` | 使用 `create`、`remove`、`prune` 管理本地 Git Worktree |
-| `pr reconcile-status` | 从当前 Run Workspace 扫描 Issue 的 `current_pr`，核实 `completed` / `abandoned` 等外部状态，不使用 Registry |
+| `pr reconcile-status` | 从当前 Run Workspace 扫描 Issue 的 `pr` 已登记记录，核实 `completed` / `abandoned` 等外部状态，不使用 Registry |
 
 `pr reconcile-status` 使用 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`（可选 `MULTICA_CLI_PATH`，默认 `multica`）；手动执行需具有相同环境及 CLI 认证。
 | `pr create` | 在 TFS Git 仓库创建 PR，支持已有 PR 的幂等识别 |
@@ -177,16 +160,12 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 ```bash
 rondo tfs reconcile-workitem --config <sync-config.json>
 rondo tfs writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-plan <plan.json>]
-rondo tfs materialize-tasks --config <repo-registry.json> --issue <KEY> [--root-repo <path>]
-rondo tfs resolve-tasks --config <repo-registry.json> --issue <KEY>
 ```
 
 | 命令 | 功能 |
 | --- | --- |
 | `tfs reconcile-workitem` | 依据同步配置查询 TFS Work Item，并创建或更新对应 Multica Issue 及其来源内容 |
 | `tfs writeback` | 按交付事实回写 TFS 工作项、任务状态、工时及关联信息 |
-| `tfs materialize-tasks` | 根据工程任务事实创建或复用对应 TFS Task |
-| `tfs resolve-tasks` | 将已完成交付对应的 TFS Task 更新至已关闭状态 |
 
 交付收口的常用调用顺序：
 

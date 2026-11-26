@@ -4,7 +4,7 @@
  *
  * 调用方：PR Status Sync Agent（Autopilot cron 或手动触发）。
  * 职责：常规扫描 in_review / blocked；按需单独扫描 done 恢复 finalize.pending → 逐个回读 metadata
- *   （有 current_pr 或 finalize.pending 才纳入）
+ *   （有 pr 或 finalize.pending 才纳入）
  *   → 逐 PR 经 TFS API 回核身份与状态 → 按 02 §11 聚合规则写事实 → 输出路由指令。
  * 本脚本只做终态检测与事实写入；收口动作由 Agent 按 SKILL.md 固定路由在同一 Run 内
  * 调 issue-closeout Skill 完成（脚本不内嵌调用）。
@@ -36,17 +36,11 @@ import { runCommand } from "../../clients/spawn.js";
 import { resolveMulticaRuntime, type MulticaRuntime } from "../../clients/runtime-context.js";
 import { loadConfig as loadTfsConfig, ConfigError } from "../../tfs/config.js";
 import { parseTfsPrWebUrl } from "../../tfs/api/pr.js";
+import { assertTfsRepository } from "../../clients/authenticated-git.js";
+import { readPrRecords, isRegisteredPr, type RegisteredPr } from "./facts.js";
 import { MulticaClient, type IssueRecord } from "../../clients/multica.js";
 import { FailError } from "../../tfs/client.js";
 import { dispatchTfs, UsageError } from "../../tfs/dispatch.js";
-
-interface CurrentPrEntry {
-  repo_key: string;
-  pr_id: number;
-  pr_url: string;
-  source_branch: string;
-  target_branch: string;
-}
 
 interface AbandonedEntry { repo_key: string; pr_id: number; event_key: string; detected_at: string }
 
@@ -152,43 +146,41 @@ export async function processIssue(
   const md = issue.metadata ?? {};
   const issueKey = issue.identifier ?? issue.id;
   const pendingRaw = md["finalize.pending"];
-  const currentPrRaw = md["current_pr"];
+  const currentPrRaw = md["pr"];
   // done 的交付已完成：仅交由 finalize 清理残留 pending，不重新判断 PR 或改变已完成状态。
   if (issue.status === "done") {
     return pendingRaw
       ? { issue: issueKey, action: "resume_finalize", detail: "Issue 已 done，仅核对并清理 finalize.pending" }
       : null;
   }
-  if (!currentPrRaw && !pendingRaw) return null; // 无 PR 事实，不纳入
-
-  if (!currentPrRaw) {
-    return { issue: issueKey, action: "unknown", detail: "finalize.pending 存在但 current_pr 缺失（事实状态破损，交 Lead 核对）" };
-  }
-  let prs: CurrentPrEntry[];
-  try { prs = JSON.parse(currentPrRaw) as CurrentPrEntry[]; }
-  catch { return { issue: issueKey, action: "unknown", detail: "metadata current_pr 不是合法 JSON" }; }
-  if (!Array.isArray(prs) || prs.length === 0) {
-    return { issue: issueKey, action: "unknown", detail: "current_pr 为空数组" };
+  let records;
+  try { records = readPrRecords(currentPrRaw); }
+  catch (error) { return { issue: issueKey, action: "unknown", detail: (error as Error).message }; }
+  const prs = records.filter(isRegisteredPr);
+  if (!prs.length) {
+    return pendingRaw || issue.status === "in_review"
+      ? { issue: issueKey, action: "unknown", detail: "缺少已登记 PR，禁止收口" }
+      : null;
   }
 
   // done 恢复无需 TFS；其他路径只在存在 PR 登记时读取 TFS 连接配置。
   const collectionUrl = tfsCollectionUrl ?? loadTfsConfig().serverUrl;
   const unknowns: string[] = [];
-  const abandoned: CurrentPrEntry[] = [];
-  const seenRepoKeys = new Set<string>();
+  const abandoned: RegisteredPr[] = [];
   let completedCount = 0;
   for (const entry of prs) {
-    if (!entry || typeof entry.repo_key !== "string" || !entry.repo_key.trim() ||
-        !Number.isSafeInteger(entry.pr_id) || entry.pr_id <= 0 ||
-        typeof entry.source_branch !== "string" || !entry.source_branch ||
-        typeof entry.target_branch !== "string" || !entry.target_branch ||
-        typeof entry.pr_url !== "string" || seenRepoKeys.has(entry.repo_key)) {
-      unknowns.push("current_pr 包含无效或重复的 PR 登记");
+    if (!entry.source_branch || !entry.target_branch) {
+      unknowns.push("pr 缺少分支");
       continue;
     }
-    seenRepoKeys.add(entry.repo_key);
     const location = parseTfsPrWebUrl(entry.pr_url, collectionUrl);
-    if (!location || location.prId !== entry.pr_id) {
+    let repositoryMatches = false;
+    try {
+      const parts = assertTfsRepository(entry.repo_url, collectionUrl).pathname.split("/").map(decodeURIComponent);
+      repositoryMatches = !!location && parts.at(-3)?.toLowerCase() === location.project.toLowerCase() &&
+        parts.at(-1)?.toLowerCase() === location.repository.toLowerCase();
+    } catch { /* an unconfirmed repository identity must not advance */ }
+    if (!location || location.prId !== entry.pr_id || !repositoryMatches) {
       unknowns.push(entry.repo_key + ": PR URL 与配置的 TFS Collection 或登记 ID 不匹配");
       continue;
     }
@@ -240,16 +232,7 @@ export async function processIssue(
     return { issue: issueKey, action: "unknown", detail: unknowns.join("；") };
   }
 
-  // Materialize can persist a partial set. Never treat it as the full delivery.
-  let prepared: {repo_key: string}[];
-  try { prepared = JSON.parse(md.pr_prep ?? "null"); }
-  catch { return { issue: issueKey, action: "unknown", detail: "pr_prep 不是合法 JSON" }; }
-  if (!Array.isArray(prepared) || prepared.length !== prs.length ||
-      prepared.some(p => !p || typeof p.repo_key !== "string" || !p.repo_key.trim()) ||
-      new Set(prepared.map(p => p.repo_key)).size !== prepared.length ||
-      prepared.some(p => !prs.some(pr => pr?.repo_key === p.repo_key))) {
-    return { issue: issueKey, action: "unknown", detail: "current_pr 与 pr_prep 仓库集合不完整，禁止收口" };
-  }
+  if (prs.length !== records.length) return { issue: issueKey, action: "unknown", detail: "pr 登记不完整，禁止收口" };
 
   if (completedCount === prs.length) {
     if (issue.status !== "in_review" && issue.status !== "blocked") {

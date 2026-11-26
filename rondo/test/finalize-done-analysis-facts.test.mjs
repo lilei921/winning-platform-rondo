@@ -13,14 +13,13 @@ const MOCK = fileURLToPath(new URL("./mock-multica.cjs", import.meta.url));
 
 const good = {
   "analysis.change_kind": "corrective",
-  "analysis.change_ref": "issue-change-123",
+  "analysis.source": JSON.stringify({repo_url:"https://tfs.example/tfs/C/P/_git/root",branch:"dev",commit:"a".repeat(40),change_ref:"issue-change-123"}),
   "analysis.gate.result": "PASS",
   "delivery.tfs_written": "true",
   "analysis.human_approval": JSON.stringify({
     decision: "approved", by: "human", at: "2026-11-08T00:00:00Z",
     comment_ref: "approval-1", verify_agent_required: false,
   }),
-  "verify_agent.required": "false",
 };
 
 function runDone(t, metadata) {
@@ -44,7 +43,7 @@ function runDone(t, metadata) {
 
 test("done replay checks only stable Change identity and completed Writeback", (t) => {
   for (const bad of [
-    { "analysis.change_ref": "../bad" },
+    { "analysis.source": JSON.stringify({...JSON.parse(good["analysis.source"]),change_ref:"../bad"}) },
     { "delivery.tfs_written": "false" },
   ]) {
     const metadata = { ...good, ...bad, "finalize.pending": "pending" };
@@ -73,7 +72,7 @@ test("done replay with valid facts and no pending remains a no-op", (t) => {
 test("completed facts checker keeps identity and TFS hard gates, not upstream classification", () => {
   assert.doesNotThrow(() => assertCompletedAnalysisFacts(good));
   assert.doesNotThrow(() => assertCompletedAnalysisFacts({ ...good, "analysis.change_kind": "production-fix" }));
-  assert.throws(() => assertCompletedAnalysisFacts({ ...good, "analysis.change_ref": "/etc/passwd" }), /change_ref/);
+  assert.throws(() => assertCompletedAnalysisFacts({ ...good, "analysis.source": JSON.stringify({...JSON.parse(good["analysis.source"]),change_ref:"/etc/passwd"}) }), /change_ref/);
   assert.throws(() => assertCompletedAnalysisFacts({ ...good, "delivery.tfs_written": "false" }), /TFS Writeback/);
 });
 

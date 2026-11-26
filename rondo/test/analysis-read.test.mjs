@@ -20,7 +20,7 @@ function fixture(t) {
   const source = { repo_url: tfs.repoUrl, branch: "dev", commit, change_ref: "fix-101" };
   const stateFile = join(dir, "state.json"), config = join(dir, "config.json");
   writeFileSync(config, JSON.stringify({ runtime: { multica_cli: MOCK, workspace_id: "ws-test", multica_profile: "private", multica_server_url: "https://private.example" } }));
-  const write = value => writeFileSync(stateFile, JSON.stringify({ metadata: { "analysis.change_ref": "fix-101", "analysis.source": value === undefined ? undefined : JSON.stringify(value) } }));
+  const write = value => writeFileSync(stateFile, JSON.stringify({ metadata: { "analysis.source": value === undefined ? undefined : JSON.stringify(value) } }));
   write(source);
   const run = (file = "tasks.md", extraEnv = {}) => {
     const before = readFileSync(stateFile, "utf8");

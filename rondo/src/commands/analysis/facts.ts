@@ -11,9 +11,8 @@ export function classifyTfsType(value: unknown): "bug" | "requirement" | null {
 export class PreconditionError extends Error {}
 
 /** Schema is authoritative; persist the derived classification for delivery statistics. */
-export function analysisMetadataEntries(changeRef: string, schema: ChangeSchema): Record<string, string> {
+export function analysisMetadataEntries(schema: ChangeSchema): Record<string, string> {
   return {
-    "analysis.change_ref": changeRef,
     "analysis.change_kind": changeKindFromSchema(schema),
   };
 }

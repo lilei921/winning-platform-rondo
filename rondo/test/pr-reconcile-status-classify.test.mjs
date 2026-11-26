@@ -47,6 +47,7 @@ function fixture(status, metadata = {}) {
   };
   const pr = {
     repo_key: "repo",
+    repo_url: COLLECTION + "/Project/_git/remote",
     pr_id: 42,
     pr_url: COLLECTION + "/Project/_git/remote/pullrequest/42",
     source_branch: "feature/a",
@@ -57,7 +58,7 @@ function fixture(status, metadata = {}) {
     identifier: "DF-1",
     status,
     assignee_id: "engineer",
-    metadata: { current_pr: JSON.stringify([pr]), pr_prep: JSON.stringify([{repo_key:pr.repo_key}]), ...metadata },
+    metadata: { pr: JSON.stringify([pr]), ...metadata },
   };
   return { calls, multica, pr, issue };
 }
@@ -196,9 +197,9 @@ test("normalization rejects a parseable PR URL that conflicts with the verified 
 
 test("mismatched PR URL or provider identity cannot write finalize.pending", async () => {
   const f = fixture("in_review");
-  const pr = JSON.parse(f.issue.metadata.current_pr)[0];
+  const pr = JSON.parse(f.issue.metadata.pr)[0];
   pr.pr_url = COLLECTION + "/Project/_git/remote/pullrequest/43";
-  f.issue.metadata.current_pr = JSON.stringify([pr]);
+  f.issue.metadata.pr = JSON.stringify([pr]);
   const badUrl = await processIssue(f.multica, f.issue, { attempts: 0, successes: 0 }, () => {
     throw new Error("must not query invalid URL");
   }, COLLECTION);
@@ -206,7 +207,7 @@ test("mismatched PR URL or provider identity cannot write finalize.pending", asy
   assert.deepEqual(f.calls, []);
 
   pr.pr_url = COLLECTION + "/Project/_git/remote/pullrequest/42";
-  f.issue.metadata.current_pr = JSON.stringify([pr]);
+  f.issue.metadata.pr = JSON.stringify([pr]);
   const badIdentity = await processIssue(f.multica, f.issue, { attempts: 0, successes: 0 }, () => ({
     status: "ok", pr: { id: 99, status: "completed", sourceBranch: "feature/a", targetBranch: "dev" },
   }), COLLECTION);
@@ -216,12 +217,13 @@ test("mismatched PR URL or provider identity cannot write finalize.pending", asy
 
 test("部分 PR 登记不能触发 Closeout；研发状态即使全部完成也等待 Materialize", async () => {
   for (const status of ["in_review","blocked"]) {
-    const f=fixture(status, {pr_prep:JSON.stringify([{repo_key:"repo"},{repo_key:"web"}])});
+    const f=fixture(status);
+    f.issue.metadata.pr=JSON.stringify([f.pr,{repo_key:"web"}]);
     const action=await processIssue(f.multica,f.issue,{attempts:0,successes:0},()=>({
       status:"ok",pr:{id:42,status:"completed",sourceBranch:"feature/a",targetBranch:"dev"}
     }),COLLECTION);
     assert.equal(action.action,"unknown");
-    assert.match(action.detail,/仓库集合不完整/);
+    assert.match(action.detail,/登记不完整/);
     assert.deepEqual(f.calls,[]);
   }
   const f=fixture("in_progress");
@@ -233,7 +235,8 @@ test("部分 PR 登记不能触发 Closeout；研发状态即使全部完成也�
 });
 
 test("partial registration still detects abandoned PRs before Closeout completeness check", async () => {
-  const f=fixture("in_review",{pr_prep:JSON.stringify([{repo_key:"repo"},{repo_key:"web"}])});
+  const f=fixture("in_review");
+  f.issue.metadata.pr=JSON.stringify([f.pr,{repo_key:"web"}]);
   const action=await processIssue(f.multica,f.issue,{attempts:0,successes:0},()=>({
     status:"ok",pr:{id:42,status:"abandoned",sourceBranch:"feature/a",targetBranch:"dev"}
   }),COLLECTION);

@@ -52,7 +52,7 @@ test("validation executes in exact authorized Git checkout, rejects failure, cha
 
 test("Requirement Gate rejects a failed participating repo even when another repo passed",()=>{
   const sha="a".repeat(40), repoUrl="http://tfs.test/tfs/C/P/_git/";
-  const entry=key=>({repo_key:key,repo_url:repoUrl+key,source_branch:"feature/12",target_branch:"main",candidate_commit:sha,title:"change",description:"review",local_validation:{result:"PASS",source:"rondo pr prepare",exit_code:0,candidate_commit:sha,summary:"test",command:["npm","test"]},code_review:{result:"PASS",candidate_commit:sha,summary:"review",findings:[]},blockers:[]});
+  const entry=key=>({repo_key:key,repo_url:repoUrl+key,source_branch:"feature/12",target_branch:"main",candidate_commit:sha,title:"change",description:"review",local_validation:{result:"PASS",source:"rondo pr prepare",exit_code:0,candidate_commit:sha,summary:"test",command:["npm","test"]},code_review:{result:"PASS",candidate_commit:sha,summary:"review",findings:[]}});
   const a=entry("a"), b=entry("b"), registry={a:{repo_url:a.repo_url,default_target_branch:"main"},b:{repo_url:b.repo_url,default_target_branch:"main"}};
   assert.throws(()=>validateChangeDelivery([a,{...b,local_validation:{...b.local_validation,result:"FAIL",exit_code:9}}],["a","b"],12,registry),/实际执行验证结果/);
   assert.deepEqual(validateChangeDelivery([a,b],["a","b"],12,registry),{a:sha,b:sha});

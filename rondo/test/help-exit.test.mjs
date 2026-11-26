@@ -16,7 +16,6 @@ function run(args) {
 }
 
 const CASES = [
-  { name: "dev materialize", args: ["dev", "materialize"] },
   { name: "pr prepare", args: ["pr", "prepare"] },
 ];
 

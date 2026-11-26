@@ -6,14 +6,12 @@ function caseFixture(t: { after: (fn: () => void) => void }, analyst: string, hu
   const source = { repo_url: "http://tfs.test/tfs/C/P/_git/root", branch: "main", commit: "a".repeat(40), change_ref: "c-x" };
   const metadata = {
     "analysis.source": JSON.stringify(source),
-    "analysis.change_ref": "c-x",
     "analysis.gate.result": "PASS",
     "analysis.verify_agent.recommendation": analyst,
     "analysis.human_approval": JSON.stringify({
       source, decision: "approved", by: "human", at: "2026-11-08T00:00:00Z",
       comment_ref: "approval-1", verify_agent_required: human,
     }),
-    "verify_agent.required": String(human),
   };
   const check = (values = metadata) =>
     assertRequirementPrepareGate(values, "in_review");
@@ -30,9 +28,9 @@ test("Human override not_required -> required: blocks until actual independent v
   assert.throws(() => f.check(), /Independent Verification PASS/);
 });
 
-test("missing or inconsistent effective Verify fact blocks before any completion decision", (t) => {
+test("Requirement completion reads the approved decision, not the independent Bug field", (t) => {
   const f = caseFixture(t, "not_required", false);
-  assert.throws(() => f.check({ ...f.metadata, "verify_agent.required": "" }), /verify_agent.required/);
-  assert.throws(() => f.check({ ...f.metadata, "verify_agent.required": "true" }), /不一致/);
+  assert.doesNotThrow(() => f.check({ ...f.metadata, "verify_agent.required": "" } as typeof f.metadata));
+  assert.doesNotThrow(() => f.check({ ...f.metadata, "verify_agent.required": "true" } as typeof f.metadata));
   assert.throws(() => f.check({ ...f.metadata, "analysis.human_approval": "{}" }), /尚未批准/);
 });
