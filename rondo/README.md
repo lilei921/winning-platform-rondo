@@ -135,6 +135,8 @@ OpenSpec 的版本要求及其他环境前提通过 `rondo doctor` 检查；需�
 
 ## 7. 升级与卸载
 
+测试环境升级前，先完成或结束仍持有不符合当前 `dev.publication` 契约的 Requirement Issue（回执须包含完整 `analysis_source` 和研发 `commit`）。新版不自动迁移旧回执，也不允许在 `in_review` 重新执行研发发布；新的测试 Issue 通过正常研发流程登记回执，不手工填造或删除交付事实以绕过检查。
+
 ```bash
 # 升级：新版 tgz 落地后覆盖安装即可
 npm install -g ./winning-rondo-<new-version>.tgz

@@ -103,7 +103,7 @@ rondo dev publish --issue <KEY> [--root-repo <path>] [--minor-design]
 | `dev git` | 受控 Fetch / 非强制 Push 当前授权 Candidate |
 | `dev contract-hash` | 计算当前 Change 契约文件的 SHA-256 摘要，供工程验证引用 |
 | `dev prepare` | Native 使用 Multica Checkout；Requirement 从 Issue 的批准来源确定 Change，无远端 Candidate 时须提供已核实的 `--resource-ref`。旧入口仅保留兼容 |
-| `dev publish` | 按已批准的 `analysis.source.branch` 发布当前 Change 已提交的 Tasks / Design，回读远端 SHA 并登记 `dev.publication`。非实质性 Design 细化使用 `--minor-design` |
+| `dev publish` | 按已批准的 `analysis.source.branch` 发布当前 Change 已提交的 Tasks / Design，确认远端 Git SHA 并登记绑定完整 `analysis.source` 的 `dev.publication`。非实质性 Design 细化使用 `--minor-design` |
 
 ### 4.2 `rondo bug`
 

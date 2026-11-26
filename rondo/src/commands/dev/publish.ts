@@ -9,7 +9,7 @@ import { git, gitOk } from "../../clients/git.js";
 import { readGitTree, readGitBlob } from "../../clients/git-tree.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { normalizeContractText } from "../delivery/contract-files.js";
-import { readAnalysisArtifact, readAnalysisSource, sameAnalysisSource, type AnalysisSource } from "../analysis/source.js";
+import { readAnalysisSource, sameAnalysisSource, type AnalysisSource } from "../analysis/source.js";
 import { approvedChange, developmentPublication } from "./requirement-guard.js";
 import { publishChange, requirementRoot } from "../runtime/root-git.js";
 
@@ -64,15 +64,11 @@ export function registerDevPublish(group: Command): void {
         const branch = source.branch;
         const original = approved.issue.metadata ?? {};
         const previous = developmentPublication(original);
-        const previousCommit = previous?.analysis_commit === source.commit ? previous.commit : undefined;
+        const previousCommit = previous && sameAnalysisSource(previous.analysis_source, source) ? previous.commit : undefined;
         const published = await publishChange(root, source.change_ref, approved.issue.identifier ?? approved.issue.id,
           executionArtifact, undefined, { repoUrl: source.repo_url, expectedBranch: branch, approvedCommit: source.commit,
             validateTree: commit => checkPublishContract(root, source, commit, opts.minorDesign === true, previousCommit) });
-        const tasks = await readAnalysisArtifact({ ...source, commit: published.commit }, "tasks.md");
-        const blob = gitOk(root, ["rev-parse", published.commit + ":" + tasks.path.slice(1)], "核对研发任务快照");
-        if (tasks.object_id !== blob) throw new UnknownError("远端 tasks.md 与发布版本不一致");
-
-        const receipt = JSON.stringify({ analysis_commit: source.commit, commit: published.commit });
+        const receipt = JSON.stringify({ analysis_source: source, commit: published.commit });
         const rechecked = await approvedChange(cfg, multica, opts.issue);
         if (rechecked.issue.status !== approved.issue.status) throw new UnknownError("发布期间 Issue 状态变化");
         const current = rechecked.issue.metadata ?? {};
@@ -89,7 +85,8 @@ export function registerDevPublish(group: Command): void {
         }
         const confirmed = multica.listMetadata(approved.issue.id);
         if (confirmed["dev.publication"] !== receipt || confirmed["analysis.source"] !== original["analysis.source"] ||
-            confirmed["analysis.human_approval"] !== original["analysis.human_approval"]) {
+            confirmed["analysis.human_approval"] !== original["analysis.human_approval"] ||
+            confirmed["analysis.change_ref"] !== source.change_ref || confirmed["tfs.id"] !== original["tfs.id"]) {
           throw new UnknownError("研发交付记录或批准版本回读不一致");
         }
         process.stdout.write(JSON.stringify({ result: "PASS", change_ref: source.change_ref, ...published }, null, 2) + "\n");
