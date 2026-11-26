@@ -41,7 +41,7 @@ Fetch 不执行合并。
 }
 ```
 
-按项目选择验证命令；Requirement 必须提供。提供命令时无需预填 `validation.result`，由 `rondo pr prepare` 执行并登记最终 Candidate 验证；开发过程中的调试与测试按实际需要开展，无需为满足输入格式重复执行。Bug 确无适用本地验证命令时可省略 command，此时须提供真实的 `result: PASS`、替代验证、证据引用及原因、范围、结果和局限；命令执行失败不得降级；当前 Candidate 存在命令验证失败事实时须重新执行验证命令。未解决 Non-blocking Finding 需标明 `blocking:false` 并提供 `risk_note` 或 `risk_ref`。
+按项目选择验证命令；Requirement 必须提供。提供 `validation.command` 时，由 `rondo pr prepare` 执行并登记实际结果，无需预填 `validation.result`。Bug 确无适用本地验证命令时可省略 command，此时须提供真实的 `result: PASS`、替代验证、证据引用及原因、范围、结果和局限；命令执行失败不得降级；当前 Candidate 存在命令验证失败事实时须重新执行验证命令。未解决 Non-blocking Finding 需标明 `blocking:false` 并提供 `risk_note` 或 `risk_ref`。
 
 Bug 在同一 Facts 中补充 `expected_behavior`、`actual_behavior`、`fix_summary`、`root_cause`（confidence 为 confirmed/probable、summary、evidence_refs；probable 补充 remaining_risk）、`regression`（PASS、summary、evidence_refs），以及 validation / code_review 的 evidence_refs。证据应真实可核查；Regression、Code Review 等专业 PASS 必须有已确认的依据，不以尚未执行的命令作为成功证据。
 
@@ -49,13 +49,13 @@ Bug 在同一 Facts 中补充 `expected_behavior`、`actual_behavior`、`fix_sum
 rondo pr prepare --issue <KEY> --repo <repo_id> --root-repo "<root>" --candidate-commit <sha> --facts "<temporary-json>" --title "<title>"
 ```
 
-长耗时 `pr prepare` 可使用 Runtime 原生后台任务，保留输入 Facts 文件至命令结束，以实际 CLI 返回结果为准。
+使用临时 Facts 文件时，保留至 `pr prepare` 执行结束。
 
 验证工作目录按需使用 `--validation-cwd "<path>"`。多仓 Bug 首次准备通过 `--required-repos <repo1,repo2>` 固定完整交付仓集合；后续不得擅自改变。Requirement 仅准备批准范围内实际修改的仓库。
 
 # PR Submission
 
-完成全部实际交付仓的 PR Preparation；Bug 根据 `ready_for_pr` 确认准备完整性，Requirement 还需依据实际实现与验证结果完成全部 Tasks 并发布当前 Change 的研发工件。
+完成全部实际交付仓的 PR Preparation；Bug 根据 `ready_for_pr` 确认准备完整性；Requirement 的研发工件已发布且全部 Tasks 已完成。
 
 ```bash
 rondo pr materialize --issue <KEY>
