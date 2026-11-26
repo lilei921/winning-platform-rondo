@@ -47,7 +47,6 @@ export async function materializePreparedPrs(
   const authorizeCurrent = () => authorize(currentPr);
   const prs: MaterializedPr[] = [];
   for (const entry of prep) {
-    authorizeCurrent();
     const prior = registered.find(p => p.repo_key === entry.repo_key);
     const pr = await materialize(entry, prior, authorizeCurrent);
     if (!prior && !readOnly) {

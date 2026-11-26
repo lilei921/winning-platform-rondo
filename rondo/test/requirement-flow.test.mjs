@@ -62,6 +62,7 @@ test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专
   let prStatus = "active";
   let sourceCommitId = sha1;
   let listOverride;
+  let allowCreate = false;
   let linked = true;
   let listed = false;
   const calls = [];
@@ -76,6 +77,9 @@ test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专
       listed = true;
       const status=args[args.indexOf("--status")+1];
       return listOverride ? listOverride(status) : status===prStatus ? [{ id: 17, targetBranch: "dev", url: "http://tfs.test/pr/17" }] : [];
+    }
+    if (args[0] === "pr" && args[1] === "create" && allowCreate) {
+      return {created:true,pr:{id:17,url:"http://tfs.test/pr/17"}};
     }
     throw Error("Unexpected external PR write");
   } };
@@ -121,6 +125,14 @@ test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专
   await assert.rejects(materializeOne(tfs,api,42,entry,repo,undefined,false,authorize),/多个/);
   listOverride = () => [];
   await assert.rejects(materializeOne(tfs,api,42,entry,repo,undefined,false,authorize),/HEAD/);
+  prStatus = "active";
+  remoteHead = sha1;
+  allowCreate = true;
+  calls.length = 0;
+  const created = await materializeOne(tfs,api,42,entry,repo,undefined,false,authorize);
+  assert.equal(created.reused,false);
+  assert.equal(calls.filter(c=>c==="pr create").length,1);
+  assert.deepEqual(calls,["pr list","pr list","branch get","pr create","pr get","branch get"]);
 });
 
 test("Requirement Closeout 读取批准 Commit 的范围而非当前工作树", t => {
