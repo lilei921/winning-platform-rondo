@@ -22,7 +22,7 @@ test('Bug pr prepare CLI (Native resumed checkout): stdin/file, Git identity, qu
   const dir = realpathSync(mkdtempSync(join(tmpdir(), 'rondo-bug-cli-')));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const root = join(dir, 'winning-platform-monorepo'), hub = join(dir, 'biz'), remote = join(dir, 'remote.git');
-  mkdirSync(hub, { recursive: true }); mkdirSync(remote);
+  mkdirSync(root); mkdirSync(hub); mkdirSync(remote);
   git(root, 'init', '-b', 'main'); git(root, 'remote', 'add', 'origin', rootUrl);
   writeFileSync(join(root, 'AGENTS.md'), '规则\n');
   const taskId = native ? '01234567-abcd-ef12-3456-000000000000' : 'run';
@@ -112,7 +112,7 @@ process.exit(r.status ?? 1);
     result(run(input), 2);
     assert.deepEqual(state(), initial);
   }
-  result(run(JSON.stringify(evidence), { MULTICA_AGENT_ID: 'other' }), 2);
+  assert.match(result(run(JSON.stringify(evidence), { MULTICA_AGENT_ID: 'other' }), 3).reason, /daemon Task/);
   assert.deepEqual(state(), initial);
   result(run(undefined, {}, join(dir, 'missing.json')), 3);
   assert.deepEqual(state(), initial);
