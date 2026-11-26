@@ -1,6 +1,6 @@
 # LEI-67 / LEI-68 Engineer 执行效率最小充分优化方案
 
-> 日期：2026-11-26；状态：设计方案，待审核、实施及真实环境复测。
+> 日期：2026-11-26；状态：P0-1、P0-2 已实施，待完整项目测试与真实环境复测；其余事项待审核实施。
 > 范围：Engineer 的 Requirement 研发交付，以两次 Replay 为依据。遵循 01 设计原则：Native First、KISS、YAGNI、One Rule One Owner、Specialist Focus、Minimal Sufficient。
 > 本方案不替代已保存的 [LEI-68 豁免与 PR 登记流程根治方案](./LEI-68-豁免与PR登记流程根治方案.md)；该问题在其专项方案中统一实施，避免重复 PR 和规则 Owner。
 
@@ -90,4 +90,4 @@ Engineer 可直接更新 tasks.md checkbox，dev publish 继续校验批准内�
 
 ## 8. 验收及边界
 
-保持授权、批准版本、仓库边界、真实测试、Review、PR 登记与归档质量。按 Run 累计时间排除人工等待；比较工具调用量、构建次数、续跑成功率、PR 准备与物化错误。LEI-67 同类任务目标 20–30 分钟，LEI-68 同类任务目标 15–25 分钟；仅为复测目标，不承诺收益或强制时限。P0-1 优先验证两个复现场景不再要求人工改分支或 --fresh，不丢失任何研发成果。方案保存不等于代码已修改或测试已执行。
+保持授权、批准版本、仓库边界、真实测试、Review、PR 登记与归档质量。按 Run 累计时间排除人工等待；比较工具调用量、构建次数、续跑成功率、PR 准备与物化错误。LEI-67 同类任务目标 20–30 分钟，LEI-68 同类任务目标 15–25 分钟；仅为复测目标，不承诺收益或强制时限。P0-1 优先验证两个复现场景不再要求人工改分支或 --fresh，不丢失任何研发成果。P0-1、P0-2 已提交（2c75771、434f05b）。隔离验收：从 PR 分支复现并核对 Git blob SHA 的 contract-files.ts 与其单元测试，5/5 PASS；使用同一版本 native-checkout.ts 与真实 Git（独立测试使用 spawnSync 替代 execa 传输层），普通 checkout、linked worktree 两组续跑与边界 smoke test 2/2 PASS。完整 npm run build / npm test、真实 Multica Runtime 与新 CLI 发布尚未验证。其余优化事项仍为方案。
