@@ -1,20 +1,11 @@
-/**
- * contract-files.ts 单元测试（rll5-replay-remediation-plan M2.1/F2）。
- *
- * 验收点：
- *  1. 归一化：CRLF/CR→LF；tasks.md 的 [x]/[X] 归一为 [ ]，非勾选项不动；其他文件不动 checkbox；
- *  2. 文件选择：proposal/tasks 必有、design 有则、specs/** 递归排序；缺 proposal/tasks → 抛错；
- *  3. verify 分类：hash_mismatch / missing_file / added_file / algorithm_mismatch；
- *  4. touchedCapabilities：specs 顶层子目录名，无 specs → []。
- */
+/** 契约文本归一化、归档文件指纹与 capability 清单。 */
 import test, { type TestContext } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  normalizeContractText, listContractFiles, computeContractFiles, verifyContractFiles, touchedCapabilities,
-  type ContractFiles,
+  normalizeContractText, listContractFiles, computeContractFiles, touchedCapabilities,
 } from "./contract-files.js";
 
 function withChange(t: TestContext, files: Record<string, string>): string {
@@ -54,7 +45,7 @@ test("listContractFiles: 必选项 + design + specs 递归排序；缺必选抛�
   assert.throws(() => listContractFiles(bad), /契约文件缺失: proposal\.md/);
 });
 
-test("compute + verify: 全一致 ok；checkbox 变化不改变哈希", (t) => {
+test("computeContractFiles: checkbox、换行变化不改变归档契约指纹", (t) => {
   const dir = withChange(t, {
     "proposal.md": "# p\r\n",
     "tasks.md": "- [x] 1.1 a\n",
@@ -64,38 +55,25 @@ test("compute + verify: 全一致 ok；checkbox 变化不改变哈希", (t) => {
   assert.equal(c1.algorithm, "sha256");
   assert.deepEqual(Object.keys(c1.files), ["proposal.md", "tasks.md", "specs/cap/spec.md"]);
   assert.ok(/^[0-9a-f]{64}$/.test(c1.files["tasks.md"]));
-  assert.deepEqual(verifyContractFiles(dir, c1), { ok: true });
+  assert.deepEqual(computeContractFiles(dir), c1);
   // 勾选状态变化不改契约哈希（Progress Patch 免刷新）
   writeFileSync(join(dir, "tasks.md"), "- [ ] 1.1 a\n");
-  assert.deepEqual(verifyContractFiles(dir, c1), { ok: true });
+  assert.deepEqual(computeContractFiles(dir), c1);
   // CRLF 变化同样不改哈希
   writeFileSync(join(dir, "proposal.md"), "# p\n");
-  assert.deepEqual(verifyContractFiles(dir, c1), { ok: true });
+  assert.deepEqual(computeContractFiles(dir), c1);
 });
 
-test("verify: mismatch / missing / added / algorithm 分类", (t) => {
+test("computeContractFiles: 契约正文或文件集合发生变化时指纹变化", (t) => {
   const dir = withChange(t, { "proposal.md": "# p", "tasks.md": "- [ ] 1.1 a" });
   const base = computeContractFiles(dir);
-
   writeFileSync(join(dir, "proposal.md"), "# changed");
-  let v = verifyContractFiles(dir, base);
-  assert.equal(v.ok, false);
-  assert.equal(v.kind, "hash_mismatch");
-  assert.match(v.problems[0], /proposal\.md.*哈希不匹配/);
-
+  assert.notDeepEqual(computeContractFiles(dir), base);
   writeFileSync(join(dir, "proposal.md"), "# p");
-  v = verifyContractFiles(dir, { algorithm: "sha256", files: { ...base.files, "design.md": "0".repeat(64) } });
-  assert.equal(v.ok, false);
-  assert.equal(v.kind, "missing_file");
-
-  v = verifyContractFiles(dir, { algorithm: "sha256", files: { "proposal.md": base.files["proposal.md"] } });
-  assert.equal(v.ok, false);
-  assert.equal(v.kind, "added_file");
-  assert.match(v.problems.join(";"), /tasks\.md.*未记录/);
-
-  v = verifyContractFiles(dir, { algorithm: "md5", files: base.files } as unknown as ContractFiles);
-  assert.equal(v.ok, false);
-  assert.equal(v.kind, "algorithm_mismatch");
+  writeFileSync(join(dir, "design.md"), "# design");
+  assert.notDeepEqual(computeContractFiles(dir), base);
+  rmSync(join(dir, "design.md"));
+  assert.deepEqual(computeContractFiles(dir), base);
 });
 
 test("touchedCapabilities: specs 顶层子目录；无 specs → []", (t) => {

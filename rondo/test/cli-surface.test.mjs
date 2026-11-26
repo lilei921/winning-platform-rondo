@@ -17,7 +17,7 @@ function runCli(args, env = {}) {
 const TREE = {
   change: ["resolve-identity"],
   analysis: ["validate", "publish", "read", "approve"],
-  dev: ["check-dispatch", "materialize", "git", "prepare", "check-completion", "publish", "contract-hash"],
+  dev: ["check-dispatch", "materialize", "git", "prepare", "publish"],
   bug: ["resume"],
   tfs: ["writeback", "materialize-tasks", "resolve-tasks", "reconcile-workitem"],
   pr: ["prepare", "materialize", "worktree", "reconcile-status", "create", "get", "list"],
@@ -46,9 +46,9 @@ test("顶层叶子 query:缺 --wiql exit 64,用法走 stderr,stdout 纯净", () 
   assert.ok(r.stderr.includes("--wiql"));
 });
 
-test("命令总数 = 45", () => {
+test("命令总数 = 43", () => {
   const total = Object.values(TREE).reduce((n, leaves) => n + leaves.length, 0) + 2 /* query + doctor */;
-  assert.equal(total, 45);
+  assert.equal(total, 43);
 });
 
 test("--version 输出 JSON:name/version/node/sea,exit 0", () => {
@@ -102,7 +102,7 @@ test("PR Preparation 命名统一，Closeout 拒绝旧配置参数", () => {
 });
 
 test("全局 --output json 由 Commander 统一消费，不改变子命令输出和退出码", () => {
-  for (const args of [["change", "resolve-identity", "--help"], ["dev", "contract-hash", "--help"], ["runtime", "resolve-root-repo"], ["query"]]) {
+  for (const args of [["change", "resolve-identity", "--help"], ["dev", "publish", "--help"], ["runtime", "resolve-root-repo"], ["query"]]) {
     const implicit = runCli(args);
     for (const explicitArgs of [["--output=json", ...args], [...args, "--output", "json"]]) {
       const explicit = runCli(explicitArgs);
@@ -142,6 +142,12 @@ test("retired stage and handoff are not public commands", () => {
 });
 
 test("P0 退役独立进度与完成检查，研发命令不再接受 Change 参数", () => {
+  const help = runCli(["dev", "--help"]);
+  assert.equal(help.status, 0);
+  for (const command of ["check-completion", "contract-hash"]) {
+    assert.ok(!(help.stdout + help.stderr).includes(command));
+    assert.notEqual(runCli(["dev", command, "--help"]).status, 0);
+  }
   for (const args of [["change", "update-progress"], ["dev", "check-change"]]) assert.notEqual(runCli(args).status, 0, args.join(" "));
   for (const command of ["prepare", "publish"]) {
     const help = runCli(["dev", command, "--help"]);

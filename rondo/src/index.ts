@@ -27,10 +27,8 @@ import { registerAnalysisRead } from "./commands/analysis/read.js";
 import { registerAnalysisApprove } from "./commands/analysis/approve.js";
 import { registerDevMaterialize } from "./commands/dev/materialize.js";
 import { registerDevPrepare } from "./commands/dev/prepare.js";
-import { registerDevCheckCompletion } from "./commands/dev/check-completion.js";
 import { registerDevPublish } from "./commands/dev/publish.js";
 import { registerDevCheckDispatch } from "./commands/dev/check-dispatch.js";
-import { registerDevContractHash } from "./commands/dev/contract-hash.js";
 import { registerDevGit } from "./commands/dev/git.js";
 import { registerRuntimeCheckCheckout } from "./commands/runtime/check-checkout.js";
 import { registerRuntimePrepareRoot } from "./commands/runtime/prepare-root.js";
@@ -87,14 +85,12 @@ registerAnalysisPublish(analysis);
 registerAnalysisRead(analysis);
 registerAnalysisApprove(analysis);
 
-const dev = bareGroup(program.command("dev").description("Development 派发与完成检查(02 §7/§8)"));
+const dev = bareGroup(program.command("dev").description("Development 研发准备、Git 与发布"));
 registerDevMaterialize(dev);
 registerDevPrepare(dev);
 registerDevGit(dev);
 registerDevCheckDispatch(dev);
-registerDevCheckCompletion(dev);
 registerDevPublish(dev);
-registerDevContractHash(dev);
 
 const bug = bareGroup(program.command("bug").description("无 OpenSpec 的 TFS Bug 修复交付入口"));
 registerBugResume(bug);

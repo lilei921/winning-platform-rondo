@@ -1,18 +1,4 @@
-/**
- * commands/dev/dispatch-facts.ts — dev.dispatch 派发事实读取与类型分支（共享模块）。
- *
- * 消费者：dev check-dispatch（开工预检）、dev check-completion 的 commit_task_links 检查。
- * 两处共用同一读取与分类实现，防止规则漂移（同 analysis/facts.ts 的 stage/complete 模式）。
- * 事实契约唯一权威：delivery-flow/references/dispatch-facts-contract.md（本模块只是读者）。
- *
- * 类型分支（tfs-bug-delivery-task-skip-plan §4.5）：tfs.type=Bug 时不建 TFS 子任务、
- * tfs_task_ids 恒缺省为正常态；tfs.type 缺失/其他 → 分类为 tfs_type 失败，交 Lead 核对。
- *
- * 2026-10-30 TFS 剥离（tfs-writeback-decoupling-plan）：子任务延后到 PR 通过后的
- * writeback 创建，开发期 commit `Refs:` 统一挂 tfs.id——tfs_task_ids 在开发期恒缺省
- * 成为全类型正常态，原 no_mappings 失败与 unmappedRefs 口径随之移除；
- * tfs_task_ids 仅作在途 legacy 交付的兼容事实保留读取。
- */
+/** Legacy dev.dispatch 派发事实读取与类型分支。 */
 
 import { multicaPrefix } from "../../clients/multica-environment.js";
 import type { BaseRegistryConfig } from "../../clients/config.js";
@@ -71,7 +57,7 @@ export type DispatchFactsResult =
 
 /**
  * 读取 Issue 并解析 dev.dispatch，按 taskRefs 求覆盖条目与映射缺口。
- * 只读，零写入。reason 文案与 check-completion 历史口径保持一致（该检查的消费方按文案归类）。
+ * 只读，不修改派发事实。
  */
 export function loadDispatchFacts(
   cfg: BaseRegistryConfig,

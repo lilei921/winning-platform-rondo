@@ -3,7 +3,6 @@
  *
  * 正常 help 求助返回 0（stdout 出用法），不再污染工具失败指标；
  * 缺必填参数仍是 64（stderr 出用法）——行为守卫，防止本修复把用法错误也放成 0。
- * 先例：change resolve-identity；contract-hash 自出生即带（M2 新增命令）。
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -19,8 +18,6 @@ function run(args) {
 const CASES = [
   { name: "dev materialize", args: ["dev", "materialize"] },
   { name: "pr prepare", args: ["pr", "prepare"] },
-  { name: "dev check-completion", args: ["dev", "check-completion"] },
-  { name: "dev contract-hash", args: ["dev", "contract-hash"] },
 ];
 
 for (const c of CASES) {
