@@ -57,7 +57,7 @@ function fixture(status, metadata = {}) {
     identifier: "DF-1",
     status,
     assignee_id: "engineer",
-    metadata: { current_pr: JSON.stringify([pr]), ...metadata },
+    metadata: { current_pr: JSON.stringify([pr]), pr_prep: JSON.stringify([{repo_key:pr.repo_key}]), ...metadata },
   };
   return { calls, multica, pr, issue };
 }
@@ -212,4 +212,20 @@ test("mismatched PR URL or provider identity cannot write finalize.pending", asy
   }), COLLECTION);
   assert.equal(badIdentity.action, "unknown");
   assert.deepEqual(f.calls, []);
+});
+
+test("部分 PR 登记不能触发 Closeout；研发状态即使全部完成也等待 Materialize", async () => {
+  for (const status of ["in_review","blocked"]) {
+    const f=fixture(status, {pr_prep:JSON.stringify([{repo_key:"repo"},{repo_key:"web"}])});
+    const action=await processIssue(f.multica,f.issue,{attempts:0,successes:0},()=>{throw Error("unexpected lookup");},COLLECTION);
+    assert.equal(action.action,"unknown");
+    assert.match(action.detail,/仓库集合不完整/);
+    assert.deepEqual(f.calls,[]);
+  }
+  const f=fixture("in_progress");
+  const action=await processIssue(f.multica,f.issue,{attempts:0,successes:0},()=>({
+    status:"ok",pr:{id:42,status:"completed",sourceBranch:"feature/a",targetBranch:"dev"}
+  }),COLLECTION);
+  assert.equal(action.action,"noop");
+  assert.deepEqual(f.calls,[]);
 });

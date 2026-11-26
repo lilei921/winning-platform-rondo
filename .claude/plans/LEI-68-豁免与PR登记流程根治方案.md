@@ -3,7 +3,7 @@
 > 更新日期：2026-11-26
 > 依据：LEI-68 与两次 PR Status Sync 回放、当前 Rondo CLI、01 设计原则及两版方案 Review。
 > 事故已人工补登 current_pr（#4065 / #3978）并完成归档；不代表自动恢复已实现。
-> 实施状态：本分支实施 P0-1；P0-2 / P0-3 待实施。
+> 实施状态：P0-1 已合并（#79）；P0-2 本分支实施；P0-3 待实施。
 
 ## 一、根因
 
@@ -23,12 +23,12 @@
 - TFS Task 规划依据实际业务改动和已批准的工程任务，保持现有职责，不增加豁免专项校验、输出字段或归档读取。现行 dev check-completion / contract-hash 旧体系不扩展。
 - 无新 Agent、Skill、状态机、独立 Metadata 或任务工件。
 
-### P0-2 — PR Materialize 事实管理（待实施）
+### P0-2 — PR Materialize 事实管理（本次实施）
 
 - 复用 pr_prep、current_pr；逐仓持久化已核实的 PR 身份，全部交付仓准备和登记完整才进入 in_review。区分事实登记与状态转换。
 - 已有 PR 按 ID 或限定仓库/源目标分支查询，Active 核实 Candidate，Completed 核实最终 Source Commit 与 Candidate、Work Item Link，不要求源分支存在。无已有 PR 才允许 Materialize 创建；歧义或不一致返回 UNKNOWN，禁止重复创建。
 - 不新增 pr register、--accept-merged、PR Registry 或事务状态。PR 身份核实与 Human 合并/工程授权分离。
-- 部分登记必须防止并发覆盖，且禁止提前收口；检查 current_pr 与 pr_prep 集合完整性。
+- 复用现有授权快照、写前检查和回读，发现并发漂移即停止；部分登记禁止提前收口，Status Sync 仅增加必要的 current_pr / pr_prep 集合完整性检查，不承担恢复。
 
 ### P0-3 — PR Status Sync 定向恢复（待实施）
 
@@ -47,7 +47,7 @@ P0-3：缺失和部分登记可观测、可定向恢复；部分 PR completed �
 
 ## 四、范围边界
 
-Runtime Task 环境适配、CLI 输出参数统一、旧 Evidence Check 清理、Replay 凭据脱敏另行处理。本次仅实现 P0-1，不修改 PR 状态或登记逻辑，不重新操作已 done 的 LEI-68。
+Runtime Task 环境适配、CLI 输出参数统一、旧 Evidence Check 清理、Replay 凭据脱敏另行处理。本次仅实现 P0-2，不扩展 Status Sync 扫描或自动恢复，不重新操作已 done 的 LEI-68。
 
 ## 五、事实锚点
 

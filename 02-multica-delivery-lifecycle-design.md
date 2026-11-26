@@ -1959,24 +1959,22 @@ PR Title / Description 属于 Engineer 对本次代码修改的语义准备，�
 ```text
 读取 PR Preparation Facts / current_pr
 ↓
-逐仓校验 Repository / Branch / Candidate Commit
+逐仓核对当前 PR 与外部事实：已存在则复用 / 恢复登记
 ↓
-确认 Branch HEAD 与 candidate_commit 一致
-↓
-核对当前 PR 与外部事实：已存在则复用 / 恢复登记，仅补缺失项
+Active 或确需创建时核对 Branch HEAD；Completed 核对最终 Source Commit
 ↓
 确需创建时调用 TFS / PR API
 ↓
-校验返回身份
+确认 PR 身份与 Work Item 关联
 ↓
-写回 current_pr
+立即登记本仓 current_pr，保留其他仓库已登记事实
 ↓
 全部 required PR 注册完成
 ↓
 Issue → in_review
 ```
 
-PR Materialization 必须幂等；多个 Repository 可以一次处理，失败重试只补未完成项。外部 PR 已创建但 `current_pr` 回写失败时，重试必须先确认外部事实并恢复登记，不能因本地记录缺失直接再建 PR；无法可靠确认身份或结果时返回 `UNKNOWN`。
+PR Materialization 必须幂等；多个 Repository 可以一次处理，逐仓登记已确认 PR，失败重试复用已登记事实。部分登记不能触发 Closeout。外部 PR 已创建但 `current_pr` 回写失败时，重试必须先确认外部事实并恢复登记，不能因本地记录缺失直接再建 PR；无法可靠确认身份或结果时返回 `UNKNOWN`。
 
 如果确定性 Materialization 返回：
 
