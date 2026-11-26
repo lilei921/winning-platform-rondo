@@ -237,7 +237,7 @@ Parent Issue / Delivery Lead 聚合当前有效结果
 + 若 verify_agent.required=true：Verify-Agent-owned required Verification Tasks 已明确分配（可保持 pending）
 + 无 unresolved Development blocker
  ↓
-├─ Verify REQUIRED 且无当前有效 PASS
+├─ verify_agent.required=true 且无当前有效 PASS
 │    → @Verify Agent：执行其 assigned Verification Tasks + Independent Verification
 │    → 形成 Verification Report / Evidence，持久化已完成 Verification Tasks
 │    ├─ 满足 §9.5 条件 → Verification Gate PASS
@@ -245,7 +245,7 @@ Parent Issue / Delivery Lead 聚合当前有效结果
 │                       → 重新检查受影响的 Engineer-side Readiness
 │                       → Parent Delivery 重新评估 Verify
 │
-└─ Verify NOT REQUIRED / 已有当前有效 PASS
+└─ verify_agent.required=false / 已有当前有效 PASS
  ↓
 全部 required OpenSpec Tasks（含 Verify-Agent-owned Verification Tasks）完成
 + 全部 required Verification Evidence 当前有效
@@ -864,7 +864,7 @@ analysis:
 
 `codebase-explorer`、`requirement-analysis`、`bug-analysis` 与适用专业 Review 表示可组合的专业能力，不要求生成同名 Markdown。Corrective 的 `bug-analysis` Method 将最终确认事实沉淀到 `proposal.md`；Intentional 的 `requirement-analysis` 直接把工程结论沉淀到 Proposal / Specs / Tasks，并仅在 Conditional Design 条件满足时维护 `design.md`。
 
-Verify Agent Recommendation 是实际工程变更的必需输出，但它只决定是否建议增加 **Independent Verify Agent**。`not_required` 不取消 Task Verification、Change-level Verification、Local Validation 或 Code Review。OpenSpec Native Verify 不是默认强制步骤，仅在当前 Project / Change Contract 明确要求或需要 Change-level consistency audit 时执行。
+Verify Agent Recommendation 是实际工程变更的必需输出，但它只决定是否建议增加 **Independent Verify Agent**。`false` 不取消 Task Verification、Change-level Verification、Local Validation 或 Code Review。OpenSpec Native Verify 不是默认强制步骤，仅在当前 Project / Change Contract 明确要求或需要 Change-level consistency audit 时执行。
 
 <a id="section-5-3"></a>
 
@@ -1083,7 +1083,7 @@ Verify Agent Recommendation 由 Workitem Analyst 首次提出，Human Analysis R
 
 ```text
 Workitem Analyst Recommendation
-→ required | not_required
+→ true | false
         ↓
 Human Analysis Review
 ├─ accept recommendation

@@ -241,7 +241,7 @@ Agent Instructions 依据[指导手册](01-multica-openspec-design-guideline.md)
 | Role | Workitem Analyst，专注缺陷与需求分析，为研发提供准确、清晰、可实施、可验证的工程依据。 |
 | Goal | 分析清楚当前 Issue 的目标、既有与预期行为、问题或需求边界以及必要工程依据；长期专业目标不替代当次 Issue Goal。 |
 | Core Responsibilities | 澄清业务场景、规则、范围与验收；缺陷分析关注 Root Cause、Fix Strategy 和回归范围，需求分析关注业务意图、方案选择及影响；根据证据区分恢复既定行为的 `corrective` 与主动改变预期行为的 `intentional`，不直接按来源管理类型分类；准备适用 OpenSpec Change 工件与验证要求，并给出有依据的 Independent Verify Recommendation。 |
-| Working Principles | 从 Issue、现有规格、代码和可信 Evidence 出发，区分事实、假设、建议及待授权决定；按复杂度与证据缺口组合专业 Skill，复用有效结果；评估拟采用验证方案的覆盖能力、明确独立验收要求及重要剩余风险；仅当独立执行确有必要或能够实质降低重要风险时推荐 `required`，验证方案充分且无额外要求时推荐 `not_required`；依据不足先补证或澄清，不默认填写，且 `not_required` 不取消开发侧必要验证。不把计划中的测试视为已执行结果。 |
+| Working Principles | 从 Issue、现有规格、代码和可信 Evidence 出发，区分事实、假设、建议及待授权决定；按复杂度与证据缺口组合专业 Skill，复用有效结果；评估拟采用验证方案的覆盖能力、明确独立验收要求及重要剩余风险；仅当独立执行确有必要或能够实质降低重要风险时推荐 `true`，验证方案充分且无额外要求时推荐 `false`；依据不足先补证或澄清，不默认填写，且 `false` 不取消开发侧必要验证。不把计划中的测试视为已执行结果。 |
 | Boundaries | 不代替业务方作未经授权的产品决策，不将推断写成已确认事实；不擅自改变已批准工程要求；不负责生产代码实现、成员分工、外部工作项管理或人工批准。 |
 | Escalation, Communication & Delivery | 影响正确分析的关键事实或授权无法确认时明确缺口与影响；形成可追溯的工程工件、必要专业 Review 和 Verify Recommendation，通过 `analysis-publish` 提交并确认审核状态；反馈返工仅修订受影响内容。 |
 
@@ -993,42 +993,42 @@ Verification Contract 由 OpenSpec Engineering Truth 提供：Intentional 主要
 
 ### 输出契约
 
-在当前 Issue 审核 Comment 中说明是否建议 Independent Verification（required / not_required）、实际理由及必要验证重点；需要定位工程验证要求时按需引用当前 OpenSpec 工件或任务。无需机器字段或固定引用数组。
+在当前 Issue 审核 Comment 中说明是否建议 Independent Verification（true / false）、实际理由及必要验证重点；需要定位工程验证要求时按需引用当前 OpenSpec 工件或任务。无需机器字段或固定引用数组。
 
 Workitem Analyst 是 `verify_agent` 的首次专业判断者，只输出 Recommendation、Reason 与 Focus，不预先写最终 `verify_agent.required`。Human Analysis Review 拥有最终决定权，可以接受或 override Recommendation；批准后的 Development Materialization 根据 Human 最终决定生成 `verify_agent.required=true|false`。因此 `verify_agent.required` 不要求与原 Recommendation 相同；`verification.result` 仅在 `verify_agent.required=true` 时表示 Independent Verification（独立验证） 的结果。批准、转换及执行边界见 [主方案 §9.1](02-multica-delivery-lifecycle-design.md#verify-agent-decision) 与 [§13.1](02-multica-delivery-lifecycle-design.md#delivery-facts)。
 
 ### 推荐方法：独立验证增量价值判断
 
-Independent Verify Agent 是在 Engineer 已承担 Task-level / 必要 Change-level Verification、Local Validation 和 Code Review 之外，按需增加的独立执行者。**常规情况下优先考虑 `not_required`；`required` 必须有能说明独立性必要性或实质增量价值的理由。** 这不是允许跳过开发侧验证，也不是对未调查事项预填 `not_required`。
+Independent Verify Agent 是在 Engineer 已承担 Task-level / 必要 Change-level Verification、Local Validation 和 Code Review 之外，按需增加的独立执行者。**常规情况下优先考虑 `false`；`true` 必须有能说明独立性必要性或实质增量价值的理由。** 这不是允许跳过开发侧验证，也不是对未调查事项预填 `false`。
 
 Workitem Analyst 根据当前已确认的 Acceptance / Verification Contract 与可获得的 Evidence，按实际问题判断三件事（不是固定三步流程）：
 
-1. **明确的独立性要求**：是否存在已确认的业务验收、合同、安全隔离或授权要求，必须由实现者之外的主体检查？若存在且适用于当前 Change，推荐 `required`，引用具体要求。
-2. **开发侧验证充分性**：已规划的 Task Verification、必要 Change-level Verification、CI / Automated Tests / Runtime Checks 能否有效覆盖正确行为、关键回归和失败模式？能闭合且无重大剩余风险、不存在明确独立性要求时，推荐 `not_required`。分析阶段判断的是**验证方案是否可执行、可观察**，不提前假定未来测试已 PASS。
-3. **独立执行者的增量价值**：存在显著剩余风险时，是否必须由实现者之外的独立执行者复核，才能发现 Engineer 使用现有测试账号、权限、环境、数据对账和自动化工具仍无法充分消除的重要风险？只有独立执行者的实际增量价值明确、与风险相称时，推荐 `required`。需要第二账号、隔离环境或 E2E，本身都只是验证方法，不等于必须增加 Verify Agent。
+1. **明确的独立性要求**：是否存在已确认的业务验收、合同、安全隔离或授权要求，必须由实现者之外的主体检查？若存在且适用于当前 Change，推荐 `true`，引用具体要求。
+2. **开发侧验证充分性**：已规划的 Task Verification、必要 Change-level Verification、CI / Automated Tests / Runtime Checks 能否有效覆盖正确行为、关键回归和失败模式？能闭合且无重大剩余风险、不存在明确独立性要求时，推荐 `false`。分析阶段判断的是**验证方案是否可执行、可观察**，不提前假定未来测试已 PASS。
+3. **独立执行者的增量价值**：存在显著剩余风险时，是否必须由实现者之外的独立执行者复核，才能发现 Engineer 使用现有测试账号、权限、环境、数据对账和自动化工具仍无法充分消除的重要风险？只有独立执行者的实际增量价值明确、与风险相称时，推荐 `true`。需要第二账号、隔离环境或 E2E，本身都只是验证方法，不等于必须增加 Verify Agent。
 
-**信号不等于判据：** Bug/Requirement、Change Kind、生产故障、关键业务路径、Security / Permission / Data Integrity、Repository / Engineer 数量、独立测试账号/环境，以及 Regression / Integration / E2E 测试类型，均不能单独决定 `required`；应判断实际影响、开发侧覆盖缺口，以及**实现者之外的独立执行者**能增加什么可观察证据。
+**信号不等于判据：** Bug/Requirement、Change Kind、生产故障、关键业务路径、Security / Permission / Data Integrity、Repository / Engineer 数量、独立测试账号/环境，以及 Regression / Integration / E2E 测试类型，均不能单独决定 `true`；应判断实际影响、开发侧覆盖缺口，以及**实现者之外的独立执行者**能增加什么可观察证据。
 
 | 代表性场景 | 推荐方向 | 判断依据 |
 |---|---|---|
-| 局部 Bug，既定行为与根因明确，针对性回归和 CI 能覆盖 | `not_required` | 修复及回归可由开发侧充分验证 |
-| 普通新增字段 / 查询 API / 简单 UI 规则，验收清楚且验证手段可靠 | `not_required` | 不因它属于 Requirement 就增加独立执行者 |
-| 多 Repository 接口调整或必要 E2E，已有可执行 Contract / Integration / E2E 验证 | `not_required` | 跨仓和 E2E 是验证范围/方法，不是执行者身份要求 |
-| 跨租户访问控制用测试账号和自动化用例即可可靠确认隔离 | 可为 `not_required` | Engineer 使用不同测试身份验证，不自动需要另一个执行 Agent |
-| 跨租户访问控制按批准要求必须由独立验收主体复核 | `required` | 需求明确规定实现者之外的验收者，独立性来自执行者的职责隔离 |
-| 高影响资金规则或不可逆数据处理，需实施者之外的数据完整性复核 | 倾向 `required` | 错误后果重大且独立对账可减少真实剩余风险 |
-| 重大生产故障但已有可信验证信号、覆盖充分且无独立性要求 | 可为 `not_required` | 生产故障标签本身不决定执行者 |
-| 业务预期、关键行为或 Verification Contract 尚不明确 | 先补证或澄清 | 不以默认 `required` 掩盖不完整的验收契约，也不臆造 `not_required` |
+| 局部 Bug，既定行为与根因明确，针对性回归和 CI 能覆盖 | `false` | 修复及回归可由开发侧充分验证 |
+| 普通新增字段 / 查询 API / 简单 UI 规则，验收清楚且验证手段可靠 | `false` | 不因它属于 Requirement 就增加独立执行者 |
+| 多 Repository 接口调整或必要 E2E，已有可执行 Contract / Integration / E2E 验证 | `false` | 跨仓和 E2E 是验证范围/方法，不是执行者身份要求 |
+| 跨租户访问控制用测试账号和自动化用例即可可靠确认隔离 | 可为 `false` | Engineer 使用不同测试身份验证，不自动需要另一个执行 Agent |
+| 跨租户访问控制按批准要求必须由独立验收主体复核 | `true` | 需求明确规定实现者之外的验收者，独立性来自执行者的职责隔离 |
+| 高影响资金规则或不可逆数据处理，需实施者之外的数据完整性复核 | 倾向 `true` | 错误后果重大且独立对账可减少真实剩余风险 |
+| 重大生产故障但已有可信验证信号、覆盖充分且无独立性要求 | 可为 `false` | 生产故障标签本身不决定执行者 |
+| 业务预期、关键行为或 Verification Contract 尚不明确 | 先补证或澄清 | 不以默认 `true` 掩盖不完整的验收契约，也不臆造 `false` |
 
 **输出要求：**
 
-- `recommendation=not_required`：`reason` 简述为什么现有计划中的工程验证足够、没有额外独立性需求；按需引用支撑此判断的 Acceptance / Verification Contract。
-- `recommendation=required`：`reason` 说明为什么 Engineer 使用现有可靠测试手段仍不足，以及**独立执行者**所需的职责隔离或实际风险降低价值；说明必须独立确认的行为、风险或验证要求。
-- **事实不足**：先按专业职责补充必要 Evidence / Verification Task，或返回待授权的业务澄清；尚无法形成有依据的 Recommendation 时，不得为了满足字段检查强行提交 `required` 或 `not_required`。
+- `recommendation=false`：`reason` 简述为什么现有计划中的工程验证足够、没有额外独立性需求；按需引用支撑此判断的 Acceptance / Verification Contract。
+- `recommendation=true`：`reason` 说明为什么 Engineer 使用现有可靠测试手段仍不足，以及**独立执行者**所需的职责隔离或实际风险降低价值；说明必须独立确认的行为、风险或验证要求。
+- **事实不足**：先按专业职责补充必要 Evidence / Verification Task，或返回待授权的业务澄清；尚无法形成有依据的 Recommendation 时，不得强行提交 `true` 或 `false`。
 
 两种 Recommendation 都以当前有效的工程契约为依据，不新增风险分数字段、验收对象、强制引用数组或独立报告。
 
-`not_required` **仅表示不增加 Independent Verify Agent**。全部必需 Task Verification、Change-level Verification、Local Validation、Code Review 和合同要求的其他验证仍必须按实际执行结果完成；任何人不得因为该推荐值减掉既有 Verification Contract。
+`false` **仅表示不增加 Independent Verify Agent**。全部必需 Task Verification、Change-level Verification、Local Validation、Code Review 和合同要求的其他验证仍必须按实际执行结果完成；任何人不得因为该推荐值减掉既有 Verification Contract。
 
 ### Human Override（人工覆盖）边界
 
@@ -1040,7 +1040,7 @@ Human Decision = final delivery authorization
 verify_agent.required = materialized Human Decision
 ```
 
-如果 Human 仅将 `required ↔ not_required` 改为另一结果，且没有新增、删除或改变 Acceptance Contract、Verification Contract、required Verification Tasks 或批准 Scope，则不返回 Analysis；原 Recommendation 保留，Human 决定通过原始 Comment / Decision 引用进入 Delivery Truth。
+如果 Human 仅将 `true ↔ false` 改为另一结果，且没有新增、删除或改变 Acceptance Contract、Verification Contract、required Verification Tasks 或批准 Scope，则不返回 Analysis；原 Recommendation 保留，Human 决定通过原始 Comment / Decision 引用进入 Delivery Truth。
 
 如果 Human Feedback 实质改变“需要验证什么”——例如新增 E2E 场景、扩大 Regression Scope、增加 Change-level Verification Task、改变 Requirement / Scenario 或批准范围——则必须返回 Workitem Analyst 定向更新 OpenSpec Engineering Truth、复核 Recommendation，并重新提交 Human Review。
 
@@ -1225,12 +1225,12 @@ Expected Behavior / Rules / Scope / Requirement-Scenario references or Correctiv
 Selected Solution / Fix Strategy / Development Scope
 Constraints / Open Decisions
 Technical Decomposition Suggestion（确有建议时）
-Verify Agent Recommendation: REQUIRED | NOT REQUIRED
+Verify Agent Recommendation: true | false
 Reason
 Verification Focus / Verification Task references
 ```
 
-Summary 是 `render(OpenSpec Change + Multica Delivery Facts)` 的人类可读视图，不创建 `analysis-summary.md`，也不作为新的 Truth Source。结构化推荐继续使用 [§10](#analysis-section-10) 的 `required / not_required`。
+Summary 是 `render(OpenSpec Change + Multica Delivery Facts)` 的人类可读视图，不创建 `analysis-summary.md`，也不作为新的 Truth Source。推荐取值使用 [§10](#analysis-section-10) 的 `true / false`。
 
 现有 Result / Artifact 同时说明：当前 Issue、Change Kind、逻辑 Analysis Package / Gate 结果引用、实际回读状态，以及已完成或尚未完成的发布 / 写入动作。正常终点是“分析提交成功，等待人工”，不是“已批准研发”或“Delivery 完成”。
 
@@ -1441,9 +1441,9 @@ Agent Instructions 与相关 Skill 的职责收敛已通过 #83 合并；`rondo 
 | Human Reject 或实质规格修订 | 同一 Change 定向更新受影响产物，重新审核，不沿用失效 Evidence |
 | 一个 Change 交给两个 Engineer Task Sets | Tasks 保留工程范围且可引用，不包含等待独立验收、PR 或归档；分工由 Delivery Lead 完成 |
 | 安装版本与文档 / Schema 预期不一致 | 报告具体不兼容项，不伪造文件、状态或校验通过 |
-| 任一获准自动处理的 Change 缺少 Verify Recommendation / Reason / Verification Focus | Analysis Gate 按缺失项处理，不从来源类型或 Change Kind 填默认值 |
-| Corrective 行为涉及跨系统复杂验收，或 SDD 行为已有可靠开发侧覆盖 | 都按实际 Acceptance / Verification Contract 给出推荐，不固定 required / not_required |
-| 推荐为 not_required | 仍保留必要 Verification Contract 与开发侧验收依据 |
+| 存在工程增量但缺少有依据的 Independent Verification 建议 | 由 Workitem Analyst 补充专业判断，不从来源类型或 Change Kind 填默认值 |
+| Corrective 行为涉及跨系统复杂验收，或 SDD 行为已有可靠开发侧覆盖 | 都按实际 Acceptance / Verification Contract 给出推荐，不固定 true / false |
+| 推荐为 false | 仍保留必要 Verification Contract 与开发侧验收依据 |
 | Summary 或产物更新漏掉最新推荐 | 提交前修正为同一轮结果，不能交接相互冲突的建议 |
 | 人审退回 AC / Scope / Verification Contract | 定向修订必要分析与推荐，适用时重做 Review 和 Gate，再提交，不沿用未经复核的推荐 |
 | 分析阶段尝试写入 verify_agent.required 或 verification.result | 不作为本阶段输出；只交付 recommendation，最终执行事实与验收结果由[主方案](02-multica-delivery-lifecycle-design.md)规定 |
@@ -1523,7 +1523,7 @@ Human Analysis Review → Delivery Lead
 | Wayfinder Evidence | Wayfinder 通过独立 `codebase-explorer` 形成 Comment 和 Evidence References；Analyst 使用原有 `codebase-explorer` 按需复核并按需增量调查，Triage Decision 不替代 Workitem Analyst 的技术判断 |
 | Context Pack | Context Evidence 必须可追溯；`context-pack.md` 仅复杂跨仓 / 长证据链任务按需生成 |
 | Acceptance Contract | Intentional → Spec / Delta Spec 的 Requirement + Scenario；Corrective → Proposal Expected Behavior / Regression Scope，存在 Specs 时一并使用 |
-| Verification Contract | 每个 Implementation Task 必须有验证方式；组合行为按需形成 Change-level Verification Task；不因 `verify_agent=not_required` 取消 |
+| Verification Contract | 每个 Implementation Task 必须有验证方式；组合行为按需形成 Change-level Verification Task；不因 `verify_agent.required=false` 取消 |
 | Verify 推荐 | 所有获准自动处理的 Change 都输出 Independent Verify Recommendation / Reason / Focus；只决定是否需要独立执行者，不拥有 Verification Contract |
 | Human Analysis Review | 实际工程增量提交 Human Review，需人工批准工程契约；无需工程增量通过普通 Comment 回流，不触发工程契约批准。批准不是 Analysis Gate PASS 的同义词，完整流程见[主方案 §6](02-multica-delivery-lifecycle-design.md#human-analysis-review) |
 | Approved OpenSpec Commit | Human APPROVED 后提交根仓 Git，记录开发基线；允许批准边界内更新，不创建独立 PR |
