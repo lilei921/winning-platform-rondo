@@ -1,12 +1,12 @@
 {
-  "collected_at": "2026-11-26T10:33:13+08:00",
+  "collected_at": "2026-11-26T16:03:30+08:00",
   "profile": "",
   "server_url": null,
   "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
   "issue_id": "01a21289-b0cf-7c07-95ad-9f770294a9f0",
   "read_only_commands": [
     [
-      "multica",
+      "C:/Users/lilei/.multica/bin/multica.exe",
       "--workspace-id",
       "a9469044-700c-4206-80d2-b39bad65de56",
       "issue",
@@ -16,7 +16,7 @@
       "json"
     ],
     [
-      "multica",
+      "C:/Users/lilei/.multica/bin/multica.exe",
       "--workspace-id",
       "a9469044-700c-4206-80d2-b39bad65de56",
       "issue",
@@ -26,7 +26,7 @@
       "json"
     ],
     [
-      "multica",
+      "C:/Users/lilei/.multica/bin/multica.exe",
       "--workspace-id",
       "a9469044-700c-4206-80d2-b39bad65de56",
       "agent",
@@ -36,7 +36,7 @@
       "json"
     ],
     [
-      "multica",
+      "C:/Users/lilei/.multica/bin/multica.exe",
       "--workspace-id",
       "a9469044-700c-4206-80d2-b39bad65de56",
       "agent",
@@ -46,7 +46,7 @@
       "json"
     ],
     [
-      "multica",
+      "C:/Users/lilei/.multica/bin/multica.exe",
       "--workspace-id",
       "a9469044-700c-4206-80d2-b39bad65de56",
       "agent",
@@ -56,7 +56,7 @@
       "json"
     ],
     [
-      "multica",
+      "C:/Users/lilei/.multica/bin/multica.exe",
       "--workspace-id",
       "a9469044-700c-4206-80d2-b39bad65de56",
       "agent",
@@ -173,10 +173,10 @@
       "invalid_jsonl_lines": 0,
       "identity_mismatch_files": [],
       "conflicting_uuids": [],
-      "source_public_tool_count": 199,
-      "exported_tool_count": 199,
-      "source_user_messages": 13,
-      "source_assistant_messages": 22,
+      "source_public_tool_count": 278,
+      "exported_tool_count": 278,
+      "source_user_messages": 15,
+      "source_assistant_messages": 25,
       "messages_match": true,
       "missing_tool_ids": [],
       "extra_tool_ids": [],
@@ -196,19 +196,29 @@
       "sources": [
         {
           "path": "C:\\Users\\lilei\\.claude\\projects\\D--Multica-default-winning-lil-b39bad65de56-lei-67-9bf5ab105abc-workdir\\20ebe308-24c5-41f2-8e97-eb82b0244791.jsonl",
-          "size_bytes": 3308177,
-          "sha256": "986dbb9ab2b4c63aa5b89f099e3495f5647cba5b7f369d1295a0572f1d1dab18"
+          "size_bytes": 4298540,
+          "sha256": "567f29d2408b9373855ecb7e8e15ad9c8130c0e6017d6cbe52eca3414e0a20c3"
         }
       ],
       "run_coverage": {
         "method": "claude_public_request_and_completion",
         "run_intervals": {
           "01a21561-ef2e-7058-b921-9bf5ab105abc": [],
-          "01a21590-0e69-7135-b945-7ca01282941c": []
+          "01a21590-0e69-7135-b945-7ca01282941c": [],
+          "01a21664-40af-7ecd-a9bb-9384d5d7f576": [],
+          "01a21665-29de-7550-a865-fe2ca8919923": [
+            {
+              "started_at": "2026-11-26T05:47:36.388Z",
+              "completed_at": "2026-11-26T06:20:28.183Z",
+              "message_id": "15773737-bf6d-4a21-ab65-d059e2bf69b8",
+              "matched_by": "platform_final_output"
+            }
+          ]
         },
         "uncovered_run_ids": [
           "01a21561-ef2e-7058-b921-9bf5ab105abc",
-          "01a21590-0e69-7135-b945-7ca01282941c"
+          "01a21590-0e69-7135-b945-7ca01282941c",
+          "01a21664-40af-7ecd-a9bb-9384d5d7f576"
         ],
         "complete": false
       },
@@ -216,5 +226,5 @@
     }
   ],
   "coverage": "partial",
-  "verified_at": "2026-11-26T10:33:15+08:00"
+  "verified_at": "2026-11-26T16:03:31+08:00"
 }

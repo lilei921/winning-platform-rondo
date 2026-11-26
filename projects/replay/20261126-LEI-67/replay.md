@@ -1,9 +1,9 @@
 # LEI-67 回放记录
 
 - 任务：[TFS 268376] 公版研发_DF集成调度_作业迁移日志没有打印详细日志，失败时无法排查失败原因，需输出详细日志
-- 采集时间：2026-11-26T10:33:13+08:00；平台状态快照：`in_progress`。
+- 采集时间：2026-11-26T16:03:30+08:00；平台状态快照：`done`。
 - Profile：``；Workspace：`a9469044-700c-4206-80d2-b39bad65de56`。
-- 覆盖：**partial**；9 次 Run，3 个已导出 session，主会话 269 次工具调用，子代理 0 次。
+- 覆盖：**partial**；13 次 Run，3 个已导出 session，主会话 348 次工具调用，子代理 0 次。
 
 ## 会话入口
 
@@ -11,7 +11,7 @@
 | --- | --- | ---: | ---: | --- | --- | --- |
 | Wayfinder Agent / claude | 2026-11-25 19:49:40 — 2026-11-25 19:52:28 | 1 | 23 | [回放](wayfinder/20261125-1949-d07cabe1/replay.md) | [时间线](wayfinder/20261125-1949-d07cabe1/timeline.md) | PASS |
 | Workitem Analyst / claude | 2026-11-25 19:53:11 — 2026-11-25 20:01:12 | 1 | 47 | [回放](workitem-analyst/20261125-1953-92eb2bfa/replay.md) | [时间线](workitem-analyst/20261125-1953-92eb2bfa/timeline.md) | PASS |
-| Engineer / claude | 2026-11-26 09:27:04 — 2026-11-26 10:29:36 | 2 | 199 | [回放](engineer/20261126-0927-20ebe308/replay.md) | [时间线](engineer/20261126-0927-20ebe308/timeline.md) | PARTIAL |
+| Engineer / claude | 2026-11-26 09:27:04 — 2026-11-26 14:20:34 | 4 | 278 | [回放](engineer/20261126-0927-20ebe308/replay.md) | [时间线](engineer/20261126-0927-20ebe308/timeline.md) | PARTIAL |
 
 ## Run 与 session 对应
 
@@ -26,6 +26,10 @@
 | Delivery Lead | `01a2157b-93f5-76de-bd34-15aca8789f43` | `-` | failed | 2026-11-26 09:32:30 / 2026-11-26 09:36:01 |
 | Delivery Lead | `01a2158e-39cf-796d-a381-9764011cc4cd` | `5dbc8df6-9d48-48ef-9388-2476ec7f16d3` | completed | 2026-11-26 09:52:52 / 2026-11-26 09:54:10 |
 | Engineer | `01a21590-0e69-7135-b945-7ca01282941c` | `20ebe308-24c5-41f2-8e97-eb82b0244791` | failed | 2026-11-26 09:54:52 / 2026-11-26 10:29:36 |
+| Engineer | `01a21664-40af-7ecd-a9bb-9384d5d7f576` | `20ebe308-24c5-41f2-8e97-eb82b0244791` | failed | 2026-11-26 13:46:39 / 2026-11-26 13:46:42 |
+| Engineer | `01a21665-29de-7550-a865-fe2ca8919923` | `20ebe308-24c5-41f2-8e97-eb82b0244791` | completed | 2026-11-26 13:47:38 / 2026-11-26 14:20:34 |
+| Delivery Lead | `01a21683-05fe-7694-82ab-18cc215cfd72` | `5dbc8df6-9d48-48ef-9388-2476ec7f16d3` | completed | 2026-11-26 14:20:15 / 2026-11-26 14:21:03 |
+| Delivery Lead | `01a216db-a58a-7498-b2b4-63137efd124c` | `5dbc8df6-9d48-48ef-9388-2476ec7f16d3` | completed | 2026-11-26 15:57:03 / 2026-11-26 15:57:43 |
 
 ## 平台完成消息
 
@@ -38,6 +42,10 @@
 - **Delivery Lead**（`01a2157b-93f5-76de-bd34-15aca8789f43`）：-
 - **Delivery Lead**（`01a2158e-39cf-796d-a381-9764011cc4cd`）：Engineer 任务因服务提供方周配额耗尽而失败，未产生代码或 PR。已向 Human 上报阻塞并将 Issue 保持为 `blocked`，同时安排了 2026-11-30 配额恢复后的自动重新委派；协调结果已记录。
 - **Engineer**（`01a21590-0e69-7135-b945-7ca01282941c`）：-
+- **Engineer**（`01a21664-40af-7ecd-a9bb-9384d5d7f576`）：-
+- **Engineer**（`01a21665-29de-7550-a865-fe2ca8919923`）：已完成实施并交付。 - **代码**：在 `DfJobMigration.trigger` 失败出口新增有界脱敏的异常链日志；原始堆栈改由服务端 SLF4J 记录，迁移业务逻辑未扩展。 - **验证**：迁移相关 25 项测试全通过，Spotless 检查通过。 - **工件**：任务状态已更新并发布，候选已推送。 - **PR**：dataintegration [PR 4061](http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-03-%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-dataintegration/pullrequest/4061?_a=overview)（`feature/268376` → `dev`）。 - 最终结果已回复至触发线程，Issue 状态为 `in_review`。
+- **Delivery Lead**（`01a21683-05fe-7694-82ab-18cc215cfd72`）：实施已交付（PR 4061），协调闭环完成。已停用阻塞期设置的自动唤醒，避免重复派发；Issue 状态确认为 `in_review`，等待 PR 评审与合并。
+- **Delivery Lead**（`01a216db-a58a-7498-b2b4-63137efd124c`）：交付已完成并归档：PR 4061 交付、OpenSpec Change 归档，Issue 已由人工/集成流转为 `done`。该通知为自动化收尾摘要，无需追加委派或状态变更。
 
 ## 覆盖缺口
 

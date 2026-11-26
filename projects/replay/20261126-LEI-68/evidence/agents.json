@@ -1,0 +1,22 @@
+{
+  "collected_at": "2026-11-26T17:07:41+08:00",
+  "agents": [
+    {
+      "id": "3068117f-163c-4ba9-86bf-fae3bfc1f6bf",
+      "name": "Wayfinder Agent"
+    },
+    {
+      "id": "3c1c3ac1-a922-4e7b-abdf-07a6268398a3",
+      "name": "Delivery Lead"
+    },
+    {
+      "id": "46e4b7dd-d186-470e-beb3-2c2d322871e1",
+      "name": "Workitem Analyst"
+    },
+    {
+      "id": "f3d2ba4b-ca63-4b76-b7eb-afe7cd43bf21",
+      "name": "Engineer"
+    }
+  ],
+  "warnings": []
+}

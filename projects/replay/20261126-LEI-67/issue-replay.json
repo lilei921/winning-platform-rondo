@@ -5,7 +5,7 @@
   "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
   "issue_id": "01a21289-b0cf-7c07-95ad-9f770294a9f0",
   "identifier": "LEI-67",
-  "collected_at": "2026-11-26T10:33:13+08:00",
+  "collected_at": "2026-11-26T16:03:30+08:00",
   "coverage": "partial",
   "sessions": [
     {
@@ -44,15 +44,17 @@
       "session_id": "20ebe308-24c5-41f2-8e97-eb82b0244791",
       "provider": "claude",
       "run_ids": [
+        "01a21665-29de-7550-a865-fe2ca8919923",
         "01a21561-ef2e-7058-b921-9bf5ab105abc",
-        "01a21590-0e69-7135-b945-7ca01282941c"
+        "01a21590-0e69-7135-b945-7ca01282941c",
+        "01a21664-40af-7ecd-a9bb-9384d5d7f576"
       ],
       "agent_ids": [
         "f3d2ba4b-ca63-4b76-b7eb-afe7cd43bf21"
       ],
       "started_at": "2026-11-26T09:27:04+08:00",
-      "completed_at": "2026-11-26T10:29:36+08:00",
-      "tool_calls_total": 199,
+      "completed_at": "2026-11-26T14:20:34+08:00",
+      "tool_calls_total": 278,
       "replay": "engineer/20261126-0927-20ebe308/replay.json",
       "timeline": "engineer/20261126-0927-20ebe308/timeline.md",
       "verification": "PARTIAL"
@@ -88,9 +90,9 @@
     "92eb2bfa-d2d1-4e05-9398-d0ebc7ebb3f3": "workitem-analyst/20261125-1953-92eb2bfa",
     "20ebe308-24c5-41f2-8e97-eb82b0244791": "engineer/20261126-0927-20ebe308"
   },
-  "run_count": 9,
+  "run_count": 13,
   "active_run_count": 0,
-  "tool_calls_total": 269,
+  "tool_calls_total": 348,
   "subagent_tool_calls_total": 0,
   "gaps": [
     "Run 01a2157b-93f5-76de-bd34-15aca8789f43 没有 session_id，也未按 work_dir 定位到本地会话",

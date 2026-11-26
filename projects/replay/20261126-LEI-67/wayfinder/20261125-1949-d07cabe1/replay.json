@@ -8,7 +8,7 @@
   "ended_at": "2026-11-25T11:52:23.395000+00:00",
   "duration_seconds": 165.3,
   "first_prompt": "You are running as a local coding agent for a Multica workspace.\n\nYour assigned issue ID is: 01a21289-b0cf-7c07-95ad-9f770294a9f0\n\nStart by running `multica issue get 01a21289-b0cf-7c07-95ad-9f770294a9f0 --output json` to understand your task, then complete it.\nFor comment history, workflow step 2 applies. Scan the threads first with `multica issue comment list 01a21289-b0cf-7c07-95ad-9f770294a9f0 --roots-only --summary --compact --output json`, then expand only what matters with `--thread <thread-id> --tail 30`. For `--since` incremental polling, pagination, and folding, see `multica issue comment list --help`.\n\n## On Behalf Of\n\nYou are acting on behalf of **lilei** (lilei@winning.com.cn). Apply any person-specific privacy or access rules in your instructions to this person. Your Multica credentials and access remain scoped to the runtime owner; do not assume this person can access everything you can.",
-  "exported_at": "2026-11-26T10:33:15+08:00",
+  "exported_at": "2026-11-26T16:03:31+08:00",
   "stats": {
     "user_prompts": 1,
     "assistant_turns": 16,
