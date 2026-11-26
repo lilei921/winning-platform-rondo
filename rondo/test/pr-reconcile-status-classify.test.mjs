@@ -217,7 +217,9 @@ test("mismatched PR URL or provider identity cannot write finalize.pending", asy
 test("部分 PR 登记不能触发 Closeout；研发状态即使全部完成也等待 Materialize", async () => {
   for (const status of ["in_review","blocked"]) {
     const f=fixture(status, {pr_prep:JSON.stringify([{repo_key:"repo"},{repo_key:"web"}])});
-    const action=await processIssue(f.multica,f.issue,{attempts:0,successes:0},()=>{throw Error("unexpected lookup");},COLLECTION);
+    const action=await processIssue(f.multica,f.issue,{attempts:0,successes:0},()=>({
+      status:"ok",pr:{id:42,status:"completed",sourceBranch:"feature/a",targetBranch:"dev"}
+    }),COLLECTION);
     assert.equal(action.action,"unknown");
     assert.match(action.detail,/仓库集合不完整/);
     assert.deepEqual(f.calls,[]);
@@ -228,4 +230,15 @@ test("部分 PR 登记不能触发 Closeout；研发状态即使全部完成也�
   }),COLLECTION);
   assert.equal(action.action,"noop");
   assert.deepEqual(f.calls,[]);
+});
+
+test("partial registration still detects abandoned PRs before Closeout completeness check", async () => {
+  const f=fixture("in_review",{pr_prep:JSON.stringify([{repo_key:"repo"},{repo_key:"web"}])});
+  const action=await processIssue(f.multica,f.issue,{attempts:0,successes:0},()=>({
+    status:"ok",pr:{id:42,status:"abandoned",sourceBranch:"feature/a",targetBranch:"dev"}
+  }),COLLECTION);
+  assert.equal(action.action,"stopped_abandoned");
+  assert.deepEqual(f.calls.map(c=>c[0]),["metadata","status"]);
+  assert.equal(f.calls[0][2],"pr.abandoned");
+  assert.deepEqual(f.calls[1],["status","issue-id","blocked"]);
 });

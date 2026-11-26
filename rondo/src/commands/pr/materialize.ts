@@ -35,7 +35,7 @@ type MaterializedPr = CurrentPrEntry & { reused: boolean };
 export async function materializePreparedPrs(
   multica: Pick<MulticaClient, "setMetadata" | "getIssue" | "setStatus">, issueId: string,
   prep: PrPrepEntry[], initialCurrentPr: string | undefined, readOnly: boolean,
-  authorize: (expectedCurrentPr: string | undefined) => void,
+  authorize: (expectedCurrentPr: string | undefined, checkActor?: boolean) => void,
   materialize: (entry: PrPrepEntry, prior: CurrentPrEntry | undefined, authorizeCurrent: () => void) => Promise<MaterializedPr>,
 ): Promise<MaterializedPr[]> {
   const registered = list<CurrentPrEntry>(initialCurrentPr, "current_pr");
@@ -51,7 +51,7 @@ export async function materializePreparedPrs(
     const pr = await materialize(entry, prior, authorizeCurrent);
     if (!prior && !readOnly) {
       const { reused: _, ...identity } = pr;
-      authorizeCurrent();
+      authorize(currentPr, false);
       const next = JSON.stringify([...registered, identity]);
       multica.setMetadata(issueId, "current_pr", next);
       if (multica.getIssue(issueId).metadata?.current_pr !== next) {
@@ -62,7 +62,7 @@ export async function materializePreparedPrs(
     }
     prs.push(pr);
   }
-  authorizeCurrent();
+  authorize(currentPr, false);
   if (!readOnly) {
     multica.setStatus(issueId, "in_review");
     const confirmed = multica.getIssue(issueId);
@@ -112,7 +112,7 @@ export async function materializeOne(tfs: Pick<TfsClient, "run">, api: Pick<ApiT
     const url = normalizeTfsPrWebUrl(live.url??priorUrl,collection,repo.project,repo.repo,id);
     if(live.status==="active") await checkHead();
     authorize();
-    await ensurePrWorkItemLink(api,repo,id,tfsId,!readOnly && live.status==="active");
+    await ensurePrWorkItemLink(api,repo,id,tfsId,!readOnly);
     return {repo_key:entry.repo_key,pr_id:id,pr_url:url,source_branch:entry.source_branch,target_branch:entry.target_branch,reused};
   };
   if(prior) return verify(prior.pr_id,true,prior.pr_url);
@@ -153,7 +153,7 @@ export function registerPrMaterialize(group: Command): void {
         if(!bug&&md["tfs.type"]!=="需求") throw new FailError("不支持当前 TFS Type");
         if(bug&&(md["analysis.change_ref"]||md["analysis.gate.result"])) throw new FailError("Bug 不能混入 OpenSpec Gate");
         const branch=candidateBranch(md["tfs.id"]);
-        const authorize=(expectedCurrentPr: string | undefined)=>{
+        const authorize=(expectedCurrentPr: string | undefined, checkActor = true)=>{
           const fresh=multica.getIssue(issue.id), facts=fresh.metadata??{};
           if(fresh.status!==issue.status||fresh.assignee_id!==issue.assignee_id||
             ["tfs.id","tfs.type","tfs.url","analysis.source","analysis.human_approval","analysis.change_ref","analysis.gate.result",
@@ -161,7 +161,7 @@ export function registerPrMaterialize(group: Command): void {
               .some(k=>facts[k]!==md[k]) || facts.current_pr!==expectedCurrentPr) throw new UnknownError("PR 物化期间授权或准备事实变化");
           if(!["todo","in_progress","in_review"].includes(fresh.status??"")||facts["finalize.pending"]||facts["delivery.tfs_written"]==="true")
             throw new FailError("当前 Issue 状态不允许 PR 物化");
-          if(readOnly) return;
+          if(readOnly || !checkActor) return;
           if(bug) {
             assertBugExecution(multica,fresh);
             assertBugAgentAssignment(fresh.assignee_id,multica.run(["agent","list",...multica.ws(),"--output","json"],"核验 Bug Fix 指派",{transient:true}));

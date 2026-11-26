@@ -52,7 +52,16 @@ test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专
   t.after(() => { for (const [k,v] of Object.entries(previous)) { if (v === undefined) delete process.env[k]; else process.env[k]=v; } });
   const entry = prep("frame", sha1);
   const repo = {project:"P",repo:"biz",projectId:"11111111-1111-1111-1111-111111111111",repoId:"22222222-2222-2222-2222-222222222222"};
-  const api = {config:{serverUrl:"http://tfs.test/tfs/C"},rawRequest:async (url,method)=>{
+  let linkWrites = 0;
+  const api = {config:{serverUrl:"http://tfs.test/tfs/C"},rawRequest:async (url,method,body)=>{
+    if (method === "PATCH") {
+      const patch = JSON.parse(body);
+      assert.equal(patch[0].value,1);
+      assert.equal(patch[1].value.url,"vstfs:///Git/PullRequestId/"+repo.projectId+"%2F"+repo.repoId+"%2F17");
+      linked = true;
+      linkWrites++;
+      return {statusCode:200,body:"{}"};
+    }
     assert.equal(method,"GET");
     return {statusCode:200,body:JSON.stringify({id:42,rev:1,relations:linked?[{rel:"ArtifactLink",url:"vstfs:///Git/PullRequestId/"+repo.projectId+"%2F"+repo.repoId+"%2F17"}]:[]})};
   }};
@@ -119,8 +128,17 @@ test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专
   await assert.rejects(materializeOne(tfs,api,42,entry,repo,undefined,false,authorize),/外部身份/);
   sourceCommitId = sha1;
   linked = false;
-  await assert.rejects(materializeOne(tfs,api,42,entry,repo,undefined,false,authorize),/缺少 Work Item/);
-  linked = true;
+  await assert.rejects(materializeOne(tfs,api,42,entry,repo,prior,true,authorize),/缺少 Work Item/);
+  assert.equal(linkWrites,0);
+  sourceCommitId = sha2;
+  await assert.rejects(materializeOne(tfs,api,42,entry,repo,undefined,false,authorize),/外部身份/);
+  assert.equal(linkWrites,0);
+  sourceCommitId = sha1;
+  assert.equal((await materializeOne(tfs,api,42,entry,repo,undefined,false,authorize)).pr_id,17);
+  assert.equal(linked,true);
+  assert.equal(linkWrites,1);
+  assert.equal((await materializeOne(tfs,api,42,entry,repo,prior,false,authorize)).pr_id,17);
+  assert.equal(linkWrites,1);
   listOverride = status => [{id:status==="active"?18:17,targetBranch:"dev",url:"http://tfs.test/pr/17"}];
   await assert.rejects(materializeOne(tfs,api,42,entry,repo,undefined,false,authorize),/多个/);
   listOverride = () => [];
@@ -495,8 +513,9 @@ test("逐仓 PR 登记保留部分成功，重试仅补缺失登记，完整后�
     getIssue() { return issue; },
     setStatus(id,status) { writes.push("status"); if (!loseStatus) issue.status=status; },
   };
-  const seen = [];
-  const authorize = expected => {
+  const seen = [], checks = [];
+  const authorize = (expected,checkActor=true) => {
+    checks.push(checkActor);
     if (issue.metadata.current_pr !== expected) throw Error("current_pr drift");
   };
   const materialize = async (entry,prior,check) => {
@@ -512,6 +531,7 @@ test("逐仓 PR 登记保留部分成功，重试仅补缺失登记，完整后�
   assert.deepEqual(JSON.parse(issue.metadata.current_pr).map(p=>p.repo_key),["frame"]);
   assert.equal(issue.status,"in_progress");
   assert.deepEqual(writes,["current_pr"]);
+  assert.deepEqual(checks,[true,false,true]);
   failRepo = "";
   loseMetadata = true;
   await assert.rejects(run(),/登记未确认/);
@@ -523,10 +543,11 @@ test("逐仓 PR 登记保留部分成功，重试仅补缺失登记，完整后�
   assert.equal(JSON.parse(issue.metadata.current_pr).length,2);
   assert.equal(issue.status,"in_progress");
   loseStatus = false;
-  writes.length=0;seen.length=0;
+  writes.length=0;seen.length=0;checks.length=0;
   await run();
   assert.deepEqual(seen,[["frame",17],["web",18]]);
   assert.deepEqual(writes,["status"]);
+  assert.deepEqual(checks,[true,true,false]);
   assert.equal(issue.status,"in_review");
   writes.length=0;
   await run(true);
