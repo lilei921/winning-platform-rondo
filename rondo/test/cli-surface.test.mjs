@@ -18,10 +18,9 @@ const TREE = {
   change: ["resolve-identity"],
   analysis: ["validate", "publish", "read", "approve"],
   dev: ["git", "prepare", "publish"],
-  bug: ["resume"],
   tfs: ["writeback", "reconcile-workitem"],
-  pr: ["prepare", "materialize", "worktree", "reconcile-status", "create", "get", "list"],
-  delivery: ["route-decision", "finalize", "root-prepare", "admission"],
+  pr: ["prepare", "materialize", "resume", "worktree", "reconcile-status", "create", "get", "list"],
+  delivery: [ "finalize", "root-prepare", "admission"],
   workspace: ["provision", "sync", "migrate-repo-keys", "check-daemon"],
   runtime: ["resolve-root-repo","prepare-root","get-context","check-checkout"],
   repo: ["get"],
@@ -46,9 +45,9 @@ test("顶层叶子 query:缺 --wiql exit 64,用法走 stderr,stdout 纯净", () 
   assert.ok(r.stderr.includes("--wiql"));
 });
 
-test("命令总数 = 39", () => {
+test("命令总数 = 38", () => {
   const total = Object.values(TREE).reduce((n, leaves) => n + leaves.length, 0) + 2 /* query + doctor */;
-  assert.equal(total, 39);
+  assert.equal(total, 38);
 });
 
 test("--version 输出 JSON:name/version/node/sea,exit 0", () => {
@@ -91,7 +90,7 @@ test("delivery root-prepare 不要求 --config，从当前 Runtime 解析环境"
 
 
 test("PR Preparation 命名统一，Closeout 拒绝旧配置参数", () => {
-  for (const group of ["dev", "bug"]) {
+  for (const group of ["dev"]) {
     const help = runCli([group]);
     assert.doesNotMatch(help.stderr, /\bpr-prepare\b/);
     assert.doesNotMatch(help.stderr, /(?:^|\s)(?:pr-prep|prepare-pr)(?=\s|$)/m);
@@ -165,4 +164,10 @@ test("retired Task Set commands are not registered", () => {
     assert.notEqual(runCli(args).status,0);
     assert.doesNotMatch(runCli([args[0]]).stderr,new RegExp("  "+args[1]+"(?: |\\n)"));
   }
+});
+
+test("PR recovery only exposes pr resume", () => {
+  assert.equal(runCli(["pr","resume","--help"]).status,0);
+  assert.notEqual(runCli(["delivery","route-decision"]).status,0);
+  assert.notEqual(runCli(["bug","resume"]).status,0);
 });

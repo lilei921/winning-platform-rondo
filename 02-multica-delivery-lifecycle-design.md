@@ -1490,7 +1490,7 @@ Finding
 → Parent Delivery 重新评估 Verify
 ```
 
-上述是定向返工的执行顺序，不意味着仅将 Sub-Issue 从 `done` 改为 `in_progress` 就必然产生新 Run。Specialist-owned / Squad-owned 的具体单次触发方式与当前 Run 检查遵循 [§7.3](#section-7-3)；来自 PR Abandoned 的 ENGINEERING 返工复用本路径并按 [§11.2](#section-11-2) 保持原 Runtime Projection。
+上述是定向返工的执行顺序，不意味着仅将 Sub-Issue 从 `done` 改为 `in_progress` 就必然产生新 Run。Specialist-owned / Squad-owned 的具体单次触发方式与当前 Run 检查遵循 [§7.3](#section-7-3)；PR Abandoned 的恢复遵循 [§11.2](#section-11-2)。
 
 如果：
 
@@ -1510,7 +1510,7 @@ Delivery Lead
 Semantic Diagnosis / Human Escalation
 ```
 
-不得无限 Engineer ↔ Verify 循环。父级重复推进遵循 [§8.2.1](#section-8-2-1)–[§8.2.2](#section-8-2-2)；定向重开、证据失效与 Stage 影响遵循 [§9.5](#section-9-5)–[§9.8](#section-9-8)；收口恢复遵循 [§12.4.2](#section-12-4-2)–[§12.4.4](#section-12-4-4)。PR Abandoned 后的 `ENGINEERING` / 需要工程工作的 `RECREATE_PR` 复用上述原 Sub-Issue 定向重开原则，具体 Human 授权与两种 Runtime Projection 的唯一触发路径见 [§11.2](#section-11-2)。只按实际验收轮次计入现有失败阈值，重复通知或脚本恢复不额外计为新验收。
+不得无限 Engineer ↔ Verify 循环。父级重复推进遵循 [§8.2.1](#section-8-2-1)–[§8.2.2](#section-8-2-2)；定向重开、证据失效与 Stage 影响遵循 [§9.5](#section-9-5)–[§9.8](#section-9-8)；收口恢复遵循 [§12.4.2](#section-12-4-2)–[§12.4.4](#section-12-4-4)。PR Abandoned 后的恢复遵循 [§11.2](#section-11-2)。只按实际验收轮次计入现有失败阈值，重复通知或脚本恢复不额外计为新验收。
 
 ---
 
@@ -1652,16 +1652,15 @@ mergeCommitMessage
 
 Status Sync 确认外部 abandoned 后登记 `pr.abandoned`，将当前 Issue 置 blocked，保持原指派。Delivery Lead 理解当前真实 Human Comment，不由 CLI 推断业务原因。
 
-Requirement 的 `rondo delivery route-decision` 根据明确决定处理：
+Bug 与 Requirement 使用 `rondo pr resume --issue <KEY> --comment-id <id> --next REWORK|RECREATE_PR` 恢复当前 Human 明确授权的 PR Facts。
 
-| 决定 | 当前动作 |
+| 恢复方式 | 当前动作 |
 |---|---|
-| ANALYSIS | 登记决定，恢复 in_progress（no-start），由 Lead 原生交接 Workitem Analyst；实质契约变化重新审核。 |
-| ENGINEERING | 核实 Human、当前批准及 abandoned PR，解除对应 PR 绑定并使旧验证和 Review 失效；保留实际交付仓范围，恢复 in_progress（no-start），Lead 原生交接 Engineer。 |
-| RECREATE_PR | 确认当前对应 PR 已 abandoned、Candidate 未变且事实一致，仅解除该仓 pr_id / pr_url 绑定，保留专业准备事实；恢复 in_progress（no-start），再由 Lead 原生交接 Engineer 重新物化。Candidate 变化须明确授权工程返工。 |
-| CANCEL_DELIVERY | 保持停止，由 Human 处理。 |
+| REWORK | 核实当前 abandoned PR；Requirement 清除对应 PR 身份、失效 Validation 与 Code Review，保留实际交付仓范围及其他有效 PR；Bug 清除失效准备，保留 bug.required_repos。 |
+| RECREATE_PR | 核实外部 abandoned 及未变 Candidate，仅解除对应 PR 身份；现有准备事实与后续 Gate 仍须有效。 |
 
-决定与必要外部身份绑定，重试不能移除后续新 PR。已解除 PR 绑定但 Issue 仍 blocked 时，由 Human 核对当前阻塞原因后通过原生状态操作恢复；不凭旧决定自动解除阻塞。Bug 使用 `rondo bug resume` 的明确 REWORK / RECREATE_PR 契约；保留完整必要仓范围与外部 abandoned 核验。
+Bug 保留全部当前 PR 已确认 abandoned 的恢复边界。CLI 仅写入并回读 `pr`，不额外存储 Human Decision 或改变 Issue 状态。Lead / Bug Fix Agent 根据 Human 意图协调原生状态恢复与执行；返回分析时重新审核实质契约变化，取消交付保持停止。若恢复已写入但响应未知，先回读当前 PR Facts；旧 Comment 不能作用于之后检测到的 Abandoned 事件。不确定时交 Human 核对当前阻塞。
+
 
 ## 11.3 PR Completed（PR 已完成）
 
@@ -2067,7 +2066,7 @@ Run 成功、PR completed、Issue done 是不同事实。调用方只根据上�
 | 工程任务、Scope、验收契约 | 固定批准版本 OpenSpec；Scope 来自 `.openspec.yaml` 的 x-repositories |
 | PR 交付准备及登记 | `pr`：每个实际交付仓唯一记录，Preparation 后逐步补充 PR ID / URL；外部状态以 TFS 为准 |
 | Bug 特有范围与独立验收 | `bug.required_repos`、`verify_agent.required` |
-| PR 异常与必要恢复 | `pr.abandoned`、适用 Human Decision |
+| PR 异常与必要恢复 | `pr.abandoned`、原生 Human Comment 与 `pr` 当前事实 |
 | 收口 | `finalize.pending`、`delivery.tfs_written` 等当前必要收口事实 |
 
 Requirement 只读取 `analysis.human_approval.verify_agent_required` 作为独立验收决定；不因不要求独立验收而取消开发验证。尚无可核验独立 PASS 时不得自动 Finalize。

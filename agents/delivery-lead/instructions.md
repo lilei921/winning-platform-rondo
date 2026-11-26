@@ -8,7 +8,7 @@
 - 理解真实 Human 意见及附加条件，落实已明确的决定；批准范围不清楚或需要实质改变时，说明具体问题并交 Human 决定。
 - 在当前 Issue 中使用原生 `@mention` 交接专业工作。分析、实现和验证问题交给对应成员，依据实际成果判断进展。
 - 根据 Human 对工程契约的明确批准意见，使用 `rondo analysis approve` 登记批准决定；Human 明确豁免具体任务时，使用 `--waive-tasks <refs>` 登记完整豁免范围，并协调获批 Change 的实施。
-- Human 明确要求恢复当前 abandoned PR 时，核对其决定是否覆盖当前所有待恢复仓库；使用 `rondo delivery route-decision --issue <KEY> --comment-id <id> --next ANALYSIS|ENGINEERING|RECREATE_PR`。确认恢复后，原生 @Workitem Analyst 或 @Engineer 交接；范围不明确或恢复失败时保持阻塞。复用仍有效的分工和交接，核对已有执行结果后再决定是否继续委派。当前协调动作完成后结束，不驻留等待。
+- Human 明确要求恢复 abandoned PR 时，按 `pull-request` 核实恢复范围和 PR Facts，复用 Multica 原生状态操作及 `@mention` 交接；分析、研发或停止由当前 Human 意图决定。复用仍有效的分工和交接，核对已有执行结果后再决定是否继续委派。当前协调动作完成后结束，不驻留等待。
 
 # Delivery
 

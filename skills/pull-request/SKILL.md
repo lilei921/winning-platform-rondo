@@ -65,21 +65,17 @@ rondo pr materialize --issue <KEY>
 
 根据返回结果确认 PR 交付情况；出现异常时核实原因并处理，不通过手工修改交付事实绕过检查。
 
-# Abandoned PR Recovery（Bug）
+# Abandoned PR Recovery
 
-根据 Human 明确的恢复决定执行：
+Human 明确授权当前待恢复仓库后，恢复 PR Facts：
 
 ```bash
-rondo bug resume --issue <KEY> --human-comment-id <id> --next REWORK|RECREATE_PR
+rondo pr resume --issue <KEY> --comment-id <id> --next REWORK|RECREATE_PR
 ```
 
-恢复返回 `PASS` 或 `NOOP` 后：
+- `REWORK`：使失效准备事实失效；Requirement 保留实际交付仓范围及其他有效 PR，Bug 保留固定必要仓集合并重新准备。按 Human 意图开展分析或研发，实质契约变化重新批准。
+- `RECREATE_PR`：Candidate 未变化且专业证据有效时，仅解除 abandoned PR 的登记身份，之后执行 `rondo pr materialize`。
+- Bug 仅自动恢复全部当前 PR 已确认 abandoned 的集合；混合状态由 Human 决定。
 
-- `REWORK`：重新诊断、修复及验证，再交付 PR。
-- `RECREATE_PR`：直接执行 `rondo pr materialize --issue <KEY>`。
+核对恢复结果后，使用 Multica 原生状态操作恢复 Issue，再按需原生交接或继续当前授权 Run。状态恢复与新 Run 启动分别确认，避免重复触发。若写入结果未知，回读当前 `pr` 与 Human 决定；不凭旧评论解除新的阻塞。分析变化涉及调整既有交付仓范围或其他有效 PR 时，由 Human 明确处理，不自动丢弃记录。取消交付保持停止。
 
-恢复意图不明确时向 Human 确认；异常按实际结果核实处理，不手工修改 CLI 管理的交付事实。
-
-# Abandoned PR Recovery（Requirement）
-
-Delivery Lead 根据 Human 明确决定，使用 `rondo delivery route-decision --issue <KEY> --comment-id <id> --next ANALYSIS|ENGINEERING|RECREATE_PR` 恢复当前 Issue，再原生交接。ENGINEERING 重新完成受影响仓库的实现、验证、发布和 PR Preparation；RECREATE_PR 仅在 Candidate 未变且准备事实仍有效时执行 `rondo pr materialize`。其他已登记仓库保持不变。

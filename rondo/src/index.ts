@@ -31,7 +31,7 @@ import { registerDevGit } from "./commands/dev/git.js";
 import { registerRuntimeCheckCheckout } from "./commands/runtime/check-checkout.js";
 import { registerRuntimePrepareRoot } from "./commands/runtime/prepare-root.js";
 import { registerRuntimeGetContext } from "./commands/runtime/get-context.js";
-import { registerBugResume } from "./commands/bug/resume.js";
+import { registerPrResume } from "./commands/pr/resume.js";
 import { registerDeliveryAdmission } from "./commands/delivery/handoff.js";
 import { registerTfsReconcileWorkitem } from "./commands/tfs/reconcile-workitem.js";
 import { registerTfsWriteback } from "./commands/tfs/writeback.js";
@@ -39,7 +39,6 @@ import { registerPrMaterialize } from "./commands/pr/materialize.js";
 import { registerPrPrepare } from "./commands/pr/prepare.js";
 import { registerPrWorktree } from "./commands/pr/worktree.js";
 import { registerPrReconcileStatus } from "./commands/pr/reconcile-status.js";
-import { registerDeliveryRouteDecision } from "./commands/delivery/route-decision.js";
 import { registerDeliveryFinalize } from "./commands/delivery/finalize.js";
 import { registerCloseoutRoot } from "./commands/delivery/closeout-root.js";
 import { registerWorkspaceProvision } from "./commands/workspace/provision.js";
@@ -86,8 +85,6 @@ registerDevPrepare(dev);
 registerDevGit(dev);
 registerDevPublish(dev);
 
-const bug = bareGroup(program.command("bug").description("无 OpenSpec 的 TFS Bug 修复交付入口"));
-registerBugResume(bug);
 
 const tfs = bareGroup(program.command("tfs").description("TFS 统一回写(writeback)/ 对账"));
 registerTfsWriteback(tfs);
@@ -97,6 +94,7 @@ registerTfsReconcileWorkitem(tfs);
 const pr = bareGroup(program.command("pr").description("PR 物化 / worktree / 状态对账 / TFS PR 事实(create|get|list)"));
 registerPrMaterialize(pr);
 registerPrPrepare(pr);
+registerPrResume(pr);
 registerPrWorktree(pr);
 registerPrReconcileStatus(pr);
 registerTfsApiLeaf(pr, "create", ["pr", "create"], "创建 TFS PR(幂等核对:重复返回 created:false + existing)");
@@ -104,7 +102,6 @@ registerTfsApiLeaf(pr, "get", ["pr", "get"], "读取 TFS PR 事实(status 原样
 registerTfsApiLeaf(pr, "list", ["pr", "list"], "列出 TFS PR(--status/--source-branch/--top)");
 
 const delivery = bareGroup(program.command("delivery").description("入口交接、Human Decision 路由与交付收口(02 §4.1/§11.2/§12)"));
-registerDeliveryRouteDecision(delivery);
 registerDeliveryAdmission(delivery);
 registerDeliveryFinalize(delivery);
 registerCloseoutRoot(delivery);
