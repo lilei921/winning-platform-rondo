@@ -90,7 +90,7 @@ Multica Resource ref 原生语义是 Checkout 起点，并非平台天然定义�
 - 实施前从 LEI-53 现场或同版本 Runtime 补录实际 .git 类型、Git common dir、Workspace/Task 上下文和平台返回结果，确认误判原因并验证最小替代身份依据。若现场不可用，使用可复现的目标 Runtime；不宣称已经证实普通 Checkout 形态，不为此增加独立预检、Manifest 或认证体系。
 - 同步修复 publishCommittedChange() 内部 Native 判断以及本地 HEAD 分支必须等于发布目标的错误前提；明确的合法 Task Branch 可发布至不同名远端分支。
 - 保留现有按 Change 范围构造 Commit、工件白名单、真实 Gate 与 Commit Tree 摘要核对、并发保护、非破坏性 Push、远端回读和幂等性；不重写 Git 发布算法，不直接推整个 Task HEAD。
-- 修复所有已经确认的形态分流消费点：dev/prepare-workspace.ts 的 validateBusinessCheckout（含 Native dev prepare 与 Bug PR 调用），dev/pr-prepare.ts 的 .git 文件分支，bug/git.ts 与 bug/pr-prepare.ts 的 Native Delivery Mapping 判断，以及 root-git.ts、dev/publish.ts 的 cache 分流。Native 调用使用已确认的 Task/Checkout 身份，普通 .git 目录不跳过 Native 授权和映射校验；旧路径仅在其既有明确契约下使用，Native 身份未知不能退回旧路径。形态校验与 Native 平级路径解析保持一致，不改 Candidate、PR 或 Gate 契约。
+- 修复所有已经确认的形态分流消费点：dev/prepare-workspace.ts 的 validateBusinessCheckout（供 Native Git 与 PR 调用），dev/pr-prepare.ts 的 .git 文件分支，bug/git.ts 与 bug/pr-prepare.ts 的 Native Delivery Mapping 判断，以及 root-git.ts、dev/publish.ts 的 cache 分流。Native 调用使用已确认的 Task/Checkout 身份，普通 .git 目录不跳过 Native 授权和映射校验；旧路径仅在其既有明确契约下使用，Native 身份未知不能退回旧路径。形态校验与 Native 平级路径解析保持一致，不改 Candidate、PR 或 Gate 契约。
 - 不新增一套独立 Preflight 来发现本应移除的实现形态限制。
 
 ### 4.3 Development Publish 与 Closeout
@@ -99,7 +99,7 @@ Multica Resource ref 原生语义是 Checkout 起点，并非平台天然定义�
 
 Closeout 继续以 analysis.source.repo_url / branch 为根仓准备和 Archive 的权威来源。closeout-root.ts 的 platformIsolatedMode/verifyPlatformCheckout 仍依赖 cache 形态，按 §4.2 的实际平台身份证据修复，保留自身授权、批准 SHA、Task-local Archive Branch、远端快进及回读机制。
 
-PR Status Sync Task 可以处理多个业务 Issue；不得要求其 Task 与目标业务 Issue 一一绑定，也不得要求已有合法 rondo/closeout/<task-suffix>/<target> 归档分支当前 HEAD 必须是 agent/...。dev prepare 保留当前业务 Issue 的 Task 归属校验，delivery root-prepare 保留自己的收口授权及原 Task Checkout 分支身份核验。不合并业务入口，不重构归档或 TFS 回写。
+PR Status Sync Task 可以处理多个业务 Issue；不得要求其 Task 与目标业务 Issue 一一绑定，也不得要求已有合法 rondo/closeout/<task-suffix>/<target> 归档分支当前 HEAD 必须是 agent/...。dev git / pr prepare 保留当前业务 Issue 的 Task 归属校验，delivery root-prepare 保留自己的收口授权及原 Task Checkout 分支身份核验。不合并业务入口，不重构归档或 TFS 回写。
 
 ### 4.4 Native Workspace 按需准备，采用平级布局
 
@@ -124,12 +124,12 @@ Task workdir/
 | 首次分析 / Bug 根仓 | `multica repo checkout <root-url> --ref <resource-ref>` | 当前 Task workdir | 根仓 Resource ref |
 | 已批准 Requirement 研发根仓 | `multica repo checkout <source.repo_url> --ref <source.branch>` | 当前 Task workdir | 已批准 analysis.source.branch |
 | 只读业务调查 | `multica repo checkout <business-url> --ref <resource-ref>` | 当前 Task workdir | 业务仓 Resource ref |
-| Requirement / Bug 研发 | 现有 `rondo dev prepare --workspace native --issue <KEY> --repo <repo_id> --root-repo "<root>" --resource-ref <resource-ref>` | CLI 在当前 Task workdir 执行 | 已发布 Candidate 优先，否则 Resource ref |
+| Requirement / Bug 研发 | `multica repo checkout <business-url> --ref <ref>` | 当前 Task workdir | 已发布 Candidate 优先，否则 Resource ref |
 | Requirement 收口根仓 | 现有 `rondo delivery root-prepare --issue <KEY>` | 当前 Task workdir | 固定 analysis.source；沿用现有归档分支准备机制 |
 
 根仓直接 Checkout 后使用实际返回路径，执行现有 `rondo runtime check-checkout --root-repo "<root>"`。首次根仓以已登记 Project Resource 的明确 URL/ref 为依据，不按名称、列表顺序或默认分支推测；Requirement 首次发布要求明确有效的分支。其他 Resource 无 ref 时可省略 --ref。Engineer 使用已批准的来源并核实根仓包含批准 commit，研发授权仍由现有业务 Guard 执行。
 
-Multica 以 cwd 决定目录；native-workspace Skill 统一在 Task workdir 执行原生 Checkout，不绑定 Shell 或操作系统。dev prepare 在根仓的父目录执行业务 Checkout，delivery root-prepare 保持原有入口；不新增 Checkout 命令、路径注册表或通用 Workspace 管理机制。
+Multica 以 cwd 决定目录；native-workspace Skill 统一在 Task workdir 执行原生 Checkout，不绑定 Shell 或操作系统。业务 Checkout 在根仓的父目录执行，delivery root-prepare 保持原有入口；不新增 Checkout 命令、路径注册表或通用 Workspace 管理机制。
 
 #### 4.4.2 必要就绪与边界
 
@@ -155,15 +155,15 @@ Multica 以 cwd 决定目录；native-workspace Skill 统一在 Task workdir 执
 
 ## 5. P1 历史依赖清理
 
-Native 路径不消费 RONDO_WORKSPACE_BRANCH、RONDO_WORKSPACE_PATH；实际根仓路径由调用方明确提供。局部更新 native-workspace，现有 dev prepare 的 --resource-ref 契约保持不变；--target-branch 不覆盖 Resource 权威，无消费者的冗余参数再删除。runtime check-checkout 保留现有根仓就绪检查入口，修复必要校验不一致。
+Native 路径不消费 RONDO_WORKSPACE_BRANCH、RONDO_WORKSPACE_PATH；实际根仓路径由调用方明确提供。native-workspace 根据 Candidate 是否存在选择已发布 Candidate 或已核实 Resource ref，不以 PR Target 替代 Resource 权威。runtime check-checkout 保留现有根仓就绪检查入口，修复必要校验不一致。
 
-当前 workspace-config/provisioning.json 仍登记 native-workspace 与 workspace-preparation，且含 workspace_branch；workspace provision 仍注入旧分支变量。Native Agent 不再需要该注入，按实际生效的工作区准备方式收敛；旧 workspace-preparation、runtime prepare-root、requirementBranch() 及配置注入如仍有真实消费者则保留，不全面重构旧模式。CLI、Skill、帮助/COMMANDS 文档和 Provision 部署保持一致，避免新 Skill 调用未部署的命令。
+workspace-config/provisioning.json 只登记 native-workspace；workspace provision 不再切换准备 Skill 或注入旧分支变量。独立的 runtime prepare-root 及根仓发布契约保持不变。CLI、Skill、帮助/COMMANDS 文档和 Provision 部署保持一致，避免新 Skill 调用未部署的命令。
 
 ## 6. Skill 边界
 
 ### native-workspace
 
-根仓及只读业务仓按需直接使用 multica repo checkout，统一在 Task workdir 执行；使用返回的实际路径。根仓执行现有 runtime check-checkout。获授权的修复与研发使用现有 dev prepare。根仓与业务仓分别准备，不自动 Checkout 全部仓库；只读调查不要求 Candidate 或研发授权。
+根仓及只读业务仓按需直接使用 multica repo checkout，统一在 Task workdir 执行；使用返回的实际路径。根仓执行现有 runtime check-checkout。获授权的修复与研发也直接使用原生 Checkout，优先续接已发布 Candidate，否则使用 Resource ref。根仓与业务仓分别准备，不自动 Checkout 全部仓库；只读调查不要求 Candidate 或研发授权。
 
 Skill 仅保留必要命令、Resource/ref、执行目录和结果处理说明，使用跨平台表达，不解释 .git、daemon cache 或 common dir，不重复正式交付校验。
 
@@ -206,15 +206,15 @@ flowchart TD
 - [ ] 在真实目标 Runtime 补录 Checkout 身份证据；经平台身份核实的普通 Checkout 与 linked worktree 均能通过分析发布；错误 Task/Issue、仓库、路径越界、身份无法确认仍拒绝，不能回退旧模式。
 - [ ] 本地 Task Branch 与远端发布目标不同名，仍正确发布；错误分支、未登记或歧义 Resource 不写入交付状态；首次 Requirement 根仓无明确有效分支则不判就绪。Resource 改换分支或 Kept 基线不符时不得发布；同分支远端前进仍可安全发布。
 - [ ] Gate 检查的工件与最终远端固定 Commit 一致；其他 Change、无关文件不被发布。
-- [ ] 根仓与只读业务仓直接使用原生 Checkout，均在 Task workdir 执行；只准备指定仓库，不自动检出其他仓库。Native dev prepare 同样以 Task workdir 为 cwd；Skill 不绑定 Shell 类型。
+- [ ] 根仓与只读业务仓直接使用原生 Checkout，均在 Task workdir 执行；只准备指定仓库，不自动检出其他仓库。研发业务仓同样以 Task workdir 为 cwd；Skill 不绑定 Shell 类型。
 - [ ] 根仓和业务仓为平级独立 Git 工作树；Native 不依赖根仓 Ignore/Tracking；现有 PR Preparation、Completion Check、Bug Git 路径消费正常。错误仓库、未授权研发和越界路径仍被拒绝。
 - [ ] 首次根仓使用明确登记 Resource；Engineer 根仓使用批准来源并核对批准 SHA；现有研发 Guard 不因 Checkout 准备方式改变而放宽。
-- [ ] Skill 直接使用原生 Checkout，不新增简单 Checkout 的 Rondo 封装；只读调查不创建 Candidate、不写研发 Metadata、不强制调用 dev prepare；研发授权与 Candidate 续接不退化。Fetch 失败/Kept 保留不兼容基线均不判就绪。
-- [ ] 普通 Native Checkout 与 linked worktree 均经过业务仓 Native 身份和映射校验；dev prepare、Bug Git/PR、Requirement PR Preparation 不因 .git 形态跳过授权或校验。
+- [ ] Skill 直接使用原生 Checkout，不新增简单 Checkout 的 Rondo 封装；只读调查不创建 Candidate、不写研发 Metadata；研发授权与 Candidate 续接不退化。Fetch 失败/Kept 保留不兼容基线均不判就绪。
+- [ ] 普通 Native Checkout 与 linked worktree 均经过业务仓 Native 身份和映射校验；Bug Git/PR、Requirement Git/PR Preparation 不因 .git 形态跳过授权或校验。
 - [ ] dev publish 直接使用 analysis.source.branch；保留批准 SHA 及现有研发工件校验。
 - [ ] Closeout 以 analysis.source.branch 归档，不依赖历史分支变量；跨 Issue 收口与 Task-local Archive Branch 重入正常，保留各自授权。
 - [ ] 已审核重放不改写固定来源；Push/Metadata 部分失败按同一目标现有幂等机制恢复，分支不明不自动跨分支发布；获授权分析返工产生新审核版本并真实执行 Gate，blocked 不绕过 Guard。
-- [ ] 测试覆盖 Resource ref 后续变化、普通 Checkout/linked worktree、平级路径、现有 dev prepare 的 cwd 控制和存量 WIP 保护。
+- [ ] 测试覆盖 Resource ref 后续变化、普通 Checkout/linked worktree、平级路径、原生 Checkout 的 cwd和存量 WIP 保护。
 - [ ] CLI、Skill、Provision 与命令文档部署一致；仍有消费者的旧路径不退化。
 - [ ] 完成真实 Multica + TFS Git 环境的端到端分析发布验收，不以 Checkout Spike 或 Gate 预检查替代。
 
@@ -234,6 +234,6 @@ flowchart TD
 
 上述步骤属于同一优化任务，不另建子项目或新工作流。
 
-直接复用 Multica 原生命令及现有 dev prepare、delivery root-prepare；不新增 runtime checkout 或其他简单 Checkout 封装，不新增 Workspace Manager、Path Registry、Checkout Manifest、双布局支持、目录迁移、分支同步机制、Workspace Preflight Skill、过程性 Metadata 或新的分析发布命令；不重构 Analysis Gate、Human Approval、Repository Scope、Git 发布算法、交付生命周期及 TFS 回写。
+直接复用 Multica 原生命令及现有 delivery root-prepare；不新增 runtime checkout 或其他简单 Checkout 封装，不新增 Workspace Manager、Path Registry、Checkout Manifest、双布局支持、目录迁移、分支同步机制、Workspace Preflight Skill、过程性 Metadata 或新的分析发布命令；不重构 Analysis Gate、Human Approval、Repository Scope、Git 发布算法、交付生命周期及 TFS 回写。
 
 本文件为方案记录，尚未修改实现、测试或运行环境；P0/P1 及验收均待实施。

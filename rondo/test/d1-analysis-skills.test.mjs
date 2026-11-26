@@ -82,7 +82,7 @@ test("D1 workspace sync renders analysis-publish config in dry-run and local-onl
   const root = join(fixture(t), "中文 工作区");
   const shared = join(root, "workspace-config");
   const skill = join(root, "skills", "analysis-publish");
-  const workspaceSkill = join(root, "skills", "workspace-preparation");
+  const workspaceSkill = join(root, "skills", "native-workspace");
   const tools = join(root, "tools");
   const docs = join(root, "docs", "config");
   mkdirSync(join(shared, "workspaces"), { recursive: true });
@@ -103,7 +103,7 @@ test("D1 workspace sync renders analysis-publish config in dry-run and local-onl
   writeFileSync(join(shared, "workspaces", "d1pilot.json"), JSON.stringify({
     workspace_id: "ws-pilot",
     multica_profile: "private", multica_server_url: "https://private.example",
-    skills: { "analysis-publish": "skill-id", "workspace-preparation": "workspace-skill-id" },
+    skills: { "analysis-publish": "skill-id", "native-workspace": "workspace-skill-id" },
   }));
   const env = { MULTICA_REPO_ROOT: root, PYTHONUTF8: "0", PYTHONIOENCODING: "cp936" };
   const localConfig = join(skill, "config", "repo-registry.json");
@@ -124,10 +124,10 @@ test("D1 workspace sync renders analysis-publish config in dry-run and local-onl
   assert.equal(cfg.registry.app.repo_path, "业务 应用");
   assert.equal(cfg.registry.app.repo_url, "http://tfs.test/tfs/C/P/_git/app");
 
-  const workspaceRendered = run(["workspace", "sync", "--workspace", "d1pilot", "--skill", "workspace-preparation", "--local-only"], env);
+  const workspaceRendered = run(["workspace", "sync", "--workspace", "d1pilot", "--skill", "native-workspace", "--local-only"], env);
   assert.equal(workspaceRendered.code, 0, workspaceRendered.stderr);
-  assert.ok(workspaceRendered.body.rendered.includes("workspace-preparation/config/repo-registry.json"));
-  assert.deepEqual(JSON.parse(readFileSync(join(workspaceSkill, "config", "repo-registry.json"), "utf8")), cfg);
+  assert.deepEqual(workspaceRendered.body.rendered, []);
+  assert.equal(existsSync(join(workspaceSkill, "config", "repo-registry.json")), false);
 });
 
 test("D1 workspace sync refuses missing registry base rather than guessing a registry", (t) => {

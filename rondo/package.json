@@ -1,6 +1,6 @@
 {
   "name": "@winning/rondo",
-  "version": "1.2.39",
+  "version": "1.2.40",
   "description": "rondo —— Multica 交付流水线统一 CLI：OpenSpec Change 身份与分析门禁、研发与 Bug 交付、TFS 工作项与 Git PR 操作、Workspace 资产供给与同步、环境体检",
   "type": "module",
   "main": "dist/index.js",

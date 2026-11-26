@@ -1,6 +1,6 @@
 # 11｜Workspace Preparation Skill 独立化设计
 
-> **状态**：设计方案，待实施和验证（2026-11-19）。
+> **状态**：历史方案（2026-11-19），已由 [Native Workspace](12-native-workspace-consumer-alignment-plan.md) 取代；不作为当前执行契约。
 >
 > **依据**：[01 统一原则](01-multica-openspec-design-guideline.md)、[08-A Bug Fix](08a-remote-analysis-bug-fix-foundation.md)、[08-B Requirement](08b-requirement-remote-git-delivery.md)、[09 Engineer](09-unified-engineer-development-design.md)。
 

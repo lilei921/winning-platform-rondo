@@ -30,16 +30,20 @@ multica repo checkout <business-url> --ref <resource-ref>
 
 ## 研发业务仓
 
-已确定需要修改的业务仓，直接使用以下命令准备研发工作树，不先单独 Checkout。根据 Project Resource 和根仓映射核实 `repo_id`、初始 ref：
+根据当前 Issue 的授权范围确定实际修改的业务仓。Requirement 以已批准版本的 `.openspec.yaml` 中 `x-repositories` 和 `docs/config/repo-context.yaml` 为准；Bug 按诊断结论及已固定的 Bug Scope（如有）确定范围。核实 Project Resource 中对应仓库的 URL 和初始 ref。
+
+通过 `rondo branch get --project <project> --repo <repo> --name feature/<tfs.id>` 查询远端 Candidate。存在则使用 Candidate 分支；明确不存在时使用已核实的 Resource 初始分支。查询失败或初始 ref 不明时先核实，不用 PR Target 猜测研发基线。
+
+在当前 Task workdir 执行：
 
 ```text
-rondo dev prepare --workspace native --issue <KEY> --repo <repo_id> --root-repo "<root>" --resource-ref <resource-ref>
+multica repo checkout <business-url> --ref <ref>
 ```
 
-已有远端 Candidate 时可省略 `--resource-ref`；无 Candidate 时必须提供已核实的初始分支。
+使用返回的实际路径和 Multica 本地 Task Branch。首次 Checkout 核对 HEAD 与所选 ref；已有 Checkout 优先复用，核实其来源，存在远端 Candidate 时确认 HEAD 包含该 Candidate Commit。重入只 Fetch，不自动切换 ref。保留未提交和未发布成果；遇到不兼容工作树或旧嵌套 Checkout 时先核实并协调恢复，不强制重置、清理或另建重复工作树。
 
-使用命令返回的 `path` 作为代码修改、验证及提交的工作区；`branch` 为远端 Candidate，`local_branch` 为 Multica 管理的本地 Task Branch。已有同一业务仓的只读 Checkout 时，由此命令核验并复用兼容的工作树。
+Requirement 根仓须包含批准 Commit。研发后的远端写入及 PR 交付由 `pull-request` 和 Rondo 的相应命令完成；准备不写入批准或交付 Metadata。
 
 ## 异常处理
 
-已有 Checkout 重入不切换 ref。准备失败或事实无法确认时保留现场，按实际异常处理；不得通过手工 Clone、强制重置或清理绕过限制。需要从已发布 Candidate 续接且现有工作树不兼容时，报告差异并协调适用的恢复方式，保留未发布成果。
+原生 Checkout / Fetch 失败或仓库身份、基线无法确认时，停止受影响的研发操作，保留现场并按实际异常处理。

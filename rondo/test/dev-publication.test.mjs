@@ -278,7 +278,7 @@ test("dev publish 拒绝来源不一致及读取期间批准变化；Push 后变
   assert.equal(metadata()["dev.publication"], undefined);
 });
 
-test("Native Requirement 续跑 prepare 从 Issue 取得 Change，拒绝同 SHA 的其他 Change 和批准变化", t => {
+test("Native Requirement Git 操作从 Issue 取得批准 Change，拒绝同 SHA 的其他 Change 和批准变化", t => {
   const { root, bare, source, state, metadata, runWithEnv, bizUrl } = fixture(t, { secondChange: true });
   const dir = dirname(root), hub = join(dir, "biz"), remote = join(dir, "biz.git");
   const taskId = "01234567-abcd-ef12-3456-000000000000";
@@ -301,17 +301,16 @@ test("Native Requirement 续跑 prepare 从 Issue 取得 Change，拒绝同 SHA 
   git(hub, "config", "multica.checkout-mode", "isolated");
   const initial = JSON.parse(readFileSync(state, "utf8"));
   initial.runs["issue-1"][0].id = taskId;
-  initial.repo_checkout = { url: bizUrl, ref: "feature/42", path: hub, branch };
   const approval = JSON.parse(initial.metadata["analysis.human_approval"]);
   const other = { ...source, change_ref: "beta" };
   const env = { MULTICA_TASK_ID: taskId, MOCK_GIT_BUSINESS_REMOTE: remote, MOCK_GIT_BUSINESS_URL: bizUrl,
-    MOCK_SYNC_CALLS_FILE: join(dir, "prepare-calls.jsonl") };
-  const args = ["dev", "prepare", "--workspace", "native", "--repo", "biz", "--root-repo", root];
+    MOCK_SYNC_CALLS_FILE: join(dir, "git-calls.jsonl") };
+  const args = ["dev", "git", "--operation", "fetch", "--repo", "biz", "--root-repo", root];
   for (const [patch, reason] of [
     [{ "analysis.source": JSON.stringify(other) }, /Change 身份.*不一致/],
     [{ "analysis.source": JSON.stringify(other),
       "analysis.human_approval": JSON.stringify({ ...approval, source: other }) }, /批准来源.*变化/],
-    [{ "analysis.human_approval": JSON.stringify({ ...approval, at: "2026-11-20T00:00:00Z" }) }, /批准来源在准备期间变化/],
+    [{ "analysis.human_approval": JSON.stringify({ ...approval, at: "2026-11-20T00:00:00Z" }) }, /批准来源在授权期间变化/],
   ]) {
     writeFileSync(state, JSON.stringify(initial));
     writeFileSync(env.MOCK_SYNC_CALLS_FILE, "");
@@ -321,10 +320,11 @@ test("Native Requirement 续跑 prepare 从 Issue 取得 Change，拒绝同 SHA 
     assert.equal(metadata()["verify_agent.required"], undefined);
   }
   writeFileSync(state, JSON.stringify(initial));
-  const prepared = runWithEnv(0, env, ...args);
-  assert.equal(prepared.result, "PASS");
-  assert.equal(prepared.path, hub);
-  assert.equal(prepared.branch, "feature/42");
+  const fetched = runWithEnv(0, env, ...args);
+  assert.equal(fetched.result, "PASS");
+  assert.equal(fetched.path, hub);
+  assert.equal(fetched.branch, "feature/42");
+  assert.deepEqual(metadata(), initial.metadata);
   assert.equal(metadata()["verify_agent.required"], undefined);
 });
 

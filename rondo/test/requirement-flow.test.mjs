@@ -10,7 +10,6 @@ import { parseRepositoryScope } from "../dist/commands/analysis/repository-scope
 import { checkedTaskProgress, validateChangeDelivery, checkPublishedChange } from "../dist/commands/dev/change-completion.js";
 import { isRequirementChangeDelivery, approvedRequirementScope } from "../dist/commands/delivery/requirement-mode.js";
 import { isDeliveryTaskTitle } from "../dist/commands/tfs/requirement-tasks.js";
-import { prepareRequirementWorktree, removePublishedRequirementWorktree } from "../dist/commands/dev/requirement-worktree.js";
 import { TfsClient } from "../dist/tfs/client.js";
 import { materializeOne, materializePreparedPrs } from "../dist/commands/pr/materialize.js";
 import { outgoing, prepareRoot, publishChange } from "../dist/commands/runtime/root-git.js";
@@ -294,74 +293,6 @@ function git(cwd,...args){
   assert.equal(r.status,0,args.join(" ")+": "+r.stderr);
   return r.stdout.trim();
 }
-test("Requirement Worktree 支持候选恢复和交付后安全回收",t=>{
-  const folder=realpathSync(mkdtempSync(join(tmpdir(),"rondo-req-wt-")));
-  t.after(()=>rmSync(folder,{recursive:true,force:true}));
-  const root=join(folder,"root"), bare=join(folder,"bare.git");
-  mkdirSync(root); mkdirSync(bare);
-  git(bare,"init","--bare");
-  git(root,"init","-b","dev");
-  writeFileSync(join(root,".gitignore"),"biz*/\ndist/\nnode_modules/\n.env\n");
-  git(root,"add",".gitignore");
-  git(root,"-c","user.email=test@example.invalid","-c","user.name=Test","commit","-m","init");
-  git(root,"push",bare,"dev");
-  // The root is a separate repository; the business bare remote is seeded from the root only for transport fixture.
-  const runRemote=(_url,args,cwd)=>{
-    const mapped=args.map(a=>a===repoUrl || a==="origin"?bare:a);
-    const r=spawnSync("git",mapped,{cwd,encoding:"utf8"});
-    if(args[0]==="clone" && r.status===0)git(args.at(-1),"remote","set-url","origin",repoUrl);
-    return {status:r.status,stdout:r.stdout,stderr:r.stderr};
-  };
-  const business={repo_path:"biz",repo_url:repoUrl,tfs_repo:"biz",tfs_project:"P",default_target_branch:"dev"};
-  const one=prepareRequirementWorktree(root,business,42,"http://tfs.test/tfs/C",runRemote);
-  assert.equal(one.changed,true);
-  assert.equal(one.branch,"feature/42");
-  assert.equal(readFileSync(join(one.path,".git"),"utf8").startsWith("gitdir:"),true);
-  writeFileSync(join(one.path,"work.txt"),"WIP");
-  const second=prepareRequirementWorktree(root,business,42,"http://tfs.test/tfs/C",()=>{throw Error("unexpected transport")});
-  assert.equal(second.changed,false);
-  assert.equal(readFileSync(join(one.path,"work.txt"),"utf8"),"WIP");
-  const moved=join(folder,"other-wt");
-  git(one.base,"worktree","add","-b","feature/43",moved,"origin/dev");
-  assert.equal(git(moved,"symbolic-ref","--short","HEAD"),"feature/43");
-  // Another existing local branch checkout remains owned by its Worktree and must never be stolen.
-  const wrong=join(root,"biz-43");
-  assert.throws(()=>prepareRequirementWorktree(root,business,43,"http://tfs.test/tfs/C",runRemote),/Worktree|already checked out/i);
-  assert.equal(readFileSync(join(one.path,"work.txt"),"utf8"),"WIP");
-  // Stale local branch may be fast-forwarded only when it is not checked out.
-  git(one.base,"branch","feature/46","origin/dev");
-  const remoteClone=join(folder,"other-runtime");
-  git(folder,"clone",bare,remoteClone);
-  git(remoteClone,"checkout","-b","feature/46","origin/dev");
-  writeFileSync(join(remoteClone,"remote.txt"),"remote commit");
-  git(remoteClone,"add","remote.txt");
-  git(remoteClone,"-c","user.name=Test","-c","user.email=test@example.invalid","commit","-m","remote candidate");
-  git(remoteClone,"push",bare,"feature/46");
-  const recovered=prepareRequirementWorktree(root,business,46,"http://tfs.test/tfs/C",runRemote);
-  assert.equal(recovered.head,git(remoteClone,"rev-parse","HEAD"));
-  assert.equal(readFileSync(join(recovered.path,"remote.txt"),"utf8"),"remote commit");
-
-  assert.throws(() => removePublishedRequirementWorktree(root, business, 42, sha1), /HEAD/);
-  assert.throws(() => removePublishedRequirementWorktree(root, business, 42, one.head), /本地修改/);
-  unlinkSync(join(one.path, "work.txt"));
-  writeFileSync(join(one.path, ".env"), "local");
-  assert.throws(() => removePublishedRequirementWorktree(root, business, 42, one.head), /未确认可丢弃/);
-  unlinkSync(join(one.path, ".env"));
-  for (const dir of ["dist", "node_modules"]) {
-    mkdirSync(join(one.path, dir));
-    writeFileSync(join(one.path, dir, "generated.txt"), "generated");
-  }
-  assert.equal(removePublishedRequirementWorktree(root, business, 42, one.head), "biz-42");
-  assert.equal(existsSync(one.path), false);
-  assert.equal(removePublishedRequirementWorktree(root, business, 42, one.head), undefined);
-  assert.equal(git(one.base, "rev-parse", "feature/42"), one.head);
-  assert.equal(git(recovered.path, "symbolic-ref", "--short", "HEAD"), "feature/46");
-  assert.equal(git(moved, "symbolic-ref", "--short", "HEAD"), "feature/43");
-
-  writeFileSync(join(root,".gitignore"),"biz/\n");
-  assert.throws(()=>prepareRequirementWorktree(root,business,44,"http://tfs.test/tfs/C",runRemote),/未被根仓忽略/);
-});
-
 test("原生 @Engineer Run 的真实 Actor / Workspace 身份必须匹配，不能以旧 dispatch 代替",()=>{
   const keys=["MULTICA_TASK_ID","MULTICA_AGENT_ID","MULTICA_WORKSPACE_ID","MULTICA_TOKEN","MULTICA_DAEMON_PORT"];
   const saved=Object.fromEntries(keys.map(k=>[k,process.env[k]]));

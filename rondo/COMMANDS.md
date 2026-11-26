@@ -33,7 +33,7 @@ rondo doctor --help
 | --- | --- | --- |
 | `change` | `resolve-identity` | Change 身份解析 |
 | `analysis` | `validate`、`publish`、`read`、`approve` | 分析事实、Gate、审核提交、工件读取和批准登记 |
-| `dev` | `prepare`、`git`、`publish` | 研发准备、Git 与发布 |
+| `dev` | `git`、`publish` | 研发 Git 与发布 |
 | `tfs` | `writeback`、`reconcile-workitem` | TFS 工作项同步与交付回写 |
 | `pr` | `prepare`、`materialize`、`resume`、`worktree`、`reconcile-status`、`create`、`get`、`list` | PR 准备、创建、查询、状态对账及 Worktree |
 | `delivery` | `admission`、`finalize` | 准入交接与交付收口 |
@@ -85,15 +85,12 @@ Requirement 的 `analysis publish` 和 `dev publish` 使用 Git 2.45 或更高�
 
 ```bash
 rondo dev git --operation fetch|push --issue <KEY> --repo <repo_id> --root-repo <path>
-rondo dev prepare --workspace native --issue <KEY> --repo <repo_id> --root-repo <path> [--resource-ref <branch>]
-rondo dev prepare --mode requirement --config <repo-registry.json> --issue <KEY> --repo <repo_key> [--root-repo <path>]
 rondo dev publish --issue <KEY> [--root-repo <path>] [--minor-design]
 ```
 
 | 命令 | 功能 |
 | --- | --- |
 | `dev git` | 受控 Fetch / 非强制 Push 当前授权 Candidate |
-| `dev prepare` | Native 使用 Multica Checkout；Requirement 从 Issue 的批准来源确定 Change，并从已准备的固定批准 Commit 读取 Repository Scope；无远端 Candidate 时须提供已核实的 `--resource-ref`。旧入口仅保留兼容 |
 | `dev publish` | 按已批准的 `analysis.source.branch` 发布当前 Change 已提交的 Tasks / Design，确认远端 Git SHA 并登记绑定完整 `analysis.source` 的 `dev.publication`。非实质性 Design 细化使用 `--minor-design` |
 
 ## 5. Delivery 与 PR
@@ -229,11 +226,11 @@ rondo workspace check-daemon --workspace-id <id> [--project-id <id>]
 | `workspace migrate-repo-keys` | 预览或实施 Workspace Issue 中的 Repository Key Metadata 变更；`--apply` 才写入 |
 | `workspace check-daemon` | 检查 Daemon 环境变量、Runtime 注册、挂载唯一性和交付亲和条件 |
 
-`workspace provision` 的 `--dry-run` 只预览；`workspace sync --local-only` 只生成本地配置，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。只有绑定 `workspace-preparation` 的 Workitem Analyst / Engineer 才接收 `project.workspace_branch` 对应的 `RONDO_WORKSPACE_BRANCH`；不修改其他 Agent 的既有环境变量。
+`workspace provision` 的 `--dry-run` 只预览；`workspace sync --local-only` 只生成本地配置，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。研发工作区统一按 Project Resource 和实际 Checkout 准备；Provision 不注入 `RONDO_WORKSPACE_BRANCH`，也不修改已有 Agent 环境变量。
 
 受管 Skill 或 Agent 绑定发生变化时，先执行 `rondo workspace provision --workspace <name>` 更新绑定和 Overlay，再执行 `rondo workspace sync --workspace <name>` 同步内容。此次 `workitem-triage` 退役后，核对 Wayfinder 仅绑定 `codebase-explorer`、Overlay 不再登记旧 Skill；不自动删除其他未受管平台 Skill。
 
-研发 Agent（Engineer / Bug Fix Agent）绑定 `native-workspace`。执行 provision 前核实 CLI、实际 TFS 根仓映射及批准版本；供给并同步 Skill 后验证实际交付。其他仍支持旧准备方式的 Agent 可按实际情况使用既有 Overlay。
+Workitem Analyst、Engineer 和 Bug Fix Agent 绑定 `native-workspace`，直接使用 Multica Native Checkout。执行 provision 前核实 CLI、实际 TFS 根仓映射及批准版本；供给并同步 Skill 后验证实际交付。
 
 ### 7.2 `rondo runtime`
 

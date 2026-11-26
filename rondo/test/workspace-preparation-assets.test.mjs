@@ -8,8 +8,8 @@ const multica = fileURLToPath(new URL("../../", import.meta.url));
 const read = (path) => readFileSync(join(multica, path), "utf8");
 const skills = JSON.parse(read("workspace-config/provisioning.json"));
 
-test("native-workspace is the default for its three consumers; legacy preparation remains managed", () => {
-  assert.ok(skills.managed_skills.includes("workspace-preparation"));
+test("native-workspace is the single preparation Skill for its three consumers", () => {
+  assert.ok(!skills.managed_skills.includes("workspace-preparation"));
   assert.ok(skills.managed_skills.includes("native-workspace"));
   assert.deepEqual(
     skills.agents.filter(agent => agent.skills?.includes("native-workspace")).map(agent => agent.name).sort(),
@@ -19,7 +19,7 @@ test("native-workspace is the default for its three consumers; legacy preparatio
   assert.match(skill, /^---\r?\nname: native-workspace\r?\n/);
   for (const operation of [
     "multica repo checkout <root-url> --ref <resource-ref>", "rondo runtime check-checkout",
-    "multica repo checkout <business-url> --ref <resource-ref>", "rondo dev prepare --workspace native", "analysis.source.branch",
+    "multica repo checkout <business-url> --ref <resource-ref>", "multica repo checkout <business-url> --ref <ref>", "analysis.source.branch",
   ]) assert.ok(skill.includes(operation), operation);
 });
 
@@ -45,11 +45,8 @@ test("workspace preparation is owned by one Skill; delivery contracts remain in 
   const dev = read("agents/engineer/instructions.md");
   assert.ok(dev.includes("rondo analysis read") && dev.includes("pull-request"));
   assert.doesNotMatch(dev, /rondo change update-progress|--change-ref/);
-  for (const name of ["native-workspace", "workspace-preparation"]) {
-    const skill = read(`skills/${name}/SKILL.md`);
-    assert.match(skill, /rondo dev prepare/);
-    assert.doesNotMatch(skill, /--change-ref/);
-  }
+  const native = read("skills/native-workspace/SKILL.md");
+  assert.doesNotMatch(native, /rondo dev prepare|--change-ref/);
   assert.ok(bugAgent.includes("pull-request"));
   assert.match(dev, /rondo dev publish/);
   assert.doesNotMatch(bug, /rondo dev publish/);
