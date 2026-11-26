@@ -172,21 +172,16 @@ Bug 保留现有 bug.delivery 与 pr_prep 的 Candidate / Branch 身份关联及
 
 ### 4.6 Requirement Publish / Completion
 
-Engineer 使用 analysis read 读取固定批准版本，使用 change update-progress 更新实际已完成 Tasks，提交当前 Change 的研发工件；不重复手工 Push 根仓，不创建永久验证报告。
+Engineer 使用 analysis read 读取固定批准版本，依据实际研发与验证结果直接更新 `tasks.md` 的完成状态，提交当前 Change 的研发工件；不重复手工 Push 根仓，不创建永久验证报告。
 
 ```bash
 rondo analysis read --issue <KEY> --file proposal.md
-rondo change update-progress --openspec-root "<openspec-root>" --change-ref <change_ref> --check <task-refs>
-rondo dev publish --issue <KEY> --change-ref <change_ref> --root-repo "<root>"
+rondo dev publish --issue <KEY> --root-repo "<root>"
 ```
 
-保留发布授权、dev.publication、原有契约；只有确属非实质性 Design 细化才使用现有 --minor-design。dev check-change 保持独立、可选诊断入口：
+dev publish 负责批准契约一致性及远端 Git 发布确认，登记绑定完整 Analysis Source 的 `dev.publication`；只有确属非实质性 Design 细化才使用 `--minor-design`。
 
-```bash
-rondo dev check-change --issue <KEY> --change-ref <change_ref>
-```
-
-pr materialize 内部已执行适用 Completion Check，正常 Skill 路径不再规定重复独立调用；不得绕过发布或降低原有 Gate。checkPublishedChange 消费绑定完整 Analysis Source 的 dev.publication，检查固定研发版本 Tasks 与开发侧质量；契约一致性由 dev publish 负责。Independent Verification 决定及现有 Closeout 阻断仍按当前实际执行边界处理（assertRequirementPrepareGate / assertBugFinalizationFacts），不宣称已有完整 PR 前独立验证流程，也不在本次补建。
+pr materialize 内部执行 Completion Check，消费有效发布回执、固定研发版本 Tasks 与开发侧质量，不重复比较批准契约与研发契约。Independent Verification 决定及现有 Closeout 阻断仍按当前实际执行边界处理（assertRequirementPrepareGate / assertBugFinalizationFacts），不宣称已有完整 PR 前独立验证流程，也不在本次补建。
 
 ### 4.7 PR Materialization
 
