@@ -3,14 +3,16 @@ import { FailError, UnknownError } from "../../cli/errors.js";
 import { markLeafExecuted } from "../../cli/output.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { resolveMulticaRuntime } from "../../clients/runtime-context.js";
-import { parseAnalysisSource, readAnalysisSource, sameAnalysisSource } from "./source.js";
-import { assertProjectedVerifyDecision, readApprovedVerifyDecision } from "../delivery/verify-decision.js";
+import { parseAnalysisSource, readAnalysisArtifact, readAnalysisSource, sameAnalysisSource } from "./source.js";
+import { assertProjectedVerifyDecision, readApprovedVerifyDecision, parseWaivedTasks } from "../delivery/verify-decision.js";
+import { readTaskProgress, assertWaiverRefs } from "../dev/change-completion.js";
 
 interface ApprovalArgs {
   issue: string;
   commentId: string;
   commit: string;
   verifyRequired: string;
+  waiveTasks?: string;
 }
 type ApprovalClient = Pick<MulticaClient, "getIssue" | "listComments" | "setMetadata" | "setStatusNoStart">;
 
@@ -20,7 +22,7 @@ const FACTS = ["tfs.type", "tfs.id", "analysis.gate.result", "analysis.change_re
   "analysis.source", APPROVAL, VERIFY, "dev.dispatch", "finalize.pending", "delivery.tfs_written"];
 
 /** Lead interprets the Human decision; CLI records and validates its exact source. */
-export function recordApproval(client: ApprovalClient, args: ApprovalArgs) {
+export async function recordApproval(client: ApprovalClient, args: ApprovalArgs, readArtifact = readAnalysisArtifact) {
   if (!/^[0-9a-f]{40}$/.test(args.commit) || !["true", "false"].includes(args.verifyRequired) ||
       !args.commentId.trim()) throw new FailError("需要完整获批 Commit、批准评论 ID 和明确的独立验收决定");
   const issue = client.getIssue(args.issue);
@@ -38,6 +40,9 @@ export function recordApproval(client: ApprovalClient, args: ApprovalArgs) {
   const source = readAnalysisSource(md);
   if (source.commit !== args.commit) throw new FailError("获批 Commit 与当前 analysis.source 不一致");
   const required = args.verifyRequired === "true";
+  const requested = args.waiveTasks === undefined ? [] : args.waiveTasks.split(",").map(ref => ref.trim());
+  if (requested.some(ref => !/^\d+(?:\.\d+)*$/.test(ref))) throw new FailError("--waive-tasks 必须是逗号分隔的有效任务编号");
+  const waivedTasks = [...new Set(requested)].sort();
   const key = issue.identifier ?? issue.id;
   const comment = client.listComments(key).find(c => c.id === args.commentId);
   if (!comment?.content?.trim() || comment.author_type !== "member" || !comment.author_id) {
@@ -46,8 +51,10 @@ export function recordApproval(client: ApprovalClient, args: ApprovalArgs) {
   const at = comment.created_at;
   if (typeof at !== "string" || Number.isNaN(Date.parse(at))) throw new UnknownError("无法确认批准评论时间");
   const approval = { decision: "approved", by: comment.author_id, at: new Date(at).toISOString(),
-    comment_ref: args.commentId, verify_agent_required: required, source };
+    comment_ref: args.commentId, verify_agent_required: required, source,
+    ...(waivedTasks.length ? { waived_tasks: waivedTasks } : {}) };
   let saved = JSON.stringify(approval);
+  let alreadyRecorded = false;
   if (md[APPROVAL] !== undefined) {
     let prior;
     try { prior = JSON.parse(md[APPROVAL]); }
@@ -59,17 +66,24 @@ export function recordApproval(client: ApprovalClient, args: ApprovalArgs) {
     const priorSource = parseAnalysisSource(prior.source);
     if (prior.comment_ref === args.commentId) {
       if (!sameAnalysisSource(priorSource, source) || prior.verify_agent_required !== required ||
-          prior.by !== approval.by || Date.parse(prior.at) !== Date.parse(approval.at)) {
+          prior.by !== approval.by || Date.parse(prior.at) !== Date.parse(approval.at) ||
+          JSON.stringify(parseWaivedTasks(prior.waived_tasks)) !== JSON.stringify(waivedTasks)) {
         throw new FailError("同一批准评论不得改变已登记的决定或版本");
       }
       readApprovedVerifyDecision(md, args.commentId);
       saved = md[APPROVAL];
+      alreadyRecorded = true;
     } else {
       if (Date.parse(approval.at) <= Date.parse(prior.at)) throw new FailError("不得用更早的批准覆盖现有决定");
       if (!sameAnalysisSource(priorSource, source) && issue.status !== "analysis_review") {
         throw new FailError("变更批准版本必须重新进入分析审核");
       }
     }
+  }
+  // A recorded decision already passed the pinned task-reference check.
+  if (waivedTasks.length && !alreadyRecorded) {
+    const artifact = await readArtifact(source, "tasks.md");
+    assertWaiverRefs(readTaskProgress(artifact.content), waivedTasks);
   }
   const expected = {...md};
   let status = issue.status;
@@ -101,7 +115,7 @@ export function recordApproval(client: ApprovalClient, args: ApprovalArgs) {
   }
   return { result: changed ? "PASS" : "NOOP", issue: key, status,
     change_ref: source.change_ref, commit: source.commit, comment_ref: args.commentId,
-    verify_agent_required: required };
+    verify_agent_required: required, waived_tasks: waivedTasks };
 }
 
 export function registerAnalysisApprove(group: Command): void {
@@ -110,10 +124,11 @@ export function registerAnalysisApprove(group: Command): void {
     .requiredOption("--comment-id <id>", "Human 批准评论 ID")
     .requiredOption("--commit <sha>", "Human 获批完整 Commit")
     .requiredOption("--verify-required <boolean>", "明确的独立验收决定 true|false")
-    .action((args: ApprovalArgs) => {
+    .option("--waive-tasks <refs>", "Human 明确批准豁免的全部任务编号，逗号分隔；省略表示无豁免")
+    .action(async (args: ApprovalArgs) => {
       markLeafExecuted();
       try {
-        const result = recordApproval(new MulticaClient(resolveMulticaRuntime()), args);
+        const result = await recordApproval(new MulticaClient(resolveMulticaRuntime()), args);
         process.stdout.write(JSON.stringify(result, null, 2) + "\n");
       } catch (err) {
         const failed = err instanceof FailError;

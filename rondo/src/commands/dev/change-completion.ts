@@ -7,6 +7,7 @@ import { RemoteArtifactReader } from "../delivery/remote-artifacts.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 import { sameAnalysisSource, type AnalysisSource } from "../analysis/source.js";
 import { approvedChange, readDevelopmentCommit } from "./requirement-guard.js";
+import { readApprovedVerifyDecision } from "../delivery/verify-decision.js";
 
 export interface PrPrep {
   repo_key: string; repo_url?: string; source_branch: string; target_branch?: string;
@@ -24,9 +25,8 @@ export interface Completion {
 function parseJson(text: string, label: string): unknown {
   try { return JSON.parse(text); } catch { throw new FailError(label + " 不是合法 JSON"); }
 }
-export function checkedTaskProgress(text: string): number {
-  const refs = new Set<string>();
-  const incomplete: string[] = [];
+export function readTaskProgress(text: string): Map<string, boolean> {
+  const refs = new Map<string, boolean>();
   for (const line of text.split(/\r?\n/)) {
     const checkbox = /^[ \t]*[-*+][ \t]+\[([^\]]*)\]/.exec(line);
     if (!checkbox) continue;
@@ -34,12 +34,24 @@ export function checkedTaskProgress(text: string): number {
     const task = /^[ \t]*[-*+][ \t]+\[([ xX])\][ \t]+(\d+(?:\.\d+)*)(?=[ \t]|$)/.exec(line);
     if (!task) throw new FailError("tasks.md 存在未编号的 checkbox 任务: " + line.trim().slice(0, 100));
     if (refs.has(task[2])) throw new FailError("tasks.md 编号重复: " + task[2]);
-    refs.add(task[2]);
-    if (task[1] === " ") incomplete.push(task[2]);
+    refs.set(task[2], task[1] !== " ");
   }
   if (refs.size === 0) throw new FailError("当前 Change 缺少可验证的 Implementation Task");
+  return refs;
+}
+
+export function assertWaiverRefs(progress: ReadonlyMap<string, boolean>, waivedTasks: readonly string[]): void {
+  const invalid = waivedTasks.filter(ref => !progress.has(ref));
+  if (invalid.length) throw new FailError("豁免任务不在 tasks.md: " + invalid.join(", "));
+}
+
+export function checkedTaskProgress(text: string, waivedTasks: readonly string[] = []): number {
+  const progress = readTaskProgress(text);
+  assertWaiverRefs(progress, waivedTasks);
+  const waived = new Set(waivedTasks);
+  const incomplete = [...progress].filter(([ref, done]) => !done && !waived.has(ref)).map(([ref]) => ref);
   if (incomplete.length) throw new FailError("仍有未完成的研发任务: " + incomplete.join(", "));
-  return refs.size;
+  return progress.size;
 }
 
 /** Gate: each repo has a pinned candidate and Rondo-executed validation, not self-declared PASS. */
@@ -96,7 +108,7 @@ export async function checkPublishedChange(
   const commit = readDevelopmentCommit(md, source);
   const prefix = "/openspec/changes/" + changeRef;
   const tasks = await reader.read(commit, prefix + "/tasks.md");
-  const taskCount = checkedTaskProgress(tasks);
+  const taskCount = checkedTaskProgress(tasks, readApprovedVerifyDecision(md).waivedTasks);
   const rawPrep = parseJson(md["pr_prep"] ?? "null", "pr_prep");
   if (!Array.isArray(rawPrep)) throw new FailError("缺少 PR Preparation");
   const candidates = validateChangeDelivery(rawPrep as PrPrep[], change.scope, change.tfsId, cfg.registry as Record<string, RepoConfig>);

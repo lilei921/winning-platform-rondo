@@ -24,9 +24,9 @@ function fixture() {
     setStatusNoStart:(_id,status)=>{writes.push("status");issue.status=status;}};
   return {issue,comments,writes,client};
 }
-test("registers exact source and both verify facts before no-start transition; replay is NOOP",()=>{
+test("registers exact source and both verify facts before no-start transition; replay is NOOP",async()=>{
   const f=fixture();
-  assert.equal(recordApproval(f.client,args).result,"PASS");
+  assert.equal((await recordApproval(f.client,args)).result,"PASS");
   assert.deepEqual(f.writes,["analysis.human_approval","verify_agent.required","status"]);
   const approval=JSON.parse(f.issue.metadata["analysis.human_approval"]);
   assert.deepEqual(approval.source,source);
@@ -34,10 +34,10 @@ test("registers exact source and both verify facts before no-start transition; r
   assert.equal(approval.at,"2026-11-25T00:00:00.000Z");
   assert.equal(assertProjectedVerifyDecision(f.issue.metadata),false);
   assert.equal(f.issue.status,"in_progress");
-  assert.equal(recordApproval(f.client,args).result,"NOOP");
+  assert.equal((await recordApproval(f.client,args)).result,"NOOP");
   assert.equal(f.writes.length,3);
 });
-test("rejects invalid source, gate, non-Human comment, missing time and invalid status before writes",()=>{
+test("rejects invalid source, gate, non-Human comment, missing time and invalid status before writes",async()=>{
   for(const mutate of [
     f=>f.issue.metadata["analysis.gate.result"]="FAIL",
     f=>f.comments[0].author_type="agent",
@@ -49,66 +49,66 @@ test("rejects invalid source, gate, non-Human comment, missing time and invalid 
     f=>f.issue.metadata["finalize.pending"]="true",
   ]) {
     const f=fixture();mutate(f);
-    assert.throws(()=>recordApproval(f.client,args));assert.deepEqual(f.writes,[]);
+    await assert.rejects(()=>recordApproval(f.client,args));assert.deepEqual(f.writes,[]);
   }
   const f=fixture();
-  assert.throws(()=>recordApproval(f.client,{...args,commit:"b".repeat(40)}));
-  assert.throws(()=>recordApproval(f.client,{...args,verifyRequired:"maybe"}));
+  await assert.rejects(()=>recordApproval(f.client,{...args,commit:"b".repeat(40)}));
+  await assert.rejects(()=>recordApproval(f.client,{...args,verifyRequired:"maybe"}));
   assert.deepEqual(f.writes,[]);
 });
-test("resumes partial write and never repeats no-start transition",()=>{
+test("resumes partial write and never repeats no-start transition",async()=>{
   const f=fixture(),write=f.client.setMetadata;
   f.client.setMetadata=(id,key,value)=>{if(key==="verify_agent.required")throw Error("interrupted");write(id,key,value);};
-  assert.throws(()=>recordApproval(f.client,args));
+  await assert.rejects(()=>recordApproval(f.client,args));
   assert.equal(f.issue.status,"analysis_review");
   f.client.setMetadata=write;
-  assert.equal(recordApproval(f.client,args).result,"PASS");
+  assert.equal((await recordApproval(f.client,args)).result,"PASS");
   assert.deepEqual(f.writes,["analysis.human_approval","verify_agent.required","status"]);
 });
-test("same comment cannot change decision; newer explicit override does not restart work",()=>{
-  const f=fixture();recordApproval(f.client,args);
-  assert.throws(()=>recordApproval(f.client,{...args,verifyRequired:"true"}));
+test("same comment cannot change decision; newer explicit override does not restart work",async()=>{
+  const f=fixture();await recordApproval(f.client,args);
+  await assert.rejects(()=>recordApproval(f.client,{...args,verifyRequired:"true"}));
   f.comments.push({...f.comments[0],id:"human-2",created_at:"2026-11-25T01:00:00Z"});
-  assert.equal(recordApproval(f.client,{...args,commentId:"human-2",verifyRequired:"true"}).result,"PASS");
+  assert.equal((await recordApproval(f.client,{...args,commentId:"human-2",verifyRequired:"true"})).result,"PASS");
   assert.equal(assertProjectedVerifyDecision(f.issue.metadata),true);
   assert.equal(f.writes.filter(x=>x==="status").length,1);
-  assert.throws(()=>recordApproval(f.client,args));
+  await assert.rejects(()=>recordApproval(f.client,args));
 });
-test("source drift before write stops registration",()=>{
+test("source drift before write stops registration",async()=>{
   const f=fixture(),list=f.client.listComments;
   f.client.listComments=()=>{f.issue.metadata["analysis.source"]=JSON.stringify({...source,commit:"b".repeat(40)});return list();};
-  assert.throws(()=>recordApproval(f.client,args),/变化/);
+  await assert.rejects(()=>recordApproval(f.client,args),/变化/);
   assert.deepEqual(f.writes,[]);
 });
-test("new approved version requires new comment and analysis review",()=>{
-  const f=fixture();recordApproval(f.client,args);
+test("new approved version requires new comment and analysis review",async()=>{
+  const f=fixture();await recordApproval(f.client,args);
   const next={...source,commit:"b".repeat(40)};
   f.issue.metadata["analysis.source"]=JSON.stringify(next);
   f.comments.push({...f.comments[0],id:"human-2",created_at:"2026-11-25T01:00:00Z"});
   const updated={...args,commentId:"human-2",commit:next.commit};
-  assert.throws(()=>recordApproval(f.client,updated));
+  await assert.rejects(()=>recordApproval(f.client,updated));
   f.issue.status="analysis_review";
-  assert.throws(()=>recordApproval(f.client,{...args,commit:next.commit}));
-  assert.equal(recordApproval(f.client,updated).result,"PASS");
+  await assert.rejects(()=>recordApproval(f.client,{...args,commit:next.commit}));
+  assert.equal((await recordApproval(f.client,updated)).result,"PASS");
   assert.deepEqual(JSON.parse(f.issue.metadata["analysis.human_approval"]).source,next);
 });
 
-test("approval remains confirmed when Issue is already todo or in_progress",()=>{
+test("approval remains confirmed when Issue is already todo or in_progress",async()=>{
   for(const status of ["todo","in_progress"]){
     const f=fixture();f.issue.status=status;
-    assert.equal(recordApproval(f.client,{...args,verifyRequired:"true"}).result,"PASS");
+    assert.equal((await recordApproval(f.client,{...args,verifyRequired:"true"})).result,"PASS");
     assert.deepEqual(f.writes,["analysis.human_approval","verify_agent.required"]);
     assert.equal(f.issue.status,status);
     assert.equal(assertProjectedVerifyDecision(f.issue.metadata),true);
   }
 });
-test("readback mismatch prevents state transition and can be retried",()=>{
+test("readback mismatch prevents state transition and can be retried",async()=>{
   const f=fixture(),write=f.client.setMetadata;
   f.client.setMetadata=(id,key,value)=>{if(key!=="verify_agent.required")write(id,key,value);};
-  assert.throws(()=>recordApproval(f.client,args),/变化/);
+  await assert.rejects(()=>recordApproval(f.client,args),/变化/);
   assert.equal(f.issue.status,"analysis_review");
   f.client.setMetadata=write;
-  assert.equal(recordApproval(f.client,args).result,"PASS");
+  assert.equal((await recordApproval(f.client,args)).result,"PASS");
   assert.deepEqual(f.writes,["analysis.human_approval","verify_agent.required","status"]);
 });
 test("approval CLI uses current Runtime without registry or Agent/Run identity", t=>{
@@ -148,7 +148,7 @@ test("approval CLI uses current Runtime without registry or Agent/Run identity",
   assert.ok(!again.calls.some(c=>c[1]==="status"||c[2]==="set"));
   assert.equal(run("maybe").code,2);
 });
-test("retired change-handoff is absent from published assets and Workspace overlays",()=>{
+test("retired change-handoff is absent from published assets and Workspace overlays",async()=>{
   const root=fileURLToPath(new URL("../../",import.meta.url));
   const manifest=JSON.parse(readFileSync(join(root,"workspace-config/provisioning.json"),"utf8"));
   assert.deepEqual(manifest.agents.find(a=>a.name==="Delivery Lead").skills,[]);
@@ -158,4 +158,47 @@ test("retired change-handoff is absent from published assets and Workspace overl
   for(const name of readdirSync(dir).filter(n=>n.endsWith(".json"))){
     assert.ok(!Object.hasOwn(JSON.parse(readFileSync(join(dir,name),"utf8")).skills??{},"change-handoff"),name);
   }
+});
+
+
+test("explicit waiver uses pinned approved tasks, is idempotent and cannot be changed under the same comment", async () => {
+  const f=fixture();
+  let reads=0;
+  const read=async (pinned,file)=>{
+    reads++;
+    assert.deepEqual(pinned,source);
+    assert.equal(file,"tasks.md");
+    return {content:"- [ ] 3.1 Integration\n- [ ] 3.2 Regression\n- [ ] 1.1 Implement\n"};
+  };
+  const decision={...args,waiveTasks:"3.2,3.1"};
+  assert.equal((await recordApproval(f.client,decision,read)).result,"PASS");
+  assert.deepEqual(JSON.parse(f.issue.metadata["analysis.human_approval"]).waived_tasks,["3.1","3.2"]);
+  assert.equal((await recordApproval(f.client,{...decision,waiveTasks:"3.1,3.2"},read)).result,"NOOP");
+  assert.equal(reads,1);
+  await assert.rejects(()=>recordApproval(f.client,{...decision,waiveTasks:"3.1"},read),/同一批准评论/);
+  await assert.rejects(()=>recordApproval(f.client,args,read),/同一批准评论/);
+  assert.equal(f.writes.length,3);
+});
+
+test("waiver requires a real Human comment, valid task refs and a successful fixed-version read before writes", async () => {
+  for (const refs of ["9.9","3.1,bad","3.1,"]) {
+    const f=fixture();
+    await assert.rejects(()=>recordApproval(f.client,{...args,waiveTasks:refs},async()=>({content:"- [ ] 3.1 Integration"})));
+    assert.deepEqual(f.writes,[]);
+  }
+  const f=fixture();
+  await assert.rejects(()=>recordApproval(f.client,{...args,waiveTasks:"3.1"},async()=>{throw Error("remote unavailable");}));
+  assert.deepEqual(f.writes,[]);
+  f.comments[0].author_type="agent";
+  await assert.rejects(()=>recordApproval(f.client,{...args,waiveTasks:"3.1"},async()=>({content:"- [ ] 3.1 Integration"})),/真实成员/);
+  assert.deepEqual(f.writes,[]);
+});
+
+test("new Human comment can explicitly replace the waiver set without changing the contract", async () => {
+  const f=fixture(), read=async()=>({content:"- [ ] 3.1 Integration\n- [ ] 3.2 Regression"});
+  await recordApproval(f.client,{...args,waiveTasks:"3.1"},read);
+  f.comments.push({...f.comments[0],id:"human-2",created_at:"2026-11-25T01:00:00Z"});
+  const result=await recordApproval(f.client,{...args,commentId:"human-2",waiveTasks:"3.2"},read);
+  assert.deepEqual(result.waived_tasks,["3.2"]);
+  assert.equal(f.writes.filter(x=>x==="status").length,1);
 });

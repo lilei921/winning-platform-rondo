@@ -14,6 +14,7 @@ import { verifyTfsWriteback } from "../tfs/writeback.js";
 import { assertStableChangeRef } from "../analysis/change-schema.js";
 import { computeContractFiles, touchedCapabilities } from "./contract-files.js";
 import { isRequirementChangeDelivery, approvedRequirementScope, assertRequirementPrepareGate, assertCompletedRequirementTasks } from "./requirement-mode.js";
+import { readApprovedVerifyDecision } from "./verify-decision.js";
 import { verifyCloseoutPrs, type CloseoutPr as CurrentPrEntry } from "./closeout-pr.js";
 import { TfsClient as TfsApiClient } from "../../tfs/client.js";
 import { isDirectBugDelivery, assertBugFinalizationFacts, bugDeliveryDigest } from "../bug/finalize-facts.js";
@@ -165,7 +166,7 @@ function syncArchiveBranch(root: string, localBranch: string, targetBranch: stri
 /** Route Archive：安全快进 → 保存本 Change → 原生归档 → 限定提交/推送。
  * openspec 外未暂存改动允许保留；外来暂存项和无关 OpenSpec 修改仍拒绝。
  * 对齐后与归档后复核契约；分叉保留现场，不自动改写历史或暂存用户文件。 */
-export function routeArchive(paths: RuntimePaths, issueKey: string, changeRef: string, tfsId: string, targetBranch: string): Record<string, unknown> {
+export function routeArchive(paths: RuntimePaths, issueKey: string, changeRef: string, tfsId: string, targetBranch: string, waivedTasks: readonly string[] = []): Record<string, unknown> {
   const detail: Record<string, unknown> = {};
   const lock = new RootLock(paths, issueKey);
   try {
@@ -216,7 +217,7 @@ export function routeArchive(paths: RuntimePaths, issueKey: string, changeRef: s
     if (aligned.dir !== current.dir || JSON.stringify(computeContractFiles(aligned.dir).files) !== preHash) {
       throw new UnknownError("根仓对齐后契约文件或归档位置漂移（此前 completion_gate PASS 失效，须重新核验）");
     }
-    assertCompletedRequirementTasks(aligned.dir);
+    assertCompletedRequirementTasks(aligned.dir, waivedTasks);
     const before = checkWorkspace();
 
     // 幂等：已归档（change 目录不在、archive 在）→ 跳过 archive，只核对 commit/push
@@ -523,7 +524,7 @@ async function main(argv: string[]): Promise<number> {
 
       assertRequirementPrepareGate(md, issue.status);
       steps.completion_gate = { status: "done" };
-      steps.route_archive = { status: "done", detail: routeArchive(paths, issueKey, changeRef, tfsId, source.branch) };
+      steps.route_archive = { status: "done", detail: routeArchive(paths, issueKey, changeRef, tfsId, source.branch, readApprovedVerifyDecision(md).waivedTasks) };
       steps.archive_readback = { status: "done", detail: confirmPublishedArchive(paths, source) };
       // 只有安全归档 + Git Push 返回成功后才能给独立 TFS Writer 提供可执行准备事实。
       client.setMetadata(issue.id, "finalize.pending", JSON.stringify({ ...pending, prepared_change_ref: changeRef }));

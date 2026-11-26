@@ -9,6 +9,17 @@ import { readAnalysisSource, parseAnalysisSource, sameAnalysisSource } from "../
 export interface ApprovedVerifyDecision {
   required: boolean;
   commentRef: string;
+  waivedTasks: string[];
+}
+
+/** A missing waiver is an empty set; malformed persisted facts never grant a waiver. */
+export function parseWaivedTasks(value: unknown): string[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.some(ref => typeof ref !== "string" || !/^\d+(?:\.\d+)*$/.test(ref)) ||
+      new Set(value).size !== value.length) {
+    throw new UnknownError("analysis.human_approval.waived_tasks 必须是无重复的任务编号数组");
+  }
+  return [...value].sort();
 }
 
 /** Delivery Lead projects an explicitly understood Human approval and its source comment. */
@@ -49,6 +60,10 @@ export function readApprovedVerifyDecision(
   if (typeof a.verify_agent_required !== "boolean") {
     throw new UnknownError("analysis.human_approval 缺少明确的 verify_agent_required boolean，不能默认使用 Analyst Recommendation");
   }
+  const waivedTasks = parseWaivedTasks(a.waived_tasks);
+  if (waivedTasks.length && (!md["analysis.source"] || !a.source)) {
+    throw new UnknownError("Task Waiver 缺少获批 Analysis Source");
+  }
   // 新来源的批准必须携带同一快照；无来源的历史收口保持兼容，派发入口另行强制来源。
   let sourceAwareDispatch = false;
   let dispatchRecords: Record<string, unknown>[] = [];
@@ -72,7 +87,7 @@ export function readApprovedVerifyDecision(
       }
     }
   }
-  return { required: a.verify_agent_required, commentRef: a.comment_ref };
+  return { required: a.verify_agent_required, commentRef: a.comment_ref, waivedTasks };
 }
 
 /** Confirm that the persisted execution fact matches the approved Human decision. */

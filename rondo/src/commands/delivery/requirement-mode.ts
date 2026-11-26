@@ -45,9 +45,9 @@ export function assertRequirementPrepareGate(md: Record<string, string>, issueSt
 }
 
 /** Check progress on the aligned Change before archive or recovery commit. */
-export function assertCompletedRequirementTasks(changeDir: string): void {
+export function assertCompletedRequirementTasks(changeDir: string, waivedTasks: readonly string[] = []): void {
   let tasks: string;
   try { tasks = readFileSync(join(changeDir, "tasks.md"), "utf8"); }
   catch { throw new UnknownError("tasks.md 不存在或不可读"); }
-  checkedTaskProgress(tasks);
+  checkedTaskProgress(tasks, waivedTasks);
 }

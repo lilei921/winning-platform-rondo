@@ -55,7 +55,7 @@ rondo pr prepare --issue <KEY> --repo <repo_id> --root-repo "<root>" --candidate
 
 # PR Submission
 
-完成全部实际交付仓的 PR Preparation；Bug 根据 `ready_for_pr` 确认准备完整性；Requirement 的研发工件已发布且全部 Tasks 已完成。
+完成全部实际交付仓的 PR Preparation；Bug 根据 `ready_for_pr` 确认准备完整性；Requirement 的研发工件已发布，所有 Tasks 已完成或由 Human Approval 明确豁免。
 
 ```bash
 rondo pr materialize --issue <KEY>

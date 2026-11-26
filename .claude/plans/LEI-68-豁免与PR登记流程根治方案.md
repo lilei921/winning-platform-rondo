@@ -1,63 +1,56 @@
 # LEI-68 豁免与 PR 登记流程根治方案
 
-> 保存日期：2026-11-26
-> 触发场景：LEI-68 的 Human 豁免只存在于评论中，任务 3.1/3.2 无法在 tasks.md 表达"批准豁免"；PR 已合并、后端源分支已删除，`pr materialize` 无法登记 `current_pr`，`pr reconcile-status` 因缺少登记返回 `PASS / included: 0`，验收链路卡死，最终只能手工写 metadata 兜底。
-> 当前状态：**方案已保存，代码未实施**（本轮落地改动已撤销）；平台侧 `current_pr` 已按方案 1 手工补登，两条已合并 PR（后端 #4065、前端 #3978）已登记。
+> 更新日期：2026-11-26
+> 依据：LEI-68 与两次 PR Status Sync 回放、当前 Rondo CLI、01 设计原则及两版方案 Review。
+> 事故已人工补登 current_pr（#4065 / #3978）并完成归档；不代表自动恢复已实现。
+> 实施状态：本分支实施 P0-1；P0-2 / P0-3 待实施。
 
-## 一、结论
+## 一、根因
 
-流程不合理，属于设计缺陷而非执行层问题：
+- Human 批准只登记 Independent Verification，未登记 Task Waiver；二态 checkbox 无法区分未执行且待完成、未执行但获准豁免。契约冻结也不允许附加注解。
+- PR 创建与 current_pr 批量登记跨系统非原子；部分成功或登记失败造成事实丢失。Completed PR 不应依赖仍存在的源分支。
+- reconcile-status 对登记缺失静默排除，无法识别和恢复已有 PR。
 
-1. 用两态 checkbox（未完成 / 已完成）表达三维事实（未完成 / 已执行 / 批准豁免），导致要么假勾、要么被门槛卡死；豁免理由还因发布契约锁定无法写入已发布工件。
-2. 批准登记器只登记了独立验收决定（`verify_agent_required=false`），没有登记豁免范围，Human 的自然语言决定对 CLI 不可见。
-3. `current_pr` 只有 `pr materialize` 一个登记入口，且要求源分支存在、HEAD 等于候选提交、PR 为 active——这些都是 PR 合并前才有的状态。一旦正常合并并被删除分支，登记窗口永久关闭；`reconcile-status` 明确只做对账、不补登记。
+## 二、设计与实施范围
 
-附带可观测性问题：`--issue` 模式下因缺少登记被静默排除，输出 `PASS / included: 0`，看起来成功实则空转。
+### P0-1 — Task Waiver（本次实施）
 
-## 二、根治方案
+- 在现有 analysis.human_approval 增加可选 waived_tasks: string[]，缺省为空；复用 by / at / comment_ref / source，不建立独立审批对象。
+- Lead 从真实 Human 批准意见理解明确豁免，使用 analysis approve --waive-tasks 3.1,3.2 登记。CLI 校验编号属于固定 Analysis Commit 的 tasks.md；同一批准评论不能改变决定，已登记的同一决定幂等重试不重复读取远端 Tasks；更新决定使用明确的新批准评论及完整豁免集合，沿用现有批准状态边界。
+- 豁免仅改变已列任务的本轮执行义务，不改变产品行为、Scope、必要验收要求，不自动取消 Independent Verification、Candidate Validation 或 Code Review。
+- Engineer 未执行的豁免任务保持 [ ]；已执行完成才勾选。PR Materialize 与 Archive 使用同一个任务判定：所有任务均已完成或获准豁免。非豁免未完成任务必须阻断。
+- OpenSpec 原生 archive --yes 继续使用，前提是项目 Guard 已确认不存在待处理任务；不伪造勾选，不绕过原生规格校验。安装版本须实测。
+- TFS Task 规划依据实际业务改动和已批准的工程任务，保持现有职责，不增加豁免专项校验、输出字段或归档读取。现行 dev check-completion / contract-hash 旧体系不扩展。
+- 无新 Agent、Skill、状态机、独立 Metadata 或任务工件。
 
-### P0 — 把豁免做成一等公民事实（治根）
+### P0-2 — PR Materialize 事实管理（待实施）
 
-- 扩展 `rondo analysis approve`，增加 `--waive-tasks 3.1,3.2`，把结构化的 `task_waivers[]`（`task_ref / reason / comment_ref / by / at`）写入 `analysis.human_approval`。豁免只能来自真实 Human 批准评论，不接受 Engineer 自述或 tasks.md 注解推断。
-- `checkedTaskProgress` 与 `checkIdentity` 统一消费豁免集合：被豁免的 task 从"必须勾选"和"evidence 必须覆盖"中剔除。**未执行保持未勾选**，不再需要假勾，也不需要往已发布 tasks.md 塞注解，契约哈希问题自然消失。
-- 豁免任务编号必须真实存在，否则 FAIL；重复豁免须幂等；同一批准评论不得改变已登记豁免内容。
+- 复用 pr_prep、current_pr；逐仓持久化已核实的 PR 身份，全部交付仓准备和登记完整才进入 in_review。区分事实登记与状态转换。
+- 已有 PR 按 ID 或限定仓库/源目标分支查询，Active 核实 Candidate，Completed 核实最终 Source Commit 与 Candidate、Work Item Link，不要求源分支存在。无已有 PR 才允许 Materialize 创建；歧义或不一致返回 UNKNOWN，禁止重复创建。
+- 不新增 pr register、--accept-merged、PR Registry 或事务状态。PR 身份核实与 Human 合并/工程授权分离。
+- 部分登记必须防止并发覆盖，且禁止提前收口；检查 current_pr 与 pr_prep 集合完整性。
 
-### P1 — 把 PR 登记与 PR 创建解耦（治时序陷阱）
+### P0-3 — PR Status Sync 定向恢复（待实施）
 
-- 新增幂等命令 `rondo pr register --issue <KEY>`（对已合并 PR 恢复时要求显式 `--accept-merged`，把 Human 授权编码进命令）：
-  - 从 `pr_prep` 的 `repo_url` + `candidate_commit` 出发，用 `pr list --status completed --source-branch <branch>` 按源/目标分支和候选提交定位 PR（含 completed）；
-  - 回核 PR 身份、分支、工作项关联，校验 `sourceCommitId == candidate_commit`；
-  - 写 `current_pr` 并回读确认（复用 `registerCurrentPr`），已有且一致时 NOOP；不创建 PR、不改远端分支。
-- `pr materialize` 的 `checkHead` 在 completed 路径放宽：PR 已 completed 且 `sourceCommitId == candidate_commit` 时不再要求源分支存在。
-- 结果：登记不再依赖"PR 还是 active"的短命窗口，正常交付顺序（先合并再收口）也能走通。
+- 复用 P0-2 的 CLI 内部核实/登记方法，针对 in_review 或存在交付事实的 blocked Issue 定向核实已有 PR；不创建缺失 PR，不解除 blocked，不全量扫描研发中的 Issue。
+- 缺失或部分登记显式返回异常原因，不能 PASS/included:0 静默忽略；复用 unknown Action，正常未纳入与 active noop 分开。
+- 只有全部实际交付仓 PR 事实完整、状态均 completed 且满足收口前提时写 finalize.pending；保留既有 Abandoned、Closeout Gate 与幂等机制，不重复工程质量校验。
+- 对 in_progress 的定向恢复优先由 Engineer 重试 Materialize；常规 Sync 不扩展扫描范围。
 
-### P2 — 收口按事实判定，不按工具路径判定
+## 三、回归验收
 
-- `finalize` / closeout 的门槛为：PR 已完成并关联工作项、契约已发布、验证与审查证据有效、Human 批准齐全——不关心 `current_pr` 是哪条命令写的。
-- `materialize` 只是注册路径之一，不应成为收口的必要条件。
-- 实施时优先通过 P1 建立可信 `current_pr` 事实，而不是直接削弱门槛；避免放宽后产生新的绕过路径。
+P0-1：合法豁免不勾选仍可 Materialize / Archive；未批准、无效编号或其他未完成任务阻断；相同批准重复登记幂等，不能同评论改写；无豁免行为不变；归档保持原始 checkbox，实际安装 OpenSpec 归档验证；保持 TFS 正常收口。附带修复现有 extractTaskText 的任务编号前缀匹配缺陷，仅调整分隔符匹配并补充回归。
 
-### P3 — 让诊断说真话（治误导）
+P0-2：多仓部分成功保留登记；写入失败后恢复；Completed PR 删除源分支后可恢复；Candidate/Work Item/身份冲突不覆盖、不重复创建。
 
-- `reconcile-status --issue` 遇到因缺少登记而被排除时，返回显式 `not_registered` + reason，计入 failures / 退出码 2，而不是静默 `PASS / included: 0`；常规扫描给出 `excluded` 计数与原因摘要。
-- 输出中区分"未纳入""PR 仍 active 的 NOOP""已写 finalize 事实"三类结果，避免 Agent 把空转当成功。
+P0-3：缺失和部分登记可观测、可定向恢复；部分 PR completed 不触发 finalize；正常 blocked 无交付事实跳过；已完成 Issue 幂等。
 
-## 三、落地顺序
+## 四、范围边界
 
-1. **本次止血（已完成）**：按方案 1 补登 `current_pr`；把 Human 豁免决定补登成可审计的结构化事实（至少补评论锚定）。
-2. **短期补丁**：P3 + P1，解除时序陷阱，成本最低、收益最大。
-3. **中期根治**：P0 + P2，统一豁免语义和收口判据。
-4. **回归防线**：每步补回归测试。
+Runtime Task 环境适配、CLI 输出参数统一、旧 Evidence Check 清理、Replay 凭据脱敏另行处理。本次仅实现 P0-1，不修改 PR 状态或登记逻辑，不重新操作已 done 的 LEI-68。
 
-## 四、必须覆盖的回归场景
+## 五、事实锚点
 
-- Human 豁免部分任务 → tasks.md 中这些任务保持未勾选 → `checkPublishedChange` / `check-completion` 仍 PASS。
-- 同一批准评论重复登记豁免幂等；不同评论篡改豁免被拒绝。
-- PR 已合并 + 源分支删除 → `pr register --accept-merged` 能登记 `current_pr` → `pr reconcile-status` 回核 completed → 写 `finalize.pending` → `finalize`。
-- `current_pr` 缺失时 `--issue` 对账返回 `not_registered` 且退出码 2，不写任何事实。
-- `current_pr` 已存在且一致时 `pr register` NOOP；身份/分支/SHA 不一致时 FAIL/UNKNOWN，不覆盖。
-
-## 五、相关事实锚点
-
-- 代码：`rondo/src/commands/dev/change-completion.ts`（`checkedTaskProgress`、`checkPublishedChange`）、`rondo/src/commands/analysis/approve.ts`、`rondo/src/commands/delivery/verify-decision.ts`、`rondo/src/commands/pr/materialize.ts`、`rondo/src/commands/pr/reconcile-status.ts`、`rondo/src/tfs/api/pr.ts`。
-- LEI-68：`analysis.human_approval` 只记 `verify_agent_required=false`；豁免决定见 Human 评论 `01a216ad-e874-757f-b3b2-caca838cbb2c` 与 `01a216e2-c504-7844-9da1-faf3fa1ab852`；已补登的 `current_pr` 含 #4065 / #3978。
+- LEI-68 Human 评论：01a216ad-e874-757f-b3b2-caca838cbb2c、01a216e2-c504-7844-9da1-faf3fa1ab852。
+- PR #4065 / #3978；current_pr 人工补登后 Closeout 成功。
+- 代码：analysis/approve.ts、delivery/verify-decision.ts、dev/change-completion.ts、delivery/requirement-mode.ts、delivery/finalize.ts、pr/materialize.ts、pr/reconcile-status.ts。
