@@ -1,6 +1,6 @@
 ---
 name: native-workspace
-description: 需要本地工程仓时，准备 Multica 原生根仓及其下的业务仓工作区，供只读调查或获授权的研发使用。
+description: 需要本地工程仓时，准备 Multica 原生工程根仓与业务仓工作区，供只读调查或获授权的研发使用。
 ---
 
 # Native Workspace
@@ -16,11 +16,11 @@ rondo runtime check-checkout --root-repo "<实际返回的根仓路径>"
 
 使用原生命令返回的实际根仓路径。首次 Requirement 分析必须有明确的 Resource 分支；其他场景 Resource 未指定 ref 时可省略 `--ref`。已有同一 Change 的 `analysis.source` 时，按 `analysis.source.repo_url` 和 `analysis.source.branch` 准备根仓；Engineer 还需核实根仓包含已批准的 `commit`。
 
-优先复用 Multica 已有的 Checkout，保留工作树及已有研发成果。业务仓统一位于实际根仓目录下，按需准备，不自动检出其他仓库；只读 MCP 已满足调查需要时，不强制本地 Checkout。
+优先复用 Multica 已有的 Checkout，保留工作树及已有研发成果。根仓与业务仓均为当前 Task workdir 的直属独立 Git 仓，按需准备，不自动检出其他仓库；只读 MCP 已满足调查需要时，不强制本地 Checkout。
 
 ## 只读业务仓
 
-从已登记 Project Resource 核实 URL 和初始 ref，并与根仓已提交的 `docs/config/repo-context.yaml` 仓库身份对应。仅需只读调查且确实需要本地业务仓时，在实际根仓目录执行：
+从已登记 Project Resource 核实 URL 和初始 ref，并与根仓已提交的 `docs/config/repo-context.yaml` 仓库身份对应。仅需只读调查且确实需要本地业务仓时，在当前 Task workdir 执行：
 
 ```text
 multica repo checkout <business-url> --ref <resource-ref>

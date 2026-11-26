@@ -21,10 +21,9 @@ test('Bug pr prepare CLI (Native resumed checkout): stdin/file, Git identity, qu
   const native = true;
   const dir = realpathSync(mkdtempSync(join(tmpdir(), 'rondo-bug-cli-')));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
-  const root = join(dir, 'winning-platform-monorepo'), hub = join(root, 'biz'), remote = join(dir, 'remote.git');
+  const root = join(dir, 'winning-platform-monorepo'), hub = join(dir, 'biz'), remote = join(dir, 'remote.git');
   mkdirSync(hub, { recursive: true }); mkdirSync(remote);
   git(root, 'init', '-b', 'main'); git(root, 'remote', 'add', 'origin', rootUrl);
-  writeFileSync(join(root, '.gitignore'), 'biz/\n');
   writeFileSync(join(root, 'AGENTS.md'), '规则\n');
   const taskId = native ? '01234567-abcd-ef12-3456-000000000000' : 'run';
   const taskBranch = 'agent/bug-fix-agent/abcdef123456';
@@ -39,7 +38,7 @@ test('Bug pr prepare CLI (Native resumed checkout): stdin/file, Git identity, qu
     git(root, 'config', 'multica.checkout-mode', 'isolated');
     git(root, 'branch', '-m', taskBranch);
   }
-  git(root, 'add', '.gitignore', 'AGENTS.md');
+  git(root, 'add', 'AGENTS.md');
   git(root, '-c', 'user.name=test', '-c', 'user.email=test@example.test', 'commit', '-m', 'fixture');
   git(hub, 'init', '-b', 'feature/12'); git(hub, 'remote', 'add', 'origin', repoUrl);
   writeFileSync(join(hub, 'fix.txt'), '修复'); git(hub, 'add', 'fix.txt');

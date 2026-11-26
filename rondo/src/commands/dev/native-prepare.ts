@@ -12,7 +12,7 @@ import { parsePlatformCheckoutOutput, assertNativeCheckoutBaseline } from "../..
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 import { RemoteArtifactReader } from "../delivery/remote-artifacts.js";
 import type { AnalysisSource } from "../analysis/source.js";
-import { validatePrepareRepo, validateBusinessPath, validateBusinessCheckout, type PrepareRepo } from "./prepare-workspace.js";
+import { validatePrepareRepo, resolveNativeBusinessPath, validateBusinessCheckout, type PrepareRepo } from "./prepare-workspace.js";
 
 /** Read committed engineering mappings, not mutable working files or a second registry. */
 export function readNativeRepoMapping(root: string, revision: string, serverUrl: string): Record<string, PrepareRepo> {
@@ -60,7 +60,7 @@ export function parseRepoMapping(content: string, rootUrl: string, serverUrl: st
 export function prepareNativeBusiness(root: string, repo: PrepareRepo, branch: string, runtime: MulticaRuntime,
   resourceRef?: string, remote = runAuthenticatedGit, checkout = runCommand): Record<string, unknown> {
   const workdir = dirname(root);
-  const path = validateBusinessPath(root, repo);
+  const path = resolveNativeBusinessPath(root, repo);
   const existing = existsSync(path);
   if (existing) validateBusinessCheckout(path, repo, branch, workdir);
   const candidateRef = "refs/heads/" + branch;
@@ -86,13 +86,13 @@ export function prepareNativeBusiness(root: string, repo: PrepareRepo, branch: s
   const candidate = observed.get(candidateRef);
   if (!candidate && (!initialRef || !observed.has(initialRef))) throw new UnknownError("缺少已确认的 Project Resource 初始分支");
   const ref = candidate ? branch : resourceRef!;
-  const result = checkout([...multicaPrefix(runtime), "repo", "checkout", repo.repo_url, "--ref", ref], root, undefined, 600_000);
+  const result = checkout([...multicaPrefix(runtime), "repo", "checkout", repo.repo_url, "--ref", ref], workdir, undefined, 600_000);
   if (result.status !== 0 || /fetch[_ -]error|fetch (?:failed|failure)/i.test(result.stdout + "\n" + result.stderr))
     throw new UnknownError("Multica Native Checkout 或 Fetch 未确认成功，保留现场");
   const reported = parsePlatformCheckoutOutput(result.stdout, result.stderr);
   const same = (a: string, b: string) => process.platform === "win32"
     ? resolve(a).toLowerCase() === resolve(b).toLowerCase() : resolve(a) === resolve(b);
-  if (!same(reported.root, path) || !same(validateBusinessPath(root, repo), path)) throw new FailError("Native Checkout 实际路径与仓库映射不一致");
+  if (!same(reported.root, path) || !same(resolveNativeBusinessPath(root, repo), path)) throw new FailError("Native Checkout 实际路径与仓库映射不一致");
   const head = validateBusinessCheckout(path, repo, branch, workdir);
   const localBranch = gitOk(path, ["symbolic-ref", "--short", "HEAD"], "核对 Task Branch");
   if (localBranch !== reported.branch) throw new FailError("Native 当前分支与平台返回不一致");
