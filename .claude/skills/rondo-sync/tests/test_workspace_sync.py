@@ -174,7 +174,32 @@ class WorkspaceSyncTests(unittest.TestCase):
             self.assertEqual(expectation.project_title, title)
             self.assertEqual(expectation.repo_urls, [r["url"] for r in declared])
 
-    def run_pipeline(self, dry_run=False, fail=False):
+    def test_disable_runtime_skills_covers_other_machines(self):
+        runtimes = [
+            {"id": "r-local", "device_info": "lileipc·Windows"},
+            {"id": "r-colleague", "device_info": "vayne·Windows"},
+        ]
+        with patch.object(sync, "list_runtimes", return_value=runtimes):
+            allowed, reason = sync.should_disable_runtime_skills(self.root, "ws", ["r-colleague"])
+        self.assertTrue(allowed, reason)
+        self.assertEqual(reason, "")
+
+    def test_disable_runtime_skills_skips_only_without_any_live_binding(self):
+        with patch.object(sync, "list_runtimes", return_value=[{"id": "r-live"}]):
+            self.assertEqual(
+                sync.should_disable_runtime_skills(self.root, "ws", []),
+                (False, "没有 Agent 绑定 runtime，跳过禁用"),
+            )
+            allowed, reason = sync.should_disable_runtime_skills(self.root, "ws", ["r-stale"])
+            self.assertFalse(allowed)
+            self.assertIn("均已不在", reason)
+            # 单个失效绑定不阻断其他 Agent 的禁用
+            allowed, reason = sync.should_disable_runtime_skills(
+                self.root, "ws", ["r-stale", "r-live"],
+            )
+            self.assertTrue(allowed, reason)
+
+    def run_pipeline(self, dry_run=False, fail=False, disable_runtime_skills=False):
         before = self.manifest.read_bytes()
         calls = []
 
@@ -193,7 +218,7 @@ class WorkspaceSyncTests(unittest.TestCase):
         with patch.object(sync.subprocess, "run", side_effect=run):
             code = sync.sync_workspace(
                 "winning-bi", "ws-bi", "runtime", self.root, ["node", "local-cli"],
-                Path("disable.py"), dry_run, False, 1, False, "测试跳过", True,
+                Path("disable.py"), dry_run, False, 1, disable_runtime_skills, "测试跳过", True,
                 Path("tfs.py"), True, Path("repos.py"), True,
             )
         return code, calls
@@ -217,6 +242,21 @@ class WorkspaceSyncTests(unittest.TestCase):
             self.assertIn("--skip-workflow", calls[0])
             for command in calls:
                 self.assertEqual("--dry-run" in command, dry_run)
+
+    def test_pipeline_previews_then_applies_runtime_skill_disable(self):
+        code, calls = self.run_pipeline(disable_runtime_skills=True)
+        self.assertEqual(code, 0)
+        self.assertEqual(len(calls), 4)
+        self.assertEqual(calls[2][1], "disable.py")
+        self.assertNotIn("--apply", calls[2])
+        self.assertEqual(calls[3][1], "disable.py")
+        self.assertIn("--apply", calls[3])
+
+        code, calls = self.run_pipeline(dry_run=True, disable_runtime_skills=True)
+        self.assertEqual(code, 0)
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(calls[2][1], "disable.py")
+        self.assertNotIn("--apply", calls[2])
 
     def test_provision_failure_stops_sync(self):
         code, calls = self.run_pipeline(fail=True)

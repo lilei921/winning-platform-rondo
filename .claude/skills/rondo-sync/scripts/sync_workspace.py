@@ -36,7 +36,6 @@ import json
 import os
 import random
 import shutil
-import socket
 import subprocess
 import sys
 from pathlib import Path
@@ -252,33 +251,20 @@ def resolve_runtime(root: Path, workspace_id: str, fixed: str | None) -> tuple[s
     return random.choice(pool)["id"], sorted(bound), stale
 
 
-def runtime_device(root: Path, workspace_id: str, runtime_id: str) -> str | None:
-    """取 runtime 所在设备名（device_info 的第一段，如 test220-pg-db1）。"""
-    for runtime in list_runtimes(root, workspace_id):
-        if runtime.get("id") != runtime_id:
-            continue
-        device = (runtime.get("device_info") or "").split("·")[0].strip()
-        return device or None
-    return None
-
-
 def should_disable_runtime_skills(
     root: Path, workspace_id: str, bound_runtime_ids: list[str],
 ) -> tuple[bool, str]:
     """判断是否执行"禁用 runtime skills"。
 
-    Agent 绑定的是同事自己机器上的 runtime 时，其本地 Skill 是本人有意保留的环境，
-    不做禁用；绑在本机 runtime 上时才禁用（避免与仓内 Skill 重复暴露）。
+    只要 Agent 绑定了 workspace 内仍存在的 runtime 就执行，不区分本机与同事机器：
+    Runtime 本地 Skill 会与仓内供给的 Skill 重复暴露，统一在 Agent 侧禁用。
+    失效绑定由 disable_runtime_skills.py 自行跳过，不阻断其他 Agent。
     """
     if not bound_runtime_ids:
         return False, "没有 Agent 绑定 runtime，跳过禁用"
-    local = socket.gethostname()
-    for runtime_id in bound_runtime_ids:
-        device = runtime_device(root, workspace_id, runtime_id)
-        if device is None:
-            return False, f"Agent 绑定 runtime {runtime_id} 已不在该 workspace，跳过禁用"
-        if device != local:
-            return False, f"Agent 绑定的是 {device} 上的 runtime（非本机 {local}），按约定不执行禁用"
+    known = {str(r.get("id")) for r in list_runtimes(root, workspace_id)}
+    if not any(runtime_id in known for runtime_id in bound_runtime_ids):
+        return False, "Agent 绑定的 runtime 均已不在该 workspace，跳过禁用"
     return True, ""
 
 
@@ -354,7 +340,7 @@ def sync_workspace(
         "--discovery-timeout", str(discovery_timeout),
     ]
     if not disable_runtime_skills:
-        # Agent 绑定同事自己机器的 runtime：其本地 Skill 是本人有意保留的环境，不禁用。
+        # 有 Agent 绑定 workspace 内 runtime 时统一禁用，包括同事机器上的 runtime。
         print(f"[SKIP] 禁用 runtime skills：{disable_skip_reason}", flush=True)
     else:
         if not dry_run:
@@ -427,8 +413,8 @@ def main() -> int:
     )
     parser.add_argument(
         "--disable-runtime-skills", choices=("auto", "always", "never"), default="auto",
-        help="禁用 runtime 继承的 Skill：auto 仅在 Agent 绑定本机 runtime 时执行；"
-             "always 始终执行；never 从不执行",
+        help="禁用 runtime 继承的 Skill：auto 在 Agent 绑定了 workspace 内 runtime 时执行"
+             "（含同事机器的 runtime）；always 无条件执行；never 从不执行",
     )
     parser.add_argument(
         "--skip-workflow", dest="skip_workflow", action="store_true", default=True,

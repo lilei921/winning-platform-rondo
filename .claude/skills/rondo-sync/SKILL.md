@@ -81,7 +81,7 @@ python .claude/skills/rondo-sync/scripts/sync_workspace.py winning-lfw --repo-ro
 | `--member <name/email>` | 改用其他成员筛选 workspace |
 | `--prefix <前缀>` | 改用其他 slug 前缀 |
 | `--runtime-id <uuid>` | 固定 runtime；缺省时沿用该 workspace 既有 Agent 的绑定，无既有绑定时在在线 runtime 中随机取一个 |
-| `--disable-runtime-skills <auto\|always\|never>` | 禁用 runtime 继承 Skill 的策略，默认 `auto`（仅本机 runtime 执行） |
+| `--disable-runtime-skills <auto\|always\|never>` | 禁用 runtime 继承 Skill 的策略，默认 `auto`（对所有绑定 workspace 内 runtime 的 Agent 执行，含同事机器） |
 | `--discovery-timeout <秒>` | runtime skill 发现超时，默认 120 秒 |
 | `--skip-workflow` | （默认开启）provision 跳过 workflow 检查与状态供给；97 服务端无 workflow API，必须保持跳过 |
 | `--with-workflow` | 恢复 workflow 检查与状态供给；仅在服务端支持 workflow API 时使用 |
@@ -98,7 +98,7 @@ python .claude/skills/rondo-sync/scripts/sync_workspace.py winning-lfw --repo-ro
 1. **provision**（`rondo workspace provision`，默认带 `--skip-workflow`）— 供给 Skill / Agent / Squad / Project / Autopilot 对象，并把解析到的对象 ID 写入 `workspace-config/workspaces/<name>.json` overlay。Rondo 按 workspace slug 在内存中合并分组 Project / MCP 配置，不改写共享 manifest。
 2. **sync**（`rondo workspace sync`）— 按 `docs/config/repo-context.yaml` 渲染仓库映射配置，upsert Skill 文件并逐文件回读校验。
 3. **绑定 Agent runtime**（仅当显式传入 `--runtime-id`）— provision 只在**新建** Agent 时使用 `--runtime-id`，已存在的 Agent 保留原 runtime；显式指定 runtime 时必须额外改绑，否则该参数对已供给的 workspace 无效。
-4. **禁用 runtime skills** — 关闭 Agent 从 runtime 继承的本地 Skill，避免与仓内 Skill 重复暴露；先预览再落盘。是否执行见下节。
+4. **禁用 runtime skills** — 关闭 Agent 从 runtime 继承的本地 Skill，避免与仓内 Skill 重复暴露；覆盖所有绑定 workspace 内 runtime 的 Agent（含同事机器），先预览再落盘。是否执行见下节。
 5. **补齐 Agent TFS 环境变量**（`provision_agent_tfs_env.py`）— 为全部 Agent 补齐 `TFS_URL` / `TFS_COLLECTION` / `TFS_PAT`，只增不改；规则与凭据红线见下节。`--dry-run` 会透传给该步骤；`--skip-tfs-env` 可整体跳过。
 6. **供给 workspace 仓库注册表**（`provision_workspace_repos.py`）— 按 manifest 的 `workspace_repos` 段执行 `multica repo add`，只增不维护；`--dry-run` 会透传；`--skip-repos` 可整体跳过。
 
@@ -178,17 +178,17 @@ DB 口令从服务端进程环境取（`POSTGRES_PASSWORD`）。提权窗口只�
 
 ## runtime 归属与禁用范围
 
-Agent 绑定的是**某台机器的** runtime，workspace 里可同时存在多台同事机器的 runtime。禁用 runtime skills 作用于 Agent 实际绑定的 runtime，不是本次选中的那个——某台机器上装了几百个本地 Skill 时，禁用数量会随之放大。
+Agent 绑定的是**某台机器的** runtime，workspace 里可同时存在多台同事机器的 runtime。禁用 runtime skills 作用于各 Agent 实际绑定的 runtime，不是本次选中的那个——某台机器上装了几百个本地 Skill 时，禁用数量会随之放大。
 
-**绑定同事自己机器的 runtime 是允许的，不做禁用**：那台机器上的本地 Skill 是本人有意保留的环境。按 `--disable-runtime-skills auto`（默认）：
+**不区分 runtime 所在设备**：同事机器上的本地 Skill 同样会与仓内供给的 Skill 重复暴露，因此在 Agent 侧统一禁用；该操作只改 Agent 的禁用列表，不删改 runtime 机器上的文件。按 `--disable-runtime-skills auto`（默认）：
 
 | Agent 绑定的 runtime 所在设备 | 是否禁用 |
 | --- | --- |
 | 本机（hostname 相同） | 执行 |
-| 其他同事的机器 | 跳过 |
-| 已从 workspace 消失的失效绑定 | 跳过，并打印 `[WARN]` |
+| 其他同事的机器 | 执行 |
+| 全部绑定均已从 workspace 消失 | 跳过禁用，并打印 `[WARN]`；单个失效绑定由禁用脚本自行跳过 |
 
-跳过时输出形如 `[SKIP] 禁用 runtime skills：Agent 绑定的是 yuandongxu-ryt 上的 runtime（非本机 test220-pg-db1），按约定不执行禁用`。
+跳过时输出形如 `[SKIP] 禁用 runtime skills：Agent 绑定的 runtime 均已不在该 workspace，跳过禁用`。
 
 需要无条件执行或彻底关闭时用 `--disable-runtime-skills always|never`。
 
@@ -238,7 +238,7 @@ overlay 文件是仓内唯一记录平台对象 ID 的位置，随同步产生�
 - 不修改业务子仓代码，不改仓内 Skill 内容，不触发 Agent Run。
 - runtime 必须在目标 workspace 内；跨 workspace 使用别处的 runtime id 会被拒绝。
 - 未显式指定 `--runtime-id` 时不改绑既有 Agent 的 runtime，只在新建 Agent 时使用选中的 runtime。
-- 禁用 runtime skills 只影响目标 Agent 自身绑定关系，不修改 runtime 机器上的文件；绑定同事机器时不执行禁用。
+- 禁用 runtime skills 只影响目标 Agent 自身绑定关系，不修改 runtime 机器上的文件；同事机器的 runtime 同样在禁用范围内。
 - `skipped_unregistered` 中的 Skill（如 `tfs-writeback`）不在 `managed_skills` 清单内，不供给、不报错。
 
 ## 本地验证
