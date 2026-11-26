@@ -43,8 +43,7 @@ export function parseAnalysisSource(raw: unknown, changeRef?: string): AnalysisS
 }
 
 export function readAnalysisSource(md: Record<string, unknown>): AnalysisSource {
-  if (typeof md["analysis.change_ref"] !== "string" || !md["analysis.change_ref"]) throw new UnknownError("缺少 analysis.change_ref");
-  return parseAnalysisSource(md["analysis.source"], md["analysis.change_ref"] as string);
+  return parseAnalysisSource(md["analysis.source"]);
 }
 
 /** 固定发布来源：仓库、分支、Commit 与 Change 必须一致。 */

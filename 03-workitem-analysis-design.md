@@ -849,10 +849,10 @@ Intentional 的 Proposal / Tasks 为稳定必需 Artifact；Specs 有 Delta 时�
 
 ### 输出与权威来源
 
-Preparation 不要求创建 `preparation-result.md`。已持久化的 Change 引用以 [§9.1](#section-9-1) 的 `analysis.change_ref` 为准；准备检查只返回当前运行使用的最小结果（示意，非新增持久化 Metadata Schema）：
+Preparation 不要求创建 `preparation-result.md`。已持久化的 Change 引用以 [§9.1](#section-9-1) 的 `analysis.source.change_ref` 为准；准备检查只返回当前运行使用的最小结果（示意，非新增持久化 Metadata Schema）：
 
 ```yaml
-change_ref: <reference-to-analysis.change_ref>
+change_ref: <reference-to-analysis.source.change_ref>
 validation: PASS | FAIL | UNKNOWN
 state_ref: <native-openspec-state-reference>
 ```
@@ -995,7 +995,7 @@ Verification Contract 由 OpenSpec Engineering Truth 提供：Intentional 主要
 
 在当前 Issue 审核 Comment 中说明是否建议 Independent Verification（true / false）、实际理由及必要验证重点；需要定位工程验证要求时按需引用当前 OpenSpec 工件或任务。无需机器字段或固定引用数组。
 
-Workitem Analyst 是 `verify_agent` 的首次专业判断者，只输出 Recommendation、Reason 与 Focus，不预先写最终 `verify_agent.required`。Human Analysis Review 拥有最终决定权，可以接受或 override Recommendation；批准后的 Development Materialization 根据 Human 最终决定生成 `verify_agent.required=true|false`。因此 `verify_agent.required` 不要求与原 Recommendation 相同；`verification.result` 仅在 `verify_agent.required=true` 时表示 Independent Verification（独立验证） 的结果。批准、转换及执行边界见 [主方案 §9.1](02-multica-delivery-lifecycle-design.md#verify-agent-decision) 与 [§13.1](02-multica-delivery-lifecycle-design.md#delivery-facts)。
+Workitem Analyst 是 `verify_agent` 的首次专业判断者，只输出 Recommendation、Reason 与 Focus，不预先写最终 `analysis.human_approval.verify_agent_required`。Human Analysis Review 拥有最终决定权，可以接受或 override Recommendation；Delivery Lead 使用 `rondo analysis approve` 登记 Human 最终决定至 `analysis.human_approval.verify_agent_required`。因此 `analysis.human_approval.verify_agent_required` 不要求与原 Recommendation 相同；`verification.result` 仅在 `analysis.human_approval.verify_agent_required=true` 时表示 Independent Verification（独立验证） 的结果。批准、转换及执行边界见 [主方案 §9.1](02-multica-delivery-lifecycle-design.md#verify-agent-decision) 与 [§13.1](02-multica-delivery-lifecycle-design.md#delivery-facts)。
 
 ### 推荐方法：独立验证增量价值判断
 
@@ -1037,7 +1037,7 @@ Human Review 可以只改变 Independent Verification Decision，而不要求 Wo
 ```text
 Recommendation = professional advice from Workitem Analyst
 Human Decision = final delivery authorization
-verify_agent.required = materialized Human Decision
+analysis.human_approval.verify_agent_required = recorded Human Decision
 ```
 
 如果 Human 仅将 `true ↔ false` 改为另一结果，且没有新增、删除或改变 Acceptance Contract、Verification Contract、required Verification Tasks 或批准 Scope，则不返回 Analysis；原 Recommendation 保留，Human 决定通过原始 Comment / Decision 引用进入 Delivery Truth。
@@ -1157,7 +1157,7 @@ reasons:
   - ...
 ```
 
-必要项明确缺失 / 不合法为 `FAIL`，事实 / 身份 / 权限 / 结果无法确认时为 `UNKNOWN`。`PASS` 后仍由 Workitem Analyst 按 [§12.1](#analysis-publish) 发布引用 / Result、写入并回读 `analysis_review`，再等待 Human；不生成 `verify_agent.required`，不等同于获准编码。
+必要项明确缺失 / 不合法为 `FAIL`，事实 / 身份 / 权限 / 结果无法确认时为 `UNKNOWN`。`PASS` 后仍由 Workitem Analyst 按 [§12.1](#analysis-publish) 发布引用 / Result、写入并回读 `analysis_review`，再等待 Human；不生成 `analysis.human_approval.verify_agent_required`，不等同于获准编码。
 
 Corrective 一致性检查为 `NEEDS_REVISION`、关键结论已失效或 `root_cause.status=unknown` 时，不满足 [§7.3](#analysis-root-cause-confidence) 的**专业提交条件**；`probable` 不自动失败，但须有充分证据和清楚的剩余风险。**现行 `rondo analysis validate` 尚未直接读取 Corrective 一致性 Verdict 或根因可信度来执行这些语义判定**；专业不通过时 Analyst 应修订或停止提交，不得宣称机器 Gate 已自动拦截。确需将它们升级为确定性硬 Gate，须另行明确可读的结果契约并实施测试。现行 CLI 的 FAIL / UNKNOWN 仍按实际检查项返回，禁止绕过。
 
@@ -1398,7 +1398,7 @@ Agent Instructions 与相关 Skill 的职责收敛已通过 #83 合并；`rondo 
 | Corrective / Intentional Change Kind 或专业 Review 被使用 | 根据证据与任务复杂度调用实际可用能力；专业一致性检查不因某候选 Skill 未注册而自动缺失，也不因名称另建 Agent、Run 或 Stage；AI Review 不替代 Human Approval |
 | 确实必需的已批准专业能力不可读取 | 报告具体缺口并停止受影响动作；候选 Skill 不存在不等于任务失败，不能依靠 Leader 临时转述或猜测方法宣称 Gate PASS / 提交成功 |
 | 重复通知或明确的定向返工请求 | 先确认当前委派与已有结果；重复通知不全量重跑或覆盖后续状态，返工只修订命中内容与必要关联项并完成当前检查 |
-| Analysis 提交审核并回读成功 | 结束本轮分析；不自行批准、生成最终 `verify_agent.required`、启动 Engineer 或关闭 Delivery |
+| Analysis 提交审核并回读成功 | 结束本轮分析；不自行批准、生成最终 `analysis.human_approval.verify_agent_required`、启动 Engineer 或关闭 Delivery |
 | OpenSpec 安装版本 | `openspec --version` 确认为 `1.13.2`；版本不一致时不把本设计的 Schema / skip / Archive 假设当作已验证事实 |
 | 项目级 Schema 来源 / Fork | `corrective-change` / `intentional-change` 均以项目级 Schema 为目标；1.13.2 已本地验证项目 Fork、`schema which`、Schema Validate 与项目优先解析可用 |
 | `intentional-change` Conditional Design / Apply 前置 | 按 [05 §6.3](05-openspec-schema-implementation-design.md#section-6-3)：`tasks.requires=[specs]`、`apply.requires=[tasks]`；Design 不作为 Tasks 原生硬依赖。条件满足时 Preparation 在形成 Tasks 前生成 Design，条件不满足时省略；Analysis Gate 核对必要内容及生成 / 省略依据；Apply 仅提供只读就绪 / 上下文信息 |
@@ -1446,7 +1446,7 @@ Agent Instructions 与相关 Skill 的职责收敛已通过 #83 合并；`rondo 
 | 推荐为 false | 仍保留必要 Verification Contract 与开发侧验收依据 |
 | Summary 或产物更新漏掉最新推荐 | 提交前修正为同一轮结果，不能交接相互冲突的建议 |
 | 人审退回 AC / Scope / Verification Contract | 定向修订必要分析与推荐，适用时重做 Review 和 Gate，再提交，不沿用未经复核的推荐 |
-| 分析阶段尝试写入 verify_agent.required 或 verification.result | 不作为本阶段输出；只交付 recommendation，最终执行事实与验收结果由[主方案](02-multica-delivery-lifecycle-design.md)规定 |
+| 分析阶段尝试写入 analysis.human_approval.verify_agent_required 或 verification.result | 不作为本阶段输出；只交付 recommendation，最终执行事实与验收结果由[主方案](02-multica-delivery-lifecycle-design.md)规定 |
 | 检查器配置指向两份 validate-analysis.py | 只保留[主方案](02-multica-delivery-lifecycle-design.md) delivery-gate 的唯一实现，Analysis 维护专业检查契约 |
 | 来源需求不完整、TFS Comment 与代码行为不一致 | 能保留 Source / Observed / Hypothesis / Decision 来源，提出具体澄清问题；不能将任一单独来源默认为已确认规格 |
 | Bug 无法本地复现但有可靠 Trace / 失败测试 | 记录复现限制及替代证据；若 Root Cause `probable`，显式保留风险；`unknown` 不能被文档齐全掩盖 |
@@ -1454,7 +1454,7 @@ Agent Instructions 与相关 Skill 的职责收敛已通过 #83 合并；`rondo 
 | Intentional 的两个方案存在关键外部 Contract 取舍 | 记录选项、推荐、影响与需 Human 确认的决定；未确认的关键取舍不得写成已经批准 |
 | Engineer 从新的独立 Run 读取 Analysis Package | 仅依靠已保存 Change、Handoff Facts 和 Evidence 引用，能定位应实现行为、范围、Task Verification 与风险；不需要 Analyst 临时对话 |
 | Semantic Review 通过但 Gate 所需身份或引用未知 | Analysis Gate 返回 `UNKNOWN` 而不是 PASS；不得写入 `analysis_review` |
-| Gate PASS 但 Human 尚未批准 | 只能提交 Human Review；不得生成批准后的 `verify_agent.required` 或启动 Engineer |
+| Gate PASS 但 Human 尚未批准 | 只能提交 Human Review；不得生成批准后的 `analysis.human_approval.verify_agent_required` 或启动 Engineer |
 | `probable` 有可靠 Trace，Expected Behavior / 范围明确，修复与验证方案有据且残余风险已说明 | Analyst 依 [§7.3](#analysis-root-cause-confidence) 判断足以提交并取得一致性检查 `PASS`；全部 Gate 条件满足后可提交人审，根因状态仍为 `probable`，研发等待正式批准 |
 | `probable` 的替代解释尚可能改变 Fix Strategy，当前验证方案不能区分原因 | 可继续调查或保存草稿；一致性检查为 `NEEDS_REVISION`，不得提交审核 |
 | Corrective 一致性检查为 `NEEDS_REVISION`，但没有 blocker | 不得提交审核；不能只凭 blocker 数量为零放行，须完成专业复核 |
@@ -1523,7 +1523,7 @@ Human Analysis Review → Delivery Lead
 | Wayfinder Evidence | Wayfinder 通过独立 `codebase-explorer` 形成 Comment 和 Evidence References；Analyst 使用原有 `codebase-explorer` 按需复核并按需增量调查，Triage Decision 不替代 Workitem Analyst 的技术判断 |
 | Context Pack | Context Evidence 必须可追溯；`context-pack.md` 仅复杂跨仓 / 长证据链任务按需生成 |
 | Acceptance Contract | Intentional → Spec / Delta Spec 的 Requirement + Scenario；Corrective → Proposal Expected Behavior / Regression Scope，存在 Specs 时一并使用 |
-| Verification Contract | 每个 Implementation Task 必须有验证方式；组合行为按需形成 Change-level Verification Task；不因 `verify_agent.required=false` 取消 |
+| Verification Contract | 每个 Implementation Task 必须有验证方式；组合行为按需形成 Change-level Verification Task；不因 `analysis.human_approval.verify_agent_required=false` 取消 |
 | Verify 推荐 | 所有获准自动处理的 Change 都输出 Independent Verify Recommendation / Reason / Focus；只决定是否需要独立执行者，不拥有 Verification Contract |
 | Human Analysis Review | 实际工程增量提交 Human Review，需人工批准工程契约；无需工程增量通过普通 Comment 回流，不触发工程契约批准。批准不是 Analysis Gate PASS 的同义词，完整流程见[主方案 §6](02-multica-delivery-lifecycle-design.md#human-analysis-review) |
 | Approved OpenSpec Commit | Human APPROVED 后提交根仓 Git，记录开发基线；允许批准边界内更新，不创建独立 PR |
@@ -1616,7 +1616,7 @@ Multica 公共机制与官方来源统一引用 [指导手册来源索引](01-mu
 - **基线与名称**：以 v1.18.1 的 14 章实施结构为基线，吸收 v1.19 的专业质量要求；名称统一为 `Workitem Analysis Design（工作项分析设计方案）`，当时文件名为 `03-workitem-analysis-design-v1.19.1.md`，不继续采用 v1.19 五段式正文目录。
 - **专业质量**：在对应章节补入问题理解 / 事实分类、业务与工程证据链、混合变更边界、Root Cause 可信度、Intentional 方案取舍与独立 Engineer 可消费的完成信号。
 - **落地与验收**：补入 Semantic Quality / Deterministic Readiness / Human Approval 分层、专业停止矩阵、专业活动到七个 Skill 的实施映射和异常验收场景。
-- **不变规则**：完整保留 TFS Bug / Requirement 管理背景、三条自动 Route、两个 OpenSpec Schema、`analysis.change_ref`、七个 Project Skills、`analysis-publish` 的 `analysis_review` 写入与回读及 02 / 05 的单一权威归属。未修改实际 Agent / Skill / Script，未定稿 05 P0-2。
+- **不变规则**：完整保留 TFS Bug / Requirement 管理背景、三条自动 Route、两个 OpenSpec Schema、`analysis.source.change_ref`、七个 Project Skills、`analysis-publish` 的 `analysis_review` 写入与回读及 02 / 05 的单一权威归属。未修改实际 Agent / Skill / Script，未定稿 05 P0-2。
 - **对照 v1.17 修订**：公共配置与 Schema 专属规则由 05 §2.6 承接；修正任务分派、审核前契约和 Task 更新引用；明确 Corrective PASS 与 `probable` 提交边界、统一 `focus_refs`，并补入对应正反验收场景。
 
 ---
@@ -1626,7 +1626,7 @@ Multica 公共机制与官方来源统一引用 [指导手册来源索引](01-mu
 - 将 38 个原正文主章节调整为 14 个专业主题章节；Route、输入、Preparation、Review / Gate、Human Handoff、Config 按职责与执行顺序归位。
 - 保留 §2 中完整的 TFS Bug / Requirement 公司管理背景；保留原最终执行模型、决策表、核心原则与历史记录（见附录 A–C）。
 - 将 Schema YAML / Template / Parser / Change Resolver 等实施权威收敛引用至 05；将 Sub-Issue / PR / Human Approval / 状态转换规则收敛引用至 02；保持 01 Canonical Terminology。
-- 将当前 Change 的 Multica 引用示例统一为 `analysis.change_ref.{id,path,schema}`；移除 `analysis-routing.yaml` 对 Human Review 强制约束的重复可配置开关。
+- 将当前 Change 的 Multica 引用示例统一为 `analysis.source.change_ref.{id,path,schema}`；移除 `analysis-routing.yaml` 对 Human Review 强制约束的重复可配置开关。
 - 保留七个 Project Skill、`analysis-publish` 提交并回读 `analysis_review`、Gate 和独立 Verify 推荐的既定边界；仅修订内部引用与章节组织，不新增第二阶段的专业契约或实施机制。
 - 01 / 02 / 04 / 05 / 06 文件仍保持各自原版本；它们指向 03 v1.17 的历史链接尚未改写。新文档保留常用显式锚点，便于下次多文档引用同步；本版不擅自升级上位方案。
 
@@ -1650,7 +1650,7 @@ Multica 公共机制与官方来源统一引用 [指导手册来源索引](01-mu
 - `corrective-change` Artifact Graph 收敛为 `proposal → specs/skipped → tasks`；Intentional 继续使用 `proposal + specs + design + tasks`。
 - 取消独立 `AC-xxx` / `VR-xxx` Identity 与独立 Acceptance / Verification Artifact；Intentional 使用 OpenSpec Requirement + Scenario 作为 Acceptance Contract，Corrective 无 Specs 时使用 Proposal Expected Behavior / Regression Scope + Task Verification。
 - `tasks.md` 正式区分 Implementation Task 与按需 Change-level Verification Task；每个 Implementation Task 必须说明自己的验证方式，只有组合后的 Change 才能证明行为时才建立 Regression / Integration / E2E Verification Task。
-- Verify Agent Recommendation 的语义收窄为 **是否需要 Independent Verify Agent**；Integration / Regression / E2E 只是 Verification Method，不直接决定 Agent。`verify_agent.required` 继续作为 Human Review 后的 Multica Delivery Fact，避免字段迁移。
+- Verify Agent Recommendation 的语义收窄为 **是否需要 Independent Verify Agent**；Integration / Regression / E2E 只是 Verification Method，不直接决定 Agent。`analysis.human_approval.verify_agent_required` 继续作为 Human Review 后的 Multica Delivery Fact，避免字段迁移。
 - `focus_refs` 不再使用 AC / VR ID；可引用 Requirement / Scenario、Corrective Proposal 语义位置或 `T-xxx`，其最终 parser-level 格式随 Native OpenSpec Template Contract P0-2 定稿。
 - Analysis Gate、Requirement Review、Corrective 一致性检查、Summary、下游交接与核心原则同步采用 Native Acceptance / Verification Model。
 - 配套基线为 Delivery、Engineer、OpenSpec Schema Implementation、Design Guideline；本次同版本修订不修改 Agent / Squad 配置或执行资产。

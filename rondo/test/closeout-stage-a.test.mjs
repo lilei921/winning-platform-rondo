@@ -342,18 +342,16 @@ test('Root 验证必须在当前 Task workdir 内运行', t => {
   assert.throws(() => verifyCloseoutRoot(f.paths(root), source), /Task workdir/);
 });
 
-test('Inspect 仍拒绝与已批准 PR Preparation 分支不符的 PR', async t => {
+test('Inspect 拒绝未完整登记的 PR', async t => {
   const f = fixture(t);
   const source = f.source('change-a'), root = f.prepare(source).root_repo;
   const md = {
-    'analysis.change_ref': source.change_ref,
     'analysis.source': JSON.stringify(source),
-    pr_prep: JSON.stringify([{ repo_key: 'app', source_branch: 'feature/10', target_branch: 'dev' }]),
-    current_pr: JSON.stringify([{ repo_key: 'app', pr_id: 42, source_branch: 'feature/99', target_branch: 'dev' }]),
+    pr: JSON.stringify([{repo_key:'app',source_branch:'feature/10',target_branch:'dev',pr_id:42}]),
   };
   await assert.rejects(
     inspectRequirementCommits(md, root, { config: { serverUrl: 'http://tfs.test/tfs/C' } }, {}),
-    /PR Preparation.*分支不一致/,
+    /登记身份不完整/,
   );
 });
 

@@ -105,7 +105,7 @@ Multica Runtime 内部继续保持：
 具体约束：
 
 - **Engineering Truth**：Requirement / Scenario、Corrective Expected Behavior / Root Cause / Fix / Regression Scope、设计、Implementation / Verification Tasks、Evidence，以及 Engineer / Verification Executor 后续需要长期消费的技术事实，优先由 OpenSpec Change 或明确的 Supporting Artifact 持有；
-- **Delivery Truth**：Status、Assignment、Review、Approval、Gate、`verify_agent.required` / Independent Verification（独立验证） Result、Run、Sub-Issue 以及协作与交付事实，优先使用 Multica 原生 Issue / metadata / custom property / comment / status / assignment / run result 承载；
+- **Delivery Truth**：Status、Assignment、Review、Approval、Gate、Human Approval 中的 Independent Verification Decision（独立 Bug 使用 `verify_agent.required`） / Independent Verification（独立验证） Result、Run、Sub-Issue 以及协作与交付事实，优先使用 Multica 原生 Issue / metadata / custom property / comment / status / assignment / run result 承载；
 - **Reference, not Replication（引用而非复制）**：两个事实域通过稳定引用连接，不为了交接、展示或方便读取而复制对方的正文事实；
 - **No Third Truth Store**：不得仅为跨阶段交接新增拥有独立 schema、lifecycle、version、status 或 reconciliation 的第三套 Contract Store / Runtime Object / Workflow State；
 - **One Rule, One Owner（单一规则、单一归属）**：新增事实前先判断它属于 Engineering Truth 还是 Delivery Truth，再放入对应权威 Owner；如果只是摘要、交接或展示，则只保存引用或 View。
@@ -264,8 +264,7 @@ PR 生命周期与异常处理由 [Delivery 主方案 §11](02-multica-delivery-
 | 工程任务 | `OpenSpec Task` | `tasks.md` 中的 Implementation Task 或按需 Verification Task |
 | 实现任务 | `Implementation Task` | 产生代码、配置或其他工程修改，并包含与该任务对应的 Task-level Verification |
 | 变更级验证任务 | `Verification Task` | 仅在完整行为必须跨 Task / Module / Repository / System / User Journey 组合后验证时创建；Regression / Integration / E2E 是可选验证方法，不是独立 Stage |
-| 独立验证活动 | `Independent Verification` | `verify_agent.required=true` 时由 Verify Agent 对固定候选版本执行的独立行为验收；属于 Delivery Activity，不是新的 OpenSpec Artifact 或 Multica Stage |
-| 旧路线分派范围 | `Task Set` / `task_refs` | 旧 Backend / Frontend Engineer 任务级执行范围；不适用于独立 `Engineer` 的 Change 级研发路线 |
+| 独立验证活动 | `Independent Verification` | Human 明确要求独立验证时由 Verify Agent 对固定候选版本执行的独立行为验收；属于 Delivery Activity，不是新的 OpenSpec Artifact 或 Multica Stage |
 | 仓库级修改对象 | `Repository Change` | 某个 Repository 的代码修改与交付范围 |
 | 仓库级代码交付对象 | `PR` | 一个 Repository 的 Pull Request |
 
@@ -487,7 +486,7 @@ Delivery Completion Gate
 | 本手册 | Multica + OpenSpec 组合架构原则、Canonical Terminology、跨系统职责边界、Multica 配置规范、OpenSpec 公共机制、官方依据与来源引用规范 | 引用具体条目；领域方案不重新定义跨系统术语、Truth Ownership 或公共机制 |
 | [Delivery 主方案](02-multica-delivery-lifecycle-design.md) | 跨角色生命周期、TFS 同步后的 Wayfinder 准入、人工授权、状态转换、任务组织、Stage 使用、Verify 批准、PR 与最终收口 | 阶段文档保留自己的输入输出和停止边界，引用跨阶段流程 |
 | [Workitem Analysis 设计方案](03-workitem-analysis-design.md) | 分析角色、Wayfinder Evidence 增量复用、输入、分类与方法、OpenSpec Engineering Truth、Multica Analysis Handoff Facts、Verify 推荐生成、Analysis Gate（分析门禁） 细项、提交与定向返工 | 主方案维护交付摘要，引用详细专业契约 |
-| [Engineer Development 设计方案](04-engineer-development-design.md) | 当前 assigned Task Set（任务集合） 的工程方法、Local Validation（本地验证）、Code Review（代码审查）、Evidence、工程交付与技术决策边界 | 主方案引用专业契约，不复制全部实现与检查方法 |
+| [Engineer Development 设计方案](04-engineer-development-design.md) | 当前获批 Change 的工程方法、Local Validation（本地验证）、Code Review（代码审查）、Evidence、工程交付与技术决策边界 | 主方案引用专业契约，不复制全部实现与检查方法 |
 | [OpenSpec Schema 实施设计](05-openspec-schema-implementation-design.md) | 项目级 OpenSpec Schema、Artifact Graph、Templates、Change Identity、Task Contract、Apply Context、Validation / Archive 的实施级契约 | 本手册维护公共术语与机制；主方案 / 阶段方案只引用具体实施规则，不复制 Schema YAML、Template grammar 或 parser Contract |
 | [Method Skill Library 实施设计](06-method-skill-library-implementation-design.md) | Project Skill 内部 Engineering Method Module 的组织、来源治理、调用与副作用边界 | Agent / Skill 规范只维护公共分层原则，具体 Method 实现引用该方案 |
 
@@ -2414,7 +2413,7 @@ API State
 人工自然语言意见表达什么决定、附加条件、修正方向及是否需要再次确认
 需求是否发生实质变化
 PR Feedback 是否推翻原 Analysis
-Finding 属于哪个 Task Set / Runtime Projection
+Finding 属于哪个工程任务及当前 Change
 多个 Task 是否存在语义冲突
 是否需要重新拆分任务
 失败 Evidence 能否可靠归因
@@ -2924,7 +2923,7 @@ LLM 负责需要上下文判断的 Semantic Reasoning（语义推理）；明确
 
 - **Project Skill 消费当前 Change 的 Artifact Contract，不复制其内容标准。** 方法、内容语义、输出结构的具体协作及冲突处理见 [§3.4](#skill-artifact-contract-boundary)。
 - **OpenSpec Task 属于 `tasks.md`，不属于 Multica Issue。** Multica 使用 `task_refs` 引用并分派工程工作，不因 Task 数量自动创建 Issue。
-- **Multica Issue 承担交付运行与协作。** 默认在 Parent Issue 中通过 `@mention + task_refs` 协作；仅当 Task Set 需要独立 Owner / Status / Block / Retry / Completion / Stage 等持久运行状态时创建 Development Sub-Issue。
+- **Multica Issue 承担交付运行与协作。** Requirement 在当前 Issue 中通过原生 `@mention` 交接获批 Change；独立 Bug 使用原生 Assignment。
 - **OpenSpec Artifact Readiness / Validation / Apply Ready 不等于 Multica Delivery Gate / Human Approval。** 两类检查分别履行工程契约与交付决策职责。
 - **Multica Agent Instructions、Project Skill、OpenSpec Artifact Instruction 与 Artifact Template 不互相替代。** 角色约束、工作执行方法、工件生成语义及输出结构各有权威 Owner。
 

@@ -2,14 +2,15 @@
 import { createHash } from "node:crypto";
 import { TfsClient } from "../../tfs/client.js";
 import { UnknownError } from "../../cli/errors.js";
+import { readPrRecords, isRegisteredPr } from "../pr/facts.js";
+import { readAnalysisSource } from "../analysis/source.js";
 import type { IssueRecord } from "../../clients/multica.js";
 
 export function deliveryCommentReference(issue: IssueRecord): string {
   const md = issue.metadata ?? {};
-  let prs: unknown;
-  try { prs = JSON.parse(md.current_pr ?? ""); } catch { throw new UnknownError("无法确认本次交付 PR 引用"); }
-  if (!Array.isArray(prs) || !prs.length || prs.some(p => !p?.repo_key || !p?.pr_url || !Number.isSafeInteger(p?.pr_id) || p.pr_id <= 0)) throw new UnknownError("交付 PR 引用不完整");
-  const identity = { issue: issue.id, tfs: md["tfs.id"], change: md["analysis.change_ref"] ?? "",
+  const records = readPrRecords(md.pr), prs = records.filter(isRegisteredPr);
+  if (!prs.length || prs.length !== records.length) throw new UnknownError("交付 PR 引用不完整");
+  const identity = { issue: issue.id, tfs: md["tfs.id"], change: md["tfs.type"] === "Bug" ? "" : readAnalysisSource(md).change_ref,
     prs: prs.map(p => [p.repo_key, p.pr_id, p.pr_url]).sort((a,b) => JSON.stringify(a).localeCompare(JSON.stringify(b))) };
   return "Rondo delivery: " + createHash("sha256").update(JSON.stringify(identity)).digest("hex");
 }

@@ -40,7 +40,7 @@ function refs(raw: unknown): boolean {
 /** Pure evidence validation; external I/O and Git identity are checked by pr-prepare. */
 export function validateBugEvidence(
   raw: unknown, identity: { issue: string; tfsId: number; repoKey: string; sha: string },
-  commandPending = false,
+  commandPending = false, persisted = false,
 ): string[] {
   const reasons: string[] = [];
   if (!record(raw)) return ["evidence 必须是 JSON 对象"];
@@ -78,8 +78,10 @@ export function validateBugEvidence(
       reasons.push("code_review.findings[" + i + "] 未说明 Non-blocking 风险");
     }
   });
-  if (!Array.isArray(ev.blockers)) reasons.push("blockers 必须是数组");
-  else if (ev.blockers.length > 0) reasons.push("存在未解决 blockers");
+  if (!persisted || ev.blockers !== undefined) {
+    if (!Array.isArray(ev.blockers)) reasons.push("blockers 必须是数组");
+    else if (ev.blockers.length > 0) reasons.push("存在未解决 blockers");
+  }
   return reasons;
 }
 

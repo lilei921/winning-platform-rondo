@@ -1,3 +1,4 @@
+import { registeredPrs } from "../pr/facts.js";
 import { ensureDeliverySummary } from "./summary.js";
 /** Prepare → TFS Writeback → Complete; current Requirement and Direct Bug only. */
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmdirSync, unlinkSync, writeFileSync } from "node:fs";
@@ -322,7 +323,8 @@ function parseArgs(argv: string[]): Record<string, string> {
 
 /** Done 重放仅核对服务端最小交付事实，不要求已卸载的 OpenSpec 根仓可访问。 */
 export function assertCompletedAnalysisFacts(md: Record<string, string>): void {
-  assertStableChangeRef(md["analysis.change_ref"]);
+  try { readAnalysisSource(md); }
+  catch { throw new FailError("已完成 Issue 缺少有效 analysis.source.change_ref"); }
   if (md["delivery.tfs_written"] !== "true") {
     throw new FailError("已完成 Issue 缺少已确认的 TFS Writeback 标记");
   }
@@ -340,14 +342,9 @@ async function finalizeDirectBug(
   phase: "prepare" | "complete",
 ): Promise<number> {
   const md = issue.metadata ?? {};
-  let prs: CurrentPrEntry[];
-  try { prs = JSON.parse(md.current_pr ?? "null") as CurrentPrEntry[]; }
-  catch { throw new UnknownError("Bug current_pr 不是合法 JSON"); }
-  if (!Array.isArray(prs) || prs.length === 0) throw new FailError("Bug current_pr 缺失或为空");
-  assertBugFinalizationFacts(md, issue.status, prs);
-  // Never trust metadata alone: confirm the actual external PR states before side effects.
-  const entries = JSON.parse(md["bug.delivery"]) as Array<{repo_key:string;candidate_commit:string}>;
-  const verifiedSources = new Map(entries.map(item => [item.repo_key, item.candidate_commit]));
+  const prs = registeredPrs(md.pr);
+  assertBugFinalizationFacts(md, issue.status);
+  const verifiedSources = new Map(prs.map(item => [item.repo_key, item.candidate_commit]));
   await verifyCloseoutPrs(md, new TfsApiClient(), tfs, undefined, verifiedSources);
   const expectedKeys = prs.map(p => issueKey + "#" + p.repo_key + "#" + p.pr_id + "#completed");
   type BugPending = {
@@ -410,7 +407,7 @@ async function finalizeDirectBug(
       "- TFS Bug: #" + md["tfs.id"],
       "- PR 已完成（逐仓）：",
       ...prs.map(p => "  - " + p.repo_key + ": " + p.pr_url),
-      "- 证据：Issue metadata bug.delivery（Candidate Commit / Root Cause / Verification / Code Review）",
+      "- 证据：Issue metadata pr（Candidate Commit / Root Cause / Verification / Code Review）",
       "- TFS Writeback: 已核实",
     ].join("\n");
   const summaryResult = ensureDeliverySummary(client, issue.id, summary);
@@ -449,11 +446,7 @@ async function main(argv: string[]): Promise<number> {
     // 0. 已 done：先核对对应交付事实，再清 pending；不重放副作用。
     if (issue.status === "done") {
       if (isDirectBugDelivery(md)) {
-        let prs: CurrentPrEntry[];
-        try { prs = JSON.parse(md.current_pr ?? "null") as CurrentPrEntry[]; }
-        catch { throw new UnknownError("已完成 Bug 的 current_pr 不是合法 JSON"); }
-        if (!Array.isArray(prs)) throw new FailError("已完成 Bug 缺少 current_pr");
-        assertBugFinalizationFacts(md, issue.status, prs);
+        assertBugFinalizationFacts(md, issue.status);
         if (md["delivery.tfs_written"] !== "true") throw new FailError("已完成 Bug 缺少 TFS Writeback 标记");
       } else {
         assertCompletedAnalysisFacts(md);

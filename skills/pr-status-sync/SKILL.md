@@ -13,6 +13,8 @@ rondo pr reconcile-status
 
 指定 Issue 时使用 `--issue <KEY>`；恢复已完成 Issue 的残留 `finalize.pending` 时使用 `--recover-done`，两者不可同时使用。
 
+已登记的 PR 身份来自 `pr`；部分登记不能触发 Closeout，外部状态以 TFS 回读为准。
+
 ## 结果
 
 根据 `actions[]` 理解各 Issue 的结果：

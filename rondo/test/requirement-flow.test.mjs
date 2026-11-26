@@ -27,7 +27,7 @@ function prep(key, sha) {
     description: "实现修复；已完成验证；风险已评估。",
     local_validation: { result: "PASS", summary: "Tests passed", command: ["node", "--test"],
       exit_code: 0, candidate_commit: sha, source: "rondo pr prepare" },
-    code_review: { result: "PASS", candidate_commit: sha, summary: "Reviewed", findings: [] }, blockers: [] };
+    code_review: { result: "PASS", candidate_commit: sha, summary: "Reviewed", findings: [] } };
 }
 
 test("Requirement Scope, Candidate 和验证/Review 必须由同一份原生事实绑定", () => {
@@ -39,7 +39,6 @@ test("Requirement Scope, Candidate 和验证/Review 必须由同一份原生事�
     {...registry,frame:{...registry.frame,default_target_branch:"feature/42"}}), /Candidate/);
   assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),title:""}], ["frame"],42,registry), /Candidate/);
   assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),local_validation:{...prep("frame",sha1).local_validation,candidate_commit:sha2}}], ["frame"],42,registry), /Candidate/);
-  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),blockers:["blocking"]}], ["frame"],42,registry), /Blocking/);
   assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{...prep("frame",sha1).code_review,candidate_commit:sha2}}], ["frame"],42,registry), /Code Review/);
   assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{result:"PASS",candidate_commit:sha1,summary:"Review",findings:[{resolved:false,blocking:true}]}}], ["frame"],42,registry), /Blocking/);
   assert.doesNotThrow(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{result:"PASS",candidate_commit:sha1,summary:"Review",findings:[{resolved:false,blocking:false,risk_note:"known acceptable risk"}]}}], ["frame"],42,registry));
@@ -169,7 +168,7 @@ test("Requirement Closeout 读取批准 Commit 的范围而非当前工作树", 
   git("add", "-A");
   git("commit", "-m", "approved");
   const source = { repo_url: repoUrl, branch: "main", commit: git("rev-parse", "HEAD"), change_ref: "foo-42" };
-  const md = {"analysis.source": JSON.stringify(source), "analysis.change_ref": "foo-42"};
+  const md = {"analysis.source": JSON.stringify(source)};
   writeFileSync(join(changeDir, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [web]\n");
   assert.deepEqual(approvedRequirementScope(md, root), ["frame"]);
 });
@@ -209,8 +208,8 @@ test("Completion 消费完整发布回执，只读取批准 Scope 和固定研�
   const approval = { source, decision: "approved", comment_ref: "approved", by: "human",
     at: "2026-11-19T00:00:00Z", verify_agent_required: false };
   const metadata = { "analysis.source": JSON.stringify(source), "analysis.gate.result": "PASS",
-    "analysis.change_ref": source.change_ref, "analysis.human_approval": JSON.stringify(approval),
-    "tfs.type": "需求", "tfs.id": "42", pr_prep: JSON.stringify([prep("frame", sha2)]),
+    "analysis.human_approval": JSON.stringify(approval),
+    "tfs.type": "需求", "tfs.id": "42", pr: JSON.stringify([prep("frame", sha2)]),
     "dev.publication": JSON.stringify({ analysis_source: source, commit: sha2 }) };
   const issue = { id: "issue", status: "in_progress", metadata };
   const cfg = { runtime: { workspace_id: "ws" }, registry };
@@ -241,13 +240,13 @@ test("Completion 消费完整发布回执，只读取批准 Scope 和固定研�
       ? { value: Object.keys(files[commit]).map(item) } : { ...item(name), content: files[commit][name] };
     return { statusCode: 200, body: JSON.stringify(body) };
   });
-  const check = () => checkPublishedChange(cfg, multica, issue.id, source, metadata.pr_prep);
+  const check = () => checkPublishedChange(cfg, multica, issue.id, source, metadata.pr);
   const checked = await check();
   assert.equal(checked.commit, sha2);
   assert.deepEqual(checked.repo_keys, ["frame"]);
   assert.deepEqual(versions, new Set([sha1, sha2]));
   assert.deepEqual(reads, [[sha1, ".openspec.yaml"], [sha2, "tasks.md"]]);
-  await assert.rejects(checkPublishedChange(cfg, multica, issue.id, { ...source, change_ref: "another-42" }, metadata.pr_prep), /批准来源.*变化/);
+  await assert.rejects(checkPublishedChange(cfg, multica, issue.id, { ...source, change_ref: "another-42" }, metadata.pr), /批准来源.*变化/);
   await assert.rejects(checkPublishedChange(cfg, multica, issue.id, source, "[]"), /PR Preparation.*变化/);
   files[sha2]["tasks.md"] = "- [ ] 1.1 Build";
   await assert.rejects(check(), /未完成/);
@@ -274,14 +273,13 @@ test("Completion 消费完整发布回执，只读取批准 Scope 和固定研�
   }
 });
 
-test("Requirement 和旧 Task Set 明确分开，不隐式从缺少 dispatch 推断",()=>{
+test("Requirement 交付识别核对 Candidate Branch",()=>{
   const newMd={"tfs.id":"42","tfs.type":"需求","analysis.source":"{}",
-    pr_prep:JSON.stringify([prep("frame",sha1)])};
+    pr:JSON.stringify([prep("frame",sha1)])};
   assert.equal(isRequirementChangeDelivery(newMd),true);
-  const legacy={...newMd,pr_prep:JSON.stringify([{...prep("frame",sha1),source_branch:"feat/42"}])};
+  const legacy={...newMd,pr:JSON.stringify([{...prep("frame",sha1),source_branch:"feat/42"}])};
   assert.throws(()=>isRequirementChangeDelivery(legacy),/Candidate Branch/);
-  assert.throws(()=>isRequirementChangeDelivery({...newMd,"dev.dispatch":"[]"}),/dev.dispatch/);
-  assert.throws(()=>isRequirementChangeDelivery({...newMd,pr_prep:JSON.stringify([prep("frame",sha1),{...prep("web",sha2),source_branch:"feat/42"}])}),/Candidate Branch/);
+  assert.throws(()=>isRequirementChangeDelivery({...newMd,pr:JSON.stringify([prep("frame",sha1),{...prep("web",sha2),source_branch:"feat/42"}])}),/Candidate Branch/);
 });
 
 test("识别旧 Delivery Task 标题以阻止与现行计划混用",()=>{
@@ -436,7 +434,7 @@ test("持久根仓安全 Fast-forward 保留其他 Change 的 staged WIP",async 
 
 test("逐仓 PR 登记保留部分成功，重试仅补缺失登记，完整后才推进状态", async () => {
   const prepared = [prep("frame",sha1),prep("web",sha2)];
-  const issue = {id:"issue",status:"in_progress",metadata:{}};
+  const issue = {id:"issue",status:"in_progress",metadata:{pr:JSON.stringify(prepared)}};
   const writes = [];
   let failRepo = "web", loseMetadata = false, loseStatus = false;
   const client = {
@@ -447,7 +445,7 @@ test("逐仓 PR 登记保留部分成功，重试仅补缺失登记，完整后�
   const seen = [], checks = [];
   const authorize = (expected,checkActor=true) => {
     checks.push(checkActor);
-    if (issue.metadata.current_pr !== expected) throw Error("current_pr drift");
+    if (issue.metadata.pr !== expected) throw Error("pr drift");
   };
   const materialize = async (entry,prior,check) => {
     check();
@@ -457,21 +455,21 @@ test("逐仓 PR 登记保留部分成功，重试仅补缺失登记，完整后�
       pr_url:entry.repo_url+"/pullrequest/"+(entry.repo_key==="frame"?17:18),
       source_branch:entry.source_branch,target_branch:entry.target_branch,reused:!!prior};
   };
-  const run = (readOnly=false) => materializePreparedPrs(client,issue.id,prepared,issue.metadata.current_pr,readOnly,authorize,materialize);
+  const run = (readOnly=false) => materializePreparedPrs(client,issue.id,issue.metadata.pr,readOnly,authorize,materialize);
   await assert.rejects(run(),/TFS unavailable/);
-  assert.deepEqual(JSON.parse(issue.metadata.current_pr).map(p=>p.repo_key),["frame"]);
+  assert.deepEqual(JSON.parse(issue.metadata.pr).filter(p=>p.pr_id).map(p=>p.repo_key),["frame"]);
   assert.equal(issue.status,"in_progress");
-  assert.deepEqual(writes,["current_pr"]);
+  assert.deepEqual(writes,["pr"]);
   assert.deepEqual(checks,[true,false,true]);
   failRepo = "";
   loseMetadata = true;
   await assert.rejects(run(),/登记未确认/);
   assert.equal(issue.status,"in_progress");
-  assert.equal(JSON.parse(issue.metadata.current_pr).length,1);
+  assert.equal(JSON.parse(issue.metadata.pr).filter(p=>p.pr_id).length,1);
   loseMetadata = false;
   loseStatus = true;
   await assert.rejects(run(),/状态未确认/);
-  assert.equal(JSON.parse(issue.metadata.current_pr).length,2);
+  assert.equal(JSON.parse(issue.metadata.pr).length,2);
   assert.equal(issue.status,"in_progress");
   loseStatus = false;
   writes.length=0;seen.length=0;checks.length=0;
@@ -485,16 +483,16 @@ test("逐仓 PR 登记保留部分成功，重试仅补缺失登记，完整后�
   assert.deepEqual(writes,[]);
 });
 
-test("PR 物化发现 current_pr 并发变化时不覆盖已登记事实", async () => {
-  const issue={id:"issue",metadata:{}};
+test("PR 物化发现 pr 并发变化时不覆盖已登记事实", async () => {
   const prepared=[prep("frame",sha1)];
+  const issue={id:"issue",metadata:{pr:JSON.stringify(prepared)}};
   const client={getIssue:()=>issue,setMetadata:()=>{throw Error("unexpected write");},setStatus:()=>{throw Error("unexpected status");}};
-  const authorize=expected=>{if(issue.metadata.current_pr!==expected)throw Error("current_pr drift");};
-  await assert.rejects(materializePreparedPrs(client,issue.id,prepared,undefined,false,authorize,async entry=>{
-    issue.metadata.current_pr="external update";
+  const authorize=expected=>{if(issue.metadata.pr!==expected)throw Error("pr drift");};
+  await assert.rejects(materializePreparedPrs(client,issue.id,issue.metadata.pr,false,authorize,async entry=>{
+    issue.metadata.pr="external update";
     return {repo_key:entry.repo_key,pr_id:17,reused:false};
-  }),/current_pr drift/);
-  assert.equal(issue.metadata.current_pr,"external update");
+  }),/pr drift/);
+  assert.equal(issue.metadata.pr,"external update");
 });
 
 test("only completed or explicitly waived tasks satisfy Change progress", () => {

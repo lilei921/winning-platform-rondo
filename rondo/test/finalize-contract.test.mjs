@@ -221,17 +221,10 @@ function evidenceFor(changeDir, opts = {}) {
 function baseMetadata(extra = {}) {
   return {
     "tfs.id": "999", "tfs.type": "Bug",
-    "analysis.change_kind": "corrective", "analysis.change_ref": CHANGE_REF,
+    "analysis.change_kind": "corrective",
     "analysis.gate.result": "PASS",
     "analysis.human_approval": JSON.stringify({ decision: "approved", by: "human", at: "2026-11-08T00:00:00Z", comment_ref: "c-0", verify_agent_required: false }),
     "analysis.verify_agent.recommendation": "not_required",
-    "verify_agent.required": "false",
-    current_pr: JSON.stringify([{ repo_key: "repo1", pr_id: 1, pr_url: "http://x/pr/1", source_branch: "feat-1", target_branch: "main" }]),
-    "dev.dispatch": JSON.stringify([{
-      dispatch_key: "WNDF-T#1.1#eng-1", task_refs: ["1.1"], engineer_id: "eng-1", engineer_name: "Eng",
-      projection: "parent", sub_issue_ref: null, change_ref: CHANGE_REF, approved_comment_ref: "c-0",
-      dispatched_at: "2026-11-01T00:00:00.000Z", active: true,
-    }]),
     ...extra,
   };
 }
@@ -347,9 +340,8 @@ async function fixture(t, opts = {}) {
       "tfs.type": "需求",
       "analysis.source": JSON.stringify(source),
       "analysis.human_approval": JSON.stringify({...JSON.parse(metadata["analysis.human_approval"]), source}),
-      current_pr: JSON.stringify([{repo_key:"repo1", pr_id:1, pr_url:tfsUrl + "/Proj1/_git/repo1/pullrequest/1", source_branch:"feature/999", target_branch:"main"}]),
-      "dev.dispatch": undefined,
-      pr_prep: JSON.stringify([{
+      pr: JSON.stringify([{
+        pr_id:1, pr_url:tfsUrl + "/Proj1/_git/repo1/pullrequest/1",
         repo_key: "repo1", repo_url: tfsUrl + "/Proj1/_git/repo1", source_branch: "feature/999", target_branch: "main",
         candidate_commit: git(seed, "rev-parse", "HEAD"), title: "Requirement delivery",
         description: "Implementation and verification completed",
@@ -357,27 +349,21 @@ async function fixture(t, opts = {}) {
           candidate_commit: git(seed, "rev-parse", "HEAD"), source: "rondo pr prepare" },
         code_review: { result: "PASS", summary: "Reviewed", findings: [],
           candidate_commit: git(seed, "rev-parse", "HEAD") },
-        blockers: [],
       }]),
     };
     if (opts.multiRepo) {
       const repoUrl = tfsUrl + "/Proj2/_git/repo1";
-      const prep = JSON.parse(metadata.pr_prep);
-      const prs = JSON.parse(metadata.current_pr);
-      prep.push({...prep[0], repo_key:"repo2", repo_url:repoUrl});
-      prs.push({...prs[0], repo_key:"repo2", pr_id:2, pr_url:repoUrl + "/pullrequest/2"});
-      metadata.pr_prep = JSON.stringify(prep);
-      metadata.current_pr = JSON.stringify(prs);
+      const records = JSON.parse(metadata.pr);
+      records.push({...records[0], repo_key:"repo2", repo_url:repoUrl, pr_id:2, pr_url:repoUrl + "/pullrequest/2"});
+      metadata.pr = JSON.stringify(records);
     }
   } else {
     const fact = {result:"PASS", summary:"Verified", evidence_refs:["test:1"]};
-    const entry = {repo_key:"repo1", tfs_id:999, source_branch:"feature/999", target_branch:"main", candidate_commit:tfsControl.candidate,
+    const entry = {repo_key:"repo1", source_branch:"feature/999", target_branch:"main", candidate_commit:tfsControl.candidate,
       expected_behavior:"success", actual_behavior:"failure", fix_summary:"fix", root_cause:{confidence:"confirmed", summary:"cause", evidence_refs:["trace:1"]},
       regression:fact, local_validation:fact, code_review:{...fact, findings:[]}};
     metadata = {"tfs.id":"999", "tfs.type":"Bug", "bug.required_repos":JSON.stringify(["repo1"]),
-      "bug.delivery":JSON.stringify([entry]),
-      pr_prep:JSON.stringify([{repo_key:"repo1", repo_url:tfsUrl + "/Proj1/_git/repo1", source_branch:"feature/999", target_branch:"main", candidate_commit:tfsControl.candidate, title:"fix"}]),
-      current_pr:JSON.stringify([{repo_key:"repo1", pr_id:1, pr_url:tfsUrl + "/Proj1/_git/repo1/pullrequest/1", source_branch:"feature/999", target_branch:"main"}]), ...opts.metadata};
+      pr:JSON.stringify([{...entry, repo_url:tfsUrl + "/Proj1/_git/repo1", pr_id:1, pr_url:tfsUrl + "/Proj1/_git/repo1/pullrequest/1", title:"fix",description:"fix"}]), ...opts.metadata};
   }
 
   // multica mock state

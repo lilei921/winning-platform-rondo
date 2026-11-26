@@ -1,7 +1,7 @@
 /**
  * Human-approved Independent Verification Decision.
  * Analysis Recommendation is advice only; never derive the effective decision from it.
- * Approval and projection live on the existing Multica Issue (no additional status).
+ * Approval lives on the existing Multica Issue (no additional status).
  */
 import { UnknownError } from "../../cli/errors.js";
 import { readAnalysisSource, parseAnalysisSource, sameAnalysisSource } from "../analysis/source.js";
@@ -22,7 +22,7 @@ export function parseWaivedTasks(value: unknown): string[] {
   return [...value].sort();
 }
 
-/** Delivery Lead projects an explicitly understood Human approval and its source comment. */
+/** Delivery Lead records an explicitly understood Human approval and its source comment. */
 export function readApprovedVerifyDecision(
   md: Record<string, unknown>,
   expectedCommentRef?: string,
@@ -48,7 +48,7 @@ export function readApprovedVerifyDecision(
     throw new UnknownError("当前批准评论与 --approved-comment-ref 不一致，禁止使用其他轮次批准");
   }
   // The Lead owns semantic approval and permission checks; CLI enforces the
-  // deterministic shape of the projected approval, not its natural language.
+  // deterministic shape of the recorded approval, not its natural language.
   if (typeof a.by !== "string" || !a.by.trim()) {
     throw new UnknownError("analysis.human_approval 缺少批准人 by");
   }
@@ -64,41 +64,10 @@ export function readApprovedVerifyDecision(
   if (waivedTasks.length && (!md["analysis.source"] || !a.source)) {
     throw new UnknownError("Task Waiver 缺少获批 Analysis Source");
   }
-  // 新来源的批准必须携带同一快照；无来源的历史收口保持兼容，派发入口另行强制来源。
-  let sourceAwareDispatch = false;
-  let dispatchRecords: Record<string, unknown>[] = [];
-  if (md["dev.dispatch"] !== undefined) {
-    let dispatches: unknown;
-    try { dispatches = JSON.parse(String(md["dev.dispatch"])); }
-    catch { throw new UnknownError("dev.dispatch 无法解析，不能判定旧数据兼容范围"); }
-    if (!Array.isArray(dispatches) || dispatches.some(d => !d || typeof d !== "object" || Array.isArray(d))) throw new UnknownError("dev.dispatch 非法，不能按旧数据放行");
-    dispatchRecords = dispatches;
-    sourceAwareDispatch = dispatches.some(d => "analysis_source" in d);
-  }
-  if (md["analysis.source"] !== undefined || a.source !== undefined || sourceAwareDispatch) {
-    const source = readAnalysisSource(md);
-    if (!sameAnalysisSource(source, parseAnalysisSource(a.source, source.change_ref))) {
-      throw new UnknownError("Human 批准的规范版本与 analysis.source 不一致，须重新审核");
-    }
-    // 不允许新批准覆盖仍在生效的旧派发；失效历史条目保留，不参与当前版本判断。
-    for (const dispatch of dispatchRecords.filter(d => d.active === true)) {
-      if (!sameAnalysisSource(source, parseAnalysisSource(dispatch.analysis_source, source.change_ref))) {
-        throw new UnknownError("active 派发的规范来源与当前批准不一致，停止收口或派发");
-      }
-    }
+  const source = readAnalysisSource(md);
+  if (!sameAnalysisSource(source, parseAnalysisSource(a.source, source.change_ref))) {
+    throw new UnknownError("Human 批准的规范版本与 analysis.source 不一致，须重新审核");
   }
   return { required: a.verify_agent_required, commentRef: a.comment_ref, waivedTasks };
 }
 
-/** Confirm that the persisted execution fact matches the approved Human decision. */
-export function assertProjectedVerifyDecision(md: Record<string, unknown>, expectedCommentRef?: string): boolean {
-  const decision = readApprovedVerifyDecision(md, expectedCommentRef);
-  const persisted = md["verify_agent.required"];
-  if (persisted !== "true" && persisted !== "false") {
-    throw new UnknownError("缺少有效 verify_agent.required（字符串 true/false）；不得根据 Recommendation 推断");
-  }
-  if (persisted !== String(decision.required)) {
-    throw new UnknownError("verify_agent.required 与 analysis.human_approval.verify_agent_required 不一致，必须停止并核对 Human 决定");
-  }
-  return decision.required;
-}

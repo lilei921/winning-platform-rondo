@@ -5,15 +5,7 @@ import { candidateBranch } from "../pr/candidate-branch.js";
  * separately by the existing PR materialization and finalization commands.
  */
 import { FailError, UnknownError } from "../../cli/errors.js";
-
-interface RepoFact {
-  repo_key?: string;
-  source_branch?: string;
-  target_branch?: string;
-  candidate_commit?: string;
-  tfs_id?: number;
-  local_validation?: { result?: string };
-}
+import { readPrRecords } from "../pr/facts.js";
 
 function parseArray<T>(raw: string | undefined, key: string): T[] {
   if (raw === undefined) throw new FailError("缺少 " + key);
@@ -43,32 +35,19 @@ export function requiredBugRepos(raw: string | undefined): string[] {
 
 /** Called before ANY external PR creation, for all participating repositories. */
 export function assertBugReadyForPr(md: Record<string,string>): string[] {
-  if (md["tfs.type"] !== "Bug" || md["analysis.change_ref"]) {
+  if (md["tfs.type"] !== "Bug" || md["analysis.source"] !== undefined) {
     throw new FailError("不是无 OpenSpec Bug Issue，不能使用 Bug PR Gate");
   }
   const required = requiredBugRepos(md["bug.required_repos"]);
-  const prep = parseArray<RepoFact>(md.pr_prep, "pr_prep");
-  const delivery = parseArray<RepoFact>(md["bug.delivery"], "bug.delivery");
-  const prepKeys = uniqueNames(prep.map(p => p?.repo_key), "pr_prep");
-  const deliveryKeys = uniqueNames(delivery.map(d => d?.repo_key), "bug.delivery");
-  if (!exactly(required, prepKeys) || !exactly(required, deliveryKeys)) {
-    throw new FailError("Bug PR 准备不完整：required_repos / pr_prep / bug.delivery 仓库集合不一致");
-  }
+  const records = readPrRecords(md.pr);
+  if (!exactly(required, uniqueNames(records.map(p => p.repo_key), "pr")))
+    throw new FailError("Bug PR 准备不完整：required_repos / pr 仓库集合不一致");
   const tfsId = Number(md["tfs.id"]);
   if (!Number.isSafeInteger(tfsId) || tfsId <= 0) throw new FailError("TFS Bug ID 无效");
-  for (const key of required) {
-    const p = prep.find(x=>x.repo_key === key)!;
-    const d = delivery.find(x=>x.repo_key === key)!;
-    if (d.local_validation?.result === "FAIL") throw new FailError(key + ": Bug Candidate 验证失败，须重新验证");
-    if (p.source_branch !== candidateBranch(tfsId) || !p.target_branch ||
-        !d.source_branch || !d.target_branch ||
-        !/^[0-9a-f]{40}$/i.test(p.candidate_commit ?? "") ||
-        p.candidate_commit !== d.candidate_commit ||
-        p.source_branch !== d.source_branch ||
-        p.target_branch !== d.target_branch ||
-        d.tfs_id !== tfsId) {
-      throw new FailError(key + ": Bug Evidence 与 PR Preparation 的候选身份不一致");
-    }
+  for (const p of records) {
+    if (p.local_validation?.result === "FAIL") throw new FailError(p.repo_key + ": Bug Candidate 验证失败，须重新验证");
+    if (p.source_branch !== candidateBranch(tfsId) || !p.target_branch || !/^[0-9a-f]{40}$/i.test(p.candidate_commit ?? ""))
+      throw new FailError(p.repo_key + ": Bug Candidate 身份无效");
   }
   return required;
 }

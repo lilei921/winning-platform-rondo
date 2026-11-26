@@ -13,7 +13,16 @@ export function isDeliveryTaskTitle(issueKey: string, title: string): boolean {
 }
 
 /** New Requirement: Agent owns grouping/estimates; Rondo owns all deterministic guards. */
-import { extractTaskText } from "./materialize-tasks.js";
+function escapeRef(ref: string): string {
+  return ref.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** tasks.md 原生行定位 + 行文本提取（Native First，不解析语义）。行尾兼容 CRLF：`.` 不匹配 `\r`，须显式吸收（2026-11-03 WNDF-52 D1 同类）。 */
+export function extractTaskText(tasksText: string, ref: string): string | null {
+  const re = new RegExp(`^\\s*- \\[[ xX]\\]\\s*${escapeRef(ref)}\\.?[ \\t]+(.*)\\r?$`, "m");
+  const m = tasksText.match(re);
+  return m ? m[1].trim() : null;
+}
 
 export interface PlannedCommit { repo_key: string; sha: string }
 export interface PlannedTask {

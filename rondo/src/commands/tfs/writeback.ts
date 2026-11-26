@@ -28,7 +28,7 @@ import { TfsClient as TfsApiClient } from "../../tfs/client.js";
 import { hasExactArtifactLink } from "../../tfs/api/commit-facts.js";
 import { commitKey, parseCommitArtifact } from "../../tfs/api/commit-identity.js";
 import { readAnalysisSource } from "../analysis/source.js";
-import { isDirectBugDelivery, assertBugFinalizationFacts, bugDeliveryDigest, type BugCurrentPr } from "../bug/finalize-facts.js";
+import { isDirectBugDelivery, assertBugFinalizationFacts, bugDeliveryDigest } from "../bug/finalize-facts.js";
 import { verifyCloseoutRoot, confirmPublishedArchive, assertCloseoutChange } from "../delivery/closeout-root.js";
 interface TfsWorkItem {
   id: number;
@@ -135,8 +135,8 @@ export async function writebackParent(clients: Pick<Clients, "tfsQuery" | "tfsSe
   if (!exists) {
     const commentFile = join(tmpdir(), `writeback-tfs-comment-${process.pid}.md`);
     const content = isDirectBugDelivery(md)
-      ? `${legacy}：Bug 修复 PR 已合并，验证与代码审查证据见 Multica bug.delivery / PR。`
-      : `${legacy}：PR 已合并，OpenSpec Change \`${md["analysis.change_ref"] ?? ""}\` 已归档。详见 Delivery Issue 摘要评论。`;
+      ? `${legacy}：Bug 修复 PR 已合并，验证与代码审查证据见 Multica pr。`
+      : `${legacy}：PR 已合并，OpenSpec Change \`${readAnalysisSource(md).change_ref}\` 已归档。详见 Delivery Issue 摘要评论。`;
     writeFileSync(commentFile, content + "\n\n" + reference, "utf8");
     try { await clients.tfsComment(tfsId, commentFile); }
     finally { try { unlinkSync(commentFile); } catch { /* 保留外部成功事实，下次回读。 */ } }
@@ -174,7 +174,7 @@ export async function verifyTfsWriteback(runtime: MulticaRuntime, issue: IssueRe
     const snapshot = await inspectRequirementCommits(md, rootRepo, api, undefined, verified);
     const plan = validateRequirementTaskPlan(saved, snapshot.approvedTasks, snapshot.commits);
     const ids = await findExistingPlannedTasks(clients, issue.identifier ?? issue.id,
-      md["analysis.change_ref"], tfsId, plan);
+      readAnalysisSource(md).change_ref, tfsId, plan);
     if (ids.some(id => id === null)) throw new UnknownError("已登记 TFS 计划存在未创建的子任务");
     await verifyPlannedTaskFacts(clients, api, plan, ids as number[], snapshot.commits, true);
     const commentRef = deliveryCommentReference(issue);
@@ -286,15 +286,14 @@ async function executePlannedRequirement(
   const latestIssue = clients.getIssue(issueKey);
   const fresh = latestIssue.metadata ?? {};
   if (fresh["finalize.pending"] !== md["finalize.pending"] ||
-      fresh["analysis.change_ref"] !== md["analysis.change_ref"] ||
       fresh["analysis.source"] !== md["analysis.source"] ||
-      fresh["current_pr"] !== md["current_pr"] ||
+      fresh["pr"] !== md["pr"] ||
       fresh["tfs.id"] !== md["tfs.id"]) {
     throw new UnknownError("收口期间 Issue 事实发生变化，停止外部 TFS 写入");
   }
   const prior = parseStoredTaskPlan(fresh["delivery.tfs_task_plan"], "delivery.tfs_task_plan");
   approvedTaskPlan(plan, prior, snapshot.approvedTasks, snapshot.commits);
-  const existing = await findExistingPlannedTasks(clients, issueKey, md["analysis.change_ref"], tfsId, plan);
+  const existing = await findExistingPlannedTasks(clients, issueKey, readAnalysisSource(md).change_ref, tfsId, plan);
   // Recheck Commit ownership immediately before creating any TFS Task.
   for (let i = 0; i < plan.tasks.length; i++) for (const ref of plan.tasks[i].commits) {
     const commit = commitByRef(snapshot.commits).get(ref.repo_key + "/" + ref.sha)!;
@@ -308,7 +307,7 @@ async function executePlannedRequirement(
     const saved = clients.getIssue(issueKey).metadata?.["delivery.tfs_task_plan"];
     if (saved !== JSON.stringify(plan)) throw new UnknownError("任务计划未回读确认；禁止创建 TFS Task");
   }
-  const materialized = await ensurePlannedDeliveryTasks(clients, issueKey, md["analysis.change_ref"], tfsId, plan);
+  const materialized = await ensurePlannedDeliveryTasks(clients, issueKey, readAnalysisSource(md).change_ref, tfsId, plan);
   const byCommit = commitByRef(snapshot.commits);
   for (let i = 0; i < plan.tasks.length; i++) for (const ref of plan.tasks[i].commits) {
     const commit = byCommit.get(ref.repo_key + "/" + ref.sha)!;
@@ -367,16 +366,12 @@ export async function executeWriteback(runtime: MulticaRuntime, issue: IssueReco
   try { pending = JSON.parse(md["finalize.pending"]) as typeof pending; }
   catch { throw new UnknownError("finalize.pending 无法解析，不能执行外部 TFS 写入"); }
   if (isDirectBugDelivery(md)) {
-    let prs: BugCurrentPr[];
-    try { prs = JSON.parse(md.current_pr ?? "null") as BugCurrentPr[]; }
-    catch { throw new UnknownError("Bug current_pr 无法解析"); }
-    if (!Array.isArray(prs)) throw new FailError("Bug current_pr 缺失");
-    assertBugFinalizationFacts(md, issue.status, prs);
+    assertBugFinalizationFacts(md, issue.status);
     if (pending.prepared_kind !== "bug" || pending.prepared_bug_digest !== bugDeliveryDigest(md)) {
       throw new FailError("Bug TFS Writeback 必须等待有效的 Bug Delivery Prepare");
     }
   } else {
-    const preparedChange = md["analysis.change_ref"];
+    const preparedChange = readAnalysisSource(md).change_ref;
     if (!paths || !preparedChange || !pending || pending.prepared_change_ref !== preparedChange ||
         !resolveChangeDir(paths, preparedChange).archived) {
       throw new FailError("TFS Writeback 必须等待 Prepare 的 Archive / Git Push 已确认，禁止仅凭 pending 或本地归档执行");
@@ -405,7 +400,7 @@ export async function executeWriteback(runtime: MulticaRuntime, issue: IssueReco
     detail.commit_links = "skipped_bug";
   } else if (requirementChange) {
     if (!paths) throw new FailError("Requirement TFS Writeback 缺少 OpenSpec 根仓");
-    const changeRef = md["analysis.change_ref"];
+    const changeRef = readAnalysisSource(md).change_ref;
     if (!changeRef) throw new FailError("Change 身份缺失");
     resolveChangeDir(paths, changeRef);
     return { ...detail, ...await executePlannedRequirement(clients, issue, issueKey, md, tfsId, paths.rootRepo, opts) };

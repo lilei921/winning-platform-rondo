@@ -68,7 +68,7 @@ function fixture(t, { previousTasks, approvedTasks = "- [ ] 1.1 Verify\n", desig
   writeFileSync(state, JSON.stringify({
     agents: { engineer: { name: "Engineer" } }, comments: { "issue-1": [{ id: "ok" }] },
     runs: { "issue-1": [{ id: "run", issue_id: "issue-1", agent_id: "engineer", workspace_id: "ws", status: "running" }] },
-    metadata: { "tfs.type": "需求", "tfs.id": "42", "analysis.gate.result": "PASS", "analysis.change_ref": "alpha",
+    metadata: { "tfs.type": "需求", "tfs.id": "42", "analysis.gate.result": "PASS",
       "analysis.source": JSON.stringify(source), "analysis.human_approval": JSON.stringify({ decision: "approved",
         by: "reviewer", at: "2026-11-19T00:00:00Z", comment_ref: "ok", verify_agent_required: false, source }) },
   }));
@@ -257,13 +257,13 @@ test("dev publish 拒绝来源不一致及读取期间批准变化；Push 后变
   const initial = readFileSync(state, "utf8");
   const approval = JSON.parse(metadata()["analysis.human_approval"]);
   const other = { ...source, change_ref: "beta" };
-  const otherChange = { "analysis.change_ref": "beta", "analysis.source": JSON.stringify(other),
+  const otherChange = { "analysis.source": JSON.stringify(other),
     "analysis.human_approval": JSON.stringify({ ...approval, source: other }) };
   git(root, "pull", "--ff-only", bare, "integration");
   writeFileSync(join(root, work, "tasks.md"), "- [x] 1.1 Verify\n");
   git(root, "commit", "-am", "complete approved task");
   for (const [patch, reason] of [
-    [{ "analysis.change_ref": "beta" }, /Change 身份.*不一致/],
+    [{ "analysis.source": JSON.stringify(other) }, /Change 身份.*不一致/],
     [otherChange, /批准来源在读取映射期间变化/],
     [{ "analysis.human_approval": JSON.stringify({ ...approval, at: "2026-11-20T00:00:00Z" }) }, /批准来源在读取映射期间变化/],
   ]) {
@@ -301,16 +301,15 @@ test("Native Requirement Git 操作从 Issue 取得批准 Change，拒绝同 SHA
   git(hub, "config", "multica.checkout-mode", "isolated");
   const initial = JSON.parse(readFileSync(state, "utf8"));
   initial.runs["issue-1"][0].id = taskId;
-  initial.metadata["verify_agent.required"] = "false";
   const approval = JSON.parse(initial.metadata["analysis.human_approval"]);
   const other = { ...source, change_ref: "beta" };
   const env = { MULTICA_TASK_ID: taskId, MOCK_GIT_BUSINESS_REMOTE: remote, MOCK_GIT_BUSINESS_URL: bizUrl,
     MOCK_SYNC_CALLS_FILE: join(dir, "git-calls.jsonl") };
   const args = ["dev", "git", "--operation", "fetch", "--repo", "biz", "--root-repo", root];
   for (const [patch, reason] of [
-    [{ "analysis.change_ref": "beta" }, /Change 身份.*不一致/],
-    [{ "analysis.change_ref": "beta", "analysis.source": JSON.stringify(other),
-      "analysis.human_approval": JSON.stringify({ ...approval, source: other }) }, /批准来源在授权期间变化/],
+    [{ "analysis.source": JSON.stringify(other) }, /Change 身份.*不一致/],
+    [{ "analysis.source": JSON.stringify(other),
+      "analysis.human_approval": JSON.stringify({ ...approval, source: other }) }, /批准来源.*变化/],
     [{ "analysis.human_approval": JSON.stringify({ ...approval, at: "2026-11-20T00:00:00Z" }) }, /批准来源在授权期间变化/],
   ]) {
     writeFileSync(state, JSON.stringify(initial));
@@ -318,7 +317,7 @@ test("Native Requirement Git 操作从 Issue 取得批准 Change，拒绝同 SHA
     assert.match(runWithEnv(3, { ...env, ...drift(2, patch) }, ...args).reason, reason);
     const calls = readFileSync(env.MOCK_SYNC_CALLS_FILE, "utf8").trim().split("\n").filter(Boolean).map(JSON.parse);
     assert.ok(!calls.some(call => call.includes("checkout") || (call.includes("metadata") && call.includes("set"))));
-    assert.equal(metadata()["verify_agent.required"], "false");
+    assert.equal(metadata()["verify_agent.required"], undefined);
   }
   writeFileSync(state, JSON.stringify(initial));
   const fetched = runWithEnv(0, env, ...args);
@@ -326,7 +325,7 @@ test("Native Requirement Git 操作从 Issue 取得批准 Change，拒绝同 SHA
   assert.equal(fetched.path, hub);
   assert.equal(fetched.branch, "feature/42");
   assert.deepEqual(metadata(), initial.metadata);
-  assert.equal(metadata()["verify_agent.required"], "false");
+  assert.equal(metadata()["verify_agent.required"], undefined);
 });
 
 test("Native Requirement 续跑使用原根仓分支发布已提交 Tasks，保留本地 WIP", t => {

@@ -22,7 +22,7 @@ function fixture(...entries) {
     calls.push(args);
     return {id:Number(args[args.indexOf("--id")+1]), status:"completed",sourceBranch:"feature/42",targetBranch:"main",sourceCommitId:candidate};
   }};
-  const md = {current_pr: JSON.stringify(entries.map(e=>e.pr)),pr_prep:JSON.stringify(entries.map(e=>e.prep))};
+  const md = {pr: JSON.stringify(entries.map(e=>({...e.prep,...e.pr})))};
   return {api,flow,md,calls};
 }
 test("approved scope permits subset and same repo name in different Projects", async () => {
@@ -42,7 +42,6 @@ test("repository, Collection, PR ID, branch and approved scope conflicts block",
     e=>{e.pr.pr_url=e.pr.pr_url.replace("/P1/","/P2/")},
     e=>{e.pr.pr_url=e.pr.pr_url.replace("/app/","/other/")},
     e=>{e.pr.pr_id=7},
-    e=>{e.pr.target_branch="dev"},
     e=>{delete e.prep.repo_url}
   ]){
     const e=facts("a");mutate(e);const f=fixture(e);

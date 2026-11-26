@@ -1,10 +1,10 @@
 /**
- * materialize-tasks extractTaskText 行尾兼容回归（2026-11-03 WNDF-52 D1 同类排雷）。
+ * requirement-tasks extractTaskText 行尾兼容回归（2026-11-03 WNDF-52 D1 同类排雷）。
  * 背景：`(.*)$` 中 `.` 不匹配 `\r`，CRLF tasks.md 行提取失败；修复为 `(.*)\r?$`。
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-const MOD = new URL("../dist/commands/tfs/materialize-tasks.js", import.meta.url);
+const MOD = new URL("../dist/commands/tfs/requirement-tasks.js", import.meta.url);
 const { extractTaskText } = await import(MOD);
 
 test("extractTaskText：LF 行正常提取", () => {
