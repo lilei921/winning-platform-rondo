@@ -1,7 +1,7 @@
 /**
  * Human-approved Independent Verification Decision.
  * Analysis Recommendation is advice only; never derive the effective decision from it.
- * Approval and projection live on the existing Multica Issue (no additional status).
+ * Approval lives on the existing Multica Issue (no additional status).
  */
 import { UnknownError } from "../../cli/errors.js";
 import { readAnalysisSource, parseAnalysisSource, sameAnalysisSource } from "../analysis/source.js";
@@ -22,7 +22,7 @@ export function parseWaivedTasks(value: unknown): string[] {
   return [...value].sort();
 }
 
-/** Delivery Lead projects an explicitly understood Human approval and its source comment. */
+/** Delivery Lead records an explicitly understood Human approval and its source comment. */
 export function readApprovedVerifyDecision(
   md: Record<string, unknown>,
   expectedCommentRef?: string,
@@ -48,7 +48,7 @@ export function readApprovedVerifyDecision(
     throw new UnknownError("当前批准评论与 --approved-comment-ref 不一致，禁止使用其他轮次批准");
   }
   // The Lead owns semantic approval and permission checks; CLI enforces the
-  // deterministic shape of the projected approval, not its natural language.
+  // deterministic shape of the recorded approval, not its natural language.
   if (typeof a.by !== "string" || !a.by.trim()) {
     throw new UnknownError("analysis.human_approval 缺少批准人 by");
   }
@@ -71,15 +71,3 @@ export function readApprovedVerifyDecision(
   return { required: a.verify_agent_required, commentRef: a.comment_ref, waivedTasks };
 }
 
-/** Confirm that the persisted execution fact matches the approved Human decision. */
-export function assertProjectedVerifyDecision(md: Record<string, unknown>, expectedCommentRef?: string): boolean {
-  const decision = readApprovedVerifyDecision(md, expectedCommentRef);
-  const persisted = md["verify_agent.required"];
-  if (persisted !== "true" && persisted !== "false") {
-    throw new UnknownError("缺少有效 verify_agent.required（字符串 true/false）；不得根据 Recommendation 推断");
-  }
-  if (persisted !== String(decision.required)) {
-    throw new UnknownError("verify_agent.required 与 analysis.human_approval.verify_agent_required 不一致，必须停止并核对 Human 决定");
-  }
-  return decision.required;
-}

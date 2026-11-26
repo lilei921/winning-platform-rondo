@@ -29,14 +29,15 @@ import { assertRegisteredRepositoryScope, parseRepositoryScope, REPOSITORY_CONTE
 
 const TARGET_STATUS = "analysis_review";
 const GATE_RESULT = "analysis.gate.result";
-const DELIVERY_FACTS = ["tfs.changed_at", "analysis.human_approval", "verify_agent.required", "finalize.pending", "delivery.tfs_written"];
+const DELIVERY_FACTS = ["tfs.changed_at", "analysis.human_approval", "finalize.pending", "delivery.tfs_written"];
 
 function sameSourceFacts(before: Record<string, unknown>, after: Record<string, unknown>): boolean {
   return before["tfs.id"] === after["tfs.id"] && before["tfs.type"] === after["tfs.type"];
 }
 
 function sameDeliveryFacts(before: Record<string, unknown>, after: Record<string, unknown>): boolean {
-  return DELIVERY_FACTS.every(key => before[key] === after[key]);
+  return DELIVERY_FACTS.every(key => before[key] === after[key]) &&
+    (before["tfs.type"] !== "Bug" || before["verify_agent.required"] === after["verify_agent.required"]);
 }
 
 function sameIssueOwner(before: Record<string, unknown>, after: Record<string, unknown>): boolean {

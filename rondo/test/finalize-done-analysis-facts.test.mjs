@@ -20,7 +20,6 @@ const good = {
     decision: "approved", by: "human", at: "2026-11-08T00:00:00Z",
     comment_ref: "approval-1", verify_agent_required: false,
   }),
-  "verify_agent.required": "false",
 };
 
 function runDone(t, metadata) {

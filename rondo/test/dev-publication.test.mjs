@@ -325,7 +325,7 @@ test("Native Requirement 续跑 prepare 从 Issue 取得 Change，拒绝同 SHA 
   assert.equal(prepared.result, "PASS");
   assert.equal(prepared.path, hub);
   assert.equal(prepared.branch, "feature/42");
-  assert.equal(metadata()["verify_agent.required"], "false");
+  assert.equal(metadata()["verify_agent.required"], undefined);
 });
 
 test("Native Requirement 续跑使用原根仓分支发布已提交 Tasks，保留本地 WIP", t => {

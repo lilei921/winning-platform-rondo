@@ -65,9 +65,6 @@ export function registerDevPrepare(group: Command): void {
               throw new UnknownError("批准来源在准备期间变化");
             const repo = validatePrepareRepo(registry[opts.repo], server);
             result = prepareNativeBusiness(root, repo, candidateBranch(approved.tfsId), runtime, opts.resourceRef);
-            if (approved.issue.metadata?.["verify_agent.required"] === undefined) {
-              client.setMetadata(approved.issue.id, "verify_agent.required", String(approved.verifyRequired));
-            }
           } else throw new FailError("不支持当前 tfs.type");
           process.stdout.write(JSON.stringify({ ...result, issue: issue.identifier ?? issue.id, repo_key: opts.repo }, null, 2) + "\n");
           return;
@@ -85,10 +82,6 @@ export function registerDevPrepare(group: Command): void {
           issue = approved.issue;
           const root = requirementRoot(opts.rootRepo);
           result = prepareRequirementWorktree(root, repo, approved.tfsId, loadTfsConfig().serverUrl);
-          // This existing Verify decision must be projected for Finalize; never infer it from Analyst advice.
-          if (issue.metadata?.["verify_agent.required"] === undefined) {
-            client.setMetadata(issue.id, "verify_agent.required", String(approved.verifyRequired));
-          }
         } else if (mode === "bug") {
           if (!opts.rootRepo) throw new FailError("Bug prepare 仍须显式提供 --root-repo");
           issue = client.getIssue(opts.issue);

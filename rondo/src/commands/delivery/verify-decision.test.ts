@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readApprovedVerifyDecision, assertProjectedVerifyDecision } from "./verify-decision.js";
+import { readApprovedVerifyDecision } from "./verify-decision.js";
 
 const source = { repo_url: "https://tfs.example/tfs/C/P/_git/R", branch: "dev", commit: "a".repeat(40), change_ref: "fix-1" };
 const md = (recommended: string, approved: boolean, required = approved, comment = "comment-1"): Record<string, string> => ({
@@ -14,22 +14,22 @@ const md = (recommended: string, approved: boolean, required = approved, comment
 });
 
 test("Human overrides Analyst required to not_required without a Verify Run", () => {
-  assert.equal(assertProjectedVerifyDecision(md("required", false), "comment-1"), false);
+  assert.equal(readApprovedVerifyDecision(md("required", false), "comment-1").required, false);
 });
 
 test("Human overrides Analyst not_required to required; final fact must be true", () => {
-  assert.equal(assertProjectedVerifyDecision(md("not_required", true), "comment-1"), true);
+  assert.equal(readApprovedVerifyDecision(md("not_required", true), "comment-1").required, true);
 });
 
 test("matches recommendation when Human accepts it", () => {
-  assert.equal(assertProjectedVerifyDecision(md("not_required", false)), false);
-  assert.equal(assertProjectedVerifyDecision(md("required", true)), true);
+  assert.equal(readApprovedVerifyDecision(md("not_required", false)).required, false);
+  assert.equal(readApprovedVerifyDecision(md("required", true)).required, true);
 });
 
 test("missing final fact never falls back to Analyst Recommendation", () => {
   const input = md("not_required", false);
   delete input["verify_agent.required"];
-  assert.throws(() => assertProjectedVerifyDecision(input), /verify_agent.required/);
+  assert.equal(readApprovedVerifyDecision(input).required, false);
 });
 
 test("missing, malformed or non-Boolean Human decision is never defaulted", () => {
@@ -44,17 +44,17 @@ test("missing, malformed or non-Boolean Human decision is never defaulted", () =
 });
 
 test("approval decision and comment source are mandatory", () => {
-  assert.throws(() => assertProjectedVerifyDecision(md("required", true, true, "other"), "comment-1"), /评论/);
+  assert.throws(() => readApprovedVerifyDecision(md("required", true, true, "other"), "comment-1"), /评论/);
   const input = md("not_required", false);
   input["analysis.human_approval"] = JSON.stringify({ decision: "rejected", comment_ref: "comment-1", verify_agent_required: false });
-  assert.throws(() => assertProjectedVerifyDecision(input), /尚未批准/);
+  assert.throws(() => readApprovedVerifyDecision(input), /尚未批准/);
 });
 
-test("tampered or inconsistent projection is rejected", () => {
-  assert.throws(() => assertProjectedVerifyDecision(md("required", false, true)), /不一致/);
+test("Requirement decision does not depend on an independent projection", () => {
+  assert.equal(readApprovedVerifyDecision(md("required", false, true)).required, false);
   const input = md("not_required", false);
   input["verify_agent.required"] = "0";
-  assert.throws(() => assertProjectedVerifyDecision(input), /字符串 true\/false/);
+  assert.equal(readApprovedVerifyDecision(input).required, false);
 });
 
 test("approval must match the current fixed source", () => {
@@ -81,5 +81,5 @@ test("waivers are version-bound; missing means empty and malformed metadata fail
   }
   input["analysis.human_approval"]=JSON.stringify({...approval,source,waived_tasks:["3.2","3.1"]});
   assert.deepEqual(readApprovedVerifyDecision(input).waivedTasks,["3.1","3.2"]);
-  assert.equal(assertProjectedVerifyDecision(input),false);
+  assert.equal(readApprovedVerifyDecision(input).required,false);
 });

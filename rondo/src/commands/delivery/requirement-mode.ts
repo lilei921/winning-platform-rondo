@@ -4,7 +4,7 @@ import { candidateBranch } from "../pr/candidate-branch.js";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { checkedTaskProgress } from "../dev/change-completion.js";
 import { readAnalysisSource } from "../analysis/source.js";
-import { assertProjectedVerifyDecision } from "./verify-decision.js";
+import { readApprovedVerifyDecision } from "./verify-decision.js";
 import { runCommand } from "../../clients/spawn.js";
 import { parseRepositoryScope } from "../analysis/repository-scope.js";
 import { readFileSync } from "node:fs";
@@ -33,8 +33,8 @@ export function approvedRequirementScope(md: Record<string, string>, root: strin
 /** First Prepare consumes approval and verification, not Engineering quality evidence. */
 export function assertRequirementPrepareGate(md: Record<string, string>, issueStatus: string | undefined): void {
   if (md["analysis.gate.result"] !== "PASS") throw new FailError("analysis.gate.result != PASS");
-  if (assertProjectedVerifyDecision(md)) {
-    throw new UnknownError("verify_agent.required=true，但尚无可确认的 Independent Verification PASS；禁止 Finalize");
+  if (readApprovedVerifyDecision(md).required) {
+    throw new UnknownError("analysis.human_approval.verify_agent_required=true，但尚无可确认的 Independent Verification PASS；禁止 Finalize");
   }
   if (issueStatus === "blocked") throw new FailError("Issue blocked，禁止 Requirement Closeout");
 }

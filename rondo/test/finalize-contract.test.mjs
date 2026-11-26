@@ -225,7 +225,6 @@ function baseMetadata(extra = {}) {
     "analysis.gate.result": "PASS",
     "analysis.human_approval": JSON.stringify({ decision: "approved", by: "human", at: "2026-11-08T00:00:00Z", comment_ref: "c-0", verify_agent_required: false }),
     "analysis.verify_agent.recommendation": "not_required",
-    "verify_agent.required": "false",
     ...extra,
   };
 }

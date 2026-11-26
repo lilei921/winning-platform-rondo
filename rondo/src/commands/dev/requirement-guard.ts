@@ -12,7 +12,6 @@ export interface ApprovedChange {
   source: AnalysisSource;
   scope: string[];
   tfsId: number;
-  verifyRequired: boolean;
 }
 
 export function developmentPublication(md: Record<string, string>): { analysis_source: AnalysisSource; commit: string } | undefined {
@@ -89,9 +88,6 @@ export async function approvedChange(cfg: BaseRegistryConfig, multica: MulticaCl
   if (!Number.isSafeInteger(tfsId) || tfsId <= 0) throw new FailError("TFS Requirement ID 非法");
   const source = readAnalysisSource(md);
   const decision = readApprovedVerifyDecision(md);
-  if (md["verify_agent.required"] !== undefined && md["verify_agent.required"] !== String(decision.required)) {
-    throw new FailError("verify_agent.required 与 Human Approval 冲突");
-  }
   if (!multica.listComments(issue.identifier ?? issue.id).some(c => c.id === decision.commentRef)) {
     throw new FailError("批准评论未在当前 Issue 回读成功");
   }
@@ -101,7 +97,7 @@ export async function approvedChange(cfg: BaseRegistryConfig, multica: MulticaCl
       throw new FailError("批准的 Repository Scope 在 Registry 中不存在: " + id);
     }
   }
-  return { issue, source, scope, tfsId, verifyRequired: decision.required };
+  return { issue, source, scope, tfsId };
 }
 
 export async function guardRepository(cfg: BaseRegistryConfig, multica: MulticaClient, issue: string, repo: string,
