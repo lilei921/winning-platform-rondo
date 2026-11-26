@@ -1,0 +1,52 @@
+{
+  "schema": "multica-issue-replay/v2",
+  "profile": "cli-default",
+  "server_url": null,
+  "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+  "issue_id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+  "identifier": "PR-Status-Sync-run-01a21715",
+  "collected_at": "2026-11-26T17:13:49+08:00",
+  "coverage": "partial",
+  "sessions": [
+    {
+      "session_id": "df333c0d-b4a7-4043-8a17-9e45a55b3ecb",
+      "provider": "claude",
+      "run_ids": [
+        "01a21715-09f4-7bd4-ae48-795e51b1770a"
+      ],
+      "agent_ids": [
+        "34986774-e980-4695-816b-4266a25a86c9"
+      ],
+      "started_at": "2026-11-26T16:59:44+08:00",
+      "completed_at": "2026-11-26T17:02:15+08:00",
+      "tool_calls_total": 17,
+      "replay": "pr-status-sync/20261126-1659-df333c0d/replay.json",
+      "timeline": "pr-status-sync/20261126-1659-df333c0d/timeline.md",
+      "verification": "PARTIAL"
+    }
+  ],
+  "agents": [
+    {
+      "id": "34986774-e980-4695-816b-4266a25a86c9",
+      "name": "PR Status Sync Agent"
+    }
+  ],
+  "agent_warnings": [],
+  "agent_directories": {
+    "34986774-e980-4695-816b-4266a25a86c9": "pr-status-sync"
+  },
+  "session_directories": {
+    "df333c0d-b4a7-4043-8a17-9e45a55b3ecb": "pr-status-sync/20261126-1659-df333c0d"
+  },
+  "run_count": 1,
+  "active_run_count": 0,
+  "tool_calls_total": 17,
+  "subagent_tool_calls_total": 0,
+  "gaps": [
+    "session df333c0d-b4a7-4043-8a17-9e45a55b3ecb 完整性核验未通过，详见 source-manifest.json"
+  ],
+  "subject_type": "autopilot",
+  "autopilot_id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+  "title": "PR Status Sync",
+  "selected_run_rank": 1
+}

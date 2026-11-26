@@ -1,0 +1,25 @@
+[
+  {
+    "autopilot_id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+    "completed_at": "2026-11-26T17:02:15+08:00",
+    "created_at": "2026-11-26T16:59:44+08:00",
+    "failure_reason": null,
+    "id": "01a21715-09f4-7bd4-ae48-795e51b1770a",
+    "issue_id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+    "result": {
+      "output": "本轮 PR 状态同步与交付收口已完成，无遗留待处理事项。\n\n- **PR 状态同步**：`rondo pr reconcile-status` 扫描 1 个 Issue，LEI-68 返回 `resume_finalize`（已存在 `finalize.pending`，按当前事实补齐）。\n- **交付收口（LEI-68，需求）**：\n  - Prepare：`PASS` / `prepared`；根仓 `master` 完成变更归档并推送，归档提交 `999282513c23794a2e6802ee2c441ff8cd07b45a`。\n  - TFS Writeback：`PASS`；父工作项 267862 状态为「已解决」，新建子任务 269177（后端，3 小时）和 269178（前端，2.5 小时），4 个业务 Commit 独占关联校验通过。\n  - Complete：`PASS` / `done`；LEI-68 已置为 `done`，`finalize.pending` 已清除，交付总结评论已写入。\n- **复核**：再次执行状态同步，扫描 0 个待处理 Issue，无失败项。\n\n说明：已批准 `tasks.md` 中的 3.1/3.2（集成与回归检查）未纳入 TFS 子任务，因为两条 PR 记录中 Human 已明确本轮不做集成与回归检查。",
+      "pr_url": "",
+      "session_id": "df333c0d-b4a7-4043-8a17-9e45a55b3ecb",
+      "work_dir": "/home/lilei/multica_workspaces/winning-lil-b39bad65de56/task-1737d3330d93/workdir"
+    },
+    "source": "manual",
+    "status": "completed",
+    "task_id": "01a21715-09f7-796b-a5be-1737d3330d93",
+    "trigger_id": null,
+    "trigger_payload": null,
+    "triggered_at": "2026-11-26T16:59:44+08:00",
+    "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+    "agent_id": "34986774-e980-4695-816b-4266a25a86c9",
+    "started_at": "2026-11-26T16:59:44+08:00"
+  }
+]

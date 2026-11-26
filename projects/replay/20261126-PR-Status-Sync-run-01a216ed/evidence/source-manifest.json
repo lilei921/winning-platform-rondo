@@ -1,0 +1,105 @@
+{
+  "collected_at": "2026-11-26T17:13:49+08:00",
+  "profile": "cli-default",
+  "server_url": null,
+  "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+  "issue_id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+  "read_only_commands": [
+    [
+      "multica",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "autopilot",
+      "get",
+      "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "autopilot",
+      "runs",
+      "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+      "--limit",
+      "3",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "agent",
+      "get",
+      "34986774-e980-4695-816b-4266a25a86c9",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "agent",
+      "get",
+      "34986774-e980-4695-816b-4266a25a86c9",
+      "--output",
+      "json"
+    ]
+  ],
+  "sessions": [
+    {
+      "verification_schema": "claude_public_messages",
+      "coverage_granularity": "public text + tool_use/tool_result",
+      "invalid_jsonl_lines": 0,
+      "identity_mismatch_files": [],
+      "conflicting_uuids": [],
+      "source_public_tool_count": 8,
+      "exported_tool_count": 8,
+      "source_user_messages": 1,
+      "source_assistant_messages": 2,
+      "messages_match": true,
+      "missing_tool_ids": [],
+      "extra_tool_ids": [],
+      "tool_order_matches": true,
+      "tool_results_match": true,
+      "missing_tool_results": [],
+      "orphan_tool_results": [],
+      "duplicate_tool_ids": [],
+      "duplicate_tool_results": [],
+      "unsupported_events": {},
+      "complete": false,
+      "session_id": "92f2de97-68df-4d5f-b447-8b18ee94fd24",
+      "subagents": [],
+      "inline_sidechain_records": 0,
+      "missing_subagent_ids": [],
+      "provider": "claude",
+      "sources": [
+        {
+          "path": "/home/lilei/.claude/projects/-home-lilei-multica-workspaces-winning-lil-b39bad65de56-task-368ec93d9917-workdir/92f2de97-68df-4d5f-b447-8b18ee94fd24.jsonl",
+          "size_bytes": 269781,
+          "sha256": "c68db3d0fff08bdd47a8dc7c854c94c21aab0924159aad8309057f12c2ef7906"
+        }
+      ],
+      "run_coverage": {
+        "method": "claude_public_request_and_completion",
+        "run_intervals": {
+          "01a216ed-2674-7602-a708-d9da44ef6d84": []
+        },
+        "uncovered_run_ids": [
+          "01a216ed-2674-7602-a708-d9da44ef6d84"
+        ],
+        "complete": false
+      },
+      "sources_stable": true
+    }
+  ],
+  "coverage": "partial",
+  "verified_at": "2026-11-26T17:13:49+08:00",
+  "subject_type": "autopilot",
+  "autopilot_id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+  "run_window_basis": "triggered_at → completed_at",
+  "requested_last": 1,
+  "selected_run_rank": 3
+}
