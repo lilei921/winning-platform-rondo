@@ -25,7 +25,7 @@ function fixture() {
     getIssue:()=>structuredClone(issue),
     listComments:()=>[comment],
     setMetadata(id,key,value){writes.push(key);issue.metadata[key]=value;},
-    setStatusNoStart(id,status){writes.push("status");issue.status=status;}
+    setStatusNoStart(){throw Error("resume must not change Issue status");}
   };
   const verify=async (p,checkCandidate)=>{checks.push([p.repo_key,checkCandidate]);};
   const run=(next,check=verify)=>resumePr(client,issue.id,comment.id,next,check);
@@ -143,4 +143,32 @@ test("TFS comment identity consumes only fully registered PRs and pinned Change 
   const {pr_id,pr_url,...prepared}=f.b;
   f.issue.metadata.pr=JSON.stringify([f.a,prepared]);
   assert.throws(()=>deliveryCommentReference(f.issue),/不完整/);
+});
+
+test("Bug RECREATE_PR preserves complete verified preparation for all repositories",async()=>{
+  const f=fixture(), md=f.issue.metadata;
+  md["tfs.type"]="Bug";
+  delete md["analysis.source"];
+  delete md["analysis.human_approval"];
+  delete md["analysis.gate.result"];
+  md["bug.required_repos"]=JSON.stringify(["frame","web"]);
+  md["pr.abandoned"]=JSON.stringify([...JSON.parse(md["pr.abandoned"]),
+    {repo_key:"frame",pr_id:1,event_key:"I-1#frame#1#abandoned",detected_at:"2026-11-25T01:00:00Z"}]);
+  const prepared=f.records().map(p=>({...p,expected_behavior:"works",actual_behavior:"broken",fix_summary:"fix",
+    root_cause:{confidence:"confirmed",summary:"cause",evidence_refs:["code"]},
+    regression:{result:"PASS",summary:"test",evidence_refs:["test"]},
+    local_validation:{...p.local_validation,evidence_refs:["test"]},
+    code_review:{...p.code_review,evidence_refs:["review"]}}));
+  md.pr=JSON.stringify(prepared);
+  await f.run("RECREATE_PR");
+  assert.deepEqual(f.records(),prepared.map(({pr_id,pr_url,...p})=>p));
+  assert.deepEqual(f.checks,[["frame",true],["web",true]]);
+  assert.deepEqual(f.writes,["pr"]);
+  assert.equal(f.issue.status,"blocked");
+});
+test("Duplicate or ambiguous abandoned identities never mutate PR facts",async()=>{
+  const f=fixture(), events=JSON.parse(f.issue.metadata["pr.abandoned"]);
+  f.issue.metadata["pr.abandoned"]=JSON.stringify([...events,...events]);
+  await assert.rejects(f.run("REWORK"),/事件不可确认/);
+  assert.deepEqual(f.writes,[]);
 });

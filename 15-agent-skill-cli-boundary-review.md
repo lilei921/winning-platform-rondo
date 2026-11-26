@@ -31,7 +31,7 @@ Inputs 只描述所需专业 Facts，不重复 Agent 角色职责。Candidate �
 
 PR Preparation 保留 Facts 示例、实际验证及多仓输入契约；Submission 消费全部交付仓准备完成的事实，Bug 使用 ready_for_pr，Requirement 还需研发工件发布。CLI 负责 PR 创建、关联、登记、状态转换及回读；Skill 不要求重复逐字段核验。
 
-Abandoned PR Recovery 根据 Human 明确决定调用 `rondo bug resume`。PASS 或 NOOP 后，REWORK 重新诊断、修复、验证及交付；RECREATE_PR 直接调用 `rondo pr materialize`，不重复 Checkout、验证、Push、PR Preparation。意图不明确向 Human 确认；CLI 核验恢复条件及执行状态转换，不手工修改 CLI 管理的 Metadata。Bug Fix Agent Instructions 不变。
+Abandoned PR Recovery 根据 Human 明确决定调用 `rondo pr resume`。CLI 仅核验并恢复 PR Facts，原生状态恢复及 Run 交接由相应 Agent 协调。REWORK 重新准备受影响仓，RECREATE_PR 复用未变 Candidate 和有效 Evidence。意图或恢复结果不明时核实当前事实并向 Human 确认。
 
 ## 3. 实施范围
 
