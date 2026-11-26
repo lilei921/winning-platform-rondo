@@ -1,6 +1,6 @@
 /** Machine-readable Repository Scope for an OpenSpec Change. No runtime or approval state. */
 import { parse as parseYaml } from "yaml";
-import { FailError } from "../../cli/errors.js";
+import { FailError, UnknownError } from "../../cli/errors.js";
 
 export function parseRepositoryScope(rawMetadata: string): string[] {
   let metadata: unknown;
@@ -25,4 +25,33 @@ export function parseRepositoryScope(rawMetadata: string): string[] {
     ids.add(id);
   }
   return [...ids];
+}
+
+export const REPOSITORY_CONTEXT_PATH = "docs/config/repo-context.yaml";
+
+/** 仅核对当前 Scope 的成员关系；不审计无关仓库或判断业务影响。 */
+export function assertRegisteredRepositoryScope(scope: string[], readMapping: () => string): void {
+  if (scope.includes("root")) throw new FailError("x-repositories 仅包含业务仓，不能包含工程契约根仓 root");
+  let document: unknown;
+  try {
+    document = parseYaml(readMapping(), { uniqueKeys: true });
+  } catch (error) {
+    throw new UnknownError("无法读取根仓 Repository Scope 权威映射 docs/config/repo-context.yaml: " + String(error));
+  }
+  const repos = document && typeof document === "object" && !Array.isArray(document)
+    ? (document as Record<string, unknown>).repos : undefined;
+  if (!Array.isArray(repos)) {
+    throw new UnknownError("根仓 docs/config/repo-context.yaml 缺少 repos 列表");
+  }
+  const registered = new Set<string>();
+  for (const repo of repos) {
+    if (repo && typeof repo === "object" && typeof repo.repo_id === "string") registered.add(repo.repo_id);
+  }
+  if (repos.length && !registered.size) {
+    throw new UnknownError("根仓 docs/config/repo-context.yaml 无可识别的 repo_id");
+  }
+  const missing = scope.filter(id => !registered.has(id));
+  if (missing.length) {
+    throw new FailError("x-repositories 包含根仓 docs/config/repo-context.yaml 未登记的 repo_id: " + missing.join(", "));
+  }
 }

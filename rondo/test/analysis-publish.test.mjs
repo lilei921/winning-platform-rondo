@@ -11,7 +11,7 @@ import { changeEvidenceDigest, metadataEvidenceDigest } from "../dist/commands/a
 
 const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
 const MOCK = fileURLToPath(new URL("./mock-multica.cjs", import.meta.url));
-const CHANGE = "c-test";
+const CHANGE = "c-test-261056";
 const PROPOSAL = "# Proposal\n\n## Problem\n- Expected Behavior: expected\n- Actual Behavior: actual\n\n## Root Cause\nconfirmed cause\n\n## Fix Strategy\nrestore behavior\n\n## Regression Scope\nregression verification\n";
 
 function git(cwd, ...args) {
@@ -38,7 +38,7 @@ function fixture(t, requirement = true, native = false, commitChange = true) {
   const root = join(home, "root");
   const change = join(root, "openspec", "changes", CHANGE);
   mkdirSync(change, { recursive: true });
-  writeFileSync(join(change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [root]\n");
+  writeFileSync(join(change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [frame]\n");
   writeFileSync(join(change, "proposal.md"), PROPOSAL);
   writeFileSync(join(change, "tasks.md"), "- [ ] 1.1 Fix and 验证 regression\n");
   git(root, "init"); git(root, "branch", "-M", "dev");
@@ -62,11 +62,11 @@ function fixture(t, requirement = true, native = false, commitChange = true) {
   writeFileSync(statePath, JSON.stringify({ status: "in_progress", metadata }));
 
   const tfs = analysisTfsFixture(t, home, { remote }, { requirementOrigin: requirement });
-  if (requirement) {
+  {
     mkdirSync(join(root, "docs", "config"), { recursive: true });
     mkdirSync(join(root, "openspec", "schemas"), { recursive: true });
     writeFileSync(join(root, "docs", "config", "repo-context.yaml"),
-      "repos:\n  - repo_id: root\n    repo_url: " + tfs.repoUrl + "\n");
+      "repos:\n  - repo_id: root\n    repo_type: root-workspace\n    repo_url: " + tfs.repoUrl + "\n  - repo_id: frame\n    repo_type: backend\n");
     writeFileSync(join(root, "openspec", "schemas", ".gitkeep"), "");
     git(root, "add", "docs/config/repo-context.yaml", "openspec/schemas/.gitkeep");
     git(root, "-c", "user.email=test@example.invalid", "-c", "user.name=Test", "commit", "-m", "mapping");
@@ -118,7 +118,7 @@ function fixture(t, requirement = true, native = false, commitChange = true) {
   const completeAt = (rootArg, cwd, ...extra) => runCli(["analysis", "publish",
     "--issue", "issue-1", "--change-ref", CHANGE,
     "--workspace-id", "ws-test", "--registry-config", config, "--multica", MOCK,
-    "--root-repo", rootArg, ...(requirement ? ["--mode", "requirement"] : []), ...extra], env, cwd);
+    "--root-repo", rootArg, ...extra], env, cwd);
   const complete = (...extra) => completeAt(root, undefined, ...extra);
   const state = () => JSON.parse(readFileSync(statePath, "utf8"));
   const setState = data => writeFileSync(statePath, JSON.stringify(data));
@@ -275,13 +275,103 @@ test("Requirement does not stage or commit during an ongoing Git operation", t =
 test("Repository Scope accepts repo_id strings, not objects; diagnostics show the valid format", t => {
   const f = fixture(t, true, false, false);
   const local = git(f.root, "rev-parse", "HEAD");
-  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories:\n  - repo_id: root\n");
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories:\n  - repo_id: frame\n");
   const invalid = f.complete();
   assert.equal(invalid.exit, 2, JSON.stringify(invalid));
   assert.match(invalid.body.reason, /x-repositories: \[dataintegration\]/);
   assert.equal(git(f.root, "rev-parse", "HEAD"), local);
-  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories:\n  - root\n");
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories:\n  - frame\n");
   assert.equal(f.complete().exit, 0);
+});
+
+test("Analysis Gate refuses a Change belonging to another TFS Work Item before any publication", t => {
+  const f = fixture(t, true, false, false);
+  const state = f.state();
+  state.metadata["tfs.id"] = "26105";
+  f.setState(state);
+  const local = git(f.root, "rev-parse", "HEAD");
+  const remote = git(f.remote, "rev-parse", "dev");
+  const preview = f.gate();
+  assert.equal(preview.exit, 2);
+  assert.match(preview.body.reasons.join(" "), /change_ref=.*tfs.id=/);
+  assert.ok(!preview.body.checks.some(c => c.name === "openspec_validate"));
+  const publish = f.complete();
+  assert.equal(publish.exit, 2);
+  assert.match(publish.body.reason, /change_ref=.*tfs.id=/);
+  assert.equal(git(f.root, "rev-parse", "HEAD"), local);
+  assert.equal(git(f.remote, "rev-parse", "dev"), remote);
+  assert.deepEqual(f.state(), state);
+});
+
+test("Analysis Gate refuses unregistered Repository Scope before any publication", t => {
+  const f = fixture(t, true, false, false);
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [frame, nonexistent-repo]\n");
+  const state = f.state();
+  const local = git(f.root, "rev-parse", "HEAD");
+  const remote = git(f.remote, "rev-parse", "dev");
+  const preview = f.gate();
+  assert.equal(preview.exit, 2);
+  assert.match(preview.body.reasons.join(" "), /未登记的 repo_id: nonexistent-repo/);
+  assert.ok(!preview.body.checks.some(c => c.name === "openspec_validate"));
+  const publish = f.complete();
+  assert.equal(publish.exit, 2);
+  assert.match(publish.body.reason, /未登记的 repo_id: nonexistent-repo/);
+  assert.equal(git(f.root, "rev-parse", "HEAD"), local);
+  assert.equal(git(f.remote, "rev-parse", "dev"), remote);
+  assert.deepEqual(f.state(), state);
+});
+
+test("Analysis Gate rejects the registered engineering root as a business Repository Scope", t => {
+  const f = fixture(t, true, false, false);
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [frame, root]\n");
+  const state = f.state();
+  const local = git(f.root, "rev-parse", "HEAD");
+  const remote = git(f.remote, "rev-parse", "dev");
+  const preview = f.gate();
+  assert.equal(preview.exit, 2, JSON.stringify(preview));
+  assert.match(preview.body.reasons.join(" "), /不能包含工程契约根仓 root/);
+  const publish = f.complete();
+  assert.equal(publish.exit, 2, JSON.stringify(publish));
+  assert.equal(git(f.root, "rev-parse", "HEAD"), local);
+  assert.equal(git(f.remote, "rev-parse", "dev"), remote);
+  assert.deepEqual(f.state(), state);
+});
+
+test("Requirement rejects a scope absent from the final Git candidate despite a valid local mapping", t => {
+  const f = fixture(t, true, false, false);
+  const mapping = join(f.root, "docs", "config", "repo-context.yaml");
+  writeFileSync(mapping, readFileSync(mapping, "utf8") + "  - repo_id: frame-web\n");
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [frame-web]\n");
+  const state = f.state();
+  const remote = git(f.remote, "rev-parse", "dev");
+  assert.equal(f.gate().exit, 0);
+  const publish = f.complete();
+  assert.equal(publish.exit, 2, JSON.stringify(publish));
+  assert.match(publish.body.reason, /未登记的 repo_id: frame-web/);
+  assert.equal(git(f.remote, "rev-parse", "dev"), remote);
+  assert.deepEqual(f.state(), state);
+});
+
+test("Requirement fixed source recovery checks scope in that commit, not the working tree", t => {
+  const f = fixture(t, true, false, false);
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [frame-web]\n");
+  git(f.root, "add", "openspec/changes/" + CHANGE);
+  git(f.root, "commit", "-m", "previous incomplete publication");
+  git(f.root, "push", "origin", "dev");
+  const remote = git(f.remote, "rev-parse", "dev");
+  const state = f.state();
+  state.metadata["analysis.source"] = JSON.stringify({
+    repo_url: f.tfs.repoUrl, branch: "dev", commit: remote, change_ref: CHANGE,
+  });
+  f.setState(state);
+  const mapping = join(f.root, "docs", "config", "repo-context.yaml");
+  writeFileSync(mapping, readFileSync(mapping, "utf8") + "  - repo_id: frame-web\n");
+  assert.equal(f.gate().exit, 0);
+  const publish = f.complete();
+  assert.equal(publish.exit, 2, JSON.stringify(publish));
+  assert.match(publish.body.reason, /未登记的 repo_id: frame-web/);
+  assert.equal(git(f.remote, "rev-parse", "dev"), remote);
+  assert.deepEqual(f.state(), state);
 });
 
 test("旧 metadata PASS 不能绕过最终真实 Gate", t => {
@@ -380,15 +470,32 @@ test("Legacy Publish 拒绝相对 RONDO_WORKSPACE_PATH，即使 cwd 是合法根
   assert.equal(f.state().metadata["analysis.source"], undefined);
 });
 
-test("Requirement 必须使用 requirement 模式，禁止误选 legacy", t => {
+test("Requirement 根据 tfs.type 自动发布，旧 mode 不得覆盖来源类型", t => {
   const f = fixture(t);
-  f.env.RONDO_WORKSPACE_BRANCH = "";
-  f.env.RONDO_WORKSPACE_PATH = "";
-  const result = runCli(["analysis", "publish", "--issue", "issue-1",
-    "--change-ref", CHANGE, "--workspace-id", "ws-test", "--registry-config", join(f.home, "registry.json"),
-    "--multica", MOCK, "--root-repo", f.root], f.env);
-  assert.equal(result.exit, 2);
-  assert.match(result.body.reason, /--mode requirement/);
+  const before = f.state();
+  const remote = git(f.remote, "rev-parse", "dev");
+  for (const flags of [["--mode", "legacy"], ["--mode", "unknown"], ["--mode"]]) {
+    const blocked = f.complete(...flags);
+    assert.equal(blocked.exit, 2, JSON.stringify(blocked));
+    assert.match(blocked.body.reason, /--mode.*tfs.type/);
+    assert.deepEqual(f.state(), before);
+    assert.equal(git(f.remote, "rev-parse", "dev"), remote);
+  }
+  const result = f.complete();
+  assert.equal(result.exit, 0, JSON.stringify(result));
+  assert.equal(f.state().status, "analysis_review");
+  const replay = f.complete("--mode", "requirement");
+  assert.equal(replay.exit, 0, JSON.stringify(replay));
+  assert.equal(replay.body.replayed, true);
+});
+
+test("Bug 不得借旧 mode 参数进入 Requirement 发布路径", t => {
+  const f = fixture(t, false);
+  const before = f.state();
+  const blocked = f.complete("--mode", "requirement");
+  assert.equal(blocked.exit, 2, JSON.stringify(blocked));
+  assert.match(blocked.body.reason, /--mode.*tfs.type/);
+  assert.deepEqual(f.state(), before);
 });
 
 test("Native Analysis without Workspace variables: raw-SHA Task branch, remote advance and single Change publish", t => {
@@ -717,7 +824,7 @@ test("已知独立硬条件 FAIL 优先于其他检查 UNKNOWN", t => {
 
 test("Intentional 发布与审核重放无需自报 Review Verdict", t => {
   const f = fixture(t);
-  writeFileSync(join(f.change, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [root]\n");
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [frame]\n");
   mkdirSync(join(f.change, "specs", "feature"), { recursive: true });
   writeFileSync(join(f.change, "specs", "feature", "spec.md"), "## ADDED Requirements\n### Requirement: Feature\nThe system SHALL support feature.\n#### Scenario: Success\n- **WHEN** invoked\n- **THEN** succeeds\n");
   git(f.root, "add", "openspec/changes/" + CHANGE);

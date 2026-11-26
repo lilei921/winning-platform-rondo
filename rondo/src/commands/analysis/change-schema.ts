@@ -29,6 +29,11 @@ export function isStableChangeRef(ref: unknown): ref is string {
   return typeof ref === "string" && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(ref);
 }
 
+/** Change ID 使用独立的数字型 TFS ID 末尾段。Resolver 与 Analysis Gate 共用。 */
+export function matchesTfsChangeId(changeRef: string, tfsId: string): boolean {
+  return /^\d+$/.test(tfsId) && changeRef.endsWith(`-${tfsId}`);
+}
+
 export function assertStableChangeRef(ref: unknown): asserts ref is string {
   if (!isStableChangeRef(ref)) {
     throw new FailError("analysis.change_ref 非法：必须是稳定 Change ID，不能包含目录分隔符或路径跳转");
