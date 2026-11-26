@@ -94,7 +94,7 @@ function list<T extends {repo_key: string}>(raw: string | undefined, field: stri
 
 export async function materializeOne(tfs: Pick<TfsClient, "run">, api: Pick<ApiTfsClient, "config" | "rawRequest">,
   tfsId: number, entry: PrPrepEntry, repo: VerifiedRepo, prior: CurrentPrEntry | undefined,
-  readOnly: boolean, authorize: () => void, recoverOnly = false): Promise<CurrentPrEntry & {reused:boolean}> {
+  mode: "submit" | "verify" | "recover", authorize: () => void): Promise<CurrentPrEntry & {reused:boolean}> {
   const collection = api.config.serverUrl;
   const expected = (url: string) => {
     const location = parseTfsPrWebUrl(url, collection);
@@ -118,15 +118,15 @@ export async function materializeOne(tfs: Pick<TfsClient, "run">, api: Pick<ApiT
       !(live.status==="active" || live.status==="completed") ||
       (live.status==="completed" && live.sourceCommitId!==entry.candidate_commit))
       throw new UnknownError("PR 外部身份、分支或状态不一致");
-    if(!recoverOnly && live.status==="active" && (!filled(live.description)||live.description.includes("补 TFS 工作项 id"))) throw new FailError("已有 PR 缺少有效专业描述");
+    if(mode!=="recover" && live.status==="active" && (!filled(live.description)||live.description.includes("补 TFS 工作项 id"))) throw new FailError("已有 PR 缺少有效专业描述");
     const url = normalizeTfsPrWebUrl(live.url??priorUrl,collection,repo.project,repo.repo,id);
     if(live.status==="active") await checkHead();
-    authorize();
-    await ensurePrWorkItemLink(api,repo,id,tfsId,!readOnly && !recoverOnly);
+    if(mode!=="recover") authorize();
+    await ensurePrWorkItemLink(api,repo,id,tfsId,mode==="submit");
     return {repo_key:entry.repo_key,pr_id:id,pr_url:url,source_branch:entry.source_branch,target_branch:entry.target_branch,reused};
   };
   if(prior) return verify(prior.pr_id,true,prior.pr_url);
-  if(readOnly && !recoverOnly) throw new FailError("in_review 缺少完整已登记 PR");
+  if(mode==="verify") throw new FailError("in_review 缺少完整已登记 PR");
   const existing: Array<{id:number;url:string;targetBranch:string}> = [];
   for (const status of ["active", "completed"]) {
     const prs = await tfs.run(["pr","list",...args,"--status",status,"--source-branch",entry.source_branch,"--top","100"], "查询已有 PR") as
@@ -138,7 +138,7 @@ export async function materializeOne(tfs: Pick<TfsClient, "run">, api: Pick<ApiT
   const unique = [...new Map(existing.map(pr=>[pr.id,pr])).values()];
   if(unique.length>1) throw new UnknownError("存在多个相同源目标的 active/completed PR");
   if(unique.length===1) return verify(unique[0].id,true,unique[0].url);
-  if(recoverOnly) throw new UnknownError("未找到可恢复的已有 PR: " + entry.repo_key);
+  if(mode==="recover") throw new UnknownError("未找到可恢复的已有 PR: " + entry.repo_key);
   const dir=mkdtempSync(join(tmpdir(),"rondo-pr-"));
   try {
     const file=join(dir,"description.md"); writeFileSync(file,entry.description,"utf8");
@@ -212,7 +212,7 @@ export async function recoverPreparedPrs(
     if (registered.some(p => p.repo_key === entry.repo_key)) continue;
     let pr: MaterializedPr;
     try {
-      pr = await materializeOne(tfs, api, tfsId, entry, identities.get(entry.repo_key)!, undefined, true, check, true);
+      pr = await materializeOne(tfs, api, tfsId, entry, identities.get(entry.repo_key)!, undefined, "recover", check);
     } catch (e) {
       // Keep recovering other repositories; a changed Issue stops all writes.
       check();
@@ -277,7 +277,7 @@ export function registerPrMaterialize(group: Command): void {
         const identities=await resolvePreparedRepos(api,prep);
         const prs=await materializePreparedPrs(multica,issue.id,prep,md.current_pr,readOnly,authorize,
           (entry,prior,authorizeCurrent)=>materializeOne(tfs,api,tfsId,entry,identities.get(entry.repo_key)!,
-            prior,readOnly,authorizeCurrent));
+            prior,readOnly?"verify":"submit",authorizeCurrent));
         process.stdout.write(JSON.stringify({result:"PASS",issue:issue.identifier??issue.id,status:"in_review",prs},null,2)+"\n");
       } catch(e) {
         if(!(e instanceof FailError||e instanceof UnknownError)) throw e;

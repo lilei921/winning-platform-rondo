@@ -1,6 +1,6 @@
 ---
 name: pr-status-sync
-description: 核实已登记 PR 的外部状态并同步可信的终态事实。
+description: 核实 PR 外部状态，按需恢复登记并同步可信的终态事实。
 ---
 
 # PR Status Sync

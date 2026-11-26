@@ -253,13 +253,14 @@ function recoveryFixture(status="in_review", registered=[]) {
     ...(registered.length?{current_pr:JSON.stringify(registered)}:{})
   }};
   const calls=[], tfsCalls=[];
+  let issueReads=0;
   const repoId=key=>key==="backend"?"22222222-2222-2222-2222-222222222222":"33333333-3333-3333-3333-333333333333";
   const projectId="11111111-1111-1111-1111-111111111111";
   const id=key=>key==="backend"?17:18;
   const pr=key=>({repo_key:key,pr_id:id(key),pr_url:COLLECTION+"/Project/_git/"+key+"/pullrequest/"+id(key),source_branch:"feature/42",target_branch:"dev"});
   const live={backend:"completed",frontend:"completed"};
   let missingLink=false, wrongSha=false, drift=false;
-  const multica={getIssue:()=>structuredClone(issue),setMetadata(_id,key,value){calls.push(key);issue.metadata[key]=value;},
+  const multica={getIssue:()=>{issueReads++;return structuredClone(issue);},setMetadata(_id,key,value){calls.push(key);issue.metadata[key]=value;},
     setStatus(_id,status){calls.push("status");issue.status=status;}};
   const api={config:{serverUrl:COLLECTION},rawRequest:async(_url,method)=>{
     assert.equal(method,"GET");
@@ -282,7 +283,7 @@ function recoveryFixture(status="in_review", registered=[]) {
   const lookup=async(_project,key,prId)=>({status:"ok",pr:{id:prId,status:live[key],sourceBranch:"feature/42",targetBranch:"dev"}});
   const recover=candidate=>recoverPreparedPrs(multica,candidate,api,tfs,resolveRepo);
   const run=()=>processIssue(multica,structuredClone(issue),{attempts:0,successes:0},lookup,COLLECTION,recover);
-  return {issue,calls,tfsCalls,live,pr,run,missingLink:()=>{missingLink=true;},wrongSha:()=>{wrongSha=true;},drift:()=>{drift=true;}};
+  return {issue,calls,tfsCalls,live,pr,run,issueReads:()=>issueReads,missingLink:()=>{missingLink=true;},wrongSha:()=>{wrongSha=true;},drift:()=>{drift=true;}};
 }
 
 test("missing registrations recover existing completed PRs and trigger closeout in same scan",async()=>{
@@ -290,6 +291,7 @@ test("missing registrations recover existing completed PRs and trigger closeout 
   assert.equal((await f.run()).action,"finalize");
   assert.deepEqual(JSON.parse(f.issue.metadata.current_pr),[f.pr("backend"),f.pr("frontend")]);
   assert.deepEqual(f.calls,["current_pr","current_pr","finalize.pending"]);
+  assert.equal(f.issueReads(),5,"each registration checks before write and reads back, then final check");
   assert.ok(f.tfsCalls.every(c=>c==="pr list"||c==="pr get"));
   f.calls.length=0;f.tfsCalls.length=0;
   assert.equal((await f.run()).action,"resume_finalize");
@@ -312,8 +314,9 @@ test("partial recovery retains progress, never creates PR and preserves abandone
 
 test("blocked can restore known PRs but never starts closeout; active recovered PR is noop",async()=>{
   const blocked=recoveryFixture("blocked");
+  blocked.issue.metadata.current_pr=JSON.stringify([blocked.pr("backend")]);
   assert.equal((await blocked.run()).action,"noop");
-  assert.deepEqual(blocked.calls,["current_pr","current_pr"]);
+  assert.deepEqual(blocked.calls,["current_pr"]);
   assert.equal(blocked.issue.status,"blocked");
   const active=recoveryFixture();
   active.live.frontend="active";
@@ -368,4 +371,19 @@ test("blocked retains existing pending while recovering registration",async()=>{
   assert.equal((await f.run()).action,"noop");
   assert.equal(f.issue.metadata["finalize.pending"],pending);
   assert.deepEqual(f.calls,["current_pr","current_pr"]);
+});
+
+test("blocked with only preparation does not restore or undo cleared PR registration",async()=>{
+  for(const cleared of [false,true]){
+    const f=recoveryFixture("blocked");
+    if(cleared) {
+      f.issue.metadata.current_pr="[]";
+      f.issue.metadata["bug.resume"]='{"comment_id":"human-decision"}';
+      f.issue.metadata["tfs.type"]="Bug";
+    }
+    assert.equal(await f.run(),null);
+    assert.deepEqual(f.calls,[]);
+    assert.deepEqual(f.tfsCalls,[]);
+    assert.equal(f.issueReads(),0);
+  }
 });

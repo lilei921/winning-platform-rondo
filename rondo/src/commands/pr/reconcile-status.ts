@@ -4,7 +4,7 @@
  *
  * 调用方：PR Status Sync Agent（Autopilot cron 或手动触发）。
  * 职责：常规扫描 in_review / blocked；按需单独扫描 done 恢复 finalize.pending → 逐个回读 metadata
- *   （in_review 或已有 PR / 准备 / 收口事实的 blocked；按需补登已核实的 PR）
+ *   （in_review 或已有 PR / 收口事实的 blocked；按需补登已核实的 PR）
  *   → 逐 PR 经 TFS API 回核身份与状态 → 按 02 §11 聚合规则写事实 → 输出路由指令。
  * 本脚本只做终态检测与事实写入；收口动作由 Agent 按 SKILL.md 固定路由在同一 Run 内
  * 调 issue-closeout Skill 完成（脚本不内嵌调用）。
@@ -174,10 +174,10 @@ export async function processIssue(
     prepared = [];
     recoveryDetail = "pr_prep 不是合法数组";
   }
-  if (!prs.length && !pendingRaw && !recoveryDetail && issue.status !== "in_review" &&
-      !(issue.status === "blocked" && prepared.length)) return null;
+  if (!prs.length && !pendingRaw && issue.status !== "in_review") return null;
 
-  if (recoverMissing && !recoveryDetail && (issue.status === "in_review" || issue.status === "blocked") &&
+  if (recoverMissing && !recoveryDetail && (issue.status === "in_review" ||
+      (issue.status === "blocked" && (prs.length > 0 || !!pendingRaw))) &&
       prepared.some(p => p && !prs.some(pr => pr?.repo_key === p.repo_key))) {
     const recovered = await recoverMissing(issue);
     issue = recovered.issue;

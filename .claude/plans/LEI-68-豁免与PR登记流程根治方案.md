@@ -28,11 +28,11 @@
 - 复用 pr_prep、current_pr；逐仓持久化已核实的 PR 身份，全部交付仓准备和登记完整才进入 in_review。区分事实登记与状态转换。
 - 已有 PR 按 ID 或限定仓库/源目标分支查询，Active 核实 Candidate，Completed 核实最终 Source Commit 与 Candidate、Work Item Link，不要求源分支存在。无已有 PR 才允许 Materialize 创建；歧义或不一致返回 UNKNOWN，禁止重复创建。
 - 不新增 pr register、--accept-merged、PR Registry 或事务状态。PR 身份核实与 Human 合并/工程授权分离。
-- 复用现有授权快照、写前检查和回读，发现并发漂移即停止；部分登记禁止提前收口，Status Sync 仅增加必要的 current_pr / pr_prep 集合完整性检查，不承担恢复。
+- 复用现有授权快照、写前检查和回读，发现并发漂移即停止；部分登记禁止提前收口，Status Sync 检查 current_pr / pr_prep 集合完整性。
 
 ### P0-3 — PR Status Sync 定向恢复（本次实施）
 
-- 复用 P0-2 的 CLI 内部核实/登记方法，针对 in_review 或存在交付事实的 blocked Issue 定向核实已有 PR；仅补登确认 Candidate 和既有 Work Item Link 的 Active / Completed PR；不创建缺失 PR，不修改 TFS 关联，不解除 blocked，不全量扫描研发中的 Issue。
+- 复用 P0-2 的 CLI 内部核实/登记方法，针对 in_review 或存在部分 current_pr / finalize.pending 的 blocked Issue 定向核实已有 PR；仅补登确认 Candidate 和既有 Work Item Link 的 Active / Completed PR；不创建缺失 PR，不修改 TFS 关联，不解除 blocked，不全量扫描研发中的 Issue。
 - 缺失或部分登记显式返回异常原因，不能 PASS/included:0 静默忽略；复用 unknown Action，正常未纳入与 active noop 分开。
 - 只有 in_review 且全部实际交付仓 PR 事实完整、状态均 completed 时写 finalize.pending；保留既有 Abandoned、Closeout Gate 与幂等机制，不重复工程质量校验。
 - 对 in_progress 的定向恢复优先由 Engineer 重试 Materialize；常规 Sync 不扩展扫描范围。
@@ -43,7 +43,7 @@ P0-1：合法豁免不勾选仍可 Materialize / Archive；未批准、无效编
 
 P0-2：多仓部分成功保留登记；写入失败后恢复；Completed PR 删除源分支后可恢复；Candidate/Work Item/身份冲突不覆盖、不重复创建。
 
-P0-3：缺失和部分登记可观测、可定向恢复；部分 PR completed 不触发 finalize；正常 blocked 无交付事实跳过；已完成 Issue 幂等。
+P0-3：缺失和部分登记可观测、可定向恢复；部分 PR completed 不触发 finalize；blocked 仅有 pr_prep 时跳过；已完成 Issue 幂等。
 
 ## 四、范围边界
 
