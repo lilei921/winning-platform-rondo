@@ -1,0 +1,100 @@
+{
+  "schema": "multica-issue-replay/v2",
+  "profile": "",
+  "server_url": null,
+  "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+  "issue_id": "01a21289-b0cf-7c07-95ad-9f770294a9f0",
+  "identifier": "LEI-67",
+  "collected_at": "2026-11-26T10:33:13+08:00",
+  "coverage": "partial",
+  "sessions": [
+    {
+      "session_id": "d07cabe1-d727-48fd-8e67-7890691c5627",
+      "provider": "claude",
+      "run_ids": [
+        "01a2128a-3fc0-7a8f-90be-b957cc323865"
+      ],
+      "agent_ids": [
+        "3068117f-163c-4ba9-86bf-fae3bfc1f6bf"
+      ],
+      "started_at": "2026-11-25T19:49:40+08:00",
+      "completed_at": "2026-11-25T19:52:28+08:00",
+      "tool_calls_total": 23,
+      "replay": "wayfinder/20261125-1949-d07cabe1/replay.json",
+      "timeline": "wayfinder/20261125-1949-d07cabe1/timeline.md",
+      "verification": "PASS"
+    },
+    {
+      "session_id": "92eb2bfa-d2d1-4e05-9398-d0ebc7ebb3f3",
+      "provider": "claude",
+      "run_ids": [
+        "01a2128d-78ea-7e8c-aa19-0f7fa088a84e"
+      ],
+      "agent_ids": [
+        "46e4b7dd-d186-470e-beb3-2c2d322871e1"
+      ],
+      "started_at": "2026-11-25T19:53:11+08:00",
+      "completed_at": "2026-11-25T20:01:12+08:00",
+      "tool_calls_total": 47,
+      "replay": "workitem-analyst/20261125-1953-92eb2bfa/replay.json",
+      "timeline": "workitem-analyst/20261125-1953-92eb2bfa/timeline.md",
+      "verification": "PASS"
+    },
+    {
+      "session_id": "20ebe308-24c5-41f2-8e97-eb82b0244791",
+      "provider": "claude",
+      "run_ids": [
+        "01a21561-ef2e-7058-b921-9bf5ab105abc",
+        "01a21590-0e69-7135-b945-7ca01282941c"
+      ],
+      "agent_ids": [
+        "f3d2ba4b-ca63-4b76-b7eb-afe7cd43bf21"
+      ],
+      "started_at": "2026-11-26T09:27:04+08:00",
+      "completed_at": "2026-11-26T10:29:36+08:00",
+      "tool_calls_total": 199,
+      "replay": "engineer/20261126-0927-20ebe308/replay.json",
+      "timeline": "engineer/20261126-0927-20ebe308/timeline.md",
+      "verification": "PARTIAL"
+    }
+  ],
+  "agents": [
+    {
+      "id": "3068117f-163c-4ba9-86bf-fae3bfc1f6bf",
+      "name": "Wayfinder Agent"
+    },
+    {
+      "id": "3c1c3ac1-a922-4e7b-abdf-07a6268398a3",
+      "name": "Delivery Lead"
+    },
+    {
+      "id": "46e4b7dd-d186-470e-beb3-2c2d322871e1",
+      "name": "Workitem Analyst"
+    },
+    {
+      "id": "f3d2ba4b-ca63-4b76-b7eb-afe7cd43bf21",
+      "name": "Engineer"
+    }
+  ],
+  "agent_warnings": [],
+  "agent_directories": {
+    "3068117f-163c-4ba9-86bf-fae3bfc1f6bf": "wayfinder",
+    "3c1c3ac1-a922-4e7b-abdf-07a6268398a3": "delivery-lead",
+    "46e4b7dd-d186-470e-beb3-2c2d322871e1": "workitem-analyst",
+    "f3d2ba4b-ca63-4b76-b7eb-afe7cd43bf21": "engineer"
+  },
+  "session_directories": {
+    "d07cabe1-d727-48fd-8e67-7890691c5627": "wayfinder/20261125-1949-d07cabe1",
+    "92eb2bfa-d2d1-4e05-9398-d0ebc7ebb3f3": "workitem-analyst/20261125-1953-92eb2bfa",
+    "20ebe308-24c5-41f2-8e97-eb82b0244791": "engineer/20261126-0927-20ebe308"
+  },
+  "run_count": 9,
+  "active_run_count": 0,
+  "tool_calls_total": 269,
+  "subagent_tool_calls_total": 0,
+  "gaps": [
+    "Run 01a2157b-93f5-76de-bd34-15aca8789f43 没有 session_id，也未按 work_dir 定位到本地会话",
+    "session 5dbc8df6-9d48-48ef-9388-2476ec7f16d3 导出失败：未找到声明的 claude 日志，可补充 --claude-home",
+    "session 20ebe308-24c5-41f2-8e97-eb82b0244791 完整性核验未通过，详见 source-manifest.json"
+  ]
+}
