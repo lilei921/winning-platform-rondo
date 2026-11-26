@@ -261,8 +261,9 @@ test("sync renders Registry without a static Squad ID", t => {
   // Use Node as an isolated repo-context fixture interpreter; no live Multica or Python dependency.
   const f = fixture(t, "normal", { RONDO_WORKSPACE_PYTHON: process.execPath });
   f.write(f.shared + "workspaces/pilot.json", {
-    workspace_id: "ws-1", skills: { "spec-preparation": "skill-1" },
+    workspace_id: "ws-1", skills: { "analysis-publish": "skill-1" },
   });
+  f.write("skills/analysis-publish/SKILL.md", "---\nname: analysis-publish\ndescription: fixture\n---\n");
   f.write(f.shared + "repo-registry.base.json", {
     runtime: { multica_cli: "multica", rondo: "rondo" }, delivery: {},
   });
@@ -274,8 +275,8 @@ test("sync renders Registry without a static Squad ID", t => {
       responsibility: "fixture", keywords: [], not_responsible_for: [],
     }], errors: [],
   }));\n`);
-  const registryPath = f.write("skills/spec-preparation/config/repo-registry.json", "{}\n");
-  const result = f.run("workspace", "sync", "--workspace", "pilot", "--local-only");
+  const registryPath = f.write("skills/analysis-publish/config/repo-registry.json", "{}\n");
+  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "analysis-publish", "--local-only");
   assert.equal(result.code, 0, JSON.stringify(result.body));
   const rendered = JSON.parse(readFileSync(registryPath, "utf8"));
   assert.equal(rendered.runtime.workspace_id, "ws-1");
@@ -393,6 +394,38 @@ test("新建工作区 dry-run 输出计划且不使用空工作区 ID", t => {
   assert.equal(readFileSync(f.overlay, "utf8"), before);
 });
 
+test("spec-preparation no longer renders Repository Registry", t => {
+  const f = fixture(t);
+  f.write(f.shared + "workspaces/pilot.json", {
+    workspace_id: "ws-1", skills: { "spec-preparation": "skill-1" },
+  });
+  f.write("skills/spec-preparation/SKILL.md", "---\nname: spec-preparation\ndescription: fixture\n---\n");
+  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "spec-preparation", "--local-only");
+  assert.equal(result.code, 0, JSON.stringify(result.body));
+  assert.deepEqual(result.body.rendered, []);
+  assert.equal(existsSync(join(dirname(f.overlay), "..", "..", "skills", "spec-preparation", "config", "repo-registry.json")), false);
+});
+
+test("spec-preparation sync deletes a stale remote Repository Registry attachment", t => {
+  const f = fixture(t, "remote-stale");
+  f.write(f.shared + "workspaces/pilot.json", {
+    workspace_id: "ws-1", skills: { "spec-preparation": "skill-1" },
+  });
+  f.write("skills/spec-preparation/SKILL.md", "---\nname: spec-preparation\ndescription: fixture\n---\n");
+  const localRegistry = join(dirname(f.overlay), "..", "..", "skills", "spec-preparation", "config", "repo-registry.json");
+  assert.equal(existsSync(localRegistry), false);
+
+  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "spec-preparation");
+  assert.equal(result.code, 0, JSON.stringify(result.body));
+  assert.deepEqual(result.body.deleted_remote, ["spec-preparation/config/repo-registry.json"]);
+  assert.ok(f.calls().some(args =>
+    args.includes("skill") && args[args.indexOf("skill") + 1] === "files" && args[args.indexOf("skill") + 2] === "delete" && args.at(-1) === "stale-registry"));
+  assert.equal(existsSync(f.trace + ".stale"), false);
+
+  const check = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "spec-preparation", "--check");
+  assert.equal(check.code, 0, JSON.stringify(check.body));
+  assert.equal(check.body.result, "PASS");
+});
 test("pr-status-sync no longer renders Repository Registry", t => {
   const f = fixture(t);
   f.write(f.shared + "workspaces/pilot.json", {

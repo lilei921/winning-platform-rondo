@@ -1,7 +1,7 @@
 # 18 — Workitem Analyst 与 Skills 职责边界优化方案
 
 > 评审基准：main @ 84da2080e39e2a00ee4c1d682c3a53c0d0c83f0f；01 设计规范 v1.16.13。
-> 范围：Workitem Analyst、实际绑定的六个 Skills、直接消费的 Analysis CLI。P0 与 P1 已实施；P2 待后续确认。
+> 范围：Workitem Analyst、实际绑定的六个 Skills、直接消费的 Analysis CLI。P0、P1、P2 已实施。
 
 ## 1. 设计结论
 
@@ -33,9 +33,11 @@
 
 P1 实施保留必要的原生命令、参数及安全边界，不以提示词字数为验收标准；更新 CLI 使用文档和相关测试，不再要求 Skill 重复最终 Strict Validation。保留 `bug-analysis`、`requirement-analysis`、`native-workspace` 原有实现。
 
-## 4. P2 — 清理（待实施）
+## 4. P2 — 清理（已实施）
 
-精简 requirement-analysis 输出描述；确认无其他引用后删除 spec-preparation/config/repo-registry.json（与 analysis-publish 配置 Blob 相同）；修正 Workitem Analyst README 中 workspace-preparation 与实际 native-workspace 绑定的漂移。不新增公共配置抽象。
+- `requirement-analysis` 仅精简输出组织，保留专业方法、证据和授权边界，不强制 Confirmed / Recommended / Unresolved 三段结构。
+- `spec-preparation` 不消费 Registry 配置，删除其 `config/repo-registry.json`，同步移除 `workspace sync` 中对应渲染项，避免重新生成；平台残留附件由现有文件差异同步删除。保留 `analysis-publish` 及其他实际消费者的配置，并更新渲染及远端旧附件清理测试。
+- Workitem Analyst README 与实际 `native-workspace` 绑定及无工程增量处理对齐。不新增公共配置抽象，不改变 Agent/Skill 绑定。
 
 ## 5. 明确非目标
 

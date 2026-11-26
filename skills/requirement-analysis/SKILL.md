@@ -21,10 +21,7 @@ description: 面向 Intentional Requirement，按需探索现有业务与工程�
 
 ## Output
 
-- **Confirmed**：来源明确的目标、行为/约束、规则、场景、Scope、影响、验收依据及 Evidence。
-- **Recommended**：有依据的方案方向、复用/取舍、风险与 Verification Considerations，明确未获批准部分。
-- **Unresolved**：关键事实缺口、规则冲突、尚未授权的业务决定及其候选选项和影响。
-- 按当前需求只返回必要结论；不要求固定字段清单或 `requirement-analysis.md`。
+按当前需求返回有依据的专业结论、方案建议及必要的验证考虑，区分已确认事实、建议和待授权决定；说明影响当前判断的事实缺口、规则冲突或待决事项。不要求固定输出结构或 `requirement-analysis.md`。
 
 ## Boundaries
 

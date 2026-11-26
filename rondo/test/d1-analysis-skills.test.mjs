@@ -78,10 +78,10 @@ test("D1 identity: duplicate, archived, wrong Schema and unknown remain safe", (
   assert.equal(missing.body.result, "NOT_FOUND");
 });
 
-test("D1 workspace sync renders spec-preparation config in dry-run and local-only modes", (t) => {
+test("D1 workspace sync renders analysis-publish config in dry-run and local-only modes", (t) => {
   const root = join(fixture(t), "中文 工作区");
   const shared = join(root, "workspace-config");
-  const skill = join(root, "skills", "spec-preparation");
+  const skill = join(root, "skills", "analysis-publish");
   const workspaceSkill = join(root, "skills", "workspace-preparation");
   const tools = join(root, "tools");
   const docs = join(root, "docs", "config");
@@ -103,17 +103,17 @@ test("D1 workspace sync renders spec-preparation config in dry-run and local-onl
   writeFileSync(join(shared, "workspaces", "d1pilot.json"), JSON.stringify({
     workspace_id: "ws-pilot",
     multica_profile: "private", multica_server_url: "https://private.example",
-    skills: { "spec-preparation": "skill-id", "workspace-preparation": "workspace-skill-id" },
+    skills: { "analysis-publish": "skill-id", "workspace-preparation": "workspace-skill-id" },
   }));
   const env = { MULTICA_REPO_ROOT: root, PYTHONUTF8: "0", PYTHONIOENCODING: "cp936" };
   const localConfig = join(skill, "config", "repo-registry.json");
-  const preview = run(["workspace", "sync", "--workspace", "d1pilot", "--skill", "spec-preparation", "--dry-run"], env);
+  const preview = run(["workspace", "sync", "--workspace", "d1pilot", "--skill", "analysis-publish", "--dry-run"], env);
   assert.equal(preview.code, 0, preview.stderr);
   assert.equal(preview.body.result, "PASS");
-  assert.ok(preview.body.rendered.includes("spec-preparation/config/repo-registry.json"));
+  assert.ok(preview.body.rendered.includes("analysis-publish/config/repo-registry.json"));
   assert.equal(existsSync(localConfig), false, "dry-run must not write config");
 
-  const rendered = run(["workspace", "sync", "--workspace", "d1pilot", "--skill", "spec-preparation", "--local-only"], env);
+  const rendered = run(["workspace", "sync", "--workspace", "d1pilot", "--skill", "analysis-publish", "--local-only"], env);
   assert.equal(rendered.code, 0, rendered.stderr);
   const cfg = JSON.parse(readFileSync(localConfig, "utf8"));
   assert.equal(cfg.runtime.workspace_id, "ws-pilot");
@@ -134,11 +134,11 @@ test("D1 workspace sync refuses missing registry base rather than guessing a reg
   const root = fixture(t);
   const shared = join(root, "workspace-config");
   mkdirSync(join(shared, "workspaces"), { recursive: true });
-  mkdirSync(join(root, "skills", "spec-preparation"), { recursive: true });
+  mkdirSync(join(root, "skills", "analysis-publish"), { recursive: true });
   writeFileSync(join(shared, "workspaces", "badpilot.json"), JSON.stringify({
-    workspace_id: "ws-pilot", skills: { "spec-preparation": "skill-id" },
+    workspace_id: "ws-pilot", skills: { "analysis-publish": "skill-id" },
   }));
-  const r = run(["workspace", "sync", "--workspace", "badpilot", "--skill", "spec-preparation", "--dry-run"],
+  const r = run(["workspace", "sync", "--workspace", "badpilot", "--skill", "analysis-publish", "--dry-run"],
     { MULTICA_REPO_ROOT: root });
   assert.equal(r.code, 3);
   assert.equal(r.body.result, "UNKNOWN");
@@ -175,6 +175,7 @@ test("D2 skill contracts: archive legacy and bind composable Analyst methods", (
   ]) assert.ok(spec.includes(expected), "spec-preparation missing: " + expected);
   assert.ok(!spec.includes("新建并绑定 Agent"));
   assert.ok(!spec.includes("config/repo-registry.json"), "spec preparation commands do not consume registry config");
+  assert.ok(!existsSync(join(SKILLS, "spec-preparation", "config", "repo-registry.json")), "unused registry attachment must not be shipped");
   assert.equal(manifest.managed_skills.includes("workitem-triage"), false);
   assert.ok(manifest.agents.every(agent => !(agent.skills ?? []).includes("workitem-triage")));
   assert.equal(existsSync(join(SKILLS, "workitem-triage", "SKILL.md")), false);
