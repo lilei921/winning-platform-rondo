@@ -17,7 +17,7 @@ function git(cwd, ...args) {
   return r.stdout.trim();
 }
 
-test('Bug pr prepare CLI (Native): stdin/file, Git identity, quality Gate and Metadata readback', t => {
+test('Bug pr prepare CLI (Native resumed checkout): stdin/file, Git identity, quality Gate and Metadata readback', t => {
   const native = true;
   const dir = realpathSync(mkdtempSync(join(tmpdir(), 'rondo-bug-cli-')));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
@@ -26,7 +26,7 @@ test('Bug pr prepare CLI (Native): stdin/file, Git identity, quality Gate and Me
   git(root, 'init', '-b', 'main'); git(root, 'remote', 'add', 'origin', rootUrl);
   writeFileSync(join(root, '.gitignore'), 'biz/\n');
   writeFileSync(join(root, 'AGENTS.md'), '规则\n');
-  const taskId = native ? '01234567-abcd-ef12-3456-abcdef123456' : 'run';
+  const taskId = native ? '01234567-abcd-ef12-3456-000000000000' : 'run';
   const taskBranch = 'agent/bug-fix-agent/abcdef123456';
   if (native) {
     mkdirSync(join(root, 'docs', 'config'), { recursive: true });

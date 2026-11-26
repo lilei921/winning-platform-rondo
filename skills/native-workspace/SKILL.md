@@ -16,7 +16,7 @@ rondo runtime check-checkout --root-repo "<实际返回的根仓路径>"
 
 使用原生命令返回的实际根仓路径。首次 Requirement 分析必须有明确的 Resource 分支；其他场景 Resource 未指定 ref 时可省略 `--ref`。已有同一 Change 的 `analysis.source` 时，按 `analysis.source.repo_url` 和 `analysis.source.branch` 准备根仓；Engineer 还需核实根仓包含已批准的 `commit`。
 
-优先复用当前 Task 的已有 Checkout。业务仓统一位于实际根仓目录下，按需准备，不自动检出其他仓库；只读 MCP 已满足调查需要时，不强制本地 Checkout。
+优先复用 Multica 已有的 Checkout，保留工作树及已有研发成果。业务仓统一位于实际根仓目录下，按需准备，不自动检出其他仓库；只读 MCP 已满足调查需要时，不强制本地 Checkout。
 
 ## 只读业务仓
 
