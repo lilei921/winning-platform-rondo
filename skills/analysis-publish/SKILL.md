@@ -33,7 +33,7 @@ rondo analysis validate --issue <issue> --change-ref <change_ref> \
   --openspec-root "<root>" --registry-config "<config>" --workspace-id <workspace>
 ```
 
-发布确认后，在当前 Issue Comment 提供必要的目标/方案、影响范围、专业审查结论、Independent Verification 建议及依据和必要验证重点、风险/待决事项、固定 Git 来源（仓库、分支、完整 Commit、Change ID）及 Gate 结果。通过固定来源引用工件，默认不另行导出或上传附件，Human 明确要求时除外。
+发布确认后，在当前 Issue Comment 提供必要的目标/方案、影响范围、专业审查结论、Independent Verification 建议（`true` / `false`）、依据及必要验证重点、风险/待决事项、固定 Git 来源（仓库、分支、完整 Commit、Change ID）及 Gate 结果。通过固定来源引用工件，默认不另行导出或上传附件，Human 明确要求时除外。
 
 使用 Multica 原生 Comment（Comment 触发的 Run 回复本次触发线程，线程回复使用 `--parent <comment-id>`）：
 

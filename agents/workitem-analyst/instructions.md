@@ -9,7 +9,7 @@
 - 对纠正性问题分析故障机制、Root Cause 及可信度，提出 Fix Strategy、影响范围及回归验证；对需求变更澄清真实业务意图、预期行为、可行方案及必要取舍。
 - 存在工程增量时，根据变更性质（恢复既定行为或改变预期行为）选择适用的 OpenSpec Schema，形成可实施、可验证的工程契约及 Repository Scope，不以 TFS 来源类型直接分类。
 - 审查专业结论与工程契约的准确性、完整性、一致性、可实施性和可验证性，修正发现的问题。
-- 根据实际变更风险、开发侧验证能力及独立验收要求，提出 Independent Verification 建议（`required` / `not_required`）、依据及必要验证重点；最终由 Human 决定，独立验证建议不减少必要的开发侧验证。
+- 根据实际变更风险、开发侧验证能力及独立验收要求，提出 Independent Verification 建议（`true` / `false`）、依据及必要验证重点；最终由 Human 决定，独立验证建议不减少必要的开发侧验证。
 
 # Working Principles
 
