@@ -36,6 +36,9 @@ test("Requirement Scope, Candidate 和验证/Review 必须由同一份原生事�
   assert.deepEqual(validateChangeDelivery([prep("frame", sha1)], ["frame","web"], 42, registry), {frame:sha1});
   assert.deepEqual(validateChangeDelivery([prep("frame",sha1),prep("web",sha2)], ["frame","web"],42,registry), {frame:sha1,web:sha2});
   assert.throws(() => validateChangeDelivery([prep("web",sha2)], ["frame"],42,registry), /Scope/);
+  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),target_branch:"feature/42"}], ["frame"],42,
+    {...registry,frame:{...registry.frame,default_target_branch:"feature/42"}}), /Candidate/);
+  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),title:""}], ["frame"],42,registry), /Candidate/);
   assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),local_validation:{...prep("frame",sha1).local_validation,candidate_commit:sha2}}], ["frame"],42,registry), /Candidate/);
   assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),blockers:["blocking"]}], ["frame"],42,registry), /Blocking/);
   assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{...prep("frame",sha1).code_review,candidate_commit:sha2}}], ["frame"],42,registry), /Code Review/);
@@ -139,7 +142,7 @@ test("Repository Scope 和完整原生 Tasks 校验，拒绝重复、空范围�
   assert.throws(()=>checkedTaskProgress("- [x] 1.1 Build\n- [y] 1.2 Review\n"),/无效 checkbox/);
 });
 
-test("Completion 读取批准 SHA 与登记的研发 SHA，其他 Change 推进分支后仍通过 PR 前置检查", async t => {
+test("Completion 消费完整发布回执，只读取批准 Scope 和固定研发 Tasks", async t => {
   const source = { repo_url: repoUrl, change_ref: "foo-42", branch: "main", commit: sha1 };
   const ref = "/openspec/changes/" + source.change_ref;
   const proposal = "# Proposal\n";
@@ -156,7 +159,7 @@ test("Completion 读取批准 SHA 与登记的研发 SHA，其他 Change 推进�
   const metadata = { "analysis.source": JSON.stringify(source), "analysis.gate.result": "PASS",
     "analysis.change_ref": source.change_ref, "analysis.human_approval": JSON.stringify(approval),
     "tfs.type": "需求", "tfs.id": "42", pr_prep: JSON.stringify([prep("frame", sha2)]),
-    "dev.publication": JSON.stringify({ analysis_commit: sha1, commit: sha2 }) };
+    "dev.publication": JSON.stringify({ analysis_source: source, commit: sha2 }) };
   const issue = { id: "issue", status: "in_progress", metadata };
   const cfg = { runtime: { workspace_id: "ws" }, registry };
   const env = { MULTICA_TASK_ID: "run", MULTICA_AGENT_ID: "agent", MULTICA_WORKSPACE_ID: "ws",
@@ -172,7 +175,7 @@ test("Completion 读取批准 SHA 与登记的研发 SHA，其他 Change 推进�
       ? [{ id: "run", agent_id: "agent", issue_id: "issue", workspace_id: "ws", status: "running" }]
       : { id: "agent", name: "Engineer" },
   };
-  const versions = new Set();
+  const versions = new Set(), reads = [];
   t.mock.method(TfsClient.prototype, "rawRequest", async raw => {
     const url = new URL(raw), q = url.searchParams;
     if (url.pathname.endsWith("/refs")) return { statusCode: 200,
@@ -181,19 +184,30 @@ test("Completion 读取批准 SHA 与登记的研发 SHA，其他 Change 推进�
     versions.add(commit);
     const item = name => ({ path: ref + "/" + name, commitId: commit, objectId: "d".repeat(40) });
     const name = q.get("path")?.slice(ref.length + 1);
+    reads.push([commit, name]);
     const body = q.has("scopePath")
       ? { value: Object.keys(files[commit]).map(item) } : { ...item(name), content: files[commit][name] };
     return { statusCode: 200, body: JSON.stringify(body) };
   });
-  const checked = await checkPublishedChange(cfg, multica, issue.id, source);
-  await assert.rejects(checkPublishedChange(cfg, multica, issue.id, { ...source, change_ref: "another-42" }), /批准来源.*变化/);
+  const check = () => checkPublishedChange(cfg, multica, issue.id, source, metadata.pr_prep);
+  const checked = await check();
   assert.equal(checked.commit, sha2);
   assert.deepEqual(checked.repo_keys, ["frame"]);
   assert.deepEqual(versions, new Set([sha1, sha2]));
-  files[sha2][".openspec.yaml"] = "schema: intentional-change\nx-repositories:\n  - web\n";
-  await assert.rejects(checkPublishedChange(cfg, multica, issue.id, source), /\.openspec\.yaml/);
-  for (const receipt of [undefined, "{", JSON.stringify({ analysis_commit: branchTip, commit: sha2 }),
-    JSON.stringify({ analysis_commit: sha1, commit: "main" })]) {
+  assert.deepEqual(reads, [[sha1, ".openspec.yaml"], [sha2, "tasks.md"]]);
+  await assert.rejects(checkPublishedChange(cfg, multica, issue.id, { ...source, change_ref: "another-42" }, metadata.pr_prep), /批准来源.*变化/);
+  await assert.rejects(checkPublishedChange(cfg, multica, issue.id, source, "[]"), /PR Preparation.*变化/);
+  files[sha2]["tasks.md"] = "- [ ] 1.1 Build";
+  await assert.rejects(check(), /未完成/);
+  files[sha2]["tasks.md"] = "- [x] 1.1 Build";
+  files[sha1][".openspec.yaml"] = "schema: intentional-change\nx-repositories:\n  - web\n";
+  await assert.rejects(check(), /Scope/);
+  for (const receipt of [undefined, "{", JSON.stringify({ analysis_commit: sha1, commit: sha2 }),
+    JSON.stringify({ analysis_source: {...source, commit: branchTip}, commit: sha2 }),
+    JSON.stringify({ analysis_source: {...source, change_ref: "another-42"}, commit: sha2 }),
+    JSON.stringify({ analysis_source: {...source, branch: "other"}, commit: sha2 }),
+    JSON.stringify({ analysis_source: {...source, repo_url: registry.web.repo_url}, commit: sha2 }),
+    JSON.stringify({ analysis_source: source, commit: "main" })]) {
     assert.throws(() => readDevelopmentCommit({ "dev.publication": receipt }, source), /dev.publication|研发发布记录/);
   }
 });

@@ -2,7 +2,7 @@
 import { FailError, UnknownError } from "../../cli/errors.js";
 import type { BaseRegistryConfig } from "../../clients/config.js";
 import { MulticaClient, type IssueRecord } from "../../clients/multica.js";
-import { readAnalysisSource, readAnalysisArtifact, type AnalysisSource } from "../analysis/source.js";
+import { readAnalysisSource, readAnalysisArtifact, parseAnalysisSource, sameAnalysisSource, type AnalysisSource } from "../analysis/source.js";
 import { parseRepositoryScope } from "../analysis/repository-scope.js";
 import { readApprovedVerifyDecision } from "../delivery/verify-decision.js";
 
@@ -14,21 +14,23 @@ export interface ApprovedChange {
   verifyRequired: boolean;
 }
 
-export function developmentPublication(md: Record<string, string>): { analysis_commit: string; commit: string } | undefined {
+export function developmentPublication(md: Record<string, string>): { analysis_source: AnalysisSource; commit: string } | undefined {
   if (md["dev.publication"] === undefined) return undefined;
   let receipt;
   try { receipt = JSON.parse(md["dev.publication"]); }
   catch { throw new UnknownError("dev.publication 不是合法 JSON"); }
-  if (typeof receipt?.analysis_commit !== "string" || !/^[0-9a-f]{40}$/.test(receipt.analysis_commit) ||
-      typeof receipt.commit !== "string" || !/^[0-9a-f]{40}$/.test(receipt.commit)) {
-    throw new UnknownError("研发发布记录包含无效的 Commit SHA");
+  if (typeof receipt?.commit !== "string" || !/^[0-9a-f]{40}$/.test(receipt.commit)) {
+    throw new UnknownError("dev.publication 包含无效的 Commit SHA");
   }
-  return receipt;
+  // A SHA-only receipt cannot prove which Change was checked. Republish through the normal Gate.
+  if (receipt.analysis_source === undefined && typeof receipt.analysis_commit === "string" &&
+      /^[0-9a-f]{40}$/.test(receipt.analysis_commit)) return undefined;
+  return { analysis_source: parseAnalysisSource(receipt.analysis_source), commit: receipt.commit };
 }
 
 export function readDevelopmentCommit(md: Record<string, string>, source: AnalysisSource): string {
   const receipt = developmentPublication(md);
-  if (!receipt || receipt.analysis_commit !== source.commit) {
+  if (!receipt || !sameAnalysisSource(receipt.analysis_source, source)) {
     throw new UnknownError("当前批准版本缺少有效的研发发布记录，请执行 rondo dev publish");
   }
   return receipt.commit;

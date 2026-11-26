@@ -4,7 +4,6 @@ import { FailError, UnknownError } from "../../cli/errors.js";
 import type { BaseRegistryConfig } from "../../clients/config.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { RemoteArtifactReader } from "../delivery/remote-artifacts.js";
-import { normalizeContractText } from "../delivery/contract-files.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 import { sameAnalysisSource, type AnalysisSource } from "../analysis/source.js";
 import { approvedChange, readDevelopmentCommit } from "./requirement-guard.js";
@@ -24,12 +23,6 @@ export interface Completion {
 
 function parseJson(text: string, label: string): unknown {
   try { return JSON.parse(text); } catch { throw new FailError(label + " 不是合法 JSON"); }
-}
-function contractFiles(items: Array<{ path: string; isFolder?: boolean }>, prefix: string): string[] {
-  return items.filter(i => !i.isFolder && i.path.startsWith(prefix + "/"))
-    .map(i => i.path.slice(prefix.length + 1))
-    .filter(p => [".openspec.yaml", "proposal.md", "tasks.md", "design.md"].includes(p) || (p.startsWith("specs/") && p.endsWith(".md")))
-    .sort();
 }
 export function checkedTaskProgress(text: string): number {
   const refs = new Set<string>();
@@ -60,7 +53,9 @@ export function validateChangeDelivery(prep: PrPrep[], scope: string[], tfsId: n
     if (key in candidates) throw new FailError("PR Preparation 仓库重复: " + key);
     if (entry.source_branch !== candidateBranch(tfsId) ||
         !/^[0-9a-f]{40}$/.test(entry.candidate_commit ?? "") ||
-        !entry.title?.trim() || !entry.description?.trim() ||
+        typeof entry.title !== "string" || !entry.title.trim() ||
+        typeof entry.description !== "string" || !entry.description.trim() ||
+        typeof entry.target_branch !== "string" || !entry.target_branch.trim() || entry.target_branch === entry.source_branch ||
         entry.description.includes("补 TFS 工作项 id") ||
         !entry.repo_url || canonicalRepositoryIdentity(entry.repo_url) !== canonicalRepositoryIdentity(repo.repo_url) ||
         entry.target_branch !== repo.default_target_branch) {
@@ -86,9 +81,9 @@ export function validateChangeDelivery(prep: PrPrep[], scope: string[], tfsId: n
   return candidates;
 }
 
-/** Re-read a single pinned TFS Git snapshot, never mix approved content with another Runtime's worktree. */
+/** Consume the approved publication receipt and check completion at its pinned Development SHA. */
 export async function checkPublishedChange(
-  cfg: BaseRegistryConfig, multica: MulticaClient, issueKey: string, expectedSource: AnalysisSource,
+  cfg: BaseRegistryConfig, multica: MulticaClient, issueKey: string, expectedSource: AnalysisSource, expectedPrep: string,
   readerFactory: (url: string) => RemoteArtifactReader = url => new RemoteArtifactReader(url),
 ): Promise<Completion> {
   const change = await approvedChange(cfg, multica, issueKey, true);
@@ -97,20 +92,9 @@ export async function checkPublishedChange(
   const changeRef = source.change_ref;
   const reader = readerFactory(source.repo_url);
   const md = change.issue.metadata ?? {};
+  if (md.pr_prep !== expectedPrep) throw new UnknownError("PR Preparation 在检查期间变化");
   const commit = readDevelopmentCommit(md, source);
   const prefix = "/openspec/changes/" + changeRef;
-  const [approvedList, currentList] = await Promise.all([reader.list(source.commit, prefix), reader.list(commit, prefix)]);
-  const approvedFiles = contractFiles(approvedList, prefix);
-  const currentFiles = contractFiles(currentList, prefix);
-  if (JSON.stringify(approvedFiles) !== JSON.stringify(currentFiles)) throw new FailError("当前 Change 契约文件清单与获批准版本不一致");
-  for (const file of approvedFiles) {
-    // Engineers can refine *non-material* design, not Proposal, Specs or task wording.
-    if (file === "design.md") continue;
-    const [before, after] = await Promise.all([reader.read(source.commit, prefix + "/" + file), reader.read(commit, prefix + "/" + file)]);
-    if (normalizeContractText(file, before) !== normalizeContractText(file, after)) {
-      throw new FailError("Change 契约实质内容已变化，须重新 Human Review: " + file);
-    }
-  }
   const tasks = await reader.read(commit, prefix + "/tasks.md");
   const taskCount = checkedTaskProgress(tasks);
   const rawPrep = parseJson(md["pr_prep"] ?? "null", "pr_prep");

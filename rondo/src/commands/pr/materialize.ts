@@ -13,7 +13,6 @@ import { verifiedRepo, type VerifiedRepo } from "../../tfs/api/commit-facts.js";
 import { ensurePrWorkItemLink } from "../../tfs/api/pr-link.js";
 import { normalizeTfsPrWebUrl, parseTfsPrWebUrl } from "../../tfs/api/pr.js";
 import { assertTfsRepository } from "../../clients/authenticated-git.js";
-import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 import { readApprovedRepoMapping } from "../dev/native-prepare.js";
 import { readAnalysisSource } from "../analysis/source.js";
 import { assertBugReadyForPr, assertBugAgentAssignment } from "../bug/scope.js";
@@ -143,7 +142,6 @@ export function registerPrMaterialize(group: Command): void {
         if(!prep.length) throw new FailError("缺少 PR Preparation");
         if(prior.some(p=>!prep.some(x=>x.repo_key===p.repo_key)||!Number.isSafeInteger(p.pr_id)||p.pr_id<=0)||
           (readOnly&&prior.length!==prep.length)) throw new FailError("current_pr 与准备仓库集合不一致");
-        let registry:Awaited<ReturnType<typeof readApprovedRepoMapping>>|undefined;
         if(bug) {
           await assertBugSource(issue,server);
           assertBugReadyForPr(md);
@@ -154,20 +152,15 @@ export function registerPrMaterialize(group: Command): void {
           }
         } else {
           const source=readAnalysisSource(md);
-          registry=await readApprovedRepoMapping(source,server);
-          await checkPublishedChange({runtime,registry},multica,opts.issue,source);
+          const registry=await readApprovedRepoMapping(source,server);
+          await checkPublishedChange({runtime,registry},multica,opts.issue,source,md.pr_prep);
         }
         const identities=new Map<string,VerifiedRepo>(), seen=new Set<string>();
         for(const entry of prep) {
-          if(entry.source_branch!==branch||!filled(entry.target_branch)||entry.target_branch===branch||
-            !/^[0-9a-f]{40}$/.test(entry.candidate_commit??"")||!filled(entry.title)||!filled(entry.description)||entry.description.includes("补 TFS 工作项 id"))
+          if(bug&&(entry.source_branch!==branch||!filled(entry.target_branch)||entry.target_branch===branch||
+            !/^[0-9a-f]{40}$/.test(entry.candidate_commit??"")||!filled(entry.title)||!filled(entry.description)||entry.description.includes("补 TFS 工作项 id")))
             throw new FailError("PR Candidate / Description 无效");
           const url=assertTfsRepository(entry.repo_url,server), parts=url.pathname.split("/").map(decodeURIComponent);
-          if(registry) {
-            const approved=registry[entry.repo_key];
-            if(!approved||approved.default_target_branch!==entry.target_branch||
-              canonicalRepositoryIdentity(approved.repo_url)!==canonicalRepositoryIdentity(url.href)) throw new FailError("PR 仓库或目标分支偏离批准映射");
-          }
           const repo=await verifiedRepo(api,parts.at(-3)!,parts.at(-1)!);
           const key=repo.projectId+"/"+repo.repoId;
           if(seen.has(key)) throw new FailError("不同 repo_key 指向同一真实 TFS Repository");

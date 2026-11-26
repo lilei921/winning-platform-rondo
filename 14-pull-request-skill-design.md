@@ -186,7 +186,7 @@ rondo dev publish --issue <KEY> --change-ref <change_ref> --root-repo "<root>"
 rondo dev check-change --issue <KEY> --change-ref <change_ref>
 ```
 
-pr materialize 内部已执行适用 Completion Check，正常 Skill 路径不再规定重复独立调用；不得绕过发布或降低原有 Gate。当前 checkPublishedChange 检查工程契约、Tasks、发布和开发侧质量；Independent Verification 决定及现有 Closeout 阻断仍按当前实际执行边界处理（assertRequirementPrepareGate / assertBugFinalizationFacts），不宣称已有完整 PR 前独立验证流程，也不在本次补建。
+pr materialize 内部已执行适用 Completion Check，正常 Skill 路径不再规定重复独立调用；不得绕过发布或降低原有 Gate。checkPublishedChange 消费绑定完整 Analysis Source 的 dev.publication，检查固定研发版本 Tasks 与开发侧质量；契约一致性由 dev publish 负责。Independent Verification 决定及现有 Closeout 阻断仍按当前实际执行边界处理（assertRequirementPrepareGate / assertBugFinalizationFacts），不宣称已有完整 PR 前独立验证流程，也不在本次补建。
 
 ### 4.7 PR Materialization
 

@@ -83,11 +83,11 @@ function fixture(t, { previousTasks, approvedTasks = "- [ ] 1.1 Verify\n", desig
   const run = (expected, ...args) => runWithEnv(expected, {}, ...args);
   const publish = (expected, ...options) => run(expected, "dev", "publish", ...options);
   const metadata = () => JSON.parse(readFileSync(state, "utf8")).metadata;
-  return { root, bare, analyst, work, approved, proposal, source, state, metadata, run, runWithEnv, publish, bizUrl };
+  return { root, bare, analyst, work, approved, proposal, source, state, metadata, run, runWithEnv, publish, bizUrl, tfs };
 }
 
 test("Engineer 从批准 SHA 读取缺失工件，在分叉的常驻根仓独立发布并登记研发 SHA", t => {
-  const { root, bare, work, approved, proposal, source, metadata, run, publish } = fixture(t);
+  const { root, bare, work, approved, proposal, source, metadata, run, publish, tfs, state } = fixture(t);
   const fetched = run(0, "analysis", "read", "--file", "tasks.md");
   assert.equal(fetched.source.commit, approved);
   mkdirSync(join(root, work), { recursive: true });
@@ -105,8 +105,15 @@ test("Engineer 从批准 SHA 读取缺失工件，在分叉的常驻根仓独立
   assert.equal(git(bare, "show", published.commit + ":" + work + "/tasks.md"), "- [x] 1.1 Verify");
   assert.equal(git(root, "rev-parse", "HEAD"), local);
   assert.equal(readFileSync(join(root, work, "tasks.md"), "utf8"), "uncommitted draft");
-  assert.deepEqual(JSON.parse(metadata()["dev.publication"]), { analysis_commit: approved, commit: published.commit });
+  assert.deepEqual(JSON.parse(metadata()["dev.publication"]), { analysis_source: source, commit: published.commit });
   assert.equal(metadata()["analysis.source"], JSON.stringify(source));
+  assert.ok(tfs.state().requests.every(request => request.query["versionDescriptor.version"] === approved),
+    "Git 发布后不得重复通过 REST 读取研发 SHA");
+  const legacy = JSON.parse(readFileSync(state, "utf8"));
+  legacy.metadata["dev.publication"] = JSON.stringify({ analysis_commit: approved, commit: published.commit });
+  writeFileSync(state, JSON.stringify(legacy));
+  assert.equal(publish(0).commit, published.commit);
+  assert.deepEqual(JSON.parse(metadata()["dev.publication"]), { analysis_source: source, commit: published.commit });
 
   writeFileSync(join(root, work, "tasks.md"), "- [x] 1.1 Different semantics\n");
   git(root, "commit", "-am", "out of approval");
@@ -122,13 +129,13 @@ test("Engineer 从批准 SHA 读取缺失工件，在分叉的常驻根仓独立
   assert.match(rejectedEvidence.reason, /evidence-biz\.json|研发工件|允许/);
   // The forbidden Evidence file does not generate a new publication receipt.
   assert.equal(git(bare, "rev-parse", "integration"), published.commit);
-  assert.deepEqual(JSON.parse(metadata()["dev.publication"]), { analysis_commit: approved, commit: published.commit });
+  assert.deepEqual(JSON.parse(metadata()["dev.publication"]), { analysis_source: source, commit: published.commit });
 });
 
 test("本机仍有旧 Tasks 时，依据批准编号与正文勾选并保留远端另一项进度", t => {
   const previousTasks = "- [ ] 1.1 Old task\n";
   const approvedTasks = "- [ ] 2.1 Approved task\n- [ ] 2.2 Another approved task\n";
-  const { root, bare, work, approved, analyst, run, publish, metadata } = fixture(t, { previousTasks, approvedTasks });
+  const { root, bare, work, approved, analyst, run, publish, metadata, source } = fixture(t, { previousTasks, approvedTasks });
   writeFileSync(join(analyst, work, "tasks.md"), approvedTasks.replace("[ ] 2.2 ", "[x] 2.2 "));
   git(analyst, "commit", "-am", "concurrent progress on another task");
   git(analyst, "push");
@@ -143,7 +150,7 @@ test("本机仍有旧 Tasks 时，依据批准编号与正文勾选并保留远�
   assert.equal(git(bare, "rev-parse", delivered + "^"), advanced);
   assert.equal(git(bare, "show", delivered + ":" + work + "/tasks.md"),
     approvedTasks.replace("[ ] 2.1 ", "[x] 2.1 ").replace("[ ] 2.2 ", "[x] 2.2 ").trim());
-  const receipt = { analysis_commit: approved, commit: delivered };
+  const receipt = { analysis_source: source, commit: delivered };
   assert.deepEqual(JSON.parse(metadata()["dev.publication"]), receipt);
 
   // The shared local base has 2.1 checked; the remote has additionally checked adjacent 2.2.
@@ -187,7 +194,7 @@ test("Design 细化仍受批准版本约束，Evidence JSON 不再参与发布",
   const rejected = publish(2);
   assert.match(rejected.reason, /evidence-biz\.json|研发工件|允许/);
   const second = first;
-  assert.deepEqual(JSON.parse(metadata()["dev.publication"]), { analysis_commit: approved, commit: first });
+  assert.deepEqual(JSON.parse(metadata()["dev.publication"]), { analysis_source: source, commit: first });
   // Isolate the next rejection from the previously rejected Evidence file.
   git(root, "rm", work + "/evidence-biz.json");
   git(root, "commit", "-m", "remove forbidden evidence");
@@ -215,7 +222,7 @@ test("Design 细化仍受批准版本约束，Evidence JSON 不再参与发布",
   git(root, "commit", "-am", "reuse previously confirmed design");
   assert.match(publish(2).reason, /design\.md/);
   assert.equal(git(bare, "rev-parse", "integration"), nextSource.commit);
-  assert.deepEqual(JSON.parse(metadata()["dev.publication"]), { analysis_commit: approved, commit: second });
+  assert.deepEqual(JSON.parse(metadata()["dev.publication"]), { analysis_source: source, commit: second });
 });
 
 function drift(read, patch) {
