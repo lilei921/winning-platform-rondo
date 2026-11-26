@@ -44,7 +44,7 @@ function sameIssueOwner(before: Record<string, unknown>, after: Record<string, u
 }
 const ANALYSIS_CONTRACT_FILE = /^(?:\.openspec\.yaml|proposal\.md|tasks\.md|design\.md|specs\/.+\.md)$/;
 
-function parseArgs(argv: string[]): { issue: string; changeRef: string; cli: string; workspaceId: string | null; registryConfig: string | null; rootRepo: string | null; targetBranch: string | null; mode: string } {
+function parseArgs(argv: string[]): { issue: string; changeRef: string; cli: string; workspaceId: string | null; registryConfig: string | null; rootRepo: string | null; targetBranch: string | null; mode: string | null } {
   const get = (flag: string): string | null => {
     const i = argv.indexOf(flag);
     return i !== -1 && i + 1 < argv.length ? argv[i + 1] : null;
@@ -60,7 +60,7 @@ function parseArgs(argv: string[]): { issue: string; changeRef: string; cli: str
     process.stderr.write("用法: rondo analysis publish --issue <issue-id> --change-ref <id> --registry-config <repo-registry.json> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>]\n");
     process.exit(64);
   }
-  return { issue, changeRef, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), registryConfig: get("--registry-config"), rootRepo, targetBranch: get("--target-branch"), mode: get("--mode") ?? "legacy" };
+  return { issue, changeRef, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), registryConfig: get("--registry-config"), rootRepo, targetBranch: get("--target-branch"), mode: get("--mode") };
 }
 
 /** 读取唯一推送地址；拒绝凭据 URL，避免在 metadata 中保存认证信息。 */
@@ -71,7 +71,7 @@ function pushRepositoryUrl(root: string): string {
 }
 
 async function main(rawArgs: string[]): Promise<number> {
-  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis publish [--mode requirement] --issue <issue-id> --change-ref <id> --registry-config <path> --workspace-id <id> [--root-repo <path>] [--target-branch <branch>] [--multica <cli>] [--profile <name>]\n"); return 0; }
+  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis publish --issue <issue-id> --change-ref <id> --registry-config <path> --workspace-id <id> [--root-repo <path>] [--target-branch <branch>] [--multica <cli>] [--profile <name>]\n"); return 0; }
   const args = parseArgs(rawArgs);
   const ws = ["--workspace-id", args.workspaceId!];
   try {
@@ -87,18 +87,17 @@ async function main(rawArgs: string[]): Promise<number> {
     };
     const before = getIssue("读取 Issue 及分析事实");
     const priorMeta = requireIssueMetadata(before);
-    if (!["legacy", "requirement"].includes(args.mode)) throw new PreconditionError("analysis publish --mode 仅支持 requirement 或省略");
     const tfsKind = classifyTfsType(priorMeta["tfs.type"]);
-    if (args.mode === "requirement" && tfsKind !== "requirement") throw new PreconditionError("Requirement 模式仅适用于 TFS 需求");
-    if (tfsKind === "requirement" && args.mode !== "requirement") {
-      throw new PreconditionError("Requirement 必须显式使用 --mode requirement，禁止绕过发布身份核验");
-    }
     if (!tfsKind) throw new UnknownError(`tfs.type 缺失或不支持: ${String(priorMeta["tfs.type"] ?? "")}`);
+    const requirement = tfsKind === "requirement";
+    // 已部署的调用可继续传旧参数，但它只核对来源类型，不能选择或绕过发布路径。
+    if (rawArgs.includes("--mode") && args.mode !== (requirement ? "requirement" : "legacy")) {
+      throw new PreconditionError("analysis publish --mode 与当前 tfs.type 不一致，请省略该参数");
+    }
     const cfg = loadConfig<BaseRegistryConfig>(args.registryConfig!, { requireRegistry: false, requireTfs: false });
     // 根仓资源查询与 Issue 读写使用同一环境，包含显式 --profile/--multica 覆盖。
     cfg.runtime = runtime;
 
-    const requirement = args.mode === "requirement";
     // Requirement 审核重放只消费已登记的 PASS、Facts 和固定来源，不重读工件。
     if (!assertAnalysisWritable(before, priorMeta, entries)) {
       const source = readAnalysisSource(priorMeta);

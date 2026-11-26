@@ -1,7 +1,7 @@
 # 18 — Workitem Analyst 与 Skills 职责边界优化方案
 
 > 评审基准：main @ 84da2080e39e2a00ee4c1d682c3a53c0d0c83f0f；01 设计规范 v1.16.13。
-> 范围：Workitem Analyst、实际绑定的六个 Skills、直接消费的 Analysis CLI。P0 本次实施；P1/P2 待后续确认。
+> 范围：Workitem Analyst、实际绑定的六个 Skills、直接消费的 Analysis CLI。P0 与 P1 已实施；P2 待后续确认。
 
 ## 1. 设计结论
 
@@ -20,7 +20,7 @@
 
 验证：正确后缀通过、其他 TFS ID/无后缀/非法 TFS ID 拒绝；合法已登记范围通过、未登记名称拒绝、权威文件缺失/无效不能放行；无关异常条目不阻塞合法 Scope；本地映射与最终候选或恢复来源不一致时，按实际固定版本阻断，已登记审核重放不重复执行；现有格式校验、合法 skip_specs 和发布路径回归。测试 fixture 按当前契约建立本地映射和 Change ID。
 
-## 3. P1 — Instructions 与 Skills 收敛（待实施）
+## 3. P1 — Instructions 与 Skills 收敛（已实施）
 
 - Workitem Analyst：核心职责明确工程增量决策；区分无需变更、确需变更、事实/授权不足。合并重复证据原则；Independent Verification 建议只表达变更风险、开发侧验证能力及独立验收要求，保留 Human 决定；按需使用已授权 Remote MCP，确需本地仓时使用 native-workspace。保留授权、专业审查、真实证据及交付边界。
 - codebase-explorer：MCP 具体用途归属此 Skill；Agent 仅保留简短使用原则；仅核实与当前结论相关的跨仓契约。保留只读及证据充分即停止。
@@ -29,7 +29,9 @@
 - spec-preparation：保留 Change 身份解析、授权及原生 Schema/Artifact 来源；可信已确认信息直接复用，按需核实，不固定 schema which/status/instructions 调用次数；具体 Artifact 内容归属 Schema；简明消费 Resolver 结果，冲突或未知停止写入。
 - analysis-publish：保留轻量执行型 Skill，CLI 负责 Gate、Git、事实及重放；PASS 提交专业审核摘要，FAIL 修正实际问题，UNKNOWN 确认结果或报告阻断，保留评论幂等和真实停止条件。不封装原生 Comment。
 - native-workspace：保持共享能力与现有架构，不修改。
-- CLI：评估取消重复的 --mode requirement 参数，根据 tfs.type 确定路径；先核对实际调用方与原有安全约束，不在 P0 改动。
+- CLI：`analysis publish` 根据当前 Issue 的 `tfs.type` 自动选择原有发布路径；常规调用不再传 `--mode requirement`。旧参数仅兼容与来源类型一致的调用，不能选择或覆盖路径。保持 Requirement 的 Git、身份、Gate、审核及恢复机制；不改其他 CLI 的 Mode。
+
+P1 实施保留必要的原生命令、参数及安全边界，不以提示词字数为验收标准；更新 CLI 使用文档和相关测试，不再要求 Skill 重复最终 Strict Validation。保留 `bug-analysis`、`requirement-analysis`、`native-workspace` 原有实现。
 
 ## 4. P2 — 清理（待实施）
 

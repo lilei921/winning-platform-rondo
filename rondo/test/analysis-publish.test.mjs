@@ -118,7 +118,7 @@ function fixture(t, requirement = true, native = false, commitChange = true) {
   const completeAt = (rootArg, cwd, ...extra) => runCli(["analysis", "publish",
     "--issue", "issue-1", "--change-ref", CHANGE,
     "--workspace-id", "ws-test", "--registry-config", config, "--multica", MOCK,
-    "--root-repo", rootArg, ...(requirement ? ["--mode", "requirement"] : []), ...extra], env, cwd);
+    "--root-repo", rootArg, ...extra], env, cwd);
   const complete = (...extra) => completeAt(root, undefined, ...extra);
   const state = () => JSON.parse(readFileSync(statePath, "utf8"));
   const setState = data => writeFileSync(statePath, JSON.stringify(data));
@@ -454,15 +454,32 @@ test("Legacy Publish 拒绝相对 RONDO_WORKSPACE_PATH，即使 cwd 是合法根
   assert.equal(f.state().metadata["analysis.source"], undefined);
 });
 
-test("Requirement 必须使用 requirement 模式，禁止误选 legacy", t => {
+test("Requirement 根据 tfs.type 自动发布，旧 mode 不得覆盖来源类型", t => {
   const f = fixture(t);
-  f.env.RONDO_WORKSPACE_BRANCH = "";
-  f.env.RONDO_WORKSPACE_PATH = "";
-  const result = runCli(["analysis", "publish", "--issue", "issue-1",
-    "--change-ref", CHANGE, "--workspace-id", "ws-test", "--registry-config", join(f.home, "registry.json"),
-    "--multica", MOCK, "--root-repo", f.root], f.env);
-  assert.equal(result.exit, 2);
-  assert.match(result.body.reason, /--mode requirement/);
+  const before = f.state();
+  const remote = git(f.remote, "rev-parse", "dev");
+  for (const flags of [["--mode", "legacy"], ["--mode", "unknown"], ["--mode"]]) {
+    const blocked = f.complete(...flags);
+    assert.equal(blocked.exit, 2, JSON.stringify(blocked));
+    assert.match(blocked.body.reason, /--mode.*tfs.type/);
+    assert.deepEqual(f.state(), before);
+    assert.equal(git(f.remote, "rev-parse", "dev"), remote);
+  }
+  const result = f.complete();
+  assert.equal(result.exit, 0, JSON.stringify(result));
+  assert.equal(f.state().status, "analysis_review");
+  const replay = f.complete("--mode", "requirement");
+  assert.equal(replay.exit, 0, JSON.stringify(replay));
+  assert.equal(replay.body.replayed, true);
+});
+
+test("Bug 不得借旧 mode 参数进入 Requirement 发布路径", t => {
+  const f = fixture(t, false);
+  const before = f.state();
+  const blocked = f.complete("--mode", "requirement");
+  assert.equal(blocked.exit, 2, JSON.stringify(blocked));
+  assert.match(blocked.body.reason, /--mode.*tfs.type/);
+  assert.deepEqual(f.state(), before);
 });
 
 test("Native Analysis without Workspace variables: raw-SHA Task branch, remote advance and single Change publish", t => {

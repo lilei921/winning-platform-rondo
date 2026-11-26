@@ -170,7 +170,8 @@ test("D2 skill contracts: archive legacy and bind composable Analyst methods", (
     "root_repo",
     "--tfs-id <tfs.id>", "--change-ref <stable-id>", "同时传入",
     "cwd", "openspec schema which", "implicit",
-    "--type change --strict --no-interactive --json", "Conditional Design", "skip_specs", "specs/**/*.md",
+    "openspec status", "openspec instructions", "openspec new change", "Conditional Design", "skip_specs", "specs/**/*.md",
+    "x-repositories", "docs/config/repo-context.yaml",
   ]) assert.ok(spec.includes(expected), "spec-preparation missing: " + expected);
   assert.ok(!spec.includes("新建并绑定 Agent"));
   assert.ok(!spec.includes("config/repo-registry.json"), "spec preparation commands do not consume registry config");
@@ -181,5 +182,9 @@ test("D2 skill contracts: archive legacy and bind composable Analyst methods", (
   assert.ok(!existsSync(join(SKILLS, "spec-preparation", "references", "tasks-md-authoring-contract.md")));
   assert.ok(existsSync(join(ARCHIVED_SKILLS, "workitem-analysis", "references", "tasks-md-authoring-contract.md")));
   assert.match(spec, /当前 Artifact Instruction \/ Template/);
+  const publish = FRONT("analysis-publish");
+  assert.match(publish, /rondo analysis publish --issue/);
+  assert.ok(!publish.includes("--mode requirement"), "source type is resolved by CLI");
+  assert.match(publish, /无需手工 Git Add、Commit、Push 或例行预校验/);
   assert.match(FRONT("bug-analysis"), /替代根因/);
 });
