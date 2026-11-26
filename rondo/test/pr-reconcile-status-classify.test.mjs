@@ -340,3 +340,12 @@ test("in_review missing current_pr is visible; normal blocked without delivery f
   assert.equal(await processIssue(b.multica,b.issue,{attempts:0,successes:0},lookup,COLLECTION),null);
   assert.deepEqual([...a.calls,...b.calls],[]);
 });
+
+test("invalid preparation does not suppress an already registered abandoned PR",async()=>{
+  const f=fixture("in_review",{pr_prep:"bad JSON"});
+  const action=await processIssue(f.multica,f.issue,{attempts:0,successes:0},()=>({
+    status:"ok",pr:{id:42,status:"abandoned",sourceBranch:"feature/a",targetBranch:"dev"}
+  }),COLLECTION);
+  assert.equal(action.action,"stopped_abandoned");
+  assert.equal(f.calls[0][2],"pr.abandoned");
+});

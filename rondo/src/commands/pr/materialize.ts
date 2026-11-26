@@ -152,6 +152,19 @@ export async function materializeOne(tfs: Pick<TfsClient, "run">, api: Pick<ApiT
   } finally { try {rmSync(dir,{recursive:true,force:true});} catch {/* best-effort temporary cleanup */} }
 }
 
+async function resolvePreparedRepos(api: ApiTfsClient, prep: PrPrepEntry[], resolveRepo = verifiedRepo): Promise<Map<string, VerifiedRepo>> {
+  const identities = new Map<string, VerifiedRepo>(), seen = new Set<string>();
+  for (const entry of prep) {
+    const url = assertTfsRepository(entry.repo_url, api.config.serverUrl);
+    const parts = url.pathname.split("/").map(decodeURIComponent);
+    const repo = await resolveRepo(api, parts.at(-3)!, parts.at(-1)!);
+    const key = repo.projectId + "/" + repo.repoId;
+    if (seen.has(key)) throw new FailError("不同 repo_key 指向同一真实 TFS Repository");
+    seen.add(key); identities.set(entry.repo_key, repo);
+  }
+  return identities;
+}
+
 /** Recover missing registrations from pinned preparation; never create PRs or change Issue status. */
 export async function recoverPreparedPrs(
   multica: Pick<MulticaClient, "getIssue" | "setMetadata">, issue: IssueRecord,
@@ -159,15 +172,6 @@ export async function recoverPreparedPrs(
 ): Promise<{issue: IssueRecord; detail?: string}> {
   const md = issue.metadata ?? {};
   if (issue.status !== "in_review" && issue.status !== "blocked") return {issue};
-  const prep = list<PrPrepEntry>(md.pr_prep, "pr_prep");
-  const registered = list<CurrentPrEntry>(md.current_pr, "current_pr");
-  if (!prep.length || registered.some(p => !prep.some(x => x.repo_key === p.repo_key) ||
-      !Number.isSafeInteger(p.pr_id) || p.pr_id <= 0)) {
-    throw new FailError("current_pr 与 pr_prep 仓库集合不一致");
-  }
-  if (registered.length === prep.length) return {issue};
-  const branch = candidateBranch(md["tfs.id"]), tfsId = Number(md["tfs.id"]);
-  if (md["tfs.type"] !== "Bug" && md["tfs.type"] !== "需求") throw new FailError("不支持当前 TFS Type");
   let currentPr = md.current_pr;
   let fresh = issue;
   const check = () => {
@@ -180,19 +184,28 @@ export async function recoverPreparedPrs(
       throw new UnknownError("PR 恢复期间 Issue 事实变化");
     }
   };
-  // Verify the prepared repository identities only on the recovery path.
-  const identities = new Map<string, VerifiedRepo>(), seen = new Set<string>();
-  for (const entry of prep) {
-    if (entry.source_branch !== branch || !filled(entry.target_branch) ||
-        entry.target_branch === branch || !/^[0-9a-f]{40}$/i.test(entry.candidate_commit ?? "")) {
-      throw new FailError("PR Preparation 缺少有效 Candidate: " + entry.repo_key);
+  let prep: PrPrepEntry[], registered: CurrentPrEntry[], identities: Map<string, VerifiedRepo>;
+  const tfsId = Number(md["tfs.id"]);
+  try {
+    prep = list<PrPrepEntry>(md.pr_prep, "pr_prep");
+    registered = list<CurrentPrEntry>(md.current_pr, "current_pr");
+    if (!prep.length || registered.some(p => !prep.some(x => x.repo_key === p.repo_key) ||
+        !Number.isSafeInteger(p.pr_id) || p.pr_id <= 0)) {
+      throw new FailError("current_pr 与 pr_prep 仓库集合不一致");
     }
-    const url = assertTfsRepository(entry.repo_url, api.config.serverUrl);
-    const parts = url.pathname.split("/").map(decodeURIComponent);
-    const repo = await resolveRepo(api, parts.at(-3)!, parts.at(-1)!);
-    const key = repo.projectId + "/" + repo.repoId;
-    if (seen.has(key)) throw new FailError("不同 repo_key 指向同一真实 TFS Repository");
-    seen.add(key); identities.set(entry.repo_key, repo);
+    if (registered.length === prep.length) return {issue};
+    const branch = candidateBranch(md["tfs.id"]);
+    if (md["tfs.type"] !== "Bug" && md["tfs.type"] !== "需求") throw new FailError("不支持当前 TFS Type");
+    for (const entry of prep) {
+      if (entry.source_branch !== branch || !filled(entry.target_branch) ||
+          entry.target_branch === branch || !/^[0-9a-f]{40}$/i.test(entry.candidate_commit ?? "")) {
+        throw new FailError("PR Preparation 缺少有效 Candidate: " + entry.repo_key);
+      }
+    }
+    identities = await resolvePreparedRepos(api, prep, resolveRepo);
+  } catch (e) {
+    check();
+    return {issue: fresh, detail: (e as Error).message};
   }
   for (const entry of prep) {
     if (registered.some(p => p.repo_key === entry.repo_key)) continue;
@@ -254,17 +267,12 @@ export function registerPrMaterialize(group: Command): void {
           const registry=await readApprovedRepoMapping(source,server);
           await checkPublishedChange({runtime,registry},multica,opts.issue,source,md.pr_prep);
         }
-        const identities=new Map<string,VerifiedRepo>(), seen=new Set<string>();
         for(const entry of prep) {
           if(bug&&(entry.source_branch!==branch||!filled(entry.target_branch)||entry.target_branch===branch||
             !/^[0-9a-f]{40}$/.test(entry.candidate_commit??"")||!filled(entry.title)||!filled(entry.description)||entry.description.includes("补 TFS 工作项 id")))
             throw new FailError("PR Candidate / Description 无效");
-          const url=assertTfsRepository(entry.repo_url,server), parts=url.pathname.split("/").map(decodeURIComponent);
-          const repo=await verifiedRepo(api,parts.at(-3)!,parts.at(-1)!);
-          const key=repo.projectId+"/"+repo.repoId;
-          if(seen.has(key)) throw new FailError("不同 repo_key 指向同一真实 TFS Repository");
-          seen.add(key);identities.set(entry.repo_key,repo);
         }
+        const identities=await resolvePreparedRepos(api,prep);
         const prs=await materializePreparedPrs(multica,issue.id,prep,md.current_pr,readOnly,authorize,
           (entry,prior,authorizeCurrent)=>materializeOne(tfs,api,tfsId,entry,identities.get(entry.repo_key)!,
             prior,readOnly,authorizeCurrent));

@@ -162,18 +162,22 @@ export async function processIssue(
       : null;
   }
   let prs: CurrentPrEntry[];
-  let prepared: {repo_key: string}[];
+  let prepared: {repo_key: string}[] = [];
+  let recoveryDetail: string | undefined;
   try { prs = JSON.parse(currentPrRaw ?? "[]"); }
   catch { return { issue: issueKey, action: "unknown", detail: "metadata current_pr 不是合法 JSON" }; }
   if (!Array.isArray(prs)) return { issue: issueKey, action: "unknown", detail: "current_pr 不是数组" };
-  try { prepared = JSON.parse(md.pr_prep ?? "[]"); }
-  catch { return { issue: issueKey, action: "unknown", detail: "pr_prep 不是合法 JSON" }; }
-  if (!Array.isArray(prepared)) return { issue: issueKey, action: "unknown", detail: "pr_prep 不是数组" };
-  if (!prs.length && !pendingRaw && issue.status !== "in_review" &&
+  try {
+    prepared = JSON.parse(md.pr_prep ?? "[]");
+    if (!Array.isArray(prepared)) throw new Error("not an array");
+  } catch {
+    prepared = [];
+    recoveryDetail = "pr_prep 不是合法数组";
+  }
+  if (!prs.length && !pendingRaw && !recoveryDetail && issue.status !== "in_review" &&
       !(issue.status === "blocked" && prepared.length)) return null;
 
-  let recoveryDetail: string | undefined;
-  if (recoverMissing && (issue.status === "in_review" || issue.status === "blocked") &&
+  if (recoverMissing && !recoveryDetail && (issue.status === "in_review" || issue.status === "blocked") &&
       prepared.some(p => p && !prs.some(pr => pr?.repo_key === p.repo_key))) {
     const recovered = await recoverMissing(issue);
     issue = recovered.issue;
