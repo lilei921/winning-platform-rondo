@@ -199,6 +199,13 @@ test("Completion 消费完整发布回执，只读取批准 Scope 和固定研�
   await assert.rejects(checkPublishedChange(cfg, multica, issue.id, source, "[]"), /PR Preparation.*变化/);
   files[sha2]["tasks.md"] = "- [ ] 1.1 Build";
   await assert.rejects(check(), /未完成/);
+  metadata["analysis.human_approval"] = JSON.stringify({...approval,waived_tasks:["1.1"]});
+  assert.equal((await check()).task_count,1);
+  metadata["analysis.human_approval"] = JSON.stringify({...approval,waived_tasks:["9.9"]});
+  await assert.rejects(check(), /豁免任务不在/);
+  metadata["analysis.human_approval"] = JSON.stringify({...approval,waived_tasks:"1.1"});
+  await assert.rejects(check(), /waived_tasks/);
+  metadata["analysis.human_approval"] = JSON.stringify(approval);
   files[sha2]["tasks.md"] = "- [x] 1.1 Build";
   files[sha1][".openspec.yaml"] = "schema: intentional-change\nx-repositories:\n  - web\n";
   await assert.rejects(check(), /Scope/);
@@ -464,4 +471,11 @@ test("PR 登记回读独立于交付模式及 Worktree Cleanup", () => {
       assert.deepEqual(calls,["metadata","read","status","read"]);
     }
   }
+});
+
+test("only completed or explicitly waived tasks satisfy Change progress", () => {
+  const tasks="- [x] 1.1 Build\n- [ ] 3.1 Integration\n- [ ] 3.2 Regression\n";
+  assert.equal(checkedTaskProgress(tasks,["3.1","3.2"]),3);
+  assert.throws(()=>checkedTaskProgress(tasks,["3.1"]),/3\.2/);
+  assert.throws(()=>checkedTaskProgress(tasks,["3.1","3.2","9.9"]),/豁免任务不在/);
 });

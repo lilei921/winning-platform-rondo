@@ -1149,3 +1149,25 @@ test("跨 Project 同名仓库及相同 SHA 按 GUID 分别关联真实 TFS Task
   assert.deepEqual(tasks.map(wi=>wi.fields["System.State"]),["已关闭","已关闭"]);
   assert.equal(f.readState().issues["WNDF-T"].status,"done");
 });
+
+test("Requirement Prepare archives an explicitly waived unchecked task and normal closeout continues", async t => {
+  const f = await fixture(t, { requirement: true });
+  const state = f.readState();
+  const md = state.issues["WNDF-T"].metadata;
+  md["analysis.human_approval"] = JSON.stringify({...JSON.parse(md["analysis.human_approval"]),waived_tasks:["1.2"]});
+  writeFileSync(join(f.dir,"state.json"),JSON.stringify(state));
+  const text = TASKS_CHECKED.replace("[x] 1.2","[ ] 1.2");
+  writeFileSync(join(f.changeDir,"tasks.md"),text);
+  const prepared = await f.phase("prepare");
+  assert.equal(prepared.exit,0,prepared.stdout+prepared.stderr);
+  const archived = join(f.rootRepo,"openspec","changes","archive","2026-01-01-"+CHANGE_REF,"tasks.md");
+  assert.equal(readFileSync(archived,"utf8"),text);
+  const planFile=join(f.dir,"plan.json");
+  const plan=JSON.parse(readFileSync(planFile,"utf8"));
+  plan.tasks[0].source_refs=["1.1"];
+  writeFileSync(planFile,JSON.stringify(plan));
+  const written=await f.writeback();
+  assert.equal(written.exit,0,written.stdout+written.stderr);
+  const completed=await f.phase("complete");
+  assert.equal(completed.exit,0,completed.stdout+completed.stderr);
+});

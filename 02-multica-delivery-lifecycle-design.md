@@ -1094,7 +1094,7 @@ Final Independent Verification Decision
 verify_agent.required = true | false
 ```
 
-仅改变“是否需要 Independent Verify Agent”且不改变 Acceptance Contract、Verification Contract、Scope 或 required Verification Tasks 时，不要求返回 Analysis；Delivery Lead 理解 Human 决定，使用 `rondo analysis approve` 引用真实批准评论、获批 Commit 和明确的独立验收决定，由 CLI 核对 Gate、登记 `analysis.human_approval` 并投影、回读 `verify_agent.required`。对同一获批 Change 的新决定，在允许的研发状态下更新批准事实，不重新派发已有效委派的工作。缺失、冲突或无法确认时不从 Analyst Recommendation 自动推断最终决定。如果 Human 意见新增、删除或实质改变验收行为、Verification Task、Regression / Integration / E2E 范围或批准 Scope，则这不是单纯 Verify override，必须返回 Workitem Analyst 定向更新 Engineering Truth 并重新 Human Review。
+仅改变“是否需要 Independent Verify Agent”且不改变 Acceptance Contract、Verification Contract、Scope 或 required Verification Tasks 时，不要求返回 Analysis；Delivery Lead 理解 Human 决定，使用 `rondo analysis approve` 引用真实批准评论、获批 Commit 和明确的独立验收决定，由 CLI 核对 Gate、登记 `analysis.human_approval` 并投影、回读 `verify_agent.required`。对同一获批 Change 的新决定，在允许的研发状态下更新批准事实，不重新派发已有效委派的工作。缺失、冲突或无法确认时不从 Analyst Recommendation 自动推断最终决定。Human 可明确批准具体已列任务在本轮不执行，由 Delivery Lead 使用 `rondo analysis approve --waive-tasks <refs>` 将完整豁免集合登记在 `analysis.human_approval.waived_tasks`（可选编号数组，缺省为空；复用批准评论及获批 Commit）。CLI 核验编号属于固定批准版 Tasks；同一评论的决定不可改写。Task Waiver 不等同于 Independent Verification 决定，也不取消必要 Candidate Validation 或 Code Review。若 Human 意见实质改变验收行为、必须满足的 Verification Contract 或批准 Scope，须返回 Workitem Analyst 定向更新 Engineering Truth 并重新 Human Review。
 
 已获准交付的 Approved OpenSpec Change 在进入 Development 前提交到根仓 Git，记录已批准的开发基线。Git Commit 不禁止批准边界内的设计细化和任务更新；需要改变已批准行为、范围、关键技术约束或验收要求时，仍返回既有 Analysis / Human Review。该 Commit 不创建独立 PR，也不进入业务 required PR 集合。
 
@@ -1577,7 +1577,7 @@ Workitem Analyst 在 Analysis 中形成是否建议 Independent Verification 的
 
 Workitem Analyst 是首次专业判断者：根据当前 Acceptance / Verification Contract、Task-level / Change-level Verification 的可闭合性、候选风险与是否需要实现者之外的独立性，形成 Recommendation、Reason 与 Focus。Human Analysis Review 是最终决定者，可以接受或 override 该 Recommendation。
 
-仅对独立性要求的 override 不修改 OpenSpec Engineering Truth，也不要求 Analysis Rework；若 Human Feedback 实质改变 Verification Contract、Acceptance Contract、Scope 或 required Verification Tasks，则返回 Workitem Analyst 定向修订并重新审核。
+仅对独立性要求的 override 不修改 OpenSpec Engineering Truth，也不要求 Analysis Rework。明确的 Task Waiver 按 Human Approval 登记具体任务，不改变必须满足的 Verification Contract、Acceptance Contract 或 Scope；实质契约变更须返回 Workitem Analyst 定向修订并重新审核。
 
 Human 最终决定批准后，执行事实继续使用现有字段（由 `rondo analysis approve` 依据 Human 决定统一登记并回读；与批准评论及获批版本绑定）：
 
@@ -2515,7 +2515,7 @@ OpenSpec 原生归档：Delta 纳入主规格（如有）+ Change Archive
 继续 TFS 回写和 Delivery 收口
 ```
 
-项目必须在调用前检查当前必要工程任务完成状态，不能以 Archive 退出成功推断交付完整。公开 Archive 实现在存在未完成任务时允许 `--yes` 继续；本项目不采用这种放宽条件，非交互参数只能在项目 Guard 通过后使用。[^d-openspec-archive]
+项目必须在调用前检查当前必要工程任务完成状态，不能以 Archive 退出成功推断交付完整。PR Materialize 与 Archive 共用任务判定：每项任务已完成或属于当前 Human Approval 的 `waived_tasks`；未执行的豁免任务保持未勾选，其他未完成任务阻断。公开 Archive 实现在存在未完成任务时允许 `--yes` 继续；仅在项目 Guard 确认不存在未处理的必要任务后使用原生非交互归档，不绕过规格校验。[^d-openspec-archive]
 
 不得通过 `--no-validate` 绕过失败，也不得用 `--skip-specs` 掩盖本应合入主规格的 Delta。无 Spec-level 行为变化的 Change 按 Workitem Analyst 方案的原生跳过标记与校验要求处理；它不是为已有行为变更跳过规格同步的权限。
 

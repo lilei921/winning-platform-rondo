@@ -23,3 +23,12 @@ test("extractTaskText：ref 不存在返回 null", () => {
   const text = "- [ ] 1.1 实现功能 A\r\n";
   assert.equal(extractTaskText(text, "9.9"), null);
 });
+
+test("extractTaskText：任务编号精确匹配，兼容编号后的句点", () => {
+  const text = "- [ ] 3.1 集成验证\r\n- [x] 3.2. 回归验证\r\n- [ ] 3.10 扩展验证\r\n";
+  assert.equal(extractTaskText(text, "3"), null);
+  assert.equal(extractTaskText(text, "3.1"), "集成验证");
+  assert.equal(extractTaskText(text, "3.2"), "回归验证");
+  assert.equal(extractTaskText(text, "3.10"), "扩展验证");
+  assert.equal(extractTaskText("- [ ] 3.10 扩展验证\n", "3.1"), null);
+});

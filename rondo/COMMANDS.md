@@ -64,7 +64,7 @@ rondo change resolve-identity --openspec-root <path> [--change-ref <ref>] [--tfs
 rondo analysis validate --issue <id> --change-ref <id> --openspec-root <path> --workspace-id <id> [--registry-config <repo-registry.json>] [--multica <cli>] [--profile <name>]
 rondo analysis publish --issue <id> --change-ref <id> --registry-config <repo-registry.json> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>] [--profile <name>]
 rondo analysis read --issue <KEY> --file <Change内相对路径>
-rondo analysis approve --issue <KEY> --comment-id <ID> --commit <SHA> --verify-required true|false
+rondo analysis approve --issue <KEY> --comment-id <ID> --commit <SHA> --verify-required true|false [--waive-tasks 3.1,3.2]
 ```
 
 | 命令 | 功能 |
@@ -72,7 +72,7 @@ rondo analysis approve --issue <KEY> --comment-id <ID> --commit <SHA> --verify-r
 | `analysis validate` | 核对当前 Issue 与 Change 身份，在指定根仓对当前 Change 运行 OpenSpec 严格校验，并核实返回的根仓和 Change 身份 |
 | `analysis publish` | 根据 Issue 的 `tfs.type` 自动选择发布路径；Requirement 核验 Gate，按当前 Change 保存并向已确认的项目根仓分支发布审核工件（Native 首次发布取当前根仓 Project Resource ref；已有同 Change 来源使用固定分支，`--target-branch` 不得覆盖），并登记可回读的 `analysis.source` |
 | `analysis read` | 按 Issue 中的 `analysis.source` 读取指定版本的 `tasks.md`、`proposal.md`、`design.md` 或 Spec，属于只读操作 |
-| `analysis approve` | 登记已确认的 Human Approval 与独立验收决定，核对 Gate、当前审核版本及真实成员评论，回读事实后按需以 `--no-start` 进入 `in_progress`。使用当前 Multica Runtime，无 Registry、Agent 或 Run 身份参数，不发 Mention、不启动 Run；同一批准可幂等重试。 |
+| `analysis approve` | 登记已确认的 Human Approval 与独立验收决定，核对 Gate、当前审核版本及真实成员评论，回读事实后按需以 `--no-start` 进入 `in_progress`。使用当前 Multica Runtime，无 Registry、Agent 或 Run 身份参数，不发 Mention、不启动 Run；同一批准可幂等重试；`--waive-tasks` 登记 Human 明确批准的完整任务豁免集合（省略表示无豁免），按获批 Commit 核验任务编号。 |
 
 `publish` 无需指定 `--mode`；已部署的旧调用仍可传与 `tfs.type` 一致的 `--mode requirement` 或 `--mode legacy`，不得以其选择其他路径。`validate`、`publish` 直接指定 Change ID；Change Kind 由 Schema 推导，专业审查与独立验证建议不作为 CLI 输入；涉及 `--workspace-id` 的命令需保证其与配置中的 Workspace 身份一致。
 
