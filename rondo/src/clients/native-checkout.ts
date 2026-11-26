@@ -208,9 +208,8 @@ export function assertNativeTaskCheckout(path: string, workdir: string, reported
     throw new UnknownError("无法确认当前 daemon Task 上下文");
   if (issueId && context.issue_id !== issueId) throw new FailError("当前 daemon Task 不属于此 Issue");
   const canonical = realpathSync(path), parent = realpathSync(workdir);
-  const immediate = dirname(canonical);
   if (!samePath(canonical, path) || lstatSync(path).isSymbolicLink() ||
-      !(samePath(immediate, parent) || samePath(dirname(immediate), parent)) ||
+      !samePath(dirname(canonical), parent) ||
       !existsSync(join(path, ".git")) ||
       lstatSync(join(path, ".git")).isSymbolicLink()) throw new FailError("工作树不属于当前 Task 的 Native Checkout");
   const read = (args: string[]) => {

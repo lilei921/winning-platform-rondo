@@ -149,7 +149,7 @@ test("configless missing Runtime identity or Task credential: UNKNOWN without wr
     { MULTICA_TOKEN: "invalid" },
   ]) {
     const f = fixture(t);
-    const result = f.run({ ...NATIVE_RUNTIME, ...envPatch }, true);
+    const result = f.run({ ...NATIVE_RUNTIME, ...envPatch });
     assert.equal(result.code, 3, JSON.stringify(result.body));
     assert.equal(result.body.result, "UNKNOWN");
     assert.equal(f.read().handoff_update_count, undefined);

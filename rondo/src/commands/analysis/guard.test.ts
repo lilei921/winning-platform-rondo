@@ -37,17 +37,13 @@ test("TFS management type is classified independently of route", () => {
   assert.equal(classifyTfsType("Feature"), null);
 });
 
-// TFS 剥离（tfs-writeback-decoupling-plan）：analysis publish 不再回写 TFS，
-// 任何类型都不再依赖 tfs_cli；Workspace 身份校验保留（tfs_cli 缺失不报错）。
-test("Registry Workspace identity is always validated; tfs_cli no longer required", () => {
+test("Registry Workspace identity must match the current Workspace", () => {
   const dir = mkdtempSync(join(tmpdir(), "rondo-analysis-"));
   const path = join(dir, "registry.json");
   try {
-    writeFileSync(path, JSON.stringify({ runtime: { workspace_id: "workspace-a" } }));
+    writeFileSync(path, JSON.stringify({ runtime: { multica_cli: "multica", workspace_id: "workspace-a" } }));
     assert.doesNotThrow(() => analysisRuntime(["--registry-config", path], "multica", "workspace-a"));
-    assert.throws(() => analysisRuntime(["--registry-config", path], "multica", "workspace-b"));
-    writeFileSync(path, JSON.stringify({ runtime: { workspace_id: "workspace-a", tfs_cli: ["tfs-cli"] } }));
-    assert.doesNotThrow(() => analysisRuntime(["--registry-config", path], "multica", "workspace-a"));
+    assert.throws(() => analysisRuntime(["--registry-config", path], "multica", "workspace-b"), /Workspace|workspace-id/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

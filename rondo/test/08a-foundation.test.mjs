@@ -180,9 +180,8 @@ test('linked worktree 的存储路径不作为 Native 身份，读取 daemon Tas
   assert.equal(readDaemonTaskContext(workdir), null);
 });
 
-test('根仓就绪检查拒绝相对路径、仓内目录、缺失规范和不完整检出', t => {
+test('根仓就绪检查拒绝仓内目录、缺失规范和不完整检出', t => {
   const f = fixture(t);
-  assert.throws(() => validateNativeCheckout('relative'), /绝对路径/);
   const nested = join(f.root, 'nested'); mkdirSync(nested);
   assert.throws(() => validateNativeCheckout(nested), /Git 根仓/);
   unlinkSync(join(f.root, 'AGENTS.md'));

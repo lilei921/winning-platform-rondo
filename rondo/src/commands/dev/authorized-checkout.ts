@@ -12,7 +12,7 @@ import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js"
 import { candidateBranch } from "../pr/candidate-branch.js";
 import { guardRepository } from "./requirement-guard.js";
 import { readNativeRepoMapping } from "./native-prepare.js";
-import { validatePrepareRepo, validateBusinessPath, validateBusinessCheckout } from "./prepare-workspace.js";
+import { validatePrepareRepo, resolveNativeBusinessPath, validateBusinessCheckout } from "./prepare-workspace.js";
 
 export async function authorizedCheckout(issueKey: string, repoKey: string, rootRepo: string) {
   const runtime = resolveMulticaRuntime(), client = new MulticaClient(runtime);
@@ -45,7 +45,7 @@ export async function authorizedCheckout(issueKey: string, repoKey: string, root
       throw new UnknownError("批准来源在授权期间变化");
   }
   const repo = validatePrepareRepo(registry[repoKey], server);
-  const branch = candidateBranch(tfsId), path = validateBusinessPath(root, repo);
+  const branch = candidateBranch(tfsId), path = resolveNativeBusinessPath(root, repo);
   if (branch === repo.default_target_branch) throw new FailError("Candidate 与 PR Target 相同");
   const head = validateBusinessCheckout(path, repo, branch, workdir);
   return { runtime, client, issue, md, root, path, repo, registry, branch, head, tfsId, bug, revision };

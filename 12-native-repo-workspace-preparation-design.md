@@ -44,12 +44,11 @@
 # 从 Task workdir Checkout 根仓；使用命令返回的实际路径
 multica repo checkout <root-url> --ref main
 
-# 进入已确认的根仓目录；每一个业务仓均从该目录执行，不在上一个业务子仓内执行
-cd <actual-root-path>
+# 只读业务仓同样在 Task workdir 执行；获授权研发使用 rondo dev prepare
 multica repo checkout <business-url> --ref <verified-base-ref>
 ```
 
-预期根仓包含 `openspec/`，业务仓位于根仓下的独立子目录。实际目录以 CLI 返回的路径为准，并核对 `repo_path` 映射、Git Top-Level、Origin/Push URL、根仓对业务仓目录的 Ignore/Tracking 边界；不推测名称，不自动 Symlink 或清理。
+根仓包含 `openspec/`；根仓与业务仓均为 Task workdir 的直属独立 Git 仓。实际目录以 CLI 返回的路径为准，并核对 `repo_path` 映射、Git Top-Level、Origin/Push URL；不推测名称，不自动 Symlink 或清理。
 
 **就绪前提**：
 
@@ -94,7 +93,7 @@ Engineer 跨 Run 必须读取已批准的 `analysis.source.commit`；`dev.public
 
 Engineer 在 Task Branch 完成 Commit 后，Rondo 仅负责最小必要的**受控远端 Candidate 发布**：验证仓库身份、批准 Scope、远端分支、提交关系及候选 SHA；只允许不覆盖已发布变更的安全 Push，禁止 force push；并发前进或历史分叉时停止并保留现场。发布成功后回读 `feature/<tfs.id>` 实际 HEAD/SHA，由现有 `rondo dev pr-prep`、PR/TFS 流程继续消费。
 
-**兼容点**：当前 `rondo dev prepare --mode requirement` 假定根仓下有完整业务基础 Clone、为每个 TFS ID 创建 sibling Worktree，不能直接用于 Native Checkout。Native 模式不重复 Clone/Worktree；仅适配现有准备/候选发布入口所需的路径与分支前提。现有 `pr-prep` 使用 `<root>/<repo_path>` 定位业务仓并核远端 SHA，需用实际路径验证，不重写 PR 契约。
+**兼容点**：当前 `rondo dev prepare --mode requirement` 假定根仓下有完整业务基础 Clone、为每个 TFS ID 创建 sibling Worktree，不能直接用于 Native Checkout。Native 模式不重复 Clone/Worktree；仅适配现有准备/候选发布入口所需的路径与分支前提。Native `dev git` 与 `pr prepare` 复用授权路径解析，以 `<task-workdir>/<repo_path>` 定位业务仓，不重写 PR 契约。
 
 ## 5. 最小 Spike 与实施门槛
 
@@ -102,7 +101,7 @@ Engineer 在 Task Branch 完成 Commit 后，Rondo 仅负责最小必要的**受
 
 | 步骤 | 验证 | PASS 条件 |
 | --- | --- | --- |
-| S1：Native Checkout | 隔离 Project 配置根仓与 2 个业务仓；在目标 Runtime 实际 Checkout/嵌套/重入 | 有效凭据、真实路径、Origin、分支、Ignore、Fetch/Kept 语义均可确认；失败保留现场 |
+| S1：Native Checkout | 隔离 Project 配置根仓与 2 个业务仓；在目标 Runtime 实际 Checkout/平级/重入 | 有效凭据、真实路径、Origin、分支、Fetch/Kept 语义均可确认；失败保留现场 |
 | S2：Analysis 发布 | Native Task Branch 编辑并 Commit 一个 Change，验证既有 Publisher 的最小兼容点 | 只发布该 Change；远端分支与 `analysis.source` SHA 一致；其他 Change 不夹带 |
 | S3：Engineer Candidate | 一次新 Candidate、一次从已有 Candidate 续接，并模拟远端前进 | `feature/<tfs.id>` SHA 可回读；失败不覆盖远端或本地；PR Preparation 可消费 |
 | S4：启用前回归 | 在拟启用 Runtime 上验证 08-B/09 的批准、研发发布、PR 和必要失败路径 | 与现有 Engineering/Delivery 契约一致；未测部分明确标记，不能宣布完整 PASS |

@@ -27,12 +27,28 @@ export function validatePrepareRepo(repo: PrepareRepo | undefined, serverUrl: st
   return repo;
 }
 
-export function validateBusinessPath(root: string, repo: Pick<PrepareRepo, "repo_path">): string {
+function validateDirectBusinessPath(parent: string, repo: Pick<PrepareRepo, "repo_path">): string {
   // 在调用者遗漏 Registry 校验时也不得允许路径逃逸。
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(repo.repo_path) || /[.]$/.test(repo.repo_path)) throw new FailError("业务仓路径非法");
-  const path = join(root, repo.repo_path);
+  const path = join(parent, repo.repo_path);
   const entry = lstatSync(path, { throwIfNoEntry: false });
   if (entry && (entry.isSymbolicLink() || !entry.isDirectory() || !same(realpathSync(path), path))) throw new FailError("业务仓路径存在链接或越界");
+  return path;
+}
+
+/** Native repositories are siblings under the current Task workdir. */
+export function resolveNativeBusinessPath(root: string, repo: Pick<PrepareRepo, "repo_path">): string {
+  const path = validateDirectBusinessPath(dirname(root), repo);
+  if (same(path, root)) throw new FailError("业务仓路径与根仓冲突");
+  // Never create a second checkout while a previous nested worktree may contain WIP.
+  if (lstatSync(join(root, repo.repo_path, ".git"), { throwIfNoEntry: false }))
+    throw new UnknownError("根仓内仍存在业务 Checkout，保留现场");
+  return path;
+}
+
+/** Legacy Clone / Worktree paths retain their original root Git boundary. */
+export function validateBusinessPath(root: string, repo: Pick<PrepareRepo, "repo_path">): string {
+  const path = validateDirectBusinessPath(root, repo);
   if (gitOk(root, ["ls-files", "--", repo.repo_path], "检查根仓跟踪边界")) throw new FailError("业务仓目录被根仓跟踪");
   if (git(root, ["check-ignore", "--no-index", "-q", "--", repo.repo_path + "/"]).status !== 0) throw new FailError("业务仓目录未被根仓忽略");
   return path;

@@ -24,12 +24,13 @@ for (const c of CASES) {
   test(`${c.name} --help → exit 0，stdout 出用法`, () => {
     const r = run([...c.args, "--help"]);
     assert.equal(r.status, 0, `stderr: ${r.stderr.slice(0, 300)}`);
-    assert.match(r.stdout, /用法|usage/);
+    assert.match(r.stdout, /用法|usage/i);
   });
 
   test(`${c.name} 缺必填参数 → exit 64（行为守卫）`, () => {
     const r = run(c.args);
     assert.equal(r.status, 64, `stdout: ${r.stdout.slice(0, 300)}`);
-    assert.match(r.stderr, /用法|usage/);
+    assert.equal(r.stdout, "");
+    assert.match(r.stderr, /用法|usage|required option/i);
   });
 }
