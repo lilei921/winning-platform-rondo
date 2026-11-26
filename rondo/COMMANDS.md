@@ -163,7 +163,7 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 | `pr prepare` | 核对授权、Candidate 与专业 Facts，执行提供的验证命令并登记 PR Preparation；有命令时无需预填 `validation.result`，Bug 无命令时须提供真实替代验证 PASS |
 | `pr materialize` | 核验适用 Gate，逐仓创建或恢复已有 Active / Completed PR、确认 Work Item 关联并登记 current_pr；全部登记后进入 in_review，in_review 仅核验已登记事实 |
 | `pr worktree` | 使用 `create`、`remove`、`prune` 管理本地 Git Worktree |
-| `pr reconcile-status` | 从当前 Run Workspace 扫描 Issue 的 `current_pr`，核实 `completed` / `abandoned` 等外部状态，不使用 Registry |
+| `pr reconcile-status` | 从当前 Run Workspace 扫描 Issue，按需恢复已有 PR 登记并核实 `completed` / `abandoned` 等外部状态，不创建 PR、不使用 Registry |
 
 `pr reconcile-status` 使用 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`（可选 `MULTICA_CLI_PATH`，默认 `multica`）；手动执行需具有相同环境及 CLI 认证。
 | `pr create` | 在 TFS Git 仓库创建 PR，支持已有 PR 的幂等识别 |

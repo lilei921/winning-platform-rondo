@@ -2051,6 +2051,8 @@ PR 状态识别与同步副作用由确定性命令负责；Agent 交付核实�
 
 已 `done` 且残留 `finalize.pending` 时仅清理待恢复事实；常规巡检不遍历历史 `done`。
 
+`in_review` 或已有部分 `current_pr` / `finalize.pending` 的 `blocked` Issue 缺少登记时，复用 Materialize 的已有 PR 身份核实和逐仓登记方法，仅补登已确认 Candidate 与 Work Item 关联的 PR，不创建 PR、不修改 TFS 或研发成果、不重复工程 Gate。无法确认时返回 `unknown`；已登记 PR 仍按现有终态优先级处理。仅 `in_review` 且全部实际交付仓 PR 已确认 completed 时触发收口，`blocked` 保留原状态和 pending；仅有 PR Preparation 时不触发恢复。
+
 脚本执行：
 
 ```text
@@ -2076,7 +2078,7 @@ provider_status ?
 否则任一 current_pr = UNKNOWN
 → UNKNOWN
 
-否则全部 current_pr = completed
+否则全部实际交付仓 current_pr = completed 且 Issue = in_review
 → Completion
 
 否则
