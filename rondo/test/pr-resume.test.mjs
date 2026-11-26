@@ -55,6 +55,8 @@ test("RECREATE_PR preserves Candidate and evidence; rejects changed Candidate be
   const f=fixture();
   await assert.rejects(f.run("RECREATE_PR",async()=>{throw Error("Candidate changed");}),/Candidate changed/);
   assert.deepEqual(f.writes,[]);
+  delete f.issue.metadata["analysis.gate.result"];
+  delete f.issue.metadata["analysis.human_approval"];
   await f.run("RECREATE_PR");
   assert.deepEqual(f.checks,[["web",true]]);
   const {pr_id,pr_url,...prepared}=f.b;
@@ -116,7 +118,7 @@ test("Bug REWORK retains fixed scope and refuses mixed PR sets",async()=>{
   assert.equal(f.issue.status,"blocked");
   assert.deepEqual(f.writes,["pr"]);
 });
-test("Bug RECREATE_PR refuses missing professional Evidence before writes",async()=>{
+test("Bug RECREATE_PR removes only old PR identities without enforcing the materialization Gate",async()=>{
   const f=fixture(), md=f.issue.metadata;
   md["tfs.type"]="Bug";
   delete md["analysis.source"];
@@ -125,8 +127,11 @@ test("Bug RECREATE_PR refuses missing professional Evidence before writes",async
   md["bug.required_repos"]=JSON.stringify(["frame","web"]);
   md["pr.abandoned"]=JSON.stringify([...JSON.parse(md["pr.abandoned"]),
     {repo_key:"frame",pr_id:1,event_key:"I-1#frame#1#abandoned",detected_at:"2026-11-25T01:00:00Z"}]);
-  await assert.rejects(f.run("RECREATE_PR"),/缺少 expected_behavior/);
-  assert.deepEqual(f.writes,[]);
+  const prepared=f.records().map(({pr_id,pr_url,...p})=>p);
+  await f.run("RECREATE_PR");
+  assert.deepEqual(f.records(),prepared);
+  assert.deepEqual(f.writes,["pr"]);
+  assert.equal(f.issue.status,"blocked");
 });
 test("readback drift blocks PR recovery without overwriting concurrent facts",async()=>{
   const f=fixture();

@@ -10,9 +10,6 @@ import { parseTfsPrWebUrl } from "../../tfs/api/pr.js";
 import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
 import { assertTfsRepository } from "../../clients/authenticated-git.js";
 import { candidateBranch } from "./candidate-branch.js";
-import { assertBugReadyForPr } from "../bug/scope.js";
-import { validateBugEvidence } from "../bug/evidence.js";
-import { readApprovedVerifyDecision } from "../delivery/verify-decision.js";
 
 type Next = "REWORK" | "RECREATE_PR";
 interface Abandoned { repo_key: string; pr_id: number; event_key: string; detected_at: string }
@@ -52,19 +49,6 @@ export async function resumePr(client: Pick<MulticaClient,"getIssue"|"listCommen
   const tfsId = Number(md["tfs.id"]);
   if (!Number.isSafeInteger(tfsId) || tfsId <= 0 || current.some(p => p.source_branch !== candidateBranch(tfsId)))
     throw new FailError("当前 TFS / Candidate Branch 身份无效");
-  if (next === "RECREATE_PR") {
-    if (bug) {
-      assertBugReadyForPr(md);
-      for (const p of records) {
-        const errors = validateBugEvidence(p, {issue: issueKey, tfsId, repoKey: p.repo_key, sha: p.candidate_commit}, false, true);
-        if (errors.length) throw new FailError(errors.join("；"));
-      }
-    } else {
-      if (md["analysis.gate.result"] !== "PASS") throw new FailError("Analysis Gate 未通过");
-      readApprovedVerifyDecision(md);
-      // Materialization still enforces the complete published Change and quality Gate.
-    }
-  }
   for (const pr of current) await verify(pr, next === "RECREATE_PR");
   const keys = ["tfs.type","tfs.id","tfs.url","analysis.source","analysis.human_approval","analysis.gate.result",
     "dev.publication","bug.required_repos","pr","pr.abandoned","finalize.pending","delivery.tfs_written"];
