@@ -199,7 +199,7 @@ export function parsePlatformCheckoutOutput(stdout: string, stderr = ""): { root
 const samePath = (a: string, b: string): boolean => process.platform === "win32"
   ? resolve(a).toLowerCase() === resolve(b).toLowerCase() : resolve(a) === resolve(b);
 
-/** Require the current daemon Task checkout, independently of Git storage layout. */
+/** Check a daemon-managed Native Checkout; Multica owns its creation and reuse. */
 export function assertNativeTaskCheckout(path: string, workdir: string, reportedBranch?: string, issueId?: string): string {
   const taskId = process.env.MULTICA_TASK_ID, workspaceId = process.env.MULTICA_WORKSPACE_ID;
   const agentId = process.env.MULTICA_AGENT_ID;
@@ -227,8 +227,9 @@ export function assertNativeTaskCheckout(path: string, workdir: string, reported
   const manifest = readPlatformCheckoutManifest(gitDir) ??
     (samePath(commonDir, gitDir) ? null : readPlatformCheckoutManifest(commonDir));
   const liveMode = platformCheckoutMode(path) ?? "isolated";
-  assertPlatformCheckoutIdentity(manifest ?? { checkout_branch: branch, task_id: taskId, workspace_id: workspaceId,
-    checkout_mode: liveMode }, { mode: liveMode, taskId, workspaceId });
+  if (liveMode.toLowerCase() !== "isolated" || (manifest && manifest.checkout_mode.toLowerCase() !== "isolated"))
+    throw new UnknownError("当前不是 Multica isolated checkout 任务");
+  if (manifest && manifest.workspace_id !== workspaceId) throw new FailError("Native Checkout manifest Workspace 不一致");
   if (manifest && manifest.checkout_branch !== branch) throw new FailError("Native Checkout manifest 分支不一致");
   return branch;
 }

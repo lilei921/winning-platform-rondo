@@ -58,7 +58,7 @@ for (const linked of [true, false]) test(`Native ${linked ? "linked worktree" : 
   try {
     mkdirSync(join(task, ".multica"), { recursive: true });
     mkdirSync(cache, { recursive: true });
-    writeFileSync(join(task, ".multica", "daemon_task_context.json"), JSON.stringify({ managed_by: "multica-daemon-task", agent_id: "engineer" }));
+    writeFileSync(join(task, ".multica", "daemon_task_context.json"), JSON.stringify({ managed_by: "multica-daemon-task", issue_id: "issue-1", agent_id: "engineer" }));
     const rootSeed = seed("root", rootUrl, { "AGENTS.md": "# root", ".gitignore": "/frame/\n/frame-42/\n/legacy/\n/legacy-42/\n", "docs/config/repo-context.yaml": JSON.stringify({ repos: [{ repo_id: "root", repo_path: ".", repo_url: rootUrl }, { repo_id: "frame", repo_path: "frame", repo_url: repoUrl, tfs_project: "project", default_target_branch: "dev" }] }) });
     const child = seed("frame", repoUrl, { "source.txt": "initial" });
     checkoutSeed(rootSeed, root, branch, rootUrl);
@@ -114,7 +114,30 @@ for (const linked of [true, false]) test(`Native ${linked ? "linked worktree" : 
     const unpushed = git(business, "rev-parse", "HEAD");
     assert.equal(prepareNativeBusiness(root, repo, "feature/42", runtime, undefined, remote, checkout).head, unpushed);
     assert.equal(readFileSync(join(business, "untracked.txt"), "utf8"), "keep");
-    // A new Task resumes only the published Candidate, not the previous Task's WIP.
+    // Multica can retain both working trees when a new Run continues the same task workdir.
+    const creationTask = process.env.MULTICA_TASK_ID;
+    process.env.MULTICA_TASK_ID = "01234567-abcd-ef12-3456-000000000000";
+    assert.equal(assertNativeTaskCheckout(root, task, undefined, "issue-1"), branch);
+    assert.equal(assertNativeTaskCheckout(business, task), branch);
+    const manifestPath = join(git(business, "rev-parse", "--absolute-git-dir"), "multica-checkout.json");
+    const manifest = { task_id: creationTask, workspace_id: "workspace", checkout_branch: branch, checkout_mode: "isolated" };
+    writeFileSync(manifestPath, JSON.stringify(manifest));
+    assert.equal(assertNativeTaskCheckout(business, task, branch, "issue-1"), branch);
+    assert.equal(prepareNativeBusiness(root, repo, "feature/42", runtime, undefined, remote, checkout).head, unpushed);
+    assert.equal(git(business, "symbolic-ref", "--short", "HEAD"), branch);
+    assert.equal(readFileSync(join(business, "untracked.txt"), "utf8"), "keep");
+    assert.throws(() => assertNativeTaskCheckout(root, task, undefined, "other-issue"), /Issue/);
+    assert.throws(() => assertNativeTaskCheckout(business, task, "agent/engineer/other"), /分支/);
+    process.env.MULTICA_AGENT_ID = "other-agent";
+    assert.throws(() => assertNativeTaskCheckout(root, task), /daemon Task/);
+    process.env.MULTICA_AGENT_ID = "engineer";
+    for (const patch of [{ workspace_id: "other" }, { checkout_branch: "agent/engineer/other" }, { checkout_mode: "shared" }]) {
+      writeFileSync(manifestPath, JSON.stringify({ ...manifest, ...patch }));
+      assert.throws(() => assertNativeTaskCheckout(business, task));
+    }
+    rmSync(manifestPath);
+    process.env.MULTICA_TASK_ID = creationTask;
+    // A new workdir resumes only the published Candidate, not the previous workdir's WIP.
     const otherTask = join(temp, "other-task"), otherRoot = join(otherTask, "root"), otherBusiness = join(otherRoot, "frame");
     const otherBranch = "agent/engineer/000000000001";
     mkdirSync(join(otherTask, ".multica"), { recursive: true });
@@ -135,8 +158,7 @@ for (const linked of [true, false]) test(`Native ${linked ? "linked worktree" : 
     candidate = "f".repeat(40);
     assert.throws(() => prepareNativeBusiness(root, repo, "feature/42", runtime, undefined, remote, checkout));
     assert.throws(() => prepareNativeBusiness(root, repo, "feature/42", runtime, undefined, () => ({ status: 1, stdout: "", stderr: "network" }), checkout));
-    process.env.MULTICA_TASK_ID = "01234567-abcd-ef12-3456-000000000000";
-    assert.throws(() => assertNativeTaskCheckout(business, task));
+    assert.throws(() => assertNativeTaskCheckout(business, otherTask), /工作树/);
   } finally {
     for (const k of keys) if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k];
     rmSync(temp, { recursive: true, force: true });

@@ -278,10 +278,10 @@ test("dev publish 拒绝来源不一致及读取期间批准变化；Push 后变
   assert.equal(metadata()["dev.publication"], undefined);
 });
 
-test("Native Requirement prepare 从 Issue 取得 Change，拒绝同 SHA 的其他 Change 和批准变化", t => {
+test("Native Requirement 续跑 prepare 从 Issue 取得 Change，拒绝同 SHA 的其他 Change 和批准变化", t => {
   const { root, bare, source, state, metadata, runWithEnv, bizUrl } = fixture(t, { secondChange: true });
   const dir = dirname(root), hub = join(root, "biz"), remote = join(dir, "biz.git");
-  const taskId = "01234567-abcd-ef12-3456-abcdef123456";
+  const taskId = "01234567-abcd-ef12-3456-000000000000";
   const branch = "agent/engineer/abcdef123456";
   git(root, "pull", "--ff-only", bare, "integration");
   git(root, "branch", "-m", branch);
@@ -326,4 +326,30 @@ test("Native Requirement prepare 从 Issue 取得 Change，拒绝同 SHA 的其�
   assert.equal(prepared.path, hub);
   assert.equal(prepared.branch, "feature/42");
   assert.equal(metadata()["verify_agent.required"], "false");
+});
+
+test("Native Requirement 续跑使用原根仓分支发布已提交 Tasks，保留本地 WIP", t => {
+  const { root, bare, work, source, state, metadata, runWithEnv } = fixture(t);
+  const dir = dirname(root), branch = "agent/engineer/abcdef123456";
+  const taskId = "01234567-abcd-ef12-3456-000000000000";
+  git(root, "pull", "--ff-only", bare, "integration");
+  git(root, "branch", "-m", branch);
+  git(root, "config", "multica.checkout-mode", "isolated");
+  mkdirSync(join(dir, ".multica"), { recursive: true });
+  writeFileSync(join(dir, ".multica", "daemon_task_context.json"), JSON.stringify({
+    managed_by: "multica-daemon-task", issue_id: "issue-1", agent_id: "engineer",
+  }));
+  const current = JSON.parse(readFileSync(state, "utf8"));
+  current.runs["issue-1"][0].id = taskId;
+  writeFileSync(state, JSON.stringify(current));
+  writeFileSync(join(root, work, "tasks.md"), "- [x] 1.1 Verify\n");
+  git(root, "commit", "-am", "complete approved task");
+  const local = git(root, "rev-parse", "HEAD");
+  writeFileSync(join(root, "local.txt"), "keep");
+  const published = runWithEnv(0, { MULTICA_TASK_ID: taskId }, "dev", "publish", "--root-repo", root);
+  assert.equal(git(root, "branch", "--show-current"), branch);
+  assert.equal(git(root, "rev-parse", "HEAD"), local);
+  assert.equal(readFileSync(join(root, "local.txt"), "utf8"), "keep");
+  assert.equal(git(bare, "show", published.commit + ":" + work + "/tasks.md"), "- [x] 1.1 Verify");
+  assert.deepEqual(JSON.parse(metadata()["dev.publication"]), { analysis_source: source, commit: published.commit });
 });

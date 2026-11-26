@@ -1,28 +1,4 @@
-/**
- * dev check-dispatch —— 派发事实开工预检（只读，零写入）。
- *
- * 背景：派发通知（@mention）与派发事实物化（dev.dispatch）可能脱节——
- * Lead 裸发 mention 而不跑 dev materialize 时，Engineer 干完活才发现无合法派发范围
- * （WNDF-9 / TFS 260203 实测，2026-10-27）。本命令把该隐性依赖变成开工前的确定性检查：
- * no_covering 时停止实现。
- *
- * 2026-10-30 TFS 剥离（tfs-writeback-decoupling-plan）：开发期 commit `Refs:` 统一挂
- * `#<tfs.id>`（需求/Bug 同一规则），tfs_task_ids 由 PR 通过后的 writeback 写入——
- * 原 no_mappings / unmapped_refs 映射核验分支整体删除（映射核验的意义是保证 commit
- * `Refs:` 合法性，新规则下 `Refs: #<tfs.id>` 恒合法；legacy commit 由 check-completion
- * 直接读 dev.dispatch.tfs_task_ids 核验，不经过本命令）。
- *
- * 用法: rondo dev check-dispatch --config <repo-registry.json> --issue <KEY> --task-refs <1.1,1.2,...> [--change-ref <ref> --engineer-id <uuid>]
- *
- * 判定（共享 dispatch-facts.ts 的读取与类型分支）：
- *   - dev.dispatch 无覆盖 task_refs 的 active 条目 → FAIL（Lead 补跑 dev materialize）；
- *   - Issue 不可读 / dev.dispatch 不可解析 / tfs.type 缺失或其他 → UNKNOWN（交 Lead 核对）。
- *
- * 退出码：0 = PASS / 2 = FAIL / 3 = UNKNOWN。
- * 与 check-completion 的口径差异为有意设计：晚期完成检查对同类缺失报 UNKNOWN（不当放行），
- * 开工预检对确定缺失报 FAIL（前置不满足、修复路径明确）。
- * 输出：stdout 仅 JSON，日志走 stderr。
- */
+/** Legacy Task Set 开工预检：只读核验 dev.dispatch 的覆盖范围和执行者身份。 */
 
 import { Command } from "commander";
 import { UnknownError } from "../../cli/errors.js";

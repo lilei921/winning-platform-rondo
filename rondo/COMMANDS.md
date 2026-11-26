@@ -33,10 +33,10 @@ rondo doctor --help
 | --- | --- | --- |
 | `change` | `resolve-identity` | Change 身份解析 |
 | `analysis` | `validate`、`publish`、`read`、`approve` | 分析事实、Gate、审核提交、工件读取和批准登记 |
-| `dev` | `materialize`、`prepare`、`check-dispatch`、`check-completion`、`publish`、`pr-prepare`、`contract-hash` | 旧派发与新 Change 研发准备、发布、验证 |
+| `dev` | `materialize`、`prepare`、`check-dispatch`、`git`、`publish` | 研发准备、Git、发布及派发 |
 | `bug` | `pr-prepare`、`git`、`resume` | 独立 TFS Bug 修复交付 |
 | `tfs` | `writeback`、`materialize-tasks`、`resolve-tasks`、`reconcile-workitem` | TFS 工作项同步与交付回写 |
-| `pr` | `materialize`、`worktree`、`reconcile-status`、`create`、`get`、`list` | PR 创建、查询、状态对账及 Worktree |
+| `pr` | `prepare`、`materialize`、`worktree`、`reconcile-status`、`create`、`get`、`list` | PR 准备、创建、查询、状态对账及 Worktree |
 | `delivery` | `admission`、`route-decision`、`finalize` | 准入交接、人工决策路由与交付收口 |
 | `workspace` | `provision`、`sync`、`migrate-repo-keys`、`check-daemon` | Workspace 资源供给、同步及检查 |
 | `runtime` | `get-context`、`resolve-root-repo`、`check-checkout`、`prepare-root` | 当前 Run 上下文查询、根仓库就绪检查及准备 |
@@ -87,9 +87,7 @@ Requirement 的 `analysis publish` 和 `dev publish` 使用 Git 2.45 或更高�
 ```bash
 rondo dev materialize --config <repo-registry.json> --issue <KEY> --change-ref <ref> --task-refs <1.1,1.2> --engineer-id <uuid> --approved-comment-ref <uuid> [--projection parent|sub-issue] [--depends-on <issue-key>] [--activate] [--root-repo <path>]
 rondo dev check-dispatch --config <repo-registry.json> --issue <KEY> --task-refs <1.1,1.2> [--change-ref <ref>] [--engineer-id <uuid>]
-rondo dev check-completion --openspec-root <path> --change-ref <ref> --task-refs <1.1,1.2> --evidence <evidence.json> [--verify-commits] [--issue <KEY> --registry-config <repo-registry.json> [--root-repo <path>]]
 rondo dev git --operation fetch|push --issue <KEY> --repo <repo_id> --root-repo <path>
-rondo dev contract-hash --openspec-root <path> --change-ref <ref>
 rondo dev prepare --workspace native --issue <KEY> --repo <repo_id> --root-repo <path> [--resource-ref <branch>]
 rondo dev prepare --mode requirement --config <repo-registry.json> --issue <KEY> --repo <repo_key> [--root-repo <path>]
 rondo dev publish --issue <KEY> [--root-repo <path>] [--minor-design]
@@ -99,9 +97,7 @@ rondo dev publish --issue <KEY> [--root-repo <path>] [--minor-design]
 | --- | --- |
 | `dev materialize` | 将已确定的 Task Set、Engineer 和依赖关系物化为研发派发事实，可选 Parent / Sub-Issue 投影 |
 | `dev check-dispatch` | 只读核对任务分工、当前有效派发和工程师身份 |
-| `dev check-completion` | 检查任务完成、验证 Evidence 和可选 Commit 关联 |
 | `dev git` | 受控 Fetch / 非强制 Push 当前授权 Candidate |
-| `dev contract-hash` | 计算当前 Change 契约文件的 SHA-256 摘要，供工程验证引用 |
 | `dev prepare` | Native 使用 Multica Checkout；Requirement 从 Issue 的批准来源确定 Change，无远端 Candidate 时须提供已核实的 `--resource-ref`。旧入口仅保留兼容 |
 | `dev publish` | 按已批准的 `analysis.source.branch` 发布当前 Change 已提交的 Tasks / Design，确认远端 Git SHA 并登记绑定完整 `analysis.source` 的 `dev.publication`。非实质性 Design 细化使用 `--minor-design` |
 
