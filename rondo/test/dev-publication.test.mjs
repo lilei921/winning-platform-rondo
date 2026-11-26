@@ -109,11 +109,14 @@ test("Engineer 从批准 SHA 读取缺失工件，在分叉的常驻根仓独立
   assert.equal(metadata()["analysis.source"], JSON.stringify(source));
   assert.ok(tfs.state().requests.every(request => request.query["versionDescriptor.version"] === approved),
     "Git 发布后不得重复通过 REST 读取研发 SHA");
-  const legacy = JSON.parse(readFileSync(state, "utf8"));
+  const saved = readFileSync(state, "utf8");
+  const legacy = JSON.parse(saved);
   legacy.metadata["dev.publication"] = JSON.stringify({ analysis_commit: approved, commit: published.commit });
   writeFileSync(state, JSON.stringify(legacy));
-  assert.equal(publish(0).commit, published.commit);
-  assert.deepEqual(JSON.parse(metadata()["dev.publication"]), { analysis_source: source, commit: published.commit });
+  assert.match(publish(3).reason, /dev\.publication.*Analysis Source/);
+  assert.equal(git(bare, "rev-parse", "integration"), published.commit);
+  assert.equal(metadata()["dev.publication"], legacy.metadata["dev.publication"]);
+  writeFileSync(state, saved);
 
   writeFileSync(join(root, work, "tasks.md"), "- [x] 1.1 Different semantics\n");
   git(root, "commit", "-am", "out of approval");
@@ -223,6 +226,26 @@ test("Design 细化仍受批准版本约束，Evidence JSON 不再参与发布",
   assert.match(publish(2).reason, /design\.md/);
   assert.equal(git(bare, "rev-parse", "integration"), nextSource.commit);
   assert.deepEqual(JSON.parse(metadata()["dev.publication"]), { analysis_source: source, commit: second });
+});
+
+test("同一批准来源的旧工作树不能覆盖更新的研发发布回执", t => {
+  const { root, bare, analyst, work, source, metadata, publish } = fixture(t, {
+    approvedTasks: "- [ ] 1.1 Build\n- [ ] 1.2 Verify\n",
+  });
+  git(root, "pull", "--ff-only", bare, "integration");
+  writeFileSync(join(root, work, "tasks.md"), "- [x] 1.1 Build\n- [ ] 1.2 Verify\n");
+  git(root, "commit", "-am", "complete first task");
+  const first = publish(0).commit;
+  git(analyst, "pull", "--ff-only");
+  writeFileSync(join(analyst, work, "tasks.md"), "- [x] 1.1 Build\n- [x] 1.2 Verify\n");
+  git(analyst, "commit", "-am", "complete remaining task");
+  const latest = publish(0, "--root-repo", analyst).commit;
+  assert.notEqual(latest, first);
+  const receipt = { analysis_source: source, commit: latest };
+  assert.deepEqual(JSON.parse(metadata()["dev.publication"]), receipt);
+  assert.match(publish(3).reason, /防止旧回执覆盖较新的研发交付/);
+  assert.equal(git(bare, "rev-parse", "integration"), latest);
+  assert.deepEqual(JSON.parse(metadata()["dev.publication"]), receipt);
 });
 
 function drift(read, patch) {

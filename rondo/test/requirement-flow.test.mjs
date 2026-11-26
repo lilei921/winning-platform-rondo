@@ -202,7 +202,10 @@ test("Completion 消费完整发布回执，只读取批准 Scope 和固定研�
   files[sha2]["tasks.md"] = "- [x] 1.1 Build";
   files[sha1][".openspec.yaml"] = "schema: intentional-change\nx-repositories:\n  - web\n";
   await assert.rejects(check(), /Scope/);
-  for (const receipt of [undefined, "{", JSON.stringify({ analysis_commit: sha1, commit: sha2 }),
+  for (const receipt of [undefined, "{", "null", "[]", JSON.stringify({ commit: sha2 }),
+    JSON.stringify({ analysis_commit: sha1, commit: sha2 }),
+    JSON.stringify({ analysis_source: {}, commit: sha2 }),
+    JSON.stringify({ analysis_source: { ...source, change_ref: "" }, commit: sha2 }),
     JSON.stringify({ analysis_source: {...source, commit: branchTip}, commit: sha2 }),
     JSON.stringify({ analysis_source: {...source, change_ref: "another-42"}, commit: sha2 }),
     JSON.stringify({ analysis_source: {...source, branch: "other"}, commit: sha2 }),

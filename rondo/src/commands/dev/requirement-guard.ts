@@ -22,10 +22,10 @@ export function developmentPublication(md: Record<string, string>): { analysis_s
   if (typeof receipt?.commit !== "string" || !/^[0-9a-f]{40}$/.test(receipt.commit)) {
     throw new UnknownError("dev.publication 包含无效的 Commit SHA");
   }
-  // A SHA-only receipt cannot prove which Change was checked. Republish through the normal Gate.
-  if (receipt.analysis_source === undefined && typeof receipt.analysis_commit === "string" &&
-      /^[0-9a-f]{40}$/.test(receipt.analysis_commit)) return undefined;
-  return { analysis_source: parseAnalysisSource(receipt.analysis_source), commit: receipt.commit };
+  let source: AnalysisSource;
+  try { source = parseAnalysisSource(receipt.analysis_source); }
+  catch { throw new UnknownError("dev.publication 缺少有效的完整 Analysis Source，请核对交付事实"); }
+  return { analysis_source: source, commit: receipt.commit };
 }
 
 export function readDevelopmentCommit(md: Record<string, string>, source: AnalysisSource): string {
