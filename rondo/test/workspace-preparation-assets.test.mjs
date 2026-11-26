@@ -50,7 +50,7 @@ test("workspace preparation is owned by one Skill; delivery contracts remain in 
   assert.ok(bugAgent.includes("pull-request"));
   assert.match(dev, /rondo dev publish/);
   assert.doesNotMatch(bug, /rondo dev publish/);
-  assert.ok(bug.includes("rondo bug resume"));
+  assert.ok(bug.includes("rondo pr resume"));
   assert.ok(bug.includes("rondo pr materialize"));
   assert.ok(!skills.managed_skills.includes("bug-delivery") && !skills.managed_skills.includes("change-development"));
   assert.ok(!readdirSync(bugDir,{recursive:true}).includes("config/repo-registry.json"));
