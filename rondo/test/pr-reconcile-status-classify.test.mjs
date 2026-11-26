@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { classifyProviderStatus, collectStatusPages, processIssue } from "../dist/commands/pr/reconcile-status.js";
 import { parseTfsPrWebUrl, normalizeTfsPrWebUrl } from "../dist/tfs/api/pr.js";
+import { recoverPreparedPrs } from "../dist/commands/pr/materialize.js";
 
 const COLLECTION = "http://tfs.example.test/tfs/Collection";
 
@@ -241,4 +242,101 @@ test("partial registration still detects abandoned PRs before Closeout completen
   assert.deepEqual(f.calls.map(c=>c[0]),["metadata","status"]);
   assert.equal(f.calls[0][2],"pr.abandoned");
   assert.deepEqual(f.calls[1],["status","issue-id","blocked"]);
+});
+
+function recoveryFixture(status="in_review", registered=[]) {
+  const sha="a".repeat(40), keys=["backend","frontend"];
+  const prepared=keys.map(key=>({repo_key:key,repo_url:COLLECTION+"/Project/_git/"+key,
+    source_branch:"feature/42",target_branch:"dev",candidate_commit:sha}));
+  const issue={id:"issue-id",identifier:"DF-42",status,assignee_id:"engineer",metadata:{
+    "tfs.id":"42","tfs.type":"需求",pr_prep:JSON.stringify(prepared),
+    ...(registered.length?{current_pr:JSON.stringify(registered)}:{})
+  }};
+  const calls=[], tfsCalls=[];
+  const repoId=key=>key==="backend"?"22222222-2222-2222-2222-222222222222":"33333333-3333-3333-3333-333333333333";
+  const projectId="11111111-1111-1111-1111-111111111111";
+  const id=key=>key==="backend"?17:18;
+  const pr=key=>({repo_key:key,pr_id:id(key),pr_url:COLLECTION+"/Project/_git/"+key+"/pullrequest/"+id(key),source_branch:"feature/42",target_branch:"dev"});
+  const live={backend:"completed",frontend:"completed"};
+  let missingLink=false, wrongSha=false, drift=false;
+  const multica={getIssue:()=>structuredClone(issue),setMetadata(_id,key,value){calls.push(key);issue.metadata[key]=value;},
+    setStatus(_id,status){calls.push("status");issue.status=status;}};
+  const api={config:{serverUrl:COLLECTION},rawRequest:async(_url,method)=>{
+    assert.equal(method,"GET");
+    return {statusCode:200,body:JSON.stringify({id:42,rev:1,relations:missingLink?[]:keys.map(key=>({
+      rel:"ArtifactLink",url:"vstfs:///Git/PullRequestId/"+projectId+"%2F"+repoId(key)+"%2F"+id(key)
+    }))})};
+  }};
+  const resolveRepo=async(_api,project,key)=>({project,repo:key,projectId,repoId:repoId(key)});
+  const tfs={run:async args=>{
+    tfsCalls.push(args.slice(0,2).join(" "));
+    const key=args.includes(repoId("backend"))?"backend":"frontend";
+    if(args[1]==="list") return args.includes(live[key])?[{id:id(key),targetBranch:"dev"}]:[];
+    if(args[1]==="get" && args[0]==="pr") {
+      if(drift) issue.metadata.pr_prep="changed";
+      return {id:id(key),status:live[key],sourceBranch:"feature/42",targetBranch:"dev",sourceCommitId:wrongSha?"b".repeat(40):sha};
+    }
+    if(args[0]==="branch" && live[key]==="active") return {found:true,branch:{commit:sha}};
+    throw Error("Unexpected external operation: "+args.join(" "));
+  }};
+  const lookup=async(_project,key,prId)=>({status:"ok",pr:{id:prId,status:live[key],sourceBranch:"feature/42",targetBranch:"dev"}});
+  const recover=candidate=>recoverPreparedPrs(multica,candidate,api,tfs,resolveRepo);
+  const run=()=>processIssue(multica,structuredClone(issue),{attempts:0,successes:0},lookup,COLLECTION,recover);
+  return {issue,calls,tfsCalls,live,pr,run,missingLink:()=>{missingLink=true;},wrongSha:()=>{wrongSha=true;},drift:()=>{drift=true;}};
+}
+
+test("missing registrations recover existing completed PRs and trigger closeout in same scan",async()=>{
+  const f=recoveryFixture();
+  assert.equal((await f.run()).action,"finalize");
+  assert.deepEqual(JSON.parse(f.issue.metadata.current_pr),[f.pr("backend"),f.pr("frontend")]);
+  assert.deepEqual(f.calls,["current_pr","current_pr","finalize.pending"]);
+  assert.ok(f.tfsCalls.every(c=>c==="pr list"||c==="pr get"));
+  f.calls.length=0;f.tfsCalls.length=0;
+  assert.equal((await f.run()).action,"resume_finalize");
+  assert.deepEqual(f.calls,[]);
+  assert.deepEqual(f.tfsCalls,[]);
+});
+
+test("partial recovery retains progress, never creates PR and preserves abandoned priority",async()=>{
+  const f=recoveryFixture();
+  f.live.frontend="absent";
+  assert.equal((await f.run()).action,"unknown");
+  assert.deepEqual(JSON.parse(f.issue.metadata.current_pr),[f.pr("backend")]);
+  assert.deepEqual(f.calls,["current_pr"]);
+  f.live.backend="abandoned";
+  assert.equal((await f.run()).action,"stopped_abandoned");
+  assert.equal(f.issue.status,"blocked");
+  assert.equal(f.issue.metadata["finalize.pending"],undefined);
+  assert.ok(f.tfsCalls.every(c=>c==="pr list"||c==="pr get"));
+});
+
+test("blocked can restore known PRs but never starts closeout; active recovered PR is noop",async()=>{
+  const blocked=recoveryFixture("blocked");
+  assert.equal((await blocked.run()).action,"noop");
+  assert.deepEqual(blocked.calls,["current_pr","current_pr"]);
+  assert.equal(blocked.issue.status,"blocked");
+  const active=recoveryFixture();
+  active.live.frontend="active";
+  assert.equal((await active.run()).action,"noop");
+  assert.deepEqual(active.calls,["current_pr","current_pr"]);
+});
+
+test("recovery refuses mismatched Candidate and missing Work Item link, does not write TFS",async()=>{
+  for(const fail of ["missingLink","wrongSha"]){
+    const f=recoveryFixture();f[fail]();
+    assert.equal((await f.run()).action,"unknown");
+    assert.deepEqual(f.calls,[]);
+  }
+  const drift=recoveryFixture();drift.drift();
+  await assert.rejects(drift.run(),/事实变化/);
+  assert.deepEqual(drift.calls,[]);
+});
+
+test("in_review missing current_pr is visible; normal blocked without delivery facts is skipped",async()=>{
+  const a=fixture("in_review",{current_pr:undefined,pr_prep:undefined});
+  const b=fixture("blocked",{current_pr:"[]",pr_prep:"[]"});
+  const lookup=()=>{throw Error("unexpected lookup")};
+  assert.equal((await processIssue(a.multica,a.issue,{attempts:0,successes:0},lookup,COLLECTION)).action,"unknown");
+  assert.equal(await processIssue(b.multica,b.issue,{attempts:0,successes:0},lookup,COLLECTION),null);
+  assert.deepEqual([...a.calls,...b.calls],[]);
 });

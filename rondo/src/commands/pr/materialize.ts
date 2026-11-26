@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
-import { MulticaClient } from "../../clients/multica.js";
+import { MulticaClient, type IssueRecord } from "../../clients/multica.js";
 import { resolveMulticaRuntime } from "../../clients/runtime-context.js";
 import { TfsClient } from "../../clients/tfs.js";
 import { TfsClient as ApiTfsClient } from "../../tfs/client.js";
@@ -31,6 +31,23 @@ interface CurrentPrEntry {
 }
 type MaterializedPr = CurrentPrEntry & { reused: boolean };
 
+/** Persist a verified identity without replacing any other registration. */
+function registerPrIdentity(
+  multica: Pick<MulticaClient, "setMetadata" | "getIssue">, issueId: string,
+  registered: CurrentPrEntry[], pr: MaterializedPr, check: () => void,
+): IssueRecord {
+  const { reused: _, ...identity } = pr;
+  check();
+  const next = JSON.stringify([...registered, identity]);
+  multica.setMetadata(issueId, "current_pr", next);
+  const confirmed = multica.getIssue(issueId);
+  if (confirmed.metadata?.current_pr !== next) {
+    throw new UnknownError("current_pr 登记未确认，停止后续 PR 物化");
+  }
+  registered.push(identity);
+  return confirmed;
+}
+
 /** Persist each confirmed identity before moving to another repository. */
 export async function materializePreparedPrs(
   multica: Pick<MulticaClient, "setMetadata" | "getIssue" | "setStatus">, issueId: string,
@@ -50,15 +67,8 @@ export async function materializePreparedPrs(
     const prior = registered.find(p => p.repo_key === entry.repo_key);
     const pr = await materialize(entry, prior, authorizeCurrent);
     if (!prior && !readOnly) {
-      const { reused: _, ...identity } = pr;
-      authorize(currentPr, false);
-      const next = JSON.stringify([...registered, identity]);
-      multica.setMetadata(issueId, "current_pr", next);
-      if (multica.getIssue(issueId).metadata?.current_pr !== next) {
-        throw new UnknownError("current_pr 登记未确认，停止后续 PR 物化");
-      }
-      registered.push(identity);
-      currentPr = next;
+      currentPr = registerPrIdentity(multica, issueId, registered, pr,
+        () => authorize(currentPr, false)).metadata!.current_pr;
     }
     prs.push(pr);
   }
@@ -84,7 +94,7 @@ function list<T extends {repo_key: string}>(raw: string | undefined, field: stri
 
 export async function materializeOne(tfs: Pick<TfsClient, "run">, api: Pick<ApiTfsClient, "config" | "rawRequest">,
   tfsId: number, entry: PrPrepEntry, repo: VerifiedRepo, prior: CurrentPrEntry | undefined,
-  readOnly: boolean, authorize: () => void): Promise<CurrentPrEntry & {reused:boolean}> {
+  readOnly: boolean, authorize: () => void, recoverOnly = false): Promise<CurrentPrEntry & {reused:boolean}> {
   const collection = api.config.serverUrl;
   const expected = (url: string) => {
     const location = parseTfsPrWebUrl(url, collection);
@@ -108,15 +118,15 @@ export async function materializeOne(tfs: Pick<TfsClient, "run">, api: Pick<ApiT
       !(live.status==="active" || live.status==="completed") ||
       (live.status==="completed" && live.sourceCommitId!==entry.candidate_commit))
       throw new UnknownError("PR 外部身份、分支或状态不一致");
-    if(live.status==="active" && (!filled(live.description)||live.description.includes("补 TFS 工作项 id"))) throw new FailError("已有 PR 缺少有效专业描述");
+    if(!recoverOnly && live.status==="active" && (!filled(live.description)||live.description.includes("补 TFS 工作项 id"))) throw new FailError("已有 PR 缺少有效专业描述");
     const url = normalizeTfsPrWebUrl(live.url??priorUrl,collection,repo.project,repo.repo,id);
     if(live.status==="active") await checkHead();
     authorize();
-    await ensurePrWorkItemLink(api,repo,id,tfsId,!readOnly);
+    await ensurePrWorkItemLink(api,repo,id,tfsId,!readOnly && !recoverOnly);
     return {repo_key:entry.repo_key,pr_id:id,pr_url:url,source_branch:entry.source_branch,target_branch:entry.target_branch,reused};
   };
   if(prior) return verify(prior.pr_id,true,prior.pr_url);
-  if(readOnly) throw new FailError("in_review 缺少完整已登记 PR");
+  if(readOnly && !recoverOnly) throw new FailError("in_review 缺少完整已登记 PR");
   const existing: Array<{id:number;url:string;targetBranch:string}> = [];
   for (const status of ["active", "completed"]) {
     const prs = await tfs.run(["pr","list",...args,"--status",status,"--source-branch",entry.source_branch,"--top","100"], "查询已有 PR") as
@@ -128,6 +138,7 @@ export async function materializeOne(tfs: Pick<TfsClient, "run">, api: Pick<ApiT
   const unique = [...new Map(existing.map(pr=>[pr.id,pr])).values()];
   if(unique.length>1) throw new UnknownError("存在多个相同源目标的 active/completed PR");
   if(unique.length===1) return verify(unique[0].id,true,unique[0].url);
+  if(recoverOnly) throw new UnknownError("未找到可恢复的已有 PR: " + entry.repo_key);
   const dir=mkdtempSync(join(tmpdir(),"rondo-pr-"));
   try {
     const file=join(dir,"description.md"); writeFileSync(file,entry.description,"utf8");
@@ -139,6 +150,65 @@ export async function materializeOne(tfs: Pick<TfsClient, "run">, api: Pick<ApiT
     if(!pr) throw new UnknownError("创建 PR 结果不可确认");
     return await verify(pr.id,!created.created,pr.url);
   } finally { try {rmSync(dir,{recursive:true,force:true});} catch {/* best-effort temporary cleanup */} }
+}
+
+/** Recover missing registrations from pinned preparation; never create PRs or change Issue status. */
+export async function recoverPreparedPrs(
+  multica: Pick<MulticaClient, "getIssue" | "setMetadata">, issue: IssueRecord,
+  api = new ApiTfsClient(), tfs: Pick<TfsClient, "run"> = new TfsClient(), resolveRepo = verifiedRepo,
+): Promise<{issue: IssueRecord; detail?: string}> {
+  const md = issue.metadata ?? {};
+  if (issue.status !== "in_review" && issue.status !== "blocked") return {issue};
+  const prep = list<PrPrepEntry>(md.pr_prep, "pr_prep");
+  const registered = list<CurrentPrEntry>(md.current_pr, "current_pr");
+  if (!prep.length || registered.some(p => !prep.some(x => x.repo_key === p.repo_key) ||
+      !Number.isSafeInteger(p.pr_id) || p.pr_id <= 0)) {
+    throw new FailError("current_pr 与 pr_prep 仓库集合不一致");
+  }
+  if (registered.length === prep.length) return {issue};
+  const branch = candidateBranch(md["tfs.id"]), tfsId = Number(md["tfs.id"]);
+  if (md["tfs.type"] !== "Bug" && md["tfs.type"] !== "需求") throw new FailError("不支持当前 TFS Type");
+  let currentPr = md.current_pr;
+  let fresh = issue;
+  const check = () => {
+    fresh = multica.getIssue(issue.id);
+    const facts = fresh.metadata ?? {};
+    if (fresh.status !== issue.status || fresh.assignee_id !== issue.assignee_id ||
+        facts.current_pr !== currentPr ||
+        ["tfs.id","tfs.type","tfs.url","pr_prep","pr.abandoned","bug.resume","finalize.pending","delivery.tfs_written"]
+          .some(k => facts[k] !== md[k])) {
+      throw new UnknownError("PR 恢复期间 Issue 事实变化");
+    }
+  };
+  // Verify the prepared repository identities only on the recovery path.
+  const identities = new Map<string, VerifiedRepo>(), seen = new Set<string>();
+  for (const entry of prep) {
+    if (entry.source_branch !== branch || !filled(entry.target_branch) ||
+        entry.target_branch === branch || !/^[0-9a-f]{40}$/i.test(entry.candidate_commit ?? "")) {
+      throw new FailError("PR Preparation 缺少有效 Candidate: " + entry.repo_key);
+    }
+    const url = assertTfsRepository(entry.repo_url, api.config.serverUrl);
+    const parts = url.pathname.split("/").map(decodeURIComponent);
+    const repo = await resolveRepo(api, parts.at(-3)!, parts.at(-1)!);
+    const key = repo.projectId + "/" + repo.repoId;
+    if (seen.has(key)) throw new FailError("不同 repo_key 指向同一真实 TFS Repository");
+    seen.add(key); identities.set(entry.repo_key, repo);
+  }
+  for (const entry of prep) {
+    if (registered.some(p => p.repo_key === entry.repo_key)) continue;
+    let pr: MaterializedPr;
+    try {
+      pr = await materializeOne(tfs, api, tfsId, entry, identities.get(entry.repo_key)!, undefined, true, check, true);
+    } catch (e) {
+      // Preserve successful registrations and allow Sync to inspect known PRs.
+      check();
+      return {issue: fresh, detail: (e as Error).message};
+    }
+    fresh = registerPrIdentity(multica, issue.id, registered, pr, check);
+    currentPr = fresh.metadata!.current_pr;
+  }
+  check();
+  return {issue: fresh};
 }
 
 export function registerPrMaterialize(group: Command): void {

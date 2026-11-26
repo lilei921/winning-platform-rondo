@@ -4,7 +4,7 @@
  *
  * 调用方：PR Status Sync Agent（Autopilot cron 或手动触发）。
  * 职责：常规扫描 in_review / blocked；按需单独扫描 done 恢复 finalize.pending → 逐个回读 metadata
- *   （有 current_pr 或 finalize.pending 才纳入）
+ *   （in_review 或已有 PR / 准备 / 收口事实的 blocked；按需补登已核实的 PR）
  *   → 逐 PR 经 TFS API 回核身份与状态 → 按 02 §11 聚合规则写事实 → 输出路由指令。
  * 本脚本只做终态检测与事实写入；收口动作由 Agent 按 SKILL.md 固定路由在同一 Run 内
  * 调 issue-closeout Skill 完成（脚本不内嵌调用）。
@@ -36,6 +36,7 @@ import { runCommand } from "../../clients/spawn.js";
 import { resolveMulticaRuntime, type MulticaRuntime } from "../../clients/runtime-context.js";
 import { loadConfig as loadTfsConfig, ConfigError } from "../../tfs/config.js";
 import { parseTfsPrWebUrl } from "../../tfs/api/pr.js";
+import { recoverPreparedPrs } from "./materialize.js";
 import { MulticaClient, type IssueRecord } from "../../clients/multica.js";
 import { FailError } from "../../tfs/client.js";
 import { dispatchTfs, UsageError } from "../../tfs/dispatch.js";
@@ -148,32 +149,46 @@ export async function processIssue(
   tfs: { attempts: number; successes: number },
   lookupPr: typeof prGet = prGet,
   tfsCollectionUrl?: string,
+  recoverMissing?: (issue: IssueRecord) => Promise<{issue: IssueRecord; detail?: string}>,
 ): Promise<Action | null> {
-  const md = issue.metadata ?? {};
+  let md = issue.metadata ?? {};
   const issueKey = issue.identifier ?? issue.id;
   const pendingRaw = md["finalize.pending"];
-  const currentPrRaw = md["current_pr"];
+  let currentPrRaw = md["current_pr"];
   // done 的交付已完成：仅交由 finalize 清理残留 pending，不重新判断 PR 或改变已完成状态。
   if (issue.status === "done") {
     return pendingRaw
       ? { issue: issueKey, action: "resume_finalize", detail: "Issue 已 done，仅核对并清理 finalize.pending" }
       : null;
   }
-  if (!currentPrRaw && !pendingRaw) return null; // 无 PR 事实，不纳入
-
-  if (!currentPrRaw) {
-    return { issue: issueKey, action: "unknown", detail: "finalize.pending 存在但 current_pr 缺失（事实状态破损，交 Lead 核对）" };
-  }
   let prs: CurrentPrEntry[];
-  try { prs = JSON.parse(currentPrRaw) as CurrentPrEntry[]; }
+  let prepared: {repo_key: string}[];
+  try { prs = JSON.parse(currentPrRaw ?? "[]"); }
   catch { return { issue: issueKey, action: "unknown", detail: "metadata current_pr 不是合法 JSON" }; }
-  if (!Array.isArray(prs) || prs.length === 0) {
-    return { issue: issueKey, action: "unknown", detail: "current_pr 为空数组" };
+  if (!Array.isArray(prs)) return { issue: issueKey, action: "unknown", detail: "current_pr 不是数组" };
+  try { prepared = JSON.parse(md.pr_prep ?? "[]"); }
+  catch { return { issue: issueKey, action: "unknown", detail: "pr_prep 不是合法 JSON" }; }
+  if (!Array.isArray(prepared)) return { issue: issueKey, action: "unknown", detail: "pr_prep 不是数组" };
+  if (!prs.length && !pendingRaw && issue.status !== "in_review" &&
+      !(issue.status === "blocked" && prepared.length)) return null;
+
+  let recoveryDetail: string | undefined;
+  if (recoverMissing && (issue.status === "in_review" || issue.status === "blocked") &&
+      prepared.some(p => p && !prs.some(pr => pr?.repo_key === p.repo_key))) {
+    const recovered = await recoverMissing(issue);
+    issue = recovered.issue;
+    md = issue.metadata ?? {};
+    currentPrRaw = md.current_pr;
+    recoveryDetail = recovered.detail;
+    prs = JSON.parse(currentPrRaw ?? "[]");
+  }
+  if (!prs.length) {
+    return { issue: issueKey, action: "unknown", detail: recoveryDetail ?? "缺少 current_pr，无法确认 PR 交付" };
   }
 
   // done 恢复无需 TFS；其他路径只在存在 PR 登记时读取 TFS 连接配置。
   const collectionUrl = tfsCollectionUrl ?? loadTfsConfig().serverUrl;
-  const unknowns: string[] = [];
+  const unknowns: string[] = recoveryDetail ? [recoveryDetail] : [];
   const abandoned: CurrentPrEntry[] = [];
   const seenRepoKeys = new Set<string>();
   let completedCount = 0;
@@ -241,10 +256,7 @@ export async function processIssue(
   }
 
   // Materialize can persist a partial set. Never treat it as the full delivery.
-  let prepared: {repo_key: string}[];
-  try { prepared = JSON.parse(md.pr_prep ?? "null"); }
-  catch { return { issue: issueKey, action: "unknown", detail: "pr_prep 不是合法 JSON" }; }
-  if (!Array.isArray(prepared) || prepared.length !== prs.length ||
+  if (!prepared.length || prepared.length !== prs.length ||
       prepared.some(p => !p || typeof p.repo_key !== "string" || !p.repo_key.trim()) ||
       new Set(prepared.map(p => p.repo_key)).size !== prepared.length ||
       prepared.some(p => !prs.some(pr => pr?.repo_key === p.repo_key))) {
@@ -252,8 +264,10 @@ export async function processIssue(
   }
 
   if (completedCount === prs.length) {
-    if (issue.status !== "in_review" && issue.status !== "blocked") {
-      return { issue: issueKey, action: "noop", detail: "PR 已全部 completed，等待 Materialize 确认 in_review" };
+    if (issue.status !== "in_review") {
+      return { issue: issueKey, action: "noop", detail: issue.status === "blocked"
+        ? "PR 已全部 completed，Issue blocked，保留收口事实"
+        : "PR 已全部 completed，等待 Materialize 确认 in_review" };
     }
     if (pendingRaw) {
       return { issue: issueKey, action: "resume_finalize", detail: "finalize.pending 已存在，按当前事实补齐" };
@@ -321,7 +335,8 @@ async function main(rawArgs: string[]): Promise<number> {
         continue;
       }
       try {
-        const action = await processIssue(multica, issue, tfs);
+        const action = await processIssue(multica, issue, tfs, prGet, undefined,
+          candidate => recoverPreparedPrs(multica, candidate));
         if (action) actions.push(action);
       } catch (exc) {
         if (exc instanceof ConfigError) throw new UnknownError("TFS 连接配置不可用: " + exc.message);
