@@ -25,6 +25,7 @@ import {
 } from "./facts.js";
 
 import { committedContract, readPublishedContract, assertCommittedContractFiles } from "./published-source.js";
+import { assertRegisteredRepositoryScope, parseRepositoryScope, REPOSITORY_CONTEXT_PATH } from "./repository-scope.js";
 
 const TARGET_STATUS = "analysis_review";
 const GATE_RESULT = "analysis.gate.result";
@@ -172,6 +173,9 @@ async function main(rawArgs: string[]): Promise<number> {
     Object.assign(entries, derived);
     const effectiveMeta = { ...priorMeta, ...derived };
     const readContractAt = (commit: string) => committedContract(root, commit, args.changeRef, effectiveMeta);
+    const assertScopeAt = (commit: string, rawMetadata: string) =>
+      assertRegisteredRepositoryScope(parseRepositoryScope(rawMetadata), () =>
+        gitOk(root, ["show", `${commit}:${REPOSITORY_CONTEXT_PATH}`], "读取固定 Git 版本的 Repository Scope 映射"));
     if (gate.payload.issue_id !== String(before.id) || gate.payload.workspace_id !== args.workspaceId ||
         gate.payload.change_ref !== args.changeRef ||
         gate.payload.metadata_digest !== metadataEvidenceDigest(effectiveMeta) ||
@@ -217,6 +221,7 @@ async function main(rawArgs: string[]): Promise<number> {
                   if (local.digest !== gateEvidence.change_digest || local.schema !== schema)
                     throw new FailError("当前已提交分析工件与 Gate 不一致");
                 }
+                assertScopeAt(commit, published.rawMetadata);
                 return true;
               }
             : undefined,
@@ -225,6 +230,7 @@ async function main(rawArgs: string[]): Promise<number> {
             if (candidate.schema !== schema || candidate.digest !== gateEvidence.change_digest) {
               throw new FailError("候选发布版本与本次真实 Analysis Gate 工程契约不一致");
             }
+            assertScopeAt(commit, candidate.rawMetadata);
           },
         }) : publishChange(root, args.changeRef, args.issue, ANALYSIS_CONTRACT_FILE, subject);
         rootCommit = { ...result };
@@ -247,6 +253,7 @@ async function main(rawArgs: string[]): Promise<number> {
           throw new UnknownError("最终固定 Git Commit 与本次真实 Gate 检查的工程契约不一致");
         }
         assertCommittedContractFiles(root, source, effectiveMeta, gateEvidence.change_digest);
+        assertScopeAt(source.commit, gitOk(root, ["show", `${source.commit}:openspec/changes/${args.changeRef}/.openspec.yaml`], "读取固定 Change Metadata"));
       }
       // Requirement 的候选契约及远端可达性已由 publishChange 确认；直接消费固定 SHA。
       rootCommit.commit = source.commit;

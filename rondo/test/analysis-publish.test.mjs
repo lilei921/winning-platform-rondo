@@ -321,6 +321,43 @@ test("Analysis Gate refuses unregistered Repository Scope before any publication
   assert.deepEqual(f.state(), state);
 });
 
+test("Requirement rejects a scope absent from the final Git candidate despite a valid local mapping", t => {
+  const f = fixture(t, true, false, false);
+  const mapping = join(f.root, "docs", "config", "repo-context.yaml");
+  writeFileSync(mapping, readFileSync(mapping, "utf8") + "  - repo_id: frame\n");
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [frame]\n");
+  const state = f.state();
+  const remote = git(f.remote, "rev-parse", "dev");
+  assert.equal(f.gate().exit, 0);
+  const publish = f.complete();
+  assert.equal(publish.exit, 2, JSON.stringify(publish));
+  assert.match(publish.body.reason, /未登记的 repo_id: frame/);
+  assert.equal(git(f.remote, "rev-parse", "dev"), remote);
+  assert.deepEqual(f.state(), state);
+});
+
+test("Requirement fixed source recovery checks scope in that commit, not the working tree", t => {
+  const f = fixture(t, true, false, false);
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [frame]\n");
+  git(f.root, "add", "openspec/changes/" + CHANGE);
+  git(f.root, "commit", "-m", "previous incomplete publication");
+  git(f.root, "push", "origin", "dev");
+  const remote = git(f.remote, "rev-parse", "dev");
+  const state = f.state();
+  state.metadata["analysis.source"] = JSON.stringify({
+    repo_url: f.tfs.repoUrl, branch: "dev", commit: remote, change_ref: CHANGE,
+  });
+  f.setState(state);
+  const mapping = join(f.root, "docs", "config", "repo-context.yaml");
+  writeFileSync(mapping, readFileSync(mapping, "utf8") + "  - repo_id: frame\n");
+  assert.equal(f.gate().exit, 0);
+  const publish = f.complete();
+  assert.equal(publish.exit, 2, JSON.stringify(publish));
+  assert.match(publish.body.reason, /未登记的 repo_id: frame/);
+  assert.equal(git(f.remote, "rev-parse", "dev"), remote);
+  assert.deepEqual(f.state(), state);
+});
+
 test("旧 metadata PASS 不能绕过最终真实 Gate", t => {
   const f = fixture(t);
   const st = f.state(); st.metadata["analysis.gate.result"] = "PASS"; f.setState(st);

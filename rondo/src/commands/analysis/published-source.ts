@@ -56,7 +56,8 @@ export function committedContract(
     if (!entry || !/^100(?:644|755)$/.test(entry.mode)) throw new FailError("Git 版本缺少普通 Gate 工件: " + path);
     return readGitBlob(root, entry.oid);
   };
-  const schema = parseChangeSchema(read(".openspec.yaml").toString("utf8"));
+  const rawMetadata = read(".openspec.yaml").toString("utf8");
+  const schema = parseChangeSchema(rawMetadata);
   const selected = new Set<string>();
   for (const [name, entry] of tree) {
     if (name.startsWith("specs/") && !/^100(?:644|755)$/.test(entry.mode)) {
@@ -65,5 +66,5 @@ export function committedContract(
     if (name === "design.md" || (name.startsWith("specs/") && name.endsWith(".md"))) selected.add(name);
   }
   const digest = digestGateFiles(changeRef, selected, meta, read, true);
-  return { schema, digest };
+  return { schema, digest, rawMetadata };
 }

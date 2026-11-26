@@ -13,12 +13,12 @@
 
 | 问题 | 证据 | 最小修复 |
 | --- | --- | --- |
-| Issue 与 Change 归属 | `analysis/validate.ts` 的 Identity 只检查 tfs.id 存在、类型与 Schema；`change/resolve-identity.ts` 已使用末尾独立 TFS ID 段 | 最终 Gate 核对实际传入 Change ID 与当前数字型 tfs.id 的后缀匹配，共用既有匹配规则 |
-| Repository Scope | `analysis/repository-scope.ts` 只解析非空、去重、合法格式的字符串列表 | Acceptance Contract 在本地根仓 `docs/config/repo-context.yaml` 中核对所有 repo_id 已登记；不存在为 FAIL，权威文件不可读或无效为 UNKNOWN |
+| Issue 与 Change 归属 | `analysis/validate.ts` 的 Identity 只检查 tfs.id 存在、类型与 Schema；`change/resolve-identity.ts` 已使用末尾独立 TFS ID 段 | 最终 Gate 核对实际传入 Change ID 与当前正整数 tfs.id 的后缀匹配，共用既有匹配规则，ID 合法性对齐下游批准/研发契约 |
+| Repository Scope | `analysis/repository-scope.ts` 只解析非空、去重、合法格式的字符串列表 | Acceptance Contract 仅核对当前 Scope 的 repo_id 在根仓 `docs/config/repo-context.yaml` 中已登记；不审计无关条目。不登记为 FAIL，映射不可读或无法识别为 UNKNOWN。Requirement 复用现有候选 Git Tree/固定来源恢复检查，核对实际固定版本的成员关系；Legacy 在已发布版本确认时核对。 |
 
-仅扩充现有 Identity / Acceptance Contract，不新增检查阶段，不远程查询、不要求 LLM 重复核验。Gate 失败不得 Commit/Push 或登记审核。保持 Schema、专业判断、OpenSpec Strict Validation、发布工件一致性及 Human Approval 机制。有效旧审核重放仍消费已登记固定事实，不重新执行 Gate。
+仅扩充现有 Identity / Acceptance Contract，不新增检查阶段，不远程查询、不要求 LLM 重复核验。本地 Gate 失败不得 Commit/Push 或登记审核；Requirement 候选版本检查失败不得 Push 或登记审核，保留已完成的本地 Change Commit。保持 Schema、专业判断、OpenSpec Strict Validation、发布工件一致性及 Human Approval 机制。有效旧审核重放仍消费已登记固定事实，不重新执行 Gate。
 
-验证：正确后缀通过、其他 TFS ID/无后缀/非法 TFS ID 拒绝；合法已登记范围通过、未登记名称拒绝、权威文件缺失/无效不能放行；现有格式校验、合法 skip_specs 和发布路径回归。测试 fixture 按当前契约建立本地映射和 Change ID。
+验证：正确后缀通过、其他 TFS ID/无后缀/非法 TFS ID 拒绝；合法已登记范围通过、未登记名称拒绝、权威文件缺失/无效不能放行；无关异常条目不阻塞合法 Scope；本地映射与最终候选或恢复来源不一致时，按实际固定版本阻断，已登记审核重放不重复执行；现有格式校验、合法 skip_specs 和发布路径回归。测试 fixture 按当前契约建立本地映射和 Change ID。
 
 ## 3. P1 — Instructions 与 Skills 收敛（待实施）
 

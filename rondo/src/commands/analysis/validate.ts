@@ -26,7 +26,7 @@ import { commandExists } from "../../clients/which.js";
 import { resolveOpenspecRootDir } from "../../clients/runtime-paths.js";
 import { classifyTfsType, analysisMetadataEntries } from "./facts.js";
 import { taskReferences } from "./source.js";
-import { parseRepositoryScope, assertRegisteredRepositoryScope } from "./repository-scope.js";
+import { parseRepositoryScope, assertRegisteredRepositoryScope, REPOSITORY_CONTEXT_PATH } from "./repository-scope.js";
 import { changeEvidenceDigest, metadataEvidenceDigest } from "./gate-evidence.js";
 
 type CheckResult = "PASS" | "FAIL" | "UNKNOWN";
@@ -95,8 +95,9 @@ export function checkIdentity(meta: Record<string, unknown>, schema: ChangeSchem
   const tfsId = meta["tfs.id"];
   const tfsKind = classifyTfsType(meta["tfs.type"]);
   if (tfsId === undefined || tfsId === null || tfsId === "") reasons.push("缺少 metadata tfs.id");
-  else if ((typeof tfsId !== "string" && typeof tfsId !== "number") || !/^\d+$/.test(String(tfsId))) {
-    reasons.push("metadata tfs.id 必须是数字");
+  else if ((typeof tfsId !== "string" && typeof tfsId !== "number") || !/^\d+$/.test(String(tfsId)) ||
+    !Number.isSafeInteger(Number(tfsId)) || Number(tfsId) <= 0) {
+    reasons.push("metadata tfs.id 必须是正整数");
   } else if (!matchesTfsChangeId(changeRef, String(tfsId))) {
     reasons.push(`change_ref=${changeRef} 与 tfs.id=${tfsId} 冲突，必须使用当前 TFS ID 作为末尾独立段`);
   }
@@ -192,7 +193,8 @@ export function checkAcceptanceContract(schema: ChangeSchema | null, changeDir: 
   if (!proposal) reasons.push("缺少 proposal.md 或不可读");
   try {
     const scope = parseRepositoryScope(rawMetadata ?? readText(join(changeDir, ".openspec.yaml")) ?? "");
-    if (!reasons.length) assertRegisteredRepositoryScope(scope, dirname(openspecRoot));
+    if (!reasons.length) assertRegisteredRepositoryScope(scope, () =>
+      readFileSync(join(dirname(openspecRoot), REPOSITORY_CONTEXT_PATH), "utf8"));
   } catch (error) {
     if (error instanceof UnknownError) return { name: "acceptance_contract", result: "UNKNOWN", reasons: [error.message] };
     if (!(error instanceof FailError)) throw error;

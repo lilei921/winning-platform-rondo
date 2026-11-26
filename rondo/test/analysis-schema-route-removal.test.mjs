@@ -113,6 +113,9 @@ test("Identity 核对实际 Change ID 与当前 TFS ID 的独立末尾段", () =
     assert.equal(checkIdentity({ ...metadata, "tfs.id": invalid }, "corrective-change", "fixture-123").result, "FAIL");
   }
   assert.equal(checkIdentity({ ...metadata, "tfs.id": 123 }, "corrective-change", "fixture-123").result, "PASS");
+  for (const invalid of ["0", "9007199254740992"]) {
+    assert.equal(checkIdentity({ ...metadata, "tfs.id": invalid }, "corrective-change", `fixture-${invalid}`).result, "FAIL");
+  }
 });
 
 test("Repository Scope 仅接受当前根仓已登记仓库，权威映射不可核实时 UNKNOWN", () => {
@@ -122,6 +125,8 @@ test("Repository Scope 仅接受当前根仓已登记仓库，权威映射不可
     const metadata = join(f.dir, ".openspec.yaml");
     writeFileSync(metadata, "schema: corrective-change\nx-repositories: [frame, frame-web]\n");
     const check = () => checkAcceptanceContract("corrective-change", f.dir, f.root);
+    assert.equal(check().result, "PASS");
+    writeFileSync(f.mapping, "repos:\n  - repo_id: frame\n  - repo_id: frame-web\n  - repo_id: unrelated_legacy\n  - repo_id: 123\n  - null\n");
     assert.equal(check().result, "PASS");
     writeFileSync(metadata, "schema: corrective-change\nx-repositories: [frame, unknown-repo]\n");
     assert.equal(check().result, "FAIL");
