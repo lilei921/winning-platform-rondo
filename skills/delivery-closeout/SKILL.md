@@ -7,7 +7,7 @@ description: 对 PR 已合并的 Bug 和 Requirement 执行交付收口。
 
 根据待收口 Issue `<KEY>` 的 `tfs.type`，选择 Bug 或 Requirement 流程；已为 `done` 的 Issue 按恢复流程处理。
 
-Prepare 成功后执行 TFS Writeback，实际回写成功后执行 Complete。按「结果处理」确认各阶段结果。
+确认全部必要 `pr` 记录已登记且外部 PR 已完成。Prepare 成功后执行 TFS Writeback，实际回写成功后执行 Complete。按「结果处理」确认各阶段结果。
 
 ## Bug 收口
 

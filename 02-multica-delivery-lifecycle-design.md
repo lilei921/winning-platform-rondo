@@ -43,7 +43,7 @@
 
 整个研发任务默认作为一个完整的 **Issue** 管理。
 
-当前统一 Engineer 的研发契约以 [09](09-unified-engineer-development-design.md) 为准，Tasks 直接编辑与发布规则由 [05 §11](05-openspec-schema-implementation-design.md#openspec-schema-section-11) 维护。本文中 Task Set 派发相关内容仅描述尚待退役的旧路线，不作为当前 Engineer 的执行要求。
+当前统一 Engineer 的研发契约以 [09](09-unified-engineer-development-design.md) 为准，Tasks 直接编辑与发布规则由 [05 §11](05-openspec-schema-implementation-design.md#openspec-schema-section-11) 维护。当前 Requirement 由统一 Engineer 在同一 Issue 内承担获批 Change，使用 Multica 原生协作及 Run。
 
 一个配置范围内的 TFS Work Item 默认对应一个 Issue。**自动 TFS 同步入口**先由 Wayfinder Agent 探索和准入，`accepted` 后根据 `tfs.type` 交 Bug Fix Agent 或 Delivery Squad；明确直接委派给 Squad / Workitem Analyst 的 Analysis 可以绕过 Wayfinder，不将其作为所有 Analysis 的强制 Gate。存在实际工程增量时，后续 Analysis Gate 与 Human Approval 规则不变；无需工程增量时，Analyst 在当前 Issue Comment 记录专业结论、关键依据和处理建议，复用原生回流，不生成 Change、Gate 或研发批准，不得借此绕过已生效的工程契约。
 
@@ -53,8 +53,8 @@
 - Engineer 的 Local Validation（本地验证） 与 Code Review（代码审查） 属于 Development 必备质量机制，与 Verify Agent 是否参与无关；
 - Verification 是 Development / Delivery Completion Contract 的组成部分，不固定为单独 Stage；每个 Implementation Task 必须完成自己的验证，组合行为按需使用 Change-level Verification Task；
 - Regression / Integration / E2E 是 Verification Method；责任执行者由 Runtime Projection（运行时投影） 确定为 Engineer，或在已批准 Independent Verification（独立验证） 与 Verification Task 范围重合时为 Verify Agent；CI / script / test runner 仅作为执行机制；
-- Verify Agent 是按需参与的 **Independent Verification Executor**，只有 `verify_agent.required=true` 时才增加独立验收者；
-- 本期默认不创建 Development Sub-Issue；当前 Issue 内通过 `@mention + task_refs` 分工，多个 Tasks、Engineer、Repository 或 PR 不需要拆分 Issue；
+- Verify Agent 是按需参与的 **Independent Verification Executor**，只有 `analysis.human_approval.verify_agent_required=true` 时才增加独立验收者；
+- 本期默认不创建 Development Sub-Issue；当前 Issue 内通过原生 `@mention` 交接获批 Change，多个 Tasks、Engineer、Repository 或 PR 不需要拆分 Issue；
 - **Workitem Analyst 负责需求与问题分析及研发准备，澄清目标、业务场景、行为规则、范围和验收要求，形成后续研发依据，并在 `analysis-publish` 中提交审核、回读确认；Human 作出决定，Delivery Lead 理解意见并组织后续协作；**
 - **获准自动交付的 Corrective / Intentional 均采用 OpenSpec Change Model；Corrective 使用专用轻量产物契约，Intentional 保留规格驱动分析与实施；Multica 继续负责独立 Agent Run、运行与协作；**
 - **Delivery Lead 在已批准的需求、方案与验收边界内，结合当前 Roster 正常承担成员选择、工作分工与交接；独立工作使用 Assignment，当前 Issue 内协作使用 `@mention`；**
@@ -99,17 +99,14 @@ Analysis Package → Analysis Gate → analysis_review
          ▼
 Human Analysis Review → Delivery Lead（批准边界）
          ▼
-OpenSpec Tasks / Runtime Projection
-   ├─ Parent Issue + @Engineer + task_refs（默认）
-   └─ Development Sub-Issue + task_refs（按需）
+Approved OpenSpec Change → 当前 Issue 原生 @Engineer
          ▼
 Implementation / Local Validation / Code Review
          ▼
 Development Completion Check → Tasks 完成状态更新
          ▼
-Parent Delivery Aggregation → Verification Projection
-   ├─ verify_agent.required=false → 验证 Evidence
-   └─ verify_agent.required=true → @Verify Agent → Verification Gate
+研发发布与 PR 准备事实
+   └─ 必要独立验收决定由 Human Approval 持有
          ▼
 PR Materialization → PR Status Sync → Finalize / Archive
          ▼
@@ -129,7 +126,7 @@ TFS Close / Issue Done
 | **Backend Engineer** | 后端专业成员 | 在已批准范围与当前 Task Set 内完成后端实现、Local Validation、Code Review 和整改 | 交付 Commit / Push、PR Preparation 与 Development Evidence（研发证据）；不重新定义需求或决定整个 Delivery 的分工 |
 | **Frontend Engineer** | 前端专业成员 | 在已批准范围与当前 Task Set 内完成前端实现、本地与必要浏览器验证、Code Review 和整改 | 交付当前 Task Set 的工程成果与 Evidence；不把技术步骤自行扩展成新的交付任务 |
 | **Flink Engineer** | Flink / 流处理专业成员 | 在已批准范围与当前 Task Set 内完成流处理实现、相关行为验证、Code Review 和整改 | 交付当前 Task Set 的工程成果与 Evidence；涉及已批准 Contract / Scope 的实质变更时升级 |
-| **Verify Agent** | 按需参与的 Delivery-level 独立验证成员 | 在 `verify_agent.required=true` 时消费已批准 OpenSpec Acceptance / Verification Contract（验证契约），对固定候选 Commit Set 做 independent verification 并归因 Finding | 交付 Verification Report 与失败证据；不拥有 Requirement / Scenario / Verification Task 的 Engineering Contract；可在批准范围内承担 assigned Verification Task 的 Runtime Execution，不替代 Engineer 的 Task Verification / Local Validation / Code Review |
+| **Verify Agent** | 按需参与的 Delivery-level 独立验证成员 | 在 `analysis.human_approval.verify_agent_required=true` 时消费已批准 OpenSpec Acceptance / Verification Contract（验证契约），对固定候选 Commit Set 做 independent verification 并归因 Finding | 交付 Verification Report 与失败证据；不拥有 Requirement / Scenario / Verification Task 的 Engineering Contract；可在批准范围内承担 assigned Verification Task 的 Runtime Execution，不替代 Engineer 的 Task Verification / Local Validation / Code Review |
 | **TFS Sync Agent** | Squad 外的 Autopilot Thin Adapter | 通过 `tfs-sync` 获取 TFS 原始事实、调用确定性同步并汇总结果 | 新建 Issue 由 Wayfinder 持有并在完整初始化后受控激活；不做准入语义判断或直接启动 Squad 研发 |
 | **Wayfinder Agent** | Squad 外的 Intake Triage Agent | 使用独立的 `codebase-explorer` 按需深入探索 Repository、代码、调用链与 Spec；依据 Wayfinder Instructions 形成 `accepted / needs_human / unsupported` 结论 | 确认 `/note` Comment 已记录后受控交接；不做正式 Root Cause / Technical Change Kind 判断 / OpenSpec Preparation |
 | **PR Status Sync Agent** | PR 状态核实与同步 | 核实已登记 PR 的外部状态，使用 `pr-status-sync` 完成状态对账并交付异常与待处理事项 | 对状态事实的准确性负责；不解释 Review 意见、不推断 abandoned 原因或替代交付决策 |
@@ -201,71 +198,20 @@ Human 自然语言审核意见
  ↓
 Delivery Lead 理解决定与条件；明确批准后继续
  ↓
-结合 Approved OpenSpec Tasks、批准边界、依赖与当前 Roster 组织 Task Set
+按获批 Change 在当前 Issue 原生 @Engineer
  ↓
-对各 Task Set 使用 §7 已定义的 Runtime Projection
- │
- ├─ Parent Issue Runtime（默认）
- │    ├─ @Backend Engineer + task_refs      ┐
- │    ├─ @Frontend Engineer + task_refs     ├─ 无阻塞依赖时可以并行
- │    └─ @Flink Engineer + task_refs        ┘
- │
- └─ Development Sub-Issue（按需）
-      ├─ materialize-development.py 落实已确定的 Owner / task_refs / 依赖
-      ├─ Assignment → Specialist / Delivery Squad
-      └─ 仅对依赖满足的 Sub-Issue：backlog → todo
+Engineer 实现、验证、Code Review、Commit / Push
  ↓
-各 Engineer 按相同 Engineering Contract 执行
-Implementation
-→ Local Validation
-→ Code Review
-→ Commit / Push
-→ PR Preparation
-→ Development Evidence
+更新 tasks.md → dev publish → 每个实际交付仓 pr prepare
  ↓
-Development Completion Check
+pr materialize：核验 Completion、批准范围和 Candidate，逐仓确认 PR 及 Work Item 关联，补充 pr_id / pr_url
  ↓
-Tasks 完成状态更新 → 核对依据 → Task Set READY
+全部登记后 in_review → PR Status Sync
  ↓
-Parent Issue / Delivery Lead 聚合当前有效结果
-├─ Parent Issue Runtime → task_refs completion / evidence facts 回流
-└─ Development Sub-Issue → done 后通过原生 Parent / Stage 回流
- ↓
-确认 required Implementation Tasks 与 Engineer-owned Verification Tasks 已完成，读取已批准 Independent Verification Decision
-+ Implementation / Engineer-owned Verification Evidence 当前有效
-+ 对应 Engineer Task Sets Development Ready / required Development Sub-Issues 已完成
-+ 若 verify_agent.required=true：Verify-Agent-owned required Verification Tasks 已明确分配（可保持 pending）
-+ 无 unresolved Development blocker
- ↓
-├─ verify_agent.required=true 且无当前有效 PASS
-│    → @Verify Agent：执行其 assigned Verification Tasks + Independent Verification
-│    → 形成 Verification Report / Evidence，持久化已完成 Verification Tasks
-│    ├─ 满足 §9.5 条件 → Verification Gate PASS
-│    └─ FAIL / UNKNOWN → Targeted Rework / 升级
-│                       → 重新检查受影响的 Engineer-side Readiness
-│                       → Parent Delivery 重新评估 Verify
-│
-└─ verify_agent.required=false / 已有当前有效 PASS
- ↓
-全部 required OpenSpec Tasks（含 Verify-Agent-owned Verification Tasks）完成
-+ 全部 required Verification Evidence 当前有效
-+ Verify 不要求或当前 Verification Gate PASS
- ↓
-PR Materialization → Create required PR(s)
-→ in_review
- ↓
-PR Status Sync Agent（Thin Adapter）
-→ reconcile-pr-status.py
- ↓
-all required PR completed
- ↓
-same-run deterministic finalize
-（Change Archive / 根仓 Commit / 引用回填）
- ↓
-TFS Done / Issue Done
+全部 PR completed → Finalize / Archive → TFS Writeback → Issue Done
 ```
 
-当前 Issue 可以承载多个专业 Agent Run；同一 Repository 的所有 Task Sets 保持唯一有效 Engineer，不从两个入口派发同一 Task Set。多个 Engineer、Repository 或 PR 不构成新建 Issue 的理由。
+同一 Issue 的成员交接与执行身份由 Multica 原生 Run / Assignment / Comment 承载。
 
 当前专业协作由 Delivery Lead 在 Issue 内统一协调，不创建新 Issue 承接普通角色交接。
 
@@ -277,7 +223,7 @@ Merge 后正常 QA / 测试发现的新问题形成新的 TFS Bug / Requirement�
 
 以下 Run 0–1 按研发测试阶段的手动入口描述；目标态将首次 `backlog → todo` 交给 TFS Sync 自动执行，后续准入和交接职责不变，见 [入口阶段约定](#wayfinder-entry-stages)。
 
-**场景假设：** 一个单 Repository、单 Backend Engineer、单 PR 的 Intentional Change，Wayfinder 一次判为 `accepted` 且 `/note` Comment 回读成功；`accepted` 固定自动启动；Analysis 一次审核通过，Human 确认 `verify_agent.required=false`；研发、PR 均一次成功，使用 Parent Issue Runtime。
+**场景假设：** 一个单 Repository、单 Backend Engineer、单 PR 的 Intentional Change，Wayfinder 一次判为 `accepted` 且 `/note` Comment 回读成功；`accepted` 固定自动启动；Analysis 一次审核通过，Human 确认 `analysis.human_approval.verify_agent_required=false`；研发、PR 均一次成功，使用 Parent Issue Runtime。
 
 - **Run 0 — TFS Sync Agent：** 创建 `backlog` Issue，写入并回读 TFS 来源事实，设置 `assignee=Wayfinder Agent` 并确认初始化；保持 `backlog`，不激活 Wayfinder 或 Squad。
 - **Run 1 — Wayfinder Agent：** Human 手动将 Issue 改为 `todo` 并保留 Wayfinder 指派，由原生 Status Trigger 启动 Run；依据 Wayfinder Instructions，按需使用 `codebase-explorer`；给出 `accepted`，确认同一 Issue 的顶层 `/note` Comment 已记录；通过一次 `todo + Squad` Assignment Update 自动唤醒 Leader。
@@ -288,7 +234,7 @@ Merge 后正常 QA / 测试发现的新问题形成新的 TFS Bug / Requirement�
 - **Run 6 — Delivery Lead：** 聚合当前有效结果；本例不需独立 Verify，满足 PR Gate 后调用确定性 PR Materialization，进入 `in_review`。
 - **Run 7 — PR Status Sync Agent：** PR `completed` 后在同一 Run 执行有界 Finalize / Archive / TFS Close，并按后置条件关闭 Issue。
 
-**数量口径：** 此例合计 **8 次关键 Agent Run**，其中 Squad 内 **5 次**，Squad 外的 TFS Sync、Wayfinder、PR Status Sync **3 次**。若 `verify_agent.required=true`，且增加一次 Verify Agent Run 与一次结果回流 Lead Run，此例相应为 **10 次**。TFS 批量同步、PR `active` 轮询、失败重试和恢复均可改变实际数量；Multica Agent Run 不等同于 CLI Session。
+**数量口径：** 此例合计 **8 次关键 Agent Run**，其中 Squad 内 **5 次**，Squad 外的 TFS Sync、Wayfinder、PR Status Sync **3 次**。若 `analysis.human_approval.verify_agent_required=true`，且增加一次 Verify Agent Run 与一次结果回流 Lead Run，此例相应为 **10 次**。TFS 批量同步、PR `active` 轮询、失败重试和恢复均可改变实际数量；Multica Agent Run 不等同于 CLI Session。
 
 `accepted` 按 `tfs.type` 交给 Bug Fix Agent 或 Delivery Squad，由原生 Assignment Trigger 启动对应 Run，不设置 `manual_start` 分支。
 
@@ -392,7 +338,7 @@ Delivery Lead 不负责：
 
 - 替代 Workitem Analyst 重新调查已确认根因、重做需求分析或另选技术方案；
 - 替代 Engineer 决定类 / 函数拆分、详细实现步骤、生产代码、正式 Local Validation 或 Code Review；
-- 在 `verify_agent.required=true` 时替代 Verify Agent 完成 Independent Verification，或替代 Human Approval / Business Decision；
+- 在 `analysis.human_approval.verify_agent_required=true` 时替代 Verify Agent 完成 Independent Verification，或替代 Human Approval / Business Decision；
 - 为当前 Issue 内的普通专业分工额外创建子 Issue，或反复切换整个 Issue 的 Assignee；
 - 实现底层 Run 队列、调度器、全局事务或第二套 Workflow Runtime；
 - 覆盖明确 Gate `FAIL`，或把 `UNKNOWN` 当作自行放宽硬条件的权限。
@@ -860,7 +806,7 @@ analysis:
 
 实际工程增量的 `analysis.change_kind` 由 `rondo analysis publish` 从通过最终 Gate 的当前 Change Schema 确定性推导并登记、回读，供跨 Run 交接及完成任务统计。它是持久化分类结果，不决定 Skill 顺序或自动化授权。统计完成工作须结合 Issue 的有效完成状态，不以分类字段存在作为完成证据。
 
-专业审查结论与 Independent Verify Recommendation、理由及必要验证重点进入当前 Issue 审核 Comment，不要求结构化 Review Verdict 或 Focus 引用数组。Human Review 后形成的 `verify_agent.required`、Independent Verification Result、Assignment / Owner / Status / Runtime Projection 继续属于 Multica Delivery Truth。
+专业审查结论与 Independent Verify Recommendation、理由及必要验证重点进入当前 Issue 审核 Comment，不要求结构化 Review Verdict 或 Focus 引用数组。Human Review 后形成的 `analysis.human_approval.verify_agent_required`、Independent Verification Result、Assignment / Owner / Status / Runtime Projection 继续属于 Multica Delivery Truth。
 
 `codebase-explorer`、`requirement-analysis`、`bug-analysis` 与适用专业 Review 表示可组合的专业能力，不要求生成同名 Markdown。Corrective 的 `bug-analysis` Method 将最终确认事实沉淀到 `proposal.md`；Intentional 的 `requirement-analysis` 直接把工程结论沉淀到 Proposal / Specs / Tasks，并仅在 Conditional Design 条件满足时维护 `design.md`。
 
@@ -1015,7 +961,7 @@ PASS
 → 结束本轮分析执行，等待 Human Review；不得自动进入研发
 ```
 
-`analysis_review` 的 Key / Display Name / category 不变。Gate PASS 不生成 `verify_agent.required`，也不表示当前 Change 已获准编码。
+`analysis_review` 的 Key / Display Name / category 不变。Gate PASS 不生成 `analysis.human_approval.verify_agent_required`，也不表示当前 Change 已获准编码。
 
 
 <a id="human-analysis-review"></a>
@@ -1091,10 +1037,10 @@ Human Analysis Review
         ↓
 Final Independent Verification Decision
         ↓
-verify_agent.required = true | false
+analysis.human_approval.verify_agent_required = true | false
 ```
 
-仅改变“是否需要 Independent Verify Agent”且不改变 Acceptance Contract、Verification Contract、Scope 或 required Verification Tasks 时，不要求返回 Analysis；Delivery Lead 理解 Human 决定，使用 `rondo analysis approve` 引用真实批准评论、获批 Commit 和明确的独立验收决定，由 CLI 核对 Gate、登记 `analysis.human_approval` 并投影、回读 `verify_agent.required`。对同一获批 Change 的新决定，在允许的研发状态下更新批准事实，不重新派发已有效委派的工作。缺失、冲突或无法确认时不从 Analyst Recommendation 自动推断最终决定。Human 可明确批准具体已列任务在本轮不执行，由 Delivery Lead 使用 `rondo analysis approve --waive-tasks <refs>` 将完整豁免集合登记在 `analysis.human_approval.waived_tasks`（可选编号数组，缺省为空；复用批准评论及获批 Commit）。CLI 核验编号属于固定批准版 Tasks；同一评论的决定不可改写。Task Waiver 不等同于 Independent Verification 决定，也不取消必要 Candidate Validation 或 Code Review。若 Human 意见实质改变验收行为、必须满足的 Verification Contract 或批准 Scope，须返回 Workitem Analyst 定向更新 Engineering Truth 并重新 Human Review。
+仅改变“是否需要 Independent Verify Agent”且不改变 Acceptance Contract、Verification Contract、Scope 或 required Verification Tasks 时，不要求返回 Analysis；Delivery Lead 理解 Human 决定，使用 `rondo analysis approve` 引用真实批准评论、获批 Commit 和明确的独立验收决定，由 CLI 核对 Gate、登记 `analysis.human_approval` 并回读确认。对同一获批 Change 的新决定，在允许的研发状态下更新批准事实，不重新派发已有效委派的工作。缺失、冲突或无法确认时不从 Analyst Recommendation 自动推断最终决定。Human 可明确批准具体已列任务在本轮不执行，由 Delivery Lead 使用 `rondo analysis approve --waive-tasks <refs>` 将完整豁免集合登记在 `analysis.human_approval.waived_tasks`（可选编号数组，缺省为空；复用批准评论及获批 Commit）。CLI 核验编号属于固定批准版 Tasks；同一评论的决定不可改写。Task Waiver 不等同于 Independent Verification 决定，也不取消必要 Candidate Validation 或 Code Review。若 Human 意见实质改变验收行为、必须满足的 Verification Contract 或批准 Scope，须返回 Workitem Analyst 定向更新 Engineering Truth 并重新 Human Review。
 
 已获准交付的 Approved OpenSpec Change 在进入 Development 前提交到根仓 Git，记录已批准的开发基线。Git Commit 不禁止批准边界内的设计细化和任务更新；需要改变已批准行为、范围、关键技术约束或验收要求时，仍返回既有 Analysis / Human Review。该 Commit 不创建独立 PR，也不进入业务 required PR 集合。
 
@@ -1209,344 +1155,46 @@ Reject 不触发整套 Analysis 无差别重跑。针对已经批准的 Analysis
 
 <a id="development-materialization"></a>
 
-# 7. Development Runtime Projection（研发运行时投影）与交付单元
-
-Human Analysis Review APPROVED 后，Delivery Lead 读取已批准 OpenSpec Change、`tasks.md`、技术依赖、当前 Squad Roster，以及 Multica 中的批准 / Gate / Verify 决策事实，在当前 Issue 内组织研发执行。
-
-工程任务以 OpenSpec Tasks 为准。一组分配给 Engineer 的 Tasks 用 `task_refs` 引用，不建立额外的 Task Set 状态对象或子 Issue。
-
-```text
-OpenSpec Tasks
-    ↓
-Delivery Lead 按 Roster 选择 Engineer
-    ↓
-当前 Issue 内 @mention Engineer + task_refs
-    ↓
-Engineer Run + Development Evidence / Completion Facts
-    ↓
-Delivery Lead 在当前 Issue 聚合
-```
-
-**当前派发原则：**
-
-- 当前 Issue 保持 `Delivery Squad` 作为 Assignee；内部角色协作使用 `@mention`，不为分工切换 Issue Ownership。
-- 同一 Issue 中同一业务 Repository 的全部 Task Sets 由同一名当前有效 Engineer 承接，允许分组或分次执行；不同 Repository 可由不同 Engineer 并行。
-- 有效派发不得重叠；换 Engineer 前先确认旧 Run 已结束，并按当前 Task / Evidence 事实交接，不因切换角色而创建新 Issue。
-- 任务数量、Repository 数量、多个 PR、跨前后端协作或普通技术依赖都不构成额外创建 Issue 的理由。
-- 技术依赖体现在 OpenSpec Tasks、Design 与本轮派发安排；不为普通执行顺序创建 Stage。
-- 必要硬条件、幂等和副作用由现有 `rondo dev materialize` 的默认 `parent` 路径处理；现存 `sub-issue` 分支不进入当前常规协作。
-
-派发提供本轮必要的 `change_ref`、`task_refs`、批准依据、Repository / Scope、适用 Artifacts 与 Evidence 引用。专业成员应能够在独立 Run 中读取当前版本，不能依赖前序 Agent 临时会话。
+# 7. Development Runtime（研发运行）
 
 <a id="development-activation"></a>
 
-## 7.1 Current Issue Runtime（当前事项运行时）
+## 7.1 Change 级原生交接
 
-Delivery Lead 可以在同一 Issue 内向不同 Repository 的 Engineer 分别发送原生 `@mention`，但同仓始终保持单一有效 Engineer。每个 Task Set 只选择一个启动入口，不重复 Mention / Rerun。
-
-Engineer 完成工作后在同一 Issue 返回与 `task_refs` 关联的 Development Result / Evidence，Delivery Lead 按当前事实聚合后续工作。
-
-共享 OpenSpec `tasks.md` 的 checkbox 更新仍应遵循 [05 §11](05-openspec-schema-implementation-design.md#task-progress-update) 的受控串行写入；工程完成检查、Patch / 回读、READY 的顺序沿用 [§8](#development-execution)。
+Delivery Lead 确认当前 Human Approval 绑定已发布 Analysis Source 后，在当前 Issue 内原生 @Engineer。工程任务与 Repository Scope 以获批 Change 为准；不增加 Task Set 事实、派发 CLI 或研发子 Issue。Rondo 仅在受控操作前核对实际 Run / Actor、批准版本、仓库及 Git Candidate。
 
 <a id="section-7-2"></a>
-
-## 7.2 Legacy Sub-Issue Path（非当前默认交付）
-
-> `rondo dev materialize --projection sub-issue` 等现有代码分支暂时保留，但当前 Delivery Lead 不在普通交付中选择该路径。以下细节仅供已有代码维护和后续专项清理参考，不作为本期新 Issue 创建规则。
-
-
-需要独立 persistent runtime state 时，按 [§7](#development-materialization) 先查找并复用同仓 Development Sub-Issue；不存在才创建。一个 Sub-Issue 可以承接多个 Task Sets，只有其全部当前 required Task Sets 完成后才允许关闭。创建时直接保存完整执行输入，不先启动空壳：
-
-```text
-Parent Issue
-+ task_refs
-+ Goal / Scope refs
-+ Approved OpenSpec Change refs
-+ 相关 Spec / Design（适用时）/ Corrective Proposal，以及 Acceptance / Verification Contract 引用（Requirement / Scenario、Corrective Proposal 中的预期行为与回归范围、当前已批准任务编号如 1.1）
-+ Owner
-+ backlog
-+ 必要 Dependency / Stage
-```
-
-Sub-Issue Owner 的选择（Specialist-owned / Squad-owned）统一由 [§7.4](#section-7-4) 规定；本节仅落实 Delivery Lead 已明确的 Owner Assignment，不在物化阶段重新判断 Owner。
-
-创建并准备完整后，只有依赖已经满足的 Sub-Issue 才从 `backlog → todo`。已经通过 Sub-Issue Assignment 启动的 Task Set，不再在父 Issue `@mention` 同一 Engineer执行相同 `task_refs`。
-
 <a id="section-7-3"></a>
 
-## 7.3 准备失败、恢复与安装版本验收
+## 7.2 执行与恢复
 
-| 当前情况 | 处理 |
-|---|---|
-| Parent Runtime 派发结果未知 | 先读取当前 Run / Comment 事实，不立即重复 Mention |
-| Sub-Issue 已创建但输入不完整 | 保持 `backlog`，补齐后回读，不激活 |
-| Sub-Issue 激活结果未知 | 查询 Issue / Run 后恢复，不重复 Assignment / Mention / Rerun |
-| task_refs 无效、范围重叠冲突或依赖无法确认 | `FAIL` / `UNKNOWN`，交 Delivery Lead 修正 |
-| 同仓多个 Engineer、重复 Sub-Issue 或父 / 子入口重叠派工 | 暂停冲突工作，按 [§7](#development-materialization) 恢复唯一责任和入口，不在 PR 阶段补救 |
-| 共享工作区修改丢失或关键 Evidence 不可读 | 停止自动推进，交 Delivery Lead 协调恢复；不得凭旧 READY 自动补勾 |
-| 身份 / 权限 / 外部结果无法可靠确认 | `UNKNOWN`，停止相关副作用 |
-
-安装版本至少验证：
-
-```text
-父 Issue @mention 一个 Engineer
-父 Issue 分别 @mention 多个 Engineer
-创建带 Owner 的 backlog Sub-Issue 不启动 Specialist
-backlog → todo 产生预期 Specialist Run
-原已 done 的 Development Sub-Issue 重开至非完成状态：确认新 Run 的实际触发机制，结果未知时查 Run 且不重复请求
-同一 task_refs 不出现双触发
-Stage / Parent 回流只针对实际 Sub-Issue
-同仓多 Task Sets 复用唯一 Engineer / Sub-Issue；部分 READY 不关闭 Sub-Issue
-换 Engineer 前旧 Run 已结束；原 Sub-Issue 复用且不出现两个有效 Owner
-不同 Agent / 新 Run 可读取同一共享根仓的受控修改；丢失时停止
-```
-
----
-
+同一 Issue 的执行、重试和回流复用 Multica 原生能力；已执行结果不确定时先查当前 Run 和工程事实，避免重复启动。交付前置不满足时返回 FAIL / UNKNOWN，并按实际原因协调。
 
 <a id="section-7-4"></a>
-
-## 7.4 Legacy Sub-Issue Ownership（非当前交付路径）
-
-Development Sub-Issue 是可选 Runtime Isolation，不是 Task decomposition。其 Owner 由 Delivery Lead 根据该 Task Set 的持续运行责任选择。
-
-```text
-单一专业 Owner
-→ Specialist-owned
-
-需要持续多角色协调 / 动态交接
-→ Squad-owned
-```
-
-Assignment 表达长期 Issue Ownership；`@mention` 表达父 Issue 中的当前请求。不得仅为了“多个 Engineer”“跨仓”或“Tasks 很多”创建 Sub-Issue。
-
-Squad-owned 是 Issue 的协调 Ownership，不豁免 [§7](#development-materialization) 的同仓唯一 Engineer 约束；实际承担同一业务 Repository 实现的 Engineer 仍须唯一。Owner 变化和后续返工保持原 Sub-Issue 的身份与可追溯交接。
-
-
 <a id="delivery-stage"></a>
 
-## 7.5 Legacy Stage（非当前交付路径）
-
-Stage 只用于 Development Sub-Issues 之间确实存在的**完成依赖**。
-
-```text
-技术任务依赖
-→ 先体现在 OpenSpec Tasks / Design / 派发顺序
-
-需要以前置 Sub-Issue 的完成状态控制后续 Sub-Issue 激活
-→ 使用 Stage
-```
-
-不存在独立 Sub-Issue 时，不为了表达普通 Task 依赖创建 Stage。接口契约已经明确且可并行时，前后端可以直接在父 Issue 中分别运行。
-
-Stage 编号不是全局执行锁；父级收到原生回流后仍需检查当前 Task coverage、Evidence、blocker 与已执行动作。
-
+Multica 原生 Sub-Issue / Stage 可用于独立事项的协作，不作为当前 Requirement Change 的研发派发模型。
 
 <a id="development-execution"></a>
 
-# 8. Development Execution、Completion & Aggregation（研发执行、完成与聚合）
+# 8. Development Execution、Completion & Aggregation（研发执行与完成）
 
-无论 Runtime Projection 是 Parent Issue Runtime 还是 Development Sub-Issue，Engineer 执行模型相同：
+## 8.1 Engineer Execution
 
-```text
-assigned task_refs
-    ↓
-Ground
-    ↓
-Implementation
-    ↓
-Local Validation
-    ↓
-Code Review
-    ↓
-Commit / Push
-    ↓
-PR Preparation
-    ↓
-Development Evidence
-    ↓
-Development Completion Check
-    ↓
-Tasks 完成状态更新
-    ↓
-核对检查依据 → 当前 Task Set READY
-```
+Engineer 消费当前获批 Change，在授权 Scope 内实现、验证、审查并发布业务 Candidate；更新实际完成的 OpenSpec Tasks，使用 `rondo dev publish` 固定本轮研发工件版本。专业方法见 [09](09-unified-engineer-development-design.md) 与 [04](04-engineer-development-design.md)。已批准豁免依据 Human Approval，不虚假勾选。
 
-`Development Completion Check` 判断的是当前 assigned Task Set 的 Engineering Contract，而不是整个 Delivery：
-
-```text
-当前仍需执行的 assigned OpenSpec Tasks 实质完成且有有效验证 Evidence
-+ Local Validation PASS
-+ Code Review PASS
-+ Review Findings 已处理
-+ 必要业务代码 Repository Commit / Push 完成
-+ PR Preparation 完整
-+ Development Evidence 完整
-+ 无当前 Task Set blocker
-```
-
-已批准取消 / 替换项由受控任务修订保留编号与批准依据，并按 [05 §8.5](05-openspec-schema-implementation-design.md#section-8-5) / [§10.2](05-openspec-schema-implementation-design.md#section-10-2) 转为非 checkbox 历史记录；不要求其实现 / 测试 Evidence，也不虚假勾选。纯验证且无代码修改的 Task Set 按 [04 §7.1](04-engineer-development-design.md#section-7-1) 引用已有 Candidate 及仍有效的 Review / PR Preparation，不要求新 Commit / Push 或重复 Code Review，但本轮要求的验证仍须执行并留存证据。
-
-Check 依据当前 Candidate、批准契约与 Evidence 判断工程实质完成，**不以本轮 checkbox 已勾选为前置**。Check PASS 后在当前 Engineer Run 内连续执行：
-
-```text
-按 05 §11 受控 Patch 当前已完成任务 → 回读确认
-→ 发布前核对 Candidate、工程契约与派工范围仍符合本轮 Check 依据
-→ 写回当前 Task Set READY Completion Fact / Evidence 引用
-```
-
-Patch / 回读失败或结果 UNKNOWN 时不得发布 READY；先查当前文件与证据，补缺失动作。有相关实质变化则重新检查受影响范围；仅 checkbox 更新不使检查依据失效。根仓最终 Git Commit 留给 [§12.4](#final-completion)，不是此处 READY 的前置；共享内容丢失时按 [§7.3](#section-7-3) 停止恢复。
-
-当前 Task Set READY 后：
-
-```text
-Parent Issue Runtime
-→ 保存 task_refs + completion/evidence facts
-→ 不将父 Issue 置为 done
-
-Development Sub-Issue
-→ 先保存当前 Task Set 结果
-→ 该 Sub-Issue 的全部当前 required Task Sets 均 READY 后，才按授权置为 done
-→ 使用原生 Parent / Stage 回流
-```
-
-Checkbox 不替代工程 Evidence；已勾选任务仍须核对当前候选与契约下的证据有效性。单个 Task Set READY 不表示整个 Repository 的最终 PR Candidate 已形成。
-
----
-
-
-## 8.1 Engineer Execution（工程师执行与质量保障）
-
-各专业 Engineer 负责当前 assigned Task Set 的完整 Engineering Contract。所有获准自动交付的 Change 消费当前 Change 的任务与适用产物：Corrective 以已批准根因 / Fix Strategy、既定行为和 Regression Scope 驱动修复；Intentional 以 Spec / Design / Tasks 驱动实现。两者均在批准边界内同步任务、必要设计与验证证据。Feedback-Driven Development、TDD、Local Validation 和 Code Review 继续作为实现与验证方法。
-
-按 [§8](#development-execution) 的适用条件完成以下工程活动；纯验证且无代码修改时复用有效 Candidate / Review / PR 事实：
-
-```text
-Ground / 读取已批准 Development Context
-Feedback Setup
-Implementation
-Required Local Validation
-Code Review
-Review Finding Fix
-Development Evidence
-Commit
-Push
-PR Preparation
-```
-
-正式原则：
-
-> **Local Validation + Code Review 是 Development 必备环节，与 Verify Agent 是否参与无关。**
-
-Engineer Local Validation 关注：
-
-```text
-Targeted Test
-Regression Test
-Build / Compile / Type Check / Lint
-Required Runtime Check
-Required Contract Check
-```
-
-Code Review 关注：
-
-```text
-Specification / Fix Strategy Alignment
-Acceptance Contract Coverage
-Scope Drift
-Repository Standards
-Complexity
-Contract Risk
-Test Quality
-Regression Risk
-```
-
-Code Review 可以由 Engineer 自检、read-only reviewer subagent 或独立 review Skill 承担，不形成新的隐藏 Development Owner。
-
-全部获准自动处理的 Change 的 `tasks.md` 只承载工程实现与开发侧验证，不以等待 Human、独立 Verify、PR 合并或 Archive 作为 Task Set 完成条件；任务内容边界见 [03 §9.4–§9.5 任务与运行时分工](03-workitem-analysis-design.md#analysis-task-contract)。每个 Task Set 只检查自身承担的必要任务，不等待其他 Task Set 的 checkbox 全部完成。规格覆盖、任务事实及其 Evidence 要求由 [04 §7 验证](04-engineer-development-design.md#development-section-07)、[§10 Evidence](04-engineer-development-design.md#engineering-evidence) 与 [§11 Completion](04-engineer-development-design.md#engineering-completion) 维护，不能仅凭勾选判定实现正确。
-
-Engineer 完成工程工作后提交结构化 Development Evidence，并按本章开头统一的 Development Completion Contract 检查实现、验证、Review Finding、Commit / Push、PR Preparation、Evidence 与 blocker；不再维护第二份完成条件清单。
-
-PR Preparation 由同仓唯一 Engineer 按 [§10.1](#section-10-1) 的统一最小输入契约准备，包含每个 required Repository Change 的分支、候选 Commit、PR Title / Description 及 TFS Work Item / Issue 的关联引用；本节不另建一份字段定义。
-
-不同 Runtime Projection 的完成边界和父级回流已在本章开头统一规定；Engineer 不据此关闭父 Issue，父级下一步由 Delivery Lead 根据 [§8.2](#parent-delivery-aggregation) 当前事实决定。
-
-Engineer 不负责：
-
-```text
-决定整个 Delivery 是否完成
-决定 Delivery-level Verify 是否 required
-派发 Delivery-level Verify Agent 或触发父 Delivery 的 PR Materialization
-执行 PR Materialization 的业务语义判断
-关闭父 Issue
-```
-
-PR Materialization 消费 Engineer 已准备的 PR Facts，由父 Delivery 流程在整体条件满足后调用确定性 capability。
-
----
-
+每个实际交付仓独立执行 `rondo pr prepare`，提供真实的验证、Code Review、Candidate 和专业 PR Description。
 
 <a id="parent-delivery-aggregation"></a>
 
-## 8.2 Parent Delivery Coordination / Aggregation（父交付协调与聚合）
+## 8.2 Change Completion
 
-父 Issue 是 Development 聚合点。Delivery Lead 每次被唤醒只读取当前事实并决定尚需做什么：
-
-```text
-OpenSpec required Tasks / task_refs coverage
-Parent Issue Engineer Run results
-Development Sub-Issue current status / results
-Unresolved blockers / findings
-verify_agent.required
-Repository Change / PR preparation facts
-```
-
-Development 可以由多个 Parent Issue Engineer Runs 与多个按需 Sub-Issues 共同完成。父级不要求它们具有统一的中间对象。所有 required OpenSpec Tasks 必须有明确的 Runtime Executor / `task_refs` 承接范围，但**进入 Verify 前的聚合只检查 Engineer-side Readiness**，不等待 Verify Agent 自己负责的 Verification Tasks 完成。
-
-进入 Independent Verification / 后续 PR 决策前的 Engineer-side Readiness 条件：
-
-```text
-所有 required Implementation Tasks 已完成且有当前有效 Evidence
-+ Engineer-owned required Change-level Verification Tasks 已完成且有当前有效 Evidence
-+ 对应 Engineer Task Sets 已按 §8 完成 Check → Patch / 回读 → 发布并形成有效 READY
-+ 上述 Engineer 工作对应的 required Development Sub-Issues（如有）处于有效完成状态
-+ 若 verify_agent.required=true：Verify-Agent-owned required Verification Tasks 已明确分配（可以 pending）
-+ 无 unresolved Development blocker
-```
-
-以上只是 Verify Agent 的准入聚合结果，**不等于整个 Change 的 required Verification Tasks 全部完成**。父级据此按 [§9.4](#section-9-4) 判断是否启动 Verify Agent；真正进入 PR Materialization 前，仍须按 [§9.8](#section-9-8)、[§10.2](#section-10-2) 检查包括 Verify-Agent-owned Tasks 在内的全部 required Tasks 及有效 Evidence。旧 Run、自述或已失效 Evidence 不覆盖当前事实。
+研发发布绑定完整 Analysis Source。PR Materialization 前核对当前批准版 Scope、固定研发发布版 Tasks、实际交付仓与 Candidate、有效 Local Validation 和 Code Review；不要求未修改仓生成空 PR。工程完成不以 PR 已合并为前置。
 
 <a id="section-8-2-1"></a>
-
-### 8.2.1 父级协调与原生调度边界
-
-Parent Issue Runtime 的 Engineer 持久化 Development Result / Evidence，并通过经安装版本确认能回流至 Squad Leader 的 Comment / Result 路径交接；Development Sub-Issue 使用原生 Parent / Stage 终态回流。Run 结束或普通回复不必然唤醒 Leader。
-
-当前 Task Set 的结果只有在 [§8](#development-execution) 的 Check、Patch / 回读与发布前核对完成后才有效。共享工作区或关键 Evidence 丢失时停止自动聚合，不以旧 READY 补勾或宣称完成；根仓尚未最终 Commit 本身不使已满足条件的 Task Set 失效。
-
-Delivery Lead 收到回流后核对 [§8.2](#parent-delivery-aggregation) 的当前事实，再决定是否启动 Verify 或调用 PR Script；通知本身不等于 Delivery Ready。回流与失败恢复须验证安装版本，避免重复 Mention / Rerun，不另建通知队列或工作流运行时。
-
 <a id="section-8-2-2"></a>
 
-### 8.2.2 当前事实与副作用幂等
-
-重复唤醒时先读取当前状态：已经完成的 `task_refs` 不重复派发；已存在的 Sub-Issue 不重复创建；已有有效 Run 不重复触发。外部调用超时先查事实再恢复。重复回流无新增待执行动作时，Delivery Lead 结束当前 Run，不重跑已完成的专业工作或副作用。
-
-### 8.2.3 安装版本并发与重试验收
-
-至少验证：
-
-```text
-多个 @mention Engineer Run 并行回流
-Parent Run + Sub-Issue 混合完成
-同一 task_refs 重复派发保护
-Sub-Issue done → Parent / Stage 回流
-重开后旧 completion fact 不再放行
-Parent Issue Result / Comment 的实际 Leader 回流、通知丢失后的恢复
-重复回流不会重复启动 Verify Agent Run 或创建 required PR
-Sub-Issue / Stage 已完成但父级通知丢失时，可通过经安装版本验证的原生入口恢复父 Delivery 协调，且不重复派发或执行已完成动作
-```
-
+原生 Run 提供成员执行事实；Rondo 仅登记确定性交付事实，并回读必要外部结果。异常按实际事实恢复，不新增完成状态、通知或派发模型。
 
 <a id="verification-rework"></a>
 
@@ -1564,7 +1212,7 @@ Level 2 — Change-level Verification
 只有组合多个 Task / Module / Repository / System / User Journey 后才能证明的行为，才在 tasks.md 增加独立 Verification Task
 
 Level 3 — Independent Verification
-只有已批准 verify_agent.required=true 时，额外由 Verify Agent 对固定候选版本进行独立验证
+只有已批准 analysis.human_approval.verify_agent_required=true 时，额外由 Verify Agent 对固定候选版本进行独立验证
 ```
 
 Regression / Integration / E2E 都是 Verification Method，不与某个 Agent 绑定。Change-level Verification Task 本身不绑定角色；Multica 可以将其投影给 Engineer，或在已批准 Independent Verification 与该 Task 重合时投影给 Verify Agent。CI / script / test runner 是执行机制，不是 Task Owner。OpenSpec Native Verify 是 Artifact-to-Implementation Verification，也不是 Verify Agent 或真实 E2E 的同义词。
@@ -1582,7 +1230,7 @@ Workitem Analyst 是首次专业判断者：根据当前 Acceptance / Verificati
 Human 最终决定批准后，执行事实继续使用现有字段（由 `rondo analysis approve` 依据 Human 决定统一登记并回读；与批准评论及获批版本绑定）：
 
 ```text
-verify_agent.required = true | false
+analysis.human_approval.verify_agent_required = true | false
 ```
 
 字段不迁移，只收窄语义。缺失、非法值或与已批准决定不一致时，派发、激活与 Finalize 均不得静默放行：
@@ -1597,7 +1245,7 @@ true
 = Verify-Agent-owned Verification Tasks 可以在该 Independent Verification 中完成
 ```
 
-`verify_agent.required` 表示 Human 已批准的最终 Independent Verification Decision，不要求与 Workitem Analyst 的原始 Recommendation 相同。Recommendation 保留为专业建议事实；Human override 保留原始评论 / Decision 引用，不复制形成第二套技术合同。
+`analysis.human_approval.verify_agent_required` 表示 Human 已批准的最终 Independent Verification Decision，不要求与 Workitem Analyst 的原始 Recommendation 相同。Recommendation 保留为专业建议事实；Human override 保留原始评论 / Decision 引用，不复制形成第二套技术合同。
 
 Delivery Lead 正常情况下执行已批准结果，不按 Change Kind 或测试类型重新判断，也不得自行把 `required=true` 降为 `false`。若 Development 中出现的新工程事实实质改变独立性要求，由 Delivery Lead 协调回到既有 Analysis / Human Review；若同时改变 Verification Contract / Scope，则先由 Workitem Analyst 更新 Engineering Truth。
 
@@ -1622,10 +1270,10 @@ OpenSpec Native Verify 可以检查 Artifact-to-Implementation 的 Completeness 
 执行策略：
 
 ```text
-verify_agent.required = true
+analysis.human_approval.verify_agent_required = true
 → Verify Agent 在本次 Independent Verification 中执行或复用当前候选 Commit Set 的有效 OpenSpec Native Verify 结果
 
-verify_agent.required = false
+analysis.human_approval.verify_agent_required = false
 → 不作为 PR Transition 默认强制条件
 → 仅在 Project / Change Contract 明确要求或需要 Change-level consistency audit 时执行
 ```
@@ -1668,7 +1316,7 @@ integration / E2E runner
 
 这些是执行机制，不拥有 Task Contract 或 Multica Runtime Ownership。
 
-如果 `verify_agent.required=true` 且某个 Change-level Verification Task 已覆盖独立验收重点，可以直接由 Verify Agent 执行；其一次有效执行可同时满足该 Verification Task Completion 与对应 Independent Verification Scope，不要求 Engineer 为形式先执行一遍相同 E2E。若该 Task 已由 Engineer 完成，已有 Evidence 仍不自动等于 Independent Verification PASS，Verify Agent 按独立性要求决定需要复验的范围。
+如果 `analysis.human_approval.verify_agent_required=true` 且某个 Change-level Verification Task 已覆盖独立验收重点，可以直接由 Verify Agent 执行；其一次有效执行可同时满足该 Verification Task Completion 与对应 Independent Verification Scope，不要求 Engineer 为形式先执行一遍相同 E2E。若该 Task 已由 Engineer 完成，已有 Evidence 仍不自动等于 Independent Verification PASS，Verify Agent 按独立性要求决定需要复验的范围。
 
 因此：
 
@@ -1686,7 +1334,7 @@ Integration / E2E required
 仅当：
 
 ```text
-verify_agent.required = true
+analysis.human_approval.verify_agent_required = true
 ```
 
 父 Delivery 才调度 Verify Agent。开始前至少满足：
@@ -1725,7 +1373,7 @@ verification:
     - ...
 ```
 
-Verification Gate 在 `verify_agent.required=true` 时检查：
+Verification Gate 在 `analysis.human_approval.verify_agent_required=true` 时检查：
 
 ```text
 Verification Report.result = PASS
@@ -1776,7 +1424,7 @@ Requirement / Scenario、Corrective Regression Scope、Verification Task 或独�
 ```text
 所有 required Engineer Task Sets Development Ready
 所有 required Verification Tasks（含 Verify-Agent-owned）已完成并有当前有效 Evidence
-verify_agent.required=false
+analysis.human_approval.verify_agent_required=false
   OR
 当前候选 Commit Set 的 Independent Verification PASS
 ```
@@ -1893,134 +1541,28 @@ PR Materialization
 
 <a id="section-10-1"></a>
 
-## 10.1 PR Preparation（PR 准备）
+## 10.1 PR Preparation
 
-Engineer 在声明当前 assigned Task Set 完成前完成：
+每个实际交付 Repository 在 Issue Metadata `pr` 数组中对应一条记录，以 `repo_key` 唯一。记录包含仓库 URL、源/目标分支、Candidate Commit、Title、Description、Local Validation、Code Review；Bug 补充行为、根因、修复及 Regression Evidence，`bug.required_repos` 约束完整必要交付仓。Requirement 的范围以获批 `.openspec.yaml` 中 `x-repositories` 为准。
 
-```text
-Local Validation PASS
-Code Review PASS
-Commit / Push
-PR Preparation
-```
-
-纯验证且无代码修改时按 [§8](#development-execution) / [04 §7.1](04-engineer-development-design.md#section-7-1) 复用仍有效的 Candidate、Code Review 与 PR Preparation，不制造新提交。同一 Repository 的多次 Task Set 结果由同一 Engineer 维护，可以逐次更新准备事实；正式 PR Materialization 前须确认该 Repository 的全部 required Task Sets 及最终 Candidate，不把较早 Task Set 的 READY 当作最终仓库候选。
-
-每个 required Repository Change 至少准备以下事实；其中 YAML 仅示意逻辑结构，不新增 Multica / TFS 平台字段或独立数据对象，实际字段映射由 `pull-request` Skill 确定：
-
-```yaml
-repository: ...
-repository_id: ...
-source_branch: ...
-target_branch: ...
-candidate_commit: ...
-pr:
-  title: ...
-  description: ...          # 或持久可读的 Description Reference
-  ready: true
-associations:
-  tfs_work_item: ...       # 来源 TFS Work Item 的稳定身份 / 引用
-  delivery_issue: ...      # 当前 Issue 的稳定身份 / 引用
-```
-
-必需项包括 Repository / Repository ID、Source Branch、Target Branch、Candidate Commit、PR Title、PR Description（或持久可读的 Description Reference）、TFS Work Item / Issue 关联信息；不得因为相关身份已经存在于父 Issue 就在 Materialization 输入中丢失其可追溯引用。这里的 `associations` 是契约示意，不规定实际 API 字段名，也不要求复制已由 Multica 保存的来源事实。
-
-PR Title / Description 属于 Engineer 对本次代码修改的语义准备，只有 Engineer 可以修改其语义内容。Script 仅可对已确认的 Repository / Branch / Candidate Commit 等客观事实进行确定性校验与必要回填，不得借事实回填自行改写 PR Title / Description。
+`rondo pr prepare` 验证输入及当前授权，执行适用验证命令并登记真实结果；阻塞输入必须为空，但不持久化空 blockers。专业内容由 Agent 提供，CLI 不代写语义结论。
 
 <a id="section-10-2"></a>
 
-## 10.2 PR Materialization（PR 物化）
+## 10.2 PR Materialization
 
-当满足：
-
-```text
-所有 required Implementation Tasks 已完成且对应 Engineer Task Sets Development Ready
-+ 所有 required Change-level Verification Tasks 已完成且 Evidence 当前有效
-+ verify_agent.required = false
-```
-
-或：
+`rondo pr materialize` 核验适用 Gate，保持以下顺序：
 
 ```text
-所有 required Implementation Tasks 已完成且对应 Engineer Task Sets Development Ready
-+ 所有 required Change-level Verification Tasks（含 Verify-Agent-owned）已完成且 Evidence 当前有效
-+ verify_agent.required = true
-+ 当前候选 Commit Set 的 Verification Gate PASS
+读取 pr 及当前授权
+→ 核实全部实际交付仓的准备事实
+→ 逐仓核实已有 PR 或创建必要 PR
+→ 确认外部 PR 身份、分支、Candidate 与 Work Item 关联
+→ 在同一条仓库记录补充 pr_id / pr_url
+→ 全部登记后进入 in_review
 ```
 
-所有获准自动处理的 Change 在上述两条路径中都必须满足：当前 Change 的必要工程任务没有遗漏，当前 Fix / Acceptance Contract 及适用规格要求有覆盖，已识别的修复 / 规格 / 实现偏差已处理，所需验证有适用于当前代码与验收要求的 Evidence。Corrective 不能只凭 Tasks 勾选替代根因对应与回归证据。Task Set 完成不要求业务 PR 已创建或合并。
-
-这些条件纳入既有 Development Completion / PR 前置检查，不新增具名 Gate 或状态表。程序核对现有任务进度、必需引用与有效专业结论；语义覆盖不明确交相应 Engineer / Workitem Analyst，不能由脚本凭 checkbox 或 Leader 自述替代专业判断。必要任务确已取消或替换时须保留理由并遵循批准边界，不得为过 Gate 虚假勾选、删除要求或将未完成工作移入无效清单。
-
-父 Delivery 流程在上述整体条件满足后，通过明确的正常调用路径调用确定性的 `pull-request` capability。PR Materialization 不绑定某个 Specialist Agent；调用者须提供已准备 Facts 和当前 Delivery 上下文，不因此允许多个入口无协调地同时创建同一 PR。调用前按 [§8.2.2](#section-8-2-2) 检查当前事实与已执行动作。
-
-标准过程：
-
-```text
-读取 PR Preparation Facts / current_pr
-↓
-逐仓核对当前 PR 与外部事实：已存在则复用 / 恢复登记
-↓
-Active 或确需创建时核对 Branch HEAD；Completed 核对最终 Source Commit
-↓
-确需创建时调用 TFS / PR API
-↓
-确认 PR 身份与 Work Item 关联
-↓
-立即登记本仓 current_pr，保留其他仓库已登记事实
-↓
-全部 required PR 注册完成
-↓
-Issue → in_review
-```
-
-PR Materialization 必须幂等；多个 Repository 可以一次处理，逐仓登记已确认 PR，失败重试复用已登记事实。部分登记不能触发 Closeout。外部 PR 已创建但 `current_pr` 回写失败时，重试必须先确认外部事实并恢复登记，不能因本地记录缺失直接再建 PR；无法可靠确认身份或结果时返回 `UNKNOWN`。
-
-如果确定性 Materialization 返回：
-
-```text
-PASS
-→ in_review
-
-FAIL
-→ 按明确失败原因处理；不得绕过
-
-UNKNOWN
-→ Delivery Lead 语义判断
-```
-
-只有出现新的 Engineering Semantic Work 时才重新 `@Engineer`，例如：
-
-```text
-Branch HEAD != candidate_commit 且原因不明
-需要 rebase / conflict resolution
-PR 前置检查暴露代码问题
-必须修改代码 / 测试 / PR Preparation
-Repository / Branch Fact 冲突
-```
-
-以下问题不需要 Engineer：
-
-```text
-TFS / PR API 临时失败
-网络超时
-幂等恢复
-metadata 回填
-可确定性的字段 / 身份校验
-```
-
-当 Verify required 时，PR Materialization 必须基于已验证候选 Commit Set；代码实质变化会使旧 Verify PASS 失效。
-
-一个 Issue / Development Sub-Issue 可以关联多个 Repository Change；每个 Repository Change 保存一个当前 required PR。
-
-所有 required PR 成功登记后才进入：
-
-```text
-in_review
-```
-
----
-
+部分成功时保留已确认记录；重试优先回读外部 PR 并补未完成登记。没有完整登记不能触发 Closeout；`in_review` 仅核实已登记事实。外部不可确认返回 UNKNOWN，不重复创建，不覆盖其他仓库。
 
 <a id="pr-status-sync"></a>
 
@@ -2070,13 +1612,13 @@ provider_status ?
 多个 required PR 聚合：
 
 ```text
-任一 current_pr = abandoned
+任一 pr = abandoned
 → Exceptional Stop
 
-否则任一 current_pr = UNKNOWN
+否则任一 pr = UNKNOWN
 → UNKNOWN
 
-否则全部 current_pr = completed
+否则全部 pr = completed
 → Completion
 
 否则
@@ -2108,126 +1650,18 @@ mergeCommitMessage
 
 ## 11.2 PR Abandoned（PR 已放弃）
 
-检测到：
+Status Sync 确认外部 abandoned 后登记 `pr.abandoned`，将当前 Issue 置 blocked，保持原指派。Delivery Lead 理解当前真实 Human Comment，不由 CLI 推断业务原因。
 
-```text
-provider_status = abandoned
-```
+Requirement 的 `rondo delivery route-decision` 根据明确决定处理：
 
-确定性处理：
-
-```text
-持久化 Abandoned Fact
-↓
-pending_event / event_key
-↓
-Issue.status = blocked（Assignee 保持不变）
-↓
-STOP，等待 Human Decision
-```
-
-机器不推断 abandoned 的业务原因。
-
-Human 提交流程决定时，顶层 Comment 必须明确：
-
-```text
-Reason:
-- REJECTED | DISCARDED
-
-NEXT:
-- ANALYSIS
-- ENGINEERING
-- RECREATE_PR
-- CANCEL_DELIVERY
-```
-
-正常 Requirement Issue 已由 Delivery Squad 持有，Human Comment 按 Multica 原生机制唤醒 Delivery Lead；PR Status Sync 不重新指派 Issue，若 Owner 已被其他操作更改，应由 Delivery Lead / Human 核对，而非自动覆盖。普通讨论或补充信息按 [§6.3](#section-6-3) 返回 `NO_ACTION`，不得仅因没有 `NEXT` 就视为异常。
-
-Delivery Lead 调用：
-
-```text
-route-human-decision.py
-```
-
-确定性路由：
-
-```text
-NEXT = ANALYSIS
-→ status = in_progress
-→ @Workitem Analyst
-
-NEXT = ENGINEERING
-+ affected Task Set 唯一明确
-+ 原 Runtime Projection / Owner / 当前 Issue 与 Run 事实可确认
-→ 按原 Runtime Projection 执行 Engineering Targeted Rework（见下文）
-
-NEXT = RECREATE_PR
-+ Candidate Commit Set 未变化
-→ 核查原 PR Preparation 是否仍符合 Human Decision
-→ 无新的 Engineering Semantic Work 且当前 PR / Verification 前置事实有效：按 §10.2 重新核验并执行 PR Materialization
-→ 需要修改 PR Title / Description 等语义内容：确认 affected Task Set，按原 Runtime Projection 交 Engineer 定向处理
-→ 原产物是否仍适用或责任归属不明确：UNKNOWN / 安全停止
-
-NEXT = RECREATE_PR
-+ Candidate Commit Set 已变化
-→ 先核验 Commit 变化原因、原 PR Preparation 的适用性及是否需要 Engineering Semantic Work
-→ 需要代码 / 测试 / 冲突处理，或需要修改 PR Title / Description 等语义内容：
-  确认 affected Task Set，按原 Runtime Projection 执行 Engineer Targeted Rework
-→ 仅存在可确定性校验的 Candidate Commit 等客观事实变化，且原 PR Preparation 语义内容仍准确：
-  Script 校验并回填候选 Commit 等事实；复用原 PR Title / Description，不自行修改语义内容
-→ 原因、Owner、语义适用性或有效事实不明确：UNKNOWN / 安全停止
-→ 重新评估受影响 Evidence、Verification Gate 和 §10.2 前置条件；必要时重新验证
-→ 满足条件后才允许 PR Materialization
-
-NEXT = CANCEL_DELIVERY
-→ Cancellation Handler / Policy
-```
-
-> **实施边界待明确**：本版已规定 `CANCEL_DELIVERY` 由 Human 明确选择，但尚未定义完整 Cancellation Handler 的状态、OpenSpec Change、TFS、PR 等后置条件。该分支不得被视为已具备自动取消和收口能力；实施前必须补齐并审核专项契约，未补齐时由 Delivery Lead 保持安全停止并交 Human 处理。
-
-**ENGINEERING Targeted Rework（复用现有 Runtime Projection）**：`route-human-decision.py` 负责确定 Human 授权的下一步；`NEXT=ENGINEERING` 不重新选择执行入口。Delivery Lead 依据 `affected task_refs`、原 Runtime Projection、Owner、当前 Issue / Run 事实确定目标并检查已有返工动作；禁止把原 Sub-Issue Task Set 转移到父 Issue 上重新 Mention。
-
-| 原执行入口 | 返工准备、Completion Fact 失效与唯一触发路径 |
+| 决定 | 当前动作 |
 |---|---|
-| Parent Issue Runtime | 使受影响 `task_refs` 的当前 `development.result=complete` 结论失效，保留历史 Evidence；父 Issue 恢复 `in_progress`，在父 Issue **单次** `@原 Engineer`，不得重复派发相同 Task Set。 |
-| Specialist-owned Development Sub-Issue | 在**原 Sub-Issue** 写入 Human Feedback、`affected task_refs` 和必要当前 Contract 引用；将原 `done` Sub-Issue 重开至非完成状态（按可执行条件使用 `in_progress`），使其旧 Runtime Completion Fact 立即失效；按原 Owner 和已验证的原生启动机制在该 Sub-Issue **单次**触发，不在父 Issue 再次 `@Engineer`。 |
-| Squad-owned Development Sub-Issue | 同样在**原 Sub-Issue** 更新返工输入、重开并使旧完成事实失效；由原 Squad Owner 按该 Sub-Issue 的协作机制单次路由至对应 Specialist，不转移到父 Issue。 |
+| ANALYSIS | 登记决定，恢复 in_progress（no-start），由 Lead 原生交接 Workitem Analyst；实质契约变化重新审核。 |
+| ENGINEERING | Lead 核对当前批准、PR、Run 与返工范围，协调工程修正；CLI 不自动重置授权或解除阻塞。 |
+| RECREATE_PR | 确认当前对应 PR 已 abandoned、Candidate 未变且事实一致，仅解除该仓 pr_id / pr_url 绑定，保留专业准备事实；再按当前授权重新物化。Candidate 变化交 Engineer。 |
+| CANCEL_DELIVERY | 保持停止，由 Human 处理。 |
 
-在 Development Sub-Issue 路径中，父 Issue 可恢复 `in_progress` **仅用于继续协调与聚合**，并不成为该 Task Set 的执行入口。若原 Sub-Issue 不可用、`task_refs` / Owner 与当前 Contract 冲突、已有 Run 的结果不明，停止自动派发，由 Delivery Lead / Human 明确恢复安排；不默认新建 Sub-Issue 或重开整个 Stage。重开可能影响下游依赖时，按 [§7.5](#delivery-stage) 检查 Stage 当前事实，不自动回滚无关的已完成 Task Set。
-
-**顺序与幂等**：先核对 Human Decision、当前 Issue / Run / `task_refs`，再准备返工输入并使受影响 Completion Fact 失效，之后才触发新的执行。Sub-Issue `done → in_progress` 是否足以产生新 Run，须由 [§7.3](#section-7-3) 的安装版本验收确认；不能仅凭状态变化认定已启动，也不能在结果未知时盲目追加 Mention / Assignment / Rerun。重开规则沿用 [§9.9](#section-9-9)，事实有效性与 Parent 聚合沿用 [§13.1](#delivery-facts)、[§8.2.2](#section-8-2-2)；重复处理同一 Human Decision 不得产生第二次执行。
-
-**RECREATE_PR 的工程动作边界**：Human 选择 `RECREATE_PR` 不等于授权绕过已有 Verification / PR Gate。Candidate Commit Set 是否变化，不直接决定是否启动 Engineer：代码 / 测试 / 冲突处理，以及 PR Title、Description、变更摘要、测试说明、风险说明等语义修改，都属于 Engineer Semantic Work；即使代码不变，也必须确认 affected Task Set 并复用上表的原 Runtime 入口。仅当变化局限于可可靠核验的 Commit / Branch 等客观事实，且既有 PR Preparation 语义内容仍准确适用时，Script 才可校验、回填候选 Commit 引用等事实并复用原语义内容，不得自行撰写或修改 PR Description。若无法证明现有描述仍准确，禁止按“无需工程返工”处理。
-
-**Verification 与安全恢复**：即使无需 Engineer，仍须按 [§9.7](#section-9-7)–[§9.8](#section-9-8) 和 [§10.2](#section-10-2) 重新评估当前 Candidate Commit Set 的 Evidence、旧 Verify PASS 与 PR 前置条件。Commit Set 变化时旧 Independent Verify PASS 默认失效，必要时重新执行验证；不能因为代码内容表面相同或 Script 已回填新 SHA 就直接沿用旧 PASS。原 abandoned PR 始终保留为历史事实，不再作为当前有效 PR 放行。
-
-明确要求执行流程动作，但存在以下情况时：
-
-```text
-NEXT 或该动作必需信息缺失
-affected Task Set 不唯一（需要 Engineering Semantic Work 时）
-原 Runtime Projection、Owner 或目标 Issue 无法可靠确认
-当前 Issue / Run / Completion Fact 与准备执行的动作冲突
-事实冲突
-无法可靠判断 Commit Set、Verification Evidence 或 PR 前置事实是否可沿用
-Human Decision 与当前状态不一致
-```
-
-则：
-
-```text
-route-human-decision.py → UNKNOWN
-↓
-保持当前状态，不执行该流程动作
-↓
-Delivery Lead 澄清缺失信息 / 冲突，必要时请求 Human
-```
-
-若回 ANALYSIS，新 Analysis 再次通过 Human Review 后，以新的技术范围、约束、Acceptance / Verification Contract 及 Verify Recommendation 为准；Delivery Lead 只在相关新事实影响现有分工时调整协作安排，不默认重建全部任务。
-
-若回 ENGINEERING，受影响 Task Set 按原 Runtime Projection 完成修复、Local Validation、Code Review、Commit / Push、PR Preparation 和 Development Completion Check；父级只聚合当前有效事实。返工一旦启动，旧 Development Completion Fact 不得继续放行，但历史 Evidence 保留；验证 Evidence 是否重用须按 [§9.7](#section-9-7) 的候选 Commit Set、Contract 和影响范围判断。Verify required 且 Commit Set 变化时旧 Verify PASS 失效；Contract 实质变化时即使 Commit 未变也须重新评估。满足全部 required Tasks / Verification Gate / [§10.2](#section-10-2) 前置条件后，才可重新 PR Materialization。
-
-本分支至少验收：Parent Runtime 单次返工；已 `done` 的 Specialist-owned / Squad-owned Sub-Issue 在原 Issue 重开且父级不双触发；只重开多个 Sub-Issue 中受影响的一个；同一 Human Decision 重试不产生第二个 Run；重开但原生触发结果未知时先查 Run；Commit 未变化但 PR Title / Description 需修改时仍由原 Engineer 处理；仅客观 Commit 事实变化且既有 PR 语义内容有效时 Script 不修改 PR 文案；候选 Commit Set 变化后不沿用失效 Verify PASS。
+决定与必要外部身份绑定，重试不能移除后续新 PR。Bug 使用 `rondo bug resume` 的明确 REWORK / RECREATE_PR 契约；保留完整必要仓范围与外部 abandoned 核验。
 
 ## 11.3 PR Completed（PR 已完成）
 
@@ -2343,7 +1777,7 @@ def pr_transition_ready(ctx):
     return (
         ctx.all_required_tasks_complete
         and acceptance_ok
-        and all(ctx.required_current_pr_completed)
+        and all(ctx.required_pr_completed)
         and ctx.unresolved_blocker == 0
     )
 ```
@@ -2437,7 +1871,7 @@ Delivery Completion Gate（交付完成门禁） 属于 `issue-closeout` 内部�
 [ ] 所有 required OpenSpec Verification Tasks 已完成并有当前有效 Evidence
 [ ] 所有 required Task Sets Local Validation PASS
 [ ] 所有 required Task Sets Code Review PASS
-[ ] verify_agent.required=false，或 Independent Verify Agent PASS
+[ ] analysis.human_approval.verify_agent_required=false，或 Independent Verify Agent PASS
 [ ] Independent Verification PASS 对应当前候选 Commit Set 与批准的 Verification Focus（如果 required）
 [ ] 当前 Change 必要工程任务、Fix / Acceptance Contract 与适用规格覆盖、有效 Evidence 满足 §10.2 收口前置要求
 [ ] 所有 required current PR provider_status = completed
@@ -2623,120 +2057,24 @@ Run 成功、PR completed、Issue done 是不同事实。调用方只根据上�
 
 ## 13.1 状态与事实来源
 
-Multica 保存：
+| 事实 | 权威来源 |
+|---|---|
+| 协作与执行 | Multica 原生 Issue、Assignment、Run、Comment、Status |
+| Change 身份及发布版本 | `analysis.source`：repo_url、branch、commit、change_ref |
+| 技术分类与审核门禁 | `analysis.change_kind`、`analysis.gate.result` |
+| Human Approval | `analysis.human_approval`：批准人、评论、时间、批准 Source、verify_agent_required、可选 waived_tasks |
+| 研发发布 | `dev.publication`：研发 Commit 与对应 Analysis Source |
+| 工程任务、Scope、验收契约 | 固定批准版本 OpenSpec；Scope 来自 `.openspec.yaml` 的 x-repositories |
+| PR 交付准备及登记 | `pr`：每个实际交付仓唯一记录，Preparation 后逐步补充 PR ID / URL；外部状态以 TFS 为准 |
+| Bug 特有范围与独立验收 | `bug.required_repos`、`verify_agent.required` |
+| PR 异常与必要恢复 | `pr.abandoned`、适用 Human Decision |
+| 收口 | `finalize.pending`、`delivery.tfs_written` 等当前必要收口事实 |
 
-```text
-Issue
-Status
-Assignee
-Squad
-Sub-Issue
-Stage
-Run
-Comment
-Metadata
-Artifact
-```
+Requirement 只读取 `analysis.human_approval.verify_agent_required` 作为独立验收决定；不因不要求独立验收而取消开发验证。尚无可核验独立 PASS 时不得自动 Finalize。
 
-入口准入依据由同一 Issue 的 `/note` Comment 保留（首次可顶层，Human Comment 触发的恢复 Run 必须线程回复；含 Decision、TFS 来源版本、Evidence References、未决问题），Status / Assignee 表达当前交接结果；不新增 Triage Artifact 或并行 Truth Store。权威细则见 [§4.1.1](#delivery-intake)。
+有已核验本地批准 Git 对象时读取固定 Commit；否则使用远端固定 Commit。不新增 Repository Scope 缓存或 Metadata 投影。无工程增量仅记录普通 Comment。
 
-存在工程增量时，Analysis 在 Multica Issue Metadata 中保存最小 Delivery Facts，不新增 `analysis_result` Domain Object；无需工程增量仅保留原生 Comment。以下为已提交审核的逻辑字段视图：
-
-```yaml
-analysis:
-  change_kind: corrective | intentional
-  change_ref: ...
-  source: ... # 固定 repo_url / branch / commit / change_ref
-
-
-  gate:
-    result: PASS
-```
-
-Acceptance Contract、Verification Contract、Development / Repository Scope、技术风险 / 依赖 / Open Decision 与 Evidence 均保留在各自权威 OpenSpec / Supporting Artifact 中；Multica Handoff Facts 只保存 Delivery 决策与必要引用，不复制工程契约。Requirement Repository Scope 从固定批准 Commit 下的 `.openspec.yaml` 读取；Native 研发入口已有身份确认的本地批准 Git 对象时直接读取该对象，未准备本地对象的消费场景使用固定 Commit 远端读取。Analysis Gate 以 stdout 返回 PASS / FAIL / UNKNOWN；仅发布成功的 PASS 登记为 Issue Metadata，不创建 `gate-result.md` 或独立 Gate Result 对象。
-
-对于一次 Engineer Task Set 执行，建议在当前 Run / Issue 上保存最小 Engineering Facts，并以 `task_refs` 标识覆盖范围：
-
-```yaml
-development:
-  task_refs: []
-  result: complete | blocked | unknown
-  local_validation: pass | fail | unknown
-  code_review: pass | fail | unknown
-  candidate_commits:
-    - repository: ...
-      commit: ...
-  pr_preparation_ready: true | false
-  evidence_ref: ...
-```
-
-其中：
-
-```text
-development.result = complete
-= 当前 assigned Task Set 已满足 §8 的工程完成及进度发布条件
-= Local Validation PASS
-+ Code Review PASS
-+ 必要业务代码 Commit / Push（纯验证按 §8 复用）
-+ PR Preparation
-+ Evidence 完整
-+ Tasks 完成状态更新确认且发布前依据仍有效
-```
-
-对于 Development Sub-Issue，先按 [§8](#development-execution) 保存各 Task Set 结果；其全部当前 required Task Sets 均满足 READY 条件后，才以 Sub-Issue 的当前完成状态作为其完整承接范围的 Runtime Completion Fact。重开时该事实立即不成立；旧 `development.result` / Check 结果仅可作为对应旧候选成果的记录，不能覆盖当前 Issue 状态。
-
-对于 Parent Issue Runtime，`development.result = complete` 与对应 `task_refs` 作为父 Issue 中的 Development Fact 保存，但不改变父 Issue 的最终完成状态。返工时清除当前 complete 结论，保留旧 Evidence，重新满足 [§8](#development-execution) 的 Check → Patch / 回读 → 发布条件后再记录；不增加 `reworking` 状态或版本绑定字段。本节字段仍是逻辑示例，[04](04-engineer-development-design.md) 的 READY 表达相同的当前 Task Set 专业完成含义；实际字段映射由实施接口确定，不新增两套完成状态。
-
-Verify 继续保存：
-
-```yaml
-verify_agent:
-  required: true | false
-  reason: ...
-  verification_focus: []
-
-verification:
-  result: not_required | pending | pass | fail | unknown
-  verified_commits: []
-  evidence_ref: ...
-```
-
-其中：
-
-```text
-审核 Comment 中的 Independent Verify Recommendation
-= Workitem Analyst 提出的分析建议
-
-verify_agent.required
-= Human Analysis Review APPROVED 后由 Development Materialization 从 Human 最终 Independent Verification Decision 确定性生成的执行事实
-
-verification.result / verified_commits
-= `verify_agent.required=true` 时 Verify Agent / Verification Gate 的 Independent Verification Delivery Fact；Task-level / Change-level Verification 的工程结果仍由 OpenSpec Tasks 与 Development Evidence 承载
-```
-
-对于外部系统：
-
-```text
-TFS / PR Platform
-= 外部事实来源
-
-External State Sync
-= TFS Work Item + PR provider status（active / completed / abandoned）事实回流入口
-
-Multica
-= 研发流程状态持久化载体
-```
-
-不得额外维护：
-
-```text
-workflow-state.json
-current-stage.yaml
-delivery-state.md
-```
-
----
-
+TFS 持有真实外部 Work Item、PR 身份和状态；Git 持有代码及工程工件；Multica 持有交付状态和必要事实。不得额外维护第二套运行状态。
 
 <a id="section-13-2"></a>
 
@@ -2756,7 +2094,7 @@ Multica、Agent、Script 分别承担运行、语义工作与明确动作保障�
 | 当前工作适合哪个成员、是否需要独立工作项 | Delivery Lead 结合批准范围与 Roster；已有明确安排时复用 | 不要求 Workitem Analyst 预先选择全部角色，不以 Router 返回 UNKNOWN 为前提 |
 | 需求目标、场景、规则与范围是否清楚，Root Cause / Solution 是否成立，研发需遵守哪些约束 | Workitem Analyst；新工程事实由相应 Specialist 提供 | 不交 Leader 重做专业分析；需人工决定的关键取舍由 Human 确认 |
 | 当前 Task Set 的实现细节、反馈方法与工程整改 | Engineer | 不擅自改动批准范围或整体协作安排 |
-| `verify_agent.required=true` 时，批准的 Independent Verification Focus 是否在固定候选版本上成立、Finding 如何专业归因 | Verify Agent | 不把普通 Task Verification 或 Engineer Local Validation 全部转交 Verify Agent；也不用实现者自述替代要求的独立验收 |
+| `analysis.human_approval.verify_agent_required=true` 时，批准的 Independent Verification Focus 是否在固定候选版本上成立、Finding 如何专业归因 | Verify Agent | 不把普通 Task Verification 或 Engineer Local Validation 全部转交 Verify Agent；也不用实现者自述替代要求的独立验收 |
 | 候选 Commit、必需 Evidence、对象身份是否满足明确条件 | 必要的 Script / Gate / Check | 只检查可核实硬条件，不覆盖 Human 或专业语义判断 |
 | 已确定 Owner 的任务如何写入、关联和恢复 | Multica API / CLI，必要时由脚本封装幂等与校验 | 不在每次写入时重新规划分工 |
 | Run 排队、执行、状态及 Parent / Stage 回流 | Multica 原生机制 | 不另建项目级运行调度器 |
@@ -2947,7 +2285,7 @@ ANALYSIS / ENGINEERING / RECREATE_PR / CANCEL_DELIVERY
 
 > **Code Review = implementation-oriented；Verify Agent = optional independent behavior-verification executor。**
 
-> **Verify Agent 是否需要由 Workitem Analyst 推荐，Human Analysis Review 确认。进入 Independent Verification 前，必须完成全部 required Implementation Tasks、Engineer-owned required Verification Tasks 及相应 Engineer-side Development Completion；Verify-Agent-owned Verification Tasks 可以保持 pending，由 Verify Agent 在本次独立验收中完成。进入 PR Materialization 前，所有 required Verification Tasks（不论执行者）必须完成并有当前有效 Evidence，且 `verify_agent.required=true` 时还须当前 Independent Verification PASS。**
+> **Verify Agent 是否需要由 Workitem Analyst 推荐，Human Analysis Review 确认。进入 Independent Verification 前，必须完成全部 required Implementation Tasks、Engineer-owned required Verification Tasks 及相应 Engineer-side Development Completion；Verify-Agent-owned Verification Tasks 可以保持 pending，由 Verify Agent 在本次独立验收中完成。进入 PR Materialization 前，所有 required Verification Tasks（不论执行者）必须完成并有当前有效 Evidence，且 `analysis.human_approval.verify_agent_required=true` 时还须当前 Independent Verification PASS。**
 
 > **Verify Finding 命中 Development Sub-Issue 的 `task_refs` 时，在原 Sub-Issue 准备输入、重开并单次触发 targeted rework；命中 Parent Issue Runtime 的 `task_refs` 时，由 Delivery Lead 在父 Issue 定向 @ 原 Engineer；不级联回退整个 Stage，不沿用失效 Evidence。**
 

@@ -51,6 +51,8 @@ rondo pr prepare --issue <KEY> --repo <repo_id> --root-repo "<root>" --candidate
 
 使用临时 Facts 文件时，保留至 `pr prepare` 执行结束。
 
+CLI 在 Issue 的 `pr` 中按仓库登记准备事实，`blockers` 为空是输入条件。提交成功后在同一记录补充外部 PR ID / URL。
+
 验证工作目录按需使用 `--validation-cwd "<path>"`。多仓 Bug 首次准备通过 `--required-repos <repo1,repo2>` 固定完整交付仓集合；后续不得擅自改变。Requirement 仅准备批准范围内实际修改的仓库。
 
 # PR Submission

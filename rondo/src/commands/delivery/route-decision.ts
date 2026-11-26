@@ -23,8 +23,10 @@ interface DecisionEntry {
   applied_at: string;
   /** 本脚本负责的路由副作用已完成；重跑不得重新启动已完成的返工。 */
   completed_at?: string;
-  abandoned_prs?: RegisteredPr[];
+  abandoned_prs?: AbandonedBinding[];
 }
+
+type AbandonedBinding = Pick<RegisteredPr, "repo_key" | "repo_url" | "source_branch" | "target_branch" | "candidate_commit" | "pr_id" | "pr_url">;
 
 interface AbandonedEntry { repo_key: string; pr_id: number; event_key: string; detected_at: string }
 
@@ -137,6 +139,7 @@ async function main(argv: string[]): Promise<number> {
     };
     const prior = decisions.find((d) => d.comment_id === args["comment-id"]);
     if (prior) {
+      if (prior.next !== next) throw new UnknownError("同一 Human Comment 不允许更改已记录决定");
       // 旧回调不能影响后续轮次；completed_at 只表示本脚本的路由动作已完成。
       if (prior.completed_at || issue.status === "done") return noop(prior);
       const later = decisions.slice(decisions.indexOf(prior) + 1);
@@ -155,10 +158,12 @@ async function main(argv: string[]): Promise<number> {
       } else if (prior.routed_to === "rematerialize_pr") {
         // An interrupted decision may only remove the exact recorded PR identities.
         if (!Array.isArray(prior.abandoned_prs) || !prior.abandoned_prs.length) throw new UnknownError("PR 重建决定缺少原 PR 身份");
+        if (issue.status !== "blocked" || md["finalize.pending"] || md["delivery.tfs_written"] === "true") throw new UnknownError("当前状态不允许重放 PR 重建决定");
         const records = readPrRecords(md.pr);
         for (const old of prior.abandoned_prs) {
           const now = records.find(p => p.repo_key === old.repo_key);
-          if (!now || JSON.stringify(withoutPrIdentity(now)) !== JSON.stringify(withoutPrIdentity(old)) ||
+          if (!now || now.candidate_commit !== old.candidate_commit || now.repo_url !== old.repo_url ||
+              now.source_branch !== old.source_branch || now.target_branch !== old.target_branch ||
               (isRegisteredPr(now) && (now.pr_id !== old.pr_id || now.pr_url !== old.pr_url)))
             throw new UnknownError("PR 重建决定对应的原候选或登记已变化");
         }
@@ -184,7 +189,7 @@ async function main(argv: string[]): Promise<number> {
       throw new UnknownError(`Issue ${issueKey} 缺少 metadata pr.abandoned——无 PR Abandoned 事实，不属于本脚本场景`);
     }
 
-    const recordDecision = (routedTo: string, abandonedPrs?: RegisteredPr[]): void => {
+    const recordDecision = (routedTo: string, abandonedPrs?: AbandonedBinding[]): void => {
       const entry: DecisionEntry = {
         comment_id: args["comment-id"],
         reason: args.reason ?? null,
@@ -257,7 +262,8 @@ async function main(argv: string[]): Promise<number> {
       if (fresh.status !== issue.status || ["pr", "pr.abandoned", "dev.decision", "analysis.source", "analysis.human_approval", "finalize.pending", "delivery.tfs_written"].some(k => fresh.metadata?.[k] !== md[k]))
         throw new UnknownError("PR 重建期间交付事实变化");
       const remaining = records.map(p => current.some(a => a.repo_key === p.repo_key && a.pr_id === p.pr_id) ? withoutPrIdentity(p) : p);
-      recordDecision("rematerialize_pr", current);
+      recordDecision("rematerialize_pr", current.map(({repo_key,repo_url,source_branch,target_branch,candidate_commit,pr_id,pr_url}) =>
+        ({repo_key,repo_url,source_branch,target_branch,candidate_commit,pr_id,pr_url})));
       client.setMetadata(issue.id, "pr", JSON.stringify(remaining));
       completeDecision();
       process.stdout.write(JSON.stringify({result:"PASS", next, directive:"rematerialize_pr", removed_prs:current.length},null,2)+"\n");

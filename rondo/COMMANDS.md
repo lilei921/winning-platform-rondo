@@ -33,9 +33,9 @@ rondo doctor --help
 | --- | --- | --- |
 | `change` | `resolve-identity` | Change 身份解析 |
 | `analysis` | `validate`、`publish`、`read`、`approve` | 分析事实、Gate、审核提交、工件读取和批准登记 |
-| `dev` | `materialize`、`prepare`、`check-dispatch`、`git`、`publish` | 研发准备、Git、发布及派发 |
+| `dev` | `prepare`、`git`、`publish` | 研发准备、Git 与发布 |
 | `bug` | `pr-prepare`、`git`、`resume` | 独立 TFS Bug 修复交付 |
-| `tfs` | `writeback`、`materialize-tasks`、`resolve-tasks`、`reconcile-workitem` | TFS 工作项同步与交付回写 |
+| `tfs` | `writeback`、`reconcile-workitem` | TFS 工作项同步与交付回写 |
 | `pr` | `prepare`、`materialize`、`worktree`、`reconcile-status`、`create`、`get`、`list` | PR 准备、创建、查询、状态对账及 Worktree |
 | `delivery` | `admission`、`route-decision`、`finalize` | 准入交接、人工决策路由与交付收口 |
 | `workspace` | `provision`、`sync`、`migrate-repo-keys`、`check-daemon` | Workspace 资源供给、同步及检查 |
@@ -157,9 +157,9 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 | 命令 | 功能 |
 | --- | --- |
 | `pr prepare` | 核对授权、Candidate 与专业 Facts，执行提供的验证命令并登记 PR Preparation；有命令时无需预填 `validation.result`，Bug 无命令时须提供真实替代验证 PASS |
-| `pr materialize` | 核验适用 Gate，逐仓创建或恢复已有 Active / Completed PR、确认 Work Item 关联并登记 current_pr；全部登记后进入 in_review，in_review 仅核验已登记事实 |
+| `pr materialize` | 核验适用 Gate，逐仓创建或恢复已有 Active / Completed PR、确认 Work Item 关联并在 pr 的对应仓库记录补充 pr_id / pr_url；全部登记后进入 in_review，in_review 仅核验已登记事实 |
 | `pr worktree` | 使用 `create`、`remove`、`prune` 管理本地 Git Worktree |
-| `pr reconcile-status` | 从当前 Run Workspace 扫描 Issue 的 `current_pr`，核实 `completed` / `abandoned` 等外部状态，不使用 Registry |
+| `pr reconcile-status` | 从当前 Run Workspace 扫描 Issue 的 `pr` 已登记记录，核实 `completed` / `abandoned` 等外部状态，不使用 Registry |
 
 `pr reconcile-status` 使用 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`（可选 `MULTICA_CLI_PATH`，默认 `multica`）；手动执行需具有相同环境及 CLI 认证。
 | `pr create` | 在 TFS Git 仓库创建 PR，支持已有 PR 的幂等识别 |
