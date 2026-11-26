@@ -14,7 +14,7 @@
 | 问题 | 证据 | 最小修复 |
 | --- | --- | --- |
 | Issue 与 Change 归属 | `analysis/validate.ts` 的 Identity 只检查 tfs.id 存在、类型与 Schema；`change/resolve-identity.ts` 已使用末尾独立 TFS ID 段 | 最终 Gate 核对实际传入 Change ID 与当前正整数 tfs.id 的后缀匹配，共用既有匹配规则，ID 合法性对齐下游批准/研发契约 |
-| Repository Scope | `analysis/repository-scope.ts` 只解析非空、去重、合法格式的字符串列表 | Acceptance Contract 仅核对当前 Scope 的 repo_id 在根仓 `docs/config/repo-context.yaml` 中已登记；不审计无关条目。不登记为 FAIL，映射不可读或无法识别为 UNKNOWN。Requirement 复用现有候选 Git Tree/固定来源恢复检查，核对实际固定版本的成员关系；Legacy 在已发布版本确认时核对。 |
+| Repository Scope | `analysis/repository-scope.ts` 只解析非空、去重、合法格式的字符串列表 | Acceptance Contract 仅核对当前 Scope 的 repo_id 在根仓 `docs/config/repo-context.yaml` 中已登记；仅允许业务仓，排除工程契约根仓 `root`；不审计无关条目。不登记为 FAIL，映射不可读或无法识别为 UNKNOWN。Requirement 复用现有候选 Git Tree/固定来源恢复检查，核对实际固定版本的成员关系；Legacy 在已发布版本确认时核对。 |
 
 仅扩充现有 Identity / Acceptance Contract，不新增检查阶段，不远程查询、不要求 LLM 重复核验。本地 Gate 失败不得 Commit/Push 或登记审核；Requirement 候选版本检查失败不得 Push 或登记审核，保留已完成的本地 Change Commit。保持 Schema、专业判断、OpenSpec Strict Validation、发布工件一致性及 Human Approval 机制。有效旧审核重放仍消费已登记固定事实，不重新执行 Gate。
 
@@ -39,6 +39,12 @@ P1 实施保留必要的原生命令、参数及安全边界，不以提示词�
 - `spec-preparation` 不消费 Registry 配置，删除其 `config/repo-registry.json`，同步移除 `workspace sync` 中对应渲染项，避免重新生成；平台残留附件由现有文件差异同步删除。保留 `analysis-publish` 及其他实际消费者的配置，并更新渲染及远端旧附件清理测试。
 - Workitem Analyst README 与实际 `native-workspace` 绑定及无工程增量处理对齐。不新增公共配置抽象，不改变 Agent/Skill 绑定。
 
-## 5. 明确非目标
+## 5. 最终 Review 修订
+
+- Repository Scope 与研发消费集合对齐，仅排除根仓 `root`，不提前检查研发环境或其他仓库属性；回归 fixture 使用业务仓，补充根仓拒绝用例，并保留固定 Git 版本成员核对场景。
+- `spec-preparation`、`bug-analysis`、`analysis-publish`、`requirement-analysis` 删除历史性描述与重复约束；保留实际命令、专业方法、输出与授权边界，身份冲突或未知时停止相关写入。
+- 修正 `analysis-skip-specs` 的项目根目录定位。保持 Agent Instructions、Schema、Human Approval 和其他流程不变。
+
+## 6. 明确非目标
 
 不合并专业 Skills，不恢复 ai_review/facts.json/持久化 Gate，不修改工作区架构、交付流程或 Human Approval，不固定调查方法及深度。不将根因、业务意图、技术方案和仓库影响语义决策转移到 CLI。后续以真实回放验证质量和耗时。

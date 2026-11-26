@@ -31,6 +31,7 @@ export const REPOSITORY_CONTEXT_PATH = "docs/config/repo-context.yaml";
 
 /** 仅核对当前 Scope 的成员关系；不审计无关仓库或判断业务影响。 */
 export function assertRegisteredRepositoryScope(scope: string[], readMapping: () => string): void {
+  if (scope.includes("root")) throw new FailError("x-repositories 仅包含业务仓，不能包含工程契约根仓 root");
   let document: unknown;
   try {
     document = parseYaml(readMapping(), { uniqueKeys: true });

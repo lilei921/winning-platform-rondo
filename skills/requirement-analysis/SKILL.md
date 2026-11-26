@@ -17,8 +17,6 @@ description: 面向 Intentional Requirement，按需探索现有业务与工程�
 - **Evaluate**：存在实质取舍时比较可行方案、既有能力复用、外部 Contract、依赖及风险，给出有证据支持的推荐及理由；简单需求不强制多个方案。
 - **Clarify**：可核实的事实先自行调查；未获授权的关键产品意图或业务选择，即使技术事实充分，也须向调用者返回依据、选项、推荐及影响，供有权者决定。
 
-方法不是固定四阶段；可根据新事实返回探索或调整方案，不以调用次数衡量完成质量。
-
 ## Output
 
 按当前需求返回有依据的专业结论、方案建议及必要的验证考虑，区分已确认事实、建议和待授权决定；说明影响当前判断的事实缺口、规则冲突或待决事项。
@@ -26,5 +24,5 @@ description: 面向 Intentional Requirement，按需探索现有业务与工程�
 ## Boundaries
 
 - 面向 Intentional 的业务目标、预期行为和方案澄清；不根据 TFS Type 字面分类，发现与既定行为或授权冲突时返回可复核事实供调用方判断。
-- 现有代码不自动代表未来产品意图；不越权作出产品决策，不诊断 Corrective Root Cause，也不替代 Engineer 冻结局部实现。
+- 现有代码不自动代表未来产品意图；不越权作出产品决策，不诊断 Corrective Root Cause。
 - 不创建/修改 OpenSpec Artifact，不写 Multica Status / Approval / Handoff；工程结果由调用者交给对应工件准备能力消费。

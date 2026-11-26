@@ -24,7 +24,7 @@ CLI 负责最终 Gate（含 OpenSpec Strict Validation）、Git 发布、事实�
 
 - **PASS**：消费返回的 `analysis_source`，无需重复核对 CLI 已确认的后置条件。按实际专业影响处理 `diagnostics`；发现实质工程契约缺陷时如实报告并按现有审核修订机制处理。
 - **FAIL**：根据实际原因修正工程契约或输入，必要时使用 `rondo analysis validate` 或 OpenSpec 原生命令定向诊断，不绕过 Gate。
-- **UNKNOWN**：处理可明确修正的问题；发布结果不明时先确认 Issue 状态和固定来源，按实际结果恢复。外部环境或 CLI 故障无法解决时保留工件及已知 Commit，报告实际阻断，不反查 CLI 内部实现或循环重试。
+- **UNKNOWN**：处理可明确修正的问题；发布结果不明时先确认 Issue 状态和固定来源，按实际结果恢复。外部环境或 CLI 故障无法解决时，保留工件及已知 Commit，说明实际进展与阻断原因。
 
 仅在需要进一步定位 Gate 问题时，按需执行只读诊断，不作为常规发布的前置步骤：
 
@@ -42,5 +42,3 @@ multica issue comment add <issue> --content-file "<summary-file>" --workspace-id
 ```
 
 `--content-file` 路径按实际 cwd 解析。审核重放或评论结果不明时，核对当前线程是否已有同一 Change、Commit 的审核摘要；已有则不重复发布。仅评论失败时补齐评论，不重跑已成功的 Gate/Git 发布。审核摘要成功提交后结束本轮。
-
-Human Approval 由 Human 决定；本 Skill 不负责研发派发、代码实现、TFS 回写或新增过程性持久化工件。

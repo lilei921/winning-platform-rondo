@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const REPO = fileURLToPath(new URL("../../../", import.meta.url));
+const REPO = fileURLToPath(new URL("../../", import.meta.url));
 const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
 const MOCK = fileURLToPath(new URL("./mock-multica.cjs", import.meta.url));
 const requireCli = process.env.OPENSPEC_D1_REQUIRED === "1";

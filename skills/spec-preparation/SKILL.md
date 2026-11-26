@@ -12,7 +12,7 @@ description: 使用项目 OpenSpec CLI 与当前 Schema / Artifact Instruction �
 
 ## Method（按需选择，可往返）
 
-- **Inspect & Resolve**：复用已确认的 Change 身份和有效工件；需要定位或核实身份时，使用 `rondo change resolve-identity --openspec-root <root> [--change-ref <stable-id>] [--tfs-id <tfs.id>] [--expect-schema <schema>]`，仅传已知参数，两个身份均已知时同时传入。命令返回 JSON。`ACTIVE_FOUND` 直接复用（旧引用失效时可按 TFS ID 恢复）；`NOT_FOUND` 按创建条件处理；`ARCHIVED_FOUND` / `CONFLICT` / `INVALID` 或结果未知时，说明实际问题，不新建规避冲突。
+- **Inspect & Resolve**：复用已确认的 Change 身份和有效工件；需要定位或核实身份时，使用 `rondo change resolve-identity --openspec-root <root> [--change-ref <stable-id>] [--tfs-id <tfs.id>] [--expect-schema <schema>]`，仅传已知参数，两个身份均已知时同时传入。命令返回 JSON。`ACTIVE_FOUND` 直接复用（旧引用失效时可按 TFS ID 恢复）；`NOT_FOUND` 按创建条件处理；`ARCHIVED_FOUND` / `CONFLICT` / `INVALID` 或结果未知时，停止相关写入并说明实际问题。
 - **Create / Complete**：仅在 `NOT_FOUND` 且身份、Schema 和创建授权明确时新建。使用 kebab-case `<semantic-slug>-<tfs.id>`（TFS ID 为末尾独立段），执行 `openspec new change <id> --schema <schema>`。按当前 Artifact State 补齐实际需要的工件。
 - **Revise & Reconcile**：根据明确反馈修订受影响工件及关联契约，复用仍有效的结论，不重做完整分析或逐文件重复确认授权。
 
@@ -26,9 +26,9 @@ description: 使用项目 OpenSpec CLI 与当前 Schema / Artifact Instruction �
   openspec instructions <artifact> --change <id> --json
   ```
 
-  来源为 `implicit`、错误或无法确认时，不据此写入。不需要翻查历史 Change 来补齐当前已明确的 Instruction。
-- **工件准备**：按当前 Artifact Instruction / Template 与原生 `requires` 准备工件；`apply.requires` 用于判断 Apply Readiness，不是工件写入前置。合法 `skip_specs`、Conditional Design 等取决于当前 Schema、专业语义及原生状态，不自建 Artifact Graph，不为填满清单制造工件。 `specs/**/*.md` 是生成模式而非文件名；有 Delta 时核对实际需要的 Capability 文件。任务内容、格式及验证方法遵循当前 Artifact Instruction / Template，验证深度与变更风险匹配。
-- **Repository Scope**：在当前 Change 的 `.openspec.yaml` 顶层维护非空、去重的 `repo_id` 字符串列表；从根仓 `docs/config/repo-context.yaml` 选取，不建立第二份授权范围。
+  来源为 `implicit`、错误或无法确认时，不据此写入。
+- **工件准备**：按当前 Artifact Instruction / Template 与原生 `requires` 准备工件；`apply.requires` 用于判断 Apply Readiness，不是工件写入前置。合法 `skip_specs`、Conditional Design 等取决于当前 Schema、专业语义及原生状态。`specs/**/*.md` 是生成模式而非文件名；有 Delta 时核对实际需要的 Capability 文件。任务内容、格式及验证方法遵循当前 Artifact Instruction / Template，验证深度与变更风险匹配。
+- **Repository Scope**：在当前 Change 的 `.openspec.yaml` 顶层维护非空、去重的业务仓 `repo_id` 字符串列表，从根仓 `docs/config/repo-context.yaml` 选取本次获授权修改的业务仓。
 
   ```yaml
   x-repositories:
@@ -38,8 +38,12 @@ description: 使用项目 OpenSpec CLI 与当前 Schema / Artifact Instruction �
 
 ## Diagnosis / Recovery
 
-按需核实实际工件、原生状态及来源，针对具体问题修订；无法解决时报告实际阻断。创建或写入结果不明时先回查身份或工件，确认实际状态后恢复，不盲目重试。只用当前 OpenSpec CLI / Schema，不调用 `/opsx:*` 或 OpenSpec 原生 AI Skill/Command。
+按需核实实际工件、原生状态及来源，针对具体问题修订；无法解决时报告实际阻断。创建或写入结果不明时先回查身份或工件，确认实际状态后恢复。
 
-## Output / Stop
+## Output
 
-返回当前唯一 Change ID、实际工件及必要的省略依据、Evidence 或未决事项；不另建 Preparation Result、Metadata Schema 或 Multica Stage。最终 Gate 由 `analysis-publish` 执行；本 Skill 不执行生产代码修改、Issue 审批或状态变更、Archive、Commit 或 Push。
+返回当前唯一 Change ID、实际工件及必要的 Evidence、省略依据与未决事项。
+
+## Boundaries
+
+仅准备当前 OpenSpec Change 工件，不执行生产代码修改、Issue 状态变更、审批、Archive、Commit 或 Push。
