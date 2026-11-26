@@ -14,7 +14,7 @@ const args = {issue:"LEI-123", commentId:"human-1", commit:source.commit, verify
 function fixture() {
   const issue = {id:"issue-1",identifier:"LEI-123",status:"analysis_review",metadata:{
     "tfs.type":"需求","tfs.id":"123","analysis.gate.result":"PASS",
-    "analysis.change_ref":source.change_ref,"analysis.source":JSON.stringify(source)
+    "analysis.source":JSON.stringify(source)
   }};
   const comments = [{id:"human-1",content:"批准，不需要独立验收",author_type:"member",
     author_id:"member-1",created_at:"2026-11-25T00:00:00Z"}];

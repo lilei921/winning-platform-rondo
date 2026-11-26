@@ -68,7 +68,7 @@ function fixture(t, { previousTasks, approvedTasks = "- [ ] 1.1 Verify\n", desig
   writeFileSync(state, JSON.stringify({
     agents: { engineer: { name: "Engineer" } }, comments: { "issue-1": [{ id: "ok" }] },
     runs: { "issue-1": [{ id: "run", issue_id: "issue-1", agent_id: "engineer", workspace_id: "ws", status: "running" }] },
-    metadata: { "tfs.type": "需求", "tfs.id": "42", "analysis.gate.result": "PASS", "analysis.change_ref": "alpha",
+    metadata: { "tfs.type": "需求", "tfs.id": "42", "analysis.gate.result": "PASS",
       "analysis.source": JSON.stringify(source), "analysis.human_approval": JSON.stringify({ decision: "approved",
         by: "reviewer", at: "2026-11-19T00:00:00Z", comment_ref: "ok", verify_agent_required: false, source }) },
   }));
@@ -257,13 +257,13 @@ test("dev publish 拒绝来源不一致及读取期间批准变化；Push 后变
   const initial = readFileSync(state, "utf8");
   const approval = JSON.parse(metadata()["analysis.human_approval"]);
   const other = { ...source, change_ref: "beta" };
-  const otherChange = { "analysis.change_ref": "beta", "analysis.source": JSON.stringify(other),
+  const otherChange = { "analysis.source": JSON.stringify(other),
     "analysis.human_approval": JSON.stringify({ ...approval, source: other }) };
   git(root, "pull", "--ff-only", bare, "integration");
   writeFileSync(join(root, work, "tasks.md"), "- [x] 1.1 Verify\n");
   git(root, "commit", "-am", "complete approved task");
   for (const [patch, reason] of [
-    [{ "analysis.change_ref": "beta" }, /Change 身份.*不一致/],
+    [{ "analysis.source": JSON.stringify(other) }, /Change 身份.*不一致/],
     [otherChange, /批准来源在读取映射期间变化/],
     [{ "analysis.human_approval": JSON.stringify({ ...approval, at: "2026-11-20T00:00:00Z" }) }, /批准来源在读取映射期间变化/],
   ]) {
@@ -308,9 +308,9 @@ test("Native Requirement 续跑 prepare 从 Issue 取得 Change，拒绝同 SHA 
     MOCK_SYNC_CALLS_FILE: join(dir, "prepare-calls.jsonl") };
   const args = ["dev", "prepare", "--workspace", "native", "--repo", "biz", "--root-repo", root];
   for (const [patch, reason] of [
-    [{ "analysis.change_ref": "beta" }, /Change 身份.*不一致/],
-    [{ "analysis.change_ref": "beta", "analysis.source": JSON.stringify(other),
-      "analysis.human_approval": JSON.stringify({ ...approval, source: other }) }, /批准来源在准备期间变化/],
+    [{ "analysis.source": JSON.stringify(other) }, /Change 身份.*不一致/],
+    [{ "analysis.source": JSON.stringify(other),
+      "analysis.human_approval": JSON.stringify({ ...approval, source: other }) }, /批准来源.*变化/],
     [{ "analysis.human_approval": JSON.stringify({ ...approval, at: "2026-11-20T00:00:00Z" }) }, /批准来源在准备期间变化/],
   ]) {
     writeFileSync(state, JSON.stringify(initial));

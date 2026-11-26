@@ -346,7 +346,6 @@ test('Inspect 拒绝未完整登记的 PR', async t => {
   const f = fixture(t);
   const source = f.source('change-a'), root = f.prepare(source).root_repo;
   const md = {
-    'analysis.change_ref': source.change_ref,
     'analysis.source': JSON.stringify(source),
     pr: JSON.stringify([{repo_key:'app',source_branch:'feature/10',target_branch:'dev',pr_id:42}]),
   };

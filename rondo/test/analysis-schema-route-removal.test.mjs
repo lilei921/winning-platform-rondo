@@ -35,11 +35,11 @@ test("Issue change_kind 持久化且与 Change Schema 校验一致，不再输�
   const f = fixture();
   try {
     assert.equal(readChangeSchema(f.dir), "corrective-change");
-    const entries = analysisMetadataEntries("fixture-123", readChangeSchema(f.dir));
+    const entries = analysisMetadataEntries(readChangeSchema(f.dir));
     assert.equal(entries["analysis.change_kind"], "corrective");
     assert.equal(Object.hasOwn(entries, "analysis.route"), false);
-    assert.equal(entries["analysis.change_ref"], "fixture-123");
-    const checked = checkChange(f.root, { "analysis.change_ref": "fixture-123" });
+    assert.equal(entries["analysis.change_ref"], undefined);
+    const checked = checkChange(f.root, "fixture-123");
     assert.equal(checked.check.result, "PASS");
     assert.equal(checked.schema, "corrective-change");
   } finally {
@@ -102,7 +102,7 @@ test("Analysis Acceptance Contract 在批准前阻断缺失、非法或重复 Re
 });
 
 test("Identity 核对实际 Change ID 与当前 TFS ID 的独立末尾段", () => {
-  const metadata = { "tfs.id": "123", "tfs.type": "Requirement", "analysis.change_ref": "stale-999" };
+  const metadata = { "tfs.id": "123", "tfs.type": "Requirement" };
   assert.equal(checkIdentity(metadata, "corrective-change", "fixture-123").result, "PASS");
   for (const ref of ["fixture-9123", "fixture-1234", "fixture-123-extra", "fixture"]) {
     const result = checkIdentity(metadata, "corrective-change", ref);
@@ -192,9 +192,9 @@ test("未知 Schema 与不安全 Change ID 均安全停止", () => {
   const f = fixture("sdd");
   try {
     assert.throws(() => readChangeSchema(f.dir), /不属于已支持/);
-    assert.equal(checkChange(f.root, { "analysis.change_ref": "fixture-123" }).check.result, "FAIL");
+    assert.equal(checkChange(f.root, "fixture-123").check.result, "FAIL");
     assert.throws(() => assertStableChangeRef("../fixture-123"), /非法/);
-    assert.equal(checkChange(f.root, { "analysis.change_ref": "../fixture-123" }).check.result, "FAIL");
+    assert.equal(checkChange(f.root, "../fixture-123").check.result, "FAIL");
   } finally {
     f.dispose();
   }

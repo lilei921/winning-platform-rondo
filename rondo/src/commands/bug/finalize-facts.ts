@@ -17,7 +17,7 @@ export interface BugCurrentPr {
 }
 /** Direct Bug has independent delivery evidence and no OpenSpec Change. */
 export function isDirectBugDelivery(md: Record<string, string>): boolean {
-  return md["tfs.type"] === "Bug" && !!md.pr && !md["analysis.change_ref"];
+  return md["tfs.type"] === "Bug" && !!md.pr && md["analysis.source"] === undefined;
 }
 
 /** Bind all repository-specific Bug evidence to the exact PR identities. */

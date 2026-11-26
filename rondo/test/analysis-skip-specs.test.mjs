@@ -46,7 +46,7 @@ function fixture(t, { skip = false, schema = "intentional-change", estimate = tr
     status: "in_progress",
     metadata: {
       "tfs.type": "需求", "tfs.id": "1234",
-      "analysis.change_kind": schema === "corrective-change" ? "corrective" : "intentional", "analysis.change_ref": "d1-internal-1234",
+      "analysis.change_kind": schema === "corrective-change" ? "corrective" : "intentional",
     },
   }));
   chmodSync(MOCK, 0o755);
@@ -88,7 +88,7 @@ test("D3-A: legal native skip_specs does not require Delta Specs", { skip: !usab
   assert.equal(r.body.change_kind, "intentional");
   assert.equal(r.body.schema, "intentional-change");
   assert.match(r.body.change_digest, /^[a-f0-9]{64}$/);
-  assert.equal(r.body.change_digest, changeEvidenceDigest(f.change, JSON.parse(readFileSync(join(f.root, "state.json"), "utf8")).metadata));
+  assert.equal(r.body.change_digest, changeEvidenceDigest(f.change, JSON.parse(readFileSync(join(f.root, "state.json"), "utf8")).metadata, "d1-internal-1234"));
   assert.equal(r.body.metadata_digest,
     metadataEvidenceDigest(JSON.parse(readFileSync(join(f.root, "state.json"), "utf8")).metadata));
   assert.equal(existsSync(join(f.change, "logs", "analysis-gate-result.json")), false);

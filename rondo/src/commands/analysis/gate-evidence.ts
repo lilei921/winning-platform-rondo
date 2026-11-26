@@ -27,9 +27,9 @@ function canonicalJson(value: unknown): string {
 }
 
 /** 只绑定 Gate 消费的来源和分析字段；后续 gate/human_approval 等流程写入不使结果失效。 */
-export function metadataEvidenceDigest(meta: Record<string, unknown>): string {
-  const keys = ["tfs.id", "tfs.type", "analysis.change_ref", "analysis.change_kind"];
-  return createHash("sha256").update(canonicalJson(Object.fromEntries(keys.map(key => [key, meta[key] ?? null])))).digest("hex");
+export function metadataEvidenceDigest(meta: Record<string, unknown>, changeRef: string): string {
+  const keys = ["tfs.id", "tfs.type", "analysis.change_kind"];
+  return createHash("sha256").update(canonicalJson({ ...Object.fromEntries(keys.map(key => [key, meta[key] ?? null])), change_ref: changeRef })).digest("hex");
 }
 
 /**

@@ -133,12 +133,12 @@ export function registerPrMaterialize(group: Command): void {
         const issue=multica.getIssue(opts.issue), md=issue.metadata??{}, readOnly=issue.status==="in_review";
         const bug=md["tfs.type"]==="Bug", tfsId=Number(md["tfs.id"]);
         if(!bug&&md["tfs.type"]!=="需求") throw new FailError("不支持当前 TFS Type");
-        if(bug&&(md["analysis.change_ref"]||md["analysis.gate.result"])) throw new FailError("Bug 不能混入 OpenSpec Gate");
+        if(bug&&(md["analysis.source"] !== undefined||md["analysis.gate.result"])) throw new FailError("Bug 不能混入 OpenSpec Gate");
         const branch=candidateBranch(md["tfs.id"]);
         const authorize=(expectedCurrentPr: string | undefined, checkActor = true)=>{
           const fresh=multica.getIssue(issue.id), facts=fresh.metadata??{};
           if(fresh.status!==issue.status||fresh.assignee_id!==issue.assignee_id||
-            ["tfs.id","tfs.type","tfs.url","analysis.source","analysis.human_approval","analysis.change_ref","analysis.gate.result",
+            ["tfs.id","tfs.type","tfs.url","analysis.source","analysis.human_approval","analysis.gate.result",
               "dev.publication","bug.required_repos","finalize.pending","delivery.tfs_written","verify_agent.required"]
               .some(k=>facts[k]!==md[k]) || facts.pr!==expectedCurrentPr) throw new UnknownError("PR 物化期间授权或准备事实变化");
           if(!["todo","in_progress","in_review"].includes(fresh.status??"")||facts["finalize.pending"]||facts["delivery.tfs_written"]==="true")

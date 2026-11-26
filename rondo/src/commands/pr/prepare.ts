@@ -94,7 +94,7 @@ export function registerPrPrepare(group: Command): void {
           const fresh=await authorizedCheckout(opts.issue,opts.repo,opts.rootRepo);
           if(fresh.issue.id!==issue.id || fresh.issue.status!==issue.status || fresh.revision!==current.revision ||
             fresh.path!==path || JSON.stringify(fresh.repo)!==JSON.stringify(repo) ||
-            ["analysis.source","analysis.human_approval","analysis.change_ref","analysis.gate.result","tfs.id","tfs.type","tfs.url","bug.required_repos","finalize.pending","delivery.tfs_written"]
+            ["analysis.source","analysis.human_approval","analysis.gate.result","tfs.id","tfs.type","tfs.url","bug.required_repos","finalize.pending","delivery.tfs_written"]
               .some(k=>fresh.md[k]!==md[k])) throw new UnknownError("Validation 期间授权或仓库事实变化");
           return fresh;
         };

@@ -86,7 +86,7 @@ export function registerDevPublish(group: Command): void {
         const confirmed = multica.listMetadata(approved.issue.id);
         if (confirmed["dev.publication"] !== receipt || confirmed["analysis.source"] !== original["analysis.source"] ||
             confirmed["analysis.human_approval"] !== original["analysis.human_approval"] ||
-            confirmed["analysis.change_ref"] !== source.change_ref || confirmed["tfs.id"] !== original["tfs.id"]) {
+            confirmed["tfs.id"] !== original["tfs.id"]) {
           throw new UnknownError("研发交付记录或批准版本回读不一致");
         }
         process.stdout.write(JSON.stringify({ result: "PASS", change_ref: source.change_ref, ...published }, null, 2) + "\n");

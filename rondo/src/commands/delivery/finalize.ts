@@ -323,7 +323,8 @@ function parseArgs(argv: string[]): Record<string, string> {
 
 /** Done 重放仅核对服务端最小交付事实，不要求已卸载的 OpenSpec 根仓可访问。 */
 export function assertCompletedAnalysisFacts(md: Record<string, string>): void {
-  assertStableChangeRef(md["analysis.change_ref"]);
+  try { readAnalysisSource(md); }
+  catch { throw new FailError("已完成 Issue 缺少有效 analysis.source.change_ref"); }
   if (md["delivery.tfs_written"] !== "true") {
     throw new FailError("已完成 Issue 缺少已确认的 TFS Writeback 标记");
   }

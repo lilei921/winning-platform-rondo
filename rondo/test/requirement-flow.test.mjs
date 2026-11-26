@@ -169,7 +169,7 @@ test("Requirement Closeout 读取批准 Commit 的范围而非当前工作树", 
   git("add", "-A");
   git("commit", "-m", "approved");
   const source = { repo_url: repoUrl, branch: "main", commit: git("rev-parse", "HEAD"), change_ref: "foo-42" };
-  const md = {"analysis.source": JSON.stringify(source), "analysis.change_ref": "foo-42"};
+  const md = {"analysis.source": JSON.stringify(source)};
   writeFileSync(join(changeDir, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [web]\n");
   assert.deepEqual(approvedRequirementScope(md, root), ["frame"]);
 });
@@ -209,7 +209,7 @@ test("Completion 消费完整发布回执，只读取批准 Scope 和固定研�
   const approval = { source, decision: "approved", comment_ref: "approved", by: "human",
     at: "2026-11-19T00:00:00Z", verify_agent_required: false };
   const metadata = { "analysis.source": JSON.stringify(source), "analysis.gate.result": "PASS",
-    "analysis.change_ref": source.change_ref, "analysis.human_approval": JSON.stringify(approval),
+    "analysis.human_approval": JSON.stringify(approval),
     "tfs.type": "需求", "tfs.id": "42", pr: JSON.stringify([prep("frame", sha2)]),
     "dev.publication": JSON.stringify({ analysis_source: source, commit: sha2 }) };
   const issue = { id: "issue", status: "in_progress", metadata };

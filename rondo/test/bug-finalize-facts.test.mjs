@@ -24,7 +24,7 @@ function fixture() {
   const md = {
     "tfs.type": "Bug", "tfs.id": "123",
     "bug.required_repos": JSON.stringify(["frame-web"]),
-    pr: JSON.stringify([{...prep[0], ...records[0], ...prs[0], repo_url:"https://example.test/tfs/C/P/_git/frame-web"}]),
+    pr: JSON.stringify([{...prep[0], ...bug[0], ...prs[0], repo_url:"https://example.test/tfs/C/P/_git/frame-web"}]),
   };
   return { md, records: JSON.parse(md.pr) };
 }
@@ -68,7 +68,7 @@ test("prepare digest detects modification to committed Bug evidence", () => {
 
 test("OpenSpec Bug remains on existing Change-based path", () => {
   const { md } = fixture();
-  assert.equal(isDirectBugDelivery({ ...md, "analysis.change_ref": "fix-123" }), false);
+  assert.equal(isDirectBugDelivery({ ...md, "analysis.source": "{}" }), false);
 });
 
 test("merged PR must point to the exact candidate verified by Bug Agent", () => {

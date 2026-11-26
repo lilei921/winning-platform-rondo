@@ -35,7 +35,7 @@ export function requiredBugRepos(raw: string | undefined): string[] {
 
 /** Called before ANY external PR creation, for all participating repositories. */
 export function assertBugReadyForPr(md: Record<string,string>): string[] {
-  if (md["tfs.type"] !== "Bug" || md["analysis.change_ref"]) {
+  if (md["tfs.type"] !== "Bug" || md["analysis.source"] !== undefined) {
     throw new FailError("不是无 OpenSpec Bug Issue，不能使用 Bug PR Gate");
   }
   const required = requiredBugRepos(md["bug.required_repos"]);

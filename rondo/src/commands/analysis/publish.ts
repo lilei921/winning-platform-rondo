@@ -78,7 +78,7 @@ async function main(rawArgs: string[]): Promise<number> {
     const runtime = analysisRuntime(rawArgs, args.cli, args.workspaceId);
     const MC = multicaPrefix(runtime);
     assertStableChangeRef(args.changeRef);
-    const entries: Record<string, string> = { "analysis.change_ref": args.changeRef, [GATE_RESULT]: "PASS" };
+    const entries: Record<string, string> = { [GATE_RESULT]: "PASS" };
 
     const getIssue = (what: string): Record<string, unknown> => {
       const issue = runJson([...MC, "issue", "get", args.issue, ...ws, "--output", "json"], what, undefined, { transient: true }) as Record<string, unknown>;
@@ -101,6 +101,7 @@ async function main(rawArgs: string[]): Promise<number> {
     // Requirement 审核重放只消费已登记的 PASS、Facts 和固定来源，不重读工件。
     if (!assertAnalysisWritable(before, priorMeta, entries)) {
       const source = readAnalysisSource(priorMeta);
+      if (source.change_ref !== args.changeRef) throw new UnknownError("当前审核 Change 与已发布来源不一致");
       if (priorMeta["analysis.gate.result"] !== "PASS") throw new UnknownError("已审核 Issue 缺少可信的 PASS 状态，不能重放");
       if (!(CHANGE_KINDS as readonly unknown[]).includes(priorMeta["analysis.change_kind"]))
         throw new UnknownError("已审核 Issue 缺少有效 Change Kind，不能重放");
@@ -168,7 +169,7 @@ async function main(rawArgs: string[]): Promise<number> {
     }
     const schema = gate.payload.schema;
     if (!schema) throw new UnknownError("本次 Gate 缺少 Change Schema");
-    const derived = analysisMetadataEntries(args.changeRef, schema);
+    const derived = analysisMetadataEntries(schema);
     Object.assign(entries, derived);
     const effectiveMeta = { ...priorMeta, ...derived };
     const readContractAt = (commit: string) => committedContract(root, commit, args.changeRef, effectiveMeta);
@@ -177,7 +178,7 @@ async function main(rawArgs: string[]): Promise<number> {
         gitOk(root, ["show", `${commit}:${REPOSITORY_CONTEXT_PATH}`], "读取固定 Git 版本的 Repository Scope 映射"));
     if (gate.payload.issue_id !== String(before.id) || gate.payload.workspace_id !== args.workspaceId ||
         gate.payload.change_ref !== args.changeRef ||
-        gate.payload.metadata_digest !== metadataEvidenceDigest(effectiveMeta) ||
+        gate.payload.metadata_digest !== metadataEvidenceDigest(effectiveMeta, args.changeRef) ||
         !/^[a-f0-9]{64}$/.test(gate.payload.change_digest ?? "")) {
       throw new UnknownError("本次真实 Gate 与 Analysis 身份、Facts 或 Change 摘要不一致");
     }
@@ -189,7 +190,7 @@ async function main(rawArgs: string[]): Promise<number> {
       let recovered: AnalysisSource | undefined;
       let checkedSource: AnalysisSource | undefined;
       let checkedContract: Awaited<ReturnType<typeof readPublishedContract>> | undefined;
-      if (!requirement && priorMeta["analysis.source"] !== undefined && metadataEvidenceDigest(priorMeta) === gateEvidence.metadata_digest) {
+      if (!requirement && priorMeta["analysis.source"] !== undefined && metadataEvidenceDigest(priorMeta, args.changeRef) === gateEvidence.metadata_digest) {
         const saved = parseAnalysisSource(priorMeta["analysis.source"]);
         if (saved.change_ref === args.changeRef) {
           const published = await readPublishedContract(saved, effectiveMeta);
@@ -210,7 +211,7 @@ async function main(rawArgs: string[]): Promise<number> {
         const result = requirement ? await publishChange(root, args.changeRef, args.issue, ANALYSIS_CONTRACT_FILE, subject, {
           repoUrl: rootRepositoryUrl(root), expectedBranch: publicationBranch!, fixedSourceCommit: pinned?.commit,
           commitWorkingChange: true,
-          canRecoverFixedSource: pinned && metadataEvidenceDigest(priorMeta) === gateEvidence.metadata_digest
+          canRecoverFixedSource: pinned && metadataEvidenceDigest(priorMeta, args.changeRef) === gateEvidence.metadata_digest
             ? (commit: string, localHead: string) => {
                 const published = readContractAt(commit);
                 if (published.digest !== gateEvidence.change_digest) return false;
@@ -266,7 +267,7 @@ async function main(rawArgs: string[]): Promise<number> {
       assertWritableSnapshot(liveIssue);
       let latestMeta = requireIssueMetadata(liveIssue);
       if (latestMeta["analysis.source"] !== priorMeta["analysis.source"]) throw new UnknownError("收口期间 analysis.source 已被其他流程更新，停止覆盖");
-      if (metadataEvidenceDigest(latestMeta) !== metadataEvidenceDigest(priorMeta) || !sameDeliveryFacts(priorMeta, latestMeta) || latestMeta[GATE_RESULT] !== priorMeta[GATE_RESULT]) {
+      if (metadataEvidenceDigest(latestMeta, args.changeRef) !== metadataEvidenceDigest(priorMeta, args.changeRef) || !sameDeliveryFacts(priorMeta, latestMeta) || latestMeta[GATE_RESULT] !== priorMeta[GATE_RESULT]) {
         throw new UnknownError("根仓 Commit/Push 期间 Analysis Facts 发生变化，必须重新执行 Analysis Gate");
       }
       const replacing = Object.entries(entries).some(([k, v]) => k !== GATE_RESULT && latestMeta[k] !== v);
@@ -275,7 +276,7 @@ async function main(rawArgs: string[]): Promise<number> {
         const invalidatedIssue = getIssue("确认旧 Gate 已失效");
         assertWritableSnapshot(invalidatedIssue);
         const invalidated = requireIssueMetadata(invalidatedIssue);
-        if (invalidated[GATE_RESULT] === "PASS" || !sameDeliveryFacts(priorMeta, invalidated) || metadataEvidenceDigest(invalidated) !== metadataEvidenceDigest(latestMeta) || invalidated["analysis.source"] !== latestMeta["analysis.source"]) {
+        if (invalidated[GATE_RESULT] === "PASS" || !sameDeliveryFacts(priorMeta, invalidated) || metadataEvidenceDigest(invalidated, args.changeRef) !== metadataEvidenceDigest(latestMeta, args.changeRef) || invalidated["analysis.source"] !== latestMeta["analysis.source"]) {
           throw new UnknownError("旧 Gate 失效结果或审核事实无法确认");
         }
         latestMeta = invalidated;

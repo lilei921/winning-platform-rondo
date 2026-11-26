@@ -18,7 +18,7 @@ type ApprovalClient = Pick<MulticaClient, "getIssue" | "listComments" | "setMeta
 
 const APPROVAL = "analysis.human_approval";
 const VERIFY = "verify_agent.required";
-const FACTS = ["tfs.type", "tfs.id", "analysis.gate.result", "analysis.change_ref",
+const FACTS = ["tfs.type", "tfs.id", "analysis.gate.result",
   "analysis.source", APPROVAL, VERIFY, "finalize.pending", "delivery.tfs_written"];
 
 /** Lead interprets the Human decision; CLI records and validates its exact source. */

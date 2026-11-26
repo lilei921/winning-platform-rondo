@@ -221,7 +221,7 @@ function evidenceFor(changeDir, opts = {}) {
 function baseMetadata(extra = {}) {
   return {
     "tfs.id": "999", "tfs.type": "Bug",
-    "analysis.change_kind": "corrective", "analysis.change_ref": CHANGE_REF,
+    "analysis.change_kind": "corrective",
     "analysis.gate.result": "PASS",
     "analysis.human_approval": JSON.stringify({ decision: "approved", by: "human", at: "2026-11-08T00:00:00Z", comment_ref: "c-0", verify_agent_required: false }),
     "analysis.verify_agent.recommendation": "not_required",

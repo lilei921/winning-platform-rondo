@@ -6,7 +6,6 @@ const source = { repo_url: "https://tfs.example/tfs/C/P/_git/R", branch: "dev", 
 const md = (recommended: string, approved: boolean, required = approved, comment = "comment-1"): Record<string, string> => ({
   "analysis.verify_agent.recommendation": recommended,
   "analysis.source": JSON.stringify(source),
-  "analysis.change_ref": source.change_ref,
   "analysis.human_approval": JSON.stringify({
     decision: "approved", by: "human", at: "2026-11-08T00:00:00Z",
     comment_ref: comment, verify_agent_required: approved, source,
@@ -75,7 +74,6 @@ test("waivers are version-bound; missing means empty and malformed metadata fail
   const approval=JSON.parse(input["analysis.human_approval"]);
   input["analysis.human_approval"]=JSON.stringify({...approval,source:undefined,waived_tasks:["3.1"]});
   assert.throws(()=>readApprovedVerifyDecision(input),/Source/);
-  input["analysis.change_ref"]=source.change_ref;
   input["analysis.source"]=JSON.stringify(source);
   for(const waived_tasks of [null,"3.1",["3.1","3.1"],["bad"],[3.1]]) {
     input["analysis.human_approval"]=JSON.stringify({...approval,source,waived_tasks});

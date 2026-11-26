@@ -109,10 +109,9 @@ export function checkIdentity(meta: Record<string, unknown>, schema: ChangeSchem
   return { name: "identity", result: reasons.length ? "FAIL" : "PASS", reasons };
 }
 
-export function checkChange(openspecRoot: string, meta: Record<string, unknown>): {
+export function checkChange(openspecRoot: string, changeRef: unknown): {
   check: Check; changeDir: string | null; schema: ChangeSchema | null; rawMetadata?: string;
 } {
-  const changeRef = meta["analysis.change_ref"];
   try {
     assertStableChangeRef(changeRef);
   } catch (exc) {
@@ -273,8 +272,8 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
     const sourceMeta = input.snapshot?.metadata ?? requireIssueMetadata(issue);
     // --openspec-root 语义统一：根仓路径自动归一到其 openspec/ 子目录
     const openspecRoot = resolveOpenspecRootDir(args.openspecRoot);
-    const { check: change, changeDir, schema, rawMetadata } = checkChange(openspecRoot, { "analysis.change_ref": input.changeRef });
-    const meta = schema ? { ...sourceMeta, ...analysisMetadataEntries(input.changeRef, schema) } : sourceMeta;
+    const { check: change, changeDir, schema, rawMetadata } = checkChange(openspecRoot, input.changeRef);
+    const meta = schema ? { ...sourceMeta, ...analysisMetadataEntries(schema) } : sourceMeta;
     checks.push(checkIdentity(meta, schema, input.changeRef));
     checks.push(change);
     // Change 不可确认时不执行依赖该目录/Schema 的检查，避免派生 FAIL。
@@ -290,7 +289,7 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
       context = {
         issue_id: String(issue.id), workspace_id: args.workspaceId!,
         change_ref: input.changeRef, change_kind: changeKindFromSchema(schema),
-        schema, change_dir: changeDir, metadata_digest: metadataEvidenceDigest(meta), metadata: meta,
+        schema, change_dir: changeDir, metadata_digest: metadataEvidenceDigest(meta, input.changeRef), metadata: meta,
       };
     }
   } catch (exc) {
