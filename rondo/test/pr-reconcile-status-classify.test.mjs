@@ -349,3 +349,23 @@ test("invalid preparation does not suppress an already registered abandoned PR",
   assert.equal(action.action,"stopped_abandoned");
   assert.equal(f.calls[0][2],"pr.abandoned");
 });
+
+test("unresolved first repository does not prevent recovery of the second",async()=>{
+  const f=recoveryFixture();
+  f.live.backend="absent";
+  assert.equal((await f.run()).action,"unknown");
+  assert.deepEqual(JSON.parse(f.issue.metadata.current_pr),[f.pr("frontend")]);
+  assert.deepEqual(f.calls,["current_pr"]);
+  f.live.backend="completed";
+  assert.equal((await f.run()).action,"finalize");
+  assert.equal(JSON.parse(f.issue.metadata.current_pr).length,2);
+});
+
+test("blocked retains existing pending while recovering registration",async()=>{
+  const f=recoveryFixture("blocked");
+  const pending=JSON.stringify({event_keys:["DF-42#backend#17#completed","DF-42#frontend#18#completed"]});
+  f.issue.metadata["finalize.pending"]=pending;
+  assert.equal((await f.run()).action,"noop");
+  assert.equal(f.issue.metadata["finalize.pending"],pending);
+  assert.deepEqual(f.calls,["current_pr","current_pr"]);
+});

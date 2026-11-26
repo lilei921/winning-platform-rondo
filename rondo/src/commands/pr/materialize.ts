@@ -207,21 +207,23 @@ export async function recoverPreparedPrs(
     check();
     return {issue: fresh, detail: (e as Error).message};
   }
+  const unresolved: string[] = [];
   for (const entry of prep) {
     if (registered.some(p => p.repo_key === entry.repo_key)) continue;
     let pr: MaterializedPr;
     try {
       pr = await materializeOne(tfs, api, tfsId, entry, identities.get(entry.repo_key)!, undefined, true, check, true);
     } catch (e) {
-      // Preserve successful registrations and allow Sync to inspect known PRs.
+      // Keep recovering other repositories; a changed Issue stops all writes.
       check();
-      return {issue: fresh, detail: (e as Error).message};
+      unresolved.push(entry.repo_key + ": " + (e as Error).message);
+      continue;
     }
     fresh = registerPrIdentity(multica, issue.id, registered, pr, check);
     currentPr = fresh.metadata!.current_pr;
   }
   check();
-  return {issue: fresh};
+  return {issue: fresh, ...(unresolved.length ? {detail: unresolved.join("；")} : {})};
 }
 
 export function registerPrMaterialize(group: Command): void {
