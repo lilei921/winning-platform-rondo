@@ -240,7 +240,21 @@ export async function processIssue(
     return { issue: issueKey, action: "unknown", detail: unknowns.join("；") };
   }
 
+  // Materialize can persist a partial set. Never treat it as the full delivery.
+  let prepared: {repo_key: string}[];
+  try { prepared = JSON.parse(md.pr_prep ?? "null"); }
+  catch { return { issue: issueKey, action: "unknown", detail: "pr_prep 不是合法 JSON" }; }
+  if (!Array.isArray(prepared) || prepared.length !== prs.length ||
+      prepared.some(p => !p || typeof p.repo_key !== "string" || !p.repo_key.trim()) ||
+      new Set(prepared.map(p => p.repo_key)).size !== prepared.length ||
+      prepared.some(p => !prs.some(pr => pr?.repo_key === p.repo_key))) {
+    return { issue: issueKey, action: "unknown", detail: "current_pr 与 pr_prep 仓库集合不完整，禁止收口" };
+  }
+
   if (completedCount === prs.length) {
+    if (issue.status !== "in_review" && issue.status !== "blocked") {
+      return { issue: issueKey, action: "noop", detail: "PR 已全部 completed，等待 Materialize 确认 in_review" };
+    }
     if (pendingRaw) {
       return { issue: issueKey, action: "resume_finalize", detail: "finalize.pending 已存在，按当前事实补齐" };
     }

@@ -12,7 +12,7 @@ import { isRequirementChangeDelivery, approvedRequirementScope } from "../dist/c
 import { isDeliveryTaskTitle } from "../dist/commands/tfs/requirement-tasks.js";
 import { prepareRequirementWorktree, removePublishedRequirementWorktree } from "../dist/commands/dev/requirement-worktree.js";
 import { TfsClient } from "../dist/tfs/client.js";
-import { materializeOne, registerCurrentPr } from "../dist/commands/pr/materialize.js";
+import { materializeOne, materializePreparedPrs } from "../dist/commands/pr/materialize.js";
 import { outgoing, prepareRoot, publishChange } from "../dist/commands/runtime/root-git.js";
 
 const repoUrl = "http://tfs.test/tfs/C/P/_git/biz";
@@ -52,26 +52,43 @@ test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专
   t.after(() => { for (const [k,v] of Object.entries(previous)) { if (v === undefined) delete process.env[k]; else process.env[k]=v; } });
   const entry = prep("frame", sha1);
   const repo = {project:"P",repo:"biz",projectId:"11111111-1111-1111-1111-111111111111",repoId:"22222222-2222-2222-2222-222222222222"};
-  const api = {config:{serverUrl:"http://tfs.test/tfs/C"},rawRequest:async (url,method)=>{
+  let linkWrites = 0;
+  const api = {config:{serverUrl:"http://tfs.test/tfs/C"},rawRequest:async (url,method,body)=>{
+    if (method === "PATCH") {
+      const patch = JSON.parse(body);
+      assert.equal(patch[0].value,1);
+      assert.equal(patch[1].value.url,"vstfs:///Git/PullRequestId/"+repo.projectId+"%2F"+repo.repoId+"%2F17");
+      linked = true;
+      linkWrites++;
+      return {statusCode:200,body:"{}"};
+    }
     assert.equal(method,"GET");
-    return {statusCode:200,body:JSON.stringify({id:42,rev:1,relations:[{rel:"ArtifactLink",url:"vstfs:///Git/PullRequestId/"+repo.projectId+"%2F"+repo.repoId+"%2F17"}]})};
+    return {statusCode:200,body:JSON.stringify({id:42,rev:1,relations:linked?[{rel:"ArtifactLink",url:"vstfs:///Git/PullRequestId/"+repo.projectId+"%2F"+repo.repoId+"%2F17"}]:[]})};
   }};
   const authorize=()=>{};
   let remoteHead = sha1;
   let description = "Engineer 已验证的专业 PR 描述";
   let prStatus = "active";
+  let sourceCommitId = sha1;
+  let listOverride;
+  let allowCreate = false;
+  let linked = true;
   let listed = false;
   const calls = [];
   const tfs = { run: async args => {
     calls.push(args.slice(0, 2).join(" "));
-    if (args[0] === "branch") return { found: true, branch: { commit: remoteHead } };
+    if (args[0] === "branch") return { found: !!remoteHead, branch: { commit: remoteHead } };
     if (args[0] === "pr" && args[1] === "get") return {
       id: 17, status: prStatus, sourceBranch: "feature/42", targetBranch: "dev",
-      description, url: "http://tfs.test/pr/17",
+      description, sourceCommitId, url: "http://tfs.test/pr/17",
     };
     if (args[0] === "pr" && args[1] === "list") {
       listed = true;
-      return [{ id: 17, targetBranch: "dev", url: "http://tfs.test/pr/17" }];
+      const status=args[args.indexOf("--status")+1];
+      return listOverride ? listOverride(status) : status===prStatus ? [{ id: 17, targetBranch: "dev", url: "http://tfs.test/pr/17" }] : [];
+    }
+    if (args[0] === "pr" && args[1] === "create" && allowCreate) {
+      return {created:true,pr:{id:17,url:"http://tfs.test/pr/17"}};
     }
     throw Error("Unexpected external PR write");
   } };
@@ -84,7 +101,7 @@ test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专
   assert.equal(reused.pr_id, 17);
   assert.equal(reused.reused, true);
   assert.equal(listed, false, "已登记 PR 必须先按 ID 回读而不是凭分支查找");
-  assert.deepEqual(calls, ["branch get", "pr get", "branch get"]);
+  assert.deepEqual(calls, ["pr get", "branch get"]);
   remoteHead = sha2;
   await assert.rejects(materializeOne(tfs, api, 42, entry, repo, prior, false, authorize), /HEAD/);
   remoteHead = sha1;
@@ -98,6 +115,42 @@ test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专
   assert.equal((await materializeOne(tfs, api, 42, entry, repo, undefined, false, authorize)).pr_id, 17);
   assert.equal(listed, true, "未登记 PR 可通过外部 Active PR 发现后复用");
   await assert.rejects(materializeOne(tfs,api,42,entry,repo,undefined,true,authorize),/in_review/);
+  prStatus = "completed";
+  remoteHead = undefined;
+  calls.length = 0;
+  assert.equal((await materializeOne(tfs,api,42,entry,repo,prior,false,authorize)).pr_id,17);
+  assert.deepEqual(calls,["pr get"]);
+  calls.length = 0;
+  assert.equal((await materializeOne(tfs,api,42,entry,repo,undefined,false,authorize)).pr_id,17);
+  assert.deepEqual(calls,["pr list","pr list","pr get"]);
+  assert.equal((await materializeOne(tfs,api,42,entry,repo,prior,true,authorize)).pr_id,17);
+  sourceCommitId = sha2;
+  await assert.rejects(materializeOne(tfs,api,42,entry,repo,undefined,false,authorize),/外部身份/);
+  sourceCommitId = sha1;
+  linked = false;
+  await assert.rejects(materializeOne(tfs,api,42,entry,repo,prior,true,authorize),/缺少 Work Item/);
+  assert.equal(linkWrites,0);
+  sourceCommitId = sha2;
+  await assert.rejects(materializeOne(tfs,api,42,entry,repo,undefined,false,authorize),/外部身份/);
+  assert.equal(linkWrites,0);
+  sourceCommitId = sha1;
+  assert.equal((await materializeOne(tfs,api,42,entry,repo,undefined,false,authorize)).pr_id,17);
+  assert.equal(linked,true);
+  assert.equal(linkWrites,1);
+  assert.equal((await materializeOne(tfs,api,42,entry,repo,prior,false,authorize)).pr_id,17);
+  assert.equal(linkWrites,1);
+  listOverride = status => [{id:status==="active"?18:17,targetBranch:"dev",url:"http://tfs.test/pr/17"}];
+  await assert.rejects(materializeOne(tfs,api,42,entry,repo,undefined,false,authorize),/多个/);
+  listOverride = () => [];
+  await assert.rejects(materializeOne(tfs,api,42,entry,repo,undefined,false,authorize),/HEAD/);
+  prStatus = "active";
+  remoteHead = sha1;
+  allowCreate = true;
+  calls.length = 0;
+  const created = await materializeOne(tfs,api,42,entry,repo,undefined,false,authorize);
+  assert.equal(created.reused,false);
+  assert.equal(calls.filter(c=>c==="pr create").length,1);
+  assert.deepEqual(calls,["pr list","pr list","branch get","pr create","pr get","branch get"]);
 });
 
 test("Requirement Closeout 读取批准 Commit 的范围而非当前工作树", t => {
@@ -450,27 +503,67 @@ test("持久根仓安全 Fast-forward 保留其他 Change 的 staged WIP",async 
   assert.match(git(root,"status","--porcelain","--","openspec/changes/other-200/tasks.md"),/^M /);
 });
 
-test("PR 登记回读独立于交付模式及 Worktree Cleanup", () => {
-  const currentPr = JSON.stringify([{repo_key:"frame",pr_id:17}]);
-  for (const failure of ["metadata","status","none"]) {
-    const issue = {id:"issue",status:"in_progress",metadata:{}};
-    const calls = [];
-    const client = {
-      setMetadata(id,key,value) { calls.push("metadata"); if (failure !== "metadata") issue.metadata[key]=value; },
-      getIssue() { calls.push("read"); return issue; },
-      setStatus(id,status) { calls.push("status"); if (failure !== "status") issue.status=status; },
-    };
-    if (failure === "metadata") {
-      assert.throws(()=>registerCurrentPr(client,issue.id,currentPr), /登记未确认/);
-      assert.deepEqual(calls,["metadata","read"]);
-    } else if (failure === "status") {
-      assert.throws(()=>registerCurrentPr(client,issue.id,currentPr), /状态未确认/);
-      assert.deepEqual(calls,["metadata","read","status","read"]);
-    } else {
-      assert.equal(registerCurrentPr(client,issue.id,currentPr).status,"in_review");
-      assert.deepEqual(calls,["metadata","read","status","read"]);
-    }
-  }
+test("逐仓 PR 登记保留部分成功，重试仅补缺失登记，完整后才推进状态", async () => {
+  const prepared = [prep("frame",sha1),prep("web",sha2)];
+  const issue = {id:"issue",status:"in_progress",metadata:{}};
+  const writes = [];
+  let failRepo = "web", loseMetadata = false, loseStatus = false;
+  const client = {
+    setMetadata(id,key,value) { writes.push(key); if (!loseMetadata) issue.metadata[key]=value; },
+    getIssue() { return issue; },
+    setStatus(id,status) { writes.push("status"); if (!loseStatus) issue.status=status; },
+  };
+  const seen = [], checks = [];
+  const authorize = (expected,checkActor=true) => {
+    checks.push(checkActor);
+    if (issue.metadata.current_pr !== expected) throw Error("current_pr drift");
+  };
+  const materialize = async (entry,prior,check) => {
+    check();
+    seen.push([entry.repo_key,prior?.pr_id]);
+    if (entry.repo_key===failRepo) throw Error("TFS unavailable");
+    return {repo_key:entry.repo_key,pr_id:entry.repo_key==="frame"?17:18,
+      pr_url:entry.repo_url+"/pullrequest/"+(entry.repo_key==="frame"?17:18),
+      source_branch:entry.source_branch,target_branch:entry.target_branch,reused:!!prior};
+  };
+  const run = (readOnly=false) => materializePreparedPrs(client,issue.id,prepared,issue.metadata.current_pr,readOnly,authorize,materialize);
+  await assert.rejects(run(),/TFS unavailable/);
+  assert.deepEqual(JSON.parse(issue.metadata.current_pr).map(p=>p.repo_key),["frame"]);
+  assert.equal(issue.status,"in_progress");
+  assert.deepEqual(writes,["current_pr"]);
+  assert.deepEqual(checks,[true,false,true]);
+  failRepo = "";
+  loseMetadata = true;
+  await assert.rejects(run(),/登记未确认/);
+  assert.equal(issue.status,"in_progress");
+  assert.equal(JSON.parse(issue.metadata.current_pr).length,1);
+  loseMetadata = false;
+  loseStatus = true;
+  await assert.rejects(run(),/状态未确认/);
+  assert.equal(JSON.parse(issue.metadata.current_pr).length,2);
+  assert.equal(issue.status,"in_progress");
+  loseStatus = false;
+  writes.length=0;seen.length=0;checks.length=0;
+  await run();
+  assert.deepEqual(seen,[["frame",17],["web",18]]);
+  assert.deepEqual(writes,["status"]);
+  assert.deepEqual(checks,[true,true,false]);
+  assert.equal(issue.status,"in_review");
+  writes.length=0;
+  await run(true);
+  assert.deepEqual(writes,[]);
+});
+
+test("PR 物化发现 current_pr 并发变化时不覆盖已登记事实", async () => {
+  const issue={id:"issue",metadata:{}};
+  const prepared=[prep("frame",sha1)];
+  const client={getIssue:()=>issue,setMetadata:()=>{throw Error("unexpected write");},setStatus:()=>{throw Error("unexpected status");}};
+  const authorize=expected=>{if(issue.metadata.current_pr!==expected)throw Error("current_pr drift");};
+  await assert.rejects(materializePreparedPrs(client,issue.id,prepared,undefined,false,authorize,async entry=>{
+    issue.metadata.current_pr="external update";
+    return {repo_key:entry.repo_key,pr_id:17,reused:false};
+  }),/current_pr drift/);
+  assert.equal(issue.metadata.current_pr,"external update");
 });
 
 test("only completed or explicitly waived tasks satisfy Change progress", () => {

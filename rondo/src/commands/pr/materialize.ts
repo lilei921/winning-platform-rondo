@@ -29,22 +29,49 @@ interface PrPrepEntry {
 interface CurrentPrEntry {
   repo_key: string; pr_id: number; pr_url: string; source_branch: string; target_branch: string;
 }
-export function registerCurrentPr(
-  multica: Pick<MulticaClient, "setMetadata" | "getIssue" | "setStatus">, issueId: string, currentPr: string, beforeStatus?: () => void,
-): ReturnType<MulticaClient["getIssue"]> {
-  multica.setMetadata(issueId, "current_pr", currentPr);
-  if (multica.getIssue(issueId).metadata?.current_pr !== currentPr) {
-    throw new UnknownError("current_pr 登记未确认，禁止进入 in_review");
-  }
-  beforeStatus?.();
-  multica.setStatus(issueId, "in_review");
-  const confirmed = multica.getIssue(issueId);
-  if (confirmed.status !== "in_review" || confirmed.metadata?.current_pr !== currentPr) {
-    throw new UnknownError("PR 登记或 in_review 状态未确认");
-  }
-  return confirmed;
-}
+type MaterializedPr = CurrentPrEntry & { reused: boolean };
 
+/** Persist each confirmed identity before moving to another repository. */
+export async function materializePreparedPrs(
+  multica: Pick<MulticaClient, "setMetadata" | "getIssue" | "setStatus">, issueId: string,
+  prep: PrPrepEntry[], initialCurrentPr: string | undefined, readOnly: boolean,
+  authorize: (expectedCurrentPr: string | undefined, checkActor?: boolean) => void,
+  materialize: (entry: PrPrepEntry, prior: CurrentPrEntry | undefined, authorizeCurrent: () => void) => Promise<MaterializedPr>,
+): Promise<MaterializedPr[]> {
+  const registered = list<CurrentPrEntry>(initialCurrentPr, "current_pr");
+  if (!prep.length || registered.some(p => !prep.some(x => x.repo_key === p.repo_key) ||
+      !Number.isSafeInteger(p.pr_id) || p.pr_id <= 0) || (readOnly && registered.length !== prep.length)) {
+    throw new FailError("current_pr 与准备仓库集合不一致");
+  }
+  let currentPr = initialCurrentPr;
+  const authorizeCurrent = () => authorize(currentPr);
+  const prs: MaterializedPr[] = [];
+  for (const entry of prep) {
+    const prior = registered.find(p => p.repo_key === entry.repo_key);
+    const pr = await materialize(entry, prior, authorizeCurrent);
+    if (!prior && !readOnly) {
+      const { reused: _, ...identity } = pr;
+      authorize(currentPr, false);
+      const next = JSON.stringify([...registered, identity]);
+      multica.setMetadata(issueId, "current_pr", next);
+      if (multica.getIssue(issueId).metadata?.current_pr !== next) {
+        throw new UnknownError("current_pr 登记未确认，停止后续 PR 物化");
+      }
+      registered.push(identity);
+      currentPr = next;
+    }
+    prs.push(pr);
+  }
+  authorize(currentPr, false);
+  if (!readOnly) {
+    multica.setStatus(issueId, "in_review");
+    const confirmed = multica.getIssue(issueId);
+    if (confirmed.status !== "in_review" || confirmed.metadata?.current_pr !== currentPr) {
+      throw new UnknownError("PR 登记或 in_review 状态未确认");
+    }
+  }
+  return prs;
+}
 
 const filled = (v: unknown): v is string => typeof v === "string" && !!v.trim();
 function list<T extends {repo_key: string}>(raw: string | undefined, field: string): T[] {
@@ -73,30 +100,34 @@ export async function materializeOne(tfs: Pick<TfsClient, "run">, api: Pick<ApiT
       {found?:boolean;branch?:{commit:string}};
     if (!branch.found || branch.branch?.commit !== entry.candidate_commit) throw new UnknownError("远端 Candidate HEAD 不一致");
   };
-  await checkHead();
   const verify = async (id:number, reused:boolean, priorUrl?:string) => {
     if(!Number.isSafeInteger(id)||id<=0) throw new UnknownError("TFS PR ID 未确认");
     const live = await tfs.run(["pr","get",...args,"--id",String(id)], "核实 PR") as
       {found?:boolean;id?:number;status?:string;sourceBranch?:string;targetBranch?:string;sourceCommitId?:string;description?:string;url?:string};
     if(live.found===false||live.id!==id||live.sourceBranch!==entry.source_branch||live.targetBranch!==entry.target_branch||
-      !(live.status==="active" || (readOnly && live.status==="completed")) ||
+      !(live.status==="active" || live.status==="completed") ||
       (live.status==="completed" && live.sourceCommitId!==entry.candidate_commit))
       throw new UnknownError("PR 外部身份、分支或状态不一致");
-    if(!filled(live.description)||live.description.includes("补 TFS 工作项 id")) throw new FailError("已有 PR 缺少有效专业描述");
+    if(live.status==="active" && (!filled(live.description)||live.description.includes("补 TFS 工作项 id"))) throw new FailError("已有 PR 缺少有效专业描述");
     const url = normalizeTfsPrWebUrl(live.url??priorUrl,collection,repo.project,repo.repo,id);
-    await checkHead();
+    if(live.status==="active") await checkHead();
     authorize();
     await ensurePrWorkItemLink(api,repo,id,tfsId,!readOnly);
     return {repo_key:entry.repo_key,pr_id:id,pr_url:url,source_branch:entry.source_branch,target_branch:entry.target_branch,reused};
   };
   if(prior) return verify(prior.pr_id,true,prior.pr_url);
   if(readOnly) throw new FailError("in_review 缺少完整已登记 PR");
-  const prs = await tfs.run(["pr","list",...args,"--status","active","--source-branch",entry.source_branch], "查询已有 PR") as
-    Array<{id:number;url:string;targetBranch:string}>;
-  if(!Array.isArray(prs)) throw new UnknownError("已有 PR 列表不可确认");
-  const existing=prs.filter(p=>p.targetBranch===entry.target_branch);
-  if(existing.length>1) throw new UnknownError("存在多个相同源目标的 active PR");
-  if(existing.length===1) return verify(existing[0].id,true,existing[0].url);
+  const existing: Array<{id:number;url:string;targetBranch:string}> = [];
+  for (const status of ["active", "completed"]) {
+    const prs = await tfs.run(["pr","list",...args,"--status",status,"--source-branch",entry.source_branch,"--top","100"], "查询已有 PR") as
+      Array<{id:number;url:string;targetBranch:string}>;
+    if(!Array.isArray(prs) || prs.length >= 100) throw new UnknownError("已有 PR 列表不可完整确认");
+    existing.push(...prs.filter(p=>p.targetBranch===entry.target_branch));
+  }
+  // A PR may move from active to completed between the two reads.
+  const unique = [...new Map(existing.map(pr=>[pr.id,pr])).values()];
+  if(unique.length>1) throw new UnknownError("存在多个相同源目标的 active/completed PR");
+  if(unique.length===1) return verify(unique[0].id,true,unique[0].url);
   const dir=mkdtempSync(join(tmpdir(),"rondo-pr-"));
   try {
     const file=join(dir,"description.md"); writeFileSync(file,entry.description,"utf8");
@@ -122,7 +153,7 @@ export function registerPrMaterialize(group: Command): void {
         if(!bug&&md["tfs.type"]!=="需求") throw new FailError("不支持当前 TFS Type");
         if(bug&&(md["analysis.change_ref"]||md["analysis.gate.result"])) throw new FailError("Bug 不能混入 OpenSpec Gate");
         const branch=candidateBranch(md["tfs.id"]);
-        const authorize=(expectedCurrentPr=md.current_pr)=>{
+        const authorize=(expectedCurrentPr: string | undefined, checkActor = true)=>{
           const fresh=multica.getIssue(issue.id), facts=fresh.metadata??{};
           if(fresh.status!==issue.status||fresh.assignee_id!==issue.assignee_id||
             ["tfs.id","tfs.type","tfs.url","analysis.source","analysis.human_approval","analysis.change_ref","analysis.gate.result",
@@ -130,18 +161,16 @@ export function registerPrMaterialize(group: Command): void {
               .some(k=>facts[k]!==md[k]) || facts.current_pr!==expectedCurrentPr) throw new UnknownError("PR 物化期间授权或准备事实变化");
           if(!["todo","in_progress","in_review"].includes(fresh.status??"")||facts["finalize.pending"]||facts["delivery.tfs_written"]==="true")
             throw new FailError("当前 Issue 状态不允许 PR 物化");
-          if(readOnly) return;
+          if(readOnly || !checkActor) return;
           if(bug) {
             assertBugExecution(multica,fresh);
             assertBugAgentAssignment(fresh.assignee_id,multica.run(["agent","list",...multica.ws(),"--output","json"],"核验 Bug Fix 指派",{transient:true}));
           } else assertEngineerExecution(multica,fresh,runtime.workspace_id);
         };
-        authorize();
+        authorize(md.current_pr);
         const api=new ApiTfsClient(), tfs=new TfsClient(), server=api.config.serverUrl;
-        const prep=list<PrPrepEntry>(md.pr_prep,"pr_prep"), prior=list<CurrentPrEntry>(md.current_pr,"current_pr");
+        const prep=list<PrPrepEntry>(md.pr_prep,"pr_prep");
         if(!prep.length) throw new FailError("缺少 PR Preparation");
-        if(prior.some(p=>!prep.some(x=>x.repo_key===p.repo_key)||!Number.isSafeInteger(p.pr_id)||p.pr_id<=0)||
-          (readOnly&&prior.length!==prep.length)) throw new FailError("current_pr 与准备仓库集合不一致");
         if(bug) {
           await assertBugSource(issue,server);
           assertBugReadyForPr(md);
@@ -166,15 +195,9 @@ export function registerPrMaterialize(group: Command): void {
           if(seen.has(key)) throw new FailError("不同 repo_key 指向同一真实 TFS Repository");
           seen.add(key);identities.set(entry.repo_key,repo);
         }
-        authorize();
-        const prs=[];
-        for(const entry of prep) prs.push(await materializeOne(tfs,api,tfsId,entry,identities.get(entry.repo_key)!,
-          prior.find(p=>p.repo_key===entry.repo_key),readOnly,authorize));
-        authorize();
-        if(!readOnly) {
-          const currentPr=JSON.stringify(prs.map(({reused:_,...rest})=>rest));
-          registerCurrentPr(multica,issue.id,currentPr,()=>authorize(currentPr));
-        }
+        const prs=await materializePreparedPrs(multica,issue.id,prep,md.current_pr,readOnly,authorize,
+          (entry,prior,authorizeCurrent)=>materializeOne(tfs,api,tfsId,entry,identities.get(entry.repo_key)!,
+            prior,readOnly,authorizeCurrent));
         process.stdout.write(JSON.stringify({result:"PASS",issue:issue.identifier??issue.id,status:"in_review",prs},null,2)+"\n");
       } catch(e) {
         if(!(e instanceof FailError||e instanceof UnknownError)) throw e;
