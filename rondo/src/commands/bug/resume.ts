@@ -14,6 +14,7 @@ import { parseTfsPrWebUrl } from "../../tfs/api/pr.js";
 import { assertTfsRepository } from "../../clients/authenticated-git.js";
 import { assertBugReadyForPr } from "./scope.js";
 import { validateBugEvidence } from "./evidence.js";
+import { readPrRecords, registeredPrs, withoutPrIdentity } from "../pr/facts.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { TfsClient } from "../../clients/tfs.js";
 import { isDirectBugDelivery, type BugCurrentPr } from "./finalize-facts.js";
@@ -35,7 +36,7 @@ function arg(argv:string[],flag:string):string {
 }
 export function assertAbandonedBugSet(prs:BugCurrentPr[],abandoned:Abandoned[]):string[] {
   if(prs.length===0 || abandoned.length===0)throw new FailError("缺少当前 PR 或 Abandoned 事实");
-  if(new Set(prs.map(p=>p.repo_key)).size!==prs.length)throw new FailError("current_pr 存在重复 repo_key");
+  if(new Set(prs.map(p=>p.repo_key)).size!==prs.length)throw new FailError("pr 存在重复 repo_key");
   const events:string[]=[];
   for(const p of prs){
     const matching=abandoned.filter(a=>a.repo_key===p.repo_key && a.pr_id===p.pr_id);
@@ -71,8 +72,8 @@ async function main(argv:string[]):Promise<number>{
         throw new FailError("同一 Human Comment 不允许更改已记录的决定");
       }
       if(decision.comment_id===commentId && issue.status==="in_progress"){
-        const current=readList<BugCurrentPr>(md.current_pr??"[]","current_pr");
-        if(current.length!==0 || (next==="REWORK" && (md["bug.delivery"]!=="[]" || md.pr_prep!=="[]")))throw new UnknownError("当前恢复事实与已记录 Decision 不一致");
+        const current=registeredPrs(md.pr);
+        if(current.length!==0 || (next==="REWORK" && readPrRecords(md.pr).length!==0))throw new UnknownError("当前恢复事实与已记录 Decision 不一致");
         if(next==="RECREATE_PR") assertBugReadyForPr(md);
         process.stdout.write(JSON.stringify({result:"NOOP",issue:issueKey,next,comment_id:commentId})+"\n");
         return 0;
@@ -84,8 +85,8 @@ async function main(argv:string[]):Promise<number>{
     if(md["finalize.pending"] || md["delivery.tfs_written"]==="true"){
       throw new FailError("已有收口或 TFS 写回事实，禁止 Bug PR 恢复覆盖");
     }
-    const observedPrs=readList<BugCurrentPr>(md.current_pr??"[]","current_pr");
-    // A previous interrupted run may already have cleared current_pr. The
+    const observedPrs=registeredPrs(md.pr).map(({repo_key,pr_id,pr_url,source_branch,target_branch})=>({repo_key,pr_id,pr_url,source_branch,target_branch}));
+    // A previous interrupted run may already have cleared pr. The
     // persist-before-act Decision retains its original immutable PR snapshot.
     const prs=observedPrs.length>0?observedPrs:
       decision?.comment_id===commentId?decision.original_prs:[];
@@ -97,12 +98,11 @@ async function main(argv:string[]):Promise<number>{
       }
     }
     const tfs=new TfsClient(), server=loadTfsConfig().serverUrl;
-    const prepared=readList<{repo_key:string;repo_url:string;candidate_commit:string;source_branch:string;target_branch:string}>(md.pr_prep??"[]","pr_prep");
+    const prepared=readPrRecords(md.pr);
     if(next==="RECREATE_PR") {
       assertBugReadyForPr(md);
-      const evidence=readList<Record<string,unknown>&{repo_key:string}>(md["bug.delivery"],"bug.delivery");
-      for(const d of evidence) {
-        const errors=validateBugEvidence({...d,blockers:[]},{issue:issueKey,tfsId:Number(md["tfs.id"]),repoKey:d.repo_key,sha:String(d.candidate_commit)});
+      for(const d of prepared) {
+        const errors=validateBugEvidence(d,{issue:issueKey,tfsId:Number(md["tfs.id"]),repoKey:d.repo_key,sha:d.candidate_commit}, false, true);
         if(errors.length) throw new FailError(errors.join("；"));
       }
     }
@@ -134,18 +134,13 @@ async function main(argv:string[]):Promise<number>{
       original_prs:prs,decided_at:new Date().toISOString(),
     } satisfies Decision);
     const latest=client.getIssue(issueRef);
-    if(latest.status!==issue.status || ["tfs.id","tfs.type","pr_prep","bug.delivery","bug.required_repos","current_pr","pr.abandoned","bug.resume","finalize.pending","delivery.tfs_written"].some(k=>latest.metadata?.[k]!==md[k])) throw new UnknownError("恢复期间 Issue 事实变化");
+    if(latest.status!==issue.status || ["tfs.id","tfs.type","pr","bug.required_repos","pr.abandoned","bug.resume","finalize.pending","delivery.tfs_written"].some(k=>latest.metadata?.[k]!==md[k])) throw new UnknownError("恢复期间 Issue 事实变化");
     // Persist decision first. Subsequent writes are idempotent and recoverable.
     if(md["bug.resume"]!==saved)client.setMetadata(issue.id,"bug.resume",saved);
-    // Remove only the current PR materialization, never the historical abandoned events.
-    client.setMetadata(issue.id,"current_pr","[]");
-    if(next==="REWORK"){
-      client.setMetadata(issue.id,"bug.delivery","[]");
-      client.setMetadata(issue.id,"pr_prep","[]");
-    }
+    const nextPr = JSON.stringify(next==="REWORK" ? [] : prepared.map(withoutPrIdentity));
+    if (md.pr!==nextPr) client.setMetadata(issue.id,"pr",nextPr);
     const read=client.getIssue(issueKey).metadata??{};
-    if(read["bug.resume"]!==saved || read.current_pr!=="[]" ||
-       (next==="REWORK"&&(read["bug.delivery"]!=="[]"||read.pr_prep!=="[]"))){
+    if(read["bug.resume"]!==saved || read.pr!==nextPr){
       throw new UnknownError("Bug 恢复事实回读不一致，保持 blocked");
     }
     // This is a state transition, not a new Run trigger. The existing Human

@@ -65,13 +65,12 @@ test("⑥ golden：ANALYSIS / RECREATE_PR(UNKNOWN) / CANCEL_DELIVERY 输出形�
 
   // RECREATE_PR：abandoned 的 repo_key 未登记 → 确定性 UNKNOWN（不触 TFS）
   const rp = parentState("c-5", {}, {
-    pr_prep: JSON.stringify([{ repo_key: "repo1", source_branch: "b", candidate_commit: "x", title: "t" }]),
-    current_pr: JSON.stringify([]),
+    pr: JSON.stringify([{ repo_key: "repo1", source_branch: "b", candidate_commit: "x", title: "t" }]),
   });
   const b = fixture(t, rp);
   const rb = b.runJson(["--issue", "WNDF-T", "--comment-id", "c-5", "--next", "RECREATE_PR"]);
   assert.equal(rb.exit, 3);
-  assert.deepEqual(rb.body, { result: "UNKNOWN", reason: "pr.abandoned 中 repo_key 未登记: repo1" });
+  assert.deepEqual(rb.body, { result: "UNKNOWN", reason: "没有当前已登记且确认 abandoned 的 PR" });
 
   // CANCEL_DELIVERY：零写入 hold_for_human
   const c = fixture(t, parentState("c-6"));

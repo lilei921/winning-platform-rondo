@@ -9,6 +9,7 @@ import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
 import { readBugEvidenceInput, validateBugEvidence } from "../bug/evidence.js";
 import { requiredBugRepos, assertBugReadyForPr } from "../bug/scope.js";
 import { verifyAndExecuteValidation, ValidationCommandError } from "./validation.js";
+import { readPrRecords } from "./facts.js";
 
 const filled = (v: unknown): v is string => typeof v === "string" && !!v.trim();
 type Fact = { result: "PASS"; summary: string; command?: string[]; evidence_refs?: string[] };
@@ -36,14 +37,6 @@ export function validatePrFacts(raw: unknown, bug: boolean): Facts {
   if (!Array.isArray(f.blockers) || f.blockers.length) throw new FailError("blockers 必须显式为空数组");
   if (!filled(f.description) || f.description.includes("补 TFS 工作项 id")) throw new FailError("缺少专业 PR Description");
   return { ...f, code_review: { ...review, findings } };
-}
-
-function list(raw: string | undefined, field: string): Array<Record<string, unknown>> {
-  let value: unknown;
-  try { value = JSON.parse(raw ?? "[]"); } catch { throw new UnknownError(field + " 非法 JSON"); }
-  if (!Array.isArray(value) || value.some(x => !x || typeof x !== "object" || Array.isArray(x) || !filled(x.repo_key)) ||
-      new Set(value.map(x => x.repo_key)).size !== value.length) throw new UnknownError(field + " 仓库事实非法或重复");
-  return value;
 }
 
 export function registerPrPrepare(group: Command): void {
@@ -76,7 +69,7 @@ export function registerPrPrepare(group: Command): void {
           const problems = validateBugEvidence({...bugFacts,local_validation:facts.validation},
             {issue:issue.identifier??issue.id,tfsId,repoKey:opts.repo,sha}, facts.validation.command !== undefined);
           if (problems.length) throw new FailError(problems.join("；"));
-          const prior = list(md["bug.delivery"],"bug.delivery").find(x=>x.repo_key===opts.repo && x.candidate_commit===sha);
+          const prior = readPrRecords(md.pr).find(x=>x.repo_key===opts.repo && x.candidate_commit===sha);
           if (!facts.validation.command && (prior?.local_validation as {result?:string}|undefined)?.result==="FAIL")
             throw new FailError("当前 Candidate 已有命令验证失败事实，须重新执行验证命令");
           required = opts.requiredRepos !== undefined ? requiredBugRepos(JSON.stringify(opts.requiredRepos.split(",").map(x=>x.trim()))) :
@@ -101,20 +94,20 @@ export function registerPrPrepare(group: Command): void {
           const fresh=await authorizedCheckout(opts.issue,opts.repo,opts.rootRepo);
           if(fresh.issue.id!==issue.id || fresh.issue.status!==issue.status || fresh.revision!==current.revision ||
             fresh.path!==path || JSON.stringify(fresh.repo)!==JSON.stringify(repo) ||
-            ["analysis.source","analysis.human_approval","analysis.change_ref","analysis.gate.result","tfs.id","tfs.type","tfs.url","bug.required_repos","current_pr","finalize.pending","delivery.tfs_written"]
+            ["analysis.source","analysis.human_approval","analysis.change_ref","analysis.gate.result","tfs.id","tfs.type","tfs.url","bug.required_repos","finalize.pending","delivery.tfs_written"]
               .some(k=>fresh.md[k]!==md[k])) throw new UnknownError("Validation 期间授权或仓库事实变化");
           return fresh;
         };
-        const replace = (fresh: Awaited<ReturnType<typeof authorizedCheckout>>, field:string,entry:Record<string,unknown>) => {
-          const before=list(md[field],field), after=list(fresh.md[field],field);
+        const replace = (fresh: Awaited<ReturnType<typeof authorizedCheckout>>, entry: Record<string,unknown>) => {
+          const before=readPrRecords(md.pr), after=readPrRecords(fresh.md.pr);
           if(JSON.stringify(before.find(x=>x.repo_key===opts.repo))!==JSON.stringify(after.find(x=>x.repo_key===opts.repo)))
-            throw new UnknownError(field+" 本仓事实在验证期间变化");
+            throw new UnknownError("pr 本仓事实在验证期间变化");
           return JSON.stringify([...after.filter(x=>x.repo_key!==opts.repo),entry]);
         };
         const prepIdentity = {repo_key:opts.repo,repo_url:repo.repo_url,source_branch:branch,target_branch:repo.default_target_branch,
           candidate_commit:sha,title:opts.title,description:facts.description};
         const {blockers:_, ...professional} = bugFacts;
-        const bugIdentity = {...professional,repo_key:opts.repo,source_branch:branch,target_branch:repo.default_target_branch,candidate_commit:sha,tfs_id:tfsId};
+        const bugIdentity = {...prepIdentity,...professional};
         const requiredJson=JSON.stringify(required);
         checkCandidate(current.head);
         if (facts.validation.command) {
@@ -128,14 +121,13 @@ export function registerPrPrepare(group: Command): void {
               checkCandidate(fresh.head,false);
               const failure={result:"FAIL",summary:facts.validation.summary,command:facts.validation.command,
                 exit_code:e.exitCode,candidate_commit:sha,source:"rondo pr prepare",...(bug && {evidence_refs:facts.validation.evidence_refs})};
-              const field=bug?"bug.delivery":"pr_prep";
-              const prior=list(fresh.md[field],field).find(x=>x.repo_key===opts.repo && x.candidate_commit===sha);
-              const entry={...(prior??(bug?bugIdentity:{...prepIdentity,code_review:review,blockers:[]})),local_validation:failure};
-              const failed=replace(fresh,field,entry);
+              const prior=readPrRecords(fresh.md.pr).find(x=>x.repo_key===opts.repo && x.candidate_commit===sha);
+              const entry={...(prior??(bug?bugIdentity:{...prepIdentity,code_review:review})),local_validation:failure};
+              const failed=replace(fresh,entry);
               if (bug && !md["bug.required_repos"]) client.setMetadata(issue.id,"bug.required_repos",requiredJson);
-              client.setMetadata(issue.id,field,failed);
+              client.setMetadata(issue.id,"pr",failed);
               const confirmed=client.getIssue(issue.id).metadata??{};
-              if (confirmed[field]!==failed || (bug && confirmed["bug.required_repos"]!==requiredJson))
+              if (confirmed.pr!==failed || (bug && confirmed["bug.required_repos"]!==requiredJson))
                 throw new UnknownError("验证失败事实未回读确认");
             } catch (cause) {
               throw new UnknownError(e.message+"；验证失败事实未确认: "+(cause as Error).message);
@@ -147,14 +139,11 @@ export function registerPrPrepare(group: Command): void {
         checkCandidate(fresh.head);
         const validation = {result:"PASS", summary:facts.validation.summary, ...(bug && {evidence_refs:facts.validation.evidence_refs}),
           ...(facts.validation.command && {command:facts.validation.command, exit_code:0, candidate_commit:sha, source:"rondo pr prepare"})};
-        const delivery=bug?{...bugIdentity,local_validation:validation}:undefined;
-        const prepared=replace(fresh,"pr_prep",{...prepIdentity,...(!bug && {local_validation:validation,code_review:review,blockers:[]})});
-        const bugDelivery=delivery?replace(fresh,"bug.delivery",delivery):undefined;
+        const prepared=replace(fresh,{...(bug?bugIdentity:{...prepIdentity,code_review:review}),local_validation:validation});
         if(bug && !md["bug.required_repos"]) client.setMetadata(issue.id,"bug.required_repos",requiredJson);
-        if(bugDelivery) client.setMetadata(issue.id,"bug.delivery",bugDelivery);
-        client.setMetadata(issue.id,"pr_prep",prepared);
+        client.setMetadata(issue.id,"pr",prepared);
         const confirmed=client.getIssue(issue.id).metadata??{};
-        if(confirmed.pr_prep!==prepared || (bug && (confirmed["bug.required_repos"]!==requiredJson || confirmed["bug.delivery"]!==bugDelivery)))
+        if(confirmed.pr!==prepared || (bug && confirmed["bug.required_repos"]!==requiredJson))
           throw new UnknownError("PR Preparation 事实未回读确认");
         let ready=true;
         if(bug) {try {assertBugReadyForPr(confirmed);} catch(e) {if(!(e instanceof FailError)) throw e;ready=false;}}

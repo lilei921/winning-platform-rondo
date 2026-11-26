@@ -28,7 +28,7 @@ import { TfsClient as TfsApiClient } from "../../tfs/client.js";
 import { hasExactArtifactLink } from "../../tfs/api/commit-facts.js";
 import { commitKey, parseCommitArtifact } from "../../tfs/api/commit-identity.js";
 import { readAnalysisSource } from "../analysis/source.js";
-import { isDirectBugDelivery, assertBugFinalizationFacts, bugDeliveryDigest, type BugCurrentPr } from "../bug/finalize-facts.js";
+import { isDirectBugDelivery, assertBugFinalizationFacts, bugDeliveryDigest } from "../bug/finalize-facts.js";
 import { verifyCloseoutRoot, confirmPublishedArchive, assertCloseoutChange } from "../delivery/closeout-root.js";
 interface TfsWorkItem {
   id: number;
@@ -135,7 +135,7 @@ export async function writebackParent(clients: Pick<Clients, "tfsQuery" | "tfsSe
   if (!exists) {
     const commentFile = join(tmpdir(), `writeback-tfs-comment-${process.pid}.md`);
     const content = isDirectBugDelivery(md)
-      ? `${legacy}：Bug 修复 PR 已合并，验证与代码审查证据见 Multica bug.delivery / PR。`
+      ? `${legacy}：Bug 修复 PR 已合并，验证与代码审查证据见 Multica pr。`
       : `${legacy}：PR 已合并，OpenSpec Change \`${md["analysis.change_ref"] ?? ""}\` 已归档。详见 Delivery Issue 摘要评论。`;
     writeFileSync(commentFile, content + "\n\n" + reference, "utf8");
     try { await clients.tfsComment(tfsId, commentFile); }
@@ -288,7 +288,7 @@ async function executePlannedRequirement(
   if (fresh["finalize.pending"] !== md["finalize.pending"] ||
       fresh["analysis.change_ref"] !== md["analysis.change_ref"] ||
       fresh["analysis.source"] !== md["analysis.source"] ||
-      fresh["current_pr"] !== md["current_pr"] ||
+      fresh["pr"] !== md["pr"] ||
       fresh["tfs.id"] !== md["tfs.id"]) {
     throw new UnknownError("收口期间 Issue 事实发生变化，停止外部 TFS 写入");
   }
@@ -367,11 +367,7 @@ export async function executeWriteback(runtime: MulticaRuntime, issue: IssueReco
   try { pending = JSON.parse(md["finalize.pending"]) as typeof pending; }
   catch { throw new UnknownError("finalize.pending 无法解析，不能执行外部 TFS 写入"); }
   if (isDirectBugDelivery(md)) {
-    let prs: BugCurrentPr[];
-    try { prs = JSON.parse(md.current_pr ?? "null") as BugCurrentPr[]; }
-    catch { throw new UnknownError("Bug current_pr 无法解析"); }
-    if (!Array.isArray(prs)) throw new FailError("Bug current_pr 缺失");
-    assertBugFinalizationFacts(md, issue.status, prs);
+    assertBugFinalizationFacts(md, issue.status);
     if (pending.prepared_kind !== "bug" || pending.prepared_bug_digest !== bugDeliveryDigest(md)) {
       throw new FailError("Bug TFS Writeback 必须等待有效的 Bug Delivery Prepare");
     }

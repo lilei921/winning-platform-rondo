@@ -9,7 +9,7 @@ function fixture() {
   const prs = [{ repo_key: "frame-web", pr_id: 12, pr_url: "https://example.test/pr/12",
                  source_branch: "feature/123", target_branch: "main" }];
   const bug = [{
-    repo_key: "frame-web", tfs_id: 123, source_branch: "feature/123", target_branch: "main",
+    repo_key: "frame-web", source_branch: "feature/123", target_branch: "main",
     candidate_commit: sha, expected_behavior: "返回列表", actual_behavior: "请求失败",
     fix_summary: "修复空值分支",
     root_cause: { confidence: "confirmed", summary: "空指针", evidence_refs: ["trace:1"] },
@@ -24,47 +24,45 @@ function fixture() {
   const md = {
     "tfs.type": "Bug", "tfs.id": "123",
     "bug.required_repos": JSON.stringify(["frame-web"]),
-    "bug.delivery": JSON.stringify(bug),
-    "pr_prep": JSON.stringify(prep),
-    "current_pr": JSON.stringify(prs),
+    pr: JSON.stringify([{...prep[0], ...records[0], ...prs[0], repo_url:"https://example.test/tfs/C/P/_git/frame-web"}]),
   };
-  return { md, prs, bug, prep };
+  return { md, records: JSON.parse(md.pr) };
 }
 
 test("direct Bug delivery has no OpenSpec dependency", () => {
-  const { md, prs } = fixture();
+  const { md } = fixture();
   assert.equal(isDirectBugDelivery(md), true);
-  assert.doesNotThrow(() => assertBugFinalizationFacts(md, "in_review", prs));
+  assert.doesNotThrow(() => assertBugFinalizationFacts(md, "in_review"));
   assert.match(bugDeliveryDigest(md), /^[a-f0-9]{64}$/);
   assert.equal(bugDeliveryDigest(md), bugDeliveryDigest({ ...md, "analysis.change_kind": "corrective" }));
 });
 
-test("Bug delivery fails when a PR is not covered or candidate differs", () => {
-  const { md, prs, bug } = fixture();
-  const conflicting = { ...md, "bug.delivery": JSON.stringify([{ ...bug[0], candidate_commit: "b".repeat(40) }]) };
-  assert.throws(() => assertBugFinalizationFacts(conflicting, "in_review", prs), /候选身份不一致|Candidate Commit/);
-  assert.throws(() => assertBugFinalizationFacts(md, "in_review", [...prs, { ...prs[0], repo_key: "another" }]), /数量不一致|未覆盖全部/);
+test("Bug delivery rejects missing registration or an additional repository", () => {
+  const { md, records } = fixture();
+  const {pr_id,pr_url,...prepared}=records[0];
+  assert.throws(()=>assertBugFinalizationFacts({...md,pr:JSON.stringify([prepared])},"in_review"),/未登记全部/);
+  assert.throws(()=>assertBugFinalizationFacts({...md,pr:JSON.stringify([...records,{...records[0],repo_key:"another"}])},"in_review"),/准备不完整/);
 });
 
 test("blocking review findings, explicit verification and blocked issue fail closed", () => {
-  const { md, prs, bug } = fixture();
-  const bad = { ...bug[0], code_review: { ...bug[0].code_review, findings: [{ blocking: true, resolved: false }] } };
-  assert.throws(() => assertBugFinalizationFacts({ ...md, "bug.delivery": JSON.stringify([bad]) }, "in_review", prs), /Code Review/);
-  assert.throws(() => assertBugFinalizationFacts(md, "blocked", prs), /blocked/);
-  assert.throws(() => assertBugFinalizationFacts({ ...md, "verify_agent.required": "true" }, "in_review", prs), /Independent Verification/);
+  const { md, records } = fixture();
+  const bad = { ...records[0], code_review: { ...records[0].code_review, findings: [{ blocking: true, resolved: false }] } };
+  assert.throws(() => assertBugFinalizationFacts({ ...md, pr: JSON.stringify([bad]) }, "in_review"), /Blocking Finding/);
+  assert.throws(() => assertBugFinalizationFacts(md, "blocked"), /blocked/);
+  assert.throws(() => assertBugFinalizationFacts({ ...md, "verify_agent.required": "true" }, "in_review"), /Independent Verification/);
 });
 
 test("finalize blocks if required Bug repositories have changed after PR readiness", () => {
-  const { md, prs } = fixture();
+  const { md } = fixture();
   const stale = { ...md, "bug.required_repos": JSON.stringify(["frame","frame-web"]) };
-  assert.throws(() => assertBugFinalizationFacts(stale, "in_review", prs), /准备不完整/);
+  assert.throws(() => assertBugFinalizationFacts(stale, "in_review"), /准备不完整/);
   assert.notEqual(bugDeliveryDigest(md), bugDeliveryDigest(stale));
 });
 
 test("prepare digest detects modification to committed Bug evidence", () => {
-  const { md, bug } = fixture();
+  const { md, records } = fixture();
   const before = bugDeliveryDigest(md);
-  const after = bugDeliveryDigest({ ...md, "bug.delivery": JSON.stringify([{ ...bug[0], fix_summary: "different fix" }]) });
+  const after = bugDeliveryDigest({ ...md, pr: JSON.stringify([{ ...records[0], fix_summary: "different fix" }]) });
   assert.notEqual(before, after);
 });
 

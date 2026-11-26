@@ -6,6 +6,10 @@ import { loadConfig, type BaseRegistryConfig, type RuntimeConfig } from "../../c
 import { MulticaClient } from "../../clients/multica.js";
 import { FailError } from "../../tfs/client.js";
 import { dispatchTfs, UsageError } from "../../tfs/dispatch.js";
+import { readPrRecords, isRegisteredPr, withoutPrIdentity, type RegisteredPr } from "../pr/facts.js";
+import { parseTfsPrWebUrl } from "../../tfs/api/pr.js";
+import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
+import { assertTfsRepository } from "../../clients/authenticated-git.js";
 interface RegistryConfig extends BaseRegistryConfig {
   runtime: RuntimeConfig;
   registry: Record<string, { repo_path: string; tfs_repo?: string; tfs_project?: string; default_target_branch?: string }>;
@@ -19,23 +23,7 @@ interface DecisionEntry {
   applied_at: string;
   /** 本脚本负责的路由副作用已完成；重跑不得重新启动已完成的返工。 */
   completed_at?: string;
-}
-
-interface PrPrepEntry {
-  repo_key: string;
-  source_branch: string;
-  target_branch?: string;
-  candidate_commit: string;
-  title: string;
-  description_ref?: string;
-}
-
-interface CurrentPrEntry {
-  repo_key: string;
-  pr_id: number;
-  pr_url: string;
-  source_branch: string;
-  target_branch: string;
+  abandoned_prs?: RegisteredPr[];
 }
 
 interface AbandonedEntry { repo_key: string; pr_id: number; event_key: string; detected_at: string }
@@ -165,13 +153,21 @@ async function main(argv: string[]): Promise<number> {
         }
         return noop(prior);
       } else if (prior.routed_to === "rematerialize_pr") {
-        const abandoned = parseJsonArray<AbandonedEntry>(md["pr.abandoned"], "pr.abandoned", issueKey);
-        const currentPr = parseJsonArray<CurrentPrEntry>(md["current_pr"], "current_pr", issueKey);
-        const remaining = currentPr.filter((p) => !abandoned.some((a) => a.repo_key === p.repo_key && a.pr_id === p.pr_id));
-        if (remaining.length !== currentPr.length) {
-          client.setMetadata(issue.id, "current_pr", JSON.stringify(remaining));
-          repairs.push("current_pr");
+        // An interrupted decision may only remove the exact recorded PR identities.
+        if (!Array.isArray(prior.abandoned_prs) || !prior.abandoned_prs.length) throw new UnknownError("PR 重建决定缺少原 PR 身份");
+        const records = readPrRecords(md.pr);
+        for (const old of prior.abandoned_prs) {
+          const now = records.find(p => p.repo_key === old.repo_key);
+          if (!now || JSON.stringify(withoutPrIdentity(now)) !== JSON.stringify(withoutPrIdentity(old)) ||
+              (isRegisteredPr(now) && (now.pr_id !== old.pr_id || now.pr_url !== old.pr_url)))
+            throw new UnknownError("PR 重建决定对应的原候选或登记已变化");
         }
+        const remaining = records.map(p => prior.abandoned_prs!.some(a => a.repo_key === p.repo_key && a.pr_id === p.pr_id) ? withoutPrIdentity(p) : p);
+        if (JSON.stringify(remaining) !== md.pr) {
+          client.setMetadata(issue.id, "pr", JSON.stringify(remaining));
+          repairs.push("pr");
+        }
+        completeDecision();
       }
       // needs_engineering / hold_for_human：零副作用路由，无后置条件可补
       if (repairs.length === 0) {
@@ -188,13 +184,14 @@ async function main(argv: string[]): Promise<number> {
       throw new UnknownError(`Issue ${issueKey} 缺少 metadata pr.abandoned——无 PR Abandoned 事实，不属于本脚本场景`);
     }
 
-    const recordDecision = (routedTo: string): void => {
+    const recordDecision = (routedTo: string, abandonedPrs?: RegisteredPr[]): void => {
       const entry: DecisionEntry = {
         comment_id: args["comment-id"],
         reason: args.reason ?? null,
         next,
         routed_to: routedTo,
         applied_at: new Date().toISOString(),
+        ...(abandonedPrs && { abandoned_prs: abandonedPrs }),
       };
       client.setMetadata(issue.id, "dev.decision", JSON.stringify([...decisions, entry]));
     };
@@ -219,32 +216,31 @@ async function main(argv: string[]): Promise<number> {
     // --- RECREATE_PR ---
     if (next === "RECREATE_PR") {
       const abandoned = parseJsonArray<AbandonedEntry>(md["pr.abandoned"], "pr.abandoned", issueKey);
-      const currentPr = parseJsonArray<CurrentPrEntry>(md["current_pr"], "current_pr", issueKey);
-      if (!md["pr_prep"]) throw new UnknownError(`Issue ${issueKey} 缺少 metadata pr_prep（候选提交事实不可确认）`);
-      const prPrep = parseJsonArray<PrPrepEntry>(md["pr_prep"], "pr_prep", issueKey);
-      const abandonedRepoKeys = [...new Set(abandoned.map((a) => a.repo_key))];
-      if (abandonedRepoKeys.length === 0) throw new UnknownError("pr.abandoned 为空（无待重建仓）");
-
-      // 逐 abandoned 仓核对 candidate commit 未变（确定性；任一已变 → needs_engineering）
+      const records = readPrRecords(md.pr);
+      const current = records.filter(isRegisteredPr).filter(p => abandoned.some(a => a.repo_key === p.repo_key && a.pr_id === p.pr_id));
+      if (!current.length) throw new UnknownError("没有当前已登记且确认 abandoned 的 PR");
+      if (md["finalize.pending"] || md["delivery.tfs_written"] === "true") throw new UnknownError("当前已进入收口");
       const changed: string[] = [];
-      for (const repoKey of abandonedRepoKeys) {
-        const repo = cfg.registry[repoKey];
-        if (!repo) throw new UnknownError(`pr.abandoned 中 repo_key 未登记: ${repoKey}`);
-        if (!repo.tfs_repo || !repo.tfs_project) {
-          throw new UnknownError(`${repoKey} 缺少 tfs_repo/tfs_project 交付配置，不能核对候选分支`);
-        }
-        const prep = prPrep.find((p) => p.repo_key === repoKey);
-        if (!prep) throw new UnknownError(`pr_prep 缺少 repo_key=${repoKey} 的条目（候选提交事实不全）`);
-        const r = await runTfs(
-          ["branch", "get", "--repo", repo.tfs_repo as string, "--name", prep.source_branch, "--project", repo.tfs_project as string],
-          `核对分支 ${prep.source_branch}(${repoKey})`,
-        );
-        if (r.tfsUnknown) throw new UnknownError(`${repoKey}: TFS 分支查询 UNKNOWN（候选提交核对不可信）`);
-        const d = r.data as { found: boolean; branch?: { commit: string } };
-        if (!d.found) throw new UnknownError(`${repoKey}: 分支 ${prep.source_branch} 在 TFS 查无（候选事实不可确认，交 Lead）`);
-        if (d.branch?.commit !== prep.candidate_commit) {
-          changed.push(`${repoKey}: HEAD ${d.branch?.commit} != candidate ${prep.candidate_commit}`);
-        }
+      const server = loadTfsConfig().serverUrl;
+      for (const prep of current) {
+        const repo = cfg.registry[prep.repo_key];
+        if (!repo?.tfs_repo || !repo.tfs_project) throw new UnknownError("缺少交付仓库配置: " + prep.repo_key);
+        const location = parseTfsPrWebUrl(prep.pr_url, server);
+        const parts = assertTfsRepository(prep.repo_url, server).pathname.split("/").map(decodeURIComponent);
+        if (!location || location.prId !== prep.pr_id || location.project.toLowerCase() !== parts.at(-3)?.toLowerCase() ||
+            location.repository.toLowerCase() !== parts.at(-1)?.toLowerCase() ||
+            location.project.toLowerCase() !== repo.tfs_project.toLowerCase() || location.repository.toLowerCase() !== repo.tfs_repo.toLowerCase())
+          throw new UnknownError("当前 PR 与仓库身份不一致");
+        const args = ["--repo", repo.tfs_repo, "--project", repo.tfs_project];
+        const live = await runTfs(["pr", "get", ...args, "--id", String(prep.pr_id)], "核实当前 abandoned PR");
+        const pr = live.data as {id?:number; status?:string; sourceBranch?:string; targetBranch?:string} | null;
+        if (live.tfsUnknown || pr?.id !== prep.pr_id || pr.status !== "abandoned" ||
+            pr.sourceBranch !== prep.source_branch || pr.targetBranch !== prep.target_branch)
+          throw new UnknownError("当前 PR 外部 abandoned 状态或身份无法确认");
+        const r = await runTfs(["branch", "get", ...args, "--name", prep.source_branch], "核对候选分支");
+        const d = r.data as {found?:boolean;branch?:{commit:string}} | null;
+        if (r.tfsUnknown || !d?.found || !d.branch?.commit) throw new UnknownError("候选分支无法确认");
+        if (d.branch.commit !== prep.candidate_commit) changed.push(prep.repo_key);
       }
 
       if (changed.length > 0) {
@@ -257,16 +253,14 @@ async function main(argv: string[]): Promise<number> {
         return 0;
       }
 
-      // 候选未变：从 current_pr 移除已 abandoned 条目（确定性：这些 PR 已确认 abandoned），
-      // 使 pull-request materialize-pr 可重新物化；active 条目保留复用。
-      const remaining = currentPr.filter((p) => !abandoned.some((a) => a.repo_key === p.repo_key && a.pr_id === p.pr_id));
-      recordDecision("rematerialize_pr");
-      client.setMetadata(issue.id, "current_pr", JSON.stringify(remaining));
-      process.stdout.write(JSON.stringify({
-        result: "PASS", next, directive: "rematerialize_pr",
-        removed_from_current_pr: currentPr.length - remaining.length,
-        remaining_current_pr: remaining,
-      }, null, 2) + "\n");
+      const fresh = client.getIssue(issueKey);
+      if (fresh.status !== issue.status || ["pr", "pr.abandoned", "dev.decision", "analysis.source", "analysis.human_approval", "finalize.pending", "delivery.tfs_written"].some(k => fresh.metadata?.[k] !== md[k]))
+        throw new UnknownError("PR 重建期间交付事实变化");
+      const remaining = records.map(p => current.some(a => a.repo_key === p.repo_key && a.pr_id === p.pr_id) ? withoutPrIdentity(p) : p);
+      recordDecision("rematerialize_pr", current);
+      client.setMetadata(issue.id, "pr", JSON.stringify(remaining));
+      completeDecision();
+      process.stdout.write(JSON.stringify({result:"PASS", next, directive:"rematerialize_pr", removed_prs:current.length},null,2)+"\n");
       return 0;
     }
 

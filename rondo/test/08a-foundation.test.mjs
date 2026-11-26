@@ -306,8 +306,8 @@ test('旧交付摘要不能冒充本次；ID 缺失的当前摘要直接复用',
 });
 
 for (const type of ['Bug', '需求']) test(`${type} 评论成功但完成标记失败，换客户端恢复只补标记`, async () => {
-  const issue = { id: 'i', metadata: { 'tfs.id': '12', 'tfs.type': type, ...(type === 'Bug' ? { 'bug.delivery': '[]' } : { 'analysis.change_ref': 'c' }),
-    current_pr: JSON.stringify([{ repo_key: 'biz', pr_id: 1, pr_url: url + '/pullrequest/1' }]) } };
+  const issue = { id: 'i', metadata: { 'tfs.id': '12', 'tfs.type': type, ...(type === 'Bug' ? {} : { 'analysis.change_ref': 'c' }),
+    pr: JSON.stringify([{ repo_key: 'biz', pr_id: 1, pr_url: url + '/pullrequest/1' }]) } };
   const history = []; let writes = 0, saved = 0;
   const client = { tfsQuery: async () => [{ state: '已解决' }], tfsSetState: async () => ({}),
     tfsComment: async (_id, file) => { writes++; history.push(readFileSync(file, 'utf8')); },

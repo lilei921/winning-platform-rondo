@@ -8,13 +8,13 @@ import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js"
 import { sameAnalysisSource, type AnalysisSource } from "../analysis/source.js";
 import { approvedChange, readDevelopmentCommit } from "./requirement-guard.js";
 import { readApprovedVerifyDecision } from "../delivery/verify-decision.js";
+import { readPrRecords } from "../pr/facts.js";
 
 export interface PrPrep {
   repo_key: string; repo_url?: string; source_branch: string; target_branch?: string;
   candidate_commit: string; title: string; description?: string;
   local_validation?: { result?: string; summary?: string; command?: string[]; exit_code?: number; candidate_commit?: string; source?: string };
   code_review?: { result?: string; candidate_commit?: string; summary?: string; findings?: Array<{ resolved?: boolean; blocking?: boolean; risk_note?: string; risk_ref?: string }> };
-  blockers?: string[];
 }
 interface RepoConfig { repo_path?: string; repo_url?: string; default_target_branch?: string }
 export interface Completion {
@@ -22,9 +22,6 @@ export interface Completion {
   task_count: number; repo_keys: string[]; candidates: Record<string, string>;
 }
 
-function parseJson(text: string, label: string): unknown {
-  try { return JSON.parse(text); } catch { throw new FailError(label + " 不是合法 JSON"); }
-}
 export function readTaskProgress(text: string): Map<string, boolean> {
   const refs = new Map<string, boolean>();
   for (const line of text.split(/\r?\n/)) {
@@ -80,8 +77,7 @@ export function validateChangeDelivery(prep: PrPrep[], scope: string[], tfsId: n
       throw new FailError("缺少与 Candidate 一致的 Rondo 实际执行验证结果: " + key);
     }
     const review = entry.code_review;
-    if (review?.result !== "PASS" || review.candidate_commit !== entry.candidate_commit || !review.summary?.trim() || !Array.isArray(review.findings) ||
-        !Array.isArray(entry.blockers) || entry.blockers.length) {
+    if (review?.result !== "PASS" || review.candidate_commit !== entry.candidate_commit || !review.summary?.trim() || !Array.isArray(review.findings)) {
       throw new FailError("Code Review 或 Blocking Findings 未通过: " + key);
     }
     if (review.findings.some(f => !f || (f.resolved !== true &&
@@ -104,16 +100,14 @@ export async function checkPublishedChange(
   const changeRef = source.change_ref;
   const reader = readerFactory(source.repo_url);
   const md = change.issue.metadata ?? {};
-  if (md.pr_prep !== expectedPrep) throw new UnknownError("PR Preparation 在检查期间变化");
+  if (md.pr !== expectedPrep) throw new UnknownError("PR Preparation 在检查期间变化");
   const commit = readDevelopmentCommit(md, source);
   const prefix = "/openspec/changes/" + changeRef;
   const tasks = await reader.read(commit, prefix + "/tasks.md");
   const taskCount = checkedTaskProgress(tasks, readApprovedVerifyDecision(md).waivedTasks);
-  const rawPrep = parseJson(md["pr_prep"] ?? "null", "pr_prep");
-  if (!Array.isArray(rawPrep)) throw new FailError("缺少 PR Preparation");
-  const candidates = validateChangeDelivery(rawPrep as PrPrep[], change.scope, change.tfsId, cfg.registry as Record<string, RepoConfig>);
+  const candidates = validateChangeDelivery(readPrRecords(md.pr), change.scope, change.tfsId, cfg.registry as Record<string, RepoConfig>);
   const latest = multica.getIssue(issueKey).metadata ?? {};
-  if (["analysis.source", "analysis.human_approval", "dev.publication", "pr_prep"].some(key => latest[key] !== md[key])) {
+  if (["analysis.source", "analysis.human_approval", "dev.publication", "pr"].some(key => latest[key] !== md[key])) {
     throw new UnknownError("完成检查期间批准、研发发布记录或 PR 候选发生变化，请重新检查");
   }
   return { change_ref: changeRef, branch: source.branch, commit, task_count: taskCount, repo_keys: Object.keys(candidates).sort(), candidates };

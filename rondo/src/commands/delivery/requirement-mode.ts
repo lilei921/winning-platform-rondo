@@ -1,3 +1,4 @@
+import { readPrRecords } from "../pr/facts.js";
 import { candidateBranch } from "../pr/candidate-branch.js";
 /** Requirement delivery identity derives from its TFS type and engineering facts. */
 import { FailError, UnknownError } from "../../cli/errors.js";
@@ -10,11 +11,9 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 export function isRequirementChangeDelivery(md: Record<string, string>): boolean {
-  if (md["tfs.type"] !== "需求" || !md["analysis.source"] || !md.pr_prep) return false;
-  let prep: unknown;
-  try { prep = JSON.parse(md.pr_prep); }
-  catch { throw new UnknownError("Requirement pr_prep 不是合法 JSON"); }
-  if (!Array.isArray(prep) || !prep.length) return false;
+  if (md["tfs.type"] !== "需求" || !md["analysis.source"] || !md.pr) return false;
+  const prep = readPrRecords(md.pr);
+  if (!prep.length) return false;
   const tfsId = Number(md["tfs.id"]);
   if (!Number.isSafeInteger(tfsId) || tfsId <= 0) throw new FailError("TFS Requirement ID 非法");
   if (!prep.every(v => v && typeof v === "object" && (v as {source_branch?: string}).source_branch === candidateBranch(tfsId))) {
