@@ -1149,3 +1149,13 @@ test("跨 Project 同名仓库及相同 SHA 按 GUID 分别关联真实 TFS Task
   assert.deepEqual(tasks.map(wi=>wi.fields["System.State"]),["已关闭","已关闭"]);
   assert.equal(f.readState().issues["WNDF-T"].status,"done");
 });
+
+test("Archive guard accepts waived unchecked tasks without changing checkbox text", async t => {
+  const f = await fixture(t, { requirement: true });
+  const text = "- [ ] 1.1 Pending\n";
+  writeFileSync(join(f.changeDir, "tasks.md"), text);
+  const { assertCompletedRequirementTasks } = await import("../dist/commands/delivery/requirement-mode.js");
+  assert.throws(()=>assertCompletedRequirementTasks(f.changeDir), /未完成/);
+  assert.doesNotThrow(()=>assertCompletedRequirementTasks(f.changeDir, ["1.1"]));
+  assert.equal(readFileSync(join(f.changeDir, "tasks.md"), "utf8"),text);
+});
