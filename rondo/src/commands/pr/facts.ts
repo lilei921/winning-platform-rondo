@@ -1,14 +1,14 @@
 import { FailError, UnknownError } from "../../cli/errors.js";
-import type { PrPrep } from "../dev/change-completion.js";
-
-export interface PrRecord extends PrPrep {
-  repo_url: string;
-  target_branch: string;
-  description: string;
+export interface PrRecord {
+  repo_key: string; repo_url: string; source_branch: string; target_branch: string;
+  candidate_commit: string; title: string; description: string;
+  local_validation?: { result?: string; summary?: string; command?: string[]; exit_code?: number; candidate_commit?: string; source?: string };
+  code_review?: { result?: string; candidate_commit?: string; summary?: string; findings?: Array<{ resolved?: boolean; blocking?: boolean; risk_note?: string; risk_ref?: string }> };
   pr_id?: number;
   pr_url?: string;
 }
 export type RegisteredPr = PrRecord & { pr_id: number; pr_url: string };
+export type PrIdentity = Pick<RegisteredPr, "repo_key" | "pr_id" | "pr_url" | "source_branch" | "target_branch">;
 
 export function readPrRecords(raw: string | undefined): PrRecord[] {
   let value: unknown;

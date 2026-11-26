@@ -8,13 +8,6 @@ import { assertBugReadyForPr } from "./scope.js";
 import { registeredPrs } from "../pr/facts.js";
 import { validateBugEvidence } from "./evidence.js";
 
-export interface BugCurrentPr {
-  repo_key: string;
-  pr_id: number;
-  pr_url: string;
-  source_branch: string;
-  target_branch: string;
-}
 /** Direct Bug has independent delivery evidence and no OpenSpec Change. */
 export function isDirectBugDelivery(md: Record<string, string>): boolean {
   return md["tfs.type"] === "Bug" && !!md.pr && md["analysis.source"] === undefined;

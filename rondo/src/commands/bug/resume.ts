@@ -14,13 +14,13 @@ import { parseTfsPrWebUrl } from "../../tfs/api/pr.js";
 import { assertTfsRepository } from "../../clients/authenticated-git.js";
 import { assertBugReadyForPr } from "./scope.js";
 import { validateBugEvidence } from "./evidence.js";
-import { readPrRecords, registeredPrs, withoutPrIdentity } from "../pr/facts.js";
+import { readPrRecords, registeredPrs, withoutPrIdentity, type PrIdentity } from "../pr/facts.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { TfsClient } from "../../clients/tfs.js";
-import { isDirectBugDelivery, type BugCurrentPr } from "./finalize-facts.js";
+import { isDirectBugDelivery } from "./finalize-facts.js";
 
 interface Abandoned { repo_key: string; pr_id: number; event_key: string; }
-interface Decision { comment_id:string; next:"REWORK"|"RECREATE_PR"; abandoned_prs:string[]; original_prs:BugCurrentPr[]; decided_at:string; }
+interface Decision { comment_id:string; next:"REWORK"|"RECREATE_PR"; abandoned_prs:string[]; original_prs:PrIdentity[]; decided_at:string; }
 const USAGE = "用法: rondo bug resume --issue <KEY> " +
   "--human-comment-id <id> --next REWORK|RECREATE_PR\n";
 
@@ -34,7 +34,7 @@ function arg(argv:string[],flag:string):string {
   const i=argv.indexOf(flag);
   return i>=0 && i+1<argv.length && !argv[i+1].startsWith("--")?argv[i+1]:"";
 }
-export function assertAbandonedBugSet(prs:BugCurrentPr[],abandoned:Abandoned[]):string[] {
+export function assertAbandonedBugSet(prs:PrIdentity[],abandoned:Abandoned[]):string[] {
   if(prs.length===0 || abandoned.length===0)throw new FailError("缺少当前 PR 或 Abandoned 事实");
   if(new Set(prs.map(p=>p.repo_key)).size!==prs.length)throw new FailError("pr 存在重复 repo_key");
   const events:string[]=[];

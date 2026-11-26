@@ -8,14 +8,8 @@ import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js"
 import { sameAnalysisSource, type AnalysisSource } from "../analysis/source.js";
 import { approvedChange, readDevelopmentCommit } from "./requirement-guard.js";
 import { readApprovedVerifyDecision } from "../delivery/verify-decision.js";
-import { readPrRecords } from "../pr/facts.js";
+import { readPrRecords, type PrRecord } from "../pr/facts.js";
 
-export interface PrPrep {
-  repo_key: string; repo_url?: string; source_branch: string; target_branch?: string;
-  candidate_commit: string; title: string; description?: string;
-  local_validation?: { result?: string; summary?: string; command?: string[]; exit_code?: number; candidate_commit?: string; source?: string };
-  code_review?: { result?: string; candidate_commit?: string; summary?: string; findings?: Array<{ resolved?: boolean; blocking?: boolean; risk_note?: string; risk_ref?: string }> };
-}
 interface RepoConfig { repo_path?: string; repo_url?: string; default_target_branch?: string }
 export interface Completion {
   change_ref: string; branch: string; commit: string;
@@ -52,7 +46,7 @@ export function checkedTaskProgress(text: string, waivedTasks: readonly string[]
 }
 
 /** Gate: each repo has a pinned candidate and Rondo-executed validation, not self-declared PASS. */
-export function validateChangeDelivery(prep: PrPrep[], scope: string[], tfsId: number, registry: Record<string, RepoConfig>): Record<string, string> {
+export function validateChangeDelivery(prep: PrRecord[], scope: string[], tfsId: number, registry: Record<string, RepoConfig>): Record<string, string> {
   if (!Array.isArray(prep) || prep.length === 0) throw new FailError("没有实际代码 Candidate；不自动无 PR Finalize");
   const candidates: Record<string, string> = {};
   for (const entry of prep) {

@@ -21,20 +21,16 @@ import { validateBugEvidence } from "../bug/evidence.js";
 import { assertEngineerExecution } from "../dev/requirement-guard.js";
 import { checkPublishedChange } from "../dev/change-completion.js";
 import { candidateBranch } from "./candidate-branch.js";
-import { readPrRecords, isRegisteredPr, type PrRecord } from "./facts.js";
+import { readPrRecords, isRegisteredPr, type PrRecord, type PrIdentity } from "./facts.js";
 
-type PrPrepEntry = Pick<PrRecord, "repo_key"|"repo_url"|"source_branch"|"target_branch"|"candidate_commit"|"title"|"description">;
-interface CurrentPrEntry {
-  repo_key: string; pr_id: number; pr_url: string; source_branch: string; target_branch: string;
-}
-type MaterializedPr = CurrentPrEntry & { reused: boolean };
+type MaterializedPr = PrIdentity & { reused: boolean };
 
 /** Persist each confirmed identity before moving to another repository. */
 export async function materializePreparedPrs(
   multica: Pick<MulticaClient, "setMetadata" | "getIssue" | "setStatus">, issueId: string,
   initialPr: string | undefined, readOnly: boolean,
   authorize: (expectedPr: string | undefined, checkActor?: boolean) => void,
-  materialize: (entry: PrPrepEntry, prior: CurrentPrEntry | undefined, authorizeCurrent: () => void) => Promise<MaterializedPr>,
+  materialize: (entry: PrRecord, prior: PrIdentity | undefined, authorizeCurrent: () => void) => Promise<MaterializedPr>,
 ): Promise<MaterializedPr[]> {
   let records = readPrRecords(initialPr);
   if (!records.length || (readOnly && records.some(p => !isRegisteredPr(p)))) throw new FailError("pr 准备或登记不完整");
@@ -65,8 +61,8 @@ export async function materializePreparedPrs(
 
 const filled = (v: unknown): v is string => typeof v === "string" && !!v.trim();
 export async function materializeOne(tfs: Pick<TfsClient, "run">, api: Pick<ApiTfsClient, "config" | "rawRequest">,
-  tfsId: number, entry: PrPrepEntry, repo: VerifiedRepo, prior: CurrentPrEntry | undefined,
-  readOnly: boolean, authorize: () => void): Promise<CurrentPrEntry & {reused:boolean}> {
+  tfsId: number, entry: PrRecord, repo: VerifiedRepo, prior: PrIdentity | undefined,
+  readOnly: boolean, authorize: () => void): Promise<PrIdentity & {reused:boolean}> {
   const collection = api.config.serverUrl;
   const expected = (url: string) => {
     const location = parseTfsPrWebUrl(url, collection);
@@ -75,7 +71,7 @@ export async function materializeOne(tfs: Pick<TfsClient, "run">, api: Pick<ApiT
   };
   if (prior && (expected(prior.pr_url)?.prId !== prior.pr_id || prior.repo_key !== entry.repo_key ||
       prior.source_branch !== entry.source_branch || prior.target_branch !== entry.target_branch))
-    throw new UnknownError("current_pr 仓库、PR 或分支身份不一致");
+    throw new UnknownError("pr 仓库、PR 或分支身份不一致");
   const args = ["--repo", repo.repoId, "--project", repo.project];
   const checkHead = async () => {
     const branch = await tfs.run(["branch","get",...args,"--name",entry.source_branch], "核对远端 Candidate") as

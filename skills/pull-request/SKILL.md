@@ -79,3 +79,7 @@ rondo bug resume --issue <KEY> --human-comment-id <id> --next REWORK|RECREATE_PR
 - `RECREATE_PR`：直接执行 `rondo pr materialize --issue <KEY>`。
 
 恢复意图不明确时向 Human 确认；异常按实际结果核实处理，不手工修改 CLI 管理的交付事实。
+
+# Abandoned PR Recovery（Requirement）
+
+Delivery Lead 根据 Human 明确决定，使用 `rondo delivery route-decision --issue <KEY> --comment-id <id> --next ANALYSIS|ENGINEERING|RECREATE_PR` 恢复当前 Issue，再原生交接。ENGINEERING 重新完成受影响仓库的实现、验证、发布和 PR Preparation；RECREATE_PR 仅在 Candidate 未变且准备事实仍有效时执行 `rondo pr materialize`。其他已登记仓库保持不变。

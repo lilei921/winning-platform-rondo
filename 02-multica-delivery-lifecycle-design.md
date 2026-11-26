@@ -1657,8 +1657,8 @@ Requirement 的 `rondo delivery route-decision` 根据明确决定处理：
 | 决定 | 当前动作 |
 |---|---|
 | ANALYSIS | 登记决定，恢复 in_progress（no-start），由 Lead 原生交接 Workitem Analyst；实质契约变化重新审核。 |
-| ENGINEERING | Lead 核对当前批准、PR、Run 与返工范围，协调工程修正；CLI 不自动重置授权或解除阻塞。 |
-| RECREATE_PR | 确认当前对应 PR 已 abandoned、Candidate 未变且事实一致，仅解除该仓 pr_id / pr_url 绑定，保留专业准备事实；再按当前授权重新物化。Candidate 变化交 Engineer。 |
+| ENGINEERING | 核实 Human、当前批准及 abandoned PR，解除对应 PR 绑定并使旧验证和 Review 失效；保留实际交付仓范围，恢复 in_progress（no-start），Lead 原生交接 Engineer。 |
+| RECREATE_PR | 确认当前对应 PR 已 abandoned、Candidate 未变且事实一致，仅解除该仓 pr_id / pr_url 绑定，保留专业准备事实；恢复 in_progress（no-start），再由 Lead 原生交接 Engineer 重新物化。Candidate 变化须明确授权工程返工。 |
 | CANCEL_DELIVERY | 保持停止，由 Human 处理。 |
 
 决定与必要外部身份绑定，重试不能移除后续新 PR。Bug 使用 `rondo bug resume` 的明确 REWORK / RECREATE_PR 契约；保留完整必要仓范围与外部 abandoned 核验。

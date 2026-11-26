@@ -18,7 +18,8 @@ import { validatePrepareRepo, validateBusinessPath, validateBusinessCheckout } f
 export async function authorizedCheckout(issueKey: string, repoKey: string, rootRepo: string) {
   const runtime = resolveMulticaRuntime(), client = new MulticaClient(runtime);
   const issue = client.getIssue(issueKey), md = issue.metadata ?? {};
-  if (registeredPrs(md.pr).length) throw new FailError("已有当前 PR，需先完成或受控恢复");
+  if (md["tfs.type"] === "需求" && registeredPrs(md.pr).some(p => p.repo_key === repoKey))
+    throw new FailError("当前仓库已有登记 PR，需先完成或受控恢复");
   const root = validateNativeCheckout(rootRepo).rootRepo, workdir = dirname(root);
   assertNativeTaskCheckout(root, workdir, undefined, issue.id);
   const server = loadTfsConfig().serverUrl;

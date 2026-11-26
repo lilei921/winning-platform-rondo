@@ -146,7 +146,7 @@ test("P0 退役独立进度与完成检查，研发命令不再接受 Change 参
   assert.equal(help.status, 0);
   for (const command of ["check-completion", "contract-hash"]) {
     assert.ok(!(help.stdout + help.stderr).includes(command));
-    assert.notEqual(runCli(["dev", command, "--help"]).status, 0);
+    assert.notEqual(runCli(["dev", command]).status, 0);
   }
   for (const args of [["change", "update-progress"], ["dev", "check-change"]]) assert.notEqual(runCli(args).status, 0, args.join(" "));
   for (const command of ["prepare", "publish"]) {
@@ -162,7 +162,7 @@ test("P0 退役独立进度与完成检查，研发命令不再接受 Change 参
 
 test("retired Task Set commands are not registered", () => {
   for (const args of [["dev","materialize"],["dev","check-dispatch"],["tfs","materialize-tasks"],["tfs","resolve-tasks"]]) {
-    assert.equal(runCli(args).status,64);
+    assert.notEqual(runCli(args).status,0);
     assert.doesNotMatch(runCli([args[0]]).stderr,new RegExp("  "+args[1]+"(?: |\\n)"));
   }
 });

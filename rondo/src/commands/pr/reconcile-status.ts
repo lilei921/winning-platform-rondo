@@ -167,18 +167,12 @@ export async function processIssue(
   const collectionUrl = tfsCollectionUrl ?? loadTfsConfig().serverUrl;
   const unknowns: string[] = [];
   const abandoned: RegisteredPr[] = [];
-  const seenRepoKeys = new Set<string>();
   let completedCount = 0;
   for (const entry of prs) {
-    if (!entry || typeof entry.repo_key !== "string" || !entry.repo_key.trim() ||
-        !Number.isSafeInteger(entry.pr_id) || entry.pr_id <= 0 ||
-        typeof entry.source_branch !== "string" || !entry.source_branch ||
-        typeof entry.target_branch !== "string" || !entry.target_branch ||
-        typeof entry.pr_url !== "string" || seenRepoKeys.has(entry.repo_key)) {
-      unknowns.push("pr 包含无效或重复的 PR 登记");
+    if (!entry.source_branch || !entry.target_branch) {
+      unknowns.push("pr 缺少分支");
       continue;
     }
-    seenRepoKeys.add(entry.repo_key);
     const location = parseTfsPrWebUrl(entry.pr_url, collectionUrl);
     let repositoryMatches = false;
     try {

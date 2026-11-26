@@ -115,7 +115,7 @@ rondo bug resume --issue <KEY> --human-comment-id <id> --next REWORK|RECREATE_PR
 
 ```bash
 rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsupported>
-rondo delivery route-decision --config <repo-registry.json> --issue <KEY> --comment-id <uuid> --next ANALYSIS|ENGINEERING|RECREATE_PR|CANCEL_DELIVERY [--reason REJECTED|DISCARDED]
+rondo delivery route-decision --issue <KEY> --comment-id <uuid> --next ANALYSIS|ENGINEERING|RECREATE_PR|CANCEL_DELIVERY [--reason REJECTED|DISCARDED]
 rondo delivery finalize --phase prepare|complete --issue <KEY> [--root-repo <path>]
 rondo delivery root-prepare --issue <KEY>
 ```
@@ -123,7 +123,7 @@ rondo delivery root-prepare --issue <KEY>
 | 命令 | 功能 |
 | --- | --- |
 | `delivery admission` | 执行 Wayfinder 已记录的 Decision：通过时按 `tfs.type` 交接并回读原生 Run，其他结果保留 Wayfinder 并设置对应状态 |
-| `delivery route-decision` | 根据已确定的 Human Decision 执行分析返工、PR 重建等确定性动作；工程返工由 Lead 按当前 Issue 原生协作处理 |
+| `delivery route-decision` | 核实 Human 决定和当前 abandoned PR；恢复 Issue 至 in_progress，Lead 原生交接 |
 | `delivery finalize` | `prepare` 核验交付并准备收口；`complete` 在外部回写完成后核验并结束交付 |
 | `delivery root-prepare` | 在 Task `workdir/<repo-name>` 复用 Multica Checkout，建立 Task 独立本地归档分支，返回 `root_repo` |
 
