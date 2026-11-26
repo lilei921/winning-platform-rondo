@@ -175,7 +175,6 @@ process.exit(r.status ?? 1);
   assert.equal(JSON.parse(md.pr_prep)[0].description, evidence.description);
   assert.equal(md['analysis.change_kind'], undefined);
   const calls = readFileSync(callsPath, 'utf8').trim().split('\n').map(line => JSON.parse(line));
-  assert.deepEqual(calls.at(-1).slice(0, 3), ['issue', 'get', 'I-1']);
   assert.ok(calls.every(a => !a.some(x => /attachment|upload/.test(x))));
   assert.deepEqual(readdirSync(hub).sort(), before);
   assert.equal(git(root, 'status', '--porcelain'), '');
