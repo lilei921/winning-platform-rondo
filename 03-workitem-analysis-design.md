@@ -1441,7 +1441,7 @@ Agent Instructions 与相关 Skill 的职责收敛已通过 #83 合并；`rondo 
 | Human Reject 或实质规格修订 | 同一 Change 定向更新受影响产物，重新审核，不沿用失效 Evidence |
 | 一个 Change 交给两个 Engineer Task Sets | Tasks 保留工程范围且可引用，不包含等待独立验收、PR 或归档；分工由 Delivery Lead 完成 |
 | 安装版本与文档 / Schema 预期不一致 | 报告具体不兼容项，不伪造文件、状态或校验通过 |
-| 任一获准自动处理的 Change 缺少 Verify Recommendation / Reason / Verification Focus | Analysis Gate 按缺失项处理，不从来源类型或 Change Kind 填默认值 |
+| 存在工程增量但缺少有依据的 Independent Verification 建议 | 由 Workitem Analyst 补充专业判断，不从来源类型或 Change Kind 填默认值 |
 | Corrective 行为涉及跨系统复杂验收，或 SDD 行为已有可靠开发侧覆盖 | 都按实际 Acceptance / Verification Contract 给出推荐，不固定 true / false |
 | 推荐为 false | 仍保留必要 Verification Contract 与开发侧验收依据 |
 | Summary 或产物更新漏掉最新推荐 | 提交前修正为同一轮结果，不能交接相互冲突的建议 |
