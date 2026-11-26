@@ -1150,12 +1150,30 @@ test("跨 Project 同名仓库及相同 SHA 按 GUID 分别关联真实 TFS Task
   assert.equal(f.readState().issues["WNDF-T"].status,"done");
 });
 
-test("Archive guard accepts waived unchecked tasks without changing checkbox text", async t => {
+test("Requirement Prepare archives an explicitly waived unchecked task; TFS plans cannot claim it", async t => {
   const f = await fixture(t, { requirement: true });
-  const text = "- [ ] 1.1 Pending\n";
-  writeFileSync(join(f.changeDir, "tasks.md"), text);
-  const { assertCompletedRequirementTasks } = await import("../dist/commands/delivery/requirement-mode.js");
-  assert.throws(()=>assertCompletedRequirementTasks(f.changeDir), /未完成/);
-  assert.doesNotThrow(()=>assertCompletedRequirementTasks(f.changeDir, ["1.1"]));
-  assert.equal(readFileSync(join(f.changeDir, "tasks.md"), "utf8"),text);
+  const state = f.readState();
+  const md = state.issues["WNDF-T"].metadata;
+  md["analysis.human_approval"] = JSON.stringify({...JSON.parse(md["analysis.human_approval"]),waived_tasks:["1.2"]});
+  writeFileSync(join(f.dir,"state.json"),JSON.stringify(state));
+  const text = TASKS_CHECKED.replace("[x] 1.2","[ ] 1.2");
+  writeFileSync(join(f.changeDir,"tasks.md"),text);
+  const prepared = await f.phase("prepare");
+  assert.equal(prepared.exit,0,prepared.stdout+prepared.stderr);
+  const archived = join(f.rootRepo,"openspec","changes","archive","2026-01-01-"+CHANGE_REF,"tasks.md");
+  assert.equal(readFileSync(archived,"utf8"),text);
+  const inspection = await f.writeback(["--inspect"]);
+  assert.equal(inspection.exit,0,inspection.stdout+inspection.stderr);
+  assert.deepEqual(inspection.body.unexecuted_waived_tasks,["1.2"]);
+  const rejected = await f.writeback();
+  assert.equal(rejected.exit,2,rejected.stdout+rejected.stderr);
+  assert.match(rejected.body.reason,/未执行的豁免任务/);
+  const planFile=join(f.dir,"plan.json");
+  const plan=JSON.parse(readFileSync(planFile,"utf8"));
+  plan.tasks[0].source_refs=["1.1"];
+  writeFileSync(planFile,JSON.stringify(plan));
+  const written=await f.writeback();
+  assert.equal(written.exit,0,written.stdout+written.stderr);
+  const completed=await f.phase("complete");
+  assert.equal(completed.exit,0,completed.stdout+completed.stderr);
 });

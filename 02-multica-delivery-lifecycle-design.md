@@ -1577,7 +1577,7 @@ Workitem Analyst 在 Analysis 中形成是否建议 Independent Verification 的
 
 Workitem Analyst 是首次专业判断者：根据当前 Acceptance / Verification Contract、Task-level / Change-level Verification 的可闭合性、候选风险与是否需要实现者之外的独立性，形成 Recommendation、Reason 与 Focus。Human Analysis Review 是最终决定者，可以接受或 override 该 Recommendation。
 
-仅对独立性要求的 override 不修改 OpenSpec Engineering Truth，也不要求 Analysis Rework；若 Human Feedback 实质改变 Verification Contract、Acceptance Contract、Scope 或 required Verification Tasks，则返回 Workitem Analyst 定向修订并重新审核。
+仅对独立性要求的 override 不修改 OpenSpec Engineering Truth，也不要求 Analysis Rework。明确的 Task Waiver 按 Human Approval 登记具体任务，不改变必须满足的 Verification Contract、Acceptance Contract 或 Scope；实质契约变更须返回 Workitem Analyst 定向修订并重新审核。
 
 Human 最终决定批准后，执行事实继续使用现有字段（由 `rondo analysis approve` 依据 Human 决定统一登记并回读；与批准评论及获批版本绑定）：
 

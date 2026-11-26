@@ -47,7 +47,7 @@ Inspect 成功后，`saved_plan=true` 时复用已有计划；否则根据 `appr
 
 #### 新建任务计划
 
-- 根据已批准的工程任务和实际业务改动，合理归并为 1–5 个子任务；核对当前 Issue 的 `analysis.human_approval.waived_tasks` 与归档 Tasks 的真实进度，不将未执行的豁免任务计入研发成果。
+- 根据已批准的工程任务和实际业务改动，合理归并为 1–5 个子任务；排除 Inspect 返回的 `unexecuted_waived_tasks`，不将未执行的豁免任务计入研发成果。
 - 每项提供准确、简洁且互不重复的任务总结，估时 0.5–4 小时。
 - `source_refs` 引用已批准 `tasks.md` 中的任务编号。
 - 使用 `owners` 为空的业务 Commit，每个任务至少关联一个 Commit，同一 Commit 不得重复分配。

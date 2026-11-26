@@ -28,6 +28,8 @@ import { TfsClient as TfsApiClient } from "../../tfs/client.js";
 import { hasExactArtifactLink } from "../../tfs/api/commit-facts.js";
 import { commitKey, parseCommitArtifact } from "../../tfs/api/commit-identity.js";
 import { readAnalysisSource } from "../analysis/source.js";
+import { readApprovedVerifyDecision } from "../delivery/verify-decision.js";
+import { readTaskProgress, assertWaiverRefs } from "../dev/change-completion.js";
 import { isDirectBugDelivery, assertBugFinalizationFacts, bugDeliveryDigest, type BugCurrentPr } from "../bug/finalize-facts.js";
 import { verifyCloseoutRoot, confirmPublishedArchive, assertCloseoutChange } from "../delivery/closeout-root.js";
 interface TfsWorkItem {
@@ -146,6 +148,17 @@ export async function writebackParent(clients: Pick<Clients, "tfsQuery" | "tfsSe
   return { status: "done", state: targetState, ...(stateOut.via?.length ? { via: stateOut.via } : {}), comment: true };
 }
 
+/** Only unexecuted approved waivers are excluded from TFS work attribution. */
+function unexecutedWaivers(md: Record<string, string>, rootRepo: string): string[] {
+  const waived = readApprovedVerifyDecision(md).waivedTasks;
+  if (!waived.length) return [];
+  const change = resolveChangeDir({ openspecRoot: join(rootRepo, "openspec") } as RuntimePaths, readAnalysisSource(md).change_ref);
+  if (!change.archived) throw new UnknownError("Task Waiver 回写需要已确认的归档 Tasks");
+  const progress = readTaskProgress(readFileSync(join(change.dir, "tasks.md"), "utf8"));
+  assertWaiverRefs(progress, waived);
+  return waived.filter(ref => !progress.get(ref));
+}
+
 /** 只读后置条件：核对 TFS 外部真实状态，不创建任务、不更新工时/状态、不追加评论。 */
 export async function verifyTfsWriteback(runtime: MulticaRuntime, issue: IssueRecord, rootRepo?: string, verified?: VerifiedCloseoutPr[]): Promise<Record<string, unknown>> {
   const md = issue.metadata ?? {};
@@ -172,7 +185,7 @@ export async function verifyTfsWriteback(runtime: MulticaRuntime, issue: IssueRe
     if (!rootRepo) throw new UnknownError("Complete 缺少已核验的根仓，不能证明业务 Commit 来源");
     const api = new TfsApiClient();
     const snapshot = await inspectRequirementCommits(md, rootRepo, api, undefined, verified);
-    const plan = validateRequirementTaskPlan(saved, snapshot.approvedTasks, snapshot.commits);
+    const plan = validateRequirementTaskPlan(saved, snapshot.approvedTasks, snapshot.commits, unexecutedWaivers(md, rootRepo));
     const ids = await findExistingPlannedTasks(clients, issue.identifier ?? issue.id,
       md["analysis.change_ref"], tfsId, plan);
     if (ids.some(id => id === null)) throw new UnknownError("已登记 TFS 计划存在未创建的子任务");
@@ -197,13 +210,13 @@ function parseStoredTaskPlan(raw: string | undefined, label: string): unknown {
 }
 
 function approvedTaskPlan(
-  input: unknown, stored: unknown, approvedTasks: string, commits: AvailableCommit[],
+  input: unknown, stored: unknown, approvedTasks: string, commits: AvailableCommit[], excludedRefs: string[],
 ): RequirementTaskPlan {
   const commitRefs = commits.map(c => ({ repo_key: c.repo_key, sha: c.sha }));
   if (!input && !stored) throw new FailError("新 Requirement 首次回写必须提供 --task-plan，禁止默认创建泛化任务");
-  const selected = validateRequirementTaskPlan(input ?? stored, approvedTasks, commitRefs);
+  const selected = validateRequirementTaskPlan(input ?? stored, approvedTasks, commitRefs, excludedRefs);
   if (stored) {
-    const previous = validateRequirementTaskPlan(stored, approvedTasks, commitRefs);
+    const previous = validateRequirementTaskPlan(stored, approvedTasks, commitRefs, excludedRefs);
     if (JSON.stringify(previous) !== JSON.stringify(selected)) {
       throw new FailError("已保存的 delivery.tfs_task_plan 与新计划不一致，不允许自动覆盖");
     }
@@ -275,25 +288,28 @@ async function executePlannedRequirement(
 ): Promise<Record<string,unknown>> {
   const api = new TfsApiClient();
   const snapshot = await inspectRequirementCommits(md, rootRepo, api);
+  const excludedRefs = unexecutedWaivers(md, rootRepo);
   if (opts.inspect) return {
     mode: "inspect", approved_tasks_source: "analysis.source.commit", approved_tasks: snapshot.approvedTasks,
+    unexecuted_waived_tasks: excludedRefs,
     commits: snapshot.commits,
     available_unique_commits: snapshot.commits.filter(c => !c.owners.length).length,
     saved_plan: Boolean(md["delivery.tfs_task_plan"]),
   };
   const stored = parseStoredTaskPlan(md["delivery.tfs_task_plan"], "delivery.tfs_task_plan");
-  const plan = approvedTaskPlan(opts.taskPlan, stored, snapshot.approvedTasks, snapshot.commits);
+  const plan = approvedTaskPlan(opts.taskPlan, stored, snapshot.approvedTasks, snapshot.commits, excludedRefs);
   const latestIssue = clients.getIssue(issueKey);
   const fresh = latestIssue.metadata ?? {};
   if (fresh["finalize.pending"] !== md["finalize.pending"] ||
       fresh["analysis.change_ref"] !== md["analysis.change_ref"] ||
       fresh["analysis.source"] !== md["analysis.source"] ||
+      fresh["analysis.human_approval"] !== md["analysis.human_approval"] ||
       fresh["current_pr"] !== md["current_pr"] ||
       fresh["tfs.id"] !== md["tfs.id"]) {
     throw new UnknownError("收口期间 Issue 事实发生变化，停止外部 TFS 写入");
   }
   const prior = parseStoredTaskPlan(fresh["delivery.tfs_task_plan"], "delivery.tfs_task_plan");
-  approvedTaskPlan(plan, prior, snapshot.approvedTasks, snapshot.commits);
+  approvedTaskPlan(plan, prior, snapshot.approvedTasks, snapshot.commits, excludedRefs);
   const existing = await findExistingPlannedTasks(clients, issueKey, md["analysis.change_ref"], tfsId, plan);
   // Recheck Commit ownership immediately before creating any TFS Task.
   for (let i = 0; i < plan.tasks.length; i++) for (const ref of plan.tasks[i].commits) {
