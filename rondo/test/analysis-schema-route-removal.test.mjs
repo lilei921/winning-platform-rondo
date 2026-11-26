@@ -20,11 +20,15 @@ import {
 } from "../dist/commands/analysis/validate.js";
 
 function fixture(schema = "corrective-change") {
-  const root = mkdtempSync(join(tmpdir(), "rondo-change-schema-"));
+  const home = mkdtempSync(join(tmpdir(), "rondo-change-schema-"));
+  const root = join(home, "openspec");
   const dir = join(root, "changes", "fixture-123");
+  const mapping = join(home, "docs", "config", "repo-context.yaml");
+  mkdirSync(join(home, "docs", "config"), { recursive: true });
+  writeFileSync(mapping, "repos:\n  - repo_id: frame\n  - repo_id: frame-web\n");
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, ".openspec.yaml"), `schema: ${schema}\nx-repositories:\n  - frame\n`, "utf8");
-  return { root, dir, dispose: () => rmSync(root, { recursive: true, force: true }) };
+  return { root, dir, mapping, dispose: () => rmSync(home, { recursive: true, force: true }) };
 }
 
 test("Issue change_kind 持久化且与 Change Schema 校验一致，不再输出独立 Route", () => {
@@ -48,9 +52,9 @@ test("来源管理类型不自动推断 Schema，但拒绝 Bug + Intentional 自
   assert.equal(sourceSchemaViolation("requirement", "intentional-change"), null);
   assert.equal(sourceSchemaViolation("bug", "corrective-change"), null);
   assert.match(sourceSchemaViolation("bug", "intentional-change"), /超出/);
-  assert.equal(checkIdentity({ "tfs.id": "123", "tfs.type": "Requirement", "analysis.change_kind": "corrective" }, "corrective-change").result, "PASS");
-  assert.equal(checkIdentity({ "tfs.id": "123", "tfs.type": "Bug", "analysis.change_kind": "intentional" }, "intentional-change").result, "FAIL");
-  assert.equal(checkIdentity({ "tfs.id": "123", "tfs.type": "Requirement", "analysis.change_kind": "corrective" }, "intentional-change").result, "PASS");
+  assert.equal(checkIdentity({ "tfs.id": "123", "tfs.type": "Requirement", "analysis.change_kind": "corrective" }, "corrective-change", "fixture-123").result, "PASS");
+  assert.equal(checkIdentity({ "tfs.id": "123", "tfs.type": "Bug", "analysis.change_kind": "intentional" }, "intentional-change", "fixture-123").result, "FAIL");
+  assert.equal(checkIdentity({ "tfs.id": "123", "tfs.type": "Requirement", "analysis.change_kind": "corrective" }, "intentional-change", "fixture-123").result, "PASS");
 });
 
 test("Acceptance Contract 根据 Schema 选择而非 Issue 分类字段", () => {
@@ -92,6 +96,43 @@ test("Analysis Acceptance Contract 在批准前阻断缺失、非法或重复 Re
     }
     writeFileSync(path, "schema: corrective-change\nx-repositories: [frame]\n");
     assert.equal(checkAcceptanceContract("corrective-change", f.dir, f.root).result, "PASS");
+  } finally {
+    f.dispose();
+  }
+});
+
+test("Identity 核对实际 Change ID 与当前 TFS ID 的独立末尾段", () => {
+  const metadata = { "tfs.id": "123", "tfs.type": "Requirement", "analysis.change_ref": "stale-999" };
+  assert.equal(checkIdentity(metadata, "corrective-change", "fixture-123").result, "PASS");
+  for (const ref of ["fixture-9123", "fixture-1234", "fixture-123-extra", "fixture"]) {
+    const result = checkIdentity(metadata, "corrective-change", ref);
+    assert.equal(result.result, "FAIL");
+    assert.match(result.reasons.join(" "), /change_ref=.*tfs.id=/);
+  }
+  for (const invalid of ["", "abc", "123.4", null, ["123"]]) {
+    assert.equal(checkIdentity({ ...metadata, "tfs.id": invalid }, "corrective-change", "fixture-123").result, "FAIL");
+  }
+  assert.equal(checkIdentity({ ...metadata, "tfs.id": 123 }, "corrective-change", "fixture-123").result, "PASS");
+});
+
+test("Repository Scope 仅接受当前根仓已登记仓库，权威映射不可核实时 UNKNOWN", () => {
+  const f = fixture();
+  try {
+    writeFileSync(join(f.dir, "proposal.md"), "Restore behavior");
+    const metadata = join(f.dir, ".openspec.yaml");
+    writeFileSync(metadata, "schema: corrective-change\nx-repositories: [frame, frame-web]\n");
+    const check = () => checkAcceptanceContract("corrective-change", f.dir, f.root);
+    assert.equal(check().result, "PASS");
+    writeFileSync(metadata, "schema: corrective-change\nx-repositories: [frame, unknown-repo]\n");
+    assert.equal(check().result, "FAIL");
+    assert.match(check().reasons.join(" "), /未登记的 repo_id: unknown-repo/);
+    writeFileSync(metadata, "schema: corrective-change\nx-repositories: [frame]\n");
+    for (const invalid of ["repos: [", "repos: {}", "repos: [{repo_id: 123}]"]) {
+      writeFileSync(f.mapping, invalid);
+      assert.equal(check().result, "UNKNOWN");
+    }
+    rmSync(f.mapping);
+    assert.equal(check().result, "UNKNOWN");
   } finally {
     f.dispose();
   }

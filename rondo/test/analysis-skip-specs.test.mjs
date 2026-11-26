@@ -27,6 +27,8 @@ function fixture(t, { skip = false, schema = "intentional-change", estimate = tr
   const openspec = join(root, "openspec");
   const change = join(openspec, "changes", "d1-internal-1234");
   mkdirSync(change, { recursive: true });
+  mkdirSync(join(root, "docs", "config"), { recursive: true });
+  writeFileSync(join(root, "docs", "config", "repo-context.yaml"), "repos:\n  - repo_id: frame\n");
   mkdirSync(join(openspec, "specs"), { recursive: true });
   for (const name of ["intentional-change", "corrective-change"]) {
     cpSync(join(REPO, "openspec", "schemas", name),
@@ -119,7 +121,7 @@ test("Gate validates the requested root when a nested workspace has the same cha
   mkdirSync(join(nested, "specs"));
 
   // The nested change still passes. Only the requested change now has an invalid delta.
-  writeFileSync(join(f.change, ".openspec.yaml"), "schema: intentional-change\n");
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [frame]\n");
   const reports = join(f.change, "specs", "reports");
   mkdirSync(reports, { recursive: true });
   writeFileSync(join(reports, "spec.md"), "## ADDED Requirements\n\n### Requirement: Export\nThe system SHALL export reports.\n");
@@ -130,7 +132,7 @@ test("Gate validates the requested root when a nested workspace has the same cha
   assert.equal(invalid.code, 2, JSON.stringify(invalid.body));
 
   rmSync(join(reports, "spec.md"));
-  writeFileSync(join(f.change, ".openspec.yaml"), "schema: intentional-change\nskip_specs: true\n");
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: intentional-change\nx-repositories: [frame]\nskip_specs: true\n");
   // The requested root also has a main spec with the change's name.
   const sameName = join(planning, "specs", basename(f.change));
   mkdirSync(sameName);

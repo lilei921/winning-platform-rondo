@@ -11,7 +11,7 @@ import { changeEvidenceDigest, metadataEvidenceDigest } from "../dist/commands/a
 
 const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
 const MOCK = fileURLToPath(new URL("./mock-multica.cjs", import.meta.url));
-const CHANGE = "c-test";
+const CHANGE = "c-test-261056";
 const PROPOSAL = "# Proposal\n\n## Problem\n- Expected Behavior: expected\n- Actual Behavior: actual\n\n## Root Cause\nconfirmed cause\n\n## Fix Strategy\nrestore behavior\n\n## Regression Scope\nregression verification\n";
 
 function git(cwd, ...args) {
@@ -62,7 +62,7 @@ function fixture(t, requirement = true, native = false, commitChange = true) {
   writeFileSync(statePath, JSON.stringify({ status: "in_progress", metadata }));
 
   const tfs = analysisTfsFixture(t, home, { remote }, { requirementOrigin: requirement });
-  if (requirement) {
+  {
     mkdirSync(join(root, "docs", "config"), { recursive: true });
     mkdirSync(join(root, "openspec", "schemas"), { recursive: true });
     writeFileSync(join(root, "docs", "config", "repo-context.yaml"),
@@ -282,6 +282,43 @@ test("Repository Scope accepts repo_id strings, not objects; diagnostics show th
   assert.equal(git(f.root, "rev-parse", "HEAD"), local);
   writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories:\n  - root\n");
   assert.equal(f.complete().exit, 0);
+});
+
+test("Analysis Gate refuses a Change belonging to another TFS Work Item before any publication", t => {
+  const f = fixture(t, true, false, false);
+  const state = f.state();
+  state.metadata["tfs.id"] = "26105";
+  f.setState(state);
+  const local = git(f.root, "rev-parse", "HEAD");
+  const remote = git(f.remote, "rev-parse", "dev");
+  const preview = f.gate();
+  assert.equal(preview.exit, 2);
+  assert.match(preview.body.reasons.join(" "), /change_ref=.*tfs.id=/);
+  assert.ok(!preview.body.checks.some(c => c.name === "openspec_validate"));
+  const publish = f.complete();
+  assert.equal(publish.exit, 2);
+  assert.match(publish.body.reason, /change_ref=.*tfs.id=/);
+  assert.equal(git(f.root, "rev-parse", "HEAD"), local);
+  assert.equal(git(f.remote, "rev-parse", "dev"), remote);
+  assert.deepEqual(f.state(), state);
+});
+
+test("Analysis Gate refuses unregistered Repository Scope before any publication", t => {
+  const f = fixture(t, true, false, false);
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [root, nonexistent-repo]\n");
+  const state = f.state();
+  const local = git(f.root, "rev-parse", "HEAD");
+  const remote = git(f.remote, "rev-parse", "dev");
+  const preview = f.gate();
+  assert.equal(preview.exit, 2);
+  assert.match(preview.body.reasons.join(" "), /未登记的 repo_id: nonexistent-repo/);
+  assert.ok(!preview.body.checks.some(c => c.name === "openspec_validate"));
+  const publish = f.complete();
+  assert.equal(publish.exit, 2);
+  assert.match(publish.body.reason, /未登记的 repo_id: nonexistent-repo/);
+  assert.equal(git(f.root, "rev-parse", "HEAD"), local);
+  assert.equal(git(f.remote, "rev-parse", "dev"), remote);
+  assert.deepEqual(f.state(), state);
 });
 
 test("旧 metadata PASS 不能绕过最终真实 Gate", t => {

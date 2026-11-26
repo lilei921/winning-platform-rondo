@@ -28,6 +28,7 @@ import { Command } from "commander";
 import { emitJson, log, markLeafExecuted } from "../../cli/output.js";
 import { UnknownError } from "../../cli/errors.js";
 import { resolveOpenspecRootDir } from "../../clients/runtime-paths.js";
+import { matchesTfsChangeId } from "../analysis/change-schema.js";
 
 type Result = "ACTIVE_FOUND" | "ARCHIVED_FOUND" | "NOT_FOUND" | "CONFLICT" | "INVALID";
 
@@ -153,7 +154,7 @@ function inspectCandidate(dir: string, id: string, archived: boolean, root: stri
 /** 两种身份均已提供时，已存在的 change_ref 必须与 tfs.id 的稳定后缀一致。
  * 旧 change_ref 路径不存在时仍允许 Recovery Lookup 按 tfs.id 恢复。 */
 function identityConflict(c: Candidate, args: Args): string | null {
-  if (args.changeRef === c.id && args.tfsId && !c.id.endsWith(`-${args.tfsId}`)) {
+  if (args.changeRef === c.id && args.tfsId && !matchesTfsChangeId(c.id, args.tfsId)) {
     return `change_ref=${c.id} 与 tfs.id=${args.tfsId} 冲突，禁止接受或恢复为其他身份`;
   }
   return null;
@@ -185,7 +186,7 @@ function logicalId(dirName: string, archived: boolean): string {
 /** 候选是否匹配目标身份：change_ref 精确匹配优先，否则按稳定 TFS ID 后缀匹配（05 §5.1）。 */
 function matchesIdentity(logical: string, changeRef: string | null, tfsId: string | null): boolean {
   if (changeRef && logical === changeRef) return true;
-  if (tfsId && logical.endsWith(`-${tfsId}`)) return true;
+  if (tfsId && matchesTfsChangeId(logical, tfsId)) return true;
   return false;
 }
 

@@ -17,7 +17,7 @@ import { existsSync, readFileSync, realpathSync, readdirSync, lstatSync } from "
 import { basename, dirname, isAbsolute, join } from "node:path";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
-import { assertStableChangeRef, readChangeMetadata, parseChangeSchema, sourceSchemaViolation, changeKindFromSchema, type ChangeSchema } from "./change-schema.js";
+import { assertStableChangeRef, matchesTfsChangeId, readChangeMetadata, parseChangeSchema, sourceSchemaViolation, changeKindFromSchema, type ChangeSchema } from "./change-schema.js";
 import { markLeafExecuted } from "../../cli/output.js";
 import { TOOL_VERSION } from "../../cli/version.js";
 import { runCommand } from "../../clients/spawn.js";
@@ -26,7 +26,7 @@ import { commandExists } from "../../clients/which.js";
 import { resolveOpenspecRootDir } from "../../clients/runtime-paths.js";
 import { classifyTfsType, analysisMetadataEntries } from "./facts.js";
 import { taskReferences } from "./source.js";
-import { parseRepositoryScope } from "./repository-scope.js";
+import { parseRepositoryScope, assertRegisteredRepositoryScope } from "./repository-scope.js";
 import { changeEvidenceDigest, metadataEvidenceDigest } from "./gate-evidence.js";
 
 type CheckResult = "PASS" | "FAIL" | "UNKNOWN";
@@ -90,11 +90,16 @@ export function emitResult(payload: unknown, exitCode: number, _outPath: string 
   return exitCode;
 }
 
-export function checkIdentity(meta: Record<string, unknown>, schema: ChangeSchema | null): Check {
+export function checkIdentity(meta: Record<string, unknown>, schema: ChangeSchema | null, changeRef: string): Check {
   const reasons: string[] = [];
   const tfsId = meta["tfs.id"];
   const tfsKind = classifyTfsType(meta["tfs.type"]);
-  if (tfsId === undefined || tfsId === null || String(tfsId) === "") reasons.push("缺少 metadata tfs.id");
+  if (tfsId === undefined || tfsId === null || tfsId === "") reasons.push("缺少 metadata tfs.id");
+  else if ((typeof tfsId !== "string" && typeof tfsId !== "number") || !/^\d+$/.test(String(tfsId))) {
+    reasons.push("metadata tfs.id 必须是数字");
+  } else if (!matchesTfsChangeId(changeRef, String(tfsId))) {
+    reasons.push(`change_ref=${changeRef} 与 tfs.id=${tfsId} 冲突，必须使用当前 TFS ID 作为末尾独立段`);
+  }
   if (!tfsKind) reasons.push(`tfs.type 缺失或不支持: ${String(meta["tfs.type"])}`);
   if (schema) {
     const violation = sourceSchemaViolation(tfsKind, schema);
@@ -186,8 +191,10 @@ export function checkAcceptanceContract(schema: ChangeSchema | null, changeDir: 
   const proposal = readText(join(changeDir, "proposal.md"));
   if (!proposal) reasons.push("缺少 proposal.md 或不可读");
   try {
-    parseRepositoryScope(rawMetadata ?? readText(join(changeDir, ".openspec.yaml")) ?? "");
+    const scope = parseRepositoryScope(rawMetadata ?? readText(join(changeDir, ".openspec.yaml")) ?? "");
+    if (!reasons.length) assertRegisteredRepositoryScope(scope, dirname(openspecRoot));
   } catch (error) {
+    if (error instanceof UnknownError) return { name: "acceptance_contract", result: "UNKNOWN", reasons: [error.message] };
     if (!(error instanceof FailError)) throw error;
     reasons.push(error.message);
   }
@@ -266,7 +273,7 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
     const openspecRoot = resolveOpenspecRootDir(args.openspecRoot);
     const { check: change, changeDir, schema, rawMetadata } = checkChange(openspecRoot, { "analysis.change_ref": input.changeRef });
     const meta = schema ? { ...sourceMeta, ...analysisMetadataEntries(input.changeRef, schema) } : sourceMeta;
-    checks.push(checkIdentity(meta, schema));
+    checks.push(checkIdentity(meta, schema, input.changeRef));
     checks.push(change);
     // Change 不可确认时不执行依赖该目录/Schema 的检查，避免派生 FAIL。
     if (change.result === "PASS") {
