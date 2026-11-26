@@ -2,7 +2,8 @@
 import { FailError, UnknownError } from "../../cli/errors.js";
 import type { BaseRegistryConfig } from "../../clients/config.js";
 import { MulticaClient, type IssueRecord } from "../../clients/multica.js";
-import { readAnalysisSource, readAnalysisArtifact, parseAnalysisSource, sameAnalysisSource, type AnalysisSource } from "../analysis/source.js";
+import { gitOk } from "../../clients/git.js";
+import { analysisArtifactPath, readAnalysisSource, readAnalysisArtifact, parseAnalysisSource, sameAnalysisSource, type AnalysisSource } from "../analysis/source.js";
 import { parseRepositoryScope } from "../analysis/repository-scope.js";
 import { readApprovedVerifyDecision } from "../delivery/verify-decision.js";
 
@@ -58,7 +59,23 @@ export function assertEngineerExecution(multica: MulticaClient, issue: IssueReco
   if (agent?.id !== agentId || agent?.name !== "Engineer") throw new FailError("当前执行者不是已登记的 Engineer Agent");
 }
 
-export async function approvedChange(cfg: BaseRegistryConfig, multica: MulticaClient, issueRef: string, allowInReview = false): Promise<ApprovedChange> {
+/** A Native caller has already confirmed the root identity and read its mapping at source.commit. */
+interface ApprovedCheckout {
+  root: string;
+  source: AnalysisSource;
+}
+
+/** Use the available fixed Git object; callers without a prepared object use the pinned TFS read. */
+export async function readApprovedRepositoryScope(source: AnalysisSource, local?: ApprovedCheckout,
+  readRemote = readAnalysisArtifact): Promise<string[]> {
+  if (!local) return parseRepositoryScope((await readRemote(source, ".openspec.yaml")).content);
+  if (!sameAnalysisSource(source, local.source)) throw new UnknownError("批准来源在读取本地 Scope 前变化");
+  const path = analysisArtifactPath(source, ".openspec.yaml").slice(1);
+  return parseRepositoryScope(gitOk(local.root, ["show", source.commit + ":" + path], "读取批准版 Repository Scope"));
+}
+
+export async function approvedChange(cfg: BaseRegistryConfig, multica: MulticaClient, issueRef: string, allowInReview = false,
+  local?: ApprovedCheckout): Promise<ApprovedChange> {
   const issue = multica.getIssue(issueRef), md = issue.metadata ?? {};
   // A completed Engineer Run is not active during read-only PR admission.
   if (!allowInReview) assertEngineerExecution(multica, issue, cfg.runtime.workspace_id);
@@ -79,8 +96,7 @@ export async function approvedChange(cfg: BaseRegistryConfig, multica: MulticaCl
   if (!multica.listComments(issue.identifier ?? issue.id).some(c => c.id === decision.commentRef)) {
     throw new FailError("批准评论未在当前 Issue 回读成功");
   }
-  const approvedMetadata = await readAnalysisArtifact(source, ".openspec.yaml");
-  const scope = parseRepositoryScope(approvedMetadata.content);
+  const scope = await readApprovedRepositoryScope(source, local);
   for (const id of scope) {
     if (!cfg.registry || !Object.prototype.hasOwnProperty.call(cfg.registry, id)) {
       throw new FailError("批准的 Repository Scope 在 Registry 中不存在: " + id);
@@ -89,8 +105,9 @@ export async function approvedChange(cfg: BaseRegistryConfig, multica: MulticaCl
   return { issue, source, scope, tfsId, verifyRequired: decision.required };
 }
 
-export async function guardRepository(cfg: BaseRegistryConfig, multica: MulticaClient, issue: string, repo: string): Promise<ApprovedChange> {
-  const change = await approvedChange(cfg, multica, issue);
+export async function guardRepository(cfg: BaseRegistryConfig, multica: MulticaClient, issue: string, repo: string,
+  local?: ApprovedCheckout): Promise<ApprovedChange> {
+  const change = await approvedChange(cfg, multica, issue, false, local);
   if (!change.scope.includes(repo)) throw new FailError("repo_id " + repo + " 超出批准的 Repository Scope");
   return change;
 }

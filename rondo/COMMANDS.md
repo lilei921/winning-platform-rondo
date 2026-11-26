@@ -98,7 +98,7 @@ rondo dev publish --issue <KEY> [--root-repo <path>] [--minor-design]
 | `dev materialize` | 将已确定的 Task Set、Engineer 和依赖关系物化为研发派发事实，可选 Parent / Sub-Issue 投影 |
 | `dev check-dispatch` | 只读核对任务分工、当前有效派发和工程师身份 |
 | `dev git` | 受控 Fetch / 非强制 Push 当前授权 Candidate |
-| `dev prepare` | Native 使用 Multica Checkout；Requirement 从 Issue 的批准来源确定 Change，无远端 Candidate 时须提供已核实的 `--resource-ref`。旧入口仅保留兼容 |
+| `dev prepare` | Native 使用 Multica Checkout；Requirement 从 Issue 的批准来源确定 Change，并从已准备的固定批准 Commit 读取 Repository Scope；无远端 Candidate 时须提供已核实的 `--resource-ref`。旧入口仅保留兼容 |
 | `dev publish` | 按已批准的 `analysis.source.branch` 发布当前 Change 已提交的 Tasks / Design，确认远端 Git SHA 并登记绑定完整 `analysis.source` 的 `dev.publication`。非实质性 Design 细化使用 `--minor-design` |
 
 ### 4.2 `rondo bug`

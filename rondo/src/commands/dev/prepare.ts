@@ -60,7 +60,7 @@ export function registerDevPrepare(group: Command): void {
             if (git(root, ["merge-base", "--is-ancestor", source.commit, "HEAD"]).status !== 0)
               throw new UnknownError("Native 根仓尚不包含批准 Commit，保留现场");
             const registry = readNativeRepoMapping(root, source.commit, server);
-            const approved = await guardRepository({ runtime, registry }, client, opts.issue, opts.repo);
+            const approved = await guardRepository({ runtime, registry }, client, opts.issue, opts.repo, { root, source });
             if (!sameAnalysisSource(approved.source, source) || approved.issue.metadata?.["analysis.human_approval"] !== issue.metadata?.["analysis.human_approval"] || approved.issue.metadata?.["tfs.id"] !== issue.metadata?.["tfs.id"])
               throw new UnknownError("批准来源在准备期间变化");
             const repo = validatePrepareRepo(registry[opts.repo], server);

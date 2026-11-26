@@ -2653,7 +2653,7 @@ analysis:
     result: PASS
 ```
 
-Acceptance Contract、Verification Contract、Development / Repository Scope、技术风险 / 依赖 / Open Decision 与 Evidence 均保留在各自权威 OpenSpec / Supporting Artifact 中；Multica Handoff Facts 只保存 Delivery 决策与必要引用，不复制工程契约。Analysis Gate 以 stdout 返回 PASS / FAIL / UNKNOWN；仅发布成功的 PASS 登记为 Issue Metadata，不创建 `gate-result.md` 或独立 Gate Result 对象。
+Acceptance Contract、Verification Contract、Development / Repository Scope、技术风险 / 依赖 / Open Decision 与 Evidence 均保留在各自权威 OpenSpec / Supporting Artifact 中；Multica Handoff Facts 只保存 Delivery 决策与必要引用，不复制工程契约。Requirement Repository Scope 从固定批准 Commit 下的 `.openspec.yaml` 读取；Native 研发入口已有身份确认的本地批准 Git 对象时直接读取该对象，未准备本地对象的消费场景使用固定 Commit 远端读取。Analysis Gate 以 stdout 返回 PASS / FAIL / UNKNOWN；仅发布成功的 PASS 登记为 Issue Metadata，不创建 `gate-result.md` 或独立 Gate Result 对象。
 
 对于一次 Engineer Task Set 执行，建议在当前 Run / Issue 上保存最小 Engineering Facts，并以 `task_refs` 标识覆盖范围：
 
