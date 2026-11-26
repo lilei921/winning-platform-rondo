@@ -47,31 +47,26 @@ LEI-68：首次 Run 01a216af-40cd-7d7c-8122-379c00c48b95，续跑 Run 01a216f4-2
 
 当前 assertNativeTaskCheckout() 将 branch suffix 与当前 MULTICA_TASK_ID 绑定，assertPlatformCheckoutIdentity() 也要求 manifest task_id 与当前 Run 一致。Multica 保留工作目录和分支，而 Run ID 改变，二者契约冲突。
 
-### 3.2 目标与最小规则
+### 3.2 最小规则：直接删除重复身份校验
 
-当前 Run 用于证明本次写入授权；平台管理的工作目录用于证明 Checkout 归属。Checkout 创建者可以是同一 Issue / Agent / Workspace / Runtime / work_dir 的较早 Run。分支尾号用于识别 Checkout 创建 Run，不代表当前执行授权。继续复用原工作树、分支、dirty 修改、未推送 Commit 以及构建产物；不改变远端 Candidate 或 PR Target 规则。
+Multica 是 Native Checkout 的创建、隔离、复用和生命周期管理 Owner。Rondo 消费平台已经提供的工作区，不再根据 Checkout 的创建 Run、分支尾号或历史 Run 推断其归属。当前 Run 的执行授权与 Checkout 创建 Run 无需相同。
 
-优先复用已有 assertEngineerExecution() 的活跃 Run 查询结果，检查当前 Run 属于该 Issue、Agent、Workspace，并以平台提供的绝对 work_dir 和 daemon_task_context.json 核对实际 workdir（规范化真实路径，Windows 不区分大小写）。不能以传入 root 的 dirname 自证归属。
+直接删除普通 Native Checkout 校验中的两条错误前提：
+- 本地 agent/ 分支尾号必须等于当前 MULTICA_TASK_ID 的尾号。
+- 平台 Checkout manifest 的 task_id 必须等于当前 MULTICA_TASK_ID。
 
-对 Engineer Requirement 的 Native Checkout：
-- 保留当前 Run 的合法授权、daemon 管理标记、Issue/Agent 身份、路径边界、非 symlink、Git 根目录、仓库 Origin/Push URL、批准 Commit 与 Repository Scope、Candidate 安全及现有发布契约。
-- 保留平台 agent/ 分支形态、明确的 isolated mode 与已有 manifest 的内部一致性检查；平台 Checkout 输出的分支应与实际 HEAD 一致。
-- 当前分支尾号匹配当前 Run 时走现有正常校验。
-- 尾号不匹配或 manifest task_id 指向旧 Run 时，仅在同一 Issue 的平台 Run 记录能证实 Checkout 创建 Run 与当前 Run 属于同一 Agent、Workspace、Runtime、规范化绝对 work_dir 时允许复用；旧 Run 不必仍活跃。manifest 存在时核对其 task_id、workspace_id、checkout_branch；缺失时用唯一匹配旧 Run 的分支尾号及可信 workdir 事实。拒绝跨 Issue/Agent/Workspace/Runtime/workdir、歧义或缺少证据的复用。
-- 只在需要确认旧 Run 时查一次该 Issue 的历史 Run，单命令内根仓和业务仓复用查询结果；不做跨命令缓存或新增持久化记录。历史记录中缺少可核验 work_dir/runtime 等关键事实时返回 UNKNOWN，保留现场。
-- 不全局放宽 assertPlatformCheckoutIdentity()：PR Status Sync/Closeout 的 Task 级规则保持原样。Bug 与其他消费者保持现有契约，除非另有实测需要。
-- 实施前在真实 Multica Runtime 核实 active/all runs 命令输出及字段可用性；当前 Replay 证实历史记录有这些字段，但未独立验证活跃 Run 响应是否一定提供绝对 work_dir。若不提供，不从相对目录或分支名猜测；采用平台提供的可信等价上下文，否则停在 UNKNOWN。
+保留现有 daemon 管理上下文、Issue/Agent 身份（已有调用方提供时）、路径及 Git 根目录检查、已有 isolated mode / manifest workspace 一致性、实际 HEAD 与平台返回分支或 manifest 分支的一致性。保留各具体操作已有的当前 Run 授权、Origin/Push URL、批准 Commit、Repository Scope、Candidate 与发布契约检查。分支格式识别仅用于现有 Native/Legacy 路径区分，不作为 Run 归属判断。
+
+正常首次执行和续跑采用同一规则；不新增历史 Run 查询、续跑分支、Run 归属证明、缓存、额外 work_dir 字段契约或 Metadata。Multica 保留的 Checkout 直接复用，包括原分支、dirty 修改、未推送 Commit 与构建产物。
 
 ### 3.3 最小代码改动
 
-- clients/native-checkout.ts：区分当前 Run 授权与 Checkout 创建 Run 归属；Engineer 路径接收已经核实的当前 Run/必要的历史 Run 证据，复用现有底层严格检查，避免全局删掉尾号判断。不要让校验函数自建分支或修改 Git。
-- commands/dev/requirement-guard.ts：将已查询的合法活跃 Run 作为函数结果供调用者复用；仅在旧 Checkout 需要时查询历史 Run；同一命令内共享，不建立新 Registry。
-- commands/dev/prepare.ts、authorized-checkout.ts、prepare-workspace.ts、native-prepare.ts：将已核验的 Engineer Checkout 上下文传给根仓及业务仓校验，保持路径/仓库/批准版本校验；Git Fetch/Push 与 PR Prepare 复用 authorized-checkout。
-- commands/dev/publish.ts、commands/runtime/root-git.ts：将同一已授权 Issue/Run 上下文传入 Native 发布检查，防止根仓校验仍旧阻塞续跑；非 Engineer 调用不改变。
-- skills/native-workspace/SKILL.md：一句说明“同一 Issue 的合法续跑优先复用 Multica 已保留的 Checkout，保留工作树和提交。”不描述 CLI 内部校验算法。
-- 现有测试：首 Run、同 workdir 合法续跑、跨 Issue/Agent/Workspace/Runtime/workdir 拒绝、历史 Run 不可确认 UNKNOWN、manifest 冲突拒绝、根仓及业务仓同时复用、保留 WIP/未推送提交、dev publish/git push/pr prepare 续跑、Closeout 旧行为不变。
+- rondo/src/clients/native-checkout.ts：修改 assertNativeTaskCheckout()，不再调用含当前 Task ID / 分支尾号绑定的 assertPlatformCheckoutIdentity() 来判定普通 Native Checkout；以现有必要检查替代其中剩余的 isolated mode、workspace 一致性约束。不要伪造当前 Task ID 作为 Checkout 创建身份。保留实际分支一致性检查。该公共入口的全部调用方自然获得正确的复用语义，不增加 Engineer 专用续跑策略或参数传递链。
+- Closeout：assertPlatformCheckoutIdentity() 仍有独立消费者，本次保留其现有 Task 级契约；不改归档分支算法。若后续真实回放证明存在同类冲突，再单独收敛。普通 Native Checkout 的共享校验改动也会影响调用它的 Bug 等场景，因此补必要回归，而非增加场景开关。
+- skills/native-workspace/SKILL.md：将复用表述改为“优先复用 Multica 已有的 Checkout，保留工作树及已有研发成果。”不解释 CLI 内部算法，不新增操作步骤。
+- 现有测试：首次 Run、同一工作区换 Run ID 后旧分支/旧 manifest task_id 仍可用、根仓及业务仓复用、dirty/WIP/未推送提交保留、dev publish/git push/pr prepare 正常续跑；现有不合法 daemon 上下文、Issue/Agent 不一致、workspace/branch manifest 冲突、路径越界、Git/Origin 错误仍拒绝；Closeout 现有行为不变。
 
-无新增命令、Metadata、工作区 Owner Marker、工作区管理器、分支命名算法、自动 reset/clean/fresh。真实验收使用 LEI-67/68 同类场景，不要求重放已完成的生产 Issue。
+不修改各调用方的 Run 查询及授权契约，不引入新命令、Workspace Manager、Owner Marker、Registry、分支命名算法或自动 reset/clean/fresh。不新增历史 Run 读取；原方案的活跃 Run work_dir 字段验证不再是实施依赖。真实验收使用 LEI-67/68 同类场景，不要求重放已完成的生产 Issue。
 
 ## 4. P0-2：收敛 Development Completion
 
