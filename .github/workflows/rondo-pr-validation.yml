@@ -1,0 +1,24 @@
+name: Rondo one-time validation
+on:
+  push:
+    branches: [refactor/delivery-facts-scope-read]
+permissions:
+  contents: read
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: rondo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - run: npm install --global @fission-ai/openspec@1.14.2
+      - run: npm test
+        env:
+          OPENSPEC_D1_REQUIRED: '1'
