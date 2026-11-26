@@ -1661,7 +1661,7 @@ Requirement 的 `rondo delivery route-decision` 根据明确决定处理：
 | RECREATE_PR | 确认当前对应 PR 已 abandoned、Candidate 未变且事实一致，仅解除该仓 pr_id / pr_url 绑定，保留专业准备事实；恢复 in_progress（no-start），再由 Lead 原生交接 Engineer 重新物化。Candidate 变化须明确授权工程返工。 |
 | CANCEL_DELIVERY | 保持停止，由 Human 处理。 |
 
-决定与必要外部身份绑定，重试不能移除后续新 PR。Bug 使用 `rondo bug resume` 的明确 REWORK / RECREATE_PR 契约；保留完整必要仓范围与外部 abandoned 核验。
+决定与必要外部身份绑定，重试不能移除后续新 PR。已解除 PR 绑定但 Issue 仍 blocked 时，由 Human 核对当前阻塞原因后通过原生状态操作恢复；不凭旧决定自动解除阻塞。Bug 使用 `rondo bug resume` 的明确 REWORK / RECREATE_PR 契约；保留完整必要仓范围与外部 abandoned 核验。
 
 ## 11.3 PR Completed（PR 已完成）
 

@@ -115,7 +115,7 @@ rondo bug resume --issue <KEY> --human-comment-id <id> --next REWORK|RECREATE_PR
 
 ```bash
 rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsupported>
-rondo delivery route-decision --issue <KEY> --comment-id <uuid> --next ANALYSIS|ENGINEERING|RECREATE_PR|CANCEL_DELIVERY [--reason REJECTED|DISCARDED]
+rondo delivery route-decision --issue <KEY> --comment-id <uuid> --next ANALYSIS|ENGINEERING|RECREATE_PR|CANCEL_DELIVERY
 rondo delivery finalize --phase prepare|complete --issue <KEY> [--root-repo <path>]
 rondo delivery root-prepare --issue <KEY>
 ```

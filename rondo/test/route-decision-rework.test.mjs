@@ -1,124 +1,114 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync, readFileSync, chmodSync, realpathSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
+import { routeDecision } from "../dist/commands/delivery/route-decision.js";
+import { validateChangeDelivery } from "../dist/commands/dev/change-completion.js";
+import { deliveryCommentReference } from "../dist/commands/tfs/delivery-comment.js";
 
-const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
-const MOCK = fileURLToPath(new URL("./mock-multica.cjs", import.meta.url));
-
-function fixture(t, state) {
-  const dir = realpathSync(mkdtempSync(join(tmpdir(), "route-decision-rework-")));
-  t.after(() => rmSync(dir, { recursive: true, force: true }));
-  chmodSync(MOCK, 0o755);
-  const config = join(dir, "registry.json");
-  writeFileSync(config, JSON.stringify({ runtime: { multica_cli: MOCK, workspace_id: "ws-test" }, registry: {} }));
-  const statePath = join(dir, "state.json");
-  writeFileSync(statePath, JSON.stringify(state));
-  const env = { MOCK_STATE: statePath };
-  const readState = () => JSON.parse(readFileSync(statePath, "utf8"));
-  const run = (args, extraEnv = {}) => {
-    const r = spawnSync(process.execPath, [CLI, "delivery", "route-decision", "--config", config, ...args], {
-      encoding: "utf8", env: { ...process.env, ...env, ...extraEnv },
-    });
-    assert.equal(r.error, undefined, r.error?.message);
-    return { exit: r.status, stdout: r.stdout, stderr: r.stderr };
-  };
-  const runJson = (args, extraEnv = {}) => {
-    const r = run(args, extraEnv);
-    let body;
-    try { body = JSON.parse(r.stdout); }
-    catch { assert.fail("CLI did not produce JSON: " + r.stdout + "\n" + r.stderr); }
-    return { ...r, body };
-  };
-  return { run, runJson, readState, writeState: value => writeFileSync(statePath, JSON.stringify(value)) };
+const sha="a".repeat(40);
+const source={repo_url:"https://tfs.test/tfs/C/P/_git/root",branch:"dev",commit:sha,change_ref:"fix-42"};
+function record(key,id) {
+  const repo_url="https://tfs.test/tfs/C/P/_git/"+key;
+  return {repo_key:key,repo_url,source_branch:"feature/42",target_branch:"dev",candidate_commit:sha,
+    title:"fix",description:"fix and test",pr_id:id,pr_url:repo_url+"/pullrequest/"+id,
+    local_validation:{result:"PASS",source:"rondo pr prepare",exit_code:0,summary:"pass",command:["test"],candidate_commit:sha},
+    code_review:{result:"PASS",candidate_commit:sha,summary:"reviewed",findings:[]}};
 }
-
-function parentState(commentId, _unused = {}, extraMetadata = {}) {
-  return {
-    issues: { "WNDF-T": { id: "issue-1", identifier: "WNDF-T", project_id: "project1", status: "blocked",
-      metadata: { "pr.abandoned": JSON.stringify([{ repo_key: "repo1", pr_id: 1, event_key: "e1", detected_at: "t" }]), ...extraMetadata } } },
-    comments: { "issue-1": [{ id: commentId, content: "请返工" }] },
+function fixture() {
+  const a=record("frame",1), b=record("web",2);
+  const issue={id:"i",identifier:"I-1",status:"blocked",metadata:{
+    "tfs.type":"需求","tfs.id":"42","analysis.gate.result":"PASS","analysis.source":JSON.stringify(source),
+    "analysis.human_approval":JSON.stringify({decision:"approved",by:"member",at:"2026-11-25T00:00:00Z",comment_ref:"approval",verify_agent_required:false,source}),
+    pr:JSON.stringify([a,b]),"pr.abandoned":JSON.stringify([{repo_key:"web",pr_id:2,detected_at:"2026-11-25T01:00:00Z"}])}};
+  const comment={id:"human",author_type:"member",author_id:"member",content:"恢复交付",created_at:"2026-11-25T02:00:00Z"};
+  const writes=[],checks=[];
+  const client={
+    getIssue:()=>structuredClone(issue),
+    listComments:()=>[comment],
+    setMetadata(id,key,value){writes.push(key);issue.metadata[key]=value;},
+    setStatusNoStart(id,status){writes.push("status");issue.status=status;}
   };
+  const verify=async (p,checkCandidate)=>{checks.push([p.repo_key,checkCandidate]);};
+  const run=(next,check=verify)=>routeDecision(client,issue.id,comment.id,next,check);
+  const records=()=>JSON.parse(issue.metadata.pr);
+  return {a,b,issue,comment,client,writes,checks,run,records};
 }
-test("Engineering rework remains a semantic decision without implicit authorization or duplicate run", t => {
-  const state = parentState("rework");
-  const f = fixture(t, state);
-  const args = ["--issue", "WNDF-T", "--comment-id", "rework", "--next", "ENGINEERING"];
-  for (let i = 0; i < 2; i++) {
-    const r = f.runJson(args);
-    assert.equal(r.exit, 0);
-    assert.equal(r.body.directive, "needs_engineering");
-    assert.deepEqual(f.readState(), state);
-  }
-  assert.equal(f.run([...args, "--affected-task-refs", "1.1"]).exit, 64);
+test("ENGINEERING invalidates only the abandoned repository and keeps it in the required actual delivery set",async()=>{
+  const f=fixture();
+  const result=await f.run("ENGINEERING");
+  assert.equal(result.result,"PASS");
+  assert.equal(f.issue.status,"in_progress");
+  assert.deepEqual(f.records()[0],f.a);
+  const b=f.records()[1];
+  assert.equal(b.repo_key,"web");
+  assert.equal(b.pr_id,undefined);
+  assert.equal(b.pr_url,undefined);
+  assert.equal(b.local_validation,undefined);
+  assert.equal(b.code_review,undefined);
+  const registry=Object.fromEntries([f.a,f.b].map(p=>[p.repo_key,{repo_url:p.repo_url,default_target_branch:"dev"}]));
+  assert.throws(()=>validateChangeDelivery(f.records(),["frame","web"],42,registry),/验证/);
+  assert.deepEqual(f.checks,[["web",false]]);
+  assert.deepEqual(f.writes,["dev.decision","pr","status","dev.decision"]);
+  assert.equal((await f.run("ENGINEERING")).result,"NOOP");
+  assert.equal(f.writes.length,4);
 });
-test("⑥ golden：ANALYSIS / RECREATE_PR(UNKNOWN) / CANCEL_DELIVERY 输出形状不变", (t) => {
-  // ANALYSIS
-  const a = fixture(t, parentState("c-4"));
-  const ra = a.runJson(["--issue", "WNDF-T", "--comment-id", "c-4", "--next", "ANALYSIS"]);
-  assert.equal(ra.exit, 0);
-  assert.deepEqual(ra.body, { result: "PASS", next: "ANALYSIS", directive: "mention_analyst", issue: "WNDF-T", status: "in_progress" });
-  assert.equal(a.readState().issues["WNDF-T"].status, "in_progress");
-
-  // RECREATE_PR：abandoned 的 repo_key 未登记 → 确定性 UNKNOWN（不触 TFS）
-  const rp = parentState("c-5", {}, {
-    pr: JSON.stringify([{ repo_key: "repo1", source_branch: "b", candidate_commit: "x", title: "t" }]),
-  });
-  const b = fixture(t, rp);
-  const rb = b.runJson(["--issue", "WNDF-T", "--comment-id", "c-5", "--next", "RECREATE_PR"]);
-  assert.equal(rb.exit, 3);
-  assert.deepEqual(rb.body, { result: "UNKNOWN", reason: "没有当前已登记且确认 abandoned 的 PR" });
-
-  // CANCEL_DELIVERY：零写入 hold_for_human
-  const c = fixture(t, parentState("c-6"));
-  const rc = c.runJson(["--issue", "WNDF-T", "--comment-id", "c-6", "--next", "CANCEL_DELIVERY"]);
-  assert.equal(rc.exit, 0);
-  assert.deepEqual(rc.body, {
-    result: "PASS", next: "CANCEL_DELIVERY", directive: "hold_for_human",
-    detail: "CANCEL_DELIVERY 专项契约未定义（02 §11.2）——本脚本零写入，Delivery Lead 保持安全停止并交 Human 处理",
-  });
+test("RECREATE_PR preserves Candidate and evidence; rejects changed Candidate before any write",async()=>{
+  const f=fixture();
+  await assert.rejects(f.run("RECREATE_PR",async()=>{throw Error("Candidate changed");}),/Candidate changed/);
+  assert.deepEqual(f.writes,[]);
+  await f.run("RECREATE_PR");
+  assert.deepEqual(f.checks,[["web",true]]);
+  const {pr_id,pr_url,...prepared}=f.b;
+  assert.deepEqual(f.records(),[f.a,prepared]);
+  assert.equal(f.issue.status,"in_progress");
 });
-
-test("⑦ legacy 状态（无 issues/comments 键）零副作用路由重跑 → NOOP 不变", (t) => {
-  const prior = {
-    comment_id: "c-7", reason: null, next: "CANCEL_DELIVERY",
-    routed_to: "hold_for_human",
-    applied_at: "2026-11-02T00:00:00.000Z",
-  };
-  const legacy = {
-    status: "blocked",
-    metadata: { "dev.decision": JSON.stringify([prior]) },
-    comments: { "issue-1": [{ id: "c-7", content: "取消" }] },
-  };
-  const { run, readState } = fixture(t, legacy);
-  const r = run(["--issue", "WNDF-T", "--comment-id", "c-7", "--next", "CANCEL_DELIVERY"]);
-  assert.equal(r.exit, 0);
-  const expected = JSON.stringify({
-    result: "NOOP",
-    reason: "同一 comment_id 的 Decision 已处理（02 §11.2 单次触发）",
-    comment_id: "c-7",
-    prior,
-  }, null, 2) + "\n";
-  assert.equal(r.stdout, expected);
-  assert.equal(readState().status, "blocked", "零副作用路由：状态不变");
+test("ANALYSIS removes only abandoned preparation and leaves valid PR records",async()=>{
+  const f=fixture();
+  assert.equal((await f.run("ANALYSIS")).directive,"mention_analyst");
+  assert.deepEqual(f.records(),[f.a]);
+  assert.equal(f.issue.status,"in_progress");
 });
-
-test("F5: stale ANALYSIS decision cannot silently unblock a new blocker", (t) => {
-  const decision = {
-    comment_id: "old-analysis", reason: null, next: "ANALYSIS",
-    routed_to: "mention_analyst",
-    applied_at: "2026-11-01T00:00:00.000Z",
-  };
-  const state = parentState("old-analysis", {}, {
-    "dev.decision": JSON.stringify([decision]),
-  });
-  const f = fixture(t, state);
-  const r = f.runJson(["--issue", "WNDF-T", "--comment-id", "old-analysis", "--next", "ANALYSIS"]);
-  assert.equal(r.exit, 3, r.stdout);
-  assert.equal(r.body.result, "UNKNOWN");
-  assert.match(r.body.reason, /禁止旧评论自动解除阻塞/);
-  assert.deepEqual(f.readState(), state, "保留新的 blocked 事实，不自动覆盖");
+test("non-Human or stale comment cannot alter PR facts",async()=>{
+  const f=fixture();
+  f.comment.author_type="agent";
+  await assert.rejects(f.run("ENGINEERING"),/真实成员/);
+  f.comment.author_type="member";
+  f.comment.created_at="2026-11-25T00:30:00Z";
+  await assert.rejects(f.run("ENGINEERING"),/早于/);
+  assert.deepEqual(f.writes,[]);
+});
+test("decision interrupted before PR write resumes only matching original PR identities",async()=>{
+  const f=fixture(), write=f.client.setMetadata;
+  f.client.setMetadata=(id,key,value)=>{if(key==="pr")throw Error("interrupted");write(id,key,value);};
+  await assert.rejects(f.run("ENGINEERING"),/interrupted/);
+  assert.equal(f.issue.status,"blocked");
+  f.client.setMetadata=write;
+  assert.equal((await f.run("ENGINEERING")).result,"PASS");
+  assert.equal(f.records()[1].pr_id,undefined);
+});
+test("old decision after PR reset does not unblock a subsequent blocker or remove a replacement PR",async()=>{
+  const f=fixture();
+  await f.run("RECREATE_PR");
+  f.issue.status="blocked";
+  f.issue.metadata.pr=JSON.stringify([f.a,record("web",3)]);
+  const before=structuredClone(f.issue);
+  assert.equal((await f.run("RECREATE_PR")).result,"NOOP");
+  assert.deepEqual(f.issue,before);
+});
+test("interruption after PR reset does not silently clear an ambiguous blocker",async()=>{
+  const f=fixture();
+  f.client.setStatusNoStart=()=>{throw Error("interrupted");};
+  await assert.rejects(f.run("RECREATE_PR"),/interrupted/);
+  await assert.rejects(f.run("RECREATE_PR"),/Human 核对/);
+  assert.equal(f.issue.status,"blocked");
+});
+test("TFS comment identity consumes only fully registered PRs and pinned Change identity",()=>{
+  const f=fixture();
+  const initial=deliveryCommentReference(f.issue);
+  f.issue.metadata.pr=JSON.stringify([f.b,f.a]);
+  assert.equal(deliveryCommentReference(f.issue),initial);
+  f.issue.metadata["analysis.source"]=JSON.stringify({...source,change_ref:"another"});
+  assert.notEqual(deliveryCommentReference(f.issue),initial);
+  const {pr_id,pr_url,...prepared}=f.b;
+  f.issue.metadata.pr=JSON.stringify([f.a,prepared]);
+  assert.throws(()=>deliveryCommentReference(f.issue),/不完整/);
 });

@@ -36,7 +36,7 @@ function list<T>(raw: string | undefined, field: string): T[] {
 export async function routeDecision(client: Pick<MulticaClient,"getIssue"|"listComments"|"setMetadata"|"setStatusNoStart">,
   issueRef: string, commentId: string, next: Next,
   verifyAbandoned: (pr: RegisteredPr, checkCandidate: boolean) => Promise<void>) {
-  const issue=client.getIssue(issueRef), md=issue.metadata??{}, issueKey=issue.identifier??issue.id;
+  const issue=client.getIssue(issueRef), md={...issue.metadata}, issueKey=issue.identifier??issue.id;
   if(md["tfs.type"]!=="需求") throw new FailError("仅支持 Requirement 人工恢复");
   const comment=client.listComments(issueKey).find(c=>c.id===commentId);
   if(!comment?.content?.trim() || comment.author_type!=="member" || !comment.author_id)
@@ -90,6 +90,10 @@ export async function routeDecision(client: Pick<MulticaClient,"getIssue"|"listC
   if(!saved) throw new UnknownError("Human Decision 未确认");
   if(!prior) client.setMetadata(issue.id,"dev.decision",saved);
   const nextPr=JSON.stringify(remaining);
+  const recorded=client.getIssue(issueKey);
+  if(recorded.status!=="blocked" || recorded.metadata?.["dev.decision"]!==saved ||
+     keys.filter(k=>k!=="dev.decision").some(k=>recorded.metadata?.[k]!==md[k]))
+    throw new UnknownError("Human Decision 未确认或当前事实变化");
   client.setMetadata(issue.id,"pr",nextPr);
   const confirmed=client.getIssue(issueKey);
   if(confirmed.status!=="blocked" || confirmed.metadata?.pr!==nextPr ||
@@ -98,6 +102,8 @@ export async function routeDecision(client: Pick<MulticaClient,"getIssue"|"listC
     throw new UnknownError("恢复事实未回读确认，保持 blocked");
   client.setStatusNoStart(issue.id,"in_progress");
   if(client.getIssue(issueKey).status!=="in_progress") throw new UnknownError("恢复状态未回读确认");
+  const latest=client.getIssue(issueKey);
+  if(latest.metadata?.["dev.decision"]!==saved) throw new UnknownError("恢复决定已变化");
   client.setMetadata(issue.id,"dev.decision",JSON.stringify([...decisions.filter(d=>d!==prior),
     {...decision,completed_at:new Date().toISOString()}]));
   return {result:"PASS",next,directive,issue:issueKey,status:"in_progress",repo_keys:bindings.map(b=>b.repo_key)};
@@ -125,7 +131,7 @@ async function verifyAbandoned(pr: RegisteredPr, checkCandidate: boolean): Promi
 export function registerDeliveryRouteDecision(group: Command): void {
   group.command("route-decision").description("恢复 Human 明确批准的 Requirement 交付")
     .requiredOption("--issue <key>").requiredOption("--comment-id <id>")
-    .requiredOption("--next <decision>").option("--reason <reason>")
+    .requiredOption("--next <decision>")
     .action(async (opts: {issue:string;commentId:string;next:Next})=>{
       markLeafExecuted();
       try {
