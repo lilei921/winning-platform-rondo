@@ -1150,7 +1150,7 @@ test("跨 Project 同名仓库及相同 SHA 按 GUID 分别关联真实 TFS Task
   assert.equal(f.readState().issues["WNDF-T"].status,"done");
 });
 
-test("Requirement Prepare archives an explicitly waived unchecked task; TFS plans cannot claim it", async t => {
+test("Requirement Prepare archives an explicitly waived unchecked task and normal closeout continues", async t => {
   const f = await fixture(t, { requirement: true });
   const state = f.readState();
   const md = state.issues["WNDF-T"].metadata;
@@ -1162,12 +1162,6 @@ test("Requirement Prepare archives an explicitly waived unchecked task; TFS plan
   assert.equal(prepared.exit,0,prepared.stdout+prepared.stderr);
   const archived = join(f.rootRepo,"openspec","changes","archive","2026-01-01-"+CHANGE_REF,"tasks.md");
   assert.equal(readFileSync(archived,"utf8"),text);
-  const inspection = await f.writeback(["--inspect"]);
-  assert.equal(inspection.exit,0,inspection.stdout+inspection.stderr);
-  assert.deepEqual(inspection.body.unexecuted_waived_tasks,["1.2"]);
-  const rejected = await f.writeback();
-  assert.equal(rejected.exit,2,rejected.stdout+rejected.stderr);
-  assert.match(rejected.body.reason,/未执行的豁免任务/);
   const planFile=join(f.dir,"plan.json");
   const plan=JSON.parse(readFileSync(planFile,"utf8"));
   plan.tasks[0].source_refs=["1.1"];

@@ -26,7 +26,7 @@ const taskIdentity = (parent: number, issueKey: string, number: number): string 
   `Multica Delivery Task: ${issueKey}/${number} (parent=${parent})`;
 
 export function validateRequirementTaskPlan(
-  value: unknown, approvedTasks: string, available: PlannedCommit[], excludedRefs: readonly string[] = [],
+  value: unknown, approvedTasks: string, available: PlannedCommit[],
 ): RequirementTaskPlan {
   const input = value as { tasks?: unknown };
   if (!input || typeof input !== "object" || Array.isArray(input) ||
@@ -53,9 +53,6 @@ export function validateRequirementTaskPlan(
         task.source_refs.some(r => typeof r !== "string" || !r.trim() ||
           extractTaskText(approvedTasks, r) === null)) {
       throw new FailError(`TFS 任务 ${index + 1} source_refs 必须可在已批准 tasks.md 中定位`);
-    }
-    if (task.source_refs.some(ref => excludedRefs.includes(ref))) {
-      throw new FailError(`TFS 任务 ${index + 1} 不得引用未执行的豁免任务`);
     }
     if (!Array.isArray(task.commits) || !task.commits.length || task.commits.length > available.length) {
       throw new FailError(`TFS 任务 ${index + 1} 缺少独占业务 Commit`);

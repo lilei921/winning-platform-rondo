@@ -16,11 +16,11 @@
 ### P0-1 — Task Waiver（本次实施）
 
 - 在现有 analysis.human_approval 增加可选 waived_tasks: string[]，缺省为空；复用 by / at / comment_ref / source，不建立独立审批对象。
-- Lead 从真实 Human 批准意见理解明确豁免，使用 analysis approve --waive-tasks 3.1,3.2 登记。CLI 校验编号属于固定 Analysis Commit 的 tasks.md；同一批准评论不能改变决定，更新决定使用明确的新批准评论及完整豁免集合，沿用现有批准状态边界。
+- Lead 从真实 Human 批准意见理解明确豁免，使用 analysis approve --waive-tasks 3.1,3.2 登记。CLI 校验编号属于固定 Analysis Commit 的 tasks.md；同一批准评论不能改变决定，已登记的同一决定幂等重试不重复读取远端 Tasks；更新决定使用明确的新批准评论及完整豁免集合，沿用现有批准状态边界。
 - 豁免仅改变已列任务的本轮执行义务，不改变产品行为、Scope、必要验收要求，不自动取消 Independent Verification、Candidate Validation 或 Code Review。
 - Engineer 未执行的豁免任务保持 [ ]；已执行完成才勾选。PR Materialize 与 Archive 使用同一个任务判定：所有任务均已完成或获准豁免。非豁免未完成任务必须阻断。
 - OpenSpec 原生 archive --yes 继续使用，前提是项目 Guard 已确认不存在待处理任务；不伪造勾选，不绕过原生规格校验。安装版本须实测。
-- TFS Task 规划不把未执行的豁免任务作为研发成果。现行 dev check-completion / contract-hash 旧体系不扩展。
+- TFS Task 规划依据实际业务改动和已批准的工程任务，保持现有职责，不增加豁免专项校验、输出字段或归档读取。现行 dev check-completion / contract-hash 旧体系不扩展。
 - 无新 Agent、Skill、状态机、独立 Metadata 或任务工件。
 
 ### P0-2 — PR Materialize 事实管理（待实施）
@@ -39,7 +39,7 @@
 
 ## 三、回归验收
 
-P0-1：合法豁免不勾选仍可 Materialize / Archive；未批准、无效编号或其他未完成任务阻断；相同批准重复登记幂等，不能同评论改写；无豁免行为不变；归档保持原始 checkbox，实际安装 OpenSpec 归档验证；TFS 不制造未执行任务成果。
+P0-1：合法豁免不勾选仍可 Materialize / Archive；未批准、无效编号或其他未完成任务阻断；相同批准重复登记幂等，不能同评论改写；无豁免行为不变；归档保持原始 checkbox，实际安装 OpenSpec 归档验证；保持 TFS 正常收口。附带修复现有 extractTaskText 的任务编号前缀匹配缺陷，仅调整分隔符匹配并补充回归。
 
 P0-2：多仓部分成功保留登记；写入失败后恢复；Completed PR 删除源分支后可恢复；Candidate/Work Item/身份冲突不覆盖、不重复创建。
 

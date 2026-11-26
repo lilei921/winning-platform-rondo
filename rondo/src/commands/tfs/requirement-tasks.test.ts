@@ -130,10 +130,3 @@ test("计划可不选与本次业务任务无关的 PR Commit，但不可伪造�
   duplicate.tasks[1].commits = [candidate(0)];
   assert.throws(() => validateRequirementTaskPlan(duplicate, tasksMd, available(2)), FailError);
 });
-
-test("TFS plan excludes unexecuted waived refs without excluding completed work", () => {
-  const plan=planFor(1);
-  assert.throws(()=>validateRequirementTaskPlan(plan,tasksMd,available(1),["1.2"]),/未执行的豁免任务/);
-  plan.tasks[0].source_refs=["1.1"];
-  assert.equal(validateRequirementTaskPlan(plan,tasksMd,available(1),["1.2"]).tasks.length,1);
-});

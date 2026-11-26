@@ -54,6 +54,7 @@ export async function recordApproval(client: ApprovalClient, args: ApprovalArgs,
     comment_ref: args.commentId, verify_agent_required: required, source,
     ...(waivedTasks.length ? { waived_tasks: waivedTasks } : {}) };
   let saved = JSON.stringify(approval);
+  let alreadyRecorded = false;
   if (md[APPROVAL] !== undefined) {
     let prior;
     try { prior = JSON.parse(md[APPROVAL]); }
@@ -71,6 +72,7 @@ export async function recordApproval(client: ApprovalClient, args: ApprovalArgs,
       }
       readApprovedVerifyDecision(md, args.commentId);
       saved = md[APPROVAL];
+      alreadyRecorded = true;
     } else {
       if (Date.parse(approval.at) <= Date.parse(prior.at)) throw new FailError("不得用更早的批准覆盖现有决定");
       if (!sameAnalysisSource(priorSource, source) && issue.status !== "analysis_review") {
@@ -78,8 +80,8 @@ export async function recordApproval(client: ApprovalClient, args: ApprovalArgs,
       }
     }
   }
-  // Only explicit waivers need an additional pinned read; ordinary approval stays unchanged.
-  if (waivedTasks.length) {
+  // A recorded decision already passed the pinned task-reference check.
+  if (waivedTasks.length && !alreadyRecorded) {
     const artifact = await readArtifact(source, "tasks.md");
     assertWaiverRefs(readTaskProgress(artifact.content), waivedTasks);
   }

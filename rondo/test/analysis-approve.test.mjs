@@ -163,7 +163,9 @@ test("retired change-handoff is absent from published assets and Workspace overl
 
 test("explicit waiver uses pinned approved tasks, is idempotent and cannot be changed under the same comment", async () => {
   const f=fixture();
+  let reads=0;
   const read=async (pinned,file)=>{
+    reads++;
     assert.deepEqual(pinned,source);
     assert.equal(file,"tasks.md");
     return {content:"- [ ] 3.1 Integration\n- [ ] 3.2 Regression\n- [ ] 1.1 Implement\n"};
@@ -172,6 +174,7 @@ test("explicit waiver uses pinned approved tasks, is idempotent and cannot be ch
   assert.equal((await recordApproval(f.client,decision,read)).result,"PASS");
   assert.deepEqual(JSON.parse(f.issue.metadata["analysis.human_approval"]).waived_tasks,["3.1","3.2"]);
   assert.equal((await recordApproval(f.client,{...decision,waiveTasks:"3.1,3.2"},read)).result,"NOOP");
+  assert.equal(reads,1);
   await assert.rejects(()=>recordApproval(f.client,{...decision,waiveTasks:"3.1"},read),/同一批准评论/);
   await assert.rejects(()=>recordApproval(f.client,args,read),/同一批准评论/);
   assert.equal(f.writes.length,3);
