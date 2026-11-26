@@ -38,6 +38,14 @@ test("validation executes in exact authorized Git checkout, rejects failure, cha
   const sha=git(root,"rev-parse","HEAD");
   assert.doesNotThrow(()=>verifyAndExecuteValidation(root,root,url,sha,[process.execPath,"-e","process.exit(0)"]));
   assert.throws(()=>verifyAndExecuteValidation(root,root,url,sha,[process.execPath,"-e","process.exit(7)"]),e=>e instanceof ValidationCommandError && e.exitCode===7);
+  assert.throws(()=>verifyAndExecuteValidation(root,root,url,sha,[process.execPath,"-e","console.log('x'.repeat(3000)+'\\ncompiler failure');console.error('y'.repeat(3000)+'\\nreactor failure');process.exitCode=7"]),e=>{
+    assert.ok(e instanceof ValidationCommandError);
+    assert.equal(e.exitCode,7);
+    assert.match(e.message,/stdout:.*compiler failure/s);
+    assert.match(e.message,/stderr:.*reactor failure/s);
+    assert.ok(e.message.length<4200);
+    return true;
+  });
   assert.throws(()=>verifyAndExecuteValidation(root,other,url,sha,[process.execPath,"-e","process.exit(0)"]),/目录/);
   assert.throws(()=>verifyAndExecuteValidation(root,root,url,sha,[process.execPath,"-e","require('fs').writeFileSync('a.txt','changed')"]),/发生变化/);
 });

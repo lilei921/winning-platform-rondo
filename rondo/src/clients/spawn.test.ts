@@ -20,7 +20,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { isTransientNetworkText, runJson, transientBackoffMs } from "./spawn.js";
+import { isTransientNetworkText, runCommand, runJson, transientBackoffMs } from "./spawn.js";
 import { UnknownError } from "../cli/errors.js";
 
 const STUB = `
@@ -258,4 +258,14 @@ test("exit 2 with valid JSON still returns the failure contract without mixing s
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("runCommand distinguishes process timeout from observed nonzero exit", () => {
+  const cmd = [process.execPath, "-e", "setTimeout(() => {}, 5000)"];
+  assert.throws(() => runCommand(cmd, undefined, undefined, 100), (exc: unknown) => {
+    assert.ok(exc instanceof UnknownError);
+    assert.match(exc.message, /命令执行超时 \(100ms\)/);
+    return true;
+  });
+  assert.equal(runCommand([process.execPath, "-e", "process.exit(7)"]).status, 7);
 });

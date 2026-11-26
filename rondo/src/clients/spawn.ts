@@ -42,7 +42,7 @@ function trace(cmd: string[]): void {
 
 /**
  * 同步执行外部命令，非零退出不抛异常（退出码是业务事实，由调用方判定）；
- * 仅当进程根本无法启动时抛 UnknownError（对齐原 runCommand 的 `命令无法执行`）。
+ * 无法启动、超时或未取得可靠退出码时抛 UnknownError。
  */
 export function runCommand(cmd: string[], cwd?: string, env?: NodeJS.ProcessEnv, timeoutMs = 300_000): CmdResult {
   const displayed = commandForLog(cmd);
@@ -60,7 +60,10 @@ export function runCommand(cmd: string[], cwd?: string, env?: NodeJS.ProcessEnv,
   } catch (e) {
     throw new UnknownError(`命令无法执行: ${cmd[0]}: ${(e as Error).message}`);
   }
-  if (r.failed && r.exitCode === undefined) {
+  if (r.timedOut) {
+    throw new UnknownError(`命令执行超时 (${timeoutMs}ms): ${cmd[0]}`);
+  }
+  if (r.failed && (r.exitCode === undefined || r.exitCode === 0 || r.isMaxBuffer || r.isTerminated)) {
     throw new UnknownError(`命令无法执行: ${cmd[0]}: ${r.message}`);
   }
   return { status: r.exitCode ?? 1, stdout: r.stdout ?? "", stderr: r.stderr ?? "" };
