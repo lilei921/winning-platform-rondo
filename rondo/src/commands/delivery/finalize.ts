@@ -42,7 +42,7 @@ function gitOk(cwd: string, args: string[], what: string, remoteUrl?: string): s
 // --- 各步骤 ---
 
 /** 定位 Change 目录：未归档取 changes/<ref>；已归档取 changes/archive/*<ref>（幂等恢复）。
- * 冻结契约明示的既定例外：本函数内联保留，不改用 change resolve-identity。
+ * 冻结契约明示的既定例外：本函数内联保留，不改用 openspec resolve-identity。
  * （导出供 tfs writeback 复用：PR 通过后 tasks.md / evidence 可能已随归档移动。） */
 export function resolveChangeDir(paths: RuntimePaths, changeRef: string): { dir: string; archived: boolean } {
   assertStableChangeRef(changeRef);

@@ -28,7 +28,7 @@
   python sync_workspace.py --skip-resource-labels  # 跳过默认的 Project Resource label 对齐
   python sync_workspace.py --dry-run
 
-前置步骤默认执行：npm pack → npm install -g → rondo openspec install → 删除全局 rondo.ps1（Windows）。
+前置步骤默认执行：npm pack → npm install -g → rondo openspec install-schema → 删除全局 rondo.ps1（Windows）。
 只写目标 Multica workspace 与仓内 overlay 文件；不回滚已完成的步骤。
 """
 
@@ -138,7 +138,7 @@ def install_rondo_cli(root: Path, dry_run: bool = False) -> None:
         print(f"[OK] 打包 rondo：{tarball}")
         run_text(["npm", "install", "-g", str(rondo_dir / tarball)], rondo_dir)
         print("[OK] 全局安装 rondo")
-        run_text(["rondo", "openspec", "install"], rondo_dir)
+        run_text(["rondo", "openspec", "install-schema"], rondo_dir)
         print("[OK] 安装 OpenSpec Schema")
         if os.name == "nt":
             prefix = run_text(["npm", "prefix", "-g"], rondo_dir)

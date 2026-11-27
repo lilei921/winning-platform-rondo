@@ -7,7 +7,7 @@ import { ExitSignal, hasLeafExecuted, logLine } from "./cli/output.js";
 import { hydrateMulticaTaskEnvironment } from "./clients/runtime-context.js";
 import { TOOL_VERSION } from "./cli/version.js";
 import { registerTfsApiLeaf } from "./tfs/runner.js";
-import { registerResolveIdentity } from "./commands/change/resolve-identity.js";
+import { registerResolveIdentity } from "./commands/openspec/resolve-identity.js";
 import { registerAnalysisValidate } from "./commands/analysis/validate.js";
 import { registerAnalysisPublish } from "./commands/analysis/publish.js";
 import { registerAnalysisRead } from "./commands/analysis/read.js";
@@ -32,7 +32,7 @@ import { registerWorkspaceSync } from "./commands/workspace/sync.js";
 import { registerWorkspaceCheckDaemon } from "./commands/workspace/check-daemon.js";
 import { registerRuntimeResolveRootRepo } from "./commands/runtime/resolve-root-repo.js";
 import { registerDoctor } from "./commands/doctor/doctor.js";
-import { registerOpenspecInstall } from "./commands/openspec/install.js";
+import { registerOpenspecInstallSchema } from "./commands/openspec/install-schema.js";
 
 const program = new Command();
 
@@ -56,9 +56,6 @@ function bareGroup(group: Command): Command {
     throw new ExitSignal(64);
   });
 }
-
-const change = bareGroup(program.command("change").description("OpenSpec Change 身份解析"));
-registerResolveIdentity(change);
 
 const analysis = bareGroup(program.command("analysis").description("分析校验、发布、读取与批准登记"));
 registerAnalysisValidate(analysis);
@@ -104,9 +101,10 @@ registerRuntimeCheckCheckout(runtime);
 registerRuntimePrepareRoot(runtime);
 registerRuntimeGetContext(runtime);
 
-// openspec 组：Schema 安装（随包分发，用户级全局目录）
-const openspec = bareGroup(program.command("openspec").description("OpenSpec Schema 安装"));
-registerOpenspecInstall(openspec);
+// OpenSpec 身份解析与 Schema 安装
+const openspec = bareGroup(program.command("openspec").description("OpenSpec Change 身份解析与 Schema 安装"));
+registerResolveIdentity(openspec);
+registerOpenspecInstallSchema(openspec);
 
 // TFS API 叶子(原 tfs-cli):query 顶级;repo/branch/workitem 各自成组
 registerTfsApiLeaf(program, "query", ["query"], "执行 TFS WIQL 查询", "--wiql <WIQL> [--project <project>]");

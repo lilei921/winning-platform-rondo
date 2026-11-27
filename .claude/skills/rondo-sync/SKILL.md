@@ -60,7 +60,7 @@ python .claude/skills/rondo-sync/scripts/sync_workspace.py
 
 Linux 上将本页命令中的 `python` 替换为 `python3`。Skill 正文和附属文件使用 UTF-8 保存，同步时统一为无 BOM、LF 换行的文本。
 
-同步默认以 **打包 → 全局安装 → 安装 OpenSpec Schema → 清理 shim** 开始，确保各 workspace 的 Agent 使用最新的全局 `rondo` 与全局 Schema：在 `rondo/` 执行 `npm pack --silent` 与 `npm install -g <tarball>`，执行 `rondo openspec install`（把随包分发的 Schema 安装到用户全局目录），再用 `npm prefix -g` 定位全局目录并删除 `rondo.ps1`（仅 Windows，文件不存在则跳过；非 Windows 不执行删除）。前置步骤失败会在写平台前整体停止；`--dry-run` 只打印计划，不打包、不安装、不删除。脚本自身执行 provision / sync 时仍优先使用本仓 `rondo/dist/index.js`（打包经 `prepack` 会重新构建）。
+同步默认以 **打包 → 全局安装 → 安装 OpenSpec Schema → 清理 shim** 开始，确保各 workspace 的 Agent 使用最新的全局 `rondo` 与全局 Schema：在 `rondo/` 执行 `npm pack --silent` 与 `npm install -g <tarball>`，执行 `rondo openspec install-schema`（把随包分发的 Schema 安装到用户全局目录），再用 `npm prefix -g` 定位全局目录并删除 `rondo.ps1`（仅 Windows，文件不存在则跳过；非 Windows 不执行删除）。前置步骤失败会在写平台前整体停止；`--dry-run` 只打印计划，不打包、不安装、不删除。脚本自身执行 provision / sync 时仍优先使用本仓 `rondo/dist/index.js`（打包经 `prepack` 会重新构建）。
 
 仓库路径只在本次运行中确定，不要求用户配置全局变量：
 
@@ -93,7 +93,7 @@ python .claude/skills/rondo-sync/scripts/sync_workspace.py winning-lfw --repo-ro
 
 执行同步前先完成一次全局前置步骤（面向所有 workspace，失败则整体停止）：
 
-0. **打包、全局安装 rondo 与安装 OpenSpec Schema** — 在 `rondo/` 执行 `npm pack --silent` 与 `npm install -g <tarball>`，执行 `rondo openspec install` 把随包分发的 Schema 安装到用户全局目录，并通过 `npm prefix -g` 定位全局目录、删除 `rondo.ps1`（仅 Windows）。
+0. **打包、全局安装 rondo 与安装 OpenSpec Schema** — 在 `rondo/` 执行 `npm pack --silent` 与 `npm install -g <tarball>`，执行 `rondo openspec install-schema` 把随包分发的 Schema 安装到用户全局目录，并通过 `npm prefix -g` 定位全局目录、删除 `rondo.ps1`（仅 Windows）。
 
 每个 workspace 依次执行下列步骤，任一步失败即停止该 workspace 并计入失败数，其余 workspace 继续：
 

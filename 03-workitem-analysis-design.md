@@ -827,7 +827,7 @@ Intentional：已确认 Goal / Requirement / Scenario / Rules / Scope / Selected
 
 | 场景 | 适用条件与必要行为 |
 |---|---|
-| New | 经 `rondo change resolve-identity` 确认 `NOT_FOUND`，且身份、Schema 与创建授权明确时，使用 OpenSpec CLI 创建唯一 Change 并回读；创建目录不等于准备完成 |
+| New | 经 `rondo openspec resolve-identity` 确认 `NOT_FOUND`，且身份、Schema 与创建授权明确时，使用 OpenSpec CLI 创建唯一 Change 并回读；创建目录不等于准备完成 |
 | Prepare | 在新建或已存在的 active Change 上，根据当前 Schema、`apply.requires` 及 Artifact `requires` 传递依赖、条件性 Design 和**实际文件集合**补全必要工件；复用已有效内容 |
 | Revise | 已有明确修订请求且仍在本次授权及批准边界内时，仅修订受影响工件，并核对必要上下游依赖、Tasks 和 Verification；越权的业务决策或已批准契约变更须停止并请求确认 |
 

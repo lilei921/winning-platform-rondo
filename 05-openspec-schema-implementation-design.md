@@ -258,7 +258,7 @@ openspec/
         ├── .openspec.yaml
         └── ...
 
-tools/rondo/src/commands/change/resolve-identity.ts    # 当前 Change Identity Resolver
+rondo/src/commands/openspec/resolve-identity.ts    # 当前 Change Identity Resolver
 
 tests/
 ├── schema/
@@ -314,10 +314,10 @@ Change ID 首次创建后保持稳定；Analysis Rework、Development Rework 不
 
 ## 5.2 Deterministic Resolver（确定性解析器）
 
-当前只读确定性入口为 `rondo change resolve-identity`，实现位于 `tools/rondo/src/commands/change/resolve-identity.ts`；历史 Python Script 不再是现行入口。它只解析 OpenSpec Change 身份，不引入新的 Runtime 或 Workflow State。
+当前只读确定性入口为 `rondo openspec resolve-identity`，实现位于 `rondo/src/commands/openspec/resolve-identity.ts`；历史 Python Script 不再是现行入口。它只解析 OpenSpec Change 身份，不引入新的 Runtime 或 Workflow State。
 
 ```text
-rondo change resolve-identity --openspec-root <root> \
+rondo openspec resolve-identity --openspec-root <root> \
   [--change-ref <stable-change-id>] [--tfs-id <number>] \
   [--expect-schema <corrective-change|intentional-change>]
 ```
@@ -484,7 +484,7 @@ CONFLICT / INVALID
 
 ## 5.6 Resolver Implementation Boundary（解析器实施边界）
 
-`rondo change resolve-identity` 只承担：
+`rondo openspec resolve-identity` 只承担：
 
 ```text
 validate input
@@ -993,7 +993,7 @@ openspec/schemas/corrective-change/schema.yaml
 openspec/schemas/corrective-change/templates/*
 openspec/schemas/intentional-change/schema.yaml
 openspec/schemas/intentional-change/templates/*
-tools/rondo/src/commands/change/resolve-identity.ts  # 当前 Change Identity 实现
+rondo/src/commands/openspec/resolve-identity.ts  # 当前 Change Identity 实现
 tests/schema/
 tests/change-identity/
 tests/task-contract/   # native checkbox / 编号定位 / 契约一致性

@@ -91,7 +91,7 @@ class WorkspaceSyncTests(unittest.TestCase):
         outputs = {
             ("npm", "pack", "--silent"): tarball.name,
             ("npm", "install", "-g", str(tarball)): "changed 32 packages",
-            ("rondo", "openspec", "install"): '{"result": "PASS"}',
+            ("rondo", "openspec", "install-schema"): '{"result": "PASS"}',
             ("npm", "prefix", "-g"): str(global_dir),
         }
 
@@ -107,7 +107,7 @@ class WorkspaceSyncTests(unittest.TestCase):
         self.assertEqual(commands, [
             ["npm", "pack", "--silent"],
             ["npm", "install", "-g", str(tarball)],
-            ["rondo", "openspec", "install"],
+            ["rondo", "openspec", "install-schema"],
             ["npm", "prefix", "-g"],
         ])
         self.assertTrue(all(call[0][1] == rondo_dir for call in run_text.call_args_list))
@@ -124,7 +124,7 @@ class WorkspaceSyncTests(unittest.TestCase):
         outputs = {
             ("npm", "pack", "--silent"): tarball.name,
             ("npm", "install", "-g", str(tarball)): "changed 32 packages",
-            ("rondo", "openspec", "install"): '{"result": "PASS"}',
+            ("rondo", "openspec", "install-schema"): '{"result": "PASS"}',
         }
 
         def fake_run_text(command, cwd):

@@ -40,7 +40,7 @@ function change(root, name, schema = "intentional-change", archive = false) {
 test("D1 identity: stale change_ref + tfs.id reuses the existing active Change", (t) => {
   const root = fixture(t);
   change(root, "feature-1234");
-  const r = run(["change", "resolve-identity", "--openspec-root", root, "--change-ref", "stale-1234",
+  const r = run(["openspec", "resolve-identity", "--openspec-root", root, "--change-ref", "stale-1234",
     "--tfs-id", "1234", "--expect-schema", "intentional-change"]);
   assert.equal(r.code, 0, r.stderr);
   assert.equal(r.body.result, "ACTIVE_FOUND");
@@ -48,7 +48,7 @@ test("D1 identity: stale change_ref + tfs.id reuses the existing active Change",
   assert.equal(r.body.schema, "intentional-change");
 
   // Without the source identity, a stale ref cannot recover the existing Change.
-  const noTfs = run(["change", "resolve-identity", "--openspec-root", root,
+  const noTfs = run(["openspec", "resolve-identity", "--openspec-root", root,
     "--change-ref", "stale-1234", "--expect-schema", "intentional-change"]);
   assert.equal(noTfs.code, 0);
   assert.equal(noTfs.body.result, "NOT_FOUND");
@@ -58,22 +58,22 @@ test("D1 identity: duplicate, archived, wrong Schema and unknown remain safe", (
   const root = fixture(t);
   change(root, "a-1234");
   change(root, "b-1234");
-  const conflict = run(["change", "resolve-identity", "--openspec-root", root, "--tfs-id", "1234"]);
+  const conflict = run(["openspec", "resolve-identity", "--openspec-root", root, "--tfs-id", "1234"]);
   assert.equal(conflict.code, 2);
   assert.equal(conflict.body.result, "CONFLICT");
 
   const archivedRoot = fixture(t);
   change(archivedRoot, "2026-11-06-old-2222", "corrective-change", true);
-  const archived = run(["change", "resolve-identity", "--openspec-root", archivedRoot, "--tfs-id", "2222"]);
+  const archived = run(["openspec", "resolve-identity", "--openspec-root", archivedRoot, "--tfs-id", "2222"]);
   assert.equal(archived.code, 0);
   assert.equal(archived.body.result, "ARCHIVED_FOUND");
 
-  const wrong = run(["change", "resolve-identity", "--openspec-root", root, "--change-ref", "a-1234",
+  const wrong = run(["openspec", "resolve-identity", "--openspec-root", root, "--change-ref", "a-1234",
     "--expect-schema", "corrective-change"]);
   assert.equal(wrong.code, 2);
   assert.equal(wrong.body.result, "INVALID");
 
-  const missing = run(["change", "resolve-identity", "--openspec-root", root, "--tfs-id", "9999"]);
+  const missing = run(["openspec", "resolve-identity", "--openspec-root", root, "--tfs-id", "9999"]);
   assert.equal(missing.code, 0);
   assert.equal(missing.body.result, "NOT_FOUND");
 });

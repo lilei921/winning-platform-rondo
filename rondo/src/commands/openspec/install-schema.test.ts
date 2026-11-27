@@ -1,12 +1,12 @@
 /**
- * openspec install 回归：只使用临时目录，不写真实的全局 Schema 目录。
+ * openspec install-schema 回归：只使用临时目录，不写真实的全局 Schema 目录。
  */
 import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { globalSchemasDir, installSchemas } from "./install.js";
+import { globalSchemasDir, installSchemas } from "./install-schema.js";
 
 function makeSchema(root: string, name: string, body: string): void {
   const templates = path.join(root, name, "templates");
