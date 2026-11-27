@@ -2,7 +2,7 @@
 
 日期：2026-11-27  
 基线：dev @ dac6c332ad0893c488f00df3164345dddc8affad  
-状态：设计方案，未实施。完整仓库名为建议决策，待确认。
+状态：设计方案已保存，未实施。完整仓库名称统一标识正式纳入本方案，实施前核实在途交付及切换条件。
 
 ## 1. 目标与原则
 
@@ -27,11 +27,11 @@ Multica 原生资源准入不能代替 Issue 的业务授权。Resource 缺失�
 
 本阶段不改 Agent Instructions、Schema、Metadata 结构、原生 Checkout、CLI 交付授权和 PR Target。验证同步有附属文件、重复同步无变更、源文件变化正常更新、未选中 Skill 不生成、无根仓 Checkout 的 Agent 可读附属文件。实际 Runtime 下发需验证。
 
-## 3. P1：完整仓库名称作为统一标识（建议）
+## 3. P1：完整仓库名称作为统一标识
 
 ### 3.1 选择理由
 
-当前 24 个业务仓的 repo_id 均对应实际仓库名称，例如 dataintegration → winning-dps-df-dataintegration。简写只是人为别名，不提供独立业务语义。建议将 repo_id、repo_key 的值统一为完整 Git/TFS 仓库名称；保留字段名称、x-repositories 字符串列表、CLI --repo 参数。根仓 root 作为角色保留，不属于业务仓 Scope。仓库名称须在当前 Project 内唯一；如实际资源存在同名不同 URL，则不能直接按名称消歧，应停止并核实，不提前引入全局 ID 体系。
+当前 24 个业务仓的 repo_id 均对应实际仓库名称，例如 dataintegration → winning-dps-df-dataintegration。简写只是人为别名，不提供独立业务语义。将 repo_id、repo_key 的值统一为完整 Git/TFS 仓库名称；保留字段名称、x-repositories 字符串列表、CLI --repo 参数。根仓 root 作为角色保留，不属于业务仓 Scope。仓库名称须在当前 Project 内唯一；如实际资源存在同名不同 URL，则不能直接按名称消歧，应停止并核实，不提前引入全局 ID 体系。
 
 ```yaml
 x-repositories:
