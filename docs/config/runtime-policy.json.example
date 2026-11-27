@@ -1,0 +1,22 @@
+{
+  "Delivery Lead": {
+    "primary_runtime_id": "<本机Runtime UUID>",
+    "fallback_runtime_id": "<服务器Runtime UUID>"
+  },
+  "Workitem Analyst": {
+    "primary_runtime_id": "<本机Runtime UUID>",
+    "fallback_runtime_id": "<服务器Runtime UUID>"
+  },
+  "Engineer": {
+    "primary_runtime_id": "<本机Runtime UUID>",
+    "fallback_runtime_id": "<服务器Runtime UUID>"
+  },
+  "Wayfinder Agent": {
+    "primary_runtime_id": "<本机Runtime UUID>",
+    "fallback_runtime_id": "<服务器Runtime UUID>"
+  },
+  "Bug Fix Agent": {
+    "primary_runtime_id": "<本机Runtime UUID>",
+    "fallback_runtime_id": "<服务器Runtime UUID>"
+  }
+}
