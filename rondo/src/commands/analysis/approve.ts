@@ -5,7 +5,7 @@ import { MulticaClient } from "../../clients/multica.js";
 import { resolveMulticaRuntime } from "../../clients/runtime-context.js";
 import { parseAnalysisSource, readAnalysisArtifact, readAnalysisSource, sameAnalysisSource } from "./source.js";
 import { readApprovedVerifyDecision, parseWaivedTasks } from "../delivery/verify-decision.js";
-import { readTaskProgress, assertWaiverRefs } from "../dev/change-completion.js";
+import { readTaskProgress, assertWaiverRefs } from "../openspec/change-completion.js";
 
 interface ApprovalArgs {
   issue: string;

@@ -5,7 +5,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, realpathSy
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parsePlatformCheckoutOutput, assertNativeTaskCheckout, assertNativeCheckoutBaseline, readProjectResources } from "../dist/clients/native-checkout.js";
-import { resourcePrepareRepo, requireTargetBranch, resolveNativeBusinessPath, validateBusinessCheckout } from "../dist/commands/dev/prepare-workspace.js";
+import { resourcePrepareRepo, requireTargetBranch, resolveNativeBusinessPath, validateBusinessCheckout } from "../dist/commands/repo/checkout.js";
 
 const branch = "agent/engineer/abcdef123456";
 test("Native Checkout parser recognizes Windows paths and Kept; rejects ambiguous output", () => {

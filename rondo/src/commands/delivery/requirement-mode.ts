@@ -2,7 +2,7 @@ import { readPrRecords } from "../pr/facts.js";
 import { candidateBranch } from "../pr/candidate-branch.js";
 /** Requirement delivery identity derives from its TFS type and engineering facts. */
 import { FailError, UnknownError } from "../../cli/errors.js";
-import { checkedTaskProgress } from "../dev/change-completion.js";
+import { checkedTaskProgress } from "../openspec/change-completion.js";
 import { readAnalysisSource } from "../analysis/source.js";
 import { readApprovedVerifyDecision } from "./verify-decision.js";
 import { runCommand } from "../../clients/spawn.js";

@@ -233,7 +233,7 @@ PR Status Sync 不需要访问 Engineer 本地 Worktree。继续由 Rondo 执行
 
 ~~~bash
 rondo workitem finalize --phase prepare --issue <KEY> --root-repo "<root_repo>"
-rondo tfs writeback --issue <KEY> --config "<config>" --root-repo "<root_repo>"
+rondo workitem writeback --issue <KEY> --root-repo "<root_repo>"
 rondo workitem finalize --phase complete --issue <KEY> --root-repo "<root_repo>"
 ~~~
 
