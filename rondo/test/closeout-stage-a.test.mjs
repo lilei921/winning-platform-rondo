@@ -4,6 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, realpathSync, exis
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { prepareRoot, verifyCloseoutRoot, confirmPublishedArchive, assertCloseoutChange, parsePlatformCheckoutOutput } from '../dist/commands/delivery/closeout-root.js';
 import { readPlatformCheckoutManifest } from '../dist/clients/native-checkout.js';
 import { approvedTasksAtCommit, inspectRequirementCommits } from '../dist/commands/tfs/requirement-commits.js';
@@ -136,6 +137,44 @@ test('Native checkout 直接位于 Task workdir，并以来源分支建立独立
   assert.equal(verifyCloseoutRoot(f.paths(root), source).gitRemoteUrl, repoUrl);
   assert.equal(existsSync(join(root, '.git', 'rondo-closeout-owner.json')), false);
   assert.equal(f.checkoutCount, 1);
+});
+
+test('root-prepare CLI 从 Task 环境文件补齐 Task ID，正确建立归档分支', t => {
+  const f = fixture(t);
+  const source = f.source('change-a');
+  const { root } = f.checkout(realpathSync(process.cwd()), repoUrl);
+  const dir = dirname(process.cwd());
+  const taskEnvFile = join(dir, 'task-env.json');
+  const statePath = join(dir, 'state.json');
+  const cli = fileURLToPath(new URL('../dist/index.js', import.meta.url));
+  const multica = fileURLToPath(new URL('./mock-multica.cjs', import.meta.url));
+  writeFileSync(taskEnvFile, JSON.stringify({ active: true, env: { MULTICA_TASK_ID: taskId, MULTICA_TASK_SLOT: 2 } }));
+  writeFileSync(statePath, JSON.stringify({ metadata: {
+    'tfs.type': '需求', 'tfs.id': '10', 'analysis.source': JSON.stringify(source),
+    pr: JSON.stringify([{ repo_key: 'app', source_branch: 'feature/10', target_branch: 'dev', pr_id: 42, pr_url: 'http://tfs.test/pr/42' }]),
+  } }));
+  const transport = join(dir, 'git-transport.cjs');
+  writeFileSync(transport, `#!/usr/bin/env node
+const { spawnSync } = require('node:child_process');
+const args = process.argv.slice(2);
+if (args[0] === 'fetch' && args[1] === 'origin') args[1] = ${JSON.stringify(f.bare)};
+const r = spawnSync('git', args, { stdio: 'inherit' });
+process.exit(r.status ?? 1);
+`, { mode: 0o755 });
+  const env = { ...process.env, MULTICA_TASK_ID: '', MULTICA_TASK_ENV_FILE: taskEnvFile,
+    MULTICA_CLI_PATH: multica, MULTICA_SERVER_URL: 'http://multica.test', MOCK_STATE: statePath,
+    TFS_SERVER_URL: 'http://tfs.test/tfs/C', TFS_PAT: 'fixture', RONDO_GIT_EXECUTABLE: transport };
+  const run = () => spawnSync(process.execPath, [cli, 'delivery', 'root-prepare', '--issue', 'WNDF-T'],
+    { cwd: process.cwd(), env, encoding: 'utf8' });
+  const result = run();
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.equal(JSON.parse(result.stdout).result, 'PASS');
+  assert.equal(git(root, 'symbolic-ref', '--short', 'HEAD'), 'rondo/closeout/' + taskSuffix + '/dev');
+  assert.equal(git(root, 'rev-parse', 'HEAD'), source.commit);
+  writeFileSync(taskEnvFile, JSON.stringify({ active: false, env: { MULTICA_TASK_ID: taskId } }));
+  const inactive = run();
+  assert.equal(inactive.status, 3, inactive.stdout + inactive.stderr);
+  assert.match(JSON.parse(inactive.stdout).reason, /缺少 Multica Task\/Workspace/);
 });
 
 test('同 Task 重复准备直接复用 Checkout 与分支，不覆盖本地已确认的提交', t => {

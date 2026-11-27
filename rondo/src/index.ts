@@ -17,8 +17,7 @@
 
 import { Command, CommanderError, Option } from "commander";
 import { isSea } from "node:sea";
-import { ExitSignal, emitJson, hasLeafExecuted, logLine } from "./cli/output.js";
-import { UnknownError } from "./cli/errors.js";
+import { ExitSignal, hasLeafExecuted, logLine } from "./cli/output.js";
 import { hydrateMulticaTaskEnvironment } from "./clients/runtime-context.js";
 import { TOOL_VERSION } from "./cli/version.js";
 import { registerTfsApiLeaf } from "./tfs/runner.js";
@@ -141,13 +140,7 @@ registerTfsApiLeaf(workitem, "create", ["workitem", "create"], "在父项下创�
 registerTfsApiLeaf(workitem, "link-commits", ["workitem", "link-commits"], "commit 以 Artifact Link 挂工作项(幂等)");
 registerTfsApiLeaf(workitem, "download-attachment", ["workitem", "download-attachment"], "下载附件(gzip 自动解压)");
 
-program.hook("preAction", () => {
-  try { hydrateMulticaTaskEnvironment(); }
-  catch (e) {
-    if (!(e instanceof UnknownError)) throw e;
-    emitJson({ result: "UNKNOWN", reason: e.message }, 3);
-  }
-});
+program.hook("preAction", () => { hydrateMulticaTaskEnvironment(); });
 
 program.exitOverride();
 

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { UnknownError } from "../cli/errors.js";
+import { logLine } from "../cli/output.js";
 import { MulticaClient } from "./multica.js";
 import type { RuntimeConfig } from "./config.js";
 
@@ -10,29 +11,29 @@ export interface RuntimeContext extends RuntimeConfig {
   delivery_squad_id: string;
 }
 
-/** Consume the daemon-provided Task environment before any CLI command executes. */
+/** 补齐平台 Task 环境；是否需要 Task 身份由具体命令判断。 */
 export function hydrateMulticaTaskEnvironment(env: NodeJS.ProcessEnv = process.env): void {
-  const path = env.MULTICA_TASK_ENV_FILE;
-  if (!path) return;
+  const keys = ["MULTICA_TASK_ID", "MULTICA_TASK_CONFIG_ROOT", "MULTICA_TASK_SLOT", "MULTICA_TOKEN"];
+  const missing = keys.filter(key => !env[key]?.trim());
+  if (!env.MULTICA_TASK_ENV_FILE || !missing.length) return;
   let record;
   try {
-    record = JSON.parse(readFileSync(path, "utf8").replace(/^\uFEFF/, ""));
+    record = JSON.parse(readFileSync(env.MULTICA_TASK_ENV_FILE, "utf8").replace(/^\uFEFF/, ""));
   } catch {
-    throw new UnknownError("无法读取 MULTICA_TASK_ENV_FILE");
+    logLine("[rondo] 无法读取 Task 环境文件，保留现有环境");
+    return;
   }
-  if (record?.active !== true || !record.env || typeof record.env !== "object" || Array.isArray(record.env))
-    throw new UnknownError("Multica Task 环境未激活或格式无效");
+  if (record?.active !== true || !record.env || typeof record.env !== "object" || Array.isArray(record.env)) return;
   const taskId = record.env.MULTICA_TASK_ID;
-  if (env.MULTICA_TASK_ID && typeof taskId === "string" && taskId && env.MULTICA_TASK_ID !== taskId)
-    throw new UnknownError("MULTICA_TASK_ID 与 Task 环境文件不一致");
-  const keys = ["MULTICA_TASK_ID", "MULTICA_TASK_CONFIG_ROOT", "MULTICA_TASK_SLOT", "MULTICA_TOKEN"];
-  for (const key of keys) {
-    const value = record.env[key];
-    if (value !== undefined && (typeof value !== "string" || !value.trim() || value.includes("\0")))
-      throw new UnknownError("Task 环境字段无效: " + key);
+  if (typeof taskId !== "string" || !taskId.trim() || taskId.includes("\0")) return;
+  if (env.MULTICA_TASK_ID?.trim() && env.MULTICA_TASK_ID !== taskId) {
+    logLine("[rondo] Task 环境文件身份与当前 Task 不一致，保留现有环境");
+    return;
   }
-  for (const key of keys) {
-    if (!env[key] && typeof record.env[key] === "string") env[key] = record.env[key];
+  for (const key of missing) {
+    const value = record.env[key];
+    if (typeof value === "string" && value.trim() && !value.includes("\0")) env[key] = value;
+    else if (key === "MULTICA_TASK_SLOT" && typeof value === "number" && Number.isFinite(value)) env[key] = String(value);
   }
 }
 

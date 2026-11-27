@@ -98,3 +98,12 @@ test("get-context rejects missing, duplicate or malformed Squad lookup", t => {
     assert.equal(result.body.result, "UNKNOWN");
   }
 });
+
+test("get-context 不依赖当前 Task，缺失的 Task 环境文件不阻断命令", t => {
+  const run = fixture(t);
+  const dir = mkdtempSync(join(tmpdir(), "rondo-no-task-"));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const result = run({ MULTICA_TASK_ID: "", MULTICA_TASK_ENV_FILE: join(dir, "missing.json") });
+  assert.equal(result.code, 0);
+  assert.equal(result.body.result, "PASS");
+});
