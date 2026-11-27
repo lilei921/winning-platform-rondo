@@ -1,7 +1,7 @@
 # Multica + OpenSpec Unified Design Guideline（统一设计规范）
 
 > Version: 1.16.14  
-> Scope: Multica Runtime（运行时）、OpenSpec Engineering Contract（工程契约）与 Rondo CLI（确定性执行层）的组合架构；Agent / Squad / Instructions / Skill / Runtime Context、OpenSpec Change / Schema / Artifact / Template / Instruction、CLI 命令对象归属与职责边界、公共原生机制及来源引用规范  
+> Scope: Multica Runtime（运行时）、OpenSpec Engineering Contract（工程契约）与 Rondo CLI（确定性执行层）的组合架构；Agent / Squad / Instructions / Skill / Runtime Context、OpenSpec Change / Schema / Artifact / Template / Instruction、CLI 命令对象归属与职责边界、Issue Metadata 数据设计、公共原生机制及来源引用规范  
 > Date: 2026-11-27  
 > Author: winning/li_lei
 
@@ -11,6 +11,7 @@
 
 - [1. 总则（General）](#1-总则general)
   - [1.7 Rondo CLI Design（Rondo 命令行设计）](#rondo-cli-design)
+  - [1.8 Issue Metadata Design（交付事实数据设计）](#issue-metadata-design)
 - [2. Multica Native Mechanisms（Multica 原生机制）](#2-multica-native-mechanismsmultica-原生机制)
 - [3. OpenSpec Engineering Contract（工程契约与原生机制）](#openspec-core-mechanism)
 - [4. Multica Runtime Context & Squad（运行上下文与协作）](#mechanism-shared-context)
@@ -406,7 +407,7 @@ Wayfinder 的准入结论 `accepted | needs_human | unsupported` 属于 **Triage
 
 #### 1.4.8 Technical Change Kind 与自动处理边界
 
-`corrective` 表示恢复有证据支持的既定行为；`intentional` 表示主动改变预期行为、业务规则或能力。Workitem Analyst 负责基于证据判断，并将结果在存在工程增量时通过 `rondo analysis publish` 写入 Multica Issue Metadata `analysis.change_kind`（string）；Gate 和 Publish 核对该分类与当前 OpenSpec Change 的 `.openspec.yaml.schema` 一致。技术分类是专业判断及统计维度，不是 Workflow、Skill 链或自动化授权。
+`corrective` 表示恢复有证据支持的既定行为；`intentional` 表示主动改变预期行为、业务规则或能力。Workitem Analyst 负责基于证据判断，并将结果在存在工程增量时通过 `rondo openspec submit-review` 写入 Multica Issue Metadata `analysis.change_kind`（string）；Gate 和 Publish 核对该分类与当前 OpenSpec Change 的 `.openspec.yaml.schema` 一致。技术分类是专业判断及统计维度，不是 Workflow、Skill 链或自动化授权。
 
 超出授权、证据或当前自动处理能力的复杂变更须停止并交 Delivery Lead / Human；不另建复杂度 Route。紧急程度与排期由 Human 管理，不创建 `hotfix` 分类。执行分类与方法边界由 [03 §5](03-workitem-analysis-design.md#analysis-section-05) 维护，Schema 归属由 [05](05-openspec-schema-implementation-design.md) 维护。
 
@@ -572,6 +573,57 @@ Rondo CLI 是 Multica + OpenSpec 组合架构中的确定性执行边界，负�
 | Multica / OpenSpec | 分别持有 Delivery Truth / Engineering Truth |
 
 命令归属调整时，应在同一变更中更新命令注册、调用方、帮助信息、设计文档与测试；除非已确认存在必须支持的外部消费者，不保留旧命令别名或额外转发层。
+
+<a id="issue-metadata-design"></a>
+
+### 1.8 Issue Metadata Design（交付事实数据设计）
+
+Issue Metadata 是 Multica 原生 Issue 上供跨 Run 确定性消费的最小交付事实集合，不是独立业务对象或第二套状态机。Rondo CLI 管理项目自定义机器事实的格式与确定性读写；Multica 原生 Status、Assignment、Run、Comment 等仍由平台持有，OpenSpec 工件、Git Commit 和 TFS 外部事实各自保持权威归属。
+
+#### Data Format（数据格式）
+
+- **Flat Key-Value Map**：当前 Rondo 管理的 Metadata 使用 `Record<string, string>`。Key 为独立字符串；有命名空间的 Key 使用点分隔，例如 `tfs.id`、`analysis.source`。点号表示逻辑归属，不表示物理嵌套路径。新 Key 优先采用稳定业务对象 / 事实语义，字段名使用 `snake_case`；不为每个 Agent 或 Run 建立独立命名空间。
+- **Scalar Value**：单一事实直接使用字符串，例如 `"12345"`、`"PASS"`、`"true"`；枚举、标识和时间使用约定的稳定表示，时间使用 ISO 8601。禁止依赖显示名称、隐式类型转换或空字符串表示未知授权。
+- **Structured Value**：需要共同校验、消费及更新的关联事实使用一个 JSON Object 或 JSON Array，经 `JSON.stringify` 序列化为单个 Metadata Value。内部保留 JSON 原生类型，例如 boolean、number、array；不把关联对象拆成多份重复的 Key，也不把无关事实塞进一个全局大 JSON。
+- **Missing Fact**：缺失字段表示尚无该事实；可选字段按实际契约省略。缺失、非法或冲突的必要事实不得被默认解释为已批准、已通过或已完成；由对应命令按契约返回 `FAIL` / `UNKNOWN`。不新增通用状态字段、版本包装或统一 Metadata Schema Registry。
+
+以下为实际存储形态示意（外层是 Metadata Map，结构化 Value 是 JSON 字符串；示例不是要求所有 Issue 都具备的字段集合）：
+
+```json
+{
+  "source": "tfs",
+  "tfs.id": "12345",
+  "analysis.change_kind": "intentional",
+  "analysis.gate.result": "PASS",
+  "analysis.source": "{\"repo_url\":\"https://tfs.example.com/tfs/Collection/Project/_git/root\",\"branch\":\"main\",\"commit\":\"0123456789abcdef0123456789abcdef01234567\",\"change_ref\":\"12345-example\"}",
+  "delivery.tfs_written": "true"
+}
+```
+
+`analysis.source` 解码后为 `{ repo_url, branch, commit, change_ref }`；PR 集合 `pr` 解码后为 JSON Array，每个实际交付仓由 `repo_key` 唯一标识，同一记录承载准备事实并在物化后补充 `pr_id` / `pr_url`。外层字符串与内层 JSON 类型不可混淆，例如独立 Bug 的 `verify_agent.required` 为字符串，而 `analysis.human_approval` 内的 `verify_agent_required` 为 JSON boolean。
+
+#### Ownership and Lifecycle（归属与生命周期）
+
+| 事实域 | 当前代表性 Key | 主要写入责任 |
+|---|---|---|
+| 来源 | `source`、`tfs.id`、`tfs.type`、`tfs.url`、`tfs.changed_at` | `workitem sync` |
+| 审核版本 | `analysis.source`、`analysis.change_kind`、`analysis.gate.result` | `openspec submit-review` |
+| 人工批准 | `analysis.human_approval` | Human 决策，`workitem approve` 校验并登记 |
+| 研发发布 | `dev.publication` | `openspec publish` |
+| PR 交付与恢复 | `pr`、`pr.abandoned` | `pr` 命令组按对应事实契约维护 |
+| 独立 Bug 范围 | `bug.required_repos` | `pr prepare` |
+| 收口与外部回写 | `finalize.pending`、`delivery.tfs_written`、`delivery.tfs_task_plan` | `pr reconcile-status`、`workitem finalize` / `writeback` 按对应事实契约维护 |
+
+上表用于说明事实的逻辑归属，不是完整字段字典或额外授权规则。当前交付事实映射见 [02 §13.1](02-multica-delivery-lifecycle-design.md#delivery-facts)，具体字段结构、类型、必填条件和校验以对应 Rondo 实现及测试为准。
+
+#### Minimal Sufficient Facts（最小充分事实）
+
+- 只有跨 Run 消费、确定性校验、外部副作用追溯或必要恢复需要时，才新增持久化机器事实。原生对象已有的状态不复制；工程内容通过固定 Git Commit / Change 引用；普通专业结论保留在 Comment 中，无工程增量不强制生成工程 Metadata。
+- 同一业务事实由唯一责任域定义；同一事实随生命周期演进时优先复用现有记录。为绑定批准版本或候选证据而保存的不可变引用属于独立事实，不等同于冗余快照。
+- 状态变化、事实写入与恢复由对应 CLI 按实际契约执行；必要时核实真实外部结果，不盲目重试未知副作用。临时恢复标记在完成后清理，不建立独立状态机。
+- Metadata 不作为流程编排器、Prompt 缓存或通用日志容器；不存储凭据、重复工件正文或可从权威来源直接获得且无需持久化的派生数据。
+
+新增或修改 Metadata 时，同步核对写入方、消费方及回归测试；不因文档规范而批量重命名现有 Key 或引入迁移机制。
 
 <a id="section-2"></a>
 
@@ -2983,6 +3035,7 @@ LLM 负责需要上下文判断的 Semantic Reasoning（语义推理）；明确
 - **Contract First**：明确职责、输入、规则、输出与停止条件。
 - **One Rule, One Owner**：每条规则和权威事实由唯一 Owner 维护。
 - **Object-Oriented CLI**：公开命令组按实际操作对象 / 业务域划分，叶子命令表达确定性操作；不按研发阶段、Agent 角色或底层 API 提供方组织。
+- **Minimal Metadata**：以原生 Issue 的平面 Key-Value 保存最小机器事实，关联事实使用 JSON Value；遵循唯一归属，不复制原生状态或工程正文。详见 [§1.8](#issue-metadata-design)。
 - **Reference, not Replication**：跨资产和跨系统通过引用关联，不复制权威正文。
 
 **专业方法与产物原则：**
@@ -3082,11 +3135,12 @@ Multica 公共机制的准确含义、官方 URL、来源支持范围和核对�
 
 ## 附录 C. 版本记录
 
-### v1.16.14 Rondo CLI 对象导向设计（2026-11-27）
+### v1.16.14 Rondo CLI 与 Issue Metadata 设计（2026-11-27）
 
 - 明确 Rondo CLI 的确定性执行边界及 Agent / Skill / CLI 职责分工。
 - 公开命令组按实际操作对象 / 业务域划分，叶子命令按确定性操作命名；不按研发阶段、Agent 角色或底层服务提供方组织。
 - 明确命令合并条件、兼容别名边界及命令归属调整时的同步要求。
+- 明确 Issue Metadata 的平面 Key-Value、JSON Value、事实归属及最小持久化规则。
 
 ### v1.16.11 Multica 原生 Agent / Skill 对齐（2026-11-04）
 
