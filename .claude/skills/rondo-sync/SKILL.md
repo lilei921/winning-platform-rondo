@@ -1,9 +1,9 @@
 ---
 name: rondo-sync
-description: Use when synchronizing Multica workspace assets — Skill、Agent、Squad、Project、Autopilot、MCP、workspace 仓库注册表 — into the winning-* workspaces that the admin user belongs to, or into explicitly named workspaces. 触发词：同步 workspace、同步 agent 和 skill、把 skill 同步到 workspace、Multica 同步、provision workspace。
+description: Use when synchronizing Multica workspace assets — Skill、Agent、Squad、Project、Autopilot、MCP、workspace 仓库注册表、Project Resource label — into the winning-* workspaces that the admin user belongs to, or into explicitly named workspaces. 触发词：同步 workspace、同步 agent 和 skill、把 skill 同步到 workspace、Multica 同步、provision workspace、设置 Project Resource label。
 metadata:
   author: winning\li_lei
-  version: 1.8.0
+  version: 1.9.0
 ---
 
 # Multica Workspace Sync
@@ -17,7 +17,8 @@ metadata:
 - 需要确认某 workspace 的 Skill 文件与 Agent 绑定是否与仓内一致。
 - 需要为 workspace 的 Agent 补齐 TFS 环境变量（TFS_URL / TFS_COLLECTION / TFS_PAT）。
 - 需要为 workspace 供给 workspace 级仓库注册表（`multica repo add`，只增不维护）。
-- 需要回读校验一批 workspace 的 MCP / 仓库注册表 / Project / Agent / Skill / Squad / Autopilot / runtime 绑定是否与 manifest 一致（`check_workspaces.py`，只读）。
+- 需要按 `docs/config/project-resources.yaml` 的 label 对齐当前 Project 中仓库 Resource 的 label。
+- 需要回读校验一批 workspace 的 MCP / 仓库注册表 / Project / Project Resource label / Agent / Skill / Squad / Autopilot / runtime 绑定是否与 manifest 一致（`check_workspaces.py`，只读）。
 
 不适用：修改仓内 Skill 内容本身（改 `skills/` 后再走本流程）、Issue 派发与交付流程（在 Multica 内由 Squad 与 Skill 负责）、业务子仓开发。
 
@@ -87,6 +88,7 @@ python .claude/skills/rondo-sync/scripts/sync_workspace.py winning-lfw --repo-ro
 | `--with-workflow` | 恢复 workflow 检查与状态供给；仅在服务端支持 workflow API 时使用 |
 | `--skip-tfs-env` | 跳过默认的 Agent TFS 环境变量补齐步骤 |
 | `--skip-repos` | 跳过默认的 workspace 仓库注册表供给步骤 |
+| `--skip-resource-labels` | 跳过默认的 Project Resource label 对齐步骤 |
 | `--dry-run` | 只预演，不打包/安装、不写平台与仓内 overlay |
 
 执行同步前先完成一次全局前置步骤（面向所有 workspace，失败则整体停止）：
@@ -101,6 +103,7 @@ python .claude/skills/rondo-sync/scripts/sync_workspace.py winning-lfw --repo-ro
 4. **禁用 runtime skills** — 关闭 Agent 从 runtime 继承的本地 Skill，避免与仓内 Skill 重复暴露；覆盖所有绑定 workspace 内 runtime 的 Agent（含同事机器），先预览再落盘。是否执行见下节。
 5. **补齐 Agent TFS 环境变量**（`provision_agent_tfs_env.py`）— 为全部 Agent 补齐 `TFS_URL` / `TFS_COLLECTION` / `TFS_PAT`，只增不改；规则与凭据红线见下节。`--dry-run` 会透传给该步骤；`--skip-tfs-env` 可整体跳过。
 6. **供给 workspace 仓库注册表**（`provision_workspace_repos.py`）— 按 manifest 的 `workspace_repos` 段执行 `multica repo add`，只增不维护；`--dry-run` 会透传；`--skip-repos` 可整体跳过。
+7. **对齐 Project Resource label**（`provision_project_resource_labels.py`）— 按 `docs/config/project-resources.yaml` 的 `label` 设置目标 Project 中匹配仓库的 `github_repo` Resource；全量对齐、写入后回读；`--dry-run` 会透传；`--skip-resource-labels` 可整体跳过。
 
 同步不再设置 `RONDO_WORKSPACE_PATH` 和 `RONDO_WORKSPACE_BRANCH`，也不主动删除 Agent 已有的这两个配置。
 
@@ -134,6 +137,26 @@ python .claude/skills/rondo-sync/scripts/provision_workspace_repos.py [workspace
 - 命令通过 `MULTICA_WORKSPACE_ID` 定向目标 workspace，不改动 CLI 默认工作区。
 - 写入后回读 `multica repo list` 校验 URL 已进入注册表。
 - **`multica repo add` 与 `workspace mcp add` 同为 owner/admin 级操作**：同事 workspace 里 admin 只有 member 角色时会被 403（`You do not have permission...`），处置方式与「MCP 供给权限」节相同（owner 本人执行，或临时提权后立即还原）。
+
+## Project Resource label 供给
+
+主同步流水线的默认步骤（每个 workspace 最后执行）；也可单独按需执行：
+
+```bash
+python .claude/skills/rondo-sync/scripts/provision_project_resource_labels.py winning-lilei
+python .claude/skills/rondo-sync/scripts/provision_project_resource_labels.py winning-lilei --dry-run
+# 默认目标 winning-admin
+```
+
+规则：
+
+- **声明来源**：`docs/config/project-resources.yaml` 的 `repos[]`，`repo_url` → `label`；缺文件、缺字段或同一 URL 对应不同 label 时停止该步骤，不猜测。
+- **Project 定位**：按 workspace slug 解析 `provisioning.json` 的分组 `project.title`（组覆盖顶层默认），在目标 workspace 内按标题精确匹配；项目不存在则停止（先由 provision 创建），不新建项目。
+- **匹配范围**：仅 `resource_type=github_repo` 且 `resource_ref.url` 与 `repo_url` 精确相等（仅忽略首尾空白与尾部 `/`）的 Resource；非仓库类型或 URL 未命中者只 `[INFO]`，不改。
+- **全量对齐**：label 与 YAML 不一致即执行 `multica project resource update <project-id> <resource-id> --label <label>`，包含覆盖已有手写 label；一致则 `[SKIP]`。不新增/删除 Resource，不改 `ref`、`default_branch_hint`、`position`。
+- 写命令不重试；有写入时统一回读 `multica project resource list` 一次校验，未命中记 `[FAIL]` 并使该步骤退出码非零（主流水线按 per-workspace 失败计数）。
+- **`project resource update` 与 `repo add` 同为 owner/admin 级操作**；同事 workspace 权限不足时按「MCP 供给权限」节处理，不要盲目重试。
+- 业务语义知识的唯一维护源仍是 codebase-explorer 的 `references/repository-context.md`，label 只是仓库清单的确定性摘要，不承载额外语义契约。
 
 ## Agent TFS 环境变量供给
 
@@ -209,6 +232,7 @@ python .claude/skills/rondo-sync/scripts/check_workspaces.py winning-lfw    # �
 - **MCP**：`multica workspace mcp list` 与 manifest `mcp_servers`（组 `mcp_servers` 覆盖顶层）名称一致。
 - **仓库注册表**：manifest `workspace_repos` 声明的 URL 均在 `multica repo list` 中；多余项只 `[INFO]`（只增不维护，不视为失败）。
 - **Project**：分组 `project.title` 对应项目存在，且资源命中声明仓库——git URL 精确匹配，或 `local_directory` 的 label / local_path 含仓库名（本地路径资源判 OK，类型不符判 `[WARN]`，无资源判 `[FAIL]`）。
+- **Project Resource label**：命中 `docs/config/project-resources.yaml` URL 的 `github_repo` 资源，label 必须与清单一致；不一致判 `[FAIL]`，未命中清单的资源不要求有 label。
 - **Agent**：manifest `agents[]` 齐全、各 Agent Skill 绑定与 manifest 一致、`custom_env_key_count` ≥ 3（TFS 三键）。
 - **runtime**：绑定失效（runtime 已不在 workspace）判 `[FAIL]`；分散绑定多个 runtime、绑定 runtime 离线判 `[WARN]`。
 - **Skill**：`managed_skills` 均在册；多余（如历史残留的 `workitem-analysis`）只 `[INFO]`。
@@ -229,12 +253,14 @@ python .claude/skills/rondo-sync/scripts/check_workspaces.py winning-lfw    # �
 - manifest 含 `mcp_servers` 时：`multica workspace mcp list <name>` 数量与 manifest 一致；MCP 完整配置只写不可回读，overlay 中的 `mcp_servers` ID 是唯一本地记录。
 - TFS 环境变量步骤输出无 `[FAIL]`：全部 Agent 的 `TFS_URL` / `TFS_COLLECTION` / `TFS_PAT` 三键均已配置（`[SKIP]` 或 `[OK  ]`）。
 - 仓库注册表步骤输出无 `[FAIL]`：manifest `workspace_repos` 声明的 URL 均在 `multica repo list` 中（`[SKIP]` 或 `[OK  ]`）。
+- Project Resource label 步骤输出无 `[FAIL]`：清单声明且已挂载的 `github_repo` 资源 label 与 `project-resources.yaml` 一致。
 
 overlay 文件是仓内唯一记录平台对象 ID 的位置，随同步产生的新 overlay 必须提交。
 
 ## 边界
 
 - 只写目标 workspace 的平台对象与仓内 overlay；不回滚已完成的步骤。
+- 不新增/删除 Project Resource，不改 `ref` / `default_branch_hint`；label 更新按仓库清单全量对齐，不写回 `project-resources.yaml`。
 - 不修改业务子仓代码，不改仓内 Skill 内容，不触发 Agent Run。
 - runtime 必须在目标 workspace 内；跨 workspace 使用别处的 runtime id 会被拒绝。
 - 未显式指定 `--runtime-id` 时不改绑既有 Agent 的 runtime，只在新建 Agent 时使用选中的 runtime。

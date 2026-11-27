@@ -199,7 +199,7 @@ class WorkspaceSyncTests(unittest.TestCase):
             )
             self.assertTrue(allowed, reason)
 
-    def run_pipeline(self, dry_run=False, fail=False, disable_runtime_skills=False):
+    def run_pipeline(self, dry_run=False, fail=False, disable_runtime_skills=False, skip_labels=True):
         before = self.manifest.read_bytes()
         calls = []
 
@@ -220,6 +220,7 @@ class WorkspaceSyncTests(unittest.TestCase):
                 "winning-bi", "ws-bi", "runtime", self.root, ["node", "local-cli"],
                 Path("disable.py"), dry_run, False, 1, disable_runtime_skills, "测试跳过", True,
                 Path("tfs.py"), True, Path("repos.py"), True,
+                Path("labels.py"), skip_labels,
             )
         return code, calls
 
@@ -257,6 +258,15 @@ class WorkspaceSyncTests(unittest.TestCase):
         self.assertEqual(len(calls), 3)
         self.assertEqual(calls[2][1], "disable.py")
         self.assertNotIn("--apply", calls[2])
+
+    def test_resource_label_step_is_last_and_respects_dry_run(self):
+        code, calls = self.run_pipeline(dry_run=True, skip_labels=False)
+        self.assertEqual(code, 0)
+        self.assertEqual(calls[-1], [sys.executable, "labels.py", "winning-bi", "--dry-run"])
+
+        code, calls = self.run_pipeline(skip_labels=False)
+        self.assertEqual(code, 0)
+        self.assertEqual(calls[-1], [sys.executable, "labels.py", "winning-bi"])
 
     def test_provision_failure_stops_sync(self):
         code, calls = self.run_pipeline(fail=True)

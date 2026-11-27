@@ -2,7 +2,7 @@
 # repo_url -> url；default_target_branch -> default_branch_hint；label -> 顶层 label。
 # repo_path 保留用于识别仓库；根仓原文未配置目标分支，保留 null，不推测。
 repos:
-  - repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepowinning-platform-monorepo
+  - repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo
     repo_path: "winning-platform-monorepo"
     default_target_branch: master
     label: "AI Coding 工程根仓：Agent、Skill、OpenSpec、Docs、Graph、Wiki 及共享工具。"

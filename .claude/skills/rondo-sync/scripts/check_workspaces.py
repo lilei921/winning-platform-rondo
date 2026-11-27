@@ -5,10 +5,11 @@
   1. MCP        —— workspace MCP 库与 manifest mcp_servers（组覆盖优先于顶层默认）
   2. 仓库注册表 —— manifest workspace_repos 声明的 URL 均在 multica repo list 中（只增不维护，多余项只提示）
   3. Project    —— 分组 project.title 对应的项目存在，且挂有仓库资源（git URL 或匹配的 local_directory）
-  4. Agent      —— manifest agents 齐全、Skill 绑定一致、runtime 绑定统一且有效（未失效/尽量在线）、TFS 环境变量键数
-  5. Skill      —— managed_skills 均在 workspace Skill 清单中
-  6. Squad      —— Delivery Squad 存在，成员数 = squad.members + leader
-  7. Autopilot  —— manifest autopilots 均在且为 active（无 trigger 属 MG-5 设计，不报警）
+  4. Project Resource label —— 匹配仓库清单 URL 的 github_repo 资源 label 与 YAML 一致（全量对齐）
+  5. Agent      —— manifest agents 齐全、Skill 绑定一致、runtime 绑定统一且有效（未失效/尽量在线）、TFS 环境变量键数
+  6. Skill      —— managed_skills 均在 workspace Skill 清单中
+  7. Squad      —— Delivery Squad 存在，成员数 = squad.members + leader
+  8. Autopilot  —— manifest autopilots 均在且为 active（无 trigger 属 MG-5 设计，不报警）
 
 分级：[OK] 一致 / [INFO] 多余项（只增不维护语义下不回滚）/ [WARN] 可用性风险 / [FAIL] 与 manifest 不一致。
 任一 [FAIL] 该 workspace 计入失败；退出码为失败 workspace 数（>0 即非零）。
@@ -28,6 +29,7 @@ from pathlib import Path
 
 import encoding_bootstrap  # noqa: F401  # 先于任何输出完成 UTF-8 自举
 from cli_retry import run_cli_json
+from provision_project_resource_labels import load_label_map, resource_url
 from workspace_paths import command_env, find_repo_root
 
 MANIFEST_REL = Path("workspace-config") / "provisioning.json"
@@ -139,7 +141,9 @@ def resource_matches_repo(resource: dict, repo_url: str) -> str | None:
     return None
 
 
-def check_workspace(slug: str, ws_id: str, exp: Expectation) -> list[tuple[str, str, str]]:
+def check_workspace(
+    slug: str, ws_id: str, exp: Expectation, label_map: dict[str, str]
+) -> list[tuple[str, str, str]]:
     """逐维度回读校验，返回 (级别, 维度, 明细) 列表。级别：OK/INFO/WARN/FAIL/ERROR。"""
     findings: list[tuple[str, str, str]] = []
 
@@ -203,6 +207,22 @@ def check_workspace(slug: str, ws_id: str, exp: Expectation) -> list[tuple[str, 
                     f"'{exp.project_title}' 有 {len(resources)} 个资源但均未匹配声明仓库（类型={kinds}）")
             else:
                 add("FAIL", "Project", f"'{exp.project_title}' 无任何资源")
+            # label 全量对齐：仅校验清单 URL 命中的 github_repo，不要求未声明资源有 label。
+            matched_labels = []
+            mismatched = []
+            for resource in resources:
+                url = resource_url(resource)
+                if url not in label_map:
+                    continue
+                if (resource.get("label") or "") == label_map[url]:
+                    matched_labels.append(url)
+                else:
+                    mismatched.append(repo_name_from_url(url))
+            if mismatched:
+                add("FAIL", "Project Resource label", f"label 不一致={mismatched}")
+            elif matched_labels:
+                add("OK", "Project Resource label",
+                    f"匹配 {len(matched_labels)} 个仓库资源，label 均与仓库清单一致")
         extra_projects = [p.get("title") for p in projects
                           if p.get("title") != exp.project_title]
         if extra_projects:
@@ -350,6 +370,12 @@ def main() -> int:
 
     root = find_repo_root(repo_root=args.repo_root)
     manifest = json.loads((root / MANIFEST_REL).read_text(encoding="utf-8"))
+    # 清单解析失败属于全局配置错误，不逐 workspace 重复报错。
+    try:
+        label_map = load_label_map(root)
+    except ValueError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
 
     try:
         if args.workspaces:
@@ -373,7 +399,7 @@ def main() -> int:
         exp = Expectation(manifest, slug)
         print(f"\n===== 校验 {slug}（{ws_id[:8]}，分组 {exp.group_label()}）=====")
         try:
-            findings = check_workspace(slug, ws_id, exp)
+            findings = check_workspace(slug, ws_id, exp, label_map)
         except KeyboardInterrupt:
             print("\n校验已中断。", file=sys.stderr)
             return 130

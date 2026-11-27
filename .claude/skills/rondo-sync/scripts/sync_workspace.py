@@ -14,6 +14,8 @@
   4. tfs-env   —— 为 Agent 补齐 TFS_URL / TFS_COLLECTION / TFS_PAT（只增不改）
   5. repos     —— 供给 workspace 级仓库注册表（只增不维护：已存在的 URL 不改动；
                   按 workspace_groups 分组解析，组 workspace_repos 覆盖顶层默认）
+  6. labels    —— 按 docs/config/project-resources.yaml 对齐 Project Resource 的 label
+                  （URL 精确匹配，全量对齐，不增不删 Resource）
 
 用法：
   python sync_workspace.py                      # 发现 admin 的全部 winning-* workspace
@@ -23,6 +25,7 @@
   python sync_workspace.py --with-workflow      # 服务端支持 workflow API 时恢复检查与状态供给
   python sync_workspace.py --skip-tfs-env       # 跳过默认的 TFS 环境变量补齐
   python sync_workspace.py --skip-repos         # 跳过默认的 workspace 仓库注册表供给
+  python sync_workspace.py --skip-resource-labels  # 跳过默认的 Project Resource label 对齐
   python sync_workspace.py --dry-run
 
 前置步骤默认执行：npm pack → npm install -g → 删除全局 rondo.ps1（Windows）。
@@ -313,6 +316,8 @@ def sync_workspace(
     skip_tfs_env: bool,
     repos_script: Path,
     skip_repos: bool,
+    labels_script: Path,
+    skip_resource_labels: bool,
 ) -> int:
     provision = cli + [
         "workspace", "provision",
@@ -367,6 +372,14 @@ def sync_workspace(
         if dry_run:
             repos_command.append("--dry-run")
         steps.append(("供给 workspace 仓库注册表", None, repos_command))
+    if skip_resource_labels:
+        print("[SKIP] 对齐 Project Resource label：按 --skip-resource-labels 跳过", flush=True)
+    else:
+        # 全量对齐 YAML label：URL 精确匹配，不新增/删除 Resource，写入后回读。
+        labels_command = [sys.executable, str(labels_script), name]
+        if dry_run:
+            labels_command.append("--dry-run")
+        steps.append(("对齐 Project Resource label", None, labels_command))
     # 把已通过预检的解释器传给 Rondo，兼容仅有 python3 的环境和虚拟环境。
     env = {**command_env(), "RONDO_WORKSPACE_PYTHON": sys.executable}
     for index, (label, kind, command) in enumerate(steps, start=1):
@@ -432,6 +445,10 @@ def main() -> int:
         "--skip-repos", action="store_true",
         help="跳过默认的 workspace 仓库注册表供给（只增不维护）",
     )
+    parser.add_argument(
+        "--skip-resource-labels", action="store_true",
+        help="跳过默认的 Project Resource label 对齐（按 project-resources.yaml）",
+    )
     parser.add_argument("--dry-run", action="store_true", help="只预演，不写平台与仓内 overlay")
     parser.add_argument("--repo-root", help="本次使用的仓库根目录；省略时从当前目录、脚本目录上溯")
     args = parser.parse_args()
@@ -450,6 +467,10 @@ def main() -> int:
     repos_script = Path(__file__).resolve().parent / "provision_workspace_repos.py"
     if not args.skip_repos and not repos_script.is_file():
         print(f"未找到脚本：{repos_script}", file=sys.stderr)
+        return 1
+    labels_script = Path(__file__).resolve().parent / "provision_project_resource_labels.py"
+    if not args.skip_resource_labels and not labels_script.is_file():
+        print(f"未找到脚本：{labels_script}", file=sys.stderr)
         return 1
 
     try:
@@ -505,6 +526,7 @@ def main() -> int:
             skip_workflow=args.skip_workflow,
             tfs_script=tfs_script, skip_tfs_env=args.skip_tfs_env,
             repos_script=repos_script, skip_repos=args.skip_repos,
+            labels_script=labels_script, skip_resource_labels=args.skip_resource_labels,
         )
         if code:
             failures += 1
