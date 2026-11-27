@@ -347,9 +347,7 @@ async function invoke(argv: string[]): Promise<number> {
 }
 
 export function registerCloseoutRoot(group: Command): void {
-  // Retain root-clone as a compatibility alias; it now runs the same native checkout.
-  for (const name of ["root-prepare", "root-clone"]) {
-    group.command(name)
+  group.command("root-prepare")
       .description("准备 OpenSpec 归档所需的根仓和本地分支")
       .usage("--issue <key>").allowUnknownOption(true).allowExcessArguments(true)
       .action(async (...values: unknown[]) => {
@@ -358,5 +356,4 @@ export function registerCloseoutRoot(group: Command): void {
         const code = await invoke(cmd.args);
         if (code !== 0) throw new ExitSignal(code);
       });
-  }
 }

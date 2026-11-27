@@ -64,7 +64,7 @@ export class Clients {
   }
 
   async tfsQuery(wiql: string, what: string): Promise<TfsWorkItem[]> {
-    const out = await this.tfs.run(["query", "--wiql", wiql], what);
+    const out = await this.tfs.run(["workitem", "query", "--wiql", wiql], what);
     if (!Array.isArray(out)) throw new UnknownError(`${what} 输出不是数组`);
     return out as TfsWorkItem[];
   }

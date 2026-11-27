@@ -106,19 +106,16 @@ const openspec = bareGroup(program.command("openspec").description("OpenSpec Cha
 registerResolveIdentity(openspec);
 registerOpenspecInstallSchema(openspec);
 
-// TFS API 叶子(原 tfs-cli):query 顶级;repo/branch/workitem 各自成组
-registerTfsApiLeaf(program, "query", ["query"], "执行 TFS WIQL 查询", "--wiql <WIQL> [--project <project>]");
 
-// doctor:环境体检(只读),顶层 leaf(方案 §10 裁定 2,先例为上方 query)
+// doctor: 全局环境体检
 registerDoctor(program);
 
 const repo = bareGroup(program.command("repo").description("TFS Git 仓库查询"));
-registerTfsApiLeaf(repo, "get", ["repo", "get"], "查询 TFS Git 仓库信息", "--name <repo> [--project <project>]");
+registerTfsApiLeaf(repo, "get", ["repo", "get"], "查询 TFS Git 仓库信息", "--repo <name|id> [--project <project>]");
+registerTfsApiLeaf(repo, "get-branch", ["repo", "get-branch"], "查询指定 TFS Git 分支及 HEAD", "--repo <name|id> --branch <branch> [--project <project>]");
 
-const branch = bareGroup(program.command("branch").description("TFS Git 分支查询"));
-registerTfsApiLeaf(branch, "get", ["branch", "get"], "查询指定 TFS Git 分支及 HEAD", "--repo <name|id> --name <branch> [--project <project>]");
-
-const workitem = bareGroup(program.command("workitem").description("TFS 工作项操作"));
+const workitem = bareGroup(program.command("workitem").description("TFS 工作项查询与操作"));
+registerTfsApiLeaf(workitem, "query", ["workitem", "query"], "执行 TFS WIQL 查询", "--wiql <WIQL> [--project <project>]");
 registerTfsApiLeaf(workitem, "set-state", ["workitem", "set-state"], "更新 TFS 工作项状态", "--id <id> --state <state> [--complete-with-estimate] [--project <project>]");
 registerTfsApiLeaf(workitem, "comment", ["workitem", "comment"], "写入 TFS 工作项评论", "--id <id> --text-file <path> [--project <project>]");
 registerTfsApiLeaf(workitem, "create", ["workitem", "create"], "创建并关联 TFS 子工作项", "--type <type> --title <title> --parent <id> [--description-file <path>] [--estimate <hours>] [--project <project>]");

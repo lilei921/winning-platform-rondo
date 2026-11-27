@@ -462,7 +462,7 @@ function syncAttachments(
   // 2. 未物化的当前 TFS 附件 → 下载 + 上传
   const pending = current.filter((a) => !map.get(attachmentIdentity(a.url))?.multicaUrl);
   if (pending.length > 0 && !tfsCliPrefix) {
-    throw new UnknownError("存在待物化附件，但无法从 tfs.query_command 推导 tfs-cli 前缀（缺少 query 子命令段）");
+    throw new UnknownError("存在待物化附件，但无法从 tfs.query_command 推导 tfs-cli 前缀（缺少 workitem query 子命令段）");
   }
   const dlDir = join(tmpdir(), `tfs-sync-att-${process.pid}-${issueId}`);
   mkdirSync(dlDir, { recursive: true });
@@ -793,9 +793,9 @@ function main(rawArgs: string[]): number {
   let result: SyncResult;
   try {
     const cfg = loadConfig(args.config);
-    // tfs-cli 前缀推导：query_command 中 "query" 子命令之前的部分（如 ["tfs-cli"] 或 ["node","dist/index.js"]）；
+    // 从 workitem query 前的命令前缀复用同一 CLI 连接配置。
     // 附件下载复用同一 CLI 身份（PAT 配置一致）。推导不出 → null，有待物化附件时 UNKNOWN。
-    const qi = cfg.tfs.query_command.indexOf("query");
+    const qi = cfg.tfs.query_command.findIndex((arg, i, argv) => arg === "workitem" && argv[i + 1] === "query");
     const tfsCliPrefix = qi > 0 ? cfg.tfs.query_command.slice(0, qi) : null;
     result = reconcile(cfg, tfsCliPrefix);
   } catch (exc) {

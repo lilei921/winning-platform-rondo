@@ -15,9 +15,9 @@ export const TFS_API_USAGE = `TFS API 命令用法
   TFS_PROJECT       默认团队项目(可被 --project 覆盖)
 
 命令:
-  rondo query --wiql "<WIQL>" [--project <p>]
-  rondo repo get --name <repo> [--project <p>]
-  rondo branch get --repo <name|id> --name <branch> [--project <p>]
+  rondo workitem query --wiql "<WIQL>" [--project <p>]
+  rondo repo get --repo <name|id> [--project <p>]
+  rondo repo get-branch --repo <name|id> --branch <branch> [--project <p>]
   rondo pr create --repo <name|id> --source <branch> --target <branch> --title <t>
             [--description-file <f>] [--work-items <id,id>] [--project <p>]
   rondo pr get --repo <name|id> --id <n> [--project <p>]
