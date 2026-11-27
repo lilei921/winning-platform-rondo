@@ -7,9 +7,8 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
+const CLI = fileURLToPath(new URL("./mock-sync-entry.mjs", import.meta.url));
 const MOCK_MULTICA = fileURLToPath(new URL("./mock-multica.cjs", import.meta.url));
-const MOCK_TFS = fileURLToPath(new URL("./mock-tfs.cjs", import.meta.url));
 const GUID = "015244e4-6152-40db-a6b9-e2e7794ac865";
 const source = `http://tfs.local/tfs/c/wrong-project/_apis/wit/attachments?FileNameGUID=${GUID}&FileName=shot.png`;
 const canonical = `http://tfs.local/tfs/c/_apis/wit/attachments/${GUID}?fileName=shot.png`;
@@ -23,14 +22,9 @@ function fixture(t, items) {
   const dir = mkdtempSync(join(tmpdir(), "rondo-attachment-recovery-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const query = join(dir, "query.json"), state = join(dir, "state.json"), calls = join(dir, "calls.jsonl");
-  const config = join(dir, "config.json");
   writeFileSync(query, JSON.stringify(items));
   writeFileSync(state, JSON.stringify({ agents_list: [{ id: "wayfinder", name: "Wayfinder Agent" }] }));
   chmodSync(MOCK_MULTICA, 0o755);
-  writeFileSync(config, JSON.stringify({
-    tfs: { query_command: [process.execPath, MOCK_TFS, "workitem", "query"] },
-    multica: { cli: MOCK_MULTICA, workspace_id: "ws-test", project: "proj-1", intake_agent: "Wayfinder Agent" }, sync: {},
-  }));
   return {
     dir,
     setItems(value) { writeFileSync(query, JSON.stringify(value)); },
@@ -38,8 +32,8 @@ function fixture(t, items) {
     setState(value) { writeFileSync(state, JSON.stringify(value)); },
     run(env = {}) {
       writeFileSync(calls, "");
-      const r = spawnSync(process.execPath, [CLI, "workitem", "sync", "--config", config], {
-        encoding: "utf8", env: { ...process.env, MOCK_STATE: state, MOCK_TFS_QUERY_FILE: query, MOCK_SYNC_CALLS_FILE: calls, ...env },
+      const r = spawnSync(process.execPath, [CLI, "workitem", "sync", "--wiql", "SELECT [System.Id] FROM workitems"], {
+        encoding: "utf8", env: { ...process.env, MULTICA_WORKSPACE_ID: "ws-test", MULTICA_SERVER_URL: "https://mock-multica", MULTICA_CLI_PATH: MOCK_MULTICA, RONDO_PROJECT_TITLE: "Sync Project", MOCK_STATE: state, MOCK_TFS_QUERY_FILE: query, MOCK_SYNC_CALLS_FILE: calls, ...env },
       });
       assert.equal(r.error, undefined);
       let result;

@@ -109,6 +109,8 @@ if (a[0] === "issue" && a[1] === "get") {
     ...(it.assignee_id !== undefined ? { assignee_id: it.assignee_id } : {}),
     ...(it.assignee_type !== undefined ? { assignee_type: it.assignee_type } : {}),
   }));
+} else if (a[0] === "project" && a[1] === "list") {
+  process.stdout.write(JSON.stringify(st.projects ?? [{ id: "proj-1", title: "Sync Project" }]));
 } else if (a[0] === "project" && a[1] === "resource") {
   injectReadFail();
   process.stdout.write(JSON.stringify(st.project_resources ?? [

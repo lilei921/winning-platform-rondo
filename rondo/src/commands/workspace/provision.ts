@@ -591,6 +591,33 @@ function main(rawArgs: string[]): number {
     }
     for (const rp of remoteProjects) if (rp.title !== manifest.project.title) unmanaged.push(`project/${rp.title}`);
 
+    // TFS Sync 的目标 Project Title 由当前分组 manifest 管理；其他 Custom Env 保持原值。
+    const syncAgentId = agentIds["TFS Sync Agent"];
+    if (syncAgentId) {
+      const envArgs = [...MC, "agent", "env"];
+      const readEnv = () => {
+        const out = runJson([...envArgs, "get", syncAgentId, ...WS, "--output", "json"], "读取 TFS Sync Agent 环境", undefined, { transient: true }) as { custom_env?: Record<string, string> };
+        const env = out.custom_env ?? {};
+        if (typeof env !== "object" || Array.isArray(env)) throw new UnknownError("TFS Sync Agent custom_env 不可识别");
+        return env;
+      };
+      const current = readEnv();
+      const title = manifest.project.title;
+      const label = "agent/TFS Sync Agent (RONDO_PROJECT_TITLE)";
+      if (current.RONDO_PROJECT_TITLE === title) unchanged.push(label);
+      else {
+        if (!dryRun) {
+          // Multica 的 **** 保留标记避免将其他（可能已脱敏的）环境变量覆盖。
+          const desired = Object.fromEntries(Object.keys(current).map(key => [key, "****"]));
+          desired.RONDO_PROJECT_TITLE = title;
+          const cp = runJsonStdin([...envArgs, "set", syncAgentId, ...WS, "--custom-env-stdin", "--output", "json"], "设置 TFS Sync Agent Project Title", JSON.stringify(desired));
+          void cp;
+          if (readEnv().RONDO_PROJECT_TITLE !== title) throw new UnknownError("RONDO_PROJECT_TITLE 回读不一致");
+        }
+        updated.push(label);
+      }
+    }
+
     // --- 6. Autopilot reconcile（run_only；trigger 一律不加——MG-5 安全纪律） ---
     const apListOut = runJson([...MC, "autopilot", "list", ...WS, "--output", "json"], "autopilot list", undefined, { transient: true }) as any;
     const remoteAps = (Array.isArray(apListOut) ? apListOut : apListOut.autopilots ?? []) as Array<Record<string, any>>;

@@ -25,10 +25,15 @@ function fixture(t, scenario = "normal", extraEnv = {}) {
     { dir: "engineer", name: "Engineer", skills: [preparation] },
     { dir: "delivery-lead", name: "Delivery Lead", skills: [] },
   );
+  if (scenario === "sync-project") {
+    agents.push({ dir: "tfs-sync-agent", name: "TFS Sync Agent", skills: [] });
+    write("agents/tfs-sync-agent/instructions.md", "instructions");
+    write("agents/tfs-sync-agent/description.md", "description");
+  }
   write(shared + "provisioning.json", {
     managed_skills: ["spec-preparation", ...(branchScenario ? [preparation] : [])], agents,
     squad: { name: "Delivery", leader: "Workitem Analyst", members: [] }, project: { title: "Project", workspace_branch: branchScenario ? "release" : undefined, description: ["project-create", "project-description"].includes(scenario) ? "项目描述" : undefined }, autopilots: [],
-    workspace_groups: { bi: { workspaces: ["pilot"], project: scenario === "group" ? { title: "BI Project" } : {} } },
+    workspace_groups: { bi: { workspaces: ["pilot"], project: ["group", "sync-project"].includes(scenario) ? { title: "BI Project" } : {} } },
     workflow: { statuses: [{ key: "analysis_review", name: "Analysis Review", category: "started" }] },
   });
   write("skills/spec-preparation/SKILL.md", "---\nname: spec-preparation\ndescription: fixture\n---\n");
@@ -95,6 +100,7 @@ else if(key==='skill files') {
 else if(key==='agent list') {
   const preparation=['branch','group','native-branch'].includes(process.env.MC_SCENARIO)?[{name:'native-workspace'}]:[];
   out=[{id:'agent-1',name:'Workitem Analyst',instructions:'instructions',description:'description',visibility:'workspace',skills:[{name:'spec-preparation'},...preparation]}];
+  if(process.env.MC_SCENARIO==='sync-project') out.push({...out[0],id:'sync-agent',name:'TFS Sync Agent',skills:[]});
   if(fs.existsSync(process.env.MC_TRACE+'.agent-2')) out.push({...out[0],id:'agent-2',name:'Engineer',skills:preparation});
   if(['branch','native-branch'].includes(process.env.MC_SCENARIO)) out.push({...out[0],id:'agent-3',name:'Delivery Lead',skills:[]});
 }
@@ -117,7 +123,7 @@ else if(key==='agent env') {
 }
 else if(key==='squad list') out=[{id:'squad-1',name:'Delivery',leader_id:'agent-1',instructions:'instructions'}];
 else if(key==='squad member') out=[];
-else if(key==='project list') out=process.env.MC_SCENARIO==='project-create'?[]:[{id:'project-1',title:process.env.MC_SCENARIO==='group'?'BI Project':'Project',description:process.env.MC_SCENARIO==='project-description'?'旧描述':'项目描述'}];
+else if(key==='project list') out=process.env.MC_SCENARIO==='project-create'?[]:[{id:'project-1',title:['group','sync-project'].includes(process.env.MC_SCENARIO)?'BI Project':'Project',description:process.env.MC_SCENARIO==='project-description'?'旧描述':'项目描述'}];
 else if(key==='project create') out={id:'project-1'};
 else if(key==='project update') out={id:'project-1'};
 else if(key==='autopilot list') out=[];
@@ -459,4 +465,18 @@ test("Native Workspace provision does not read or inject the historical root bra
   const result = f.run("workspace", "provision", "--workspace", "pilot", "--skip-workflow");
   assert.equal(result.code, 0, result.stderr);
   assert.ok(!f.calls().some(args => args.includes("env") || args.some(arg => arg.includes("RONDO_WORKSPACE_BRANCH"))));
+});
+
+test("TFS Sync Agent 同步分组 Project Title，保留其他环境变量并幂等", t => {
+  const f = fixture(t, "sync-project");
+  const args = ["workspace", "provision", "--workspace", "pilot", "--skip-workflow"];
+  assert.equal(f.run(...args, "--dry-run").code, 0);
+  assert.ok(!f.calls().some(a => a.includes("env") && a.includes("set")));
+  const first = f.run(...args);
+  assert.equal(first.code, 0, first.stderr);
+  const env = JSON.parse(readFileSync(f.trace + ".sync-agent", "utf8"));
+  assert.equal(env.RONDO_PROJECT_TITLE, "BI Project");
+  assert.equal(env.OTHER, "fixture-private-value");
+  assert.equal(f.run(...args).code, 0);
+  assert.equal(f.calls().filter(a => a.includes("env") && a.includes("set")).length, 1);
 });
