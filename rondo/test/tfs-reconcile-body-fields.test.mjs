@@ -1,4 +1,4 @@
-// tfs reconcile-workitem 正文投影测试：按工作项类型选主内容字段（Bug → ReproSteps/Symptom），
+// workitem sync 正文投影测试：按工作项类型选主内容字段（Bug → ReproSteps/Symptom），
 // 主字段之外已知内容字段非空追加；乱码统计覆盖全部渲染字段；正文内嵌 TFS attachment 图片
 // 并入附件物化管线（与 AttachedFile 按 URL 去重），外链图片只留占位。
 import test from "node:test";
@@ -47,7 +47,7 @@ function runCreate(t, workItems) {
     sync: {},
   }));
 
-  const r = spawnSync(process.execPath, [CLI, "tfs", "reconcile-workitem", "--config", config], {
+  const r = spawnSync(process.execPath, [CLI, "workitem", "sync", "--config", config], {
     encoding: "utf8",
     env: { ...process.env, MOCK_STATE: statePath, MOCK_TFS_QUERY_FILE: queryFile },
   });
@@ -79,7 +79,7 @@ test("无附件 Issue 创建时保留真实 Markdown 换行；旧版转义正文
   writeFileSync(statePath, JSON.stringify(state));
 
   const syncAgain = () => {
-    const r = spawnSync(process.execPath, [CLI, "tfs", "reconcile-workitem", "--config", config], {
+    const r = spawnSync(process.execPath, [CLI, "workitem", "sync", "--config", config], {
       encoding: "utf8",
       env: { ...process.env, MOCK_STATE: statePath, MOCK_TFS_QUERY_FILE: queryFile },
     });

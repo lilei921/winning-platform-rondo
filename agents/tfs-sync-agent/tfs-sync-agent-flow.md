@@ -8,7 +8,7 @@
 flowchart TD
     A([Autopilot / 人工触发])
     B["Agent 加载 tfs-sync Skill 与配置"]
-    C["rondo tfs reconcile-workitem --config"]
+    C["rondo workitem sync --config"]
     D{"同步配置有效？"}
     E["内部调用 rondo workitem query --wiql"]
     E2["WIQL：需求 / Bug、@me、排除已验证和已关闭"]
@@ -71,7 +71,7 @@ flowchart TD
 ### 1. 同步主命令（Agent 调用）
 
 ```bash
-rondo tfs reconcile-workitem --config "<config-path>"
+rondo workitem sync --config "<config-path>"
 ```
 
 `<config-path>` 是绝对路径，默认指向 [Skill 同步配置](../../skills/tfs-sync/config/sync-config.json)。主命令校验配置、查询 TFS、按 `tfs.id` 对账 Multica Issue，并输出 `created / updated / skipped / failed`。

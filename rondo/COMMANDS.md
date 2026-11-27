@@ -33,14 +33,13 @@ rondo doctor --help
 | --- | --- | --- |
 | `analysis` | `validate`、`publish`、`read`、`approve` | 分析事实、Gate、审核提交、工件读取和批准登记 |
 | `dev` | `git`、`publish` | 研发 Git 与发布 |
-| `tfs` | `writeback`、`reconcile-workitem` | TFS 工作项同步与交付回写 |
 | `pr` | `prepare`、`materialize`、`resume`、`reconcile-status`、`create`、`get`、`list` | PR 准备、创建、查询及状态对账 |
 | `delivery` | `admission`、`finalize`、`root-prepare` | 准入交接与交付收口 |
 | `workspace` | `provision`、`sync`、`check-daemon` | Workspace 资源供给、同步及检查 |
 | `runtime` | `get-context`、`check-checkout` | 当前 Run 上下文查询及 Checkout 就绪检查 |
 | `openspec` | `resolve-identity`、`install-schema` | OpenSpec Change 身份解析与 Schema 安装 |
 | `repo` | `get`、`get-branch` | 查询 TFS Git 仓库和分支 |
-| `workitem` | `query`、`set-state`、`comment`、`create`、`link-commits`、`download-attachment` | TFS Work Item 操作 |
+| `workitem` | `sync`、`writeback`、`query`、`set-state`、`comment`、`create`、`link-commits`、`download-attachment` | TFS 工作项同步、回写、查询与操作 |
 | 顶级 | `doctor` | 环境体检 |
 
 ## 3. OpenSpec 与 Analysis
@@ -150,25 +149,25 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 
 ## 6. TFS 工作项与仓库
 
-### 6.1 `rondo tfs`
+### 6.1 `rondo workitem`：同步与交付回写
 
 ```bash
-rondo tfs reconcile-workitem --config <sync-config.json>
-rondo tfs writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-plan <plan.json>]
+rondo workitem sync --config <sync-config.json>
+rondo workitem writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-plan <plan.json>]
 ```
 
 | 命令 | 功能 |
 | --- | --- |
-| `tfs reconcile-workitem` | 依据同步配置查询 TFS Work Item，并创建或更新对应 Multica Issue 及其来源内容 |
-| `tfs writeback` | 按交付事实回写 TFS 工作项、任务状态、工时及关联信息 |
+| `workitem sync` | 依据同步配置查询 TFS Work Item，并创建或更新对应 Multica Issue 及其来源内容 |
+| `workitem writeback` | 按交付事实回写 TFS 工作项、任务状态、工时及关联信息 |
 
 交付收口的常用调用顺序：
 
 ```bash
 rondo delivery root-prepare --issue <KEY>
 rondo delivery finalize --phase prepare --issue <KEY> --root-repo <path>
-rondo tfs writeback --issue <KEY> --root-repo <path> --inspect
-rondo tfs writeback --issue <KEY> --root-repo <path> --task-plan <plan.json>
+rondo workitem writeback --issue <KEY> --root-repo <path> --inspect
+rondo workitem writeback --issue <KEY> --root-repo <path> --task-plan <plan.json>
 rondo delivery finalize --phase complete --issue <KEY> --root-repo <path>
 ```
 
@@ -186,7 +185,7 @@ rondo repo get-branch --repo <name|id> --branch <branch> [--project <project>]
 | `repo get` | 按仓库名称或 ID 读取 TFS Git 仓库信息 |
 | `repo get-branch` | 查询指定 TFS Git 分支及其 HEAD |
 
-### 6.3 `rondo workitem`
+### 6.3 `rondo workitem`：基础查询与操作
 
 ```bash
 rondo workitem query --wiql "<WIQL>" [--project <project>]

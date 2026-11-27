@@ -416,7 +416,7 @@ async function main(rawArgs: string[]): Promise<number> {
   const args = parseArgs(rawArgs);
   if (typeof args.issue !== "string" || !args.issue ||
       rawArgs.some(arg => arg === "--config" || arg.startsWith("--config="))) {
-    process.stderr.write("用法: rondo tfs writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-plan <plan.json>]\n");
+    process.stderr.write("用法: rondo workitem writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-plan <plan.json>]\n");
     return 64;
   }
   try {

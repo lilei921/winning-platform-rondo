@@ -65,10 +65,6 @@ registerDevGit(dev);
 registerDevPublish(dev);
 
 
-const tfs = bareGroup(program.command("tfs").description("TFS 工作项同步与交付回写"));
-registerTfsWriteback(tfs);
-registerTfsReconcileWorkitem(tfs);
-
 // PR 交付与 TFS PR 操作
 const pr = bareGroup(program.command("pr").description("PR 准备、创建、查询、恢复与状态核实"));
 registerPrMaterialize(pr);
@@ -108,7 +104,9 @@ const repo = bareGroup(program.command("repo").description("TFS Git 仓库查询
 registerTfsApiLeaf(repo, "get", ["repo", "get"], "查询 TFS Git 仓库信息", "--repo <name|id> [--project <project>]");
 registerTfsApiLeaf(repo, "get-branch", ["repo", "get-branch"], "查询指定 TFS Git 分支及 HEAD", "--repo <name|id> --branch <branch> [--project <project>]");
 
-const workitem = bareGroup(program.command("workitem").description("TFS 工作项查询与操作"));
+const workitem = bareGroup(program.command("workitem").description("TFS 工作项同步、回写、查询与操作"));
+registerTfsReconcileWorkitem(workitem);
+registerTfsWriteback(workitem);
 registerTfsApiLeaf(workitem, "query", ["workitem", "query"], "执行 TFS WIQL 查询", "--wiql <WIQL> [--project <project>]");
 registerTfsApiLeaf(workitem, "set-state", ["workitem", "set-state"], "更新 TFS 工作项状态", "--id <id> --state <state> [--complete-with-estimate] [--project <project>]");
 registerTfsApiLeaf(workitem, "comment", ["workitem", "comment"], "写入 TFS 工作项评论", "--id <id> --text-file <path> [--project <project>]");

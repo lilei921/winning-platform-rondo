@@ -427,7 +427,7 @@ process.exit(result.status??1);`);
   const writeback = (extraArgs = []) => {
     const planned = readState().issues["WNDF-T"].metadata["delivery.tfs_task_plan"];
     const planArgs = opts.requirement && !planned && !extraArgs.includes("--inspect") ? ["--task-plan",planFile] : [];
-    return runCli(["tfs","writeback","--issue","WNDF-T",...rootArgs,...planArgs,...extraArgs]);
+    return runCli(["workitem", "writeback","--issue","WNDF-T",...rootArgs,...planArgs,...extraArgs]);
   };
 
   const run = async (extraArgs = []) => {

@@ -1687,7 +1687,7 @@ same-run 使用 `issue-closeout` 按 Prepare → TFS Writeback → Complete 收�
 ```text
 rondo delivery finalize --phase prepare
   → PR Transition / Delivery Gate → Workspace Reconciliation → OpenSpec Archive + Git Push
-rondo tfs writeback
+rondo workitem writeback
   → TFS 管理子任务、合法工时、Commit 关联、状态链与回读（完整 PASS 才可继续）
 rondo delivery finalize --phase complete
   → 确认 TFS 写回事实 → Final Summary → Issue done → 清 pending
@@ -1903,7 +1903,7 @@ UNKNOWN
 
 ## 12.4 Final Completion（最终完成）
 
-**D3-B 现行实施契约（2026-11-10）**：Engineering Completion 与 TFS Work Item 管理分属不同责任域；`Workitem Analyst`/OpenSpec 不承担 TFS 工时，`PR Status Sync Agent` 作为外部终态与收口触发入口，不替代工程专业判断。现行实现已将 `rondo delivery finalize` 的 TFS 业务调用拆成外部 `rondo tfs writeback` 能力，`issue-closeout` 在同一 PR Status Sync Run 核实 Archive/Writeback，再设置 Issue `done`。**TFS Writeback 不完整、失败或 UNKNOWN 时不允许 `done`；保留 `finalize.pending` 并有界恢复，不重复工程/PR/归档。**详细分步及兼容验收以 [D3-B 专项方案](../plans/d3b-external-tfs-management-decoupling-plan-2026-11-10.md) 为准。本节以下对收口顺序的描述，以本段独立 Writeback 和最终 `done` 硬依赖为准；运行环境仍需真实 Workspace E2E 验收。
+**D3-B 现行实施契约（2026-11-10）**：Engineering Completion 与 TFS Work Item 管理分属不同责任域；`Workitem Analyst`/OpenSpec 不承担 TFS 工时，`PR Status Sync Agent` 作为外部终态与收口触发入口，不替代工程专业判断。现行实现已将 `rondo delivery finalize` 的 TFS 业务调用拆成外部 `rondo workitem writeback` 能力，`issue-closeout` 在同一 PR Status Sync Run 核实 Archive/Writeback，再设置 Issue `done`。**TFS Writeback 不完整、失败或 UNKNOWN 时不允许 `done`；保留 `finalize.pending` 并有界恢复，不重复工程/PR/归档。**详细分步及兼容验收以 [D3-B 专项方案](../plans/d3b-external-tfs-management-decoupling-plan-2026-11-10.md) 为准。本节以下对收口顺序的描述，以本段独立 Writeback 和最终 `done` 硬依赖为准；运行环境仍需真实 Workspace E2E 验收。
 
 Delivery Completion Gate PASS 后，`issue-closeout` 按当前事实完成：
 

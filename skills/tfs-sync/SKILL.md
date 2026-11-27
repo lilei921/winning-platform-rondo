@@ -10,7 +10,7 @@ description: 按配置将 TFS Work Item 同步至 Multica Issue；适用于定�
 使用调用方指定的配置，默认使用本 Skill 的 `config/sync-config.json`。将配置路径解析为绝对路径后执行：
 
 ```bash
-rondo tfs reconcile-workitem --config "<config-path>"
+rondo workitem sync --config "<config-path>"
 ```
 
 ## 结果处理

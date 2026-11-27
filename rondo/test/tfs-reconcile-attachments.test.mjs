@@ -38,7 +38,7 @@ function fixture(t, items) {
     setState(value) { writeFileSync(state, JSON.stringify(value)); },
     run(env = {}) {
       writeFileSync(calls, "");
-      const r = spawnSync(process.execPath, [CLI, "tfs", "reconcile-workitem", "--config", config], {
+      const r = spawnSync(process.execPath, [CLI, "workitem", "sync", "--config", config], {
         encoding: "utf8", env: { ...process.env, MOCK_STATE: state, MOCK_TFS_QUERY_FILE: query, MOCK_SYNC_CALLS_FILE: calls, ...env },
       });
       assert.equal(r.error, undefined);

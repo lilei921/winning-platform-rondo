@@ -20,14 +20,13 @@ function runCli(args, env = {}) {
 const TREE = {
   analysis: ["validate", "publish", "read", "approve"],
   dev: ["git", "publish"],
-  tfs: ["writeback", "reconcile-workitem"],
   pr: ["prepare", "materialize", "resume", "reconcile-status", "create", "get", "list"],
   delivery: [ "finalize", "root-prepare", "admission"],
   workspace: ["provision", "sync", "check-daemon"],
   runtime: ["get-context","check-checkout"],
   openspec: ["resolve-identity", "install-schema"],
   repo: ["get", "get-branch"],
-  workitem: ["query", "set-state", "comment", "create", "link-commits", "download-attachment"],
+  workitem: ["sync", "writeback", "query", "set-state", "comment", "create", "link-commits", "download-attachment"],
 };
 
 test("全部命令组:bare 调用 exit 64,stderr 帮助列出全部叶子", () => {
@@ -92,7 +91,7 @@ test("PR Preparation 命名统一，Closeout 拒绝旧配置参数", () => {
     assert.doesNotMatch(help.stderr, /\bpr-prepare\b/);
     assert.doesNotMatch(help.stderr, /(?:^|\s)(?:pr-prep|prepare-pr)(?=\s|$)/m);
   }
-  for (const args of [["dev", "pr-prepare"], ["bug", "pr-prepare"], ["bug", "git"], ["dev", "pr-prep"], ["bug", "prepare-pr"], ["pr","materialize","--issue","X","--config","unused"], ["delivery", "finalize", "--phase", "prepare", "--issue", "X", "--config", "unused"], ["tfs", "writeback", "--issue", "X", "--config", "unused"]]) {
+  for (const args of [["dev", "pr-prepare"], ["bug", "pr-prepare"], ["bug", "git"], ["dev", "pr-prep"], ["bug", "prepare-pr"], ["pr","materialize","--issue","X","--config","unused"], ["delivery", "finalize", "--phase", "prepare", "--issue", "X", "--config", "unused"], ["workitem", "writeback", "--issue", "X", "--config", "unused"]]) {
     assert.notEqual(runCli(args).status, 0, args.join(" "));
   }
 });
@@ -197,7 +196,7 @@ test("Help 不执行带有效业务参数的写操作", () => {
     const r = runCli(["openspec", "install-schema", "--help"], { XDG_DATA_HOME: dir });
     assert.equal(r.status, 0);
     assert.equal(existsSync(join(dir, "openspec")), false);
-    const w = runCli(["tfs", "writeback", "--issue", "TEST-1", "--help"], { MULTICA_WORKSPACE_ID: "", MULTICA_SERVER_URL: "" });
+    const w = runCli(["workitem", "writeback", "--issue", "TEST-1", "--help"], { MULTICA_WORKSPACE_ID: "", MULTICA_SERVER_URL: "" });
     assert.equal(w.status, 0, w.stderr);
     assert.match(w.stdout, /usage/i);
   } finally {
@@ -219,7 +218,7 @@ test("OpenSpec 仅保留统一命令组，不注册旧入口", () => {
 });
 
 test("退役入口不再公开", () => {
-  for (const args of [["branch","get"],["query"],["delivery","root-clone"],["runtime","prepare-root"],["runtime","resolve-root-repo"],["pr","worktree"]]) {
+  for (const args of [["branch","get"],["query"],["delivery","root-clone"],["runtime","prepare-root"],["runtime","resolve-root-repo"],["pr","worktree"],["tfs"],["tfs","reconcile-workitem"],["tfs","writeback"],["workitem","reconcile-workitem"]]) {
     assert.equal(runCli(args).status,64,args.join(" "));
   }
   const missing = runCli(["repo","get-branch","--repo","example"]);

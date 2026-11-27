@@ -14,7 +14,7 @@
 - **估计范围**：每个 TFS 子任务 `OriginalEstimate` 为 **0.5–4h**，由 Agent 根据执行情况和复杂度判断。
 - **Commit KPI Hard Constraint**：**一个真实业务 Commit 最多关联一个 TFS Task；每个 TFS Task 至少关联一个不同的真实业务 Commit。** 一个 TFS Task 可以关联多个 Commit；由 Rondo CLI 验证、关联并回读，任何违规或结果不可信均阻断收口。
 - **独立边界**：不要求 Workitem Analyst、Engineer、Bug Fix Agent 或 Delivery Lead 管理 TFS 子任务、估时或为 TFS 调整工程任务粒度。
-- **最小修改**：复用现有 PR Status Sync Agent、`issue-closeout`、Rondo `tfs writeback`、TFS API 和原有 Finalize Gate；不新增 Agent、Skill、Dispatch、外部数据库或状态机。
+- **最小修改**：复用现有 PR Status Sync Agent、`issue-closeout`、Rondo `workitem writeback`、TFS API 和原有 Finalize Gate；不新增 Agent、Skill、Dispatch、外部数据库或状态机。
 
 上位原则与关联设计：
 - [01 — Unified Design Guideline](01-multica-openspec-design-guideline.md)：Specialist Focus、KISS、One Rule One Owner、Native First、Deterministic First / Semantic Fallback、Reference-not-Replication。
@@ -62,7 +62,7 @@ PR Status Sync Agent
                ├─ Bug → 跳过任务规划
                ├─ 需求 → 读取 tasks.md，规划或复用已保存计划
                └─ 缺失/不支持 → 停止
-            3. rondo tfs writeback
+            3. rondo workitem writeback
                ├─ 需求：可用 Commit 与独占核验 → 计划校验/复用 → 子任务创建
                │        → 按计划单归属关联 Commit/回读 → 子任务解决/工时回写 → 父需求回写
                └─ Bug：原有父 Bug 回写
@@ -160,15 +160,15 @@ Agent 提供单个 JSON 文件；Rondo 读取 Issue 的 `tfs.id`、`tfs.type`、
 rondo delivery finalize --phase prepare --issue <KEY> --root-repo "<root_repo>"
 
 # 只读返回当前 Change 经核验的 PR Commit
-rondo tfs writeback --issue <KEY> --inspect --root-repo "<root_repo>"
+rondo workitem writeback --issue <KEY> --inspect --root-repo "<root_repo>"
 
 # Agent 提供 Commit 单归属任务计划；恢复可复用已登记计划
-rondo tfs writeback --issue <KEY> --task-plan "<task-plan.json>" --root-repo "<root_repo>"
+rondo workitem writeback --issue <KEY> --task-plan "<task-plan.json>" --root-repo "<root_repo>"
 
 rondo delivery finalize --phase complete --issue <KEY> --root-repo "<root_repo>"
 ```
 
-- 扩展既有 `rondo tfs writeback`，不新增独立的估算/分配 CLI。新增同命令只读 `--inspect` 返回已核验的业务 Commit（`repo_key + sha`）及可用性；Agent 生成每个 Task 的 `commits` 分配，Rondo 严格核验，不把同一个 Commit 复制给多个 Task。
+- 扩展既有 `rondo workitem writeback`，不新增独立的估算/分配 CLI。新增同命令只读 `--inspect` 返回已核验的业务 Commit（`repo_key + sha`）及可用性；Agent 生成每个 Task 的 `commits` 分配，Rondo 严格核验，不把同一个 Commit 复制给多个 Task。
 - 新 Requirement 第一次写入必须有有效任务计划；**禁止**在缺少计划时回退到当前 `ensureDeliveryTasks()` 的默认单任务逻辑。
 - 已确认计划的恢复执行可以不传 `--task-plan`；传入不同计划时拒绝自动覆盖。
 - Bug 继续使用原命令、不传任务计划、不创建子任务。
@@ -260,7 +260,7 @@ TFS 子任务标题：住院病案质量指标优化 - 实现接口与权限控�
 实施约束：
 
 - 复用 `tools/rondo/src/tfs/api/workitem.ts` 已有工时与 `workitem link-commits` 能力；按**项目 GUID + 仓库 GUID + 完整 SHA**比对 Commit，修复当前只按 SHA 判重导致的错仓复用风险。链接前需检查其他 TFS Task 占用；链接后再次验证目标和全局独占关系。
-- 扩展 `tools/rondo/src/tfs/api/query.ts` 现有 `$expand=all` 输出中的 Commit `ArtifactLink` 只读投影，供 `tfs writeback` 与 `verifyTfsWriteback` 校验准确链接；不另建 Commit Link 状态表或新独立 CLI。
+- 扩展 `tools/rondo/src/tfs/api/query.ts` 现有 `$expand=all` 输出中的 Commit `ArtifactLink` 只读投影，供 `workitem writeback` 与 `verifyTfsWriteback` 校验准确链接；不另建 Commit Link 状态表或新独立 CLI。
 - Rondo 的 `delivery/finalize.ts` 保持 Prepare/Complete 边界；增强现有 `verifyTfsWriteback` 的新任务、工时、Commit Link 和 Task 间独占核验。
 - `provisioning.json` 已给 PR Status Sync Agent 绑定 `pr-status-sync` 与 `issue-closeout`，不新增绑定或受管 Skill。
 - **不改** Workitem Analyst、Engineer、Bug Fix Agent、Delivery Squad、OpenSpec Schema/Template、`spec-preparation` 对 `tasks.md` 的写作契约。

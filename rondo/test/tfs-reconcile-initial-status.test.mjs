@@ -36,7 +36,7 @@ function fixture(t, initialStatus) {
     state() { return JSON.parse(readFileSync(statePath, "utf8")); },
     run() {
       writeFileSync(callsFile, "");
-      const r = spawnSync(process.execPath, [CLI, "tfs", "reconcile-workitem", "--config", config], {
+      const r = spawnSync(process.execPath, [CLI, "workitem", "sync", "--config", config], {
         encoding: "utf8",
         env: { ...process.env, MOCK_STATE: statePath, MOCK_TFS_QUERY_FILE: queryFile, MOCK_SYNC_CALLS_FILE: callsFile },
       });

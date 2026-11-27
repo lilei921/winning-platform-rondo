@@ -782,7 +782,7 @@ function reconcile(cfg: SyncConfig, tfsCliPrefix: string[] | null): SyncResult {
 function parseArgs(argv: string[]): { config: string } {
   const i = argv.indexOf("--config");
   if (i === -1 || i + 1 >= argv.length) {
-    process.stderr.write("用法: rondo tfs reconcile-workitem --config <sync-config.json 路径>\n");
+    process.stderr.write("用法: rondo workitem sync --config <sync-config.json 路径>\n");
     process.exit(64);
   }
   return { config: argv[i + 1] };
@@ -812,10 +812,10 @@ function main(rawArgs: string[]): number {
   return result.failed.length === 0 ? 0 : 2;
 }
 
-/** commander 注册：group=tfs；参数解析沿用原脚本实现以保证契约逐字节等价。 */
+/** 注册工作项同步命令。 */
 export function registerTfsReconcileWorkitem(group: Command): void {
   group
-    .command("reconcile-workitem")
+    .command("sync")
     .description("将 TFS 工作项同步为 Multica Issue")
     .usage("--config <sync-config.json>")
     .allowUnknownOption(true)
