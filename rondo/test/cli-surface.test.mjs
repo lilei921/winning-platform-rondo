@@ -129,7 +129,7 @@ test("doctor 默认文本，统一 JSON 输出兼容原 --format json，冲突�
 });
 
 test("阶段命令组已退役，操作归入对应对象命令组", () => {
-  for (const args of [["analysis"], ["analysis", "validate"], ["analysis", "publish"], ["analysis", "read"], ["analysis", "approve"], ["delivery", "handoff"]]) assert.equal(runCli(args).status, 64, args.join(" "));
+  for (const args of [["analysis"], ["analysis", "validate"], ["analysis", "publish"], ["analysis", "read"], ["analysis", "approve"], ["workspace", "check-daemon"], ["delivery", "handoff"]]) assert.equal(runCli(args).status, 64, args.join(" "));
   for (const args of [["openspec", "validate"], ["openspec", "submit-review"], ["openspec", "read"], ["workitem", "approve"], ["workitem", "admission"]]) assert.equal(runCli([...args, "--help"]).status, 0, args.join(" "));
 });
 

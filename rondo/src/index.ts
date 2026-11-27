@@ -65,7 +65,7 @@ registerTfsApiLeaf(pr, "create", ["pr", "create"], "创建 TFS Git PR", "--repo 
 registerTfsApiLeaf(pr, "get", ["pr", "get"], "查询指定 TFS Git PR", "--repo <name|id> --id <id> [--project <project>]");
 registerTfsApiLeaf(pr, "list", ["pr", "list"], "按条件查询 TFS Git PR", "--repo <name|id> [--status active|completed|abandoned] [--source-branch <branch>] [--top <n>] [--project <project>]");
 
-// workspace 组(运维/供给,与 flow 组隔离)
+// Workspace 资源供给与 Skill 同步
 const workspace = bareGroup(program.command("workspace").description("Workspace 资源供给与 Skill 同步"));
 registerWorkspaceProvision(workspace);
 registerWorkspaceSyncSkills(workspace);
@@ -77,7 +77,7 @@ registerRuntimeCheckCheckout(runtime);
 registerRuntimeGetContext(runtime);
 registerRuntimeReconcile(runtime);
 
-// OpenSpec 身份解析与 Schema 安装
+// OpenSpec 工程契约操作
 const openspec = bareGroup(program.command("openspec").description("OpenSpec Change、Schema 与工件管理"));
 registerResolveIdentity(openspec);
 registerOpenspecInstallSchema(openspec);

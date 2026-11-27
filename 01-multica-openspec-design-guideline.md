@@ -32,7 +32,7 @@
 
 ### 1.1 目的（Purpose）
 
-本规范用于统一 Multica + OpenSpec 组合架构中以下资产的职责和设计方式：
+本规范用于统一 Multica + OpenSpec + Rondo 组合架构中以下资产的职责和设计方式：
 
 **Multica Runtime：**
 
@@ -535,11 +535,6 @@ Supporting Evidence（补充证据） 是 Artifact 或 External Reference 的一
 
 删除固定 Markdown 不等于删除 Contract；应先把技术事实迁移到明确 Artifact Owner，把交付事实映射到 Multica 原生事实，再取消重复载体。
 
-
-
-
-
-
 <a id="rondo-cli-design"></a>
 
 ### 1.7 Rondo CLI Design（Rondo 命令行设计）
@@ -577,6 +572,7 @@ Rondo CLI 是 Multica + OpenSpec 组合架构中的确定性执行边界，负�
 | Multica / OpenSpec | 分别持有 Delivery Truth / Engineering Truth |
 
 命令归属调整时，应在同一变更中更新命令注册、调用方、帮助信息、设计文档与测试；除非已确认存在必须支持的外部消费者，不保留旧命令别名或额外转发层。
+
 <a id="section-2"></a>
 
 ## 2. Multica Native Mechanisms（Multica 原生机制）
@@ -2947,9 +2943,14 @@ Workflow
 | Project Skill | Reusable Work Method Package（可复用步骤、资料、模板与工具） |
 | Multica Issue | Delivery Work Context（交付目标、协作与运行上下文） |
 | Run / Assignment / Status | Runtime Execution & State（运行执行与状态） |
-| Rondo CLI | Deterministic Validation / Execution / Fact Management（确定性校验、执行与事实管理） |
 | Config | Parameters（环境参数与配置） |
 | Script / Deterministic Gate / Route | Deterministic Execution / Control（确定性执行与控制） |
+
+**Rondo CLI 职责：**
+
+| 资产 | 核心职责 |
+|---|---|
+| Rondo CLI | Deterministic Validation / Execution / Fact Management（确定性校验、执行与事实管理） |
 
 LLM 负责需要上下文判断的 Semantic Reasoning（语义推理）；明确硬条件由相应确定性机制检查，人工批准仍归 Human。
 
