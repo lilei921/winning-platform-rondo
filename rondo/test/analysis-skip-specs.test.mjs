@@ -27,8 +27,6 @@ function fixture(t, { skip = false, schema = "intentional-change", estimate = tr
   const openspec = join(root, "openspec");
   const change = join(openspec, "changes", "d1-internal-1234");
   mkdirSync(change, { recursive: true });
-  mkdirSync(join(root, "docs", "config"), { recursive: true });
-  writeFileSync(join(root, "docs", "config", "repo-context.yaml"), "repos:\n  - repo_id: frame\n");
   mkdirSync(join(openspec, "specs"), { recursive: true });
   for (const name of ["intentional-change", "corrective-change"]) {
     cpSync(join(REPO, "openspec", "schemas", name),
@@ -50,16 +48,12 @@ function fixture(t, { skip = false, schema = "intentional-change", estimate = tr
     },
   }));
   chmodSync(MOCK, 0o755);
-  const configPath = join(root, "registry.json");
-  writeFileSync(configPath, JSON.stringify({ runtime: {
-    multica_cli: MOCK, workspace_id: "ws-test", multica_profile: "private", multica_server_url: "https://private.example",
-  } }));
   function gate() {
     const r = spawnSync(process.execPath, [
       CLI, "analysis", "validate", "--change-ref", "d1-internal-1234", "--issue", "issue-1", "--openspec-root", root,
-      "--workspace-id", "ws-test", "--multica", MOCK, "--registry-config", configPath,
+      "--workspace-id", "ws-test", "--multica", MOCK, "--profile", "private",
     ], {
-      encoding: "utf8", env: { ...process.env, MOCK_STATE: statePath, MOCK_EXPECT_PROFILE: "private", MOCK_EXPECT_SERVER: "https://private.example" }, timeout: 30_000,
+      encoding: "utf8", env: { ...process.env, MOCK_STATE: statePath, MOCK_EXPECT_PROFILE: "private", MOCK_EXPECT_SERVER: "https://private.example", MULTICA_SERVER_URL: "https://private.example" }, timeout: 30_000,
     });
     assert.equal(r.error, undefined, r.error?.message);
     let body;

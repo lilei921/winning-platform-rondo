@@ -21,7 +21,7 @@ const TREE = {
   tfs: ["writeback", "reconcile-workitem"],
   pr: ["prepare", "materialize", "resume", "worktree", "reconcile-status", "create", "get", "list"],
   delivery: [ "finalize", "root-prepare", "admission"],
-  workspace: ["provision", "sync", "migrate-repo-keys", "check-daemon"],
+  workspace: ["provision", "sync", "check-daemon"],
   runtime: ["resolve-root-repo","prepare-root","get-context","check-checkout"],
   repo: ["get"],
   branch: ["get"],

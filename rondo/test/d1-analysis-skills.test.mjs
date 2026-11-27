@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -78,71 +78,23 @@ test("D1 identity: duplicate, archived, wrong Schema and unknown remain safe", (
   assert.equal(missing.body.result, "NOT_FOUND");
 });
 
-test("D1 workspace sync renders analysis-publish config in dry-run and local-only modes", (t) => {
+test("D1 workspace sync needs no repository mapping or generated Registry", t => {
   const root = join(fixture(t), "中文 工作区");
   const shared = join(root, "workspace-config");
-  const skill = join(root, "skills", "analysis-publish");
-  const workspaceSkill = join(root, "skills", "native-workspace");
-  const tools = join(root, "tools");
-  const docs = join(root, "docs", "config");
   mkdirSync(join(shared, "workspaces"), { recursive: true });
-  mkdirSync(skill, { recursive: true });
-  mkdirSync(workspaceSkill, { recursive: true });
-  mkdirSync(tools, { recursive: true });
-  mkdirSync(docs, { recursive: true });
-  // 使用真实的 registry 查询工具，验证独立仓库的 Python → Rondo 渲染链路。
-  writeFileSync(join(docs, "repo-context.yaml"), JSON.stringify({ repos: [
-    { repo_id: "root", repo_type: "root-workspace", repo_path: ".", responsibility: "root", keywords: [], not_responsible_for: [] },
-    { repo_id: "app", repo_type: "backend", repo_path: "业务 应用", repo_url: "http://tfs.test/tfs/C/P/_git/app", default_target_branch: "main", responsibility: "业务应用", keywords: [], not_responsible_for: [] },
-  ] }));
-  copyFileSync(new URL("../../tools/repo_registry.py", import.meta.url), join(tools, "repo_registry.py"));
-  writeFileSync(join(shared, "repo-registry.base.json"), JSON.stringify({
-    runtime: { multica_cli: "multica", rondo: "rondo" },
-    delivery: { app: { tfs_repo: "app" } },
-  }));
+  for (const name of ["analysis-publish", "native-workspace"]) mkdirSync(join(root, "skills", name), { recursive: true });
   writeFileSync(join(shared, "workspaces", "d1pilot.json"), JSON.stringify({
-    workspace_id: "ws-pilot",
-    multica_profile: "private", multica_server_url: "https://private.example",
+    workspace_id: "ws-pilot", multica_profile: "private", multica_server_url: "https://private.example",
     skills: { "analysis-publish": "skill-id", "native-workspace": "workspace-skill-id" },
   }));
-  const env = { MULTICA_REPO_ROOT: root, PYTHONUTF8: "0", PYTHONIOENCODING: "cp936" };
-  const localConfig = join(skill, "config", "repo-registry.json");
-  const preview = run(["workspace", "sync", "--workspace", "d1pilot", "--skill", "analysis-publish", "--dry-run"], env);
-  assert.equal(preview.code, 0, preview.stderr);
-  assert.equal(preview.body.result, "PASS");
-  assert.ok(preview.body.rendered.includes("analysis-publish/config/repo-registry.json"));
-  assert.equal(existsSync(localConfig), false, "dry-run must not write config");
-
-  const rendered = run(["workspace", "sync", "--workspace", "d1pilot", "--skill", "analysis-publish", "--local-only"], env);
-  assert.equal(rendered.code, 0, rendered.stderr);
-  const cfg = JSON.parse(readFileSync(localConfig, "utf8"));
-  assert.equal(cfg.runtime.workspace_id, "ws-pilot");
-  assert.equal(cfg.runtime.delivery_squad_id, undefined);
-  assert.equal(cfg.registry.app.default_target_branch, "main");
-  assert.equal(cfg.runtime.multica_profile, "private");
-  assert.equal(cfg.runtime.multica_server_url, "https://private.example");
-  assert.equal(cfg.registry.app.repo_path, "业务 应用");
-  assert.equal(cfg.registry.app.repo_url, "http://tfs.test/tfs/C/P/_git/app");
-
-  const workspaceRendered = run(["workspace", "sync", "--workspace", "d1pilot", "--skill", "native-workspace", "--local-only"], env);
-  assert.equal(workspaceRendered.code, 0, workspaceRendered.stderr);
-  assert.deepEqual(workspaceRendered.body.rendered, []);
-  assert.equal(existsSync(join(workspaceSkill, "config", "repo-registry.json")), false);
-});
-
-test("D1 workspace sync refuses missing registry base rather than guessing a registry", (t) => {
-  const root = fixture(t);
-  const shared = join(root, "workspace-config");
-  mkdirSync(join(shared, "workspaces"), { recursive: true });
-  mkdirSync(join(root, "skills", "analysis-publish"), { recursive: true });
-  writeFileSync(join(shared, "workspaces", "badpilot.json"), JSON.stringify({
-    workspace_id: "ws-pilot", skills: { "analysis-publish": "skill-id" },
-  }));
-  const r = run(["workspace", "sync", "--workspace", "badpilot", "--skill", "analysis-publish", "--dry-run"],
-    { MULTICA_REPO_ROOT: root });
-  assert.equal(r.code, 3);
-  assert.equal(r.body.result, "UNKNOWN");
-  assert.match(r.body.reason, /repo-registry base 不存在/);
+  for (const name of ["analysis-publish", "native-workspace"]) {
+    for (const mode of ["--dry-run", "--local-only"]) {
+      const result = run(["workspace", "sync", "--workspace", "d1pilot", "--skill", name, mode], { MULTICA_REPO_ROOT: root });
+      assert.equal(result.code, 0, result.stderr);
+      assert.deepEqual(result.body.rendered, []);
+      assert.equal(existsSync(join(root, "skills", name, "config", "repo-registry.json")), false);
+    }
+  }
 });
 
 test("D2 skill contracts: archive legacy and bind composable Analyst methods", () => {

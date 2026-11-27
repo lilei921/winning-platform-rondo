@@ -49,11 +49,6 @@ function fixture(t, requirement = true, native = false, commitChange = true) {
   git(root, "push", "-u", "origin", "dev");
 
   chmodSync(MOCK, 0o755);
-  const config = join(home, "registry.json");
-  writeFileSync(config, JSON.stringify({ runtime: {
-    multica_cli: MOCK, workspace_id: "ws-test",
-    multica_profile: "private", multica_server_url: "https://private.example",
-  } }));
   const metadata = {
     "tfs.type": requirement ? "需求" : "Bug", "tfs.id": "261056",
     "analysis.change_kind": "corrective",
@@ -110,15 +105,16 @@ function fixture(t, requirement = true, native = false, commitChange = true) {
   const env = { ...tfs.env, PATH: bin + delimiter + tfs.env.PATH,
     MOCK_STATE: statePath, MOCK_ROOT_REPO: root,
     MOCK_EXPECT_PROFILE: "private", MOCK_EXPECT_SERVER: "https://private.example",
+    MULTICA_SERVER_URL: "https://private.example",
     ...(requirement ? { RONDO_WORKSPACE_BRANCH: "dev" } : {}),
     ...(native ? { RONDO_WORKSPACE_BRANCH: "", RONDO_WORKSPACE_PATH: "", MULTICA_TASK_ID: taskId,
       MULTICA_WORKSPACE_ID: "ws-test", MULTICA_AGENT_ID: "analyst" } : {}) };
   const args = ["--issue", "issue-1", "--openspec-root", root,
-    "--workspace-id", "ws-test", "--registry-config", config, "--multica", MOCK];
+    "--workspace-id", "ws-test", "--profile", "private", "--multica", MOCK];
   const gate = (ref = CHANGE) => runCli(["analysis", "validate", "--change-ref", ref, ...args], env);
   const completeAt = (rootArg, cwd, ...extra) => runCli(["analysis", "publish",
     "--issue", "issue-1", "--change-ref", CHANGE,
-    "--workspace-id", "ws-test", "--registry-config", config, "--multica", MOCK,
+    "--workspace-id", "ws-test", "--profile", "private", "--multica", MOCK,
     "--root-repo", rootArg, ...extra], env, cwd);
   const complete = (...extra) => completeAt(root, undefined, ...extra);
   const state = () => JSON.parse(readFileSync(statePath, "utf8"));
@@ -463,7 +459,7 @@ test("Legacy Publish 拒绝相对 RONDO_WORKSPACE_PATH，即使 cwd 是合法根
   const f = fixture(t, false);
   f.env.RONDO_WORKSPACE_PATH = ".";
   const result = runCli(["analysis", "publish", "--issue", "issue-1",
-    "--change-ref", CHANGE, "--workspace-id", "ws-test", "--registry-config", join(f.home, "registry.json"),
+    "--change-ref", CHANGE, "--workspace-id", "ws-test", "--profile", "private",
     "--multica", MOCK], f.env, f.root);
   assert.equal(result.exit, 3, JSON.stringify(result));
   assert.match(result.body.reason, /绝对路径.*RONDO_WORKSPACE_PATH/);
@@ -692,7 +688,7 @@ test("invalid Change ID never publishes or writes metadata", t => {
   const before = f.state();
   assert.equal(f.gate("../invalid").exit, 2);
   const result = runCli(["analysis", "publish", "--issue", "issue-1", "--change-ref", "../invalid",
-    "--workspace-id", "ws-test", "--registry-config", join(f.home, "registry.json"), "--multica", MOCK,
+    "--workspace-id", "ws-test", "--profile", "private", "--multica", MOCK,
     "--root-repo", f.root, "--mode", "requirement"], f.env);
   assert.equal(result.exit, 2);
   assert.deepEqual(f.state(), before);
@@ -843,7 +839,7 @@ test("Intentional 发布与审核重放无需自报 Review Verdict", t => {
 test("显式 --root-repo 缺值或为空时不回退环境变量", t => {
   const f = fixture(t);
   const args = ["analysis", "publish", "--mode", "requirement", "--issue", "issue-1",
-    "--change-ref", CHANGE, "--workspace-id", "ws-test", "--registry-config", join(f.home, "registry.json"),
+    "--change-ref", CHANGE, "--workspace-id", "ws-test", "--profile", "private",
     "--multica", MOCK];
   for (const flags of [["--root-repo"], ["--root-repo", ""], ["--root-repo", "--target-branch", "dev"]]) {
     const r = spawnSync(process.execPath, [CLI, ...args, ...flags], { encoding: "utf8", cwd: f.root,

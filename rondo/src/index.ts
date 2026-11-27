@@ -42,7 +42,6 @@ import { registerDeliveryFinalize } from "./commands/delivery/finalize.js";
 import { registerCloseoutRoot } from "./commands/delivery/closeout-root.js";
 import { registerWorkspaceProvision } from "./commands/workspace/provision.js";
 import { registerWorkspaceSync } from "./commands/workspace/sync.js";
-import { registerWorkspaceMigrateRepoKeys } from "./commands/workspace/migrate-repo-keys.js";
 import { registerWorkspaceCheckDaemon } from "./commands/workspace/check-daemon.js";
 import { registerRuntimeResolveRootRepo } from "./commands/runtime/resolve-root-repo.js";
 import { registerDoctor } from "./commands/doctor/doctor.js";
@@ -108,7 +107,6 @@ registerCloseoutRoot(delivery);
 const workspace = bareGroup(program.command("workspace").description("平台供给 / 资产同步 / 迁移 / daemon 检查"));
 registerWorkspaceProvision(workspace);
 registerWorkspaceSync(workspace);
-registerWorkspaceMigrateRepoKeys(workspace);
 registerWorkspaceCheckDaemon(workspace);
 
 // runtime 组(运行时路径解析工具)
