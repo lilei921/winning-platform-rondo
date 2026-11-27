@@ -293,7 +293,7 @@ test("Native Requirement Git 操作从 Issue 取得批准 Change，拒绝同 SHA
   mkdirSync(join(dir, ".multica", "project"), { recursive: true });
   writeFileSync(join(dir, ".multica", "project", "resources.json"), JSON.stringify({project_id:"project1", resources:[
     {resource_type:"github_repo",resource_ref:{url:source.repo_url,ref:"integration"}},
-    {resource_type:"github_repo",resource_ref:{url:bizUrl,ref:"integration",default_branch_hint:"integration"}},
+    {resource_type:"github_repo",resource_ref:{url:bizUrl,ref:"integration"}},
   ]}));
   git(dir, "init", "--bare", remote);
   git(dir, "init", "-b", "integration", hub);
@@ -331,9 +331,9 @@ test("Native Requirement Git 操作从 Issue 取得批准 Change，拒绝同 SHA
   assert.equal(fetched.branch, "feature/42");
   const resourceFile = join(dir, ".multica", "project", "resources.json");
   const resources = JSON.parse(readFileSync(resourceFile, "utf8"));
-  delete resources.resources[1].resource_ref.default_branch_hint;
+  delete resources.resources[1].resource_ref.ref;
   writeFileSync(resourceFile, JSON.stringify(resources));
-  assert.match(runWithEnv(2, env, ...args).reason, /default_branch_hint/);
+  assert.match(runWithEnv(2, env, ...args).reason, /缺少 ref/);
   const pushArgs = args.map(a => a === "fetch" ? "push" : a);
   assert.equal(runWithEnv(0, env, ...pushArgs).result, "PASS");
   assert.deepEqual(metadata(), initial.metadata);
@@ -358,7 +358,9 @@ test("Native Requirement 续跑使用原根仓分支发布已提交 Tasks，保�
   git(root, "commit", "-am", "complete approved task");
   const local = git(root, "rev-parse", "HEAD");
   writeFileSync(join(root, "local.txt"), "keep");
-  const published = runWithEnv(0, { MULTICA_TASK_ID: taskId }, "dev", "publish", "--root-repo", root);
+  const taskEnvFile = join(dir, "task-env.json");
+  writeFileSync(taskEnvFile, JSON.stringify({ active: true, env: { MULTICA_TASK_ID: taskId, MULTICA_TOKEN: "fixture" } }));
+  const published = runWithEnv(0, { MULTICA_TASK_ID: "", MULTICA_TOKEN: "", MULTICA_TASK_ENV_FILE: taskEnvFile }, "dev", "publish", "--root-repo", root);
   assert.equal(git(root, "branch", "--show-current"), branch);
   assert.equal(git(root, "rev-parse", "HEAD"), local);
   assert.equal(readFileSync(join(root, "local.txt"), "utf8"), "keep");

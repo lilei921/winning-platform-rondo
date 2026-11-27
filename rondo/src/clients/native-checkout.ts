@@ -240,7 +240,7 @@ export function assertNativeTaskCheckout(path: string, workdir: string, reported
 export interface ProjectResource {
   resource_type?: unknown;
   label?: unknown;
-  resource_ref?: { url?: unknown; ref?: unknown; default_branch_hint?: unknown };
+  resource_ref?: { url?: unknown; ref?: unknown };
 }
 export function readProjectResources(workdir: string, projectId: unknown,
   client?: Pick<MulticaClient, "run" | "ws">): ProjectResource[] {
@@ -261,7 +261,7 @@ export function readProjectResources(workdir: string, projectId: unknown,
   return resources;
 }
 
-type RepoResource = { url: string; ref?: unknown; default_branch_hint?: unknown };
+type RepoResource = { url: string; ref?: unknown };
 function selectResource(resources: ProjectResource[], matches: (url: string) => boolean, what: string): RepoResource {
   const rows = resources.filter(row => {
     if (row?.resource_type !== "github_repo" || typeof row.resource_ref?.url !== "string") return false;

@@ -55,7 +55,7 @@ process.exit(r.status ?? 1);
 
   const resources = [
     { id: 'r', resource_type: 'github_repo', resource_ref: { url: rootUrl, ref: 'main' } },
-    { id: 'biz', resource_type: 'github_repo', resource_ref: { url: repoUrl, ref: 'main', default_branch_hint: 'main' } },
+    { id: 'biz', resource_type: 'github_repo', resource_ref: { url: repoUrl, ref: 'main' } },
     { id: 'sibling', resource_type: 'github_repo', resource_ref: { url: 'http://tfs.test/tfs/C/P/_git/sibling', ref: 'main' } },
   ];
   mkdirSync(join(dir, '.multica', 'project'), { recursive: true });
