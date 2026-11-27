@@ -13,7 +13,7 @@ export function registerDevGit(group: Command): void {
       markLeafExecuted();
       try {
         if (!["fetch", "push"].includes(opts.operation)) throw new FailError("仅支持 fetch / push");
-        const { repo, path, branch, head } = await authorizedCheckout(opts.issue, opts.repo, opts.rootRepo);
+        const { repo, path, branch, head } = await authorizedCheckout(opts.issue, opts.repo, opts.rootRepo, opts.operation === "push");
         if (opts.operation === "fetch") {
           const target = requireTargetBranch(repo, branch);
           const result = runAuthenticatedGit(repo.repo_url, ["fetch", "--no-tags", repo.repo_url, `refs/heads/${target}:refs/remotes/origin/${target}`], path);

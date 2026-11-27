@@ -113,7 +113,7 @@ for (const linked of [true, false]) test(`Native ${linked ? "linked worktree" : 
     assert.equal(readFileSync(join(business, "untracked.txt"), "utf8"), "keep");
     // Multica can retain both working trees when a new Run continues the same task workdir.
     const creationTask = process.env.MULTICA_TASK_ID;
-    process.env.MULTICA_TASK_ID = "01234567-abcd-ef12-3456-000000000000";
+    delete process.env.MULTICA_TASK_ID;
     assert.equal(assertNativeTaskCheckout(root, task, undefined, "issue-1"), branch);
     assert.equal(assertNativeTaskCheckout(business, task), branch);
     const manifestPath = join(git(business, "rev-parse", "--absolute-git-dir"), "multica-checkout.json");
@@ -121,6 +121,8 @@ for (const linked of [true, false]) test(`Native ${linked ? "linked worktree" : 
     writeFileSync(manifestPath, JSON.stringify(manifest));
     assert.equal(assertNativeTaskCheckout(business, task, branch, "issue-1"), branch);
     assert.equal(validateBusinessCheckout(business, repo, "feature/42", task), unpushed);
+    process.env.MULTICA_TASK_ID = "01234567-abcd-ef12-3456-000000000000";
+    assert.equal(assertNativeTaskCheckout(business, task, branch, "issue-1"), branch);
     assert.equal(git(business, "symbolic-ref", "--short", "HEAD"), branch);
     assert.equal(readFileSync(join(business, "untracked.txt"), "utf8"), "keep");
     assert.throws(() => assertNativeTaskCheckout(root, task, undefined, "other-issue"), /Issue/);

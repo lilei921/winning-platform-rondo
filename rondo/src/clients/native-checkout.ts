@@ -204,10 +204,10 @@ const samePath = (a: string, b: string): boolean => process.platform === "win32"
 
 /** Check a daemon-managed Native Checkout; Multica owns its creation and reuse. */
 export function assertNativeTaskCheckout(path: string, workdir: string, reportedBranch?: string, issueId?: string): string {
-  const taskId = process.env.MULTICA_TASK_ID, workspaceId = process.env.MULTICA_WORKSPACE_ID;
+  const workspaceId = process.env.MULTICA_WORKSPACE_ID;
   const agentId = process.env.MULTICA_AGENT_ID;
   const context = readDaemonTaskContext(workdir);
-  if (!taskId || !workspaceId || !agentId || context?.managed_by !== "multica-daemon-task" || context.agent_id !== agentId)
+  if (!workspaceId || !agentId || context?.managed_by !== "multica-daemon-task" || context.agent_id !== agentId)
     throw new UnknownError("无法确认当前 daemon Task 上下文");
   if (issueId && context.issue_id !== issueId) throw new FailError("当前 daemon Task 不属于此 Issue");
   const canonical = realpathSync(path), parent = realpathSync(workdir);

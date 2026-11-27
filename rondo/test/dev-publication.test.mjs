@@ -325,7 +325,11 @@ test("Native Requirement Git 操作从 Issue 取得批准 Change，拒绝同 SHA
     assert.equal(metadata()["verify_agent.required"], undefined);
   }
   writeFileSync(state, JSON.stringify(initial));
-  const fetched = runWithEnv(0, env, ...args);
+  writeFileSync(env.MOCK_SYNC_CALLS_FILE, "");
+  const noTask = { ...env, MULTICA_TASK_ID: "", MULTICA_TASK_ENV_FILE: "" };
+  const fetched = runWithEnv(0, noTask, ...args);
+  const fetchCalls = readFileSync(env.MOCK_SYNC_CALLS_FILE, "utf8").trim().split("\n").map(JSON.parse);
+  assert.ok(!fetchCalls.some(call => call[0] === "issue" && call[1] === "runs"));
   assert.equal(fetched.result, "PASS");
   assert.equal(fetched.path, hub);
   assert.equal(fetched.branch, "feature/42");
@@ -335,6 +339,7 @@ test("Native Requirement Git 操作从 Issue 取得批准 Change，拒绝同 SHA
   writeFileSync(resourceFile, JSON.stringify(resources));
   assert.match(runWithEnv(2, env, ...args).reason, /缺少 ref/);
   const pushArgs = args.map(a => a === "fetch" ? "push" : a);
+  assert.match(runWithEnv(3, noTask, ...pushArgs).reason, /Task \/ Actor \/ Workspace/);
   assert.equal(runWithEnv(0, env, ...pushArgs).result, "PASS");
   assert.deepEqual(metadata(), initial.metadata);
   assert.equal(metadata()["verify_agent.required"], undefined);
