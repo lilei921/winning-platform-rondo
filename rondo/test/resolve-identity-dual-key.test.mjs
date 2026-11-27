@@ -27,7 +27,7 @@ function change(id, { archived = false, schema = "corrective-change" } = {}) {
 }
 
 function resolve(...args) {
-  const out = spawnSync(process.execPath, [cli, "change", "resolve-identity",
+  const out = spawnSync(process.execPath, [cli, "openspec", "resolve-identity",
     "--openspec-root", root, ...args], { encoding: "utf8" });
   assert.equal(out.error, undefined, out.error?.message);
   return { status: out.status, data: JSON.parse(out.stdout) };

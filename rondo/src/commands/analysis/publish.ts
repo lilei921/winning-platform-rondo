@@ -379,8 +379,8 @@ async function main(rawArgs: string[]): Promise<number> {
 export function registerAnalysisPublish(group: Command): void {
   group
     .command("publish")
-    .description("发布工程契约审核版本（02 §5.4）：提交推送当前 Change 后写入 analysis_review")
-    .helpOption(false)
+    .description("发布 OpenSpec 审核版本，登记来源事实并进入审核状态")
+    .usage("--issue <key> --change-ref <id> [--root-repo <path>] [--target-branch <branch>]")
     .allowUnknownOption(true)
     .allowExcessArguments(true)
     .action(async (...cbArgs: unknown[]) => {

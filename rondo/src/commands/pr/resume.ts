@@ -92,9 +92,9 @@ async function verifyAbandoned(pr: RegisteredPr, checkCandidate: boolean): Promi
 }
 
 export function registerPrResume(group: Command): void {
-  group.command("resume").description("根据 Human 决定恢复 abandoned PR 的交付事实")
-    .requiredOption("--issue <key>").requiredOption("--comment-id <id>")
-    .requiredOption("--next <REWORK|RECREATE_PR>")
+  group.command("resume").description("根据已确认的人工决定恢复 abandoned PR 的交付事实")
+    .requiredOption("--issue <key>", "Multica Issue 标识").requiredOption("--comment-id <id>", "人工决定评论 ID")
+    .requiredOption("--next <REWORK|RECREATE_PR>", "已确认的后续处理决定")
     .action(async (opts: {issue:string;commentId:string;next:Next}) => {
       markLeafExecuted();
       try {

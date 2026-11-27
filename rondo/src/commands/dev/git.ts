@@ -6,9 +6,9 @@ import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
 
 export function registerDevGit(group: Command): void {
-  group.command("git").description("以当前 Task 授权 fetch 或非强制 push Candidate")
-    .requiredOption("--issue <key>").requiredOption("--repo <key>")
-    .requiredOption("--root-repo <path>").requiredOption("--operation <fetch|push>")
+  group.command("git").description("对已授权仓库执行 Fetch 或非强制 Candidate Push")
+    .requiredOption("--issue <key>", "Multica Issue 标识").requiredOption("--repo <key>", "完整仓库名称")
+    .requiredOption("--root-repo <path>", "当前根仓路径").requiredOption("--operation <fetch|push>", "Fetch 目标分支或 Push Candidate")
     .action(async (opts: { issue: string; repo: string; rootRepo: string; operation: string }) => {
       markLeafExecuted();
       try {

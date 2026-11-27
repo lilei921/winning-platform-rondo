@@ -7,7 +7,7 @@ import { readAnalysisArtifact, readAnalysisSource } from "./source.js";
 
 /** Lead 按 Issue 的审核快照读取工件，无需根仓挂载，也不修改任何平台事实。 */
 export function registerAnalysisRead(group: Command): void {
-  group.command("read").description("按 Issue 的 analysis.source 固定版本只读规范")
+  group.command("read").description("读取 Issue 已登记版本的 OpenSpec 工件")
     .requiredOption("--issue <key>", "Delivery Issue")
     .requiredOption("--file <path>", "Change 内相对路径，例如 tasks.md")
     .action(async (args: { issue: string; file: string }) => {

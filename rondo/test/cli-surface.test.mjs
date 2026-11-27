@@ -2,6 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
 
@@ -15,14 +18,14 @@ function runCli(args, env = {}) {
 
 /** 当前完整命令树；包含 analysis read 和顶层叶子 query/doctor。 */
 const TREE = {
-  change: ["resolve-identity"],
   analysis: ["validate", "publish", "read", "approve"],
   dev: ["git", "publish"],
   tfs: ["writeback", "reconcile-workitem"],
   pr: ["prepare", "materialize", "resume", "worktree", "reconcile-status", "create", "get", "list"],
-  delivery: [ "finalize", "root-prepare", "admission"],
+  delivery: [ "finalize", "root-prepare", "root-clone", "admission"],
   workspace: ["provision", "sync", "check-daemon"],
   runtime: ["resolve-root-repo","prepare-root","get-context","check-checkout"],
+  openspec: ["resolve-identity", "install-schema"],
   repo: ["get"],
   branch: ["get"],
   workitem: ["set-state", "comment", "create", "link-commits", "download-attachment"],
@@ -96,7 +99,7 @@ test("PR Preparation 命名统一，Closeout 拒绝旧配置参数", () => {
 });
 
 test("全局 --output json 由 Commander 统一消费，不改变子命令输出和退出码", () => {
-  for (const args of [["change", "resolve-identity", "--help"], ["dev", "publish", "--help"], ["runtime", "resolve-root-repo"], ["query"]]) {
+  for (const args of [["openspec", "resolve-identity", "--help"], ["dev", "publish", "--help"], ["runtime", "resolve-root-repo"], ["query"]]) {
     const implicit = runCli(args);
     for (const explicitArgs of [["--output=json", ...args], [...args, "--output", "json"]]) {
       const explicit = runCli(explicitArgs);
@@ -104,7 +107,7 @@ test("全局 --output json 由 Commander 统一消费，不改变子命令输出
       assert.equal(explicit.stdout, implicit.stdout, explicitArgs.join(" "));
     }
   }
-  for (const args of [["change", "resolve-identity"], ["runtime", "check-checkout"], ["query"], ["doctor"]]) {
+  for (const args of [["openspec", "resolve-identity"], ["runtime", "check-checkout"], ["query"], ["doctor"]]) {
     for (const flags of [["--output", "table"], ["--output"]]) {
       const result = runCli([...args, ...flags]);
       assert.equal(result.status, 64);
@@ -166,4 +169,52 @@ test("PR recovery only exposes pr resume", () => {
   assert.equal(runCli(["pr","resume","--help"]).status,0);
   assert.notEqual(runCli(["delivery","route-decision"]).status,0);
   assert.notEqual(runCli(["bug","resume"]).status,0);
+});
+
+test("全部公开命令 --help / -h 输出帮助到 stdout，exit 0 且不执行安装", () => {
+  const dir = mkdtempSync(join(tmpdir(), "rondo-cli-help-"));
+  try {
+    const commands = [[], ["query"], ["doctor"], ...Object.entries(TREE).flatMap(
+      ([group, leaves]) => [[group], ...leaves.map(leaf => [group, leaf])]
+    )];
+    for (const args of commands) {
+      for (const flag of ["--help", "-h"]) {
+        const r = runCli([...args, flag], { XDG_DATA_HOME: dir, TFS_PAT: "", MULTICA_WORKSPACE_ID: "", MULTICA_SERVER_URL: "" });
+        const label = [...args, flag].join(" ");
+        assert.equal(r.status, 0, label + ": " + r.stderr);
+        assert.match(r.stdout, /(?:usage|用法)/i, label);
+        assert.equal(r.stderr, "", label);
+      }
+    }
+    assert.equal(existsSync(join(dir, "openspec")), false);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("Help 不执行带有效业务参数的写操作", () => {
+  const dir = mkdtempSync(join(tmpdir(), "rondo-cli-help-"));
+  try {
+    const r = runCli(["openspec", "install-schema", "--help"], { XDG_DATA_HOME: dir });
+    assert.equal(r.status, 0);
+    assert.equal(existsSync(join(dir, "openspec")), false);
+    const w = runCli(["tfs", "writeback", "--issue", "TEST-1", "--help"], { MULTICA_WORKSPACE_ID: "", MULTICA_SERVER_URL: "" });
+    assert.equal(w.status, 0, w.stderr);
+    assert.match(w.stdout, /usage/i);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("OpenSpec 仅保留统一命令组，不注册旧入口", () => {
+  const dir = mkdtempSync(join(tmpdir(), "rondo-help-"));
+  try {
+    for (const args of [["change", "resolve-identity"], ["openspec", "install"]]) {
+      const r = runCli(args, { XDG_DATA_HOME: dir });
+      assert.equal(r.status, 64, args.join(" "));
+    }
+    assert.equal(existsSync(join(dir, "openspec")), false);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

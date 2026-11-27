@@ -32,7 +32,7 @@
 | Rondo / OpenSpec CLI | 已实现的确定性 Identity、Validation、Gate、发布及状态写入 | 以真实 CLI 结果为准，不能伪造 PASS |
 | Human | 产品选择与批准 | 未获批准不能自动授权研发 |
 
-**关键区分：** “CLI 已有检查”不代表 Agent 可以跳过**调用前提**。例如 `rondo change resolve-identity` 会解析身份并拒绝冲突，但不自动为随后的 OpenSpec 写入选择正确 `cwd`、确认写入授权。`rondo analysis validate` 也不判定 Root Cause、Conditional Design、Task Verification 的专业语义质量。**CLI PASS ≠ 专业 Review PASS ≠ Human Approval。**
+**关键区分：** “CLI 已有检查”不代表 Agent 可以跳过**调用前提**。例如 `rondo openspec resolve-identity` 会解析身份并拒绝冲突，但不自动为随后的 OpenSpec 写入选择正确 `cwd`、确认写入授权。`rondo analysis validate` 也不判定 Root Cause、Conditional Design、Task Verification 的专业语义质量。**CLI PASS ≠ 专业 Review PASS ≠ Human Approval。**
 
 规则分类：
 - **Hard Constraint**：身份、Root / Workspace / Schema、授权、不可交换的副作用顺序、有效 Gate、真实状态回读及安全停止。
@@ -166,7 +166,7 @@ Professional Review 只判断 **Correctness、Consistency、Implementability、V
 - [Requirement Analysis](skills/requirement-analysis/SKILL.md)
 - [Analysis Source Contract](skills/analysis-publish/references/analysis-source-contract.md)
 - [03 Workitem Analysis Design](03-workitem-analysis-design.md)
-- [Rondo Identity Resolver](rondo/src/commands/change/resolve-identity.ts)
+- [Rondo Identity Resolver](rondo/src/commands/openspec/resolve-identity.ts)
 - [Rondo Stage](rondo/src/commands/analysis/stage.ts)
 - [Rondo Gate](rondo/src/commands/analysis/validate.ts)
 - [Rondo Complete](rondo/src/commands/analysis/publish.ts)

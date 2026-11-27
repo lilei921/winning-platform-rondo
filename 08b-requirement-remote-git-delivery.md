@@ -168,7 +168,7 @@ Requirement 调用沿用以下 CLI 入口。根仓准备和分析发布在修复
 rondo runtime prepare-root
 
 # 已有：唯一 Change 解析、工件准备与原生检查
-rondo change resolve-identity --openspec-root "<root>" --change-ref <change_ref> --tfs-id <tfs.id> --expect-schema <schema>
+rondo openspec resolve-identity --openspec-root "<root>" --change-ref <change_ref> --tfs-id <tfs.id> --expect-schema <schema>
 openspec status --change <change_ref> --json
 openspec instructions <artifact-id> --change <change_ref> --json
 openspec validate <change_ref> --type change --strict --no-interactive --json

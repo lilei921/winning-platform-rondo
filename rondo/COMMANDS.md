@@ -5,7 +5,7 @@ status: active
 
 # Rondo CLI 命令参考
 
-`rondo`（npm 包：`@winning/rondo`）用于 Multica 交付流程中的 OpenSpec Change 管理、工程分析与开发、Bug 交付、TFS Work Item 与 Git PR 操作、Workspace 配置和运行环境检查。
+`rondo`（npm 包：`@winning/rondo`）是面向 Multica 研发交付的确定性 CLI，提供交付校验、执行、事实管理及平台运维能力。
 
 具体可用命令以当前安装版本的 `rondo --help` 为准；本页按命令组介绍用途、参数和关键约束，不维护随版本变化的命令数量。
 
@@ -23,7 +23,7 @@ rondo doctor --help
 - 显式 `--root-repo` 与 `--openspec-root` 路径可使用绝对路径或相对当前 cwd 的路径；`--root-repo` 仍须指向实际 Git 根仓，`--openspec-root` 可指向根仓或其 OpenSpec 目录。持久环境变量 `RONDO_WORKSPACE_PATH` 仍要求绝对路径。支持环境变量回退的命令只在未提供 `--root-repo` 时回退，显式空路径或缺值拒绝。
 - 业务命令默认输出 JSON，可统一显式传入全局 `--output json`（仅支持 `json`）；诊断信息走 `stderr`。非法或缺失输出格式返回 `64`，参数错误信息走 `stderr`。`doctor` 默认输出文本，支持 `--output json`，兼容 `--format json` / `--format text`，冲突格式拒绝。帮助信息不属于业务 JSON 输出。
 - 退出码：`0` 成功或无须重复执行、`2` 前置条件不满足（FAIL）、`3` 结果不能确认（UNKNOWN）、`64` 命令用法错误。具体结果以命令输出为准。
-- `--help` 的具体输出和退出方式取决于子命令；可通过 `rondo --help` 和各命令组的 `--help` 查看入口。
+- `--help` / `-h` 输出当前命令的帮助到 stdout，退出码为 0，不执行实际操作；缺少必填参数或用法错误仍返回 64。
 
 配置安装、TFS 连接、Multica Workspace 和 Project Resource 的说明见 [README.md](README.md#5-运行期配置)。本页仅保留命令调用契约。
 
@@ -31,36 +31,39 @@ rondo doctor --help
 
 | 命令组 | 子命令 | 主要用途 |
 | --- | --- | --- |
-| `change` | `resolve-identity` | Change 身份解析 |
 | `analysis` | `validate`、`publish`、`read`、`approve` | 分析事实、Gate、审核提交、工件读取和批准登记 |
 | `dev` | `git`、`publish` | 研发 Git 与发布 |
 | `tfs` | `writeback`、`reconcile-workitem` | TFS 工作项同步与交付回写 |
 | `pr` | `prepare`、`materialize`、`resume`、`worktree`、`reconcile-status`、`create`、`get`、`list` | PR 准备、创建、查询、状态对账及 Worktree |
-| `delivery` | `admission`、`finalize` | 准入交接与交付收口 |
+| `delivery` | `admission`、`finalize`、`root-prepare` | 准入交接与交付收口 |
 | `workspace` | `provision`、`sync`、`check-daemon` | Workspace 资源供给、同步及检查 |
 | `runtime` | `get-context`、`resolve-root-repo`、`check-checkout`、`prepare-root` | 当前 Run 上下文查询、根仓库就绪检查及准备 |
-| `openspec` | `install` | 安装随包分发的 OpenSpec Schema 到用户全局目录 |
+| `openspec` | `resolve-identity`、`install-schema` | OpenSpec Change 身份解析与 Schema 安装 |
 | `repo` | `get` | 查询 TFS Git 仓库 |
 | `branch` | `get` | 查询 TFS Git 分支 |
 | `workitem` | `set-state`、`comment`、`create`、`link-commits`、`download-attachment` | TFS Work Item 操作 |
 | 顶级 | `query`、`doctor` | WIQL 查询、环境体检 |
 
-## 3. Change 与 Analysis
+## 3. OpenSpec 与 Analysis
 
-### 3.1 `rondo change`
+### 3.1 `rondo openspec`
 
 ```bash
-rondo change resolve-identity --openspec-root <path> [--change-ref <ref>] [--tfs-id <id>] [--expect-schema <name>] [--output json]
+rondo openspec resolve-identity --openspec-root <path> [--change-ref <ref>] [--tfs-id <id>] [--expect-schema <name>] [--output json]
+rondo openspec install-schema
 ```
 
 | 命令 | 功能 |
 | --- | --- |
-| `change resolve-identity` | 根据 Change Ref 或 TFS ID 定位 OpenSpec Change，并可校验 Schema |
+| `openspec resolve-identity` | 根据 Change Ref 或 TFS ID 定位 OpenSpec Change，并可校验 Schema |
+| `openspec install-schema` | 将随包分发的 Schema 安装到 OpenSpec 用户全局目录 |
+
+把随 rondo 包分发的 `openspec/schemas` 安装到 OpenSpec 用户全局目录（`XDG_DATA_HOME` / `%LOCALAPPDATA%` / `~/.local/share` 下的 `openspec/schemas`）。同名 Schema 直接覆盖，其他 Schema 不受影响；不访问网络、不做 OpenSpec CLI 校验。SEA 单文件运行不支持该命令。
 
 ### 3.2 `rondo analysis`
 
 ```bash
-rondo analysis validate --issue <id> --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>] [--profile <name>]
+rondo analysis validate --issue <id> --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]
 rondo analysis publish --issue <id> --change-ref <id> [--root-repo <path>] [--target-branch <branch>]
 rondo analysis read --issue <KEY> --file <Change内相对路径>
 rondo analysis approve --issue <KEY> --comment-id <ID> --commit <SHA> --verify-required true|false [--waive-tasks 3.1,3.2]
@@ -242,14 +245,6 @@ rondo runtime prepare-root [--root-repo <path>] [--branch <branch>]
 `runtime get-context` 只读获取当前 Multica Agent Run 的 Runtime 信息（`multica_cli`、`multica_server_url`、`workspace_id`、`rondo`、`delivery_squad_id`）。Workspace 和 Server 来自当前 Run 环境变量；按名称 `Delivery Squad` 在当前 Workspace 查找唯一有效 Squad。缺少环境或无法确认目标时返回 `UNKNOWN`（exit 3）；不依赖 `repo-registry.json`，不支持从外部终端猜测默认 Workspace。
 
 `runtime resolve-root-repo` 只读验证显式 Git 根仓路径并返回根仓与 OpenSpec 路径。`check-checkout` 只读校验已有根仓。`prepare-root` 优先使用 `--root-repo`，省略时读取 `RONDO_WORKSPACE_PATH`。分支取必需的 `RONDO_WORKSPACE_BRANCH`，优先于 `--branch`。命令在原目录检查分支占用、按 Change 分别本地保存切换前的改动，并在安全时快进。历史分叉时保留本地提交和工作区。
-
-### 7.3 `rondo openspec`
-
-```bash
-rondo openspec install
-```
-
-把随 rondo 包分发的 `openspec/schemas` 安装到 OpenSpec 用户全局目录（`XDG_DATA_HOME` / `%LOCALAPPDATA%` / `~/.local/share` 下的 `openspec/schemas`）。同名 Schema 直接覆盖，其他 Schema 不受影响；不访问网络、不做 OpenSpec CLI 校验。SEA 单文件运行不支持该命令。
 
 ## 8. 环境检查：`rondo doctor`
 

@@ -1,16 +1,16 @@
 /**
- * change resolve-identity — OpenSpec Change Identity 确定性只读解析器。
+ * openspec resolve-identity — OpenSpec Change Identity 确定性只读解析器。
  *
  * 契约：05-openspec-schema-implementation-design §5.2/§5.3/§5.6
  * （裁决 D1：05 §5.2/§18 的 resolve-openspec-change.py 落地为 TS；
  * 裁决 D3 修订：自 rondo 收编起，实现位置为 @winning/skill-flow 包内
- * commands/change/resolve-identity.ts，原 projects/multica/scripts/ 路径
+ * commands/openspec/resolve-identity.ts，原 projects/multica/scripts/ 路径
  * 在迁移窗口期保持有效，见 change-progress-script-contract.md addendum）。
  *
  * 只读：不创建 / 不修改任何 Change 与 Multica 事实。
  *
  * 用法：
- *   rondo change resolve-identity --openspec-root <root>
+ *   rondo openspec resolve-identity --openspec-root <root>
  *     [--change-ref <stable-change-id>] [--tfs-id <id>] [--expect-schema <name>]
  *
  * 结果枚举 → 退出码：
@@ -106,7 +106,7 @@ function parseArgs(argv: string[]): Args {
       case "--expect-schema": expectSchema = next(); break;
       case "--help": case "-h":
         process.stdout.write(
-          "usage: rondo change resolve-identity --openspec-root <root> [--change-ref <id>] [--tfs-id <id>] [--expect-schema <name>] [--output json]\n",
+          "usage: rondo openspec resolve-identity --openspec-root <root> [--change-ref <id>] [--tfs-id <id>] [--expect-schema <name>] [--output json]\n",
         );
         process.exit(0);
       default:
@@ -346,8 +346,8 @@ function main(rawArgs: string[]): void {
 export function registerResolveIdentity(group: Command): void {
   group
     .command("resolve-identity")
-    .description("OpenSpec Change Identity 确定性只读解析（冻结契约 §1）")
-    .helpOption(false)
+    .description("根据 Change Ref 或 TFS ID 解析 OpenSpec Change 身份")
+    .usage("--openspec-root <root> [--change-ref <id>] [--tfs-id <id>] [--expect-schema <name>] [--output json]")
     .allowUnknownOption(true)
     .allowExcessArguments(true)
     .action((...cbArgs: unknown[]) => {

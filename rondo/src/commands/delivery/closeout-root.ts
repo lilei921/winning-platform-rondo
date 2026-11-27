@@ -350,8 +350,8 @@ export function registerCloseoutRoot(group: Command): void {
   // Retain root-clone as a compatibility alias; it now runs the same native checkout.
   for (const name of ["root-prepare", "root-clone"]) {
     group.command(name)
-      .description("在 Task workdir 直属目录复用 Multica checkout 并准备本地归档分支")
-      .helpOption(false).allowUnknownOption(true).allowExcessArguments(true)
+      .description("准备 OpenSpec 归档所需的根仓和本地分支")
+      .usage("--issue <key>").allowUnknownOption(true).allowExcessArguments(true)
       .action(async (...values: unknown[]) => {
         markLeafExecuted();
         const cmd = values[values.length - 1] as Command;

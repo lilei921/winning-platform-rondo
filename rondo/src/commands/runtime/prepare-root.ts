@@ -5,8 +5,8 @@ import { prepareRoot } from "./root-git.js";
 
 export function registerRuntimePrepareRoot(group: Command): void {
   group.command("prepare-root")
-    .description("在常驻根仓准备 RONDO_WORKSPACE_BRANCH")
-    .option("--root-repo <path>")
+    .description("准备常驻根仓的工作分支")
+    .option("--root-repo <path>", "常驻根仓路径")
     .option("--branch <name>", "兼容参数；项目分支取 RONDO_WORKSPACE_BRANCH")
     .action((opts: { rootRepo?: string; branch?: string }) => {
       markLeafExecuted();

@@ -687,8 +687,9 @@ function main(rawArgs: string[]): number {
 export function registerWorkspaceProvision(group: Command): void {
   group
     .command("provision")
-    .description("平台对象供给 reconcile")
-    .helpOption(false)
+    .description("根据配置供给并核对 Multica Workspace 资源")
+    .usage("--workspace <name> [--slug <slug>] [--create-workspace [--display-name <name>]] [--runtime-id <uuid>] [--profile <name>] [--dry-run | --check] [--skip-workflow] [--mcp-only] [--update-mcp <names>]")
+    .addHelpText("after", "\n--dry-run / --check 仅预览或检查；--mcp-only 仅处理 MCP。")
     .allowUnknownOption(true)
     .allowExcessArguments(true)
     .action((...cbArgs: unknown[]) => {

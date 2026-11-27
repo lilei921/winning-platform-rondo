@@ -816,8 +816,8 @@ function main(rawArgs: string[]): number {
 export function registerTfsReconcileWorkitem(group: Command): void {
   group
     .command("reconcile-workitem")
-    .description("工作项对账")
-    .helpOption(false)
+    .description("将 TFS 工作项同步为 Multica Issue")
+    .usage("--config <sync-config.json>")
     .allowUnknownOption(true)
     .allowExcessArguments(true)
     .action((...cbArgs: unknown[]) => {

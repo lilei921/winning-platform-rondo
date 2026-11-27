@@ -30,7 +30,7 @@ test("全新根仓（openspec/ 无 changes/）：resolve-identity 返回 NOT_FOU
   const dir = fixture(t);
   const repo = join(dir, "root-repo");
   mkdirSync(join(repo, "openspec", "schemas"), { recursive: true });
-  const r = runCli(["change", "resolve-identity", "--openspec-root", repo, "--tfs-id", "263181"]);
+  const r = runCli(["openspec", "resolve-identity", "--openspec-root", repo, "--tfs-id", "263181"]);
   assert.equal(r.status, 0, `rc=${r.status} stderr=${r.stderr.slice(0, 300)}`);
   const out = JSON.parse(r.stdout);
   assert.equal(out.result, "NOT_FOUND");
@@ -42,7 +42,7 @@ test("直接传 openspec/ 目录且无 changes/：同样 NOT_FOUND exit 0", (t) 
   const dir = fixture(t);
   const openspec = join(dir, "openspec");
   mkdirSync(openspec, { recursive: true });
-  const r = runCli(["change", "resolve-identity", "--openspec-root", openspec, "--tfs-id", "263181"]);
+  const r = runCli(["openspec", "resolve-identity", "--openspec-root", openspec, "--tfs-id", "263181"]);
   assert.equal(r.status, 0, `rc=${r.status} stderr=${r.stderr.slice(0, 300)}`);
   assert.equal(JSON.parse(r.stdout).result, "NOT_FOUND");
 });
@@ -50,7 +50,7 @@ test("直接传 openspec/ 目录且无 changes/：同样 NOT_FOUND exit 0", (t) 
 /** openspec/ 本身定位不到（根路径传错）：维持 UNKNOWN 语义，结构化 JSON + exit 3，不抛裸堆栈。 */
 test("openspec/ 定位不到：结构化 INVALID exit 3，stdout 为纯 JSON，无未捕获堆栈", (t) => {
   const dir = fixture(t);
-  const r = runCli(["change", "resolve-identity", "--openspec-root", dir, "--tfs-id", "263181"]);
+  const r = runCli(["openspec", "resolve-identity", "--openspec-root", dir, "--tfs-id", "263181"]);
   assert.equal(r.status, 3, `rc=${r.status} stderr=${r.stderr.slice(0, 300)}`);
   const out = JSON.parse(r.stdout);
   assert.equal(out.result, "INVALID");
@@ -63,7 +63,7 @@ test("changes/ 存在但无匹配：NOT_FOUND exit 0（既有行为回归锚点�
   const dir = fixture(t);
   const repo = join(dir, "root-repo");
   mkdirSync(join(repo, "openspec", "changes"), { recursive: true });
-  const r = runCli(["change", "resolve-identity", "--openspec-root", repo, "--tfs-id", "263181"]);
+  const r = runCli(["openspec", "resolve-identity", "--openspec-root", repo, "--tfs-id", "263181"]);
   assert.equal(r.status, 0, `rc=${r.status} stderr=${r.stderr.slice(0, 300)}`);
   assert.equal(JSON.parse(r.stdout).result, "NOT_FOUND");
 });
@@ -75,7 +75,7 @@ test("changes/ 下 tfs-id 后缀命中：ACTIVE_FOUND exit 0（既有行为回�
   const changeDir = join(repo, "openspec", "changes", "fix-metadata-collect-datasource-type-263181");
   mkdirSync(changeDir, { recursive: true });
   writeFileSync(join(changeDir, ".openspec.yaml"), "schema: corrective-change\ncreated: 2026-11-07\n");
-  const r = runCli(["change", "resolve-identity", "--openspec-root", repo, "--tfs-id", "263181", "--expect-schema", "corrective-change"]);
+  const r = runCli(["openspec", "resolve-identity", "--openspec-root", repo, "--tfs-id", "263181", "--expect-schema", "corrective-change"]);
   assert.equal(r.status, 0, `rc=${r.status} stderr=${r.stderr.slice(0, 300)}`);
   const out = JSON.parse(r.stdout);
   assert.equal(out.result, "ACTIVE_FOUND");
@@ -86,7 +86,7 @@ test("changes/ 下 tfs-id 后缀命中：ACTIVE_FOUND exit 0（既有行为回�
 test("相对 OpenSpec 根路径和显式 JSON 输出与默认输出等价，拒绝其他格式", (t) => {
   const repo = fixture(t);
   mkdirSync(join(repo, "openspec", "changes"), { recursive: true });
-  const args = ["change", "resolve-identity", "--openspec-root", ".", "--tfs-id", "263181"];
+  const args = ["openspec", "resolve-identity", "--openspec-root", ".", "--tfs-id", "263181"];
   const implicit = runCli(args, repo);
   const explicit = runCli([...args, "--output", "json"], repo);
   assert.equal(implicit.status, 0);

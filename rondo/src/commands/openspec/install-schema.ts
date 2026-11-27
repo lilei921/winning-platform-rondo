@@ -1,5 +1,5 @@
 /**
- * openspec install —— 把随 rondo 分发的 OpenSpec Schema 安装到用户全局目录。
+ * openspec install-schema —— 把随 rondo 分发的 OpenSpec Schema 安装到用户全局目录。
  * 对应 .cache/install_openspec_schemas.py 的本地安装路径：不访问网络、不做 CLI 校验，
  * 同名 Schema 直接覆盖（不保留旧版备份），其他 Schema 不受影响。
  * 退出码：0 成功 / 2 安装失败 / 64 用法错误。
@@ -36,16 +36,16 @@ export function installSchemas(source: string, target: string): string[] {
   return names;
 }
 
-export function registerOpenspecInstall(group: Command): void {
-  group.command("install").description("安装随包分发的 OpenSpec Schema 到用户全局目录")
-    .helpOption(false).allowUnknownOption(true).allowExcessArguments(true)
+export function registerOpenspecInstallSchema(group: Command): void {
+  group.command("install-schema").description("安装随包分发的 OpenSpec Schema 到用户全局目录")
+    .addHelpText("after", "\n同名 Schema 将被覆盖；不访问网络；SEA 单文件运行不支持。")
     .action((...cbArgs: unknown[]) => {
       markLeafExecuted();
       void cbArgs;
       let answer: Record<string, unknown>;
       let exitCode = 0;
       try {
-        // 命令文件位于 dist/commands/openspec/install.js，包根在三级上级。
+        // 命令文件位于 dist/commands/openspec/install-schema.js，包根在三级上级。
         const source = fileURLToPath(new URL("../../../openspec/schemas", import.meta.url));
         if (!existsSync(source)) throw new Error(`未找到随包分发的 Schema：${source}（SEA 单文件运行不支持）`);
         const target = globalSchemasDir();

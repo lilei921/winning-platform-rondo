@@ -186,8 +186,9 @@ async function runDoctor(rawArgs: string[], jsonOutput: boolean): Promise<never>
 export function registerDoctor(program: Command): void {
   program
     .command("doctor")
-    .description("环境体检(只读,默认 text 报告;--require 子集/--format json 供程序化消费)")
-    .helpOption(false)
+    .description("只读检查运行环境、CLI 工具、配置及服务连通性")
+    .usage("[--require <checks>] [--output json | --format text|json] [--expect-openspec <version>] [--workspace-id <id> [--profile <name>]] [--network-sample <N> [--network-interval <ms>]]")
+    .addHelpText("after", "\n默认输出文本；--require 指定必检项（逗号分隔）；网络采样需指定 --require network_baseline。")
     .allowUnknownOption(true)
     .allowExcessArguments(true)
     .action(async (...cbArgs: unknown[]) => {
