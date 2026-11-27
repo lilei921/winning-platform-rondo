@@ -12,8 +12,8 @@ import { registerAnalysisValidate } from "./commands/analysis/validate.js";
 import { registerAnalysisPublish } from "./commands/analysis/publish.js";
 import { registerAnalysisRead } from "./commands/analysis/read.js";
 import { registerAnalysisApprove } from "./commands/analysis/approve.js";
-import { registerDevPublish } from "./commands/dev/publish.js";
-import { registerDevGit } from "./commands/dev/git.js";
+import { registerOpenSpecPublish } from "./commands/openspec/publish.js";
+import { registerRepoGit } from "./commands/repo/git.js";
 import { registerRuntimeCheckCheckout } from "./commands/runtime/check-checkout.js";
 import { registerRuntimeGetContext } from "./commands/runtime/get-context.js";
 import { registerRuntimeReconcile } from "./commands/runtime/reconcile.js";
@@ -61,9 +61,6 @@ registerAnalysisPublish(analysis);
 registerAnalysisRead(analysis);
 registerAnalysisApprove(analysis);
 
-const dev = bareGroup(program.command("dev").description("研发 Git 操作与工件发布"));
-registerDevGit(dev);
-registerDevPublish(dev);
 
 
 // PR 交付与 TFS PR 操作
@@ -94,17 +91,19 @@ registerRuntimeGetContext(runtime);
 registerRuntimeReconcile(runtime);
 
 // OpenSpec 身份解析与 Schema 安装
-const openspec = bareGroup(program.command("openspec").description("OpenSpec Change 身份解析与 Schema 安装"));
+const openspec = bareGroup(program.command("openspec").description("OpenSpec Change 身份解析、Schema 安装与研发工件发布"));
 registerResolveIdentity(openspec);
 registerOpenspecInstallSchema(openspec);
+registerOpenSpecPublish(openspec);
 
 
 // doctor: 全局环境体检
 registerDoctor(program);
 
-const repo = bareGroup(program.command("repo").description("TFS Git 仓库查询"));
+const repo = bareGroup(program.command("repo").description("Git 仓库与分支查询及受控操作"));
 registerTfsApiLeaf(repo, "get", ["repo", "get"], "查询 TFS Git 仓库信息", "--repo <name|id> [--project <project>]");
 registerTfsApiLeaf(repo, "get-branch", ["repo", "get-branch"], "查询指定 TFS Git 分支及 HEAD", "--repo <name|id> --branch <branch> [--project <project>]");
+registerRepoGit(repo);
 
 const workitem = bareGroup(program.command("workitem").description("TFS 工作项同步、回写、查询与操作"));
 registerTfsReconcileWorkitem(workitem);

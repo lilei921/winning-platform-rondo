@@ -5,9 +5,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 
-import { assertEngineerExecution, readDevelopmentCommit } from "../dist/commands/dev/requirement-guard.js";
+import { assertEngineerExecution, readDevelopmentCommit } from "../dist/commands/analysis/requirement-guard.js";
 import { parseRepositoryScope } from "../dist/commands/analysis/repository-scope.js";
-import { checkedTaskProgress, validateChangeDelivery, checkPublishedChange } from "../dist/commands/dev/change-completion.js";
+import { checkedTaskProgress, validateChangeDelivery, checkPublishedChange } from "../dist/commands/openspec/change-completion.js";
 import { isRequirementChangeDelivery, approvedRequirementScope } from "../dist/commands/delivery/requirement-mode.js";
 import { isDeliveryTaskTitle } from "../dist/commands/tfs/requirement-tasks.js";
 import { TfsClient } from "../dist/tfs/client.js";

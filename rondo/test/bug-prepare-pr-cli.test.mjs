@@ -98,7 +98,7 @@ process.exit(r.status ?? 1);
 
   if (native) {
     const noTask = { ...env, MULTICA_TASK_ID: '', MULTICA_TASK_ENV_FILE: '' };
-    const runGit = (operation, gitEnv) => spawnSync(process.execPath, [cli, 'dev', 'git', '--issue', 'I-1', '--repo', 'biz', '--root-repo', root, '--operation', operation], { encoding: 'utf8', env: gitEnv, timeout: 30_000 });
+    const runGit = (operation, gitEnv) => spawnSync(process.execPath, [cli, 'repo', operation, '--issue', 'I-1', '--repo', 'biz', '--root-repo', root], { encoding: 'utf8', env: gitEnv, timeout: 30_000 });
     writeFileSync(callsPath, '');
     assert.equal(result(runGit('fetch', noTask), 0).head, sha);
     const fetchCalls = readFileSync(callsPath, 'utf8').trim().split('\n').map(JSON.parse);

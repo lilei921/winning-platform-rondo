@@ -8,7 +8,7 @@ import { readGitTree, readGitBlob } from "../../clients/git-tree.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { normalizeContractText } from "../delivery/contract-files.js";
 import { readAnalysisSource, sameAnalysisSource, type AnalysisSource } from "../analysis/source.js";
-import { approvedIdentity, developmentPublication } from "./requirement-guard.js";
+import { approvedIdentity, developmentPublication } from "../analysis/requirement-guard.js";
 import { publishChange, requirementRoot } from "../runtime/root-git.js";
 
 export const executionArtifact = /^(?:tasks\.md|design\.md)$/;
@@ -43,8 +43,8 @@ export function checkPublishContract(root: string, source: AnalysisSource, candi
   }
 }
 
-export function registerDevPublish(group: Command): void {
-  group.command("publish").description("发布已提交的研发工件并登记远端提交事实")
+export function registerOpenSpecPublish(group: Command): void {
+  group.command("publish").description("发布已批准 OpenSpec Change 的研发工件并登记发布事实")
     .requiredOption("--issue <key>", "Multica Issue 标识")
     .option("--root-repo <path>", "当前根仓路径").option("--minor-design", "确认仅细化非实质性 Design")
     .action(async (opts: { issue: string; rootRepo?: string; minorDesign?: boolean }) => {

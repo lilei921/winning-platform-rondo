@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
 import { validatePrFacts } from "../dist/commands/pr/prepare.js";
-import { validateChangeDelivery } from "../dist/commands/dev/change-completion.js";
+import { validateChangeDelivery } from "../dist/commands/openspec/change-completion.js";
 import { verifyAndExecuteValidation, ValidationCommandError } from "../dist/commands/pr/validation.js";
 const valid=()=>({validation:{command:[process.execPath,"-e","process.exit(0)"],summary:"actual validation"},code_review:{result:"PASS",summary:"review"},blockers:[],description:"professional description"});
 test("common Facts enforce actual command for Requirement, allow Bug evidence-only",()=>{

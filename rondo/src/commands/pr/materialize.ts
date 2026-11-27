@@ -17,8 +17,8 @@ import { readAnalysisSource } from "../analysis/source.js";
 import { assertBugReadyForPr, assertBugAgentAssignment } from "../bug/scope.js";
 import { assertBugExecution, assertBugSource } from "../bug/authorization.js";
 import { validateBugEvidence } from "../bug/evidence.js";
-import { assertEngineerExecution } from "../dev/requirement-guard.js";
-import { checkPublishedChange } from "../dev/change-completion.js";
+import { assertEngineerExecution } from "../analysis/requirement-guard.js";
+import { checkPublishedChange } from "../openspec/change-completion.js";
 import { candidateBranch } from "./candidate-branch.js";
 import { readPrRecords, isRegisteredPr, type PrRecord, type PrIdentity } from "./facts.js";
 

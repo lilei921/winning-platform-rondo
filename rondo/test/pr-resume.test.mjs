@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { resumePr } from "../dist/commands/pr/resume.js";
-import { validateChangeDelivery } from "../dist/commands/dev/change-completion.js";
+import { validateChangeDelivery } from "../dist/commands/openspec/change-completion.js";
 import { deliveryCommentReference } from "../dist/commands/tfs/delivery-comment.js";
 
 const sha="a".repeat(40);

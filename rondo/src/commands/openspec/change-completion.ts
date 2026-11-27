@@ -5,7 +5,7 @@ import type { BaseRegistryConfig } from "../../clients/config.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { RemoteArtifactReader } from "../delivery/remote-artifacts.js";
 import { repositoryName, sameAnalysisSource, type AnalysisSource } from "../analysis/source.js";
-import { approvedChange, readDevelopmentCommit } from "./requirement-guard.js";
+import { approvedChange, readDevelopmentCommit } from "../analysis/requirement-guard.js";
 import { readApprovedVerifyDecision } from "../delivery/verify-decision.js";
 import { readPrRecords, type PrRecord } from "../pr/facts.js";
 
