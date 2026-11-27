@@ -32,13 +32,12 @@ rondo doctor --help
 | 命令组 | 子命令 | 主要用途 |
 | --- | --- | --- |
 | `analysis` | `validate`、`publish`、`read`、`approve` | 分析事实、Gate、审核提交、工件读取和批准登记 |
-| `dev` | `git`、`publish` | 研发 Git 与发布 |
 | `pr` | `prepare`、`materialize`、`resume`、`reconcile-status`、`create`、`get`、`list` | PR 准备、创建、查询及状态对账 |
 | `delivery` | `admission`、`finalize`、`root-prepare` | 准入交接与交付收口 |
 | `workspace` | `provision`、`sync`、`check-daemon` | Workspace 资源供给、同步及检查 |
 | `runtime` | `get-context`、`check-checkout`、`reconcile` | 当前 Run 上下文、Checkout 检查及主备协调 |
-| `openspec` | `resolve-identity`、`install-schema` | OpenSpec Change 身份解析与 Schema 安装 |
-| `repo` | `get`、`get-branch` | 查询 TFS Git 仓库和分支 |
+| `openspec` | `resolve-identity`、`install-schema`、`publish` | OpenSpec Change 身份解析、Schema 安装与研发工件发布 |
+| `repo` | `get`、`get-branch`、`fetch`、`push` | Git 仓库与分支查询及受控操作 |
 | `workitem` | `sync`、`writeback`、`query`、`set-state`、`comment`、`create`、`link-commits`、`download-attachment` | TFS 工作项同步、回写、查询与操作 |
 | 顶级 | `doctor` | 环境体检 |
 
@@ -49,12 +48,14 @@ rondo doctor --help
 ```bash
 rondo openspec resolve-identity --openspec-root <path> [--change-ref <ref>] [--tfs-id <id>] [--expect-schema <name>] [--output json]
 rondo openspec install-schema
+rondo openspec publish --issue <KEY> [--root-repo <path>] [--minor-design]
 ```
 
 | 命令 | 功能 |
 | --- | --- |
 | `openspec resolve-identity` | 根据 Change Ref 或 TFS ID 定位 OpenSpec Change，并可校验 Schema |
 | `openspec install-schema` | 将随包分发的 Schema 安装到 OpenSpec 用户全局目录 |
+| `openspec publish` | 按已批准的 `analysis.source.branch` 发布当前 Change 已提交的 Tasks / Design，确认远端 Git SHA 并登记绑定完整 `analysis.source` 的 `dev.publication`。非实质性 Design 细化使用 `--minor-design` |
 
 把随 rondo 包分发的 `openspec/schemas` 安装到 OpenSpec 用户全局目录（`XDG_DATA_HOME` / `%LOCALAPPDATA%` / `~/.local/share` 下的 `openspec/schemas`）。同名 Schema 直接覆盖，其他 Schema 不受影响；不访问网络、不做 OpenSpec CLI 校验。SEA 单文件运行不支持该命令。
 
@@ -74,25 +75,27 @@ rondo analysis approve --issue <KEY> --comment-id <ID> --commit <SHA> --verify-r
 | `analysis read` | 按 Issue 中的 `analysis.source` 读取指定版本的 `tasks.md`、`proposal.md`、`design.md` 或 Spec，属于只读操作 |
 | `analysis approve` | 登记已确认的 Human Approval 与独立验收决定，核对 Gate、当前审核版本及真实成员评论，回读事实后按需以 `--no-start` 进入 `in_progress`。使用当前 Multica Runtime，无 Registry、Agent 或 Run 身份参数，不发 Mention、不启动 Run；同一批准可幂等重试；`--waive-tasks` 登记 Human 明确批准的完整任务豁免集合（省略表示无豁免），按获批 Commit 核验任务编号。 |
 
-`publish` 无需指定 `--mode`；已部署的旧调用仍可传与 `tfs.type` 一致的 `--mode requirement` 或 `--mode legacy`，不得以其选择其他路径。`validate`、`publish` 直接指定 Change ID；Change Kind 由 Schema 推导，专业审查与独立验证建议不作为 CLI 输入；涉及 `--workspace-id` 的命令需保证其与配置中的 Workspace 身份一致。
+`analysis publish` 无需指定 `--mode`；已部署的旧调用仍可传与 `tfs.type` 一致的 `--mode requirement` 或 `--mode legacy`，不得以其选择其他路径。`analysis validate`、`analysis publish` 直接指定 Change ID；Change Kind 由 Schema 推导，专业审查与独立验证建议不作为 CLI 输入；涉及 `--workspace-id` 的命令需保证其与配置中的 Workspace 身份一致。
 
-Requirement 的 `analysis publish` 和 `dev publish` 使用 Git 2.45 或更高版本，依赖 `git merge-tree` 对三个目录树的三方合并支持。
+Requirement 的 `analysis publish` 和 `openspec publish` 使用 Git 2.45 或更高版本，依赖 `git merge-tree` 对三个目录树的三方合并支持。
 
 远端已包含本次改动但无法从历史确定其本地来源时，首次发布会创建一笔文件差异为零的 Git 提交，记录来源 SHA。重试会复用这笔提交的远端 SHA。
 
-## 4. Development 与 Bug
-
-### 4.1 `rondo dev`
+## 4. Git 仓库操作：`rondo repo`
 
 ```bash
-rondo dev git --operation fetch|push --issue <KEY> --repo <repo_id> --root-repo <path>
-rondo dev publish --issue <KEY> [--root-repo <path>] [--minor-design]
+rondo repo get --repo <name|id> [--project <project>]
+rondo repo get-branch --repo <name|id> --branch <branch> [--project <project>]
+rondo repo fetch --issue <KEY> --repo <repo_id> --root-repo <path>
+rondo repo push --issue <KEY> --repo <repo_id> --root-repo <path>
 ```
 
 | 命令 | 功能 |
 | --- | --- |
-| `dev git` | 受控 Fetch / 非强制 Push 当前授权 Candidate |
-| `dev publish` | 按已批准的 `analysis.source.branch` 发布当前 Change 已提交的 Tasks / Design，确认远端 Git SHA 并登记绑定完整 `analysis.source` 的 `dev.publication`。非实质性 Design 细化使用 `--minor-design` |
+| `repo get` | 按仓库名称或 ID 读取 TFS Git 仓库信息 |
+| `repo get-branch` | 查询指定 TFS Git 分支及其 HEAD |
+| `repo fetch` | 受控 Fetch 当前授权仓库的目标分支，不执行合并 |
+| `repo push` | 非强制 Push 当前授权 Candidate，确认远端 SHA |
 
 ## 5. Delivery 与 PR
 
@@ -147,7 +150,7 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 | `pr get` | 根据仓库和 PR ID 查询 TFS PR |
 | `pr list` | 按仓库、状态、源分支等条件查询 TFS PR 列表 |
 
-## 6. TFS 工作项与仓库
+## 6. TFS 工作项
 
 ### 6.1 `rondo workitem`：同步与交付回写
 
@@ -175,19 +178,7 @@ rondo delivery finalize --phase complete --issue <KEY> --root-repo <path>
 
 已有任务计划时省略 `--task-plan`。Direct Bug 不执行 root-prepare / inspect，不传 root-repo 或 task-plan，仅执行 prepare、writeback、complete。收口命令使用当前 Multica Runtime，无 Registry 配置。
 
-### 6.2 Git 仓库查询
-
-```bash
-rondo repo get --repo <name|id> [--project <project>]
-rondo repo get-branch --repo <name|id> --branch <branch> [--project <project>]
-```
-
-| 命令 | 功能 |
-| --- | --- |
-| `repo get` | 按仓库名称或 ID 读取 TFS Git 仓库信息 |
-| `repo get-branch` | 查询指定 TFS Git 分支及其 HEAD |
-
-### 6.3 `rondo workitem`：基础查询与操作
+### 6.2 `rondo workitem`：基础查询与操作
 
 ```bash
 rondo workitem query --wiql "<WIQL>" [--project <project>]

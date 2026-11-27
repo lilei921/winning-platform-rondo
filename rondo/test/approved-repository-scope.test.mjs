@@ -4,7 +4,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { readApprovedRepositoryScope } from "../dist/commands/dev/requirement-guard.js";
+import { readApprovedRepositoryScope } from "../dist/commands/analysis/requirement-guard.js";
 
 test("Repository Scope uses the approved Git object, never the working tree or newer HEAD", async t => {
   const root = mkdtempSync(join(tmpdir(), "rondo-approved-scope-"));

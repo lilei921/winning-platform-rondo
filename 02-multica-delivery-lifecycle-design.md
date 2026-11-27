@@ -1181,7 +1181,7 @@ Multica 原生 Sub-Issue / Stage 可用于独立事项的协作，不作为当�
 
 ## 8.1 Engineer Execution
 
-Engineer 消费当前获批 Change，在授权 Scope 内实现、验证、审查并发布业务 Candidate；更新实际完成的 OpenSpec Tasks，使用 `rondo dev publish` 固定本轮研发工件版本。专业方法见 [09](09-unified-engineer-development-design.md) 与 [04](04-engineer-development-design.md)。已批准豁免依据 Human Approval，不虚假勾选。
+Engineer 消费当前获批 Change，在授权 Scope 内实现、验证、审查并发布业务 Candidate；更新实际完成的 OpenSpec Tasks，使用 `rondo openspec publish` 固定本轮研发工件版本。专业方法见 [09](09-unified-engineer-development-design.md) 与 [04](04-engineer-development-design.md)。已批准豁免依据 Human Approval，不虚假勾选。
 
 每个实际交付仓独立执行 `rondo pr prepare`，提供真实的验证、Code Review、Candidate 和专业 PR Description。
 

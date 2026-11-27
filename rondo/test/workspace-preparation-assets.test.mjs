@@ -34,8 +34,8 @@ test("workspace preparation is owned by one Skill; delivery contracts remain in 
   for (const file of readdirSync(bugDir, { recursive: true }).filter(path => path.endsWith(".md"))) {
     assert.doesNotMatch(readFileSync(join(bugDir, file), "utf8"), /rondo dev prepare/, file);
   }
-  assert.ok(bug.includes("rondo dev git --operation fetch"));
-  assert.ok(bug.includes("rondo dev git --operation push"));
+  assert.ok(bug.includes("rondo repo fetch"));
+  assert.ok(bug.includes("rondo repo push"));
   assert.ok(bug.includes("rondo pr prepare"));
 
   const spec = read("skills/spec-preparation/SKILL.md");
@@ -48,8 +48,8 @@ test("workspace preparation is owned by one Skill; delivery contracts remain in 
   const native = read("skills/native-workspace/SKILL.md");
   assert.doesNotMatch(native, /rondo dev prepare|--change-ref/);
   assert.ok(bugAgent.includes("pull-request"));
-  assert.match(dev, /rondo dev publish/);
-  assert.doesNotMatch(bug, /rondo dev publish/);
+  assert.match(dev, /rondo openspec publish/);
+  assert.doesNotMatch(bug, /rondo openspec publish/);
   assert.ok(bug.includes("rondo pr resume"));
   assert.ok(bug.includes("rondo pr materialize"));
   assert.ok(!skills.managed_skills.includes("bug-delivery") && !skills.managed_skills.includes("change-development"));

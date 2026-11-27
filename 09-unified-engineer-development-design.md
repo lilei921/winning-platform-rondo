@@ -159,7 +159,7 @@ rondo analysis read --issue <issue> --file tasks.md
 multica repo checkout <business-url> --ref <verified-ref>
 
 # 发布已提交的研发工件
-rondo dev publish --issue <issue> --root-repo "<root>"
+rondo openspec publish --issue <issue> --root-repo "<root>"
 
 # 创建或核实 PR，内部执行 Change 完成检查
 rondo pr materialize --issue <issue>
@@ -207,7 +207,7 @@ Workspace 路径、分支准备与根仓 Git 发布以 08-B 的运行契约为�
 | `analysis read` | 已支持 | 按获批 `analysis.source` 读取固定版本 Change 工件 |
 | 原生 Tasks 编辑 | Engineer 直接维护 checkbox | 真实完成后更新，保持任务正文和编号；进度由研发发布固定 SHA |
 | `requirement-guard` | 当前 Requirement 授权入口 | 新 Change 级模式仅只读核对当前 Multica Actor / Run、Human Approval、Change、Repository Scope |
-| `dev publish` | 受控 Git 发布与远端回读 | 从 Issue 批准来源定位 Change，发布已提交的 `tasks.md` 与适用的 Design 细化，登记研发 SHA，保留获批分析 SHA。 |
+| `openspec publish` | 受控 Git 发布与远端回读 | 从 Issue 批准来源定位 Change，发布已提交的 `tasks.md` 与适用的 Design 细化，登记研发 SHA，保留获批分析 SHA。 |
 | `pr prepare` / `pr materialize` 内部完成检查 | 无独立 Change 完成检查入口 | Change 级检查真实 Candidate、Evidence、原生 Tasks 全量进度与 PR Preparation，不使用派发 Task 编号集合 |
 | `pr materialize` | 已实现新模式且旧路径独立 | 新模式在创建任何 PR 前整体校验 Completion、批准和实际有代码变更仓库的 Candidate / `pr` 对账；支持远端 PR 描述，逐仓幂等恢复 |
 

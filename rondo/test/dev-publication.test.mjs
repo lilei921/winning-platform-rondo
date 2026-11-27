@@ -81,7 +81,7 @@ function fixture(t, { previousTasks, approvedTasks = "- [ ] 1.1 Verify\n", desig
     return JSON.parse(proc.stdout);
   }
   const run = (expected, ...args) => runWithEnv(expected, {}, ...args);
-  const publish = (expected, ...options) => run(expected, "dev", "publish", ...options);
+  const publish = (expected, ...options) => run(expected, "openspec", "publish", ...options);
   const metadata = () => JSON.parse(readFileSync(state, "utf8")).metadata;
   return { root, bare, analyst, work, approved, proposal, source, state, metadata, run, runWithEnv, publish, bizUrl, tfs };
 }
@@ -252,7 +252,7 @@ function drift(read, patch) {
   return { MOCK_METADATA_ON_ISSUE_READ: String(read), MOCK_ISSUE_METADATA_PATCH: JSON.stringify(patch) };
 }
 
-test("dev publish 拒绝来源不一致及读取期间批准变化；Push 后变化不登记回执", t => {
+test("openspec publish 拒绝来源不一致及读取期间批准变化；Push 后变化不登记回执", t => {
   const { root, bare, approved, source, state, metadata, runWithEnv, work } = fixture(t, { secondChange: true });
   const initial = readFileSync(state, "utf8");
   const approval = JSON.parse(metadata()["analysis.human_approval"]);
@@ -268,12 +268,12 @@ test("dev publish 拒绝来源不一致及读取期间批准变化；Push 后变
     [{ "analysis.human_approval": JSON.stringify({ ...approval, at: "2026-11-20T00:00:00Z" }) }, /批准来源在读取授权期间变化/],
   ]) {
     writeFileSync(state, initial);
-    assert.match(runWithEnv(3, drift(2, patch), "dev", "publish").reason, reason);
+    assert.match(runWithEnv(3, drift(2, patch), "openspec", "publish").reason, reason);
     assert.equal(git(bare, "rev-parse", "integration"), approved);
     assert.equal(metadata()["dev.publication"], undefined);
   }
   writeFileSync(state, initial);
-  assert.match(runWithEnv(3, drift(3, otherChange), "dev", "publish").reason, /发布期间批准来源发生变化/);
+  assert.match(runWithEnv(3, drift(3, otherChange), "openspec", "publish").reason, /发布期间批准来源发生变化/);
   assert.notEqual(git(bare, "rev-parse", "integration"), approved);
   assert.equal(metadata()["dev.publication"], undefined);
 });
@@ -310,7 +310,7 @@ test("Native Requirement Git 操作从 Issue 取得批准 Change，拒绝同 SHA
   const other = { ...source, change_ref: "beta" };
   const env = { MULTICA_TASK_ID: taskId, MOCK_GIT_BUSINESS_REMOTE: remote, MOCK_GIT_BUSINESS_URL: bizUrl,
     MOCK_SYNC_CALLS_FILE: join(dir, "git-calls.jsonl") };
-  const args = ["dev", "git", "--operation", "fetch", "--repo", "biz", "--root-repo", root];
+  const args = ["repo", "fetch", "--repo", "biz", "--root-repo", root];
   for (const [patch, reason] of [
     [{ "analysis.source": JSON.stringify(other) }, /Change 身份.*不一致/],
     [{ "analysis.source": JSON.stringify(other),
@@ -369,7 +369,7 @@ test("Native Requirement 续跑使用原根仓分支发布已提交 Tasks，保�
   writeFileSync(join(root, "local.txt"), "keep");
   const taskEnvFile = join(dir, "task-env.json");
   writeFileSync(taskEnvFile, JSON.stringify({ active: true, env: { MULTICA_TASK_ID: taskId, MULTICA_TOKEN: "fixture" } }));
-  const published = runWithEnv(0, { MULTICA_TASK_ID: "", MULTICA_TOKEN: "", MULTICA_TASK_ENV_FILE: taskEnvFile }, "dev", "publish", "--root-repo", root);
+  const published = runWithEnv(0, { MULTICA_TASK_ID: "", MULTICA_TOKEN: "", MULTICA_TASK_ENV_FILE: taskEnvFile }, "openspec", "publish", "--root-repo", root);
   assert.equal(git(root, "branch", "--show-current"), branch);
   assert.equal(git(root, "rev-parse", "HEAD"), local);
   assert.equal(readFileSync(join(root, "local.txt"), "utf8"), "keep");
