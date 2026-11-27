@@ -11,7 +11,6 @@
     "codebase-explorer",
     "diagnosing-bugs",
     "delivery-closeout",
-    "pr-status-sync",
     "requirement-analysis",
     "spec-preparation",
     "tfs-sync",
@@ -79,7 +78,6 @@
       "name": "PR Status Sync Agent",
       "visibility": "workspace",
       "skills": [
-        "pr-status-sync",
         "delivery-closeout"
       ]
     }

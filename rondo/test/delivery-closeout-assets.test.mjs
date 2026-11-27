@@ -17,10 +17,15 @@ test("delivery-closeout 名称、Manifest 与 Agent 绑定一致", () => {
   assert.ok(manifest.managed_skills.includes("delivery-closeout"));
   assert.ok(!manifest.managed_skills.includes("issue-closeout"));
   const agent = manifest.agents.find((a) => a.name === "PR Status Sync Agent");
-  assert.ok(agent?.skills.includes("pr-status-sync"));
+  assert.ok(!existsSync(join(multicaRoot, "skills/pr-status-sync")));
+  assert.ok(!manifest.managed_skills.includes("pr-status-sync"));
+  assert.ok(!manifest.agents.some((a) => a.skills?.includes("pr-status-sync")));
   assert.ok(agent?.skills.includes("delivery-closeout"));
   assert.ok(!manifest.agents.some((a) => a.skills?.includes("issue-closeout")));
-  assert.ok(read("agents/pr-status-sync-agent/autopilot-prompt.md").includes("delivery-closeout"));
+  const instructions = read("agents/pr-status-sync-agent/instructions.md");
+  assert.ok(instructions.includes("rondo pr reconcile-status"));
+  assert.ok(instructions.includes("finalize") && instructions.includes("resume_finalize") && instructions.includes("delivery-closeout"));
+  assert.ok(!read("agents/pr-status-sync-agent/autopilot-prompt.md").includes("pr-status-sync"));
   const sync = readFileSync(new URL("../src/commands/workspace/sync.ts", import.meta.url), "utf8");
   assert.ok(!sync.includes('"delivery-closeout"'), "Workspace Sync 不应渲染 Closeout Registry");
   assert.ok(!sync.includes('"issue-closeout"'));

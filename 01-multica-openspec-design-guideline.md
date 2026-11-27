@@ -246,7 +246,7 @@ Squad      = Delivery Squad
 
 其中 `Leader`、`Member`、`Squad Leader`、`Engineer`、`Specialist Agent` 只能用于描述类型、关系或角色类别；当指向具体 Multica 配置对象时，必须使用对应 Canonical Name。
 
-`TFS Sync Agent` 与 `PR Status Sync Agent` 都在 Delivery Squad 外通过 Multica Autopilot 运行；分别绑定 `tfs-sync` 与 `pr-status-sync` Skill。后者负责已登记 PR 的状态核对与有界 Finalize，并在满足条件的 Requirement Closeout 中规划 TFS 子任务及估时；不负责创建 / 合并 PR 或解释 Review 意见。
+`TFS Sync Agent` 与 `PR Status Sync Agent` 都在 Delivery Squad 外通过 Multica Autopilot 运行；前者绑定 `tfs-sync` Skill；后者直接调用 `rondo pr reconcile-status` 并使用 `delivery-closeout` Skill，负责已登记 PR 的状态核对与有界 Finalize，并在满足条件的 Requirement Closeout 中规划 TFS 子任务及估时；不负责创建 / 合并 PR 或解释 Review 意见。
 
 `Wayfinder Agent` 独立于 Delivery Squad，是自动 TFS 入口的默认 Intake Triage：按需使用 `codebase-explorer` 调查准入所需工程证据，由 Wayfinder Instructions 维护准入判断；`accepted` 后按 TFS 来源类型交给 `Bug Fix Agent` 或 `Delivery Squad`，三种 Decision 的确定性执行通过 `rondo delivery admission` 完成。明确直接委派的 Analysis 可以不经过 Wayfinder；Wayfinder Decision 不作为所有 Analysis 的强制 Gate。它不替代 `Workitem Analyst` 的 Change Kind / Analysis Route、Root Cause、需求方案和 OpenSpec Preparation。`codebase-explorer` 参考原有 `context-analysis` 的定位方法，但独立绑定、独立演进；两者仅通过 Evidence References 交接，不共享 Skill 及完成标准。准入、交接和异常由 [Delivery 主方案 §4.1.1](02-multica-delivery-lifecycle-design.md#delivery-intake) 维护，Evidence 增量复用由 [03 §6](03-workitem-analysis-design.md#analysis-section-06) 维护。
 
