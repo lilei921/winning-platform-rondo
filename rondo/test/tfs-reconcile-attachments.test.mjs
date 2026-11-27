@@ -291,3 +291,26 @@ test("内嵌多图同身份：关联附件优先保留名称，展示按真实�
   assert.deepEqual(nativeImages(body), ["https://mock-multica/files/relation-name.bin"]);
   assert.equal(body.split("[Multica 副本]").length - 1, 1);
 });
+
+for (const [label, projects, title] of [
+  ["缺少目标 Title", [{id:"proj-1",title:"Sync Project"}], ""],
+  ["目标不存在", [{id:"other",title:"Other"}], "Sync Project"],
+  ["目标重名", [{id:"p1",title:"Sync Project"},{id:"p2",title:"Sync Project"}], "Sync Project"],
+]) test(`Project 解析失败不写入 Issue：${label}`, t => {
+  const f = fixture(t, [wi(265136)]);
+  f.setState({...f.state(), projects});
+  const r = f.run({RONDO_PROJECT_TITLE:title});
+  assert.equal(r.exit, 3, r.stderr);
+  assert.equal(r.result.result, "UNKNOWN");
+  assert.equal(creates(r).length, 0);
+  assert.equal(f.state().issues, undefined);
+});
+test("同一轮仅解析一次 Project，并使用精确匹配的 ID", t => {
+  const f = fixture(t, [wi(265136),wi(265137)]);
+  f.setState({...f.state(), projects:[{id:"other",title:"Other"},{id:"target",title:"Sync Project"}]});
+  const r = f.run();
+  assert.equal(r.exit, 0, r.stderr);
+  assert.equal(r.calls.filter(a => a[0]==="project" && a[1]==="list").length,1);
+  assert.equal(r.result.created.length,2);
+  assert.ok(Object.values(f.state().issues).every(i => i.project_id==="target"));
+});

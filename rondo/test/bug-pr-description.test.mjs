@@ -12,7 +12,7 @@ test("new PR submits Agent description unchanged and verifies existing Work Item
     writes++;linked=true;return {statusCode:200,body:"{}"};
   }};
   const tfs={run:async args=>{
-    if(args[0]==="branch")return {found:true,branch:{commit:sha}};
+    if(args[0]==="repo"&&args[1]==="get-branch")return {found:true,branch:{commit:sha}};
     if(args[1]==="list")return [];
     if(args[1]==="create"){file=args[args.indexOf("--description-file")+1];assert.equal(readFileSync(file,"utf8"),desc);return {created:true,pr:{id:9}};}
     if(args[1]==="get")return {id:9,status:"active",sourceBranch:entry.source_branch,targetBranch:entry.target_branch,description:desc};

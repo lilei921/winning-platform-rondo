@@ -68,7 +68,7 @@ async function queryWorkItems(tfs: TfsClient, wiql: string): Promise<WorkItem[]>
   });
   const limit = MAX_ITEMS_PER_RUN;
   if (items.length > limit) {
-    log(`查询结果 ${items.length} 项，超过 max_items_per_run=${limit}，本次只处理前 ${limit} 项`);
+    log(`查询结果 ${items.length} 项，本次只处理前 ${limit} 项`);
     return items.slice(0, limit);
   }
   return items;
@@ -344,7 +344,7 @@ async function downloadAttachment(tfs: TfsClient, attachment: WorkItemAttachment
   return value as { path: string; name: string; size: number };
 }
 
-/** 附件物化：当前 TFS 附件中未物化（映射缺失或无副本链接）的 → tfs-cli 下载 → issue update
+/** 附件物化：当前 TFS 附件中未物化（映射缺失或无副本链接）的 → TFS API 下载 → issue update
  *  --attachment 上传 → 从返回正文识别新副本 URL 记入映射。平台不去重，命中映射的绝不重传。
  *  返回映射与是否有物化变化。崩溃遗留裸引用按文件名认领；同名歧义 → UNKNOWN（交人工）。 */
 async function syncAttachments(

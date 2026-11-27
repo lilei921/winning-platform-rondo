@@ -31,7 +31,7 @@ import { registerWorkspaceCheckDaemon } from "./commands/workspace/check-daemon.
 import { registerDoctor } from "./commands/doctor/doctor.js";
 import { registerOpenspecInstallSchema } from "./commands/openspec/install-schema.js";
 
-const program = new Command();
+const program = new Command().exitOverride();
 
 program
   .name("rondo")
@@ -115,8 +115,6 @@ registerTfsApiLeaf(workitem, "link-commits", ["workitem", "link-commits"], "将 
 registerTfsApiLeaf(workitem, "download-attachment", ["workitem", "download-attachment"], "下载 TFS 工作项附件", "--url <url> --out <directory> [--name <file>]");
 
 program.hook("preAction", () => { hydrateMulticaTaskEnvironment(); });
-
-program.exitOverride();
 
 // async action 需要 parseAsync;包成 IIFE 避免顶层 await(esbuild CJS bundle 不支持 TLA)。
 void (async () => {
