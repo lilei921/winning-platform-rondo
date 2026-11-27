@@ -55,7 +55,7 @@
 PR Status Sync Agent
   └─ pr-status-sync → action=finalize / resume_finalize
        └─ issue-closeout
-            1. rondo delivery finalize --phase prepare
+            1. rondo workitem finalize --phase prepare
                ├─ PASS, status=prepared → 继续
                └─ already=done → 结束（不得重写）
             2. 判断 tfs.type
@@ -66,7 +66,7 @@ PR Status Sync Agent
                ├─ 需求：可用 Commit 与独占核验 → 计划校验/复用 → 子任务创建
                │        → 按计划单归属关联 Commit/回读 → 子任务解决/工时回写 → 父需求回写
                └─ Bug：原有父 Bug 回写
-            4. rondo delivery finalize --phase complete
+            4. rondo workitem finalize --phase complete
                └─ TFS 实际状态核对 PASS → Issue done
 ```
 
@@ -157,7 +157,7 @@ Agent 提供单个 JSON 文件；Rondo 读取 Issue 的 `tfs.id`、`tfs.type`、
 ### 6.2 CLI（实施入口）
 
 ```bash
-rondo delivery finalize --phase prepare --issue <KEY> --root-repo "<root_repo>"
+rondo workitem finalize --phase prepare --issue <KEY> --root-repo "<root_repo>"
 
 # 只读返回当前 Change 经核验的 PR Commit
 rondo workitem writeback --issue <KEY> --inspect --root-repo "<root_repo>"
@@ -165,7 +165,7 @@ rondo workitem writeback --issue <KEY> --inspect --root-repo "<root_repo>"
 # Agent 提供 Commit 单归属任务计划；恢复可复用已登记计划
 rondo workitem writeback --issue <KEY> --task-plan "<task-plan.json>" --root-repo "<root_repo>"
 
-rondo delivery finalize --phase complete --issue <KEY> --root-repo "<root_repo>"
+rondo workitem finalize --phase complete --issue <KEY> --root-repo "<root_repo>"
 ```
 
 - 扩展既有 `rondo workitem writeback`，不新增独立的估算/分配 CLI。新增同命令只读 `--inspect` 返回已核验的业务 Commit（`repo_key + sha`）及可用性；Agent 生成每个 Task 的 `commits` 分配，Rondo 严格核验，不把同一个 Commit 复制给多个 Task。
@@ -240,7 +240,7 @@ TFS 子任务标题：住院病案质量指标优化 - 实现接口与权限控�
 2. **每个子任务至少有一个按本次计划唯一分配的业务 Commit `ArtifactLink`**；按完整仓库身份和 SHA 回读确认，全部子任务间无重复 Commit，且该 Commit 不被其他 TFS Task 占用。父需求上的链接不能替代子任务。
 3. 每个子任务已解决，`OriginalEstimate=计划估计`、`RemainingWork=0`、`CompletedWork=OriginalEstimate`。
 4. TFS 父需求已解决，收口评论按现有稳定引用去重。
-5. 仅全部确认后写 `delivery.tfs_written=true`；`delivery finalize --phase complete` 再次执行只读核对后设置 Issue `done`。
+5. 仅全部确认后写 `delivery.tfs_written=true`；`workitem finalize --phase complete` 再次执行只读核对后设置 Issue `done`。
 
 `FAIL` 表示已知前置/契约冲突；`UNKNOWN` 表示外部写入或回读无法确认、可能部分成功。二者都不允许推进 Complete。恢复先回读真实 TFS，再补未完成步骤，不回滚已确认副作用。
 

@@ -431,7 +431,7 @@ async function finalizeDirectBug(
 async function main(argv: string[]): Promise<number> {
   const args = parseArgs(argv);
   if (!args.issue || argv.some(arg => arg === "--config" || arg.startsWith("--config=")) || (args.phase !== "prepare" && args.phase !== "complete")) {
-    process.stderr.write("用法: rondo delivery finalize --phase prepare|complete --issue <KEY|id> [--root-repo <path>（Requirement 必填）]\n");
+    process.stderr.write("用法: rondo workitem finalize --phase prepare|complete --issue <KEY|id> [--root-repo <path>（Requirement 必填）]\n");
     return 64;
   }
   try {
@@ -532,7 +532,7 @@ async function main(argv: string[]): Promise<number> {
 
     // --phase complete 不重复准备/归档，只核实它们已经完成，且 TFS 外部管理写回成功。
     if (!md["finalize.pending"]) {
-      throw new FailError("缺少 finalize.pending：必须先执行 delivery finalize --phase prepare");
+      throw new FailError("缺少 finalize.pending：必须先执行 workitem finalize --phase prepare");
     }
     const pending = parsePending(md["finalize.pending"]);
     assertPendingEvents(pending);

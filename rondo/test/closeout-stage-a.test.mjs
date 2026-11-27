@@ -139,7 +139,7 @@ test('Native checkout 直接位于 Task workdir，并以来源分支建立独立
   assert.equal(f.checkoutCount, 1);
 });
 
-test('root-prepare CLI 从 Task 环境文件补齐 Task ID，正确建立归档分支', t => {
+test('prepare-archive CLI 从 Task 环境文件补齐 Task ID，正确建立归档分支', t => {
   const f = fixture(t);
   const source = f.source('change-a');
   const { root } = f.checkout(realpathSync(process.cwd()), repoUrl);
@@ -164,7 +164,7 @@ process.exit(r.status ?? 1);
   const env = { ...process.env, MULTICA_TASK_ID: '', MULTICA_TASK_ENV_FILE: taskEnvFile,
     MULTICA_CLI_PATH: multica, MULTICA_SERVER_URL: 'http://multica.test', MOCK_STATE: statePath,
     TFS_SERVER_URL: 'http://tfs.test/tfs/C', TFS_PAT: 'fixture', RONDO_GIT_EXECUTABLE: transport };
-  const run = () => spawnSync(process.execPath, [cli, 'delivery', 'root-prepare', '--issue', 'WNDF-T'],
+  const run = () => spawnSync(process.execPath, [cli, 'repo', 'prepare-archive', '--issue', 'WNDF-T'],
     { cwd: process.cwd(), env, encoding: 'utf8' });
   const result = run();
   assert.equal(result.status, 0, result.stdout + result.stderr);

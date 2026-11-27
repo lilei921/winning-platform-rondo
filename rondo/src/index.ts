@@ -76,11 +76,6 @@ registerTfsApiLeaf(pr, "create", ["pr", "create"], "创建 TFS Git PR", "--repo 
 registerTfsApiLeaf(pr, "get", ["pr", "get"], "查询指定 TFS Git PR", "--repo <name|id> --id <id> [--project <project>]");
 registerTfsApiLeaf(pr, "list", ["pr", "list"], "按条件查询 TFS Git PR", "--repo <name|id> [--status active|completed|abandoned] [--source-branch <branch>] [--top <n>] [--project <project>]");
 
-const delivery = bareGroup(program.command("delivery").description("准入执行与交付收口"));
-registerDeliveryAdmission(delivery);
-registerDeliveryFinalize(delivery);
-registerCloseoutRoot(delivery);
-
 // workspace 组(运维/供给,与 flow 组隔离)
 const workspace = bareGroup(program.command("workspace").description("Workspace 资源供给、同步与检查"));
 registerWorkspaceProvision(workspace);
@@ -102,11 +97,14 @@ registerOpenspecInstallSchema(openspec);
 // doctor: 全局环境体检
 registerDoctor(program);
 
-const repo = bareGroup(program.command("repo").description("TFS Git 仓库查询"));
+const repo = bareGroup(program.command("repo").description("Git 仓库查询、准备与操作"));
+registerCloseoutRoot(repo);
 registerTfsApiLeaf(repo, "get", ["repo", "get"], "查询 TFS Git 仓库信息", "--repo <name|id> [--project <project>]");
 registerTfsApiLeaf(repo, "get-branch", ["repo", "get-branch"], "查询指定 TFS Git 分支及 HEAD", "--repo <name|id> --branch <branch> [--project <project>]");
 
-const workitem = bareGroup(program.command("workitem").description("TFS 工作项同步、回写、查询与操作"));
+const workitem = bareGroup(program.command("workitem").description("工作项同步、准入、收口及查询操作"));
+registerDeliveryAdmission(workitem);
+registerDeliveryFinalize(workitem);
 registerTfsReconcileWorkitem(workitem);
 registerTfsWriteback(workitem);
 registerTfsApiLeaf(workitem, "query", ["workitem", "query"], "执行 TFS WIQL 查询", "--wiql <WIQL> [--project <project>]");

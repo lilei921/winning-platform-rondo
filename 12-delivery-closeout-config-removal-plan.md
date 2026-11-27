@@ -92,12 +92,12 @@ Closeout：
 Requirement：
 
 ```bash
-rondo delivery root-prepare --issue <KEY>
-rondo delivery finalize --phase prepare --issue <KEY> --root-repo "<root_repo>"
+rondo repo prepare-archive --issue <KEY>
+rondo workitem finalize --phase prepare --issue <KEY> --root-repo "<root_repo>"
 rondo workitem writeback --issue <KEY> --root-repo "<root_repo>" --inspect
 rondo workitem writeback --issue <KEY> --root-repo "<root_repo>" --task-plan "<plan.json>"
 rondo workitem writeback --issue <KEY> --root-repo "<root_repo>"
-rondo delivery finalize --phase complete --issue <KEY> --root-repo "<root_repo>"
+rondo workitem finalize --phase complete --issue <KEY> --root-repo "<root_repo>"
 ```
 
 最后一个无 task-plan 的 writeback 用于已有计划恢复，不要求首次写入后再执行一遍。Bug 只执行不带 root-repo 的 prepare、writeback、complete。done 残留 pending 只执行无 root-repo 的 complete。

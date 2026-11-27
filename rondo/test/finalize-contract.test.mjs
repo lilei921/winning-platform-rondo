@@ -423,7 +423,7 @@ process.exit(result.status??1);`);
   });
   const rootArgs = opts.requirement ? ["--root-repo",rootRepo] : [];
   const phase = (name, extraArgs = []) =>
-    runCli(["delivery", "finalize", "--phase", name, "--issue", "WNDF-T", ...rootArgs, ...extraArgs]);
+    runCli(["workitem", "finalize", "--phase", name, "--issue", "WNDF-T", ...rootArgs, ...extraArgs]);
   const writeback = (extraArgs = []) => {
     const planned = readState().issues["WNDF-T"].metadata["delivery.tfs_task_plan"];
     const planArgs = opts.requirement && !planned && !extraArgs.includes("--inspect") ? ["--task-plan",planFile] : [];

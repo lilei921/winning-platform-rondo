@@ -232,9 +232,9 @@ Worktree 的 `.git` 通常是**文件**，不是独立 Clone 的 `.git` 目录�
 PR Status Sync 不需要访问 Engineer 本地 Worktree。继续由 Rondo 执行：
 
 ~~~bash
-rondo delivery finalize --phase prepare --issue <KEY> --config "<config>" --root-repo "<root_repo>"
+rondo workitem finalize --phase prepare --issue <KEY> --root-repo "<root_repo>"
 rondo tfs writeback --issue <KEY> --config "<config>" --root-repo "<root_repo>"
-rondo delivery finalize --phase complete --issue <KEY> --config "<config>" --root-repo "<root_repo>"
+rondo workitem finalize --phase complete --issue <KEY> --root-repo "<root_repo>"
 ~~~
 
 按远端 PR、OpenSpec 和 Delivery Facts 归档并收口，外部动作部分成功时先对账、只补缺失项，不引入跨服务器工作区机制。**TFS 子任务独立于 OpenSpec Tasks**：PR Status Sync Agent 在 Prepare PASS 后依据批准版 `tasks.md` 与真实业务 Commit 决定 1–5 个 TFS 子任务及估时；Rondo 执行独占关联、回读与恢复，**无有效计划不默认创建**。参见 [10 方案](10-tfs-subtask-estimation-design.md)。不让 Analyst / Engineer 管理 TFS 任务。
