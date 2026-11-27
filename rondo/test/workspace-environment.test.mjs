@@ -247,16 +247,16 @@ test("analysis-publish sync no longer renders a Repository Registry", t => {
     workspace_id: "ws-1", skills: { "analysis-publish": "skill-1" },
   });
   f.write("skills/analysis-publish/SKILL.md", "---\nname: analysis-publish\ndescription: fixture\n---\n");
-  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "analysis-publish", "--local-only");
+  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "analysis-publish", "--dry-run");
   assert.equal(result.code, 0, JSON.stringify(result.body));
-  assert.deepEqual(result.body.rendered, []);
+  assert.equal(result.body.mode, "dry-run");
   assert.equal(existsSync(join(dirname(f.overlay), "..", "..", "skills", "analysis-publish", "config", "repo-registry.json")), false);
 });
 
 test("旧 Analyst overlay 同步必须先完成供给，不能静默跳过新 Skills", t => {
   const f = fixture(t);
   f.write(f.shared + "workspaces/pilot.json", { workspace_id: "ws-1", skills: { "workitem-analysis": "old" }, provisioning_required: ["spec-preparation"] });
-  const r = f.run("workspace", "sync", "--workspace", "pilot", "--local-only");
+  const r = f.run("workspace", "sync", "--workspace", "pilot", "--dry-run");
   assert.equal(r.code, 3); assert.match(r.body.reason, /provision/); assert.equal(f.calls().length, 0);
 });
 
@@ -325,7 +325,7 @@ test("对象供给中断后保留恢复标志，sync 不得发布半成品绑定
   assert.equal(r.code, 3);
   const overlay = JSON.parse(readFileSync(f.overlay, "utf8"));
   assert.deepEqual(overlay.provisioning_required, ["spec-preparation"]);
-  assert.equal(f.run("workspace", "sync", "--workspace", "pilot", "--local-only").code, 3);
+  assert.equal(f.run("workspace", "sync", "--workspace", "pilot", "--dry-run").code, 3);
 });
 
 for (const scenario of ["no-runtime", "new-bad"]) test(`新建工作区在 ${scenario} 中断时保留环境与恢复 ID`, t => {
@@ -339,7 +339,7 @@ for (const scenario of ["no-runtime", "new-bad"]) test(`新建工作区在 ${sce
   assert.equal(overlay.multica_server_url, "https://private.example");
   assert.deepEqual(overlay.provisioning_required, ["spec-preparation"]);
   assert.equal(r.body.overlay_written, true);
-  assert.equal(f.run("workspace", "sync", "--workspace", "pilot", "--local-only").code, 3);
+  assert.equal(f.run("workspace", "sync", "--workspace", "pilot", "--dry-run").code, 3);
 });
 
 test("已绑定工作区不因错误 slug 创建额外对象", t => {
@@ -369,9 +369,9 @@ test("spec-preparation no longer renders Repository Registry", t => {
     workspace_id: "ws-1", skills: { "spec-preparation": "skill-1" },
   });
   f.write("skills/spec-preparation/SKILL.md", "---\nname: spec-preparation\ndescription: fixture\n---\n");
-  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "spec-preparation", "--local-only");
+  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "spec-preparation", "--dry-run");
   assert.equal(result.code, 0, JSON.stringify(result.body));
-  assert.deepEqual(result.body.rendered, []);
+  assert.equal(result.body.mode, "dry-run");
   assert.equal(existsSync(join(dirname(f.overlay), "..", "..", "skills", "spec-preparation", "config", "repo-registry.json")), false);
 });
 
@@ -401,9 +401,9 @@ test("pr-status-sync no longer renders Repository Registry", t => {
     workspace_id: "ws-1", skills: { "pr-status-sync": "skill-1" },
   });
   f.write("skills/pr-status-sync/SKILL.md", "---\nname: pr-status-sync\ndescription: fixture\n---\n");
-  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "pr-status-sync", "--local-only");
+  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "pr-status-sync", "--dry-run");
   assert.equal(result.code, 0, JSON.stringify(result.body));
-  assert.deepEqual(result.body.rendered, []);
+  assert.equal(result.body.mode, "dry-run");
   assert.equal(existsSync(join(dirname(f.overlay), "..", "..", "skills", "pr-status-sync", "config", "repo-registry.json")), false);
 });
 
@@ -433,9 +433,9 @@ test("delivery-closeout no longer renders Repository Registry", t => {
     workspace_id: "ws-1", skills: { "delivery-closeout": "skill-1" },
   });
   f.write("skills/delivery-closeout/SKILL.md", "---\nname: delivery-closeout\ndescription: fixture\n---\n");
-  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "delivery-closeout", "--local-only");
+  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "delivery-closeout", "--dry-run");
   assert.equal(result.code, 0, JSON.stringify(result.body));
-  assert.deepEqual(result.body.rendered, []);
+  assert.equal(result.body.mode, "dry-run");
   assert.equal(existsSync(join(dirname(f.overlay), "..", "..", "skills", "delivery-closeout", "config", "repo-registry.json")), false);
 });
 

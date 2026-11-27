@@ -1,31 +1,8 @@
-/**
- * workspace sync — Skill 资产工作区无关化的渲染 + 平台同步（方案：projects/multica/archive/docs-2026-10-26/workspace-skill-portability-plan.md §3.4，历史溯源）。
- *
- * （rondo 收编：实现位置为 @winning/skill-flow 包内 commands/workspace/sync.ts，
- * 原 projects/multica/scripts/sync-workspace.ts 在迁移窗口期保持有效。）
- *
- * 职责：sync-config base + Workspace overlay 渲染 TFS 同步配置
- *   → 对 overlay.skills 已登记的 Skill 执行 skill update（SKILL.md）+ files upsert（全量）
- *   → reconcile：平台多出而仓内不存在的文件 files delete（仓内为准，列明 deleted_remote）
- *   → 回读校验：content_hash 逐文件比对，不一致 → exit 3。
- *
- * 用法：
- *   rondo workspace sync --workspace <name> [--skill <name>] [--local-only] [--profile <name>] [--dry-run] [--check]
- *   --profile     multica 配置 profile（云端/97 等多环境；追加到全部 multica 调用，缺省走 CLI 默认 profile）
- *   --local-only  只渲染写本地，不动平台（本地运行就绪）
- *   --dry-run     不写盘不动平台，diff 走 stderr，stdout 仍只出 JSON 摘要
- *   --check       纯检测模式（方案：archive/docs-2026-10-26/workspace-provisioning-plan.md §1.3，历史溯源）：零写入，回读比对
- *                 平台实际状态（SKILL.md content_hash + 逐文件 hash），有漂移 → exit 2 列明
- *
- * 退出码：0 PASS / 2 漂移（--check）/ 3 UNKNOWN（缺文件/缺字段/命令失败/回读不符）/ 64 用法错误。
- * stdout 只出 JSON；日志走 stderr。
- *
- * 运行环境：Node ≥ 23.6 直跑（22.6+ 需 --experimental-strip-types）；只用可擦除类型注解；零 npm 依赖。
- */
+/** workspace sync — 同步受管 Skill 资产并回读确认。 */
 
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join, relative, resolve, sep } from "node:path";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { join, relative, sep } from "node:path";
 import { Command } from "commander";
 import { UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
@@ -47,13 +24,9 @@ function initRoots(): void {
   SKILLS_ROOT = join(REPO_ROOT, "skills");
 }
 
-/** 消费 sync-config.json 的 Skill（渲染目标 ×1） */
-const TFS_SYNC_SKILL = "tfs-sync";
-
 interface Overlay extends MulticaEnvironment {
   provisioning_required?: string[];
   workspace_id?: string;
-  project?: string;
   skills?: Record<string, string>;
 }
 
@@ -67,38 +40,6 @@ function readJson(path: string, what: string): any {
 
 function sha256(buf: Buffer): string {
   return createHash("sha256").update(buf).digest("hex");
-}
-
-// --- 渲染 ---
-
-interface RenderTarget { skill: string; relPath: string; content: string; }
-
-function renderConfigs(overlay: Overlay, scope: Set<string>): RenderTarget[] {
-  if (!overlay.workspace_id) throw new UnknownError("overlay 缺少 workspace_id");
-  const targets: RenderTarget[] = [];
-
-  if (scope.has(TFS_SYNC_SKILL)) {
-    if (!overlay.project) {
-      throw new UnknownError("overlay 缺少 project（tfs-sync 的 sync-config 渲染必需；项目未建时先跳过 tfs-sync）");
-    }
-    const base = readJson(join(CONFIG_ROOT, "sync-config.base.json"), "sync-config base");
-    const merged = {
-      tfs: base.tfs,
-      multica: {
-        cli: base.multica?.cli,
-        ...(overlay.multica_profile ? { multica_profile: overlay.multica_profile } : {}),
-        ...(overlay.multica_server_url ? { multica_server_url: overlay.multica_server_url } : {}),
-        workspace_id: overlay.workspace_id,
-        project: overlay.project,
-        intake_agent: base.multica?.intake_agent,
-        initial_status: base.multica?.initial_status,
-        cli_note: base.multica?.cli_note,
-      },
-      sync: base.sync,
-    };
-    targets.push({ skill: TFS_SYNC_SKILL, relPath: "config/sync-config.json", content: JSON.stringify(merged, null, 2) + "\n" });
-  }
-  return targets;
 }
 
 /** 仓内 Skill 清单：skills/ 下排除 _shared 的目录；SKILL.md = content，其余文件全量 = skill files */
@@ -135,16 +76,18 @@ function main(rawArgs: string[]): number {
   const args = parseArgs(rawArgs);
   if (typeof args.workspace !== "string" || !args.workspace) {
     process.stderr.write(
-      "用法: rondo workspace sync --workspace <name> [--skill <name>] [--local-only] [--profile <name>] [--dry-run]\n",
+      "用法: rondo workspace sync --workspace <name> [--skill <name>] [--profile <name>] [--dry-run]\n",
     );
     return 64;
   }
-  const localOnly = args["local-only"] === true;
+  if (Object.keys(args).some(key => !["workspace", "skill", "profile", "dry-run", "check"].includes(key))) {
+    process.stderr.write("workspace sync 存在未知参数\n");
+    return 64;
+  }
   const dryRun = args["dry-run"] === true;
   // --profile：multica 配置 profile（云端/97 等多环境，自带 server_url+token）；缺省走 CLI 默认 profile
   let MC: string[] = [];
   const checkMode = args.check === true;
-  const noWrite = dryRun || checkMode;
 
   try {
     initRoots();
@@ -157,8 +100,8 @@ function main(rawArgs: string[]): number {
     if ((args.profile !== undefined || process.env.RONDO_MULTICA_PROFILE) && !overlay.multica_server_url) {
       throw new UnknownError("overlay 尚未绑定环境；请先用指定 profile 执行 workspace provision");
     }
-    // 离线渲染保持零平台调用；显式 profile 必须先由 provision 绑定，避免产生跨环境配置。
-    if (localOnly || dryRun) {
+    // 预演保持零平台调用；显式 profile 必须先由 provision 绑定。
+    if (dryRun) {
       if (args.profile !== undefined && args.profile !== overlay.multica_profile) {
         throw new UnknownError("离线同步的 profile 未绑定；请先为该环境执行 workspace provision");
       }
@@ -187,11 +130,10 @@ function main(rawArgs: string[]): number {
       }
       scope = [args.skill];
     }
-    const scopeSet = new Set(scope);
 
-    if (!localOnly) {
+    {
       // M6 发布前闸（F6 防复发）：references 引用完整性——包内引用必须包内存在，
-      // 跨包引用必须在 skillsRoot 存在；--dry-run 只报告不阻断，正式同步/检测列全量后阻断，local-only 保持仅渲染
+      // 跨包引用必须在 skillsRoot 存在；--dry-run 只报告不阻断，正式同步/检测列全量后阻断
       const refProblems = scope.flatMap((s) => validateSkillReferences(SKILLS_ROOT, s));
       if (refProblems.length > 0) {
         const report = refProblems.map((p) => `  ${p.skill}/${p.file} -> ${p.ref}（${p.kind}）`).join("\n");
@@ -200,66 +142,17 @@ function main(rawArgs: string[]): number {
       }
     }
 
-    // --- 渲染 ---
-    const rendered = renderConfigs(overlay, scopeSet);
-    const renderedPaths: string[] = [];
-    const renderedContent = new Map<string, string>(); // "skill/relPath" → 渲染内容（--check 比对用）
-    const changes: Array<{ target: RenderTarget; abs: string; old: Buffer | null }> = [];
-    for (const t of rendered) {
-      const abs = join(SKILLS_ROOT, t.skill, t.relPath);
-      renderedPaths.push(`${t.skill}/${t.relPath}`);
-      renderedContent.set(`${t.skill}/${t.relPath}`, t.content);
-      const old = existsSync(abs) ? readFileSync(abs) : null;
-      if (old?.toString("utf8") === t.content) {
-        log(`渲染 ${t.skill}/${t.relPath}: 无变化`);
-        continue;
-      }
-      changes.push({ target: t, abs, old });
-      if (noWrite) {
-        log(`渲染 ${t.skill}/${t.relPath}: DIFF（旧 ${old === null ? "<不存在>" : old.length + " bytes"} → 新 ${Buffer.byteLength(t.content)} bytes）`);
-      }
-    }
-    if (!noWrite && changes.length > 0) {
-      const tempPaths: string[] = [];
-      const committed: Array<{ abs: string; old: Buffer | null }> = [];
-      try {
-        // 先完成全部临时文件写入，再同目录原子替换；失败时恢复已替换文件，避免半套配置。
-        changes.forEach((change, index) => {
-          mkdirSync(dirname(change.abs), { recursive: true });
-          const temp = `${change.abs}.sync-${process.pid}-${index}.tmp`;
-          tempPaths.push(temp);
-          writeFileSync(temp, change.target.content, "utf8");
-        });
-        changes.forEach((change, index) => {
-          renameSync(tempPaths[index], change.abs);
-          committed.push({ abs: change.abs, old: change.old });
-          log(`渲染 ${change.target.skill}/${change.target.relPath}: 已写入（${change.target.content.length} chars）`);
-        });
-      } catch (exc) {
-        const rollbackErrors: string[] = [];
-        for (const temp of tempPaths) {
-          try { rmSync(temp, { force: true }); } catch (rollback) { rollbackErrors.push(String(rollback)); }
-        }
-        for (const change of committed.reverse()) {
-          try {
-            if (change.old === null) rmSync(change.abs, { force: true });
-            else writeFileSync(change.abs, change.old);
-          } catch (rollback) { rollbackErrors.push(String(rollback)); }
-        }
-        throw new UnknownError(`本地渲染写入失败，已执行回滚: ${exc}${rollbackErrors.length ? `；回滚异常: ${rollbackErrors.join("；")}` : ""}`);
-      }
-    }
+    if (!overlay.workspace_id) throw new UnknownError("overlay 缺少 workspace_id");
 
     const skippedUnregistered = readdirSync(SKILLS_ROOT)
       .filter((d) => statSync(join(SKILLS_ROOT, d)).isDirectory())
       .filter((d) => !registered.includes(d));
 
-    if (localOnly || dryRun) {
+    if (dryRun) {
       process.stdout.write(JSON.stringify({
         result: "PASS",
         workspace: args.workspace,
-        mode: localOnly ? "local-only" : "dry-run",
-        rendered: renderedPaths,
+        mode: "dry-run",
         skipped_unregistered: skippedUnregistered,
       }, null, 2) + "\n");
       return 0;
@@ -283,14 +176,10 @@ function main(rawArgs: string[]): number {
       const skillContent = readSkillContent(skillMd);
       const skillMdHash = sha256(Buffer.from(skillContent, "utf8"));
 
-      // 本地事实集：仓内文件 + 渲染产物覆盖（--check 时渲染产物可能未写盘，以内存内容为准）
-      const paths = new Set(listSkillFiles(skill));
-      for (const key of renderedContent.keys()) {
-        if (key.startsWith(skill + "/")) paths.add(key.slice(skill.length + 1));
-      }
+      const paths = listSkillFiles(skill);
       const localByPath = new Map<string, { content: string; hash: string; size: number }>();
       for (const rel of paths) {
-        const content = renderedContent.get(`${skill}/${rel}`) ?? readSkillContent(join(skillDir, rel));
+        const content = readSkillContent(join(skillDir, rel));
         const buf = Buffer.from(content, "utf8");
         localByPath.set(rel, { content, hash: sha256(buf), size: buf.length });
       }
@@ -384,7 +273,6 @@ function main(rawArgs: string[]): number {
     process.stdout.write(JSON.stringify({
       result: "PASS",
       workspace: args.workspace,
-      rendered: renderedPaths,
       synced,
       deleted_remote: deletedRemote,
       unchanged_files: unchangedFiles.length,
@@ -405,9 +293,9 @@ function main(rawArgs: string[]): number {
 export function registerWorkspaceSync(group: Command): void {
   group
     .command("sync")
-    .description("生成本地运行配置并同步 Skill 资产")
-    .usage("--workspace <name> [--skill <name>] [--local-only] [--profile <name>] [--dry-run] [--check]")
-    .addHelpText("after", "\n--local-only 只生成本地配置；--check 检查差异；--dry-run 预览。")
+    .description("同步 Skill 资产")
+    .usage("--workspace <name> [--skill <name>] [--profile <name>] [--dry-run] [--check]")
+    .addHelpText("after", "\n--check 检查差异；--dry-run 预览。")
     .allowUnknownOption(true)
     .allowExcessArguments(true)
     .action((...cbArgs: unknown[]) => {

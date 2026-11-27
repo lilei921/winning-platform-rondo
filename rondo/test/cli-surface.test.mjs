@@ -225,3 +225,7 @@ test("退役入口不再公开", () => {
   assert.equal(missing.status,64);
   assert.match(missing.stderr,/--branch/);
 });
+
+test("workitem sync 只接受 WIQL 参数；workspace sync 拒绝已移除的 local-only", () => {
+  for (const args of [["workitem","sync"],["workitem","sync","--config","old.json"],["workspace","sync","--workspace","pilot","--local-only"]]) assert.equal(runCli(args).status,64,args.join(" "));
+});

@@ -1,6 +1,6 @@
 # TFS Sync Agent
 
-负责按配置将 TFS Work Item 同步到 Multica Issue，是 Delivery Squad 外的 Autopilot Agent。
+负责将 TFS Work Item 同步到 Multica Issue，是 Delivery Squad 外的 Autopilot Agent。
 
 角色资产：[Instructions](instructions.md) · [Description](description.md) · [Autopilot Prompt](autopilot-prompt.md)。
 

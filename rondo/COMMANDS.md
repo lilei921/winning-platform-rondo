@@ -152,14 +152,16 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 ### 6.1 `rondo workitem`：同步与交付回写
 
 ```bash
-rondo workitem sync --config <sync-config.json>
+rondo workitem sync --wiql "<WIQL>" [--initial-status backlog|todo]
 rondo workitem writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-plan <plan.json>]
 ```
 
 | 命令 | 功能 |
 | --- | --- |
-| `workitem sync` | 依据同步配置查询 TFS Work Item，并创建或更新对应 Multica Issue 及其来源内容 |
+| `workitem sync` | 依据 WIQL 查询 TFS Work Item，并创建或更新对应 Multica Issue 及其来源内容 |
 | `workitem writeback` | 按交付事实回写 TFS 工作项、任务状态、工时及关联信息 |
+
+`workitem sync` 使用当前 Multica Runtime 与 `RONDO_PROJECT_TITLE`，每轮按 Title 唯一解析目标 Project；默认新建 Issue 停放 `backlog`，显式 `todo` 在初始化完成后激活。每轮最多处理 50 项。
 
 交付收口的常用调用顺序：
 
@@ -211,17 +213,17 @@ rondo workitem download-attachment --url <attachment-url> --out <directory> [--n
 
 ```bash
 rondo workspace provision --workspace <name> [--slug <slug>] [--create-workspace [--display-name <name>]] [--runtime-id <uuid>] [--profile <name>] [--dry-run] [--skip-workflow]
-rondo workspace sync --workspace <name> [--skill <skill>] [--local-only] [--profile <name>] [--dry-run] [--check]
+rondo workspace sync --workspace <name> [--skill <skill>] [--profile <name>] [--dry-run] [--check]
 rondo workspace check-daemon --workspace-id <id> [--project-id <id>]
 ```
 
 | 命令 | 功能 |
 | --- | --- |
 | `workspace provision` | 根据 Workspace 配置创建或核对 Agent、Skill、Squad、Project 和工作流对象，并记录对象 ID |
-| `workspace sync` | 将本地受管 Skill 内容同步到 Multica Workspace，生成对应运行配置 |
+| `workspace sync` | 将本地受管 Skill 内容同步到 Multica Workspace |
 | `workspace check-daemon` | 检查 Daemon 环境变量、Runtime 注册、挂载唯一性和交付亲和条件 |
 
-`workspace provision` 的 `--dry-run` 只预览；`workspace sync --local-only` 只生成本地配置，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。研发工作区统一按 Project Resource 和实际 Checkout 准备；Provision 不注入 `RONDO_WORKSPACE_BRANCH`，也不修改已有 Agent 环境变量。
+`workspace provision` 的 `--dry-run` 只预览；`workspace sync --dry-run` 只预览，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。研发工作区统一按 Project Resource 和实际 Checkout 准备；Provision 不注入 `RONDO_WORKSPACE_BRANCH`，仅为 TFS Sync Agent 对齐 `RONDO_PROJECT_TITLE`，保留其他环境变量。
 
 受管 Skill 或 Agent 绑定发生变化时，先执行 `rondo workspace provision --workspace <name>` 更新绑定和 Overlay，再执行 `rondo workspace sync --workspace <name>` 同步内容。此次 `workitem-triage` 退役后，核对 Wayfinder 仅绑定 `codebase-explorer`、Overlay 不再登记旧 Skill；不自动删除其他未受管平台 Skill。
 
