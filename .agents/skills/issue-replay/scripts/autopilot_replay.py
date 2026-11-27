@@ -41,6 +41,7 @@ def main() -> int:
     parser.add_argument("--profile", help="Multica CLI profile；缺省沿用 CLI 当前配置")
     parser.add_argument("--workspace-id", required=True)
     parser.add_argument("--last", type=int, default=1, help="采集最近 N 次 Run，默认 1")
+    parser.add_argument("--run-id", action="append", default=[], help="只导出指定 Run ID，可重复；与 --last 的结果取交集")
     parser.add_argument("--server-url", default=os.environ.get("MULTICA_SERVER_URL"))
     parser.add_argument("--cli", default=os.environ.get("MULTICA_CLI_PATH", "multica"))
     parser.add_argument("--codex-home", type=Path, action="append", default=[], help="补充日志目录，可重复")
@@ -64,6 +65,15 @@ def main() -> int:
             raise ValueError("Run JSON 形状无效或该 Autopilot 没有执行记录")
         # 平台按最新在前返回；只取请求的最近 N 次。
         runs = [normalize_run(run, autopilot) for run in runs[:args.last]]
+        if args.run_id:
+            # 指定 Run ID 时仅保留命中的 Run，便于为同一次 Autopilot 的不同 Run 分别生成独立回放。
+            selected = {ir.safe_key(run_id, "Run") for run_id in args.run_id}
+            runs = [run for run in runs if run["id"] in selected]
+            if len(runs) != len(selected):
+                missing = selected - {run["id"] for run in runs}
+                raise ValueError(f"指定 Run 不在最近 {args.last} 次记录中：{', '.join(sorted(missing))}")
+        if not runs:
+            raise ValueError("没有可导出的 Run")
         agents, agent_warnings = client.read_agents(runs)
         issue_view = {**autopilot, "identifier": identifier_for(autopilot, runs), "subject_type": "autopilot"}
         directory, index = ir.export_issue(

@@ -1,0 +1,32 @@
+{
+  "schema": "multica-issue-replay/v2",
+  "profile": "cli-default",
+  "server_url": null,
+  "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+  "issue_id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+  "identifier": "PR-Status-Sync-run-01a21b97",
+  "collected_at": "2026-11-27T16:09:52+08:00",
+  "coverage": "partial",
+  "sessions": [],
+  "agents": [
+    {
+      "id": "34986774-e980-4695-816b-4266a25a86c9",
+      "name": "PR Status Sync Agent"
+    }
+  ],
+  "agent_warnings": [],
+  "agent_directories": {
+    "34986774-e980-4695-816b-4266a25a86c9": "pr-status-sync"
+  },
+  "session_directories": {},
+  "run_count": 1,
+  "active_run_count": 0,
+  "tool_calls_total": 0,
+  "subagent_tool_calls_total": 0,
+  "gaps": [
+    "session 56bf2ad4-3349-4e3c-b24f-62a16425a2d8 导出失败：未找到唯一的本地会话来源，可补充 --codex-home / --claude-home 并核对 Run provider"
+  ],
+  "subject_type": "autopilot",
+  "autopilot_id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+  "title": "PR Status Sync"
+}

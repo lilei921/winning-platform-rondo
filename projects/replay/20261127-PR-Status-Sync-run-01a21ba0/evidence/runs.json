@@ -1,0 +1,25 @@
+[
+  {
+    "autopilot_id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+    "completed_at": "2026-11-27T14:10:38+08:00",
+    "created_at": "2026-11-27T14:10:04+08:00",
+    "failure_reason": null,
+    "id": "01a21ba0-122d-7e05-9b71-75f4c1161126",
+    "issue_id": "ba14e806-eee4-4ab1-889d-209d7e4b2454",
+    "result": {
+      "output": "本轮 PR 状态同步已完成，无待处理事项。\n\n- `rondo pr reconcile-status`：PASS，扫描 0 个候选项，无动作、无失败。\n- `rondo pr reconcile-status --recover-done`：PASS，扫描 17 个已完成 Issue，无残留 `finalize.pending`，无动作、无失败。\n\n未产生 `finalize` / `resume_finalize` 动作，因此本轮无需执行 `delivery-closeout`，也没有 `unknown` 或 `stopped_abandoned` 项需要跟进。",
+      "pr_url": "",
+      "session_id": "fe20def2-3904-4913-8b3f-c615164d3827",
+      "work_dir": "/home/lilei/multica_workspaces/winning-lil-b39bad65de56/task-293a4b0d4564/workdir"
+    },
+    "source": "schedule",
+    "status": "completed",
+    "task_id": "01a21ba0-123c-79ec-bf37-293a4b0d4564",
+    "trigger_id": "46271734-ae1f-4636-8f16-769b480e44f8",
+    "trigger_payload": null,
+    "triggered_at": "2026-11-27T14:10:04+08:00",
+    "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+    "agent_id": "34986774-e980-4695-816b-4266a25a86c9",
+    "started_at": "2026-11-27T14:10:04+08:00"
+  }
+]
