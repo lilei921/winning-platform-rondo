@@ -71,7 +71,7 @@ function pushRepositoryUrl(root: string): string {
 }
 
 async function main(rawArgs: string[]): Promise<number> {
-  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis publish --issue <issue-id> --change-ref <id> [--registry-config <path>] --workspace-id <id> [--root-repo <path>] [--target-branch <branch>] [--multica <cli>] [--profile <name>]\n"); return 0; }
+  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis publish --issue <issue-id> --change-ref <id> --workspace-id <id> [--root-repo <path>] [--target-branch <branch>] [--multica <cli>] [--profile <name>]\n"); return 0; }
   const args = parseArgs(rawArgs);
   const ws = ["--workspace-id", args.workspaceId!];
   try {

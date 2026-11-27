@@ -9,7 +9,7 @@
 import { checkNodeRuntime, checkNpmRegistryConfig } from "./runtime.js";
 import { checkOpenspecCli, checkRondoSelf, checkGit, checkPython } from "./cli-tools.js";
 import { checkInternalNpmRegistry, checkTfsApi, checkMulticaApi } from "./connectivity.js";
-import { checkOpenspecRoot, checkRepoRegistry, checkTfsConfig, checkDaemonEnv } from "./config-data.js";
+import { checkOpenspecRoot, checkTfsConfig, checkDaemonEnv } from "./config-data.js";
 import { checkVersionAlignment, checkPathPrecedence, checkWorkflowStatuses } from "./consistency.js";
 import { checkNetworkBaseline } from "./network-probe.js";
 
@@ -75,7 +75,6 @@ export const CHECKS: CheckDef[] = [
   def("multica_api", "WARN", 1, checkMulticaApi),
   // 4.4 数据/配置层
   def("openspec_root", "WARN", 1, checkOpenspecRoot),
-  def("repo_registry", "WARN", 1, checkRepoRegistry),
   def("tfs_config", "FAIL", 1, checkTfsConfig),
   def("daemon_env", "WARN", 1, checkDaemonEnv),
   // 4.5 一致性层（依赖 phase=1 结果）
