@@ -276,7 +276,7 @@ test("Repository Scope accepts repo_id strings, not objects; diagnostics show th
   writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories:\n  - repo_id: frame\n");
   const invalid = f.complete();
   assert.equal(invalid.exit, 2, JSON.stringify(invalid));
-  assert.match(invalid.body.reason, /x-repositories: \[dataintegration\]/);
+  assert.match(invalid.body.reason, /x-repositories: \[winning-dps-df-dataintegration\]/);
   assert.equal(git(f.root, "rev-parse", "HEAD"), local);
   writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories:\n  - frame\n");
   assert.equal(f.complete().exit, 0);
