@@ -236,7 +236,7 @@ Bug Resume 使用 pr / original_prs 的 PR URL、ID、分支和外部 abandoned 
 
 openspec read 直接使用 Runtime + analysis.source；change update-progress 已无 Registry 依赖。
 
-[workspace/sync.ts](rondo/src/commands/workspace/sync.ts) 的 REPO_REGISTRY_SKILLS 移除 bug-delivery、change-development、pull-request，防止自动生成新 Registry。保留 workspace-config/repo-registry.base.json 及其他实际 Registry 消费者（如 analysis-completion、spec-preparation、change-handoff）；本次不改造整个 Workspace 配置体系。
+[workspace/sync-skills.ts](rondo/src/commands/workspace/sync-skills.ts) 的 REPO_REGISTRY_SKILLS 移除 bug-delivery、change-development、pull-request，防止自动生成新 Registry。保留 workspace-config/repo-registry.base.json 及其他实际 Registry 消费者（如 analysis-completion、spec-preparation、change-handoff）；本次不改造整个 Workspace 配置体系。
 
 ## 6. Skill 目标结构
 
