@@ -36,7 +36,7 @@ rondo doctor --help
 | `runtime` | `get-context`、`check-checkout`、`check-daemon`、`reconcile` | Runtime / Daemon、Checkout 检查及主备协调 |
 | `openspec` | `resolve-identity`、`install-schema`、`validate`、`read`、`submit-review`、`publish` | OpenSpec Change、Schema 与工程工件管理 |
 | `repo` | `get`、`get-branch`、`fetch`、`push`、`prepare-archive` | Git 仓库查询、准备与受控操作 |
-| `workitem` | `sync`、`admission`、`approve`、`finalize`、`writeback`、`query`、`set-state`、`comment`、`create`、`link-commits`、`download-attachment` | 工作项同步、准入、批准、收口及查询操作 |
+| `workitem` | `sync`、`apply-decision`、`approve`、`finalize`、`writeback`、`query`、`set-state`、`comment`、`create`、`link-commits`、`download-attachment` | 工作项同步、准入、批准、收口及查询操作 |
 | 顶级 | `doctor` | 环境体检 |
 
 ## 3. OpenSpec
@@ -121,7 +121,7 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 
 ```bash
 rondo workitem sync --wiql "<WIQL>" [--initial-status backlog|todo]
-rondo workitem admission --issue <KEY> --decision <accepted|needs_human|unsupported>
+rondo workitem apply-decision --issue <KEY> --decision <accepted|needs_human|unsupported>
 rondo workitem approve --issue <KEY> --comment-id <ID> --commit <SHA> --verify-required true|false [--waive-tasks 3.1,3.2]
 rondo workitem finalize --phase prepare|complete --issue <KEY> [--root-repo <path>]
 rondo workitem writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-plan <plan.json>]
@@ -130,7 +130,7 @@ rondo workitem writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-
 | 命令 | 功能 |
 | --- | --- |
 | `workitem sync` | 依据 WIQL 查询 TFS Work Item，并创建或更新对应 Multica Issue 及其来源内容 |
-| `workitem admission` | 执行 Wayfinder 已记录的 Decision：通过时按 `tfs.type` 交接并回读原生 Run，其他结果保留 Wayfinder 并设置对应状态 |
+| `workitem apply-decision` | 执行 Wayfinder 已记录的 Decision：通过时按 `tfs.type` 交接并回读原生 Run，其他结果保留 Wayfinder 并设置对应状态 |
 | `workitem approve` | 根据真实 Human 评论、获批 Commit 和明确的独立验收决定登记 Human Approval；按需记录完整任务豁免集合，并回读后将审核中的 Requirement 转入 `in_progress`，不启动 Run |
 | `workitem finalize` | `prepare` 核验交付并准备收口；`complete` 在外部回写完成后核验并结束交付 |
 | `workitem writeback` | 按交付事实回写 TFS 工作项、任务状态、工时及关联信息 |
@@ -139,7 +139,7 @@ rondo workitem writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-
 
 `workitem approve` 使用当前 Multica Runtime，要求 Gate 已通过，并核对真实成员批准评论、获批 Commit 及明确的独立验收决定；`--waive-tasks` 记录 Human 明确批准的完整任务豁免集合，并按固定批准版 Tasks 核验编号。同一评论可幂等重试，不允许改写已登记决定。成功回读后将审核中的 Issue 转入 `in_progress`，不发 Mention、不启动 Run，也不要求 Registry、Agent 或 Run 身份参数。
 
-`workitem admission` 的映射规则：
+`workitem apply-decision` 的映射规则：
 
 | `tfs.type` | 交接目标 |
 | --- | --- |
@@ -148,7 +148,7 @@ rondo workitem writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-
 
 `accepted` 执行一次 `status=todo + assignee` 更新，通过 Multica 原生机制启动对应 Run。它不重新判断 Wayfinder 的 `accepted` 结论，也不解析 `/note` 或 Evidence。若无法确认结果则返回 `UNKNOWN`，不盲目重复交接。
 
-`workitem admission` 接受 `--issue` 和 `--decision`。`needs_human` / `unsupported` 保留 Wayfinder Assignee，分别设置 `blocked` / `unsupported`，不启动新 Run。Workspace 与服务端从 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL` 读取；CLI 路径可选 `MULTICA_CLI_PATH`（默认 `multica`），并校验 `MULTICA_AGENT_ID` 必须是当前 Workspace 的 Wayfinder Agent。缺失或身份不符返回 `UNKNOWN`，不使用默认 Workspace。交接目标始终从当前 Workspace 查询。完整说明见 `rondo workitem admission --help`。
+`workitem apply-decision` 接受 `--issue` 和 `--decision`。`needs_human` / `unsupported` 保留 Wayfinder Assignee，分别设置 `blocked` / `unsupported`，不启动新 Run。Workspace 与服务端从 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL` 读取；CLI 路径可选 `MULTICA_CLI_PATH`（默认 `multica`），并校验 `MULTICA_AGENT_ID` 必须是当前 Workspace 的 Wayfinder Agent。缺失或身份不符返回 `UNKNOWN`，不使用默认 Workspace。交接目标始终从当前 Workspace 查询。完整说明见 `rondo workitem apply-decision --help`。
 
 交付收口的常用调用顺序：
 

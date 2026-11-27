@@ -23,7 +23,7 @@ const TREE = {
   runtime: ["get-context", "check-checkout", "check-daemon", "reconcile"],
   openspec: ["resolve-identity", "install-schema", "validate", "read", "submit-review", "publish"],
   repo: ["get", "get-branch", "fetch", "push", "prepare-archive"],
-  workitem: ["sync", "admission", "approve", "finalize", "writeback", "query", "set-state", "comment", "create", "link-commits", "download-attachment"],
+  workitem: ["sync", "apply-decision", "approve", "finalize", "writeback", "query", "set-state", "comment", "create", "link-commits", "download-attachment"],
 };
 
 test("全部命令组:bare 调用 exit 64,stderr 帮助列出全部叶子", () => {
@@ -129,8 +129,8 @@ test("doctor 默认文本，统一 JSON 输出兼容原 --format json，冲突�
 });
 
 test("阶段命令组已退役，操作归入对应对象命令组", () => {
-  for (const args of [["analysis"], ["analysis", "validate"], ["analysis", "publish"], ["analysis", "read"], ["analysis", "approve"], ["workspace", "check-daemon"], ["delivery", "handoff"]]) assert.equal(runCli(args).status, 64, args.join(" "));
-  for (const args of [["openspec", "validate"], ["openspec", "submit-review"], ["openspec", "read"], ["workitem", "approve"], ["workitem", "admission"]]) assert.equal(runCli([...args, "--help"]).status, 0, args.join(" "));
+  for (const args of [["analysis"], ["analysis", "validate"], ["analysis", "publish"], ["analysis", "read"], ["analysis", "approve"], ["workspace", "check-daemon"], ["delivery", "handoff"], ["workitem", "admission"]]) assert.equal(runCli(args).status, 64, args.join(" "));
+  for (const args of [["openspec", "validate"], ["openspec", "submit-review"], ["openspec", "read"], ["workitem", "approve"], ["workitem", "apply-decision"]]) assert.equal(runCli([...args, "--help"]).status, 0, args.join(" "));
 });
 
 test("P0 退役独立进度与完成检查，研发命令不再接受 Change 参数", () => {

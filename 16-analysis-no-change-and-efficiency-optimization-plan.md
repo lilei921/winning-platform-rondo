@@ -258,7 +258,7 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 
 已确认收敛方向：
 - 删除 Repository Accessibility 和 Admission Boundary 两个独立评估维度；保留 Business Scope、Repository Discovery、Processing Capability，按下述已确认的准入规则判断。实际访问异常与已明确的授权/排除规则仍按实际影响处理，不要求常规逐项调查权限或限制。
-- 统一使用 accepted / needs_human / unsupported 三种专业决策；准入通过命名由 eligible 调整为 accepted，不保留旧命名兼容别名。先确认有效 Decision 已记录，再通过统一的 rondo workitem admission 执行确定性结果处理；不新增 Decision Gate 或自然语言解析。
+- 统一使用 accepted / needs_human / unsupported 三种专业决策；准入通过命名由 eligible 调整为 accepted，不保留旧命名兼容别名。先确认有效 Decision 已记录，再通过统一的 rondo workitem apply-decision 执行确定性结果处理；不新增 Decision Gate 或自然语言解析。
 - 保留 /note 原生静默评论、必要 Evidence 与增量重评；不要求固定 JSON 或 Markdown 字段。取消 supersedes、resume_ref 的固定字段要求，使用原生 Comment 上下文和必要引用；当前 handoff 不解析 Decision 正文，其他实际消费者在实施时核实。写入已明确成功时不强制额外回读，结果不明时先核实。
 - 正文采用 Role & Goal、Working Principles、Admission Criteria、Decision、Delivery 的精简结构；不把方案中的历史说明、内部 CLI 实现或固定调查步骤写入 Instructions。
 
@@ -328,7 +328,7 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 
 确认有效 Decision 已记录后，执行：
 
-rondo workitem admission --issue <KEY> --decision <accepted|needs_human|unsupported>
+rondo workitem apply-decision --issue <KEY> --decision <accepted|needs_human|unsupported>
 
 根据命令结果处理后续事项。操作结果不明确时核实实际结果，不重复执行已确认成功的操作。
 
@@ -348,7 +348,7 @@ Decision 是专业结论，Comment 是专业内容的原生载体；CLI 不消�
 将现有 rondo delivery handoff 收敛为唯一公开入口：
 
 ```bash
-rondo workitem admission --issue <KEY> --decision <accepted|needs_human|unsupported>
+rondo workitem apply-decision --issue <KEY> --decision <accepted|needs_human|unsupported>
 ```
 
 | Decision | CLI 操作 |
@@ -460,7 +460,7 @@ Wayfinder 明确受支持的业务范围、定位相关工程仓库，判断需�
 - 无工程增量：直接发布 Comment，原生回流，由 Lead 协调，不虚构 Change/Gate/Approval/PR/TFS 事实；现场版本未知不等于已解决；已有有效契约不被静默取消。
 - 真实工程增量：正常 publish 直接消费本次 Facts，保留专业复核、原生 Strict Validation、必要 Gate、Git 固定来源、Human Approval；必要诊断仍可执行。
 - CLI 回归：首次发布前 validate 直接消费本次 Facts（无 stage、无 Metadata 写入）；Gate、候选及远端契约使用一致的 Facts；输入缺失或不合法、发布路径越界、身份或事实冲突、候选/远端不一致、部分成功恢复与审核重放；首次发布与重放返回一致的固定来源字段。不得降低已有保护或增加无意义校验。
-- Wayfinder：Business Scope 与 Repository Discovery 必须满足；Bug 满足前两项即可准入，需求仅支持 Bug 类及现有功能优化，新增业务功能暂不支持，关键性质不明时按需澄清。有效 Decision 先记录再执行 admission；三个分支分别验证原生交接/blocked/unsupported、Assignee、是否触发 Run、重复执行和已移交保护，不修改 TFS；删除两个独立准入维度，不取消真实授权边界；合并实施后确认绑定及当前原生评论契约。
+- Wayfinder：Business Scope 与 Repository Discovery 必须满足；Bug 满足前两项即可准入，需求仅支持 Bug 类及现有功能优化，新增业务功能暂不支持，关键性质不明时按需澄清。有效 Decision 先记录再执行 `apply-decision`；三个分支分别验证原生交接/blocked/unsupported、Assignee、是否触发 Run、重复执行和已移交保护，不修改 TFS；删除两个独立准入维度，不取消真实授权边界；合并实施后确认绑定及当前原生评论契约。
 - 工程调查：远端路径和证据版本真实，按需使用工具；不强制重复 Checkout。
 - Agent / Skill 指导可直接消费：保留真实命令、参数、配置来源、专业判断依据与必要失败处理；正常执行无需反查 CLI 内部实现或历史工件来补齐契约。Lead 仅局部明确批准对象，Independent Verification 仅调整适用范围，spec-preparation 保留有效原生执行指引；不以提示词缩短作为验收目标。
 - 效率仅作回放观察，不写入 Agent Instructions、Gate 或固定限时、配额。Runtime 取消与等待独立调查，不作为功能实现验收条件。
@@ -469,10 +469,10 @@ Wayfinder 明确受支持的业务范围、定位相关工程仓库，判断需�
 
 - 模块一：Analysis 职责优化。Analysis / Change 解耦、直接 Comment 回流、Lead 按实际情况协调、最小工件与按需准备校验。
 - 模块二：Analysis Publish 收敛。publish 与按需 validate 直接消费本次 Facts、删除常规 Stage 与重复/伪语义校验、保留必要 Gate 与发布后置条件、统一固定来源返回、保留可直接执行的 Skill 与 CLI 使用契约。
-- 模块三：Wayfinder 职责收敛。合并 workitem-triage、明确三项准入条件、按目标稿收敛 Instructions、确认有效 Decision 后通过统一 admission 执行结果、修正远端 MCP 路径语义。
+- 模块三：Wayfinder 职责收敛。合并 workitem-triage、明确三项准入条件、按目标稿收敛 Instructions、确认有效 Decision 后通过统一 `apply-decision` 执行结果、修正远端 MCP 路径语义。
 
 Runtime 取消及等待问题独立排查，不阻塞上述模块，不预设新调度机制。遵循 01 原则，按实际需要局部修改，不新增概念、Skill、Schema、状态机或执行框架。
 
 ## 9. 限制
 
-两次回放覆盖均为 partial；首次取消 Analyst 的完整日志及 Lead session 未导出，部分 CLI 错误输出截断；未重新执行真实业务测试。现场版本、实际问题是否仍复现、无 Change 的 TFS 适用终态仍需实际确认。CLI 独立 stage 的实际消费者、可删除字段及校验等价性应在实施时核实；直接消费 Facts 的恢复复杂度需由回归测试确认。Wayfinder 目标稿与 admission 契约已纳入设计；Decision 字段的其他消费者、原生终态恢复和 CLI 回归仍需实施时验证。原生 Comment 回流采用用户确认的现有 Multica 机制，未在本次方案更新中重新实测。效率改善未实测。原已发布的 LEI-61/62 审核事实不自动改写。本方案为待评审设计，不表示已实现或修改任何 Agent、Skill、CLI、业务源码、Issue 或 TFS 数据。
+两次回放覆盖均为 partial；首次取消 Analyst 的完整日志及 Lead session 未导出，部分 CLI 错误输出截断；未重新执行真实业务测试。现场版本、实际问题是否仍复现、无 Change 的 TFS 适用终态仍需实际确认。CLI 独立 stage 的实际消费者、可删除字段及校验等价性应在实施时核实；直接消费 Facts 的恢复复杂度需由回归测试确认。Wayfinder 目标稿与 `apply-decision` 契约已纳入设计；Decision 字段的其他消费者、原生终态恢复和 CLI 回归仍需实施时验证。原生 Comment 回流采用用户确认的现有 Multica 机制，未在本次方案更新中重新实测。效率改善未实测。原已发布的 LEI-61/62 审核事实不自动改写。本方案为待评审设计，不表示已实现或修改任何 Agent、Skill、CLI、业务源码、Issue 或 TFS 数据。

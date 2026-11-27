@@ -178,7 +178,7 @@ status = todo（同步完成后自动启动）
 Wayfinder Intake Triage（codebase-explorer 深入探索）
  ↓
 /note Comment 持久化并回读确认 → 准入结论
- ├─ accepted → rondo workitem admission（按 tfs.type 单次 todo + Bug Fix Agent / Delivery Squad Update）
+ ├─ accepted → rondo workitem apply-decision（按 tfs.type 单次 todo + Bug Fix Agent / Delivery Squad Update）
  ├─ needs_human → status = blocked + assignee = Wayfinder（Human Comment 唤醒后重评）
  └─ unsupported → unsupported（终止当前自动交付路径）
  （仅 accepted 且满足启动条件时继续）
@@ -310,7 +310,7 @@ Members
 └── Verify Agent
 ```
 
-自动 TFS 入口通过 Wayfinder 准入且满足启动条件后，由 `rondo workitem admission` 将 Issue 交给 Bug Fix Agent 或 Delivery Squad；准入之前由 Wayfinder Agent 持有，不触发 Squad Leader。明确直接委派的 Analysis 不要求先经过 Wayfinder；两种入口的 Human Analysis Review 均不改变。Leader-first、Instructions 与 Roster 的接收范围见 [指导手册：Squad](01-multica-openspec-design-guideline.md#mechanism-squad)。
+自动 TFS 入口通过 Wayfinder 准入且满足启动条件后，由 `rondo workitem apply-decision` 将 Issue 交给 Bug Fix Agent 或 Delivery Squad；准入之前由 Wayfinder Agent 持有，不触发 Squad Leader。明确直接委派的 Analysis 不要求先经过 Wayfinder；两种入口的 Human Analysis Review 均不改变。Leader-first、Instructions 与 Roster 的接收范围见 [指导手册：Squad](01-multica-openspec-design-guideline.md#mechanism-squad)。
 
 ---
 
@@ -602,7 +602,7 @@ tfs.url: "<url>"
 tfs.changed_at: "<changed-date>"
 ```
 
-来源初始化完成后先进入下述 Wayfinder Intake Triage；`accepted` 后由 `rondo workitem admission` 按 `tfs.type` 移交：Requirement 的 Squad-owned Issue 启动 Delivery Lead，Bug Issue 启动 Bug Fix Agent。`backlog → todo` 的具体触发与首次处理、失败恢复分别见 [§4.1.1](#delivery-intake) 和 [§4.2](#delivery-start)。
+来源初始化完成后先进入下述 Wayfinder Intake Triage；`accepted` 后由 `rondo workitem apply-decision` 按 `tfs.type` 移交：Requirement 的 Squad-owned Issue 启动 Delivery Lead，Bug Issue 启动 Bug Fix Agent。`backlog → todo` 的具体触发与首次处理、失败恢复分别见 [§4.1.1](#delivery-intake) 和 [§4.2](#delivery-start)。
 
 ---
 
@@ -627,19 +627,19 @@ tfs.changed_at: "<changed-date>"
 
 `accepted`、`needs_human`、`unsupported` 的语义由 [Wayfinder Instructions](agents/wayfinder-agent/instructions.md) 定义。本项目典型场景：已定位授权 Repository 但 Root Cause 未明，可进入后续专业分析；多候选系统无法消歧或权限待授权，需 Human 补充；外部封闭系统已确认禁止修改且无可行授权路径，则属于明确硬性排除。复杂度、Repository 数量或单一工具故障不能独立证明不支持。
 
-**交接顺序**：先按 [Wayfinder Instructions](agents/wayfinder-agent/instructions.md) 确认有效 Decision 已记录在 `/note`，再执行 `rondo workitem admission --issue <KEY> --decision <accepted|needs_human|unsupported>`。CLI 不解析 Comment 正文；仅 accepted 执行目标映射、Assignment 与 Run 校验，其他分支保留 Wayfinder Assignee，分别设置 blocked / unsupported，不启动新 Run。
+**交接顺序**：先按 [Wayfinder Instructions](agents/wayfinder-agent/instructions.md) 确认有效 Decision 已记录在 `/note`，再执行 `rondo workitem apply-decision --issue <KEY> --decision <accepted|needs_human|unsupported>`。CLI 不解析 Comment 正文；仅 accepted 执行目标映射、Assignment 与 Run 校验，其他分支保留 Wayfinder Assignee，分别设置 blocked / unsupported，不启动新 Run。
 
 Decision Comment 的内容、来源版本引用和有效性判断统一遵循 [Wayfinder Instructions](agents/wayfinder-agent/instructions.md)。本场景以原 Issue 的 `/note` 为交付事实入口，按需引用工程 Evidence，不新增独立 Triage Artifact 或平行事实源。
 
 **Decision 消费：** Workitem Analyst 读取当前有效 `/note` Decision 及 Evidence 时遵循 [Wayfinder Instructions](agents/wayfinder-agent/instructions.md)，不得凭 Comment 自述推断 Root Cause 或已获研发批准。明确直接委派、未经过准入的 Analysis 不需要补造 Decision。
 
-交接前核对来源版本并确认 `/note` 持久化；目标更新、预期 Run 回读及 UNKNOWN 恢复由 `rondo workitem admission` 执行。未经确认不报告交接成功。
+交接前核对来源版本并确认 `/note` 持久化；目标更新、预期 Run 回读及 UNKNOWN 恢复由 `rondo workitem apply-decision` 执行。未经确认不报告交接成功。
 
 初版不自动重评估已移交 Squad、`needs_human` 或 `unsupported` 的 Issue；TFS Changed Date 增量同步只更新来源字段。
 
 **来源实质变更复核（不新增 Gate）**：Workitem Analyst 在提交 `analysis_review` 前、Delivery Lead 在依据 Human APPROVED 提交批准基线或启动 Development 前，应核对当前 `tfs.changed_at` 与本轮 Analysis 所依据的来源版本。版本发生变化时，读取来源差异并判断：仅备注、排期等不影响 Engineering Contract 的管理变更，记录差异后可继续；影响需求目标、Expected Behavior、交付范围、系统归属、授权或验收要求的实质变更，必须先复核或更新 Analysis / OpenSpec Contract，并按既有 Human Review 规则处理受影响的批准边界，不得基于旧结论启动研发。无法确认变化性质时停止推进并澄清。不要求自动重跑 Wayfinder，也不增加独立状态、脚本或 Gate。
 
-人工补充或能力扩展后的重新准入沿用原 Issue。Human 补充 Comment 后通过 Multica 原生 Comment Trigger 唤醒 Wayfinder；Wayfinder 增量评估、在触发线程记录新 `/note`，结果不明时回读，由 Wayfinder 调用 `rondo workitem admission` 执行本次 Decision。Human 不需先改 `todo`。
+人工补充或能力扩展后的重新准入沿用原 Issue。Human 补充 Comment 后通过 Multica 原生 Comment Trigger 唤醒 Wayfinder；Wayfinder 增量评估、在触发线程记录新 `/note`，结果不明时回读，由 Wayfinder 调用 `rondo workitem apply-decision` 执行本次 Decision。Human 不需先改 `todo`。
 
 **`unsupported` 恢复边界**：以当前 Workspace 实际有效的终止 Status 为准（当前 Manifest 将 `unsupported` 定义为 `cancelled` Category）；该分支的 Comment 唤醒与恢复仍需独立验证，结果不明时停止。
 
@@ -649,7 +649,7 @@ Decision Comment 的内容、来源版本引用和有效性判断统一遵循 [W
 
 ## 4.2 Issue（交付事项）启动
 
-自动 TFS 入口的 Issue 需有已确认的 `accepted` Decision，再由 Wayfinder 调用 `rondo workitem admission` 完成 Assignment Trigger 交接，启动 Bug Fix Agent 或 Delivery Lead；此动作只进入 Analysis，不构成 Human Approval 或编码授权。明确直接委派的 Analysis 不以 Wayfinder Decision 为前置。
+自动 TFS 入口的 Issue 需有已确认的 `accepted` Decision，再由 Wayfinder 调用 `rondo workitem apply-decision` 完成 Assignment Trigger 交接，启动 Bug Fix Agent 或 Delivery Lead；此动作只进入 Analysis，不构成 Human Approval 或编码授权。明确直接委派的 Analysis 不以 Wayfinder Decision 为前置。
 
 已通过准入的 Requirement `todo + Squad` Issue 由 Multica 原生 Assignment Trigger 自动启动 Lead。Bug Issue 则直接启动 Bug Fix Agent，不进入下述 Squad 分析路径。首次进入交付流程且尚未开展 Analysis 的 Issue，由 Delivery Lead 直接通过 `@mention` 将专业分析工作交给 Workitem Analyst：
 
