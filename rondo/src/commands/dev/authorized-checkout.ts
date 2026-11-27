@@ -47,7 +47,6 @@ export async function authorizedCheckout(issueKey: string, repoKey: string, root
   if (bug) projectRootResource(resources, rootUrl);
   const repo = resourcePrepareRepo(resources, repoKey, rootUrl, server);
   const branch = candidateBranch(tfsId), path = resolveNativeBusinessPath(root, repo);
-  if (branch === repo.ref) throw new FailError("Candidate 与 PR Target 相同");
   const head = validateBusinessCheckout(path, repo, branch, workdir);
   return { runtime, client, issue, md, root, path, repo, resources, rootUrl, branch, head, tfsId, bug };
 }

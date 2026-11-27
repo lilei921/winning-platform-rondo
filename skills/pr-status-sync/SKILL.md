@@ -11,7 +11,7 @@ description: 核实已登记 PR 的外部状态并同步可信的终态事实。
 rondo pr reconcile-status
 ```
 
-指定 Issue 时使用 `--issue <KEY>`；恢复已完成 Issue 的残留 `finalize.pending` 时使用 `--recover-done`，两者不可同时使用。
+指定 Issue 时使用 `--issue <KEY>`；按需恢复已完成 Issue 的残留 `finalize.pending` 时使用 `--recover-done`，两者不可同时使用。
 
 已登记的 PR 身份来自 `pr`；部分登记不能触发 Closeout，外部状态以 TFS 回读为准。
 

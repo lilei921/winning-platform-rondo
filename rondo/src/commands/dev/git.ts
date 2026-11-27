@@ -19,6 +19,7 @@ export function registerDevGit(group: Command): void {
           const result = runAuthenticatedGit(repo.repo_url, ["fetch", "--no-tags", repo.repo_url, `refs/heads/${target}:refs/remotes/origin/${target}`], path);
           if (result.status !== 0) throw new UnknownError("Git Fetch 未确认成功，保留现场");
         } else {
+          if (branch === repo.ref) throw new FailError("Candidate 与 PR Target 相同");
           try { runAuthenticatedGit(repo.repo_url, ["push", repo.repo_url, `${head}:refs/heads/${branch}`], path); }
           catch (e) { if (!(e instanceof UnknownError)) throw e; }
           // A transport failure can follow a successful push; the exact remote SHA is authoritative.

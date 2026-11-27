@@ -341,6 +341,10 @@ test("Native Requirement Git 操作从 Issue 取得批准 Change，拒绝同 SHA
   const pushArgs = args.map(a => a === "fetch" ? "push" : a);
   assert.match(runWithEnv(3, noTask, ...pushArgs).reason, /Task \/ Actor \/ Workspace/);
   assert.equal(runWithEnv(0, env, ...pushArgs).result, "PASS");
+  resources.resources[1].resource_ref.ref = "feature/42";
+  writeFileSync(resourceFile, JSON.stringify(resources));
+  assert.match(runWithEnv(2, env, ...args).reason, /Candidate 与 PR Target 相同/);
+  assert.match(runWithEnv(2, env, ...pushArgs).reason, /Candidate 与 PR Target 相同/);
   assert.deepEqual(metadata(), initial.metadata);
   assert.equal(metadata()["verify_agent.required"], undefined);
 });
