@@ -9,7 +9,7 @@
 
 办公期间优先使用员工本机 Runtime；本机关机、休眠或 Multica 确认离线后，切换到已配置的服务器 Runtime；本机恢复后，在不打断正常执行的前提下切回主 Runtime。保留现有 Agent ID、Squad、Issue Assignment、交付流程与原生 Run 管理。
 
-采用独立基础设施 Agent「黑灯守卫」+ Multica Autopilot + 确定性 MJS。黑灯守卫永久绑定服务器 Runtime，不加入 Delivery Squad，不负责 Issue 诊断、业务恢复、OpenSpec、PR 或任务重试。TFS Sync Agent、PR Status Sync Agent 本次保持现状。
+采用独立基础设施 Agent「黑灯守卫」+ Multica Autopilot + Rondo CLI。黑灯守卫永久绑定服务器 Runtime，不加入 Delivery Squad，不负责 Issue 诊断、业务恢复、OpenSpec、PR 或任务重试。TFS Sync Agent、PR Status Sync Agent 本次保持现状。
 
 ## 2. Agent 与 Autopilot
 
@@ -21,11 +21,11 @@
 | Mode | run_only |
 | Runtime | 固定服务器 Runtime（每 Workspace 明确配置） |
 | Max Concurrent Tasks | 1 |
-| Skill | runtime-reconcile |
+| Rondo CLI | rondo runtime reconcile |
 
 Description：维护工作区内 Agent 的 Runtime 可用性，根据主备配置自动执行 Runtime 切换，保障无人值守期间的研发工作持续运行。
 
-Instructions：负责当前 Workspace 内受管 Agent 的 Runtime 自动协调。使用 runtime-reconcile Skill 执行协调，根据脚本结果简洁报告切换及需要人工处理的异常。
+Instructions：负责当前 Workspace 内受管 Agent 的 Runtime 自动协调。执行 `rondo runtime reconcile` 完成 Runtime 自动协调，简洁报告切换及需要人工处理的异常。
 
 Autopilot Prompt：执行 Runtime 自动协调。
 
@@ -40,7 +40,7 @@ Autopilot Prompt：执行 Runtime 自动协调。
 
 ## 3. 每个 Agent 独立主备策略
 
-复用 workspace-config/workspaces/<workspace>.json。以下 ID 均为示例，不是生产配置：
+主备配置按 Workspace 独立维护。若通过现有 workspace-config/workspaces/<workspace>.json 供给，使用以下结构（也可直接将内层对象配置到黑灯守卫 custom_env，见 §3.1）。以下 ID 均为示例，不是生产配置：
 
 ```json
 {
@@ -73,13 +73,25 @@ Autopilot Prompt：执行 Runtime 自动协调。
 
 配置只表达期望策略，不保存 current_runtime_id、last_switch_time、运行状态或历史计数。当前绑定及在线状态由 Multica 提供。
 
-### 3.1 配置如何进入 Runtime
+### 3.1 RONDO_RUNTIME_POLICY
 
-Workspace overlay 是主备策略的管理来源，但 Autopilot 的 workdir 不保证存在 Rondo 根仓。建议利用现有 Agent custom_env 机制，将当前 Workspace 的 runtime_policy JSON 投影为黑灯守卫专属 RONDO_RUNTIME_POLICY。脚本从环境变量读取，并限定在当前 Workspace；不把各 Workspace 的策略写入共享 Skill 文件。供给时仅更新该键，保留其他 env；修改主备策略后需要同步该投影。固定服务器 Runtime ID 可在黑灯守卫首次供给时显式指定或由管理员绑定，供给不得把它改到本机。
+黑灯守卫的 Agent custom_env 中配置 RONDO_RUNTIME_POLICY，值为 JSON 字符串，内容为上述 runtime_policy 对象本身（不包含外层 runtime_policy 键）。
 
-此为拟定的配置传输方式，待 PoC 核实 custom_env 注入及 CLI 写权限；不再创建额外配置文件或运行时事实库。
+```typescript
+interface AgentRuntimePolicy {
+  primary_runtime_id: string;
+  fallback_runtime_id: string;
+}
+type RuntimePolicy = Record<string, AgentRuntimePolicy>;
+```
 
-## 4. Skill 与脚本的原生供给
+Rondo 使用 JSON.parse 解析，Key 为 Workspace 内 Agent Name，Value 仅包含两个真实 Runtime UUID。通过现有 resolveMulticaRuntime() 从 MULTICA_WORKSPACE_ID 与 MULTICA_SERVER_URL 获取当前 Workspace 上下文，再从原生 Agent 列表解析真实 Agent ID。无需在策略中重复配置 workspace_id、agent_id、enabled 或实时状态。无配置、空对象不执行切换；非法 JSON 或无效策略不得猜测写入。配置不得管理黑灯守卫自身。
+
+Workspace overlay 作为供给配置，按需把 runtime_policy 投影为黑灯守卫的 RONDO_RUNTIME_POLICY；供给只更新该键、保留其他 custom_env。也可由管理员直接配置黑灯守卫 env（若采用人工配置模式，不再在 overlay 重复维护相同策略；避免两个配置源同时修改）。两种方式选择其一。首版优先复用现有手工配置能力，批量供给有实际需求再扩展。黑灯守卫首次创建或人工绑定时显式选择服务器 Runtime，后续供给不得覆盖此绑定。
+
+## 4. Rondo CLI 原生实现
+
+不新增 Skill，也不单独分发 MJS。Rondo 已使用 TypeScript + Node.js ESM，编译后随现有 dist/ 及 Rondo 发布流程交付。黑灯守卫所在服务器需安装包含新命令的 Rondo 版本，不依赖根仓 checkout 或 Skill Bundle。
 
 ```text
 agents/
@@ -87,22 +99,24 @@ agents/
     description.md
     instructions.md
     autopilot-prompt.md
-skills/
-  runtime-reconcile/
-    SKILL.md
-    scripts/
-      runtime-reconcile.mjs
+rondo/
+  src/
+    commands/
+      runtime/
+        reconcile.ts
+        reconcile.test.ts
 ```
 
-测试放在非生产 Skill 包的测试目录，避免现有全量文件同步上传测试。SKILL.md 只说明调用包内 scripts/runtime-reconcile.mjs 并消费结构化结果，不复述切换规则，不让 LLM 决策。
+在 rondo/src/index.ts 的 runtime 命令组注册 reconcile，复用现有 Commander、resolveMulticaRuntime()、multicaPrefix() 和 clients/spawn.ts 的 runJson/runCommand，不新增进程执行框架。维护 CLI Help / COMMANDS.md 中必要的命令说明。manifest 只登记黑灯守卫和 Autopilot，黑灯守卫 skills 为空，不注册新 Skill。
 
-当前 rondo workspace sync 只遍历 skills/<skill>/，SKILL.md 经 skill update 上传，其余文件经 skill files upsert --path ... --content-stdin 上传，并做文件 Hash 回读；Agent 目录的 scripts 不在现有上传范围。故 runtime-reconcile 必须作为极简 Skill 资产包供给（除非改用外置服务器安装或新增发布入口，本方案不采用）。
+```bash
+rondo runtime reconcile
+rondo runtime reconcile --dry-run
+```
 
-在 workspace-config/provisioning.json 注册 managed_skills、黑灯守卫及其唯一绑定 Skill、Autopilot；复用 rondo workspace provision 与 rondo workspace sync。Runtime 实际加载路径由 Multica 原生 Skill 机制决定，使用包内相对路径定位脚本，不假定 cwd 是仓库，不要求每次 clone。
+## 5. 确定性切换逻辑
 
-## 5. MJS 切换逻辑
-
-MJS（Node.js、零第三方依赖）使用 UTF-8 读取、JSON 解析和 child_process 参数数组调用原生 CLI；显式指定 workspace-id，不拼接 shell 字符串。不由 LLM 选择 Runtime。外部 CLI 输出编码及错误处理仍须核实。
+Rondo CLI 负责 UTF-8、JSON、原生 Multica CLI 读取与写入、状态判断、结果确认。显式指定当前 workspace-id，不拼接 shell 字符串，不由 LLM 选择 Runtime。复用现有统一进程执行层及异常约定。
 
 ```bash
 multica runtime list --workspace-id <id> --output json
@@ -131,18 +145,18 @@ Runtime 切换不迁移本机未提交代码、CLI Session 或本地工作目录
 - 本机在线/离线、恢复、双方离线、查询失败和重复执行。
 - queued/deferred 原生迁移并可领取；dispatched/running 原生终结或恢复，不重复执行；服务器活跃 Run 不被抢占。
 - 主备跨机真实执行、已持久化成果接续、原生 Runtime 绑定和权限（尤其黑灯守卫自身 Run 凭据是否允许更新其他 Agent）。
-- Skill 文件上传、Runtime 真实读取并执行 MJS、custom_env 注入、两段 Autopilot Trigger。
+- 服务器 Rondo CLI 真实可调用、custom_env 注入、两段 Autopilot Trigger。
 - 多 Agent 独立选择，固定黑灯守卫不被动态协调或现有同步脚本改绑。
 
 ## 7. 实施范围与顺序
 
-1. P0：完成现网版本、权限、Skill 供给与 Cron 的最小 PoC。
-2. P0：新增 Agent、极简 Skill 与 MJS 单元测试；注册 manifest；按 Workspace 配置每 Agent 主备及黑灯守卫固定服务器绑定。
-3. P0：最小调整 provision/config 投影和 .claude/skills/rondo-sync/scripts/sync_workspace.py 的 bind_agent_runtime，避免批量改绑覆盖受管主备策略及黑灯守卫固定绑定。保留非本次受管对象的既有行为，不改变交付 workflow。
+1. P0：完成现网版本、权限、Rondo 命令执行环境与 Cron 的最小 PoC。
+2. P0：新增 Agent、rondo runtime reconcile 命令及单元测试；注册 manifest；按 Workspace 配置每 Agent 主备及黑灯守卫固定服务器绑定；通过现有 Rondo 发布流程供给服务器。
+3. P0：按需调整 provision 的固定绑定及配置投影，并最小调整 .claude/skills/rondo-sync/scripts/sync_workspace.py 的 bind_agent_runtime，避免批量改绑覆盖受管主备策略及黑灯守卫固定绑定。保留非本次受管对象的既有行为，不改变交付 workflow。
 4. P1：隔离 Workspace 端到端验收后逐 Workspace 配置并启用 Autopilot。未配置主备策略的 Workspace 不执行切换。
 5. P2：仅有实际问题时再考虑防抖、额外告警或向 Multica 上游提原生主备需求。
 
-本计划仅保存设计；不包含生产 Agent/Autopilot 创建、配置写入、部署或代码实施。配置字段、传输方式及脚本入口以 PoC 核实为准。
+本计划仅保存设计；不包含生产 Agent/Autopilot 创建、配置写入、部署或代码实施。配置字段、传输方式及 CLI 入口以 PoC 核实为准。
 
 ## 8. 参考实现
 
