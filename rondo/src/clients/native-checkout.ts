@@ -159,24 +159,21 @@ export function readPlatformCheckoutManifest(gitDir: string): PlatformCheckoutId
   return evidence;
 }
 
-/**
- * 弱方案四条件中可离线交叉验证的三项：isolated 模式、Task/Workspace 绑定、平台分支尾号。
- * 第四项 `issue runs --active` 依赖平台 API，由准备根仓的调用方在主流程中核实。
- */
-export function assertPlatformCheckoutIdentity(evidence: PlatformCheckoutIdentity, live: LivePlatformContext): void {
-  if (evidence.checkout_mode.toLowerCase() !== "isolated" || (live.mode ?? "").toLowerCase() !== "isolated") {
+/** 校验实际 Checkout 分支；存在平台 manifest 时核对其独立身份事实。 */
+export function assertPlatformCheckoutIdentity(evidence: PlatformCheckoutIdentity | null, live: LivePlatformContext, branch = evidence?.checkout_branch ?? ""): void {
+  if ((evidence && evidence.checkout_mode.toLowerCase() !== "isolated") || (live.mode ?? "").toLowerCase() !== "isolated") {
     throw new UnknownError("当前不是 Multica isolated checkout 任务，禁止使用收口根仓");
   }
   if (!live.taskId || !live.workspaceId) {
     throw new UnknownError("缺少 MULTICA_TASK_ID / MULTICA_WORKSPACE_ID，不能校验收口 checkout 身份");
   }
-  if (evidence.task_id !== live.taskId || evidence.workspace_id !== live.workspaceId) {
+  if (evidence && (evidence.task_id !== live.taskId || evidence.workspace_id !== live.workspaceId)) {
     throw new FailError("平台 checkout 的 Task/Workspace 与当前 Run 不一致，拒绝使用该根仓");
   }
   const suffix = platformTaskSuffix(live.taskId);
   // 平台在分支名冲突时为同一 Task 追加 `-<时间戳>`，仍属本 Task 的 checkout。
-  if (!evidence.checkout_branch.startsWith("agent/")) throw new FailError("平台 Checkout 分支身份不一致");
-  const tail = evidence.checkout_branch.split("/").at(-1) ?? "";
+  if (!branch.startsWith("agent/") || (evidence && evidence.checkout_branch !== branch)) throw new FailError("平台 Checkout 分支身份不一致");
+  const tail = branch.split("/").at(-1) ?? "";
   if (tail !== suffix && !new RegExp("^" + suffix + "-\\d+$").test(tail)) {
     throw new FailError("平台 checkout 分支尾号与当前 Task 不一致，拒绝使用该根仓");
   }
@@ -204,10 +201,10 @@ const samePath = (a: string, b: string): boolean => process.platform === "win32"
 
 /** Check a daemon-managed Native Checkout; Multica owns its creation and reuse. */
 export function assertNativeTaskCheckout(path: string, workdir: string, reportedBranch?: string, issueId?: string): string {
-  const taskId = process.env.MULTICA_TASK_ID, workspaceId = process.env.MULTICA_WORKSPACE_ID;
+  const workspaceId = process.env.MULTICA_WORKSPACE_ID;
   const agentId = process.env.MULTICA_AGENT_ID;
   const context = readDaemonTaskContext(workdir);
-  if (!taskId || !workspaceId || !agentId || context?.managed_by !== "multica-daemon-task" || context.agent_id !== agentId)
+  if (!workspaceId || !agentId || context?.managed_by !== "multica-daemon-task" || context.agent_id !== agentId)
     throw new UnknownError("无法确认当前 daemon Task 上下文");
   if (issueId && context.issue_id !== issueId) throw new FailError("当前 daemon Task 不属于此 Issue");
   const canonical = realpathSync(path), parent = realpathSync(workdir);
@@ -240,7 +237,7 @@ export function assertNativeTaskCheckout(path: string, workdir: string, reported
 export interface ProjectResource {
   resource_type?: unknown;
   label?: unknown;
-  resource_ref?: { url?: unknown; ref?: unknown; default_branch_hint?: unknown };
+  resource_ref?: { url?: unknown; ref?: unknown };
 }
 export function readProjectResources(workdir: string, projectId: unknown,
   client?: Pick<MulticaClient, "run" | "ws">): ProjectResource[] {
@@ -261,7 +258,7 @@ export function readProjectResources(workdir: string, projectId: unknown,
   return resources;
 }
 
-type RepoResource = { url: string; ref?: unknown; default_branch_hint?: unknown };
+type RepoResource = { url: string; ref?: unknown };
 function selectResource(resources: ProjectResource[], matches: (url: string) => boolean, what: string): RepoResource {
   const rows = resources.filter(row => {
     if (row?.resource_type !== "github_repo" || typeof row.resource_ref?.url !== "string") return false;

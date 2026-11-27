@@ -13,12 +13,13 @@ export function registerDevGit(group: Command): void {
       markLeafExecuted();
       try {
         if (!["fetch", "push"].includes(opts.operation)) throw new FailError("仅支持 fetch / push");
-        const { repo, path, branch, head } = await authorizedCheckout(opts.issue, opts.repo, opts.rootRepo);
+        const { repo, path, branch, head } = await authorizedCheckout(opts.issue, opts.repo, opts.rootRepo, opts.operation === "push");
         if (opts.operation === "fetch") {
           const target = requireTargetBranch(repo, branch);
           const result = runAuthenticatedGit(repo.repo_url, ["fetch", "--no-tags", repo.repo_url, `refs/heads/${target}:refs/remotes/origin/${target}`], path);
           if (result.status !== 0) throw new UnknownError("Git Fetch 未确认成功，保留现场");
         } else {
+          if (branch === repo.ref) throw new FailError("Candidate 与 PR Target 相同");
           try { runAuthenticatedGit(repo.repo_url, ["push", repo.repo_url, `${head}:refs/heads/${branch}`], path); }
           catch (e) { if (!(e instanceof UnknownError)) throw e; }
           // A transport failure can follow a successful push; the exact remote SHA is authoritative.

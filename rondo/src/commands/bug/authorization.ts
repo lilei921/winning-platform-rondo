@@ -6,12 +6,16 @@ import { MulticaClient } from "../../clients/multica.js";
 import { assertBugAgentAssignment, requiredBugRepos } from "./scope.js";
 import { TfsClient } from "../../tfs/client.js";
 
-/** Bug 写操作沿用当前活跃 Run 的执行者约束；根仓目录检查不承载这项授权。 */
-export function assertBugExecution(client: MulticaClient, issue: IssueRecord): void {
+/** Bug 操作核对执行者；写操作额外要求当前活跃 Run。 */
+export function assertBugExecution(client: MulticaClient, issue: IssueRecord, requireActiveRun = true): void {
   const taskId = process.env.MULTICA_TASK_ID, agentId = process.env.MULTICA_AGENT_ID;
   const workspaceId = process.env.MULTICA_WORKSPACE_ID;
-  if (!taskId || !agentId || !workspaceId || !process.env.MULTICA_TOKEN || !process.env.MULTICA_DAEMON_PORT) {
+  if (!agentId || !workspaceId || (requireActiveRun && (!taskId || !process.env.MULTICA_TOKEN || !process.env.MULTICA_DAEMON_PORT))) {
     throw new UnknownError("缺少 Multica Task/Actor 上下文，不能执行 Bug 写操作");
+  }
+  if (!requireActiveRun) {
+    if (issue.assignee_id !== agentId) throw new FailError("Bug 当前执行者与指派不一致");
+    return;
   }
   const raw = client.run(["issue", "runs", issue.id, "--active", ...client.ws(), "--output", "json"], "核验 Bug 执行者", { transient: true });
   if (!Array.isArray(raw)) throw new UnknownError("Bug Task 列表不可核实");

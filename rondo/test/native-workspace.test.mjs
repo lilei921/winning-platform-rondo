@@ -69,13 +69,15 @@ for (const linked of [true, false]) test(`Native ${linked ? "linked worktree" : 
     assert.equal(assertNativeTaskCheckout(root, task), branch);
     const resources = readProjectResources(task, "p");
     const repo = resourcePrepareRepo(resources, "frame", rootUrl, url);
-    assert.equal(repo.default_target_branch, "dev");
-    assert.equal(requireTargetBranch(repo, "feature/42"), "dev");
+    assert.equal(repo.ref, "main");
+    assert.equal(requireTargetBranch(repo, "feature/42"), "main");
     const withoutHint = resourcePrepareRepo(resources.map(row => ({...row, resource_ref: {...row.resource_ref, default_branch_hint: undefined}})), "frame", rootUrl, url);
     assert.equal(withoutHint.repo_url, repoUrl);
-    assert.throws(() => requireTargetBranch(withoutHint, "feature/42"), /default_branch_hint/);
-    assert.throws(() => requireTargetBranch({...repo, default_target_branch:"feature/42"}, "feature/42"), /Candidate/);
-    assert.throws(() => requireTargetBranch({...repo, default_target_branch:"refs/heads/dev"}, "feature/42"), /非法/);
+    assert.equal(requireTargetBranch(withoutHint, "feature/42"), "main");
+    const withoutRef = resourcePrepareRepo(resources.map(row => ({...row, resource_ref: {...row.resource_ref, ref: undefined}})), "frame", rootUrl, url);
+    assert.throws(() => requireTargetBranch(withoutRef, "feature/42"), /缺少 ref/);
+    assert.throws(() => requireTargetBranch({...repo, ref:"feature/42"}, "feature/42"), /Candidate/);
+    assert.throws(() => requireTargetBranch({...repo, ref:"refs/heads/dev"}, "feature/42"), /非法/);
     assert.throws(() => resourcePrepareRepo(resources, "root", rootUrl, url), /根仓/);
     assert.throws(() => resourcePrepareRepo(resources, "missing", rootUrl, url), /缺失/);
     assert.throws(() => resourcePrepareRepo([...resources, resources[1]], "frame", rootUrl, url), /不唯一/);
@@ -111,7 +113,7 @@ for (const linked of [true, false]) test(`Native ${linked ? "linked worktree" : 
     assert.equal(readFileSync(join(business, "untracked.txt"), "utf8"), "keep");
     // Multica can retain both working trees when a new Run continues the same task workdir.
     const creationTask = process.env.MULTICA_TASK_ID;
-    process.env.MULTICA_TASK_ID = "01234567-abcd-ef12-3456-000000000000";
+    delete process.env.MULTICA_TASK_ID;
     assert.equal(assertNativeTaskCheckout(root, task, undefined, "issue-1"), branch);
     assert.equal(assertNativeTaskCheckout(business, task), branch);
     const manifestPath = join(git(business, "rev-parse", "--absolute-git-dir"), "multica-checkout.json");
@@ -119,6 +121,8 @@ for (const linked of [true, false]) test(`Native ${linked ? "linked worktree" : 
     writeFileSync(manifestPath, JSON.stringify(manifest));
     assert.equal(assertNativeTaskCheckout(business, task, branch, "issue-1"), branch);
     assert.equal(validateBusinessCheckout(business, repo, "feature/42", task), unpushed);
+    process.env.MULTICA_TASK_ID = "01234567-abcd-ef12-3456-000000000000";
+    assert.equal(assertNativeTaskCheckout(business, task, branch, "issue-1"), branch);
     assert.equal(git(business, "symbolic-ref", "--short", "HEAD"), branch);
     assert.equal(readFileSync(join(business, "untracked.txt"), "utf8"), "keep");
     assert.throws(() => assertNativeTaskCheckout(root, task, undefined, "other-issue"), /Issue/);

@@ -14,7 +14,7 @@ import { registeredPrs } from "../pr/facts.js";
 import { guardRepository } from "./requirement-guard.js";
 import { resourcePrepareRepo, resolveNativeBusinessPath, validateBusinessCheckout } from "./prepare-workspace.js";
 
-export async function authorizedCheckout(issueKey: string, repoKey: string, rootRepo: string) {
+export async function authorizedCheckout(issueKey: string, repoKey: string, rootRepo: string, requireActiveRun = true) {
   const runtime = resolveMulticaRuntime(), client = new MulticaClient(runtime);
   const issue = client.getIssue(issueKey), md = issue.metadata ?? {};
   if (md["tfs.type"] === "需求" && registeredPrs(md.pr).some(p => p.repo_key === repoKey))
@@ -27,7 +27,7 @@ export async function authorizedCheckout(issueKey: string, repoKey: string, root
   let analysisSource: AnalysisSource | undefined;
   const bug = md["tfs.type"] === "Bug";
   if (bug) {
-    assertBugExecution(client, issue);
+    assertBugExecution(client, issue, requireActiveRun);
     await assertBugSource(issue, server);
     tfsId = assertBugStart(client, issue, repoKey);
   } else if (md["tfs.type"] === "需求") {
@@ -38,7 +38,7 @@ export async function authorizedCheckout(issueKey: string, repoKey: string, root
     tfsId = Number(md["tfs.id"]);
   } else throw new FailError("不支持当前 TFS Type");
   if (analysisSource) {
-    const approved = await guardRepository({ runtime }, client, issueKey, repoKey, { root, source: analysisSource });
+    const approved = await guardRepository({ runtime }, client, issueKey, repoKey, { root, source: analysisSource }, requireActiveRun);
     if (approved.source.commit !== analysisSource.commit || approved.issue.project_id !== issue.project_id || approved.issue.metadata?.["analysis.source"] !== md["analysis.source"] ||
         approved.issue.metadata?.["analysis.human_approval"] !== md["analysis.human_approval"] || approved.tfsId !== tfsId)
       throw new UnknownError("批准来源在授权期间变化");
@@ -47,7 +47,6 @@ export async function authorizedCheckout(issueKey: string, repoKey: string, root
   if (bug) projectRootResource(resources, rootUrl);
   const repo = resourcePrepareRepo(resources, repoKey, rootUrl, server);
   const branch = candidateBranch(tfsId), path = resolveNativeBusinessPath(root, repo);
-  if (branch === repo.default_target_branch) throw new FailError("Candidate 与 PR Target 相同");
   const head = validateBusinessCheckout(path, repo, branch, workdir);
   return { runtime, client, issue, md, root, path, repo, resources, rootUrl, branch, head, tfsId, bug };
 }

@@ -55,7 +55,7 @@ process.exit(r.status ?? 1);
 
   const resources = [
     { id: 'r', resource_type: 'github_repo', resource_ref: { url: rootUrl, ref: 'main' } },
-    { id: 'biz', resource_type: 'github_repo', resource_ref: { url: repoUrl, ref: 'main', default_branch_hint: 'main' } },
+    { id: 'biz', resource_type: 'github_repo', resource_ref: { url: repoUrl, ref: 'main' } },
     { id: 'sibling', resource_type: 'github_repo', resource_ref: { url: 'http://tfs.test/tfs/C/P/_git/sibling', ref: 'main' } },
   ];
   mkdirSync(join(dir, '.multica', 'project'), { recursive: true });
@@ -97,10 +97,15 @@ process.exit(r.status ?? 1);
   const state = () => JSON.parse(readFileSync(statePath, 'utf8'));
 
   if (native) {
-    for (const operation of ['fetch', 'push']) {
-      const gitResult = spawnSync(process.execPath, [cli, 'dev', 'git', '--issue', 'I-1', '--repo', 'biz', '--root-repo', root, '--operation', operation], { encoding: 'utf8', env, timeout: 30_000 });
-      assert.equal(result(gitResult, 0).head, sha);
-    }
+    const noTask = { ...env, MULTICA_TASK_ID: '', MULTICA_TASK_ENV_FILE: '' };
+    const runGit = (operation, gitEnv) => spawnSync(process.execPath, [cli, 'dev', 'git', '--issue', 'I-1', '--repo', 'biz', '--root-repo', root, '--operation', operation], { encoding: 'utf8', env: gitEnv, timeout: 30_000 });
+    writeFileSync(callsPath, '');
+    assert.equal(result(runGit('fetch', noTask), 0).head, sha);
+    const fetchCalls = readFileSync(callsPath, 'utf8').trim().split('\n').map(JSON.parse);
+    assert.ok(!fetchCalls.some(call => call[0] === 'issue' && call[1] === 'runs'));
+    assert.match(result(runGit('push', noTask), 3).reason, /Task\/Actor/);
+    assert.equal(result(runGit('push', env), 0).head, sha);
+    assert.match(result(run(JSON.stringify(evidence), { MULTICA_TASK_ID: '', MULTICA_TASK_ENV_FILE: '' }), 3).reason, /Task\/Actor/);
     assert.equal(git(hub, 'branch', '--show-current'), taskBranch);
   }
   for (const input of ['', '  ', '{', JSON.stringify({ ...evidence, candidate_commit: 'b'.repeat(40) }),

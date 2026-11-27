@@ -12,7 +12,7 @@
 |---|---|
 | 仓库业务职责及语义线索 | Project Resource 顶层 label；实际行为以源码为准 |
 | 当前 Project 可用仓库、URL、初始版本 | Project Resource 的 resource_ref.url、resource_ref.ref |
-| PR Target 的配置来源 | Project Resource 的 resource_ref.default_branch_hint（Rondo 交付契约） |
+| PR Target 的配置来源 | Project Resource 的 resource_ref.ref（Rondo 交付契约） |
 | Requirement 获批仓库范围 | 已批准 .openspec.yaml 的 x-repositories |
 | Bug 研发范围 | 诊断结论及已固定 Bug Scope（如有） |
 | 实际工作树 | Multica 原生 repo checkout 返回路径及当前 Git |
@@ -80,10 +80,10 @@ rondo pr prepare --repo winning-dps-df-dataintegration ...
 | repo_url | resource_ref.url；已有交付使用已登记实际 URL |
 | repo_path | 原生 Checkout 返回路径；已有工作树按实际原生布局及 Git 身份定位 |
 | tfs_repo / tfs_project / tfs_collection | 从 TFS URL 获取，保留受控认证边界 |
-| default_target_branch | resource_ref.default_branch_hint；已准备 PR 使用 pr.target_branch |
+| PR Target | resource_ref.ref；已准备 PR 使用 pr.target_branch |
 | repo_type、responsibility、keywords、not_responsible_for | Resource 顶层 label 中必要语义 |
 
-Rondo 将 default_branch_hint 等价解释为 PR Target；这是 Rondo 交付契约，而非 Multica 自身强制 PR 策略。ref 仅表示初始 Checkout 版本，不作为 PR Target 的隐式回退。不硬编码 dev 或引入全局默认配置。需要确定目标分支时，若 hint 缺失或不能确定有效目标，按实际异常处理，不新增独立预检 Gate。
+Project Resource 的 ref 同时作为初始 Checkout 分支及 PR Target 的唯一配置来源。已有 Candidate 续接不改变 PR Target。不硬编码 dev，不引入其他目标分支字段或回退逻辑。需要目标分支时，若 ref 缺失或不是有效目标，按实际异常处理，不新增独立预检 Gate。
 
 ### 4.2 原生 Resource 与根仓身份
 
@@ -138,7 +138,7 @@ P0/P1/P2/P3 为逻辑研发工作包，不新增运行流程阶段。先核实�
 
 最小验收：
 
-1. 实际 Runtime 可按需取得当前 Project Resource 的 label、url、ref、default_branch_hint；无根仓 Checkout 的 Wayfinder / Analyst 可使用 label 与源码定位仓库。
+1. 实际 Runtime 可按需取得当前 Project Resource 的 label、url、ref；无根仓 Checkout 的 Wayfinder / Analyst 可使用 label 与源码定位仓库。
 2. Requirement 以完整名称完成分析发布和批准；未登记或歧义仓库不能作为新的有效 Scope 发布；根仓不作为业务仓 Scope。
 3. Requirement / Bug 的原生 Checkout、Git Fetch / Push、PR Prepare 正常，越权及真实仓库身份不符时拒绝受影响操作；无关 Resource 不影响当前仓库执行。
 4. Dev Publish、PR Materialize、多仓交付、重入与 PR 恢复、PR Status Sync / Closeout 正常，已准备 PR 使用已登记实际事实。
@@ -156,4 +156,4 @@ P0/P1/P2/P3 为逻辑研发工作包，不新增运行流程阶段。先核实�
 - rondo/src/commands/dev/native-prepare.ts、authorized-checkout.ts、publish.ts、change-completion.ts、pr/materialize.ts：存在固定 Commit 映射读取及已准备交付事实与 Registry 的重复比较。
 - validation/native-workspace-spike-20261124.md：未登记 common 的 Checkout 报错 repo is not configured for this workspace，Project Resource 中 frame 等可成功 Checkout。
 - 原方案记录 replay 20261126 LEI-67/68 至少 6 次 Agent 直接读取、11 次 CLI 内部读取；日志截断可能低估。
-- 尚未核实线上全部 Project Resource 实例、label 与 default_branch_hint 的实际下发、活跃 Issue、外部 YAML 消费者及所有 Agent 的实际配置。本次仅更新设计，不实施代码或线上配置变更。
+- 尚未核实线上全部 Project Resource 实例、label 与 ref 的实际下发、活跃 Issue、外部 YAML 消费者及所有 Agent 的实际配置。本次仅更新设计，不实施代码或线上配置变更。

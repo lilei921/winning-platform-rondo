@@ -18,7 +18,6 @@ import {
   readDaemonTaskContext,
   DAEMON_TASK_CONTEXT,
   readPlatformCheckoutManifest,
-  type PlatformCheckoutIdentity,
 } from "../../clients/native-checkout.js";
 import { readAnalysisSource, type AnalysisSource } from "../analysis/source.js";
 import { canonicalRepositoryIdentity } from "./evidence-repository.js";
@@ -127,14 +126,8 @@ function verifyPlatformCheckout(root: string, workdir: string, reportedBranch?: 
   if (runCommand(["git", "show-ref", "--verify", "--quiet", "refs/heads/" + branch], root).status !== 0) {
     throw new UnknownError("平台分配的 Checkout 分支不存在，拒绝使用");
   }
-  const evidence: PlatformCheckoutIdentity = manifest ?? {
-    checkout_branch: branch,
-    task_id: taskId ?? "",
-    workspace_id: workspaceId ?? "",
-    checkout_mode: liveMode ?? "",
-  };
-  assertPlatformCheckoutIdentity(evidence, { mode: liveMode, taskId, workspaceId });
-  if (reportedBranch && reportedBranch !== evidence.checkout_branch) {
+  assertPlatformCheckoutIdentity(manifest, { mode: liveMode, taskId, workspaceId }, branch);
+  if (reportedBranch && reportedBranch !== branch) {
     throw new UnknownError("平台 Checkout 返回分支与身份事实不一致");
   }
   const current = local(root, ["symbolic-ref", "--short", "HEAD"], "核对当前 Task 本地分支");

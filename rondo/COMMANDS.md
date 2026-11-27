@@ -109,7 +109,7 @@ rondo delivery root-prepare --issue <KEY>
 | `delivery finalize` | `prepare` 核验交付并准备收口；`complete` 在外部回写完成后核验并结束交付 |
 | `delivery root-prepare` | 在 Task `workdir/<repo-name>` 复用 Multica Checkout，建立 Task 独立本地归档分支，返回 `root_repo` |
 
-`delivery root-prepare` 使用当前 Run 的 Multica Runtime（`MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`），仅用于 Requirement OpenSpec Change，必须在 Multica Task workdir 内运行。优先复用现有 Checkout，必要时直接调用 `multica repo checkout`，校验平台 isolated/Task/Workspace 身份、Origin/Push URL 与 `analysis.source.commit` 的可达性；本地归档分支按 Task 和来源分支隔离。Fetch、普通 Push（`HEAD:refs/heads/<analysis.source.branch>`）及 Readback 均指向 `analysis.source.branch`。不使用 Owner Marker、Cleanup Token 或 `root-cleanup`；平台 Worktree 由 Multica 管理。`root-clone` 暂保留为 Native Checkout 兼容别名。
+`delivery root-prepare` 使用当前 Run 的 Multica Runtime（`MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`），仅用于 Requirement OpenSpec Change，必须在 Multica Task workdir 内运行。CLI 从平台提供的有效 `MULTICA_TASK_ENV_FILE` 补齐缺失的 Task 环境（包括 `MULTICA_TASK_ID`），不覆盖已有有效值；无法确认必要身份时返回 UNKNOWN。优先复用现有 Checkout，必要时直接调用 `multica repo checkout`，校验平台 isolated/Task/Workspace 身份、Origin/Push URL 与 `analysis.source.commit` 的可达性；本地归档分支按 Task 和来源分支隔离。Fetch、普通 Push（`HEAD:refs/heads/<analysis.source.branch>`）及 Readback 均指向 `analysis.source.branch`。不使用 Owner Marker、Cleanup Token 或 `root-cleanup`；平台 Worktree 由 Multica 管理。`root-clone` 暂保留为 Native Checkout 兼容别名。
 
 `delivery admission` 的映射规则：
 

@@ -9,7 +9,7 @@ import { repositoryName } from "../analysis/source.js";
 import { projectBusinessRepository, type ProjectResource } from "../../clients/native-checkout.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 
-export interface PrepareRepo { repo_path: string; repo_url: string; default_target_branch?: string }
+export interface PrepareRepo { repo_path: string; repo_url: string; ref?: string }
 const same = (a: string, b: string) => process.platform === "win32" ? resolve(a).toLowerCase() === resolve(b).toLowerCase() : resolve(a) === resolve(b);
 
 export function validatePrepareRepo(repo: PrepareRepo | undefined, serverUrl: string): PrepareRepo {
@@ -23,8 +23,8 @@ export function validatePrepareRepo(repo: PrepareRepo | undefined, serverUrl: st
 
 /** Only operations consuming a PR Target need its configuration. */
 export function requireTargetBranch(repo: PrepareRepo, candidate: string): string {
-  const ref = repo.default_target_branch;
-  if (!ref) throw new FailError("Project Resource 缺少 default_branch_hint");
+  const ref = repo.ref;
+  if (!ref) throw new FailError("Project Resource 缺少 ref");
   if (ref === candidate) throw new FailError("Candidate 与 PR Target 相同");
   if (ref.startsWith("-") || ref.startsWith("refs/") || /[\s~^:?*\[\\\x00-\x1f\x7f]/.test(ref) || ref.includes("..") || ref.includes("@{") ||
       ref.split("/").some(p => !p || p.startsWith(".") || p.endsWith(".") || p.endsWith(".lock"))) throw new FailError("Project Resource 目标分支名非法");
@@ -36,7 +36,7 @@ export function resourcePrepareRepo(resources: ProjectResource[], key: string, r
   const selected = projectBusinessRepository(resources, key, rootUrl);
   return validatePrepareRepo({
     repo_path: repositoryName(selected.url), repo_url: selected.url,
-    default_target_branch: typeof selected.default_branch_hint === "string" ? selected.default_branch_hint : undefined,
+    ref: typeof selected.ref === "string" ? selected.ref : undefined,
   }, serverUrl);
 }
 
