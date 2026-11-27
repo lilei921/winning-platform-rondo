@@ -4,13 +4,11 @@ import { FailError, UnknownError } from "../../cli/errors.js";
 import type { BaseRegistryConfig } from "../../clients/config.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { RemoteArtifactReader } from "../delivery/remote-artifacts.js";
-import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
-import { sameAnalysisSource, type AnalysisSource } from "../analysis/source.js";
+import { repositoryName, sameAnalysisSource, type AnalysisSource } from "../analysis/source.js";
 import { approvedChange, readDevelopmentCommit } from "./requirement-guard.js";
 import { readApprovedVerifyDecision } from "../delivery/verify-decision.js";
 import { readPrRecords, type PrRecord } from "../pr/facts.js";
 
-interface RepoConfig { repo_path?: string; repo_url?: string; default_target_branch?: string }
 export interface Completion {
   change_ref: string; branch: string; commit: string;
   task_count: number; repo_keys: string[]; candidates: Record<string, string>;
@@ -46,13 +44,12 @@ export function checkedTaskProgress(text: string, waivedTasks: readonly string[]
 }
 
 /** Gate: each repo has a pinned candidate and Rondo-executed validation, not self-declared PASS. */
-export function validateChangeDelivery(prep: PrRecord[], scope: string[], tfsId: number, registry: Record<string, RepoConfig>): Record<string, string> {
+export function validateChangeDelivery(prep: PrRecord[], scope: string[], tfsId: number): Record<string, string> {
   if (!Array.isArray(prep) || prep.length === 0) throw new FailError("没有实际代码 Candidate；不自动无 PR Finalize");
   const candidates: Record<string, string> = {};
   for (const entry of prep) {
     const key = entry?.repo_key;
-    const repo = registry[key];
-    if (!scope.includes(key) || !repo?.repo_url) throw new FailError("PR Candidate 的 repo_key 不在批准 Repository Scope: " + key);
+    if (!scope.includes(key)) throw new FailError("PR Candidate 的 repo_key 不在批准 Repository Scope: " + key);
     if (key in candidates) throw new FailError("PR Preparation 仓库重复: " + key);
     if (entry.source_branch !== candidateBranch(tfsId) ||
         !/^[0-9a-f]{40}$/.test(entry.candidate_commit ?? "") ||
@@ -60,8 +57,7 @@ export function validateChangeDelivery(prep: PrRecord[], scope: string[], tfsId:
         typeof entry.description !== "string" || !entry.description.trim() ||
         typeof entry.target_branch !== "string" || !entry.target_branch.trim() || entry.target_branch === entry.source_branch ||
         entry.description.includes("补 TFS 工作项 id") ||
-        !entry.repo_url || canonicalRepositoryIdentity(entry.repo_url) !== canonicalRepositoryIdentity(repo.repo_url) ||
-        entry.target_branch !== repo.default_target_branch) {
+        !entry.repo_url || repositoryName(entry.repo_url) !== key) {
       throw new FailError("PR Preparation 缺少真实 Candidate 或 Engineer 专业描述: " + key);
     }
     const validation = entry.local_validation;
@@ -90,7 +86,7 @@ export async function checkPublishedChange(
 ): Promise<Completion> {
   const change = await approvedChange(cfg, multica, issueKey, true);
   const source = change.source;
-  if (!sameAnalysisSource(source, expectedSource)) throw new UnknownError("批准来源在读取映射期间变化");
+  if (!sameAnalysisSource(source, expectedSource)) throw new UnknownError("批准来源在读取 Scope 期间变化");
   const changeRef = source.change_ref;
   const reader = readerFactory(source.repo_url);
   const md = change.issue.metadata ?? {};
@@ -99,7 +95,7 @@ export async function checkPublishedChange(
   const prefix = "/openspec/changes/" + changeRef;
   const tasks = await reader.read(commit, prefix + "/tasks.md");
   const taskCount = checkedTaskProgress(tasks, readApprovedVerifyDecision(md).waivedTasks);
-  const candidates = validateChangeDelivery(readPrRecords(md.pr), change.scope, change.tfsId, cfg.registry as Record<string, RepoConfig>);
+  const candidates = validateChangeDelivery(readPrRecords(md.pr), change.scope, change.tfsId);
   const latest = multica.getIssue(issueKey).metadata ?? {};
   if (["analysis.source", "analysis.human_approval", "dev.publication", "pr"].some(key => latest[key] !== md[key])) {
     throw new UnknownError("完成检查期间批准、研发发布记录或 PR 候选发生变化，请重新检查");

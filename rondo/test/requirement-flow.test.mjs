@@ -16,7 +16,7 @@ import { outgoing, prepareRoot, publishChange } from "../dist/commands/runtime/r
 
 const repoUrl = "http://tfs.test/tfs/C/P/_git/biz";
 const registry = {
-  frame: { repo_path: "biz", repo_url: repoUrl, default_target_branch: "dev" },
+  frame: { repo_path: "frame", repo_url: "http://tfs.test/tfs/C/P/_git/frame", default_target_branch: "dev" },
   web: { repo_path: "web", repo_url: "http://tfs.test/tfs/C/P/_git/web", default_target_branch: "dev" },
 };
 const sha1 = "a".repeat(40);
@@ -32,16 +32,17 @@ function prep(key, sha) {
 
 test("Requirement Scope, Candidate 和验证/Review 必须由同一份原生事实绑定", () => {
   assert.deepEqual(parseRepositoryScope("schema: intentional-change\nx-repositories:\n  - frame\n  - web\n"), ["frame", "web"]);
-  assert.deepEqual(validateChangeDelivery([prep("frame", sha1)], ["frame","web"], 42, registry), {frame:sha1});
-  assert.deepEqual(validateChangeDelivery([prep("frame",sha1),prep("web",sha2)], ["frame","web"],42,registry), {frame:sha1,web:sha2});
-  assert.throws(() => validateChangeDelivery([prep("web",sha2)], ["frame"],42,registry), /Scope/);
-  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),target_branch:"feature/42"}], ["frame"],42,
-    {...registry,frame:{...registry.frame,default_target_branch:"feature/42"}}), /Candidate/);
-  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),title:""}], ["frame"],42,registry), /Candidate/);
-  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),local_validation:{...prep("frame",sha1).local_validation,candidate_commit:sha2}}], ["frame"],42,registry), /Candidate/);
-  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{...prep("frame",sha1).code_review,candidate_commit:sha2}}], ["frame"],42,registry), /Code Review/);
-  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{result:"PASS",candidate_commit:sha1,summary:"Review",findings:[{resolved:false,blocking:true}]}}], ["frame"],42,registry), /Blocking/);
-  assert.doesNotThrow(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{result:"PASS",candidate_commit:sha1,summary:"Review",findings:[{resolved:false,blocking:false,risk_note:"known acceptable risk"}]}}], ["frame"],42,registry));
+  assert.deepEqual(validateChangeDelivery([prep("frame", sha1)], ["frame","web"], 42), {frame:sha1});
+  assert.deepEqual(validateChangeDelivery([prep("frame",sha1),prep("web",sha2)], ["frame","web"],42), {frame:sha1,web:sha2});
+  assert.throws(() => validateChangeDelivery([prep("web",sha2)], ["frame"],42), /Scope/);
+  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),repo_url:registry.web.repo_url}], ["frame"],42), /Candidate/);
+  assert.doesNotThrow(() => validateChangeDelivery([{...prep("frame",sha1),target_branch:"release"}], ["frame"],42));
+  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),target_branch:"feature/42"}], ["frame"],42), /Candidate/);
+  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),title:""}], ["frame"],42), /Candidate/);
+  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),local_validation:{...prep("frame",sha1).local_validation,candidate_commit:sha2}}], ["frame"],42), /Candidate/);
+  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{...prep("frame",sha1).code_review,candidate_commit:sha2}}], ["frame"],42), /Code Review/);
+  assert.throws(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{result:"PASS",candidate_commit:sha1,summary:"Review",findings:[{resolved:false,blocking:true}]}}], ["frame"],42), /Blocking/);
+  assert.doesNotThrow(() => validateChangeDelivery([{...prep("frame",sha1),code_review:{result:"PASS",candidate_commit:sha1,summary:"Review",findings:[{resolved:false,blocking:false,risk_note:"known acceptable risk"}]}}], ["frame"],42));
 });
 
 test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专业描述", async (t) => {
@@ -212,7 +213,7 @@ test("Completion 消费完整发布回执，只读取批准 Scope 和固定研�
     "tfs.type": "需求", "tfs.id": "42", pr: JSON.stringify([prep("frame", sha2)]),
     "dev.publication": JSON.stringify({ analysis_source: source, commit: sha2 }) };
   const issue = { id: "issue", status: "in_progress", metadata };
-  const cfg = { runtime: { workspace_id: "ws" }, registry };
+  const cfg = { runtime: { workspace_id: "ws" } };
   const env = { MULTICA_TASK_ID: "run", MULTICA_AGENT_ID: "agent", MULTICA_WORKSPACE_ID: "ws",
     MULTICA_TOKEN: "fixture", MULTICA_DAEMON_PORT: "1", TFS_PAT: "fixture", TFS_SERVER_URL: "http://tfs.test/tfs/C" };
   for (const [key, value] of Object.entries(env)) {

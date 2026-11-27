@@ -13,7 +13,6 @@ import { verifiedRepo, type VerifiedRepo } from "../../tfs/api/commit-facts.js";
 import { ensurePrWorkItemLink } from "../../tfs/api/pr-link.js";
 import { normalizeTfsPrWebUrl, parseTfsPrWebUrl } from "../../tfs/api/pr.js";
 import { assertTfsRepository } from "../../clients/authenticated-git.js";
-import { readApprovedRepoMapping } from "../dev/native-prepare.js";
 import { readAnalysisSource } from "../analysis/source.js";
 import { assertBugReadyForPr, assertBugAgentAssignment } from "../bug/scope.js";
 import { assertBugExecution, assertBugSource } from "../bug/authorization.js";
@@ -158,8 +157,7 @@ export function registerPrMaterialize(group: Command): void {
           }
         } else {
           const source=readAnalysisSource(md);
-          const registry=await readApprovedRepoMapping(source,server);
-          await checkPublishedChange({runtime,registry},multica,opts.issue,source,md.pr);
+          await checkPublishedChange({runtime},multica,opts.issue,source,md.pr);
         }
         const identities=new Map<string,VerifiedRepo>(), seen=new Set<string>();
         for(const entry of prep) {
