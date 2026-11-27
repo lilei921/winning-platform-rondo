@@ -89,7 +89,7 @@ $env:MULTICA_REPO_ROOT = "D:/UserProgram/winning-platform-rondo"
 
 ### 5.3 Multica 交付命令
 
-交付命令使用当前 Multica Run 的 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`（可选 `MULTICA_CLI_PATH`）。仓库配置以当前 Project Resource 为准，Requirement 的修改授权以已批准 OpenSpec Scope 为准；后续交付消费已登记的 PR Facts。业务仓 `repo_id` / `repo_key` 为完整 Git/TFS 仓库名称。TFS Sync Agent 通过 provision 设置的 `RONDO_PROJECT_TITLE` 在当前 Workspace 解析目标 Project。
+交付命令使用当前 Multica Run 的 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`（可选 `MULTICA_CLI_PATH`）。仓库配置以当前 Project Resource 为准，Requirement 的修改授权以已批准 OpenSpec Scope 为准；后续交付消费已登记的 PR Facts。业务仓 `repo_id` / `repo_key` 为完整 Git/TFS 仓库名称。TFS Sync Agent 通过 `RONDO_PROJECT_TITLE` 在当前 Workspace 解析目标 Project；provision 按分组补齐缺失变量，允许人工配置且不覆盖已有值。
 
 
 `workspace provision / sync` 和 `doctor` 可使用 `--profile <name>` 选择 Multica 连接配置（`doctor` 需同时提供 `--workspace-id`）。不要跨环境复用 Workspace Overlay。

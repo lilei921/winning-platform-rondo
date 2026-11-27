@@ -223,7 +223,7 @@ rondo workspace check-daemon --workspace-id <id> [--project-id <id>]
 | `workspace sync` | 将本地受管 Skill 内容同步到 Multica Workspace |
 | `workspace check-daemon` | 检查 Daemon 环境变量、Runtime 注册、挂载唯一性和交付亲和条件 |
 
-`workspace provision` 的 `--dry-run` 只预览；`workspace sync --dry-run` 只预览，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。研发工作区统一按 Project Resource 和实际 Checkout 准备；Provision 不注入 `RONDO_WORKSPACE_BRANCH`，仅为 TFS Sync Agent 对齐 `RONDO_PROJECT_TITLE`，保留其他环境变量。
+`workspace provision` 的 `--dry-run` 只预览；`workspace sync --dry-run` 只预览，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。研发工作区统一按 Project Resource 和实际 Checkout 准备；Provision 不注入 `RONDO_WORKSPACE_BRANCH`，仅为 TFS Sync Agent 按分组补齐缺失的 `RONDO_PROJECT_TITLE`，已有值及其他环境变量保留。
 
 受管 Skill 或 Agent 绑定发生变化时，先执行 `rondo workspace provision --workspace <name>` 更新绑定和 Overlay，再执行 `rondo workspace sync --workspace <name>` 同步内容。此次 `workitem-triage` 退役后，核对 Wayfinder 仅绑定 `codebase-explorer`、Overlay 不再登记旧 Skill；不自动删除其他未受管平台 Skill。
 

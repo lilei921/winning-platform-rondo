@@ -591,7 +591,7 @@ function main(rawArgs: string[]): number {
     }
     for (const rp of remoteProjects) if (rp.title !== manifest.project.title) unmanaged.push(`project/${rp.title}`);
 
-    // TFS Sync 的目标 Project Title 由当前分组 manifest 管理；其他 Custom Env 保持原值。
+    // 按分组 Project Title 补齐 TFS Sync Agent 环境变量；已有变量（含空值）保留。
     const syncAgentId = agentIds["TFS Sync Agent"];
     if (syncAgentId) {
       const envArgs = [...MC, "agent", "env"];
@@ -604,10 +604,10 @@ function main(rawArgs: string[]): number {
       const current = readEnv();
       const title = manifest.project.title;
       const label = "agent/TFS Sync Agent (RONDO_PROJECT_TITLE)";
-      if (current.RONDO_PROJECT_TITLE === title) unchanged.push(label);
+      if (Object.hasOwn(current, "RONDO_PROJECT_TITLE")) unchanged.push(label);
       else {
         if (!dryRun) {
-          const desired = { ...current, RONDO_PROJECT_TITLE: title };
+          const desired = { RONDO_PROJECT_TITLE: title, ...current };
           runJsonStdin([...envArgs, "set", syncAgentId, ...WS, "--custom-env-stdin", "--output", "json"], "设置 TFS Sync Agent Project Title", JSON.stringify(desired));
           if (readEnv().RONDO_PROJECT_TITLE !== title) throw new UnknownError("RONDO_PROJECT_TITLE 回读不一致");
         }
