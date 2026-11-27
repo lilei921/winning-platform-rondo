@@ -16,19 +16,18 @@ function runCli(args, env = {}) {
   return result;
 }
 
-/** 当前完整命令树；包含 analysis read 和顶层叶子 query/doctor。 */
+/** 当前完整命令树；包含 analysis read 和顶层叶子 doctor。 */
 const TREE = {
   analysis: ["validate", "publish", "read", "approve"],
   dev: ["git", "publish"],
   tfs: ["writeback", "reconcile-workitem"],
-  pr: ["prepare", "materialize", "resume", "worktree", "reconcile-status", "create", "get", "list"],
-  delivery: [ "finalize", "root-prepare", "root-clone", "admission"],
+  pr: ["prepare", "materialize", "resume", "reconcile-status", "create", "get", "list"],
+  delivery: [ "finalize", "root-prepare", "admission"],
   workspace: ["provision", "sync", "check-daemon"],
-  runtime: ["resolve-root-repo","prepare-root","get-context","check-checkout"],
+  runtime: ["get-context","check-checkout"],
   openspec: ["resolve-identity", "install-schema"],
-  repo: ["get"],
-  branch: ["get"],
-  workitem: ["set-state", "comment", "create", "link-commits", "download-attachment"],
+  repo: ["get", "get-branch"],
+  workitem: ["query", "set-state", "comment", "create", "link-commits", "download-attachment"],
 };
 
 test("全部命令组:bare 调用 exit 64,stderr 帮助列出全部叶子", () => {
@@ -41,8 +40,8 @@ test("全部命令组:bare 调用 exit 64,stderr 帮助列出全部叶子", () =
   }
 });
 
-test("顶层叶子 query:缺 --wiql exit 64,用法走 stderr,stdout 纯净", () => {
-  const r = runCli(["query"]);
+test("workitem query:缺 --wiql exit 64,用法走 stderr,stdout 纯净", () => {
+  const r = runCli(["workitem", "query"]);
   assert.equal(r.status, 64);
   assert.equal(r.stdout, "");
   assert.ok(r.stderr.includes("--wiql"));
@@ -59,7 +58,7 @@ test("--version 输出 JSON:name/version/node/sea,exit 0", () => {
 });
 
 test("TFS 配置缺失:exit 3 且 stdout 为 {unknown:true}(ConfigError → UNKNOWN)", () => {
-  const r = runCli(["repo", "get", "--name", "anything"], {
+  const r = runCli(["repo", "get", "--repo", "anything"], {
     TFS_PAT: "", TFS_URL: "", TFS_SERVER_URL: "", TFS_COLLECTION: "", TFS_PROJECT: "",
   });
   assert.equal(r.status, 3, `rc=${r.status} stdout=${r.stdout.slice(0, 300)}`);
@@ -99,7 +98,7 @@ test("PR Preparation 命名统一，Closeout 拒绝旧配置参数", () => {
 });
 
 test("全局 --output json 由 Commander 统一消费，不改变子命令输出和退出码", () => {
-  for (const args of [["openspec", "resolve-identity", "--help"], ["dev", "publish", "--help"], ["runtime", "resolve-root-repo"], ["query"]]) {
+  for (const args of [["openspec", "resolve-identity", "--help"], ["dev", "publish", "--help"], ["runtime", "check-checkout"], ["workitem", "query"]]) {
     const implicit = runCli(args);
     for (const explicitArgs of [["--output=json", ...args], [...args, "--output", "json"]]) {
       const explicit = runCli(explicitArgs);
@@ -107,7 +106,7 @@ test("全局 --output json 由 Commander 统一消费，不改变子命令输出
       assert.equal(explicit.stdout, implicit.stdout, explicitArgs.join(" "));
     }
   }
-  for (const args of [["openspec", "resolve-identity"], ["runtime", "check-checkout"], ["query"], ["doctor"]]) {
+  for (const args of [["openspec", "resolve-identity"], ["runtime", "check-checkout"], ["workitem", "query"], ["doctor"]]) {
     for (const flags of [["--output", "table"], ["--output"]]) {
       const result = runCli([...args, ...flags]);
       assert.equal(result.status, 64);
@@ -174,7 +173,7 @@ test("PR recovery only exposes pr resume", () => {
 test("全部公开命令 --help / -h 输出帮助到 stdout，exit 0 且不执行安装", () => {
   const dir = mkdtempSync(join(tmpdir(), "rondo-cli-help-"));
   try {
-    const commands = [[], ["query"], ["doctor"], ...Object.entries(TREE).flatMap(
+    const commands = [[], ["doctor"], ...Object.entries(TREE).flatMap(
       ([group, leaves]) => [[group], ...leaves.map(leaf => [group, leaf])]
     )];
     for (const args of commands) {
@@ -217,4 +216,13 @@ test("OpenSpec 仅保留统一命令组，不注册旧入口", () => {
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("退役入口不再公开", () => {
+  for (const args of [["branch","get"],["query"],["delivery","root-clone"],["runtime","prepare-root"],["runtime","resolve-root-repo"],["pr","worktree"]]) {
+    assert.equal(runCli(args).status,64,args.join(" "));
+  }
+  const missing = runCli(["repo","get-branch","--repo","example"]);
+  assert.equal(missing.status,64);
+  assert.match(missing.stderr,/--branch/);
 });

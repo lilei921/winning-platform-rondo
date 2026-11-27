@@ -117,25 +117,26 @@ test("继承的 Git 定位环境变量不能将显式根仓导向其他目录", 
   assert.equal(validateRootRepo(repo, "环境隔离"), expected);
 });
 
-test("本地根仓 CLI 无需平台配置即可解析；缺少显式路径不尝试发现", (t) => {
+test("Checkout 检查支持显式绝对与相对根仓路径", (t) => {
   const { repo } = fixture(t);
-  const r = spawnSync(process.execPath, [CLI, "runtime", "resolve-root-repo", "--root-repo", repo], { encoding: "utf8" });
+  writeFileSync(join(repo, "AGENTS.md"), "项目规则");
+  const r = spawnSync(process.execPath, [CLI, "runtime", "check-checkout", "--root-repo", repo], { encoding: "utf8" });
   assert.equal(r.status, 0, r.stderr);
-  assert.equal(JSON.parse(r.stdout).root_repo, git(repo, "rev-parse", "--show-toplevel"));
+  assert.equal(JSON.parse(r.stdout).rootRepo, git(repo, "rev-parse", "--show-toplevel"));
   assert.equal(JSON.parse(r.stdout).repo_context, undefined);
   for (const [cwd, arg] of [[repo, "."], [dirname(repo), "中文 repo"]]) {
-    const relative = spawnSync(process.execPath, [CLI, "runtime", "resolve-root-repo", "--root-repo", arg], { cwd, encoding: "utf8" });
+    const relative = spawnSync(process.execPath, [CLI, "runtime", "check-checkout", "--root-repo", arg], { cwd, encoding: "utf8" });
     assert.equal(relative.status, 0, relative.stderr);
     assert.deepEqual(JSON.parse(relative.stdout), JSON.parse(r.stdout));
   }
   mkdirSync(join(repo, "nested"));
-  const nested = spawnSync(process.execPath, [CLI, "runtime", "resolve-root-repo", "--root-repo", "nested"], { cwd: repo, encoding: "utf8" });
+  const nested = spawnSync(process.execPath, [CLI, "runtime", "check-checkout", "--root-repo", "nested"], { cwd: repo, encoding: "utf8" });
   assert.equal(nested.status, 3);
   assert.match(JSON.parse(nested.stdout).reason, /不是 Git 根仓/);
-  const missing = spawnSync(process.execPath, [CLI, "runtime", "resolve-root-repo"], { encoding: "utf8" });
+  const missing = spawnSync(process.execPath, [CLI, "runtime", "check-checkout"], { encoding: "utf8" });
   assert.equal(missing.status, 64);
   assert.match(missing.stderr, /--root-repo/);
-  const help = spawnSync(process.execPath, [CLI, "runtime", "resolve-root-repo", "--help"], { encoding: "utf8" });
+  const help = spawnSync(process.execPath, [CLI, "runtime", "check-checkout", "--help"], { encoding: "utf8" });
   assert.equal(help.status, 0);
   assert.match(help.stdout, /--root-repo/);
 });
@@ -161,10 +162,10 @@ test("现场只读业务仓可通过子进程 cwd 读取分支且不改变 Lead 
   assert.equal(process.cwd(), before);
 });
 
-test("prepare-root 显式空路径不回退持久环境变量", t => {
+test("check-checkout 显式空路径不回退持久环境变量", t => {
   const { repo } = fixture(t);
-  const r = spawnSync(process.execPath, [CLI, "runtime", "prepare-root", "--root-repo", ""], {
-    cwd: repo, encoding: "utf8", env: { ...process.env, RONDO_WORKSPACE_PATH: repo, RONDO_WORKSPACE_BRANCH: "dev" },
+  const r = spawnSync(process.execPath, [CLI, "runtime", "check-checkout", "--root-repo", ""], {
+    cwd: repo, encoding: "utf8", env: { ...process.env, RONDO_WORKSPACE_PATH: repo },
   });
   assert.equal(r.status, 3, r.stderr);
   assert.match(JSON.parse(r.stdout).reason, /根仓路径为空/);

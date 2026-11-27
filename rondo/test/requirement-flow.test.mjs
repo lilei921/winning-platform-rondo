@@ -12,7 +12,7 @@ import { isRequirementChangeDelivery, approvedRequirementScope } from "../dist/c
 import { isDeliveryTaskTitle } from "../dist/commands/tfs/requirement-tasks.js";
 import { TfsClient } from "../dist/tfs/client.js";
 import { materializeOne, materializePreparedPrs } from "../dist/commands/pr/materialize.js";
-import { outgoing, prepareRoot, publishChange } from "../dist/commands/runtime/root-git.js";
+import { outgoing, publishChange } from "../dist/commands/runtime/root-git.js";
 
 const repoUrl = "http://tfs.test/tfs/C/P/_git/biz";
 const registry = {
@@ -76,7 +76,7 @@ test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专
   const calls = [];
   const tfs = { run: async args => {
     calls.push(args.slice(0, 2).join(" "));
-    if (args[0] === "branch") return { found: !!remoteHead, branch: { commit: remoteHead } };
+    if (args[0] === "repo" && args[1] === "get-branch") return { found: !!remoteHead, branch: { commit: remoteHead } };
     if (args[0] === "pr" && args[1] === "get") return {
       id: 17, status: prStatus, sourceBranch: "feature/42", targetBranch: "dev",
       description, sourceCommitId, url: "http://tfs.test/pr/17",
@@ -100,7 +100,7 @@ test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专
   assert.equal(reused.pr_id, 17);
   assert.equal(reused.reused, true);
   assert.equal(listed, false, "已登记 PR 必须先按 ID 回读而不是凭分支查找");
-  assert.deepEqual(calls, ["pr get", "branch get"]);
+  assert.deepEqual(calls, ["pr get", "repo get-branch"]);
   remoteHead = sha2;
   await assert.rejects(materializeOne(tfs, api, 42, entry, repo, prior, false, authorize), /HEAD/);
   remoteHead = sha1;
@@ -149,7 +149,7 @@ test("PR 已登记/外部存在时必须核对 Candidate、状态、分支和专
   const created = await materializeOne(tfs,api,42,entry,repo,undefined,false,authorize);
   assert.equal(created.reused,false);
   assert.equal(calls.filter(c=>c==="pr create").length,1);
-  assert.deepEqual(calls,["pr list","pr list","branch get","pr create","pr get","branch get"]);
+  assert.deepEqual(calls,["pr list","pr list","repo get-branch","pr create","pr get","repo get-branch"]);
 });
 
 test("Requirement Closeout 读取批准 Commit 的范围而非当前工作树", t => {
@@ -378,7 +378,7 @@ test("多个 Rondo 发布的 Change 允许共用一次 Push，拒绝无凭据的
   assert.throws(()=>outgoing(root,"main",git(root,"rev-parse","HEAD"),"openspec/changes/first-1/"),/受控发布标记/);
 });
 
-test("持久根仓安全 Fast-forward 保留其他 Change 的 staged WIP",async t=>{
+test("发布 Change 保留其他 Change 的 staged WIP",async t=>{
   const dir=realpathSync(mkdtempSync(join(tmpdir(),"rondo-dirty-root-")));
   t.after(()=>rmSync(dir,{recursive:true,force:true}));
   const root=join(dir,"root"),bare=join(dir,"bare.git");mkdirSync(root);mkdirSync(bare);
@@ -401,15 +401,7 @@ test("持久根仓安全 Fast-forward 保留其他 Change 的 staged WIP",async 
   git(root,"push",bare,"HEAD:refs/heads/main");
   git(root,"checkout","main");
   writeFileSync(join(other,"tasks.md"),"local WIP\n");git(root,"add","openspec/changes/other-200/tasks.md");
-  const remote=(_url,args,cwd)=>{
-    const r=spawnSync("git",args.map(arg=>arg==="origin"?bare:arg),{cwd,encoding:"utf8"});
-    return {status:r.status,stdout:r.stdout,stderr:r.stderr};
-  };
-  const oldBranch=process.env.RONDO_WORKSPACE_BRANCH;
-  t.after(()=>{ if(oldBranch===undefined) delete process.env.RONDO_WORKSPACE_BRANCH; else process.env.RONDO_WORKSPACE_BRANCH=oldBranch; });
-  process.env.RONDO_WORKSPACE_BRANCH="main";
-  const result=prepareRoot(root,"main",remote);
-  assert.equal(result.updated,true);assert.equal(result.preserved_wip,true);
+  git(root,"merge","--ff-only","advance");
   assert.equal(readFileSync(join(other,"tasks.md"),"utf8"),"local WIP\n");
   assert.equal(readFileSync(join(fresh,"proposal.md"),"utf8"),"approved\n");
   assert.match(git(root,"status","--porcelain","--","openspec/changes/other-200/tasks.md"),/^M /);

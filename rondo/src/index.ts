@@ -15,7 +15,6 @@ import { registerAnalysisApprove } from "./commands/analysis/approve.js";
 import { registerDevPublish } from "./commands/dev/publish.js";
 import { registerDevGit } from "./commands/dev/git.js";
 import { registerRuntimeCheckCheckout } from "./commands/runtime/check-checkout.js";
-import { registerRuntimePrepareRoot } from "./commands/runtime/prepare-root.js";
 import { registerRuntimeGetContext } from "./commands/runtime/get-context.js";
 import { registerPrResume } from "./commands/pr/resume.js";
 import { registerDeliveryAdmission } from "./commands/delivery/handoff.js";
@@ -23,14 +22,12 @@ import { registerTfsReconcileWorkitem } from "./commands/tfs/reconcile-workitem.
 import { registerTfsWriteback } from "./commands/tfs/writeback.js";
 import { registerPrMaterialize } from "./commands/pr/materialize.js";
 import { registerPrPrepare } from "./commands/pr/prepare.js";
-import { registerPrWorktree } from "./commands/pr/worktree.js";
 import { registerPrReconcileStatus } from "./commands/pr/reconcile-status.js";
 import { registerDeliveryFinalize } from "./commands/delivery/finalize.js";
 import { registerCloseoutRoot } from "./commands/delivery/closeout-root.js";
 import { registerWorkspaceProvision } from "./commands/workspace/provision.js";
 import { registerWorkspaceSync } from "./commands/workspace/sync.js";
 import { registerWorkspaceCheckDaemon } from "./commands/workspace/check-daemon.js";
-import { registerRuntimeResolveRootRepo } from "./commands/runtime/resolve-root-repo.js";
 import { registerDoctor } from "./commands/doctor/doctor.js";
 import { registerOpenspecInstallSchema } from "./commands/openspec/install-schema.js";
 
@@ -72,12 +69,11 @@ const tfs = bareGroup(program.command("tfs").description("TFS 工作项同步与
 registerTfsWriteback(tfs);
 registerTfsReconcileWorkitem(tfs);
 
-// pr 组:flow(materialize/worktree/reconcile-status)+ TFS API(create/get/list)合并,子命令名不交叠(方案 §3.1)
-const pr = bareGroup(program.command("pr").description("PR 准备、创建、恢复、状态核实及 Worktree 管理"));
+// PR 交付与 TFS PR 操作
+const pr = bareGroup(program.command("pr").description("PR 准备、创建、查询、恢复与状态核实"));
 registerPrMaterialize(pr);
 registerPrPrepare(pr);
 registerPrResume(pr);
-registerPrWorktree(pr);
 registerPrReconcileStatus(pr);
 registerTfsApiLeaf(pr, "create", ["pr", "create"], "创建 TFS Git PR", "--repo <name|id> --source <branch> --target <branch> --title <title> [--description-file <path>] [--work-items <ids>] [--project <project>]");
 registerTfsApiLeaf(pr, "get", ["pr", "get"], "查询指定 TFS Git PR", "--repo <name|id> --id <id> [--project <project>]");
@@ -95,10 +91,8 @@ registerWorkspaceSync(workspace);
 registerWorkspaceCheckDaemon(workspace);
 
 // runtime 组(运行时路径解析工具)
-const runtime = bareGroup(program.command("runtime").description("Runtime 上下文与根仓管理"));
-registerRuntimeResolveRootRepo(runtime);
+const runtime = bareGroup(program.command("runtime").description("Runtime 上下文与 Checkout 检查"));
 registerRuntimeCheckCheckout(runtime);
-registerRuntimePrepareRoot(runtime);
 registerRuntimeGetContext(runtime);
 
 // OpenSpec 身份解析与 Schema 安装

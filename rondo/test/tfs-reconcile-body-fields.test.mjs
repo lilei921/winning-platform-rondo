@@ -42,7 +42,7 @@ function runCreate(t, workItems) {
   chmodSync(MOCK_MULTICA, 0o755);
   const config = join(dir, "sync-config.json");
   writeFileSync(config, JSON.stringify({
-    tfs: { query_command: [process.execPath, MOCK_TFS, "query"] },
+    tfs: { query_command: [process.execPath, MOCK_TFS, "workitem", "query"] },
     multica: { cli: MOCK_MULTICA, workspace_id: "ws-test", project: "proj-1", intake_agent: "Wayfinder Agent" },
     sync: {},
   }));

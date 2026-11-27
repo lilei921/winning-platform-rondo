@@ -1,14 +1,13 @@
-/** Non-destructive persistent root synchronization and per-Change Git publishing. */
-import { existsSync, lstatSync, writeFileSync } from "node:fs";
+/** Per-Change Git publishing. */
+import { existsSync, lstatSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { assertNativeTaskCheckout, assertNativeCheckoutBaseline, nativeCheckoutExpected, readDaemonTaskContext, projectRootResource, type ProjectResource } from "../../clients/native-checkout.js";
 import { randomUUID } from "node:crypto";
 import { changeTree, developmentTree, mergeChangeTrees, publishedTree } from "./change-tree.js";
 import { FailError, UnknownError } from "../../cli/errors.js";
-import { git, gitRuntime, withTemporaryIndex } from "../../clients/git.js";
-import { logLine } from "../../cli/output.js";
+import { git } from "../../clients/git.js";
 import { runAuthenticatedGit } from "../../clients/authenticated-git.js";
-import { runCommand, sleepSync } from "../../clients/spawn.js";
+import { sleepSync } from "../../clients/spawn.js";
 import { validateRootRepo } from "../../clients/runtime-paths.js";
 import { repositoryUrl } from "../analysis/source.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
@@ -42,13 +41,10 @@ function rootPath(arg?: string | null): string {
 
 const rootDirectories = ["openspec/schemas", "openspec/changes"];
 
-function assertRootLayout(root: string, preserveChangeDeletion = false): void {
+function assertRootLayout(root: string): void {
   for (const path of rootDirectories) {
     const entry = lstatSync(join(root, path), { throwIfNoEntry: false });
     if (entry?.isDirectory()) continue;
-    // A sparse checkout is missing a directory without a diff. A local deletion is real WIP.
-    if (!entry && preserveChangeDeletion && path === "openspec/changes" &&
-        git(root, ["diff", "--quiet", "--no-ext-diff", "HEAD", "--", path]).status === 1) continue;
     throw new UnknownError("根仓缺少目录 " + path);
   }
 }
@@ -85,146 +81,6 @@ export function resolveProjectRootBranch(root: string, resources: ProjectResourc
       git(root, ["check-ref-format", "refs/heads/" + branch]).status !== 0)
     throw new FailError("根仓 Project Resource ref 必须是有效分支");
   return branch;
-}
-
-export function requirementBranch(): string {
-  const branch = process.env.RONDO_WORKSPACE_BRANCH;
-  if (!branch) throw new UnknownError("请配置 RONDO_WORKSPACE_BRANCH 后再准备根仓");
-  return branch;
-}
-
-function rootChanges(root: string): string[] {
-  const status = git(root, ["status", "--porcelain=v1", "--no-renames", "--untracked-files=all", "-z"]);
-  if (status.status !== 0) throw new UnknownError("检查根仓 WIP 失败: " + status.stderr);
-  return status.stdout.split("\0").filter(Boolean);
-}
-
-/** Path-limited commits leave other groups' staged changes in the index. */
-function saveRootChanges(root: string): void {
-  type PathEdits = { staged: boolean; working: boolean; untracked: boolean };
-  const groups = new Map<string, Map<string, PathEdits>>();
-  for (const entry of rootChanges(root)) {
-    const xy = entry.slice(0, 2), path = entry.slice(3);
-    if (xy.includes("U") || xy === "AA" || xy === "DD") throw new UnknownError("根仓冲突尚未解决: " + path);
-    const change = /^openspec\/changes\/([^/]+)\//.exec(path)?.[1];
-    const key = change && change !== "archive" ? change : "";
-    const paths = groups.get(key) ?? new Map<string, PathEdits>();
-    const edits = paths.get(path) ?? { staged: false, working: false, untracked: false };
-    // A staged deletion followed by an untracked replacement produces two records for one path.
-    edits.staged ||= xy[0] !== " " && xy !== "??";
-    edits.working ||= xy[1] !== " ";
-    edits.untracked ||= xy === "??";
-    paths.set(path, edits);
-    groups.set(key, paths);
-  }
-  if (!groups.size) return;
-  withTemporaryIndex(root, (index, dir) => {
-    let stagedTree: string | undefined;
-    const file = join(dir, "paths");
-    const fromFile = ["--pathspec-file-nul", "--pathspec-from-file=" + file];
-    const select = (paths: string[]) => writeFileSync(file, paths.join("\0") + "\0");
-    for (const [change, entries] of groups) {
-      const paths = [...entries.keys()];
-      const subject = "WIP: " + (change || "shared root changes");
-      const partial = paths.filter(path => entries.get(path)!.staged && entries.get(path)!.working);
-      if (partial.length) {
-        // Preserve the staged version in this group's history before committing the working copy.
-        stagedTree ??= writeGit(root, ["write-tree"], "固定原暂存版本");
-        select(partial);
-        index(["read-tree", "HEAD"]);
-        index(["--literal-pathspecs", "restore", "--staged", "--source=" + stagedTree, ...fromFile]);
-        index(["commit", "-m", subject + " (staged)"]);
-      }
-      const untracked = paths.filter(path => entries.get(path)!.untracked);
-      if (untracked.length) {
-        select(untracked);
-        writeGit(root, ["--literal-pathspecs", "add", ...fromFile], "暂存新增文件");
-      }
-      select(paths);
-      writeGit(root, ["--literal-pathspecs", "commit", "--only", "-m", subject, ...fromFile], "保存原分支改动",
-        () => !rootChanges(root).some(entry => entries.has(entry.slice(3))));
-    }
-  });
-  if (run(root, ["status", "--porcelain"], "确认原分支保存结果")) throw new UnknownError("原分支仍有未保存改动，保留现场");
-}
-
-/** Git protects branches occupied by a worktree, even when a rebase or bisect detached its HEAD. */
-function checkWorktreeOccupancy(root: string, source: string, target: string): void {
-  const runtime = gitRuntime({ ...process.env, GIT_ALLOW_PROTOCOL: "file", LC_ALL: "C" });
-  const check = runCommand([runtime.executable, "fetch", "--dry-run", "--no-write-fetch-head", "--no-tags",
-    "--no-recurse-submodules", "--no-auto-maintenance", root, source + ":" + target], root, runtime.env);
-  if (check.status !== 0) {
-    if (check.stderr.includes("checked out at")) throw new FailError("根仓分支被占用: " + check.stderr.trim());
-    throw new UnknownError("无法确认根仓分支占用: " + check.stderr.trim());
-  }
-}
-
-export function prepareRoot(arg?: string | null, legacyBranch?: string, remote: RootRemote = runAuthenticatedGit): Record<string, unknown> {
-  const branch = requirementBranch();
-  const root = rootPath(arg);
-  if (legacyBranch && legacyBranch !== branch) logLine("采用 RONDO_WORKSPACE_BRANCH=" + branch + "（忽略 --branch " + legacyBranch + "）");
-  const valid = git(root, ["check-ref-format", "--branch", branch]);
-  if (valid.status !== 0 || valid.stdout.trim() !== branch || branch.startsWith("refs/")) throw new FailError("根仓分支名非法: " + branch);
-  const { fetchUrl } = rootGitUrls(root);
-  const localRef = "refs/heads/" + branch, remoteRef = "refs/remotes/origin/" + branch;
-  const fetched = remote(fetchUrl, ["fetch", "--no-tags", "origin", "+" + localRef + ":" + remoteRef], root);
-  let remoteTip: string | null = null;
-  if (fetched.status === 0) {
-    remoteTip = run(root, ["rev-parse", "--verify", remoteRef], "读取根仓远端分支");
-  } else {
-    // An old tracking ref can survive branch deletion. Only a successful remote query proves absence.
-    const probe = remote(fetchUrl, ["ls-remote", "--exit-code", "--heads", "origin", localRef], root);
-    if (probe.status !== 2) throw new UnknownError("Fetch 根仓分支 " + branch + " 失败: " + fetched.stderr.trim().slice(0, 500));
-  }
-  const local = git(root, ["rev-parse", "--verify", "--quiet", localRef]);
-  if (local.status > 1) throw new UnknownError("读取根仓本地分支失败: " + local.stderr);
-  const localTip = local.stdout.trim();
-  const targetTip = localTip || remoteTip;
-  if (!targetTip) throw new FailError("本地与远端均无根仓分支: " + branch);
-
-  let finalTip = targetTip;
-  if (localTip && remoteTip && localTip !== remoteTip) {
-    const ancestor = git(root, ["merge-base", "--is-ancestor", localTip, remoteTip]);
-    if (ancestor.status === 0) finalTip = remoteTip;
-    else if (ancestor.status !== 1) throw new UnknownError("无法核验根仓历史: " + ancestor.stderr);
-  }
-  const current = run(root, ["symbolic-ref", "HEAD"], "检查根仓分支");
-  const switched = current !== localRef;
-  const fastForward = Boolean(localTip && localTip !== finalTip);
-  if (switched) checkWorktreeOccupancy(root, localTip ? localRef : remoteRef, localRef);
-  // Validate the tree that will be consumed before touching the current index or branch.
-  const entries = run(root, ["ls-tree", "-z", "--format=%(objectmode) %(path)", finalTip, "--", ...rootDirectories],
-    "核对目标根仓布局").split("\0");
-  for (const path of rootDirectories) {
-    if (!entries.includes("040000 " + path)) throw new FailError("目标分支 " + branch + " 缺少目录 " + path);
-  }
-  if (switched) {
-    // Even a commit with a private index would consume the current worktree's MERGE_HEAD.
-    const operation = rootGitOperation(root);
-    if (operation) throw new UnknownError("原分支 Git 操作仍在进行，已保留现场: " + operation);
-    if (!localTip) {
-      // A single-branch clone needs the new tracking refspec for @{upstream} and later fetches.
-      const refspecs = git(root, ["config", "--get-all", "remote.origin.fetch"]).stdout.split(/\r?\n/).map(spec => spec.replace(/^\+/, ""));
-      if (!refspecs.includes("refs/heads/*:refs/remotes/origin/*") && !refspecs.includes(localRef + ":" + remoteRef)) {
-        run(root, ["remote", "set-branches", "--add", "origin", branch], "登记根仓跟踪分支");
-      }
-    }
-    saveRootChanges(root);
-    const args = localTip ? [branch] : ["--track", "-c", branch, remoteRef];
-    run(root, ["switch", "--no-overwrite-ignore", ...args], "切换根仓分支 " + branch);
-  }
-
-  const dirty = run(root, ["status", "--porcelain", "--untracked-files=all"], "检查根仓 WIP");
-  if (fastForward) {
-    run(root, ["merge", "--ff-only", "--no-autostash", "--no-overwrite-ignore", finalTip], "根仓不能安全 Fast-forward（已保留 WIP）");
-  }
-  if (run(root, ["rev-parse", "HEAD"], "核对实际根仓版本") !== finalTip) throw new UnknownError("根仓分支在准备期间发生变化，请重试");
-  assertRootLayout(root, !switched);
-  const normative = ["openspec/schemas", "openspec/specs"];
-  if (run(root, ["status", "--porcelain", "--untracked-files=all", "--", ...normative], "检查根仓规范")) {
-    throw new UnknownError("Schema / Specs 存在未提交变更，拒绝使用不确定的规范");
-  }
-  return { root_repo: root, branch, remote_commit: remoteTip, updated: switched || fastForward, preserved_wip: Boolean(dirty) };
 }
 
 function latestMarkedCommit(root: string, marker: string): string | null {
