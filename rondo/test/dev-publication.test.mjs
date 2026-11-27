@@ -109,6 +109,8 @@ test("Engineer 从批准 SHA 读取缺失工件，在分叉的常驻根仓独立
   assert.equal(metadata()["analysis.source"], JSON.stringify(source));
   assert.ok(tfs.state().requests.every(request => request.query["versionDescriptor.version"] === approved),
     "Git 发布后不得重复通过 REST 读取研发 SHA");
+  assert.ok(tfs.state().requests.every(request => request.query.path !== "/docs/config/repo-context.yaml"),
+    "研发发布仅消费批准 Scope，不读取远端仓库映射");
   const saved = readFileSync(state, "utf8");
   const legacy = JSON.parse(saved);
   legacy.metadata["dev.publication"] = JSON.stringify({ analysis_commit: approved, commit: published.commit });
@@ -264,8 +266,8 @@ test("dev publish 拒绝来源不一致及读取期间批准变化；Push 后变
   git(root, "commit", "-am", "complete approved task");
   for (const [patch, reason] of [
     [{ "analysis.source": JSON.stringify(other) }, /Change 身份.*不一致/],
-    [otherChange, /批准来源在读取映射期间变化/],
-    [{ "analysis.human_approval": JSON.stringify({ ...approval, at: "2026-11-20T00:00:00Z" }) }, /批准来源在读取映射期间变化/],
+    [otherChange, /批准来源在读取 Scope 期间变化/],
+    [{ "analysis.human_approval": JSON.stringify({ ...approval, at: "2026-11-20T00:00:00Z" }) }, /批准来源在读取 Scope 期间变化/],
   ]) {
     writeFileSync(state, initial);
     assert.match(runWithEnv(3, drift(2, patch), "dev", "publish").reason, reason);

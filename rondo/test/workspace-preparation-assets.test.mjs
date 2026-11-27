@@ -55,3 +55,13 @@ test("workspace preparation is owned by one Skill; delivery contracts remain in 
   assert.ok(!skills.managed_skills.includes("bug-delivery") && !skills.managed_skills.includes("change-development"));
   assert.ok(!readdirSync(bugDir,{recursive:true}).includes("config/repo-registry.json"));
 });
+
+test("read-only repository investigation uses current Project Resources", () => {
+  const explorer = read("skills/codebase-explorer/SKILL.md");
+  assert.match(explorer, /Project Resource.*label/);
+  assert.match(explorer, /multica project resource list/);
+  assert.doesNotMatch(explorer, /repo-context\.yaml/);
+  const native = read("skills/native-workspace/SKILL.md").split("## 只读业务仓")[1].split("## 研发业务仓")[0];
+  assert.match(native, /Project Resource/);
+  assert.doesNotMatch(native, /repo-context\.yaml/);
+});

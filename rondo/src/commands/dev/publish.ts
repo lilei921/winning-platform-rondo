@@ -3,8 +3,6 @@ import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
 import { resolveMulticaRuntime } from "../../clients/runtime-context.js";
-import { readApprovedRepoMapping } from "./native-prepare.js";
-import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
 import { git, gitOk } from "../../clients/git.js";
 import { readGitTree, readGitBlob } from "../../clients/git-tree.js";
 import { MulticaClient } from "../../clients/multica.js";
@@ -54,12 +52,12 @@ export function registerDevPublish(group: Command): void {
       try {
         const runtime = resolveMulticaRuntime(), client = new MulticaClient(runtime);
         const initial = client.getIssue(opts.issue).metadata ?? {};
-        const sourceForMapping = readAnalysisSource(initial);
-        const cfg = { runtime, registry: await readApprovedRepoMapping(sourceForMapping, loadTfsConfig().serverUrl) };
+        const initialSource = readAnalysisSource(initial);
+        const cfg = { runtime };
         const multica = client;
         const approved = await approvedChange(cfg, multica, opts.issue);
         const source = approved.source;
-        if (!sameAnalysisSource(source, sourceForMapping) || approved.issue.metadata?.["analysis.human_approval"] !== initial["analysis.human_approval"] || approved.issue.metadata?.["tfs.id"] !== initial["tfs.id"]) throw new UnknownError("批准来源在读取映射期间变化");
+        if (!sameAnalysisSource(source, initialSource) || approved.issue.metadata?.["analysis.human_approval"] !== initial["analysis.human_approval"] || approved.issue.metadata?.["tfs.id"] !== initial["tfs.id"]) throw new UnknownError("批准来源在读取 Scope 期间变化");
         const root = requirementRoot(opts.rootRepo);
         const branch = source.branch;
         const original = approved.issue.metadata ?? {};

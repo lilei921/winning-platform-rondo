@@ -58,7 +58,7 @@ export function assertEngineerExecution(multica: MulticaClient, issue: IssueReco
   if (agent?.id !== agentId || agent?.name !== "Engineer") throw new FailError("当前执行者不是已登记的 Engineer Agent");
 }
 
-/** A Native caller has already confirmed the root identity and read its mapping at source.commit. */
+/** A Native caller has already confirmed the root identity. */
 interface ApprovedCheckout {
   root: string;
   source: AnalysisSource;
@@ -92,11 +92,6 @@ export async function approvedChange(cfg: BaseRegistryConfig, multica: MulticaCl
     throw new FailError("批准评论未在当前 Issue 回读成功");
   }
   const scope = await readApprovedRepositoryScope(source, local);
-  for (const id of scope) {
-    if (!cfg.registry || !Object.prototype.hasOwnProperty.call(cfg.registry, id)) {
-      throw new FailError("批准的 Repository Scope 在 Registry 中不存在: " + id);
-    }
-  }
   return { issue, source, scope, tfsId };
 }
 

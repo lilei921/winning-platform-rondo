@@ -20,13 +20,13 @@ rondo runtime check-checkout --root-repo "<实际返回的根仓路径>"
 
 ## 只读业务仓
 
-从已登记 Project Resource 核实 URL 和初始 ref，并与根仓已提交的 `docs/config/repo-context.yaml` 仓库身份对应。仅需只读调查且确实需要本地业务仓时，在当前 Task workdir 执行：
+从当前 Project Resource 核实仓库 URL 和初始 ref。优先复用已取得的 Project 上下文，必要时使用原生 Resource 查询。仅需只读调查且确实需要本地业务仓时，在当前 Task workdir 执行：
 
 ```text
 multica repo checkout <business-url> --ref <resource-ref>
 ```
 
-使用原生命令返回的实际业务仓路径。无 ref 时可省略 `--ref`。
+使用原生命令返回的实际业务仓路径，核实 Git Origin 与 Resource 仓库身份一致。无 ref 时可省略 `--ref`。
 
 ## 研发业务仓
 
