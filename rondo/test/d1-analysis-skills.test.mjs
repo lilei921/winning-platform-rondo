@@ -171,7 +171,7 @@ test("D2 skill contracts: archive legacy and bind composable Analyst methods", (
     "--tfs-id <tfs.id>", "--change-ref <stable-id>", "同时传入",
     "cwd", "openspec schema which", "implicit",
     "openspec status", "openspec instructions", "openspec new change", "Conditional Design", "skip_specs", "specs/**/*.md",
-    "x-repositories", "docs/config/repo-context.yaml",
+    "x-repositories", "winning-dps-df-dataintegration",
   ]) assert.ok(spec.includes(expected), "spec-preparation missing: " + expected);
   assert.ok(!spec.includes("新建并绑定 Agent"));
   assert.ok(!spec.includes("config/repo-registry.json"), "spec preparation commands do not consume registry config");

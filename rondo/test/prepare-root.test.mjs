@@ -248,18 +248,19 @@ test("目标分支缺少 Schema 时，保存 WIP 前报告失败", t => {
   assert.equal(readFileSync(join(root, "pending.md"), "utf8"), "local WIP");
 });
 
-test("快进前校验将要使用的提交中的根仓映射", t => {
+test("目标分支可删除旧仓库映射；真实 fetch/push Origin 必须一致", t => {
   const { root, bare, remote } = fixture(t);
   prepareRoot(root, undefined, remote);
-  const before = git(root, "rev-parse", "HEAD");
   git(root, "switch", "-c", "remote-edit");
-  put(root, "docs/config/repo-context.yaml", "repos:\n  - repo_id: root\n    repo_url: http://tfs.test/tfs/C/P/_git/other\n");
-  git(root, "add", ".");
-  git(root, "commit", "-m", "change repo mapping");
+  git(root, "rm", "docs/config/repo-context.yaml");
+  git(root, "commit", "-m", "remove obsolete repo mapping");
   git(root, "push", bare, "HEAD:refs/heads/main");
   git(root, "switch", "main");
-  assert.throws(() => prepareRoot(root, undefined, remote), /Origin/);
-  assert.equal(git(root, "rev-parse", "HEAD"), before);
+  assert.equal(prepareRoot(root, undefined, remote).branch, "main");
+  assert.equal(git(root, "rev-parse", "HEAD"), git(bare, "rev-parse", "main"));
+  assert.equal(requirementRoot(root), git(root, "rev-parse", "--show-toplevel"));
+  git(root, "remote", "set-url", "--push", "origin", "http://tfs.test/tfs/C/P/_git/other");
+  assert.throws(() => prepareRoot(root, undefined, remote), /Origin.*Push URL/);
 });
 
 test("已在目标分支时保留工作区对最后一个 Change 的删除", t => {

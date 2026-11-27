@@ -61,33 +61,34 @@ function fixture(t, requirement = true, native = false, commitChange = true) {
   const statePath = join(home, "state.json");
   writeFileSync(statePath, JSON.stringify({ status: "in_progress", metadata }));
 
-  const tfs = analysisTfsFixture(t, home, { remote }, { requirementOrigin: requirement });
+  const tfs = analysisTfsFixture(t, home, { remote }, { requirementOrigin: true });
   {
     mkdirSync(join(root, "docs", "config"), { recursive: true });
     mkdirSync(join(root, "openspec", "schemas"), { recursive: true });
-    writeFileSync(join(root, "docs", "config", "repo-context.yaml"),
-      "repos:\n  - repo_id: root\n    repo_type: root-workspace\n    repo_url: " + tfs.repoUrl + "\n  - repo_id: frame\n    repo_type: backend\n");
     writeFileSync(join(root, "openspec", "schemas", ".gitkeep"), "");
-    git(root, "add", "docs/config/repo-context.yaml", "openspec/schemas/.gitkeep");
-    git(root, "-c", "user.email=test@example.invalid", "-c", "user.name=Test", "commit", "-m", "mapping");
+    git(root, "add", "openspec/schemas/.gitkeep");
+    git(root, "-c", "user.email=test@example.invalid", "-c", "user.name=Test", "commit", "-m", "schemas");
     git(root, "push", "origin", "dev");
   }
 
   const taskId = "01234567-abcd-ef12-3456-abcdef123456";
   const taskBranch = "agent/workitem-analyst/abcdef123456";
   const resourcePath = join(home, ".multica", "project", "resources.json");
+  const resources = [
+    { resource_type: "github_repo", resource_ref: { url: tfs.repoUrl, ref: "dev" } },
+    { resource_type: "github_repo", label: "业务仓", resource_ref: { url: tfs.repoUrl.replace(/[^/]+$/, "frame"), ref: "dev", default_branch_hint: "dev" } },
+  ];
+  writeFileSync(statePath, JSON.stringify({ status: "in_progress", metadata, project_resources: resources }));
   if (native) {
     mkdirSync(dirname(resourcePath), { recursive: true });
-    writeFileSync(resourcePath, JSON.stringify({ project_id: "project1", resources: [
-      { resource_type: "github_repo", resource_ref: { url: tfs.repoUrl, ref: "dev" } },
-    ] }));
+    writeFileSync(resourcePath, JSON.stringify({ project_id: "project1", resources }));
     writeFileSync(join(home, ".multica", "daemon_task_context.json"), JSON.stringify({
       managed_by: "multica-daemon-task", issue_id: "issue-1", agent_id: "analyst",
     }));
     git(root, "config", "multica.checkout-mode", "isolated");
     // Match Multica isolated Checkout: branch created from raw SHA, without upstream.
     git(root, "checkout", "-b", taskBranch, git(root, "rev-parse", "HEAD"));
-    writeFileSync(statePath, JSON.stringify({ status: "in_progress", metadata, runs: {
+    writeFileSync(statePath, JSON.stringify({ status: "in_progress", metadata, project_resources: resources, runs: {
       "issue-1": [{ id: taskId, issue_id: "issue-1", agent_id: "analyst", workspace_id: "ws-test", status: "running" }],
     } }));
   }
@@ -144,6 +145,7 @@ test("Preview → Complete without Stage: final Gate and fixed Git Contract; no 
   const commands = readFileSync(calls, "utf8").trim().split("\n").map(line => JSON.parse(line));
   assert.equal(commands.filter(a => a.includes("issue") && a.includes("get")).length, 5);
   assert.equal(commands.filter(a => a.includes("metadata") && a.includes("list")).length, 0);
+  assert.equal(commands.filter(a => a[0] === "project" && a[1] === "resource").length, 1);
   const source = JSON.parse(f.state().metadata["analysis.source"]);
   assert.deepEqual(result.body.analysis_source, source);
   assert.equal(source.commit, git(f.remote, "rev-parse", "dev"));
@@ -303,56 +305,54 @@ test("Analysis Gate refuses a Change belonging to another TFS Work Item before a
   assert.deepEqual(f.state(), state);
 });
 
-test("Analysis Gate refuses unregistered Repository Scope before any publication", t => {
+test("Analysis preview checks format; publication rejects unregistered Project Resource before Git writes", t => {
   const f = fixture(t, true, false, false);
   writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [frame, nonexistent-repo]\n");
   const state = f.state();
   const local = git(f.root, "rev-parse", "HEAD");
   const remote = git(f.remote, "rev-parse", "dev");
   const preview = f.gate();
-  assert.equal(preview.exit, 2);
-  assert.match(preview.body.reasons.join(" "), /未登记的 repo_id: nonexistent-repo/);
-  assert.ok(!preview.body.checks.some(c => c.name === "openspec_validate"));
+  assert.equal(preview.exit, 0);
   const publish = f.complete();
   assert.equal(publish.exit, 2);
-  assert.match(publish.body.reason, /未登记的 repo_id: nonexistent-repo/);
+  assert.match(publish.body.reason, /repo_id nonexistent-repo.*缺失/);
   assert.equal(git(f.root, "rev-parse", "HEAD"), local);
   assert.equal(git(f.remote, "rev-parse", "dev"), remote);
   assert.deepEqual(f.state(), state);
 });
 
-test("Analysis Gate rejects the registered engineering root as a business Repository Scope", t => {
+test("Analysis publication rejects the actual engineering root as business Scope", t => {
   const f = fixture(t, true, false, false);
-  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [frame, root]\n");
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [frame, R]\n");
   const state = f.state();
   const local = git(f.root, "rev-parse", "HEAD");
   const remote = git(f.remote, "rev-parse", "dev");
   const preview = f.gate();
-  assert.equal(preview.exit, 2, JSON.stringify(preview));
-  assert.match(preview.body.reasons.join(" "), /不能包含工程契约根仓 root/);
+  assert.equal(preview.exit, 0, JSON.stringify(preview));
   const publish = f.complete();
   assert.equal(publish.exit, 2, JSON.stringify(publish));
+  assert.match(publish.body.reason, /不能包含工程契约根仓 R/);
   assert.equal(git(f.root, "rev-parse", "HEAD"), local);
   assert.equal(git(f.remote, "rev-parse", "dev"), remote);
   assert.deepEqual(f.state(), state);
 });
 
-test("Requirement rejects a scope absent from the final Git candidate despite a valid local mapping", t => {
+test("Requirement rejects an unregistered Scope even when obsolete local mapping lists it", t => {
   const f = fixture(t, true, false, false);
   const mapping = join(f.root, "docs", "config", "repo-context.yaml");
-  writeFileSync(mapping, readFileSync(mapping, "utf8") + "  - repo_id: frame-web\n");
+  writeFileSync(mapping, "repos:\n  - repo_id: frame-web\n");
   writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [frame-web]\n");
   const state = f.state();
   const remote = git(f.remote, "rev-parse", "dev");
   assert.equal(f.gate().exit, 0);
   const publish = f.complete();
   assert.equal(publish.exit, 2, JSON.stringify(publish));
-  assert.match(publish.body.reason, /未登记的 repo_id: frame-web/);
+  assert.match(publish.body.reason, /repo_id frame-web.*缺失/);
   assert.equal(git(f.remote, "rev-parse", "dev"), remote);
   assert.deepEqual(f.state(), state);
 });
 
-test("Requirement fixed source recovery checks scope in that commit, not the working tree", t => {
+test("Requirement recovery checks current Resource membership, not obsolete local mapping", t => {
   const f = fixture(t, true, false, false);
   writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [frame-web]\n");
   git(f.root, "add", "openspec/changes/" + CHANGE);
@@ -365,11 +365,11 @@ test("Requirement fixed source recovery checks scope in that commit, not the wor
   });
   f.setState(state);
   const mapping = join(f.root, "docs", "config", "repo-context.yaml");
-  writeFileSync(mapping, readFileSync(mapping, "utf8") + "  - repo_id: frame-web\n");
+  writeFileSync(mapping, "repos:\n  - repo_id: frame-web\n");
   assert.equal(f.gate().exit, 0);
   const publish = f.complete();
   assert.equal(publish.exit, 2, JSON.stringify(publish));
-  assert.match(publish.body.reason, /未登记的 repo_id: frame-web/);
+  assert.match(publish.body.reason, /repo_id frame-web.*缺失/);
   assert.equal(git(f.remote, "rev-parse", "dev"), remote);
   assert.deepEqual(f.state(), state);
 });
