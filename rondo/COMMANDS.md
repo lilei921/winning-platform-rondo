@@ -18,7 +18,7 @@ rondo delivery --help
 rondo doctor --help
 ```
 
-- 命令通常采用 `rondo <group> <command> [options]`；`query`、`doctor` 直接位于顶层。
+- 命令通常采用 `rondo <group> <command> [options]`；`doctor` 直接位于顶层。
 - 下面的 `<...>` 表示必填值，`[...]` 表示可选项，`a|b` 表示取其中一种。排版分行的命令需合并为一行执行。
 - 显式 `--root-repo` 与 `--openspec-root` 路径可使用绝对路径或相对当前 cwd 的路径；`--root-repo` 仍须指向实际 Git 根仓，`--openspec-root` 可指向根仓或其 OpenSpec 目录。持久环境变量 `RONDO_WORKSPACE_PATH` 仍要求绝对路径。支持环境变量回退的命令只在未提供 `--root-repo` 时回退，显式空路径或缺值拒绝。
 - 业务命令默认输出 JSON，可统一显式传入全局 `--output json`（仅支持 `json`）；诊断信息走 `stderr`。非法或缺失输出格式返回 `64`，参数错误信息走 `stderr`。`doctor` 默认输出文本，支持 `--output json`，兼容 `--format json` / `--format text`，冲突格式拒绝。帮助信息不属于业务 JSON 输出。
@@ -33,16 +33,14 @@ rondo doctor --help
 | --- | --- | --- |
 | `analysis` | `validate`、`publish`、`read`、`approve` | 分析事实、Gate、审核提交、工件读取和批准登记 |
 | `dev` | `git`、`publish` | 研发 Git 与发布 |
-| `tfs` | `writeback`、`reconcile-workitem` | TFS 工作项同步与交付回写 |
-| `pr` | `prepare`、`materialize`、`resume`、`worktree`、`reconcile-status`、`create`、`get`、`list` | PR 准备、创建、查询、状态对账及 Worktree |
+| `pr` | `prepare`、`materialize`、`resume`、`reconcile-status`、`create`、`get`、`list` | PR 准备、创建、查询及状态对账 |
 | `delivery` | `admission`、`finalize`、`root-prepare` | 准入交接与交付收口 |
 | `workspace` | `provision`、`sync`、`check-daemon` | Workspace 资源供给、同步及检查 |
-| `runtime` | `get-context`、`resolve-root-repo`、`check-checkout`、`prepare-root` | 当前 Run 上下文查询、根仓库就绪检查及准备 |
+| `runtime` | `get-context`、`check-checkout` | 当前 Run 上下文查询及 Checkout 就绪检查 |
 | `openspec` | `resolve-identity`、`install-schema` | OpenSpec Change 身份解析与 Schema 安装 |
-| `repo` | `get` | 查询 TFS Git 仓库 |
-| `branch` | `get` | 查询 TFS Git 分支 |
-| `workitem` | `set-state`、`comment`、`create`、`link-commits`、`download-attachment` | TFS Work Item 操作 |
-| 顶级 | `query`、`doctor` | WIQL 查询、环境体检 |
+| `repo` | `get`、`get-branch` | 查询 TFS Git 仓库和分支 |
+| `workitem` | `sync`、`writeback`、`query`、`set-state`、`comment`、`create`、`link-commits`、`download-attachment` | TFS 工作项同步、回写、查询与操作 |
+| 顶级 | `doctor` | 环境体检 |
 
 ## 3. OpenSpec 与 Analysis
 
@@ -112,7 +110,7 @@ rondo delivery root-prepare --issue <KEY>
 | `delivery finalize` | `prepare` 核验交付并准备收口；`complete` 在外部回写完成后核验并结束交付 |
 | `delivery root-prepare` | 在 Task `workdir/<repo-name>` 复用 Multica Checkout，建立 Task 独立本地归档分支，返回 `root_repo` |
 
-`delivery root-prepare` 使用当前 Run 的 Multica Runtime（`MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`），仅用于 Requirement OpenSpec Change，必须在 Multica Task workdir 内运行。CLI 从平台提供的有效 `MULTICA_TASK_ENV_FILE` 补齐缺失的 Task 环境（包括 `MULTICA_TASK_ID`），不覆盖已有有效值；无法确认必要身份时返回 UNKNOWN。优先复用现有 Checkout，必要时直接调用 `multica repo checkout`，校验平台 isolated/Task/Workspace 身份、Origin/Push URL 与 `analysis.source.commit` 的可达性；本地归档分支按 Task 和来源分支隔离。Fetch、普通 Push（`HEAD:refs/heads/<analysis.source.branch>`）及 Readback 均指向 `analysis.source.branch`。不使用 Owner Marker、Cleanup Token 或 `root-cleanup`；平台 Worktree 由 Multica 管理。`root-clone` 暂保留为 Native Checkout 兼容别名。
+`delivery root-prepare` 使用当前 Run 的 Multica Runtime（`MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`），仅用于 Requirement OpenSpec Change，必须在 Multica Task workdir 内运行。CLI 从平台提供的有效 `MULTICA_TASK_ENV_FILE` 补齐缺失的 Task 环境（包括 `MULTICA_TASK_ID`），不覆盖已有有效值；无法确认必要身份时返回 UNKNOWN。优先复用现有 Checkout，必要时直接调用 `multica repo checkout`，校验平台 isolated/Task/Workspace 身份、Origin/Push URL 与 `analysis.source.commit` 的可达性；本地归档分支按 Task 和来源分支隔离。Fetch、普通 Push（`HEAD:refs/heads/<analysis.source.branch>`）及 Readback 均指向 `analysis.source.branch`。不使用 Owner Marker、Cleanup Token 或 `root-cleanup`；平台 Worktree 由 Multica 管理。
 
 `delivery admission` 的映射规则：
 
@@ -131,9 +129,6 @@ rondo delivery root-prepare --issue <KEY>
 rondo pr prepare --issue <KEY> --repo <完整仓库名称> --root-repo <path> --candidate-commit <sha> --facts <json|-> --title <title> [--validation-cwd <path>] [--required-repos <repo1,repo2>]
 rondo pr materialize --issue <KEY>
 rondo pr resume --issue <KEY> --comment-id <id> --next REWORK|RECREATE_PR
-rondo pr worktree create --config <repo-registry.json> --issue <KEY> --repo <repo_key> --branch <branch> [--base <target>] [--root-repo <path>]
-rondo pr worktree remove --config <repo-registry.json> --issue <KEY> --repo <repo_key> [--root-repo <path>]
-rondo pr worktree prune --config <repo-registry.json> (--project-id <id> | --root-repo <path>)
 rondo pr reconcile-status [--issue <KEY> | --recover-done]
 rondo pr create --repo <name|id> --source <branch> --target <branch> --title <title> [--description-file <path>] [--work-items <id,id>] [--project <project>]
 rondo pr get --repo <name|id> --id <pr-id> [--project <project>]
@@ -145,7 +140,6 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 | `pr prepare` | 核对授权、Candidate 与专业 Facts，执行提供的验证命令并登记 PR Preparation；有命令时无需预填 `validation.result`，Bug 无命令时须提供真实替代验证 PASS |
 | `pr materialize` | 核验适用 Gate，逐仓创建或恢复已有 Active / Completed PR、确认 Work Item 关联并在 pr 的对应仓库记录补充 pr_id / pr_url；全部登记后进入 in_review，in_review 仅核验已登记事实 |
 | `pr resume` | 根据 Human Comment 核验 abandoned PR 并恢复 PR Facts；不修改 Issue 状态或启动 Run |
-| `pr worktree` | 人工运维：使用显式配置管理非 Native 的既有 Git Worktree，不用于 Agent 交付 |
 | `pr reconcile-status` | 从当前 Run Workspace 扫描 Issue 的 `pr` 已登记记录，核实 `completed` / `abandoned` 等外部状态，不使用 Registry |
 
 `pr reconcile-status` 使用 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`（可选 `MULTICA_CLI_PATH`，默认 `multica`）；手动执行需具有相同环境及 CLI 认证。
@@ -155,47 +149,48 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 
 ## 6. TFS 工作项与仓库
 
-### 6.1 `rondo tfs`
+### 6.1 `rondo workitem`：同步与交付回写
 
 ```bash
-rondo tfs reconcile-workitem --config <sync-config.json>
-rondo tfs writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-plan <plan.json>]
+rondo workitem sync --wiql "<WIQL>" [--initial-status backlog|todo]
+rondo workitem writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-plan <plan.json>]
 ```
 
 | 命令 | 功能 |
 | --- | --- |
-| `tfs reconcile-workitem` | 依据同步配置查询 TFS Work Item，并创建或更新对应 Multica Issue 及其来源内容 |
-| `tfs writeback` | 按交付事实回写 TFS 工作项、任务状态、工时及关联信息 |
+| `workitem sync` | 依据 WIQL 查询 TFS Work Item，并创建或更新对应 Multica Issue 及其来源内容 |
+| `workitem writeback` | 按交付事实回写 TFS 工作项、任务状态、工时及关联信息 |
+
+`workitem sync` 使用当前 Multica Runtime 与 `RONDO_PROJECT_TITLE`，每轮按 Title 唯一解析目标 Project；默认新建 Issue 停放 `backlog`，显式 `todo` 在初始化完成后激活。每轮最多处理 50 项。
 
 交付收口的常用调用顺序：
 
 ```bash
 rondo delivery root-prepare --issue <KEY>
 rondo delivery finalize --phase prepare --issue <KEY> --root-repo <path>
-rondo tfs writeback --issue <KEY> --root-repo <path> --inspect
-rondo tfs writeback --issue <KEY> --root-repo <path> --task-plan <plan.json>
+rondo workitem writeback --issue <KEY> --root-repo <path> --inspect
+rondo workitem writeback --issue <KEY> --root-repo <path> --task-plan <plan.json>
 rondo delivery finalize --phase complete --issue <KEY> --root-repo <path>
 ```
 
 已有任务计划时省略 `--task-plan`。Direct Bug 不执行 root-prepare / inspect，不传 root-repo 或 task-plan，仅执行 prepare、writeback、complete。收口命令使用当前 Multica Runtime，无 Registry 配置。
 
-### 6.2 顶级 WIQL 查询及 Git 仓库查询
+### 6.2 Git 仓库查询
 
 ```bash
-rondo query --wiql "<WIQL>" [--project <project>]
-rondo repo get --name <repo> [--project <project>]
-rondo branch get --repo <name|id> --name <branch> [--project <project>]
+rondo repo get --repo <name|id> [--project <project>]
+rondo repo get-branch --repo <name|id> --branch <branch> [--project <project>]
 ```
 
 | 命令 | 功能 |
 | --- | --- |
-| `query` | 执行 WIQL 查询并返回 TFS Work Item 数据 |
-| `repo get` | 按仓库名称读取 TFS Git 仓库信息 |
-| `branch get` | 查询指定 TFS Git 分支及其 HEAD |
+| `repo get` | 按仓库名称或 ID 读取 TFS Git 仓库信息 |
+| `repo get-branch` | 查询指定 TFS Git 分支及其 HEAD |
 
-### 6.3 `rondo workitem`
+### 6.3 `rondo workitem`：基础查询与操作
 
 ```bash
+rondo workitem query --wiql "<WIQL>" [--project <project>]
 rondo workitem set-state --id <id> --state <state> [--complete-with-estimate] [--project <project>]
 rondo workitem comment --id <id> --text-file <path> [--project <project>]
 rondo workitem create --type <type> --title <title> --parent <id> [--description-file <path>] [--estimate <hours>] [--project <project>]
@@ -205,6 +200,7 @@ rondo workitem download-attachment --url <attachment-url> --out <directory> [--n
 
 | 命令 | 功能 |
 | --- | --- |
+| `workitem query` | 执行 WIQL 查询并返回 TFS Work Item 数据 |
 | `workitem set-state` | 将 Work Item 更新到目标状态；`--complete-with-estimate` 同时核对并填写完成工时 |
 | `workitem comment` | 读取本地文件内容并写入 TFS Work Item History |
 | `workitem create` | 创建并关联父 Work Item 下的子工作项，可设置预估工时 |
@@ -217,17 +213,17 @@ rondo workitem download-attachment --url <attachment-url> --out <directory> [--n
 
 ```bash
 rondo workspace provision --workspace <name> [--slug <slug>] [--create-workspace [--display-name <name>]] [--runtime-id <uuid>] [--profile <name>] [--dry-run] [--skip-workflow]
-rondo workspace sync --workspace <name> [--skill <skill>] [--local-only] [--profile <name>] [--dry-run] [--check]
+rondo workspace sync --workspace <name> [--skill <skill>] [--profile <name>] [--dry-run] [--check]
 rondo workspace check-daemon --workspace-id <id> [--project-id <id>]
 ```
 
 | 命令 | 功能 |
 | --- | --- |
 | `workspace provision` | 根据 Workspace 配置创建或核对 Agent、Skill、Squad、Project 和工作流对象，并记录对象 ID |
-| `workspace sync` | 将本地受管 Skill 内容同步到 Multica Workspace，生成对应运行配置 |
+| `workspace sync` | 将本地受管 Skill 内容同步到 Multica Workspace |
 | `workspace check-daemon` | 检查 Daemon 环境变量、Runtime 注册、挂载唯一性和交付亲和条件 |
 
-`workspace provision` 的 `--dry-run` 只预览；`workspace sync --local-only` 只生成本地配置，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。研发工作区统一按 Project Resource 和实际 Checkout 准备；Provision 不注入 `RONDO_WORKSPACE_BRANCH`，也不修改已有 Agent 环境变量。
+`workspace provision` 的 `--dry-run` 只预览；`workspace sync --dry-run` 只预览，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。研发工作区统一按 Project Resource 和实际 Checkout 准备；Provision 不注入 `RONDO_WORKSPACE_BRANCH`，仅为 TFS Sync Agent 按分组补齐缺失的 `RONDO_PROJECT_TITLE`，已有值及其他环境变量保留。
 
 受管 Skill 或 Agent 绑定发生变化时，先执行 `rondo workspace provision --workspace <name>` 更新绑定和 Overlay，再执行 `rondo workspace sync --workspace <name>` 同步内容。此次 `workitem-triage` 退役后，核对 Wayfinder 仅绑定 `codebase-explorer`、Overlay 不再登记旧 Skill；不自动删除其他未受管平台 Skill。
 
@@ -237,14 +233,12 @@ Workitem Analyst、Engineer 和 Bug Fix Agent 绑定 `native-workspace`，直接
 
 ```bash
 rondo runtime get-context
-rondo runtime resolve-root-repo --root-repo <path>
 rondo runtime check-checkout --root-repo <path>
-rondo runtime prepare-root [--root-repo <path>] [--branch <branch>]
 ```
 
 `runtime get-context` 只读获取当前 Multica Agent Run 的 Runtime 信息（`multica_cli`、`multica_server_url`、`workspace_id`、`rondo`、`delivery_squad_id`）。Workspace 和 Server 来自当前 Run 环境变量；按名称 `Delivery Squad` 在当前 Workspace 查找唯一有效 Squad。缺少环境或无法确认目标时返回 `UNKNOWN`（exit 3）；不依赖 `repo-registry.json`，不支持从外部终端猜测默认 Workspace。
 
-`runtime resolve-root-repo` 只读验证显式 Git 根仓路径并返回根仓与 OpenSpec 路径。`check-checkout` 只读校验已有根仓。`prepare-root` 优先使用 `--root-repo`，省略时读取 `RONDO_WORKSPACE_PATH`。分支取必需的 `RONDO_WORKSPACE_BRANCH`，优先于 `--branch`。命令在原目录检查分支占用、按 Change 分别本地保存切换前的改动，并在安全时快进。历史分叉时保留本地提交和工作区。
+`runtime check-checkout` 只读检查调用者指定的根仓，返回规范根仓路径，核对 `AGENTS.md` 和适用的 Native Task Checkout 身份。不执行检出或分支切换。
 
 ## 8. 环境检查：`rondo doctor`
 

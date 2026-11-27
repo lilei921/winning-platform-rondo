@@ -94,9 +94,9 @@ Requirement：
 ```bash
 rondo delivery root-prepare --issue <KEY>
 rondo delivery finalize --phase prepare --issue <KEY> --root-repo "<root_repo>"
-rondo tfs writeback --issue <KEY> --root-repo "<root_repo>" --inspect
-rondo tfs writeback --issue <KEY> --root-repo "<root_repo>" --task-plan "<plan.json>"
-rondo tfs writeback --issue <KEY> --root-repo "<root_repo>"
+rondo workitem writeback --issue <KEY> --root-repo "<root_repo>" --inspect
+rondo workitem writeback --issue <KEY> --root-repo "<root_repo>" --task-plan "<plan.json>"
+rondo workitem writeback --issue <KEY> --root-repo "<root_repo>"
 rondo delivery finalize --phase complete --issue <KEY> --root-repo "<root_repo>"
 ```
 

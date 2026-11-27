@@ -157,7 +157,7 @@ Multica 以 cwd 决定目录；native-workspace Skill 统一在 Task workdir 执
 
 Native 路径不消费 RONDO_WORKSPACE_BRANCH、RONDO_WORKSPACE_PATH；实际根仓路径由调用方明确提供。native-workspace 根据 Candidate 是否存在选择已发布 Candidate 或已核实 Resource ref，不以 PR Target 替代 Resource 权威。runtime check-checkout 保留现有根仓就绪检查入口，修复必要校验不一致。
 
-workspace-config/provisioning.json 只登记 native-workspace；workspace provision 不再切换准备 Skill 或注入旧分支变量。独立的 runtime prepare-root 及根仓发布契约保持不变。CLI、Skill、帮助/COMMANDS 文档和 Provision 部署保持一致，避免新 Skill 调用未部署的命令。
+workspace-config/provisioning.json 只登记 native-workspace；workspace provision 不再切换准备 Skill 或注入旧分支变量。根仓发布契约保持独立。CLI、Skill、帮助/COMMANDS 文档和 Provision 部署保持一致，避免新 Skill 调用未部署的命令。
 
 ## 6. Skill 边界
 

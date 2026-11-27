@@ -73,7 +73,7 @@ Workitem Analyst 在已核验的 Native 根仓编辑、校验并 Commit 当前 C
 
 **最小兼容点**：当前 `root-git.ts` 的 `checkTarget()` 强制本地 Branch 与 `expectedBranch` 相同。Native 路径应移除此不适用的等名条件（或等效地按环境准备方式区分），但**保留** Git Root/Origin、远端目标 Branch、已提交 Change、Gate、冲突与重试安全、SHA 回读等校验；持久根仓原有分支就绪检查不改变。
 
-Native 模式不调用 `rondo runtime prepare-root` 将 Task Branch 强行切回 `main`。也不允许以 `git push HEAD:main` 代替单 Change Publisher，因为会夹带无关 Commit。
+Native 模式保留平台管理的 Task Branch。也不允许以 `git push HEAD:main` 代替单 Change Publisher，因为会夹带无关 Commit。
 
 Engineer 跨 Run 必须读取已批准的 `analysis.source.commit`；`dev.publication` 继续独立记录研发发布 SHA，不能覆盖批准 SHA。
 

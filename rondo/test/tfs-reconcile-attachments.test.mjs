@@ -7,9 +7,8 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
+const CLI = fileURLToPath(new URL("./mock-sync-entry.mjs", import.meta.url));
 const MOCK_MULTICA = fileURLToPath(new URL("./mock-multica.cjs", import.meta.url));
-const MOCK_TFS = fileURLToPath(new URL("./mock-tfs.cjs", import.meta.url));
 const GUID = "015244e4-6152-40db-a6b9-e2e7794ac865";
 const source = `http://tfs.local/tfs/c/wrong-project/_apis/wit/attachments?FileNameGUID=${GUID}&FileName=shot.png`;
 const canonical = `http://tfs.local/tfs/c/_apis/wit/attachments/${GUID}?fileName=shot.png`;
@@ -23,14 +22,9 @@ function fixture(t, items) {
   const dir = mkdtempSync(join(tmpdir(), "rondo-attachment-recovery-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const query = join(dir, "query.json"), state = join(dir, "state.json"), calls = join(dir, "calls.jsonl");
-  const config = join(dir, "config.json");
   writeFileSync(query, JSON.stringify(items));
   writeFileSync(state, JSON.stringify({ agents_list: [{ id: "wayfinder", name: "Wayfinder Agent" }] }));
   chmodSync(MOCK_MULTICA, 0o755);
-  writeFileSync(config, JSON.stringify({
-    tfs: { query_command: [process.execPath, MOCK_TFS, "query"] },
-    multica: { cli: MOCK_MULTICA, workspace_id: "ws-test", project: "proj-1", intake_agent: "Wayfinder Agent" }, sync: {},
-  }));
   return {
     dir,
     setItems(value) { writeFileSync(query, JSON.stringify(value)); },
@@ -38,8 +32,8 @@ function fixture(t, items) {
     setState(value) { writeFileSync(state, JSON.stringify(value)); },
     run(env = {}) {
       writeFileSync(calls, "");
-      const r = spawnSync(process.execPath, [CLI, "tfs", "reconcile-workitem", "--config", config], {
-        encoding: "utf8", env: { ...process.env, MOCK_STATE: state, MOCK_TFS_QUERY_FILE: query, MOCK_SYNC_CALLS_FILE: calls, ...env },
+      const r = spawnSync(process.execPath, [CLI, "workitem", "sync", "--wiql", "SELECT [System.Id] FROM workitems"], {
+        encoding: "utf8", env: { ...process.env, MULTICA_WORKSPACE_ID: "ws-test", MULTICA_SERVER_URL: "https://mock-multica", MULTICA_CLI_PATH: MOCK_MULTICA, RONDO_PROJECT_TITLE: "Sync Project", MOCK_STATE: state, MOCK_TFS_QUERY_FILE: query, MOCK_SYNC_CALLS_FILE: calls, ...env },
       });
       assert.equal(r.error, undefined);
       let result;
@@ -296,4 +290,27 @@ test("内嵌多图同身份：关联附件优先保留名称，展示按真实�
   const body = Object.values(f.state().issues)[0].description;
   assert.deepEqual(nativeImages(body), ["https://mock-multica/files/relation-name.bin"]);
   assert.equal(body.split("[Multica 副本]").length - 1, 1);
+});
+
+for (const [label, projects, title] of [
+  ["缺少目标 Title", [{id:"proj-1",title:"Sync Project"}], ""],
+  ["目标不存在", [{id:"other",title:"Other"}], "Sync Project"],
+  ["目标重名", [{id:"p1",title:"Sync Project"},{id:"p2",title:"Sync Project"}], "Sync Project"],
+]) test(`Project 解析失败不写入 Issue：${label}`, t => {
+  const f = fixture(t, [wi(265136)]);
+  f.setState({...f.state(), projects});
+  const r = f.run({RONDO_PROJECT_TITLE:title});
+  assert.equal(r.exit, 3, r.stderr);
+  assert.equal(r.result.result, "UNKNOWN");
+  assert.equal(creates(r).length, 0);
+  assert.equal(f.state().issues, undefined);
+});
+test("同一轮仅解析一次 Project，并使用精确匹配的 ID", t => {
+  const f = fixture(t, [wi(265136),wi(265137)]);
+  f.setState({...f.state(), projects:[{id:"other",title:"Other"},{id:"target",title:"Sync Project"}]});
+  const r = f.run();
+  assert.equal(r.exit, 0, r.stderr);
+  assert.equal(r.calls.filter(a => a[0]==="project" && a[1]==="list").length,1);
+  assert.equal(r.result.created.length,2);
+  assert.ok(Object.values(f.state().issues).every(i => i.project_id==="target"));
 });

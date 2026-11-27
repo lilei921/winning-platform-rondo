@@ -1,4 +1,4 @@
-// tfs reconcile-workitem 正文投影测试：按工作项类型选主内容字段（Bug → ReproSteps/Symptom），
+// workitem sync 正文投影测试：按工作项类型选主内容字段（Bug → ReproSteps/Symptom），
 // 主字段之外已知内容字段非空追加；乱码统计覆盖全部渲染字段；正文内嵌 TFS attachment 图片
 // 并入附件物化管线（与 AttachedFile 按 URL 去重），外链图片只留占位。
 import test from "node:test";
@@ -9,9 +9,8 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const CLI = fileURLToPath(new URL("../dist/index.js", import.meta.url));
+const CLI = fileURLToPath(new URL("./mock-sync-entry.mjs", import.meta.url));
 const MOCK_MULTICA = fileURLToPath(new URL("./mock-multica.cjs", import.meta.url));
-const MOCK_TFS = fileURLToPath(new URL("./mock-tfs.cjs", import.meta.url));
 const FFFD = String.fromCharCode(0xfffd);
 
 function baseWi(over = {}) {
@@ -40,16 +39,9 @@ function runCreate(t, workItems) {
     agents_list: [{ id: "agent-wayfinder", name: "Wayfinder Agent" }],
   }));
   chmodSync(MOCK_MULTICA, 0o755);
-  const config = join(dir, "sync-config.json");
-  writeFileSync(config, JSON.stringify({
-    tfs: { query_command: [process.execPath, MOCK_TFS, "query"] },
-    multica: { cli: MOCK_MULTICA, workspace_id: "ws-test", project: "proj-1", intake_agent: "Wayfinder Agent" },
-    sync: {},
-  }));
-
-  const r = spawnSync(process.execPath, [CLI, "tfs", "reconcile-workitem", "--config", config], {
+  const r = spawnSync(process.execPath, [CLI, "workitem", "sync", "--wiql", "SELECT [System.Id] FROM workitems"], {
     encoding: "utf8",
-    env: { ...process.env, MOCK_STATE: statePath, MOCK_TFS_QUERY_FILE: queryFile },
+    env: { ...process.env, MULTICA_WORKSPACE_ID: "ws-test", MULTICA_SERVER_URL: "https://mock-multica", MULTICA_CLI_PATH: MOCK_MULTICA, RONDO_PROJECT_TITLE: "Sync Project", MOCK_STATE: statePath, MOCK_TFS_QUERY_FILE: queryFile },
   });
   assert.equal(r.error, undefined, r.error?.message);
   let body;
@@ -59,12 +51,12 @@ function runCreate(t, workItems) {
   const state = JSON.parse(readFileSync(statePath, "utf8"));
   const issues = Object.values(state.issues || {});
   assert.equal(issues.length, 1);
-  return { body, issue: issues[0], statePath, queryFile, config };
+  return { body, issue: issues[0], statePath, queryFile };
 }
 
 
 test("无附件 Issue 创建时保留真实 Markdown 换行；旧版转义正文重跑仅修复一次", (t) => {
-  const { issue, statePath, queryFile, config } = runCreate(t, [baseWi({
+  const { issue, statePath, queryFile } = runCreate(t, [baseWi({
     type: "需求",
     attachments: [],
     fields: { "System.Description": "<p>第一行</p><p>第二行</p>" },
@@ -79,9 +71,9 @@ test("无附件 Issue 创建时保留真实 Markdown 换行；旧版转义正文
   writeFileSync(statePath, JSON.stringify(state));
 
   const syncAgain = () => {
-    const r = spawnSync(process.execPath, [CLI, "tfs", "reconcile-workitem", "--config", config], {
+    const r = spawnSync(process.execPath, [CLI, "workitem", "sync", "--wiql", "SELECT [System.Id] FROM workitems"], {
       encoding: "utf8",
-      env: { ...process.env, MOCK_STATE: statePath, MOCK_TFS_QUERY_FILE: queryFile },
+      env: { ...process.env, MULTICA_WORKSPACE_ID: "ws-test", MULTICA_SERVER_URL: "https://mock-multica", MULTICA_CLI_PATH: MOCK_MULTICA, RONDO_PROJECT_TITLE: "Sync Project", MOCK_STATE: statePath, MOCK_TFS_QUERY_FILE: queryFile },
     });
     assert.equal(r.status, 0, r.stderr + "\n" + r.stdout);
     return JSON.parse(r.stdout);

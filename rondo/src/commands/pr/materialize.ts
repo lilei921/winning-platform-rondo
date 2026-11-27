@@ -73,7 +73,7 @@ export async function materializeOne(tfs: Pick<TfsClient, "run">, api: Pick<ApiT
     throw new UnknownError("pr 仓库、PR 或分支身份不一致");
   const args = ["--repo", repo.repoId, "--project", repo.project];
   const checkHead = async () => {
-    const branch = await tfs.run(["branch","get",...args,"--name",entry.source_branch], "核对远端 Candidate") as
+    const branch = await tfs.run(["repo","get-branch",...args,"--branch",entry.source_branch], "核对远端 Candidate") as
       {found?:boolean;branch?:{commit:string}};
     if (!branch.found || branch.branch?.commit !== entry.candidate_commit) throw new UnknownError("远端 Candidate HEAD 不一致");
   };

@@ -15,7 +15,7 @@ description: 对 PR 已合并的 Bug 和 Requirement 执行交付收口。
 
 ```bash
 rondo delivery finalize --phase prepare --issue <KEY>
-rondo tfs writeback --issue <KEY>
+rondo workitem writeback --issue <KEY>
 rondo delivery finalize --phase complete --issue <KEY>
 ```
 
@@ -40,7 +40,7 @@ rondo delivery finalize --phase prepare --issue <KEY> --root-repo "<root_repo>"
 已确认存在保存的任务计划时，直接复用；否则执行 Inspect：
 
 ```bash
-rondo tfs writeback --issue <KEY> --root-repo "<root_repo>" --inspect
+rondo workitem writeback --issue <KEY> --root-repo "<root_repo>" --inspect
 ```
 
 Inspect 成功后，`saved_plan=true` 时复用已有计划；否则根据 `approved_tasks` 和 `commits` 规划 TFS 子任务。
@@ -76,13 +76,13 @@ Inspect 成功后，`saved_plan=true` 时复用已有计划；否则根据 `appr
 执行回写：
 
 ```bash
-rondo tfs writeback --issue <KEY> --root-repo "<root_repo>" --task-plan "<plan.json>"
+rondo workitem writeback --issue <KEY> --root-repo "<root_repo>" --task-plan "<plan.json>"
 ```
 
 #### 复用已有计划
 
 ```bash
-rondo tfs writeback --issue <KEY> --root-repo "<root_repo>"
+rondo workitem writeback --issue <KEY> --root-repo "<root_repo>"
 ```
 
 ### Complete

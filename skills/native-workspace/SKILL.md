@@ -32,7 +32,7 @@ multica repo checkout <business-url> --ref <resource-ref>
 
 根据当前 Issue 的授权范围确定实际修改的业务仓。Requirement 以已批准版本的 `.openspec.yaml` 中 `x-repositories` 为准；Bug 按诊断结论及已固定的 Bug Scope（如有）确定范围。使用完整 Git/TFS 仓库名称标识，核实当前 Project Resource 中对应仓库的 URL 和初始 ref。
 
-通过 `rondo branch get --project <project> --repo <repo> --name feature/<tfs.id>` 查询远端 Candidate。存在则使用 Candidate 分支；明确不存在时使用 Project Resource 的 `ref`。该 `ref` 也是新 PR 的目标分支。无法确认所需分支时，先核实实际原因。
+通过 `rondo repo get-branch --project <project> --repo <repo> --branch feature/<tfs.id>` 查询远端 Candidate。存在则使用 Candidate 分支；明确不存在时使用 Project Resource 的 `ref`。该 `ref` 也是新 PR 的目标分支。无法确认所需分支时，先核实实际原因。
 
 在当前 Task workdir 执行：
 

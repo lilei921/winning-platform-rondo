@@ -3,7 +3,7 @@
  *
  * 参数解析、必填校验、错误消息与 tfs-cli 逐字节一致;
  * 两个消费面:
- *   1. rondo CLI 叶子(query/repo/branch/pr create|get|list/workitem *)——经 runner.ts 映射退出码;
+ *   1. rondo CLI 叶子(repo/pr create|get|list/workitem *)——经 runner.ts 映射退出码;
  *   2. flow 层 clients/tfs.ts——进程内调用,FailError 作数据返回(runJson exit-2 等价语义)。
  */
 
@@ -68,16 +68,16 @@ export async function dispatchTfs(argv: string[]): Promise<unknown> {
   const [cmd, sub] = args._;
   if (!cmd || args.help) throw new UsageError("");
 
-  if (cmd === "query") {
+  if (cmd === "workitem" && sub === "query") {
     return cmdQuery({ wiql: requireStr(args, "wiql"), project: optionalStr(args, "project") });
   }
   if (cmd === "repo" && sub === "get") {
-    return cmdRepoGet({ name: requireStr(args, "name"), project: optionalStr(args, "project") });
+    return cmdRepoGet({ name: requireStr(args, "repo"), project: optionalStr(args, "project") });
   }
-  if (cmd === "branch" && sub === "get") {
+  if (cmd === "repo" && sub === "get-branch") {
     return cmdBranchGet({
       repo: requireStr(args, "repo"),
-      name: requireStr(args, "name"),
+      name: requireStr(args, "branch"),
       project: optionalStr(args, "project"),
     });
   }

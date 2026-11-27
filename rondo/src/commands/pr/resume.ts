@@ -85,7 +85,7 @@ async function verifyAbandoned(pr: RegisteredPr, checkCandidate: boolean): Promi
   if(live?.id!==pr.pr_id || live.status!=="abandoned" || live.sourceBranch!==pr.source_branch || live.targetBranch!==pr.target_branch)
     throw new UnknownError("当前 PR 外部 abandoned 状态或身份无法确认");
   if(checkCandidate) {
-    const r=await tfs.run(["branch","get",...args,"--name",pr.source_branch],"核实 Candidate") as {found?:boolean;branch?:{commit:string}};
+    const r=await tfs.run(["repo","get-branch",...args,"--branch",pr.source_branch],"核实 Candidate") as {found?:boolean;branch?:{commit:string}};
     if(!r?.found || !r.branch?.commit) throw new UnknownError("候选分支无法确认");
     if(r.branch.commit!==pr.candidate_commit) throw new FailError("Candidate 已变化，须由 Human 确认工程返工");
   }

@@ -1,53 +1,12 @@
-/**
- * reconcile-workitem.ts — TFS Work Item → Multica Delivery Issue 确定性同步。
- *
- * 裁决 D3 修订：自 rondo 收编起，实现位置为 @winning/skill-flow 包内
- * commands/tfs/reconcile-workitem.ts，原 projects/multica/workspace-skills/tfs-sync/scripts/
- * reconcile-workitem.ts 路径在迁移窗口期保持有效（见 change-progress-script-contract.md addendum）。
- *
- * 职责（02 §4.1）：
- *   1. 查询符合条件的 TFS Work Item；
- *   2. 不存在则创建 Delivery Issue（assignee = Wayfinder Agent, status = backlog, 不启动），
- *      正文写入 TFS 原始上下文：按工作项类型投影主内容字段（Bug → 重现步骤
- *      ReproSteps / 症状 Symptom；其他类型 → System.Description / 需求分析
- *      Winning.Demand.Analysis），主字段之外已知内容字段非空时追加投影，附附件段；
- *   3. 附件物化（正文即映射，不新增 metadata）：正文附件段固定格式行携带
- *      `tfs附件url → Multica 副本链接`，同步时解析旧正文重建映射；新附件经
- *      tfs-cli download-attachment 下载 → issue update --attachment 上传（平台不去重，
- *      映射命中的绝不重传）→ 重写正文渲染副本链接。崩溃遗留的裸附件引用（`![name](url)`
- *      或旧式 `!file[name](url)`）按文件名认领（歧义 → UNKNOWN 停止）；
- *   4. 已存在则更新 TFS 管理字段，不修改执行状态与负责人；tfs.changed_at 变化或
- *      附件未物化时同步刷新 Issue 正文（来源内容投影归同步所有，执行事实绝不触碰）；
- *   5. 来源及附件完成回读后清除 pending 标记；initial_status=backlog 时保持停放，
- *      =todo 时在收口后发一次启动信号触发 Multica 原生 Run（准入默认仍由 Human 触发）。
- *   6. 全程幂等；单项失败不中断其余项。
- *
- * 退出码：
- *   0 = 全部成功（含全部 skipped）
- *   2 = 存在单项失败（failed 非空）
- *   3 = 配置 / 查询 / 环境不可用（UNKNOWN，整体未执行或部分执行，需人工核对）
- *
- * 输出：stdout 仅输出一个 JSON 对象（结构化结果），日志走 stderr。
- *
- * 运行环境（零构建）：
- *   - Node ≥ 23.6（或 24 LTS）：直接 `node reconcile-workitem.ts`；
- *   - Node 22.6+：`node --experimental-strip-types reconcile-workitem.ts`。
- *   本文件只使用可擦除类型注解（erasable types），不引入任何 npm 依赖与构建步骤。
- *
- * 依赖说明：
- *   - TFS 查询命令由 config 注入，必须输出 JSON 数组（字段见 REQUIRED_WI_FIELDS）；
- *   - Multica 操作为 CLI 子进程调用；CLI flag 已对照 0.6.1 `multica --help` 核验（01 §2.8）。
- *   - 注意：`issue create` 无 `--no-start` 与 `--metadata` flag——创建即带 status=backlog
- *     （停放语义由平台承担），metadata 经 `issue metadata set` 逐键写入。
- */
-
-import { mkdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+/** 确定性同步 TFS Work Item 至当前 Multica Workspace 的目标 Project。 */
+import { mkdirSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Command } from "commander";
 import { UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
-import { runCommand, runJson } from "../../clients/spawn.js";
+import { TfsClient } from "../../clients/tfs.js";
+import { resolveMulticaRuntime, type MulticaRuntime } from "../../clients/runtime-context.js";
 import { MulticaClient as SharedMulticaClient } from "../../clients/multica.js";
 import { attachmentIdentity } from "../../tfs/attachments.js";
 
@@ -77,22 +36,8 @@ interface WorkItem {
   [key: string]: unknown;
 }
 
-interface SyncConfig {
-  tfs: { query_command: string[] };
-  multica: {
-    cli?: string;
-    multica_profile?: string;
-    multica_server_url?: string;
-    workspace_id?: string;
-    project: string;
-    intake_agent: string;
-    initial_status?: string;
-  };
-  sync: {
-    max_items_per_run?: number;
-    managed_fields_only_on_existing?: boolean;
-  };
-}
+const INTAKE_AGENT = "Wayfinder Agent";
+const MAX_ITEMS_PER_RUN = 50;
 
 interface SyncResult {
   created: Array<Record<string, unknown>>;
@@ -109,29 +54,8 @@ function log(msg: string): void {
   process.stderr.write(msg + "\n");
 }
 
-function loadConfig(path: string): SyncConfig {
-  let cfg: SyncConfig;
-  try {
-    cfg = JSON.parse(readFileSync(path, "utf8")) as SyncConfig;
-  } catch (exc) {
-    throw new UnknownError(`无法读取配置 ${path}: ${exc}`);
-  }
-  for (const section of ["tfs", "multica", "sync"] as const) {
-    if (!(section in cfg)) throw new UnknownError(`配置缺少节: ${section}`);
-  }
-  if (!cfg.multica?.workspace_id || !cfg.multica?.project || !cfg.multica?.intake_agent) {
-    throw new UnknownError("TFS Sync 缺少 workspace_id / project / intake_agent，停止以免向错误工作区或 Owner 写入");
-  }
-  // initial_status 由配置驱动：backlog=停放；todo=初始化收口后发一次启动信号
-  const initialStatus = cfg.multica.initial_status ?? "backlog";
-  if (initialStatus !== "backlog" && initialStatus !== "todo") {
-    throw new UnknownError(`TFS Sync 不支持 initial_status=${initialStatus}（仅 backlog / todo）`);
-  }
-  return cfg;
-}
-
-function queryWorkItems(cfg: SyncConfig): WorkItem[] {
-  const raw = runJson(cfg.tfs.query_command, "TFS 查询");
+async function queryWorkItems(tfs: TfsClient, wiql: string): Promise<WorkItem[]> {
+  const raw = await tfs.run(["workitem", "query", "--wiql", wiql], "TFS 查询");
   if (!Array.isArray(raw)) throw new UnknownError("TFS 查询结果不是 JSON 数组");
   const items: WorkItem[] = [];
   raw.forEach((wi, i) => {
@@ -142,9 +66,9 @@ function queryWorkItems(cfg: SyncConfig): WorkItem[] {
     // 正文内嵌的 TFS attachment 图片在此并入附件列表，后续正文渲染与物化管线统一消费
     items.push(withInlineImages(wi as WorkItem));
   });
-  const limit = cfg.sync.max_items_per_run ?? 50;
+  const limit = MAX_ITEMS_PER_RUN;
   if (items.length > limit) {
-    log(`查询结果 ${items.length} 项，超过 max_items_per_run=${limit}，本次只处理前 ${limit} 项`);
+    log(`查询结果 ${items.length} 项，本次只处理前 ${limit} 项`);
     return items.slice(0, limit);
   }
   return items;
@@ -398,23 +322,18 @@ class AttachmentDownloadError extends Error {
   constructor(message: string, readonly sourceUrl: string, readonly unknown = false) { super(message); }
 }
 
-function downloadAttachment(prefix: string[], attachment: WorkItemAttachment, out: string): { path: string; name: string; size: number } {
-  const command = [...prefix, "workitem", "download-attachment", "--url", attachment.url, "--out", out,
-    ...(attachment.name ? ["--name", attachment.name] : [])];
-  let cp;
-  try { cp = runCommand(command); }
-  catch (exc) { throw new AttachmentDownloadError(`下载附件命令无法执行: ${String(exc)}`, attachment.url, true); }
-  if (cp.status !== 0) {
-    // 通用 runJson 接受 exit 2；下载成功契约必须单独检查，错误 JSON 绝不可传给上传。
-    throw new AttachmentDownloadError(`下载附件失败 rc=${cp.status}: ${cp.stdout.trim() || cp.stderr.trim()}`,
-      attachment.url, cp.status !== 2);
+async function downloadAttachment(tfs: TfsClient, attachment: WorkItemAttachment, out: string): Promise<{ path: string; name: string; size: number }> {
+  let raw: unknown;
+  try {
+    raw = await tfs.run(["workitem", "download-attachment", "--url", attachment.url, "--out", out,
+      ...(attachment.name ? ["--name", attachment.name] : [])], "下载附件");
+  } catch (exc) {
+    throw new AttachmentDownloadError(String(exc), attachment.url, true);
   }
-  let value: { path?: unknown; name?: unknown; size?: unknown };
-  try { value = JSON.parse(cp.stdout); }
-  catch { throw new AttachmentDownloadError("下载结果不是合法 JSON", attachment.url); }
+  const value = raw as { path?: string; name?: string; size?: number };
   if (!value || typeof value.path !== "string" || !value.path.trim() || typeof value.name !== "string" || !value.name.trim()
     || typeof value.size !== "number" || !Number.isSafeInteger(value.size) || value.size < 0) {
-    throw new AttachmentDownloadError(`下载结果缺少有效 path/name/size: ${cp.stdout.trim()}`, attachment.url);
+    throw new AttachmentDownloadError(`下载结果缺少有效 path/name/size: ${JSON.stringify(raw)}`, attachment.url);
   }
   try {
     const file = statSync(value.path);
@@ -425,16 +344,16 @@ function downloadAttachment(prefix: string[], attachment: WorkItemAttachment, ou
   return value as { path: string; name: string; size: number };
 }
 
-/** 附件物化：当前 TFS 附件中未物化（映射缺失或无副本链接）的 → tfs-cli 下载 → issue update
+/** 附件物化：当前 TFS 附件中未物化（映射缺失或无副本链接）的 → TFS API 下载 → issue update
  *  --attachment 上传 → 从返回正文识别新副本 URL 记入映射。平台不去重，命中映射的绝不重传。
  *  返回映射与是否有物化变化。崩溃遗留裸引用按文件名认领；同名歧义 → UNKNOWN（交人工）。 */
-function syncAttachments(
+async function syncAttachments(
   client: MulticaClient,
-  tfsCliPrefix: string[] | null,
+  tfs: TfsClient,
   issueId: string,
   wi: WorkItem,
   existingBody: string,
-): { map: AttachmentMap; changed: boolean } {
+): Promise<{ map: AttachmentMap; changed: boolean }> {
   const { map, bareRefs } = parseAttachmentMap(existingBody);
   const current = wi.attachments ?? [];
   let changed = false;
@@ -461,14 +380,11 @@ function syncAttachments(
 
   // 2. 未物化的当前 TFS 附件 → 下载 + 上传
   const pending = current.filter((a) => !map.get(attachmentIdentity(a.url))?.multicaUrl);
-  if (pending.length > 0 && !tfsCliPrefix) {
-    throw new UnknownError("存在待物化附件，但无法从 tfs.query_command 推导 tfs-cli 前缀（缺少 query 子命令段）");
-  }
   const dlDir = join(tmpdir(), `tfs-sync-att-${process.pid}-${issueId}`);
   mkdirSync(dlDir, { recursive: true });
   try {
     for (const a of pending) {
-      const dl = downloadAttachment(tfsCliPrefix as string[], a, dlDir);
+      const dl = await downloadAttachment(tfs, a, dlDir);
       const knownRefs = new Set([...lastBody.matchAll(ATTACH_REF_RE)].map((m) => m[1]));
       const updated = client.uploadAttachment(issueId, dl.path);
       lastBody = String(updated.description ?? "");
@@ -497,23 +413,19 @@ interface IssueRecord {
 class MulticaClient {
   private client: SharedMulticaClient;
   private project: string;
-  private intakeAgent: string;
   private initialStatus: string;
   private intakeAgentId: string | null = null;
 
-  constructor(cfg: SyncConfig) {
-    const mc = cfg.multica;
-    // 不显式指定工作区时 CLI 落到默认 profile 工作区，可能静默读错工作区
-    this.client = new SharedMulticaClient({
-      multica_cli: mc.cli ?? "multica",
-      multica_profile: mc.multica_profile,
-      multica_server_url: mc.multica_server_url,
-      workspace_id: mc.workspace_id,
-      tfs_cli: [],
-    });
-    this.project = mc.project;
-    this.intakeAgent = mc.intake_agent;
-    this.initialStatus = mc.initial_status ?? "backlog";
+  constructor(runtime: MulticaRuntime, projectTitle: string, initialStatus: string) {
+    this.client = new SharedMulticaClient(runtime);
+    const projects = this.client.run(["project", "list", ...this.client.ws(), "--output", "json"], "查询目标 Project", { transient: true });
+    if (!Array.isArray(projects)) throw new UnknownError("Project list 结果不可识别");
+    const matches = projects.filter(p => p?.title === projectTitle);
+    if (matches.length !== 1 || typeof matches[0]?.id !== "string" || !matches[0].id.trim()) {
+      throw new UnknownError(`Project ${projectTitle} 未唯一登记（匹配数=${matches.length}）`);
+    }
+    this.project = matches[0].id;
+    this.initialStatus = initialStatus;
   }
 
   private ws(): string[] {
@@ -526,8 +438,8 @@ class MulticaClient {
     // Agent 清单是只读查询，网络瞬断时使用共享退避；不把重试扩散到后续创建操作。
     const out = this.client.run(["agent", "list", ...this.ws(), "--output", "json"], "读取准入 Agent", { transient: true }) as Array<{ id?: string; name?: string }>;
     if (!Array.isArray(out)) throw new UnknownError("Agent list 结果不可识别");
-    const hits = out.filter((a) => a.name === this.intakeAgent && a.id);
-    if (hits.length !== 1) throw new UnknownError(`准入 Agent ${this.intakeAgent} 未唯一登记（匹配数=${hits.length}）`);
+    const hits = out.filter((a) => a.name === INTAKE_AGENT && a.id);
+    if (hits.length !== 1) throw new UnknownError(`准入 Agent ${INTAKE_AGENT} 未唯一登记（匹配数=${hits.length}）`);
     this.intakeAgentId = String(hits[0].id);
     return this.intakeAgentId;
   }
@@ -605,7 +517,7 @@ class MulticaClient {
       "--project", this.project,
       "--title", `[TFS ${wi.id}] ${wi.title}`,
       "--description", buildIssueBody(wi),
-      "--assignee", this.intakeAgent,
+      "--assignee", INTAKE_AGENT,
       "--status", "backlog",
       ...this.ws(),
       "--output", "json",
@@ -678,11 +590,9 @@ class MulticaClient {
   }
 }
 
-function reconcile(cfg: SyncConfig, tfsCliPrefix: string[] | null): SyncResult {
+async function reconcile(client: MulticaClient, tfs: TfsClient, wiql: string): Promise<SyncResult> {
   const result: SyncResult = { created: [], updated: [], skipped: [], failed: [] };
-  const items = queryWorkItems(cfg);
-  const client = new MulticaClient(cfg);
-  const managedOnly = cfg.sync.managed_fields_only_on_existing ?? true;
+  const items = await queryWorkItems(tfs, wiql);
   client.resolveIntakeAgentId(); // 任何创建/写入前预检当前工作区的唯一准入 Agent
 
   for (const [index, wi] of items.entries()) {
@@ -699,7 +609,7 @@ function reconcile(cfg: SyncConfig, tfsCliPrefix: string[] | null): SyncResult {
         // 附件物化：新建 Issue 正文尚无映射，从空正文起步；有附件则重写正文渲染副本链接
         if ((wi.attachments ?? []).length > 0) {
           stage = "attachments";
-          const att = syncAttachments(client, tfsCliPrefix, issueId, wi, "");
+          const att = await syncAttachments(client, tfs, issueId, wi, "");
           client.updateBody(issueId, wi, att.map);
         }
         stage = "finalize";
@@ -712,9 +622,6 @@ function reconcile(cfg: SyncConfig, tfsCliPrefix: string[] | null): SyncResult {
 
       issueId = String(existing.id);
       stage = "metadata";
-      if (!managedOnly) {
-        throw new UnknownError("managed_fields_only_on_existing=false 不受支持");
-      }
       const current = existing.metadata ?? {};
       const desired = buildMetadata(wi);
       const managedSame = MANAGED_METADATA_KEYS.every((k) => current[k] === desired[k]);
@@ -739,7 +646,7 @@ function reconcile(cfg: SyncConfig, tfsCliPrefix: string[] | null): SyncResult {
       }
       if (!managedSame) client.updateManagedFields(issueId, wi);
       stage = "attachments";
-      const att = syncAttachments(client, tfsCliPrefix, issueId, wi, existingBody);
+      const att = await syncAttachments(client, tfs, issueId, wi, existingBody);
       const bodyRefreshed = bodyStale || legacyEscapedBody || att.changed || attachmentsPending || imageDisplayPending;
       if (bodyRefreshed) {
         stage = "body";
@@ -779,25 +686,15 @@ function reconcile(cfg: SyncConfig, tfsCliPrefix: string[] | null): SyncResult {
   return result;
 }
 
-function parseArgs(argv: string[]): { config: string } {
-  const i = argv.indexOf("--config");
-  if (i === -1 || i + 1 >= argv.length) {
-    process.stderr.write("用法: rondo tfs reconcile-workitem --config <sync-config.json 路径>\n");
-    process.exit(64);
-  }
-  return { config: argv[i + 1] };
-}
-
-function main(rawArgs: string[]): number {
-  const args = parseArgs(rawArgs);
+async function main(wiql: string, initialStatus: string): Promise<number> {
   let result: SyncResult;
   try {
-    const cfg = loadConfig(args.config);
-    // tfs-cli 前缀推导：query_command 中 "query" 子命令之前的部分（如 ["tfs-cli"] 或 ["node","dist/index.js"]）；
-    // 附件下载复用同一 CLI 身份（PAT 配置一致）。推导不出 → null，有待物化附件时 UNKNOWN。
-    const qi = cfg.tfs.query_command.indexOf("query");
-    const tfsCliPrefix = qi > 0 ? cfg.tfs.query_command.slice(0, qi) : null;
-    result = reconcile(cfg, tfsCliPrefix);
+    const projectTitle = process.env.RONDO_PROJECT_TITLE?.trim();
+    if (!projectTitle) throw new UnknownError("缺少 RONDO_PROJECT_TITLE");
+    if (!wiql.trim()) throw new UnknownError("WIQL 不能为空");
+    if (initialStatus !== "backlog" && initialStatus !== "todo") throw new UnknownError("initial_status 仅支持 backlog / todo");
+    const client = new MulticaClient(resolveMulticaRuntime(), projectTitle, initialStatus);
+    result = await reconcile(client, new TfsClient(), wiql);
   } catch (exc) {
     if (exc instanceof UnknownError) {
       log(`UNKNOWN: ${exc.message}`);
@@ -812,17 +709,15 @@ function main(rawArgs: string[]): number {
   return result.failed.length === 0 ? 0 : 2;
 }
 
-/** commander 注册：group=tfs；参数解析沿用原脚本实现以保证契约逐字节等价。 */
+/** 注册工作项同步命令。 */
 export function registerTfsReconcileWorkitem(group: Command): void {
   group
-    .command("reconcile-workitem")
+    .command("sync")
     .description("将 TFS 工作项同步为 Multica Issue")
-    .usage("--config <sync-config.json>")
-    .allowUnknownOption(true)
-    .allowExcessArguments(true)
-    .action((...cbArgs: unknown[]) => {
+    .requiredOption("--wiql <WIQL>", "TFS 查询范围")
+    .option("--initial-status <status>", "新建 Issue 初始状态（backlog / todo）", "backlog")
+    .action(async (opts: { wiql: string; initialStatus: string }) => {
       markLeafExecuted();
-      const cmd = cbArgs[cbArgs.length - 1] as Command;
-      throw new ExitSignal(main(cmd.args));
+      throw new ExitSignal(await main(opts.wiql, opts.initialStatus));
     });
 }

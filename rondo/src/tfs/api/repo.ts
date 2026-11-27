@@ -1,6 +1,6 @@
 /**
- * repo get --name <repo> [--project <p>]
- * branch get --repo <name|id> --name <branch> [--project <p>]
+ * repo get --repo <name|id> [--project <p>]
+ * repo get-branch --repo <name|id> --branch <branch> [--project <p>]
  * 输出契约：{ "found": true|false, ... }；found:false → 由调用层判 exit 2（明确失败，非 UNKNOWN）
  */
 

@@ -8,9 +8,9 @@
 flowchart TD
     A([Autopilot / 人工触发])
     B["Agent 加载 tfs-sync Skill 与配置"]
-    C["rondo tfs reconcile-workitem --config"]
+    C["rondo workitem sync --wiql"]
     D{"同步配置有效？"}
-    E["内部调用 rondo query --wiql"]
+    E["内部调用 rondo workitem query --wiql"]
     E2["WIQL：需求 / Bug、@me、排除已验证和已关闭"]
     F{"查询结果有效且 Wayfinder 唯一？"}
     G{"还有待处理 Work Item？"}
@@ -70,19 +70,7 @@ flowchart TD
 
 ### 1. 同步主命令（Agent 调用）
 
-```bash
-rondo tfs reconcile-workitem --config "<config-path>"
-```
-
-`<config-path>` 是绝对路径，默认指向 [Skill 同步配置](../../skills/tfs-sync/config/sync-config.json)。主命令校验配置、查询 TFS、按 `tfs.id` 对账 Multica Issue，并输出 `created / updated / skipped / failed`。
-
-### 2. TFS 查询命令（同步主命令内部调用）
-
-当前 `sync-config.json` 的 `tfs.query_command` 为：
-
-```bash
-rondo query --wiql "SELECT [System.Id], [System.WorkItemType], [System.Title], [System.AssignedTo], [System.State], [System.Tags], [System.CreatedDate], [System.ChangedDate] FROM workitems WHERE [System.WorkItemType] IN ('需求','Bug') AND [System.AssignedTo] = @me AND [System.State] <> '已验证' AND [System.State] <> '已关闭' ORDER BY [System.Id]"
-```
+执行 [tfs-sync Skill](../../skills/tfs-sync/SKILL.md) 中的 WIQL 同步命令。Rondo 使用当前 Runtime 与 `RONDO_PROJECT_TITLE` 在当前 Workspace 内解析目标 Project，并通过进程内 TFS Client 查询、下载附件及对账 Issue。
 
 - **筛选**：只查询指派给当前 TFS 认证身份（`@me`）的需求和 Bug，排除已验证、已关闭项。
 - **排序与上限**：按 `System.Id` 升序；主命令最多处理查询结果的前 50 项（不是自动分页）。
@@ -101,5 +89,4 @@ rondo query --wiql "SELECT [System.Id], [System.WorkItemType], [System.Title], [
 
 - [Agent Instructions](./instructions.md)
 - [tfs-sync Skill](../../skills/tfs-sync/SKILL.md)
-- [同步配置](../../skills/tfs-sync/config/sync-config.json)
 - [Rondo 对账实现](../../rondo/src/commands/tfs/reconcile-workitem.ts)

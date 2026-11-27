@@ -35,15 +35,15 @@ test("delivery-closeout 分别保留 Bug 与 Requirement 的收口命令及结�
   const commands = (section) => (section ?? "").split("\n").filter(line => line.startsWith("rondo "));
   assert.deepEqual(commands(bug), [
     "rondo delivery finalize --phase prepare --issue <KEY>",
-    "rondo tfs writeback --issue <KEY>",
+    "rondo workitem writeback --issue <KEY>",
     "rondo delivery finalize --phase complete --issue <KEY>",
   ]);
   assert.deepEqual(commands(requirement), [
     "rondo delivery root-prepare --issue <KEY>",
     'rondo delivery finalize --phase prepare --issue <KEY> --root-repo "<root_repo>"',
-    'rondo tfs writeback --issue <KEY> --root-repo "<root_repo>" --inspect',
-    'rondo tfs writeback --issue <KEY> --root-repo "<root_repo>" --task-plan "<plan.json>"',
-    'rondo tfs writeback --issue <KEY> --root-repo "<root_repo>"',
+    'rondo workitem writeback --issue <KEY> --root-repo "<root_repo>" --inspect',
+    'rondo workitem writeback --issue <KEY> --root-repo "<root_repo>" --task-plan "<plan.json>"',
+    'rondo workitem writeback --issue <KEY> --root-repo "<root_repo>"',
     'rondo delivery finalize --phase complete --issue <KEY> --root-repo "<root_repo>"',
   ]);
   assert.deepEqual(commands(recovery), [

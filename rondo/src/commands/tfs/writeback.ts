@@ -64,7 +64,7 @@ export class Clients {
   }
 
   async tfsQuery(wiql: string, what: string): Promise<TfsWorkItem[]> {
-    const out = await this.tfs.run(["query", "--wiql", wiql], what);
+    const out = await this.tfs.run(["workitem", "query", "--wiql", wiql], what);
     if (!Array.isArray(out)) throw new UnknownError(`${what} 输出不是数组`);
     return out as TfsWorkItem[];
   }
@@ -416,7 +416,7 @@ async function main(rawArgs: string[]): Promise<number> {
   const args = parseArgs(rawArgs);
   if (typeof args.issue !== "string" || !args.issue ||
       rawArgs.some(arg => arg === "--config" || arg.startsWith("--config="))) {
-    process.stderr.write("用法: rondo tfs writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-plan <plan.json>]\n");
+    process.stderr.write("用法: rondo workitem writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-plan <plan.json>]\n");
     return 64;
   }
   try {

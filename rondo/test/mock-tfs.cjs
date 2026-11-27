@@ -1,16 +1,11 @@
 #!/usr/bin/env node
-// 桩 tfs CLI（tfs reconcile-workitem 测试用）：
-//   query                                            → 输出 MOCK_TFS_QUERY_FILE 的 JSON 数组
-//   workitem download-attachment --url <u> --out <dir> [--name <n>]
-//                                                    → 落一个伪附件文件并输出 {path,name}
-// rondo 的 tfsCliPrefix 推导要求 query_command 含 "query" 子命令段，
-// 推荐配置形式：["node", "<本文件>", "query"]。
+// TFS 同步回归的 API 边界桩（由 mock-sync-entry.mjs 调用）。
 const fs = require("fs");
 const path = require("path");
 const a = process.argv.slice(2);
 function flag(name) { const i = a.indexOf(name); return i >= 0 ? a[i + 1] : undefined; }
 
-if (a[0] === "query") {
+if (a[0] === "workitem" && a[1] === "query") {
   process.stdout.write(fs.readFileSync(process.env.MOCK_TFS_QUERY_FILE, "utf8"));
 } else if (a[0] === "workitem" && a[1] === "download-attachment") {
   // 同步回归：按来源 URL 注入下载失败或损坏的成功响应，不连接真实 TFS。
