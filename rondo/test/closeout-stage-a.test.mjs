@@ -171,6 +171,17 @@ process.exit(r.status ?? 1);
   assert.equal(JSON.parse(result.stdout).result, 'PASS');
   assert.equal(git(root, 'symbolic-ref', '--short', 'HEAD'), 'rondo/closeout/' + taskSuffix + '/dev');
   assert.equal(git(root, 'rev-parse', 'HEAD'), source.commit);
+  // Each CLI invocation must independently recover the platform context.
+  const reused = run();
+  assert.equal(reused.status, 0, reused.stdout + reused.stderr);
+  assert.equal(JSON.parse(reused.stdout).root_repo, root);
+  assert.equal(git(root, 'rev-parse', 'HEAD'), source.commit);
+  // An unrelated Task file cannot authorize the existing checkout.
+  writeFileSync(taskEnvFile, JSON.stringify({ active: true, env: { MULTICA_TASK_ID: '01a1d2fc-da3a-796b-9584-000000000000' } }));
+  const foreign = run();
+  assert.equal(foreign.status, 3, foreign.stdout + foreign.stderr);
+  assert.match(JSON.parse(foreign.stdout).reason, /平台 Checkout 分支不存在或不唯一/);
+  assert.equal(git(root, 'symbolic-ref', '--short', 'HEAD'), 'rondo/closeout/' + taskSuffix + '/dev');
   writeFileSync(taskEnvFile, JSON.stringify({ active: false, env: { MULTICA_TASK_ID: taskId } }));
   const inactive = run();
   assert.equal(inactive.status, 3, inactive.stdout + inactive.stderr);
