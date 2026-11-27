@@ -9,15 +9,15 @@
 
 办公期间优先使用员工本机 Runtime；本机关机、休眠或 Multica 确认离线后，切换到已配置的服务器 Runtime；本机恢复后，在不打断正常执行的前提下切回主 Runtime。保留现有 Agent ID、Squad、Issue Assignment、交付流程与原生 Run 管理。
 
-采用独立基础设施 Agent「黑灯守卫」+ Multica Autopilot + Rondo CLI。黑灯守卫永久绑定服务器 Runtime，不加入 Delivery Squad，不负责 Issue 诊断、业务恢复、OpenSpec、PR 或任务重试。TFS Sync Agent、PR Status Sync Agent 本次保持现状。
+采用独立基础设施 Agent `Vayne`（黑灯计划的 Runtime 守卫）+ Multica Autopilot + Rondo CLI。Vayne永久绑定服务器 Runtime，不加入 Delivery Squad，不负责 Issue 诊断、业务恢复、OpenSpec、PR 或任务重试。TFS Sync Agent、PR Status Sync Agent 本次保持现状。
 
 ## 2. Agent 与 Autopilot
 
 | 项目 | 约定 |
 | --- | --- |
-| Agent Name | 黑灯守卫 |
-| Agent 目录 | agents/lights-out-guardian/ |
-| Autopilot | 黑灯守卫 |
+| Agent Name | Vayne |
+| Agent 目录 | agents/vayne-agent/ |
+| Autopilot | Vayne |
 | Mode | run_only |
 | Runtime | 固定服务器 Runtime（每 Workspace 明确配置） |
 | Max Concurrent Tasks | 1 |
@@ -40,7 +40,7 @@ Autopilot Prompt：执行 Runtime 自动协调。
 
 ## 3. 每个 Agent 独立主备策略
 
-每个 Workspace 的黑灯守卫独立维护 `RONDO_RUNTIME_POLICY`，由管理员直接在 Multica Agent Environment Variables（custom_env）中配置。值为下列 JSON 对象的字符串形式；以下 ID 均为示例，不是生产配置：
+每个 Workspace 的Vayne独立维护 `RONDO_RUNTIME_POLICY`，由管理员直接在 Multica Agent Environment Variables（custom_env）中配置。值为下列 JSON 对象的字符串形式；以下 ID 均为示例，不是生产配置：
 
 ```json
 {
@@ -67,13 +67,13 @@ Autopilot Prompt：执行 Runtime 自动协调。
 }
 ```
 
-每个 Agent 单独选择目标；允许共享 Runtime，不要求一对一。以配置中的 Agent Name 匹配当前 Workspace 原生 Agent 列表中的真实 Agent ID，写入时使用 ID。未配置的 Agent 不管理；黑灯守卫自身无条件不参与切换。主备均须属于目标 Workspace、具备授权、建议使用相同 Provider 并一次性验收执行环境。不得用当前绑定反推 Primary，也不按机器名称猜测 ID。
+每个 Agent 单独选择目标；允许共享 Runtime，不要求一对一。以配置中的 Agent Name 匹配当前 Workspace 原生 Agent 列表中的真实 Agent ID，写入时使用 ID。未配置的 Agent 不管理；Vayne自身无条件不参与切换。主备均须属于目标 Workspace、具备授权、建议使用相同 Provider 并一次性验收执行环境。不得用当前绑定反推 Primary，也不按机器名称猜测 ID。
 
 配置只表达期望策略，不保存 current_runtime_id、last_switch_time、运行状态或历史计数。当前绑定及在线状态由 Multica 提供。
 
 ### 3.1 RONDO_RUNTIME_POLICY
 
-`RONDO_RUNTIME_POLICY` 是黑灯守卫专属环境变量，值为上述 JSON Object 的字符串形式，无外层包装。
+`RONDO_RUNTIME_POLICY` 是Vayne专属环境变量，值为上述 JSON Object 的字符串形式，无外层包装。
 
 ```typescript
 interface AgentRuntimePolicy {
@@ -83,17 +83,17 @@ interface AgentRuntimePolicy {
 type RuntimePolicy = Record<string, AgentRuntimePolicy>;
 ```
 
-Rondo 使用 JSON.parse 解析，Key 为 Workspace 内 Agent Name，Value 仅包含两个真实 Runtime UUID。通过现有 resolveMulticaRuntime() 从 MULTICA_WORKSPACE_ID 与 MULTICA_SERVER_URL 获取当前 Workspace 上下文，再从原生 Agent 列表解析真实 Agent ID。无需在策略中重复配置 workspace_id、agent_id、enabled 或实时状态。无配置、空对象不执行切换；非法 JSON 或无效策略不得猜测写入。配置不得管理黑灯守卫自身。
+Rondo 使用 JSON.parse 解析，Key 为 Workspace 内 Agent Name，Value 仅包含两个真实 Runtime UUID。通过现有 resolveMulticaRuntime() 从 MULTICA_WORKSPACE_ID 与 MULTICA_SERVER_URL 获取当前 Workspace 上下文，再从原生 Agent 列表解析真实 Agent ID。无需在策略中重复配置 workspace_id、agent_id、enabled 或实时状态。无配置、空对象不执行切换；非法 JSON 或无效策略不得猜测写入。配置不得管理Vayne自身。
 
-首版仅采用 Multica 原生 custom_env 人工配置，作为主备策略唯一来源；不在 Workspace overlay 重复维护，不增加配置投影、同步脚本或 Registry。后续确有批量配置需求时再评估 rondo-sync。黑灯守卫首次创建或人工绑定时显式选择服务器 Runtime，后续供给不得覆盖此绑定。
+首版仅采用 Multica 原生 custom_env 人工配置，作为主备策略唯一来源；不在 Workspace overlay 重复维护，不增加配置投影、同步脚本或 Registry。后续确有批量配置需求时再评估 rondo-sync。Vayne首次创建或人工绑定时显式选择服务器 Runtime，后续供给不得覆盖此绑定。
 
 ## 4. Rondo CLI 原生实现
 
-不新增 Skill，也不单独分发 MJS。Rondo 已使用 TypeScript + Node.js ESM，编译后随现有 dist/ 及 Rondo 发布流程交付。黑灯守卫所在服务器需安装包含新命令的 Rondo 版本，不依赖根仓 checkout 或 Skill Bundle。
+不新增 Skill，也不单独分发 MJS。Rondo 已使用 TypeScript + Node.js ESM，编译后随现有 dist/ 及 Rondo 发布流程交付。Vayne所在服务器需安装包含新命令的 Rondo 版本，不依赖根仓 checkout 或 Skill Bundle。
 
 ```text
 agents/
-  lights-out-guardian/
+  vayne-agent/
     description.md
     instructions.md
     autopilot-prompt.md
@@ -105,12 +105,14 @@ rondo/
         reconcile.test.ts
 ```
 
-在 rondo/src/index.ts 的 runtime 命令组注册 reconcile，复用现有 Commander、resolveMulticaRuntime()、multicaPrefix() 和 clients/spawn.ts 的 runJson/runCommand，不新增进程执行框架。维护 CLI Help / COMMANDS.md 中必要的命令说明。manifest 只登记黑灯守卫和 Autopilot，黑灯守卫 skills 为空，不注册新 Skill。
+在 rondo/src/index.ts 的 runtime 命令组注册 reconcile，复用现有 Commander、resolveMulticaRuntime()、multicaPrefix() 和 clients/spawn.ts 的 runJson/runCommand，不新增进程执行框架。维护 CLI Help / COMMANDS.md 中必要的命令说明。manifest 只登记Vayne和 Autopilot，Vayne skills 为空，不注册新 Skill。
 
 ```bash
 rondo runtime reconcile
 rondo runtime reconcile --dry-run
 ```
+
+Help Description：根据 Agent 主备策略自动协调 Runtime 绑定。只提供 reconcile 及 --dry-run；人工改绑使用 Multica 原生能力。
 
 ## 5. 确定性切换逻辑
 
@@ -142,15 +144,15 @@ Runtime 切换不迁移本机未提交代码、CLI Session 或本地工作目录
 真实 PoC 验证：
 - 本机在线/离线、恢复、双方离线、查询失败和重复执行。
 - queued/deferred 原生迁移并可领取；dispatched/running 原生终结或恢复，不重复执行；服务器活跃 Run 不被抢占。
-- 主备跨机真实执行、已持久化成果接续、原生 Runtime 绑定和权限（尤其黑灯守卫自身 Run 凭据是否允许更新其他 Agent）。
+- 主备跨机真实执行、已持久化成果接续、原生 Runtime 绑定和权限（尤其Vayne自身 Run 凭据是否允许更新其他 Agent）。
 - 服务器 Rondo CLI 真实可调用、custom_env 注入、两段 Autopilot Trigger。
-- 多 Agent 独立选择，固定黑灯守卫不被动态协调或现有同步脚本改绑。
+- 多 Agent 独立选择，固定Vayne不被动态协调或现有同步脚本改绑。
 
 ## 7. 实施范围与顺序
 
 1. P0：完成现网版本、权限、Rondo 命令执行环境与 Cron 的最小 PoC。
-2. P0：新增 Agent、rondo runtime reconcile 命令及单元测试；注册 manifest；按 Workspace 配置每 Agent 主备及黑灯守卫固定服务器绑定；通过现有 Rondo 发布流程供给服务器。
-3. P0：按需调整 provision 的固定绑定，并最小调整 .claude/skills/rondo-sync/scripts/sync_workspace.py 的 bind_agent_runtime，避免批量改绑覆盖黑灯守卫固定绑定；明确既有人工批量改绑与自动协调的边界。保留非本次受管对象的既有行为，不改变交付 workflow。
+2. P0：新增 Agent、rondo runtime reconcile 命令及单元测试；注册 manifest；按 Workspace 配置每 Agent 主备及Vayne固定服务器绑定；通过现有 Rondo 发布流程供给服务器。
+3. P0：按需调整 provision 的固定绑定，并最小调整 .claude/skills/rondo-sync/scripts/sync_workspace.py 的 bind_agent_runtime，避免批量改绑覆盖Vayne固定绑定；明确既有人工批量改绑与自动协调的边界。保留非本次受管对象的既有行为，不改变交付 workflow。
 4. P1：隔离 Workspace 端到端验收后逐 Workspace 配置并启用 Autopilot。未配置主备策略的 Workspace 不执行切换。
 5. P2：仅有实际问题时再考虑防抖、额外告警或向 Multica 上游提原生主备需求。
 
