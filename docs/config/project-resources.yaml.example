@@ -40,12 +40,12 @@ repos:
   - repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-03-%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-dataengine
     repo_path: "winning-dps-df-dataengine"
     default_target_branch: dev
-    label: "数据计算引擎后端：Flink、实时计算、流计算、离线计算及算子。"
+    label: "数据引擎接入与请求转发服务，提供 HTTP 接口，调用 datatransfer-core SDK 处理 SQL 转换、作业提交与预览，按任务 key 代理 Flink 作业查询与取消。"
 
   - repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20Data%20Integrated%20Platform/_git/winning-dps-df-datatransfer-core
     repo_path: "winning-dps-df-datatransfer-core"
     default_target_branch: dev
-    label: "Flink 数据集成与交换内核：DDL、JDBC Driver/方言、CDC、UDF、Calcite SQL、SQL Gateway、Connector、Paimon 湖仓、IRIS、HL7、作业 JSON、Hessian RPC。"
+    label: "数据集成与交换引擎内核，解析作业 JSON，构建并提交 Flink 流批作业，实现算子、Connector、CDC、JDBC 方言、SQL 扩展与 UDF。"
 
   - repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX_Data_Operation/_git/winning-dps-df-devops
     repo_path: "winning-dps-df-devops"
