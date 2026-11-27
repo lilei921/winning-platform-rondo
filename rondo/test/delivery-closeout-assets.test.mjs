@@ -21,8 +21,8 @@ test("delivery-closeout 名称、Manifest 与 Agent 绑定一致", () => {
   assert.ok(agent?.skills.includes("delivery-closeout"));
   assert.ok(!manifest.agents.some((a) => a.skills?.includes("issue-closeout")));
   assert.ok(read("agents/pr-status-sync-agent/autopilot-prompt.md").includes("delivery-closeout"));
-  const sync = readFileSync(new URL("../src/commands/workspace/sync.ts", import.meta.url), "utf8");
-  assert.ok(!sync.includes('"delivery-closeout"'), "Workspace Sync 不应渲染 Closeout Registry");
+  const syncSkills = readFileSync(new URL("../src/commands/workspace/sync-skills.ts", import.meta.url), "utf8");
+  assert.ok(!syncSkills.includes('"delivery-closeout"'), "Workspace Sync 不应渲染 Closeout Registry");
   assert.ok(!sync.includes('"issue-closeout"'));
 });
 

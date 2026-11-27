@@ -137,7 +137,7 @@ rondo workitem writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-
 
 `workitem sync` 使用当前 Multica Runtime 与 `RONDO_PROJECT_TITLE`，每轮按 Title 唯一解析目标 Project；默认新建 Issue 停放 `backlog`，显式 `todo` 在初始化完成后激活。每轮最多处理 50 项。
 
-`workitem approve` 使用当前 Multica Runtime，要求 Gate 已通过，并核对真实成员批准评论、获批 Commit 及明确的独立验收决定；`--waive-tasks` 记录 Human 明确批准的完整任务豁免集合，并按固定批准版 Tasks 核验编号。同一评论可幂等重试，不允许改写已登记决定。成功回读后将审核中的 Issue 转入 `in_progress`，不发 Mention、不启动 Run，也不要求 Registry、Agent 或 Run 身份参数。
+`workitem approve` 使用当前 Multica Runtime，要求 Gate 已通过，并核对真实成员批准评论、获批 Commit 及明确的独立验收决定；`--waive-tasks` 记录 Human 明确批准的完整任务豁免集合，并按固定批准版 Tasks 核验编号。同一评论可幂等重试，不允许改写已登记决定。成功回读后按需以 `--no-start` 进入 `in_progress`；不发 Mention、不启动 Run，也不要求 Registry、Agent 或 Run 身份参数。
 
 `workitem admission` 的映射规则：
 
