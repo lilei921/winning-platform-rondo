@@ -8,13 +8,14 @@ import { hydrateMulticaTaskEnvironment } from "./clients/runtime-context.js";
 import { TOOL_VERSION } from "./cli/version.js";
 import { registerTfsApiLeaf } from "./tfs/runner.js";
 import { registerResolveIdentity } from "./commands/openspec/resolve-identity.js";
-import { registerAnalysisValidate } from "./commands/analysis/validate.js";
-import { registerAnalysisPublish } from "./commands/analysis/publish.js";
-import { registerAnalysisRead } from "./commands/analysis/read.js";
-import { registerAnalysisApprove } from "./commands/analysis/approve.js";
+import { registerOpenSpecValidate } from "./commands/openspec/validate.js";
+import { registerOpenSpecSubmitReview } from "./commands/openspec/submit-review.js";
+import { registerOpenSpecRead } from "./commands/openspec/read.js";
+import { registerWorkitemApprove } from "./commands/workitem/approve.js";
 import { registerOpenSpecPublish } from "./commands/openspec/publish.js";
 import { registerRepoGit } from "./commands/repo/git.js";
 import { registerRuntimeCheckCheckout } from "./commands/runtime/check-checkout.js";
+import { registerRuntimeCheckDaemon } from "./commands/runtime/check-daemon.js";
 import { registerRuntimeGetContext } from "./commands/runtime/get-context.js";
 import { registerRuntimeReconcile } from "./commands/runtime/reconcile.js";
 import { registerPrResume } from "./commands/pr/resume.js";
@@ -27,8 +28,7 @@ import { registerPrReconcileStatus } from "./commands/pr/reconcile-status.js";
 import { registerDeliveryFinalize } from "./commands/delivery/finalize.js";
 import { registerCloseoutRoot } from "./commands/delivery/closeout-root.js";
 import { registerWorkspaceProvision } from "./commands/workspace/provision.js";
-import { registerWorkspaceSync } from "./commands/workspace/sync.js";
-import { registerWorkspaceCheckDaemon } from "./commands/workspace/check-daemon.js";
+import { registerWorkspaceSyncSkills } from "./commands/workspace/sync-skills.js";
 import { registerDoctor } from "./commands/doctor/doctor.js";
 import { registerOpenspecInstallSchema } from "./commands/openspec/install-schema.js";
 
@@ -55,14 +55,6 @@ function bareGroup(group: Command): Command {
   });
 }
 
-const analysis = bareGroup(program.command("analysis").description("分析校验、发布、读取与批准登记"));
-registerAnalysisValidate(analysis);
-registerAnalysisPublish(analysis);
-registerAnalysisRead(analysis);
-registerAnalysisApprove(analysis);
-
-
-
 // PR 交付与 TFS PR 操作
 const pr = bareGroup(program.command("pr").description("PR 准备、创建、查询、恢复与状态核实"));
 registerPrMaterialize(pr);
@@ -74,21 +66,24 @@ registerTfsApiLeaf(pr, "get", ["pr", "get"], "查询指定 TFS Git PR", "--repo 
 registerTfsApiLeaf(pr, "list", ["pr", "list"], "按条件查询 TFS Git PR", "--repo <name|id> [--status active|completed|abandoned] [--source-branch <branch>] [--top <n>] [--project <project>]");
 
 // workspace 组(运维/供给,与 flow 组隔离)
-const workspace = bareGroup(program.command("workspace").description("Workspace 资源供给、同步与检查"));
+const workspace = bareGroup(program.command("workspace").description("Workspace 资源供给与 Skill 同步"));
 registerWorkspaceProvision(workspace);
-registerWorkspaceSync(workspace);
-registerWorkspaceCheckDaemon(workspace);
+registerWorkspaceSyncSkills(workspace);
 
 // runtime 组
-const runtime = bareGroup(program.command("runtime").description("Runtime 上下文、Checkout 检查与主备协调"));
+const runtime = bareGroup(program.command("runtime").description("Runtime、Daemon 检查、Checkout 与主备协调"));
+registerRuntimeCheckDaemon(runtime);
 registerRuntimeCheckCheckout(runtime);
 registerRuntimeGetContext(runtime);
 registerRuntimeReconcile(runtime);
 
 // OpenSpec 身份解析与 Schema 安装
-const openspec = bareGroup(program.command("openspec").description("OpenSpec Change 身份解析、Schema 安装与研发工件发布"));
+const openspec = bareGroup(program.command("openspec").description("OpenSpec Change、Schema 与工件管理"));
 registerResolveIdentity(openspec);
 registerOpenspecInstallSchema(openspec);
+registerOpenSpecValidate(openspec);
+registerOpenSpecRead(openspec);
+registerOpenSpecSubmitReview(openspec);
 registerOpenSpecPublish(openspec);
 
 
@@ -101,7 +96,8 @@ registerTfsApiLeaf(repo, "get-branch", ["repo", "get-branch"], "查询指定 TFS
 registerRepoGit(repo);
 registerCloseoutRoot(repo);
 
-const workitem = bareGroup(program.command("workitem").description("工作项同步、准入、收口及查询操作"));
+const workitem = bareGroup(program.command("workitem").description("工作项同步、准入、批准、收口与查询操作"));
+registerWorkitemApprove(workitem);
 registerDeliveryAdmission(workitem);
 registerDeliveryFinalize(workitem);
 registerTfsReconcileWorkitem(workitem);

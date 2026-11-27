@@ -41,9 +41,9 @@ test("workspace preparation is owned by one Skill; delivery contracts remain in 
   const spec = read("skills/spec-preparation/SKILL.md");
   assert.ok(spec.includes("openspec schema which") && spec.includes("cwd"));
   const analysis = read("skills/analysis-publish/SKILL.md");
-  assert.ok(analysis.includes("rondo analysis validate") && analysis.includes("rondo analysis publish"));
+  assert.ok(analysis.includes("rondo openspec validate") && analysis.includes("rondo openspec submit-review"));
   const dev = read("agents/engineer/instructions.md");
-  assert.ok(dev.includes("rondo analysis read") && dev.includes("pull-request"));
+  assert.ok(dev.includes("rondo openspec read") && dev.includes("pull-request"));
   assert.doesNotMatch(dev, /rondo change update-progress|--change-ref/);
   const native = read("skills/native-workspace/SKILL.md");
   assert.doesNotMatch(native, /rondo dev prepare|--change-ref/);

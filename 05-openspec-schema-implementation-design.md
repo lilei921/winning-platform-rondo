@@ -227,7 +227,7 @@ change_kind = intentional
 - Change ID 在首次 Preparation 时确定；
 - 后续 Analysis Rework / Development Rework 使用同一个 Change；
 - Schema 不在不同 Agent / Run 中重新选择。
-- `analysis.change_kind=corrective|intentional` 由 `rondo analysis publish` 从通过 Gate 的当前 Change Schema 推导并持久化到 Multica Issue Metadata，供统计使用；Agent 不重复传入分类字段。它不写入 `.openspec.yaml` 作为额外字段，也不新增执行 Route。
+- `analysis.change_kind=corrective|intentional` 由 `rondo openspec submit-review` 从通过 Gate 的当前 Change Schema 推导并持久化到 Multica Issue Metadata，供统计使用；Agent 不重复传入分类字段。它不写入 `.openspec.yaml` 作为额外字段，也不新增执行 Route。
 
 ---
 
@@ -916,7 +916,7 @@ openspec instructions apply --change <id> --json
 openspec validate <id> --type change --strict --json
 ```
 
-对 `specs/**/*.md` 等 Glob，OpenSpec 原生 `specs=done` 不表示 Proposal 声明的每个 Capability Spec 均已存在；具体文件集合与 Conditional Design 的适用性由 `spec-preparation` / Workitem Analyst 专业 Review 核对，当前 `rondo analysis validate` 主要检查可确定的存在性、格式、原生 skip 与 CLI Validation，不提供完整语义覆盖保证。
+对 `specs/**/*.md` 等 Glob，OpenSpec 原生 `specs=done` 不表示 Proposal 声明的每个 Capability Spec 均已存在；具体文件集合与 Conditional Design 的适用性由 `spec-preparation` / Workitem Analyst 专业 Review 核对，当前 `rondo openspec validate` 主要检查可确定的存在性、格式、原生 skip 与 CLI Validation，不提供完整语义覆盖保证。
 
 Schema 命令在当前 OpenSpec 文档中仍标记为 experimental，因此项目不是“动态跟随 CLI”，而是把已锁定的 `1.14.2` 行为作为本实施 Contract。任何版本升级必须重新运行本节与 [§19](#openspec-schema-section-19) Acceptance Cases。
 

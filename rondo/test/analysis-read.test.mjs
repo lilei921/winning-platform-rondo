@@ -24,7 +24,7 @@ function fixture(t) {
   write(source);
   const run = (file = "tasks.md", extraEnv = {}) => {
     const before = readFileSync(stateFile, "utf8");
-    const r = spawnSync(process.execPath, [CLI, "analysis", "read", "--issue", "WNDF-T", "--file", file], {
+    const r = spawnSync(process.execPath, [CLI, "openspec", "read", "--issue", "WNDF-T", "--file", file], {
       encoding: "utf8", timeout: 15000,
       env: { ...Object.fromEntries(Object.entries(process.env).filter(([k]) => k.toLowerCase() !== "path")), ...tfs.env,
         MOCK_STATE: stateFile, MULTICA_CLI_PATH: MOCK, MULTICA_WORKSPACE_ID: "ws-test", MULTICA_SERVER_URL: "https://private.example", MOCK_EXPECT_SERVER: "https://private.example", ...extraEnv },

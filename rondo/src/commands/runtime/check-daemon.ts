@@ -1,5 +1,5 @@
 /**
- * workspace check-daemon — daemon 主机的注册与版本体检。
+ * runtime check-daemon — daemon 主机的注册与版本体检。
  * 根仓路径由调用方显式提供；本命令不检查项目挂载或交付成员的运行亲和。
  * 退出码：0 PASS / 2 FAIL / 3 UNKNOWN / 64 用法错误。
  */
@@ -16,16 +16,15 @@ function main(argv: string[]): void {
   let workspaceId = "";
   for (let i = 0; i < argv.length; i++) {
     const key = argv[i];
-    if (!["--workspace-id", "--project-id"].includes(key) || !argv[i + 1] || argv[i + 1].startsWith("--")) {
+    if (!["--workspace-id"].includes(key) || !argv[i + 1] || argv[i + 1].startsWith("--")) {
       process.stderr.write(`无法识别的参数或缺少值: ${key}\n`);
       throw new ExitSignal(64);
     }
     const value = argv[++i];
     if (key === "--workspace-id") workspaceId = value;
-    // 接受既有维护脚本的 project-id；注册体检不再按项目限定或查询资源。
   }
   if (!workspaceId) {
-    process.stderr.write("用法: rondo workspace check-daemon --workspace-id <id>\n");
+    process.stderr.write("用法: rondo runtime check-daemon --workspace-id <id>\n");
     throw new ExitSignal(64);
   }
 
@@ -45,13 +44,13 @@ function main(argv: string[]): void {
       : "MULTICA_DAEMON_ID 未配置，无法校验注册"] });
 
   // 当前进程版本仅用于诊断，不替代工作区版本发布验收。
-  checks.push({ name: "skill_flow", result: "PASS", reasons: [`rondo ${TOOL_VERSION}（当前进程）`] });
+  checks.push({ name: "rondo_version", result: "PASS", reasons: [`rondo ${TOOL_VERSION}（当前进程）`] });
   const failed = checks.some(c => c.result === "FAIL");
   process.stdout.write(JSON.stringify({ result: failed ? "FAIL" : "PASS", checks }, null, 2) + "\n");
   throw new ExitSignal(failed ? 2 : 0);
 }
 
-export function registerWorkspaceCheckDaemon(group: Command): void {
+export function registerRuntimeCheckDaemon(group: Command): void {
   group.command("check-daemon").description("检查 Daemon 注册与运行环境")
     .usage("--workspace-id <id>").allowUnknownOption(true).allowExcessArguments(true)
     .action((...cbArgs: unknown[]) => {

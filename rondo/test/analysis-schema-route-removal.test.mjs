@@ -17,7 +17,7 @@ import {
   checkAcceptanceContract,
   checkChange,
   checkIdentity,
-} from "../dist/commands/analysis/validate.js";
+} from "../dist/commands/openspec/validate.js";
 
 function fixture(schema = "corrective-change") {
   const home = mkdtempSync(join(tmpdir(), "rondo-change-schema-"));

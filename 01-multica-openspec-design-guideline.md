@@ -1,15 +1,16 @@
 # Multica + OpenSpec Unified Design Guideline（统一设计规范）
 
-> Version: 1.16.13  
-> Scope: Multica Runtime（运行时）与 OpenSpec Engineering Contract（工程契约）的组合架构；Agent / Squad / Instructions / Skill / Runtime Context、OpenSpec Change / Schema / Artifact / Template / Instruction、跨系统术语与职责边界、公共原生机制及来源引用规范  
-> Date: 2026-11-06  
+> Version: 1.16.14  
+> Scope: Multica Runtime（运行时）、OpenSpec Engineering Contract（工程契约）与 Rondo CLI（确定性执行层）的组合架构；Agent / Squad / Instructions / Skill / Runtime Context、OpenSpec Change / Schema / Artifact / Template / Instruction、CLI 命令对象归属与职责边界、公共原生机制及来源引用规范  
+> Date: 2026-11-27  
 > Author: winning/li_lei
 
-本规范是当前研发交付体系的统一上位设计规范，用于指导 Multica Runtime 与 OpenSpec Engineering Contract 的组合设计、配置设计与评审。具体业务流程、Schema / Template 实现、触发机制、调度方式及运行时适配由对应下游方案确定；文中的 Gate（门禁） / Route（路由）等设计约定不表示相关机制已经实现。
+本规范是当前研发交付体系的统一上位设计规范，用于指导 Multica Runtime、OpenSpec Engineering Contract 与 Rondo CLI 的组合设计、配置设计与评审。具体业务流程、Schema / Template 实现、触发机制、调度方式及运行时适配由对应下游方案确定；文中的 Gate（门禁） / Route（路由）等设计约定不表示相关机制已经实现。
 
 ## 目录
 
 - [1. 总则（General）](#1-总则general)
+  - [1.7 Rondo CLI Design（Rondo 命令行设计）](#rondo-cli-design)
 - [2. Multica Native Mechanisms（Multica 原生机制）](#2-multica-native-mechanismsmultica-原生机制)
 - [3. OpenSpec Engineering Contract（工程契约与原生机制）](#openspec-core-mechanism)
 - [4. Multica Runtime Context & Squad（运行上下文与协作）](#mechanism-shared-context)
@@ -52,6 +53,10 @@
 - OpenSpec Artifact Template（工件模板）
 - OpenSpec Artifact Instruction（工件指令）
 - Artifact Dependency / Apply Readiness（工件依赖 / 应用就绪）
+
+**Rondo CLI：**
+
+- 公开命令体系、命令对象归属与确定性执行边界
 
 核心目标是避免：
 
@@ -533,6 +538,45 @@ Supporting Evidence（补充证据） 是 Artifact 或 External Reference 的一
 
 
 
+
+
+<a id="rondo-cli-design"></a>
+
+### 1.7 Rondo CLI Design（Rondo 命令行设计）
+
+Rondo CLI 是 Multica + OpenSpec 组合架构中的确定性执行边界，负责可程序化的校验、执行与事实管理；不承担 Agent 的语义判断或 Skill 的专业方法，也不建立独立业务事实源。Engineering Truth 仍由 OpenSpec 持有，Delivery Truth 仍由 Multica 原生对象持有。
+
+#### Object-Oriented CLI（面向操作对象的 CLI）
+
+公开命令组按实际管理对象或业务域划分，不按研发流程阶段、Agent 角色或底层服务提供方划分。命令组应回答“正在操作什么对象”，而不是“当前处于哪个流程阶段”或“由哪个 Agent 执行”。
+
+- `openspec`：Change、Schema 与工程工件。
+- `workitem`：工作项及其准入、批准、收口和同步事实。
+- `pr`：Pull Request 及其准备、创建、恢复和状态核实。
+- `repo`：Git Repository、Branch 与受控仓库操作。
+- `runtime`：Runtime、Daemon 与当前执行上下文。
+- `workspace`：Workspace 资源供给与 Skill 同步。
+- `doctor`：跨对象的环境诊断，可作为顶层诊断命令。
+
+底层系统不是命令组归属的唯一依据：TFS Work Item 操作归入 `workitem`，TFS Git PR 操作归入 `pr`；不因它们都通过 TFS API 实现而另建 `tfs` 命令组。类似地，`analysis`、`development`、`delivery` 等流程阶段或角色名称，不作为公开命令组的默认分类。
+
+#### Command Semantics and Granularity（命令语义与粒度）
+
+- 叶子命令以明确对象上的确定性操作命名，例如 `openspec validate`、`openspec submit-review`、`workitem approve`、`pr resume`。生命周期动作可以作为叶子命令；不因此建立阶段命令组。
+- 只有在操作对象、授权前置条件、副作用及失败恢复语义一致时，才考虑合并命令。存在实质不同的授权或副作用时保持独立，不为追求命令数量少而强行合并。
+- 不按每个 API Endpoint 建立命令，不引入通用 Dispatch 层、重复命令树或仅转发旧命令的兼容别名。
+- CLI 参数只承载执行所必需的输入；语义判断、业务取舍及人工决定由相应 Agent / Human 完成，CLI 只校验和记录明确决定，不推断授权。
+
+#### Responsibility Boundary（职责边界）
+
+| 层 | 职责 |
+|---|---|
+| Agent | 基于上下文进行专业分析、语义判断与决策 |
+| Skill | 提供可复用的场景化执行方法、步骤与必要资料 |
+| Rondo CLI | 执行确定性校验、操作及权威事实读写 |
+| Multica / OpenSpec | 分别持有 Delivery Truth / Engineering Truth |
+
+命令归属调整时，应在同一变更中更新命令注册、调用方、帮助信息、设计文档与测试；除非已确认存在必须支持的外部消费者，不保留旧命令别名或额外转发层。
 <a id="section-2"></a>
 
 ## 2. Multica Native Mechanisms（Multica 原生机制）
@@ -2903,6 +2947,7 @@ Workflow
 | Project Skill | Reusable Work Method Package（可复用步骤、资料、模板与工具） |
 | Multica Issue | Delivery Work Context（交付目标、协作与运行上下文） |
 | Run / Assignment / Status | Runtime Execution & State（运行执行与状态） |
+| Rondo CLI | Deterministic Validation / Execution / Fact Management（确定性校验、执行与事实管理） |
 | Config | Parameters（环境参数与配置） |
 | Script / Deterministic Gate / Route | Deterministic Execution / Control（确定性执行与控制） |
 
@@ -2936,6 +2981,7 @@ LLM 负责需要上下文判断的 Semantic Reasoning（语义推理）；明确
 - **Minimal Sufficient**：仅保留正确执行、验证和交付所需信息。
 - **Contract First**：明确职责、输入、规则、输出与停止条件。
 - **One Rule, One Owner**：每条规则和权威事实由唯一 Owner 维护。
+- **Object-Oriented CLI**：公开命令组按实际操作对象 / 业务域划分，叶子命令表达确定性操作；不按研发阶段、Agent 角色或底层 API 提供方组织。
 - **Reference, not Replication**：跨资产和跨系统通过引用关联，不复制权威正文。
 
 **专业方法与产物原则：**
@@ -2945,7 +2991,7 @@ LLM 负责需要上下文判断的 Semantic Reasoning（语义推理）；明确
 - Evidence 保留在对应 Artifact 或明确引用中；Package 只是事实的逻辑集合，Summary 只是呈现视图，不新增 Truth Source。
 - 删除重复文档不得删除原有的执行、验证或交付契约。
 
-以上作为 Multica + OpenSpec 组合架构、配置资产及研发交付方案的统一设计和评审边界。
+以上作为 Multica + OpenSpec + Rondo 组合架构、配置资产及研发交付方案的统一设计和评审边界。
 
 ---
 
@@ -3034,6 +3080,12 @@ Multica 公共机制的准确含义、官方 URL、来源支持范围和核对�
 ---
 
 ## 附录 C. 版本记录
+
+### v1.16.14 Rondo CLI 对象导向设计（2026-11-27）
+
+- 明确 Rondo CLI 的确定性执行边界及 Agent / Skill / CLI 职责分工。
+- 公开命令组按实际操作对象 / 业务域划分，叶子命令按确定性操作命名；不按研发阶段、Agent 角色或底层服务提供方组织。
+- 明确命令合并条件、兼容别名边界及命令归属调整时的同步要求。
 
 ### v1.16.11 Multica 原生 Agent / Skill 对齐（2026-11-04）
 

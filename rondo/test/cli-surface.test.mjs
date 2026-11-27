@@ -16,15 +16,14 @@ function runCli(args, env = {}) {
   return result;
 }
 
-/** 当前完整命令树；包含 analysis read 和顶层叶子 doctor。 */
+/** 当前完整命令树；按实际操作对象组织。 */
 const TREE = {
-  analysis: ["validate", "publish", "read", "approve"],
   pr: ["prepare", "materialize", "resume", "reconcile-status", "create", "get", "list"],
-  workspace: ["provision", "sync", "check-daemon"],
-  runtime: ["get-context","check-checkout","reconcile"],
-  openspec: ["resolve-identity", "install-schema", "publish"],
+  workspace: ["provision", "sync-skills"],
+  runtime: ["get-context", "check-checkout", "check-daemon", "reconcile"],
+  openspec: ["resolve-identity", "install-schema", "validate", "read", "submit-review", "publish"],
   repo: ["get", "get-branch", "fetch", "push", "prepare-archive"],
-  workitem: ["sync", "admission", "finalize", "writeback", "query", "set-state", "comment", "create", "link-commits", "download-attachment"],
+  workitem: ["sync", "admission", "approve", "finalize", "writeback", "query", "set-state", "comment", "create", "link-commits", "download-attachment"],
 };
 
 test("全部命令组:bare 调用 exit 64,stderr 帮助列出全部叶子", () => {
@@ -129,9 +128,9 @@ test("doctor 默认文本，统一 JSON 输出兼容原 --format json，冲突�
   assert.match(conflict.stderr, /冲突/);
 });
 
-test("retired stage and handoff are not public commands", () => {
-  for (const args of [["analysis", "stage"], ["delivery", "handoff"]]) assert.notEqual(runCli(args).status, 0);
-  for (const args of [["analysis", "validate"], ["analysis", "publish"], ["workitem", "admission"]]) assert.equal(runCli([...args, "--help"]).status, 0);
+test("阶段命令组已退役，操作归入对应对象命令组", () => {
+  for (const args of [["analysis"], ["analysis", "validate"], ["analysis", "publish"], ["analysis", "read"], ["analysis", "approve"], ["delivery", "handoff"]]) assert.equal(runCli(args).status, 64, args.join(" "));
+  for (const args of [["openspec", "validate"], ["openspec", "submit-review"], ["openspec", "read"], ["workitem", "approve"], ["workitem", "admission"]]) assert.equal(runCli([...args, "--help"]).status, 0, args.join(" "));
 });
 
 test("P0 退役独立进度与完成检查，研发命令不再接受 Change 参数", () => {
@@ -229,8 +228,9 @@ test("退役入口不再公开", () => {
   assert.match(missing.stderr,/--branch/);
 });
 
-test("workitem sync 只接受 WIQL 参数；workspace sync 拒绝已移除的 local-only", () => {
-  for (const args of [["workitem","sync"],["workitem","sync","--config","old.json"],["workspace","sync","--workspace","pilot","--local-only"]]) assert.equal(runCli(args).status,64,args.join(" "));
+test("workitem sync 只接受 WIQL 参数；Workspace 只公开 Skill 同步命令", () => {
+  for (const args of [["workitem","sync"],["workitem","sync","--config","old.json"],["workspace","sync"],["workspace","sync","--workspace","pilot","--local-only"]]) assert.equal(runCli(args).status,64,args.join(" "));
+  assert.equal(runCli(["workspace","sync-skills","--help"]).status,0);
 });
 
 test("repo Git 独立叶子与 OpenSpec 发布替代 dev；旧入口不再注册", () => {

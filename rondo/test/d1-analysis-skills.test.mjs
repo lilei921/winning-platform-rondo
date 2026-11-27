@@ -88,7 +88,7 @@ test("D1 workspace sync needs no repository mapping or generated Registry", t =>
     skills: { "analysis-publish": "skill-id", "native-workspace": "workspace-skill-id" },
   }));
   for (const name of ["analysis-publish", "native-workspace"]) {
-    const result = run(["workspace", "sync", "--workspace", "d1pilot", "--skill", name, "--dry-run"], { MULTICA_REPO_ROOT: root });
+    const result = run(["workspace", "sync-skills", "--workspace", "d1pilot", "--skill", name, "--dry-run"], { MULTICA_REPO_ROOT: root });
     assert.equal(result.code, 0, result.stderr);
     assert.equal(result.body.mode, "dry-run");
     assert.equal(existsSync(join(root, "skills", name, "config", "repo-registry.json")), false);
@@ -134,7 +134,7 @@ test("D2 skill contracts: archive legacy and bind composable Analyst methods", (
   assert.ok(existsSync(join(ARCHIVED_SKILLS, "workitem-analysis", "references", "tasks-md-authoring-contract.md")));
   assert.match(spec, /当前 Artifact Instruction \/ Template/);
   const publish = FRONT("analysis-publish");
-  assert.match(publish, /rondo analysis publish --issue/);
+  assert.match(publish, /rondo openspec submit-review --issue/);
   assert.ok(!publish.includes("--mode requirement"), "source type is resolved by CLI");
   assert.match(publish, /无需手工 Git Add、Commit、Push 或例行预校验/);
   assert.match(FRONT("bug-analysis"), /替代根因/);

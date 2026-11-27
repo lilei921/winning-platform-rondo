@@ -50,7 +50,7 @@ function fixture(t, { skip = false, schema = "intentional-change", estimate = tr
   chmodSync(MOCK, 0o755);
   function gate() {
     const r = spawnSync(process.execPath, [
-      CLI, "analysis", "validate", "--change-ref", "d1-internal-1234", "--issue", "issue-1", "--openspec-root", root,
+      CLI, "openspec", "validate", "--change-ref", "d1-internal-1234", "--issue", "issue-1", "--openspec-root", root,
       "--workspace-id", "ws-test", "--multica", MOCK, "--profile", "private",
     ], {
       encoding: "utf8", env: { ...process.env, MOCK_STATE: statePath, MOCK_EXPECT_PROFILE: "private", MOCK_EXPECT_SERVER: "https://private.example", MULTICA_SERVER_URL: "https://private.example" }, timeout: 30_000,

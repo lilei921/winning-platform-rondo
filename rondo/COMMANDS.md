@@ -31,22 +31,24 @@ rondo doctor --help
 
 | 命令组 | 子命令 | 主要用途 |
 | --- | --- | --- |
-| `analysis` | `validate`、`publish`、`read`、`approve` | 分析事实、Gate、审核提交、工件读取和批准登记 |
 | `pr` | `prepare`、`materialize`、`resume`、`reconcile-status`、`create`、`get`、`list` | PR 准备、创建、查询及状态对账 |
-| `workspace` | `provision`、`sync`、`check-daemon` | Workspace 资源供给、同步及检查 |
-| `runtime` | `get-context`、`check-checkout`、`reconcile` | 当前 Run 上下文、Checkout 检查及主备协调 |
-| `openspec` | `resolve-identity`、`install-schema`、`publish` | OpenSpec Change 身份解析、Schema 安装与研发工件发布 |
+| `workspace` | `provision`、`sync-skills` | Workspace 资源供给与 Skill 同步 |
+| `runtime` | `get-context`、`check-checkout`、`check-daemon`、`reconcile` | Runtime / Daemon、Checkout 检查及主备协调 |
+| `openspec` | `resolve-identity`、`install-schema`、`validate`、`read`、`submit-review`、`publish` | OpenSpec Change、Schema 与工程工件管理 |
 | `repo` | `get`、`get-branch`、`fetch`、`push`、`prepare-archive` | Git 仓库查询、准备与受控操作 |
-| `workitem` | `sync`、`admission`、`finalize`、`writeback`、`query`、`set-state`、`comment`、`create`、`link-commits`、`download-attachment` | 工作项同步、准入、收口及查询操作 |
+| `workitem` | `sync`、`admission`、`approve`、`finalize`、`writeback`、`query`、`set-state`、`comment`、`create`、`link-commits`、`download-attachment` | 工作项同步、准入、批准、收口及查询操作 |
 | 顶级 | `doctor` | 环境体检 |
 
-## 3. OpenSpec 与 Analysis
+## 3. OpenSpec
 
 ### 3.1 `rondo openspec`
 
 ```bash
 rondo openspec resolve-identity --openspec-root <path> [--change-ref <ref>] [--tfs-id <id>] [--expect-schema <name>] [--output json]
 rondo openspec install-schema
+rondo openspec validate --issue <id> --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]
+rondo openspec read --issue <KEY> --file <Change内相对路径>
+rondo openspec submit-review --issue <id> --change-ref <id> [--root-repo <path>] [--target-branch <branch>]
 rondo openspec publish --issue <KEY> [--root-repo <path>] [--minor-design]
 ```
 
@@ -54,32 +56,18 @@ rondo openspec publish --issue <KEY> [--root-repo <path>] [--minor-design]
 | --- | --- |
 | `openspec resolve-identity` | 根据 Change Ref 或 TFS ID 定位 OpenSpec Change，并可校验 Schema |
 | `openspec install-schema` | 将随包分发的 Schema 安装到 OpenSpec 用户全局目录 |
+| `openspec validate` | 按需只读诊断 Issue 与 Change 身份、Schema、工程工件及 OpenSpec Strict Validation；正常提交由 `submit-review` 执行最终 Gate，无需预先调用 |
+| `openspec read` | 按 Issue 中固定的 `analysis.source` Commit 读取指定版本的 OpenSpec 工件，不跟随可变分支 |
+| `openspec submit-review` | 校验并发布当前 Change 的审核版本，核实固定 Git 来源，登记 `analysis.source` 与 Gate 事实，并进入 `analysis_review` |
 | `openspec publish` | 按已批准的 `analysis.source.branch` 发布当前 Change 已提交的 Tasks / Design，确认远端 Git SHA 并登记绑定完整 `analysis.source` 的 `dev.publication`。非实质性 Design 细化使用 `--minor-design` |
 
-把随 rondo 包分发的 `openspec/schemas` 安装到 OpenSpec 用户全局目录（`XDG_DATA_HOME` / `%LOCALAPPDATA%` / `~/.local/share` 下的 `openspec/schemas`）。同名 Schema 直接覆盖，其他 Schema 不受影响；不访问网络、不做 OpenSpec CLI 校验。SEA 单文件运行不支持该命令。
+`openspec install-schema` 把随 Rondo 包分发的 `openspec/schemas` 安装到 OpenSpec 用户全局目录（`XDG_DATA_HOME` / `%LOCALAPPDATA%` / `~/.local/share` 下的 `openspec/schemas`）。同名 Schema 直接覆盖，其他 Schema 不受影响；不访问网络、不做 OpenSpec CLI 校验。SEA 单文件运行不支持该命令。
 
-### 3.2 `rondo analysis`
+`openspec validate` 仅用于按需诊断，不持久化 Gate 结果；`openspec submit-review` 直接指定 Change ID，Change Kind 由 Schema 推导，专业审查与独立验证建议不作为 CLI 输入。提交审核成功后，固定来源由下游按需读取。
 
-```bash
-rondo analysis validate --issue <id> --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]
-rondo analysis publish --issue <id> --change-ref <id> [--root-repo <path>] [--target-branch <branch>]
-rondo analysis read --issue <KEY> --file <Change内相对路径>
-rondo analysis approve --issue <KEY> --comment-id <ID> --commit <SHA> --verify-required true|false [--waive-tasks 3.1,3.2]
-```
+Requirement 的 `openspec submit-review` 和研发工件 `openspec publish` 使用 Git 2.45 或更高版本，依赖 `git merge-tree` 对三个目录树的三方合并支持。
 
-| 命令 | 功能 |
-| --- | --- |
-| `analysis validate` | 核对当前 Issue 与 Change 身份，在指定根仓对当前 Change 运行 OpenSpec 严格校验，并核实返回的根仓和 Change 身份 |
-| `analysis publish` | 根据 Issue 的 `tfs.type` 自动选择发布路径；Requirement 核验 Gate，按当前 Change 保存并向已确认的项目根仓分支发布审核工件（Native 首次发布取当前根仓 Project Resource ref；已有同 Change 来源使用固定分支，`--target-branch` 不得覆盖），并登记可回读的 `analysis.source` |
-| `analysis read` | 按 Issue 中的 `analysis.source` 读取指定版本的 `tasks.md`、`proposal.md`、`design.md` 或 Spec，属于只读操作 |
-| `analysis approve` | 登记已确认的 Human Approval 与独立验收决定，核对 Gate、当前审核版本及真实成员评论，回读事实后按需以 `--no-start` 进入 `in_progress`。使用当前 Multica Runtime，无 Registry、Agent 或 Run 身份参数，不发 Mention、不启动 Run；同一批准可幂等重试；`--waive-tasks` 登记 Human 明确批准的完整任务豁免集合（省略表示无豁免），按获批 Commit 核验任务编号。 |
-
-`analysis publish` 无需指定 `--mode`；已部署的旧调用仍可传与 `tfs.type` 一致的 `--mode requirement` 或 `--mode legacy`，不得以其选择其他路径。`analysis validate`、`analysis publish` 直接指定 Change ID；Change Kind 由 Schema 推导，专业审查与独立验证建议不作为 CLI 输入；涉及 `--workspace-id` 的命令需保证其与配置中的 Workspace 身份一致。
-
-Requirement 的 `analysis publish` 和 `openspec publish` 使用 Git 2.45 或更高版本，依赖 `git merge-tree` 对三个目录树的三方合并支持。
-
-远端已包含本次改动但无法从历史确定其本地来源时，首次发布会创建一笔文件差异为零的 Git 提交，记录来源 SHA。重试会复用这笔提交的远端 SHA。
-
+远端已包含本次改动但无法从历史确定其本地来源时，首次提交审核会创建一笔文件差异为零的 Git 提交，记录来源 SHA。重试会复用这笔提交的远端 SHA。
 ## 4. Git 仓库操作：`rondo repo`
 
 ```bash
@@ -133,6 +121,7 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 ```bash
 rondo workitem sync --wiql "<WIQL>" [--initial-status backlog|todo]
 rondo workitem admission --issue <KEY> --decision <accepted|needs_human|unsupported>
+rondo workitem approve --issue <KEY> --comment-id <ID> --commit <SHA> --verify-required true|false [--waive-tasks 3.1,3.2]
 rondo workitem finalize --phase prepare|complete --issue <KEY> [--root-repo <path>]
 rondo workitem writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-plan <plan.json>]
 ```
@@ -141,6 +130,7 @@ rondo workitem writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-
 | --- | --- |
 | `workitem sync` | 依据 WIQL 查询 TFS Work Item，并创建或更新对应 Multica Issue 及其来源内容 |
 | `workitem admission` | 执行 Wayfinder 已记录的 Decision：通过时按 `tfs.type` 交接并回读原生 Run，其他结果保留 Wayfinder 并设置对应状态 |
+| `workitem approve` | 根据真实 Human 评论、获批 Commit 和明确的独立验收决定登记 Human Approval；按需记录完整任务豁免集合，并回读后将审核中的 Requirement 转入 `in_progress`，不启动 Run |
 | `workitem finalize` | `prepare` 核验交付并准备收口；`complete` 在外部回写完成后核验并结束交付 |
 | `workitem writeback` | 按交付事实回写 TFS 工作项、任务状态、工时及关联信息 |
 
@@ -195,19 +185,17 @@ rondo workitem download-attachment --url <attachment-url> --out <directory> [--n
 
 ```bash
 rondo workspace provision --workspace <name> [--slug <slug>] [--create-workspace [--display-name <name>]] [--runtime-id <uuid>] [--profile <name>] [--dry-run] [--skip-workflow]
-rondo workspace sync --workspace <name> [--skill <skill>] [--profile <name>] [--dry-run] [--check]
-rondo workspace check-daemon --workspace-id <id> [--project-id <id>]
+rondo workspace sync-skills --workspace <name> [--skill <skill>] [--profile <name>] [--dry-run] [--check]
 ```
 
 | 命令 | 功能 |
 | --- | --- |
 | `workspace provision` | 根据 Workspace 配置创建或核对 Agent、Skill、Squad、Project 和工作流对象，并记录对象 ID |
-| `workspace sync` | 将本地受管 Skill 内容同步到 Multica Workspace |
-| `workspace check-daemon` | 检查 Daemon 环境变量、Runtime 注册、挂载唯一性和交付亲和条件 |
+| `workspace sync-skills` | 将本地受管 Skill 内容同步到 Multica Workspace |
 
-`workspace provision` 的 `--dry-run` 只预览；`workspace sync --dry-run` 只预览，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。研发工作区统一按 Project Resource 和实际 Checkout 准备；Provision 不注入 `RONDO_WORKSPACE_BRANCH`，仅为 TFS Sync Agent 按分组补齐缺失的 `RONDO_PROJECT_TITLE`，已有值及其他环境变量保留。
+`workspace provision` 的 `--dry-run` 只预览；`workspace sync-skills --dry-run` 只预览，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。研发工作区统一按 Project Resource 和实际 Checkout 准备；Provision 不注入 `RONDO_WORKSPACE_BRANCH`，仅为 TFS Sync Agent 按分组补齐缺失的 `RONDO_PROJECT_TITLE`，已有值及其他环境变量保留。
 
-受管 Skill 或 Agent 绑定发生变化时，先执行 `rondo workspace provision --workspace <name>` 更新绑定和 Overlay，再执行 `rondo workspace sync --workspace <name>` 同步内容。此次 `workitem-triage` 退役后，核对 Wayfinder 仅绑定 `codebase-explorer`、Overlay 不再登记旧 Skill；不自动删除其他未受管平台 Skill。
+受管 Skill 或 Agent 绑定发生变化时，先执行 `rondo workspace provision --workspace <name>` 更新绑定和 Overlay，再执行 `rondo workspace sync-skills --workspace <name>` 同步内容。此次 `workitem-triage` 退役后，核对 Wayfinder 仅绑定 `codebase-explorer`、Overlay 不再登记旧 Skill；不自动删除其他未受管平台 Skill。
 
 Workitem Analyst、Engineer 和 Bug Fix Agent 绑定 `native-workspace`，直接使用 Multica Native Checkout。执行 provision 前核实 CLI、实际 TFS 根仓映射及批准版本；供给并同步 Skill 后验证实际交付。
 
@@ -216,8 +204,11 @@ Workitem Analyst、Engineer 和 Bug Fix Agent 绑定 `native-workspace`，直接
 ```bash
 rondo runtime get-context
 rondo runtime check-checkout --root-repo <path>
+rondo runtime check-daemon --workspace-id <id>
 rondo runtime reconcile [--dry-run]
 ```
+
+`runtime check-daemon` 检查 `MULTICA_DAEMON_ID` 是否配置、该 Daemon 是否登记在指定 Workspace 的 Runtime 中，并输出当前 Rondo 版本。它不检查 Project Resource、Agent 亲和或 Workspace 挂载；不接受无关的 `--project-id`。
 
 `runtime get-context` 只读获取当前 Multica Agent Run 的 Runtime 信息（`multica_cli`、`multica_server_url`、`workspace_id`、`rondo`、`delivery_squad_id`）。Workspace 和 Server 来自当前 Run 环境变量；按名称 `Delivery Squad` 在当前 Workspace 查找唯一有效 Squad。缺少环境或无法确认目标时返回 `UNKNOWN`（exit 3）；不依赖 `repo-registry.json`，不支持从外部终端猜测默认 Workspace。
 

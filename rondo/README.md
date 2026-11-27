@@ -92,7 +92,7 @@ $env:MULTICA_REPO_ROOT = "D:/UserProgram/winning-platform-rondo"
 交付命令使用当前 Multica Run 的 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`（可选 `MULTICA_CLI_PATH`）。仓库配置以当前 Project Resource 为准，Requirement 的修改授权以已批准 OpenSpec Scope 为准；后续交付消费已登记的 PR Facts。业务仓 `repo_id` / `repo_key` 为完整 Git/TFS 仓库名称。TFS Sync Agent 通过 `RONDO_PROJECT_TITLE` 在当前 Workspace 解析目标 Project；provision 按分组补齐缺失变量，允许人工配置且不覆盖已有值。
 
 
-`workspace provision / sync` 和 `doctor` 可使用 `--profile <name>` 选择 Multica 连接配置（`doctor` 需同时提供 `--workspace-id`）。不要跨环境复用 Workspace Overlay。
+`workspace provision / sync-skills` 和 `doctor` 可使用 `--profile <name>` 选择 Multica 连接配置（`doctor` 需同时提供 `--workspace-id`）。不要跨环境复用 Workspace Overlay。
 
 ## 6. 常用命令
 
@@ -103,13 +103,13 @@ $env:MULTICA_REPO_ROOT = "D:/UserProgram/winning-platform-rondo"
 rondo workitem query --wiql "SELECT [System.Id] FROM workitems WHERE [System.AssignedTo] = @me"
 
 # 预览 Workspace Skill 同步
-rondo workspace sync --workspace <name> --dry-run
+rondo workspace sync-skills --workspace <name> --dry-run
 
 # 检查 Skill 同步差异（只读）
-rondo workspace sync --workspace <name> --check
+rondo workspace sync-skills --workspace <name> --check
 
 # 更新现有 Skill 内容
-rondo workspace sync --workspace <name> [--skill <skill-name>]
+rondo workspace sync-skills --workspace <name> [--skill <skill-name>]
 
 # 新增 Skill 或修改 Agent 绑定时供给资源
 rondo workspace provision --workspace <name>
@@ -147,5 +147,5 @@ npm uninstall -g @winning/rondo
 | --- | --- |
 | [Rondo 命令参考](COMMANDS.md) | 命令组、参数、退出码与调用约束。 |
 | [TFS CLI 安装与运行操作手册](../archive/docs-2026-11-18/tfs-cli-operations-guide.md) | 凭证配置、自部署服务器、排障全文（命令面已并入 rondo）。 |
-| [Workspace 资产同步操作手册](../archive/docs-2026-11-18/workspace-sync-operations-guide.md) | `rondo workspace provision / sync` 日常运维。 |
+| [Workspace 资产同步操作手册](../archive/docs-2026-11-18/workspace-sync-operations-guide.md) | `rondo workspace provision / sync-skills` 日常运维。 |
 | [Multica + OpenSpec 索引](../README.md) | 本目录上级索引与资产清单。 |

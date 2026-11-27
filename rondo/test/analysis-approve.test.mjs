@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join, delimiter } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
-import { recordApproval } from "../dist/commands/analysis/approve.js";
+import { recordApproval } from "../dist/commands/workitem/approve.js";
 import { readApprovedVerifyDecision } from "../dist/commands/delivery/verify-decision.js";
 
 const source = {repo_url:"https://tfs.example.test/tfs/Collection/Project/_git/root", branch:"main",
@@ -127,7 +127,7 @@ test("approval CLI uses current Runtime without registry or Agent/Run identity",
     MOCK_STATE:statePath,MOCK_SYNC_CALLS_FILE:callsPath,MOCK_EXPECT_SERVER:"http://multica.test"};
   function run(required="true"){
     writeFileSync(callsPath,"");
-    const cp=spawnSync(process.execPath,[cli,"analysis","approve","--issue",args.issue,
+    const cp=spawnSync(process.execPath,[cli,"workitem","approve","--issue",args.issue,
       "--comment-id",args.commentId,"--commit",args.commit,"--verify-required",required],{env,encoding:"utf8",cwd:dir});
     assert.equal(cp.error,undefined,cp.error?.message);
     let body;try{body=JSON.parse(cp.stdout);}catch{assert.fail(cp.stdout+"\n"+cp.stderr);}

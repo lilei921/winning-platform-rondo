@@ -69,7 +69,7 @@ Multica Native Checkout 的本地 HEAD 通常是 `agent/<agent>/<task>` Task Bra
 | `RONDO_WORKSPACE_BRANCH` | Rondo 的**远端发布目标**，当前通常为 `main` |
 | `analysis.source` | 正式发布后从远端回读的 `repo_url + branch + commit + change_ref`，而非本地 Task HEAD |
 
-Workitem Analyst 在已核验的 Native 根仓编辑、校验并 Commit 当前 Change；`rondo analysis publish --mode requirement` 应沿用现有 `publishCommittedChange()`，**仅将当前 Change 已提交工件**定向发布到配置的远端分支，回读实际 SHA，维持批准版本及跨 Run 交接契约。
+Workitem Analyst 在已核验的 Native 根仓编辑、校验并 Commit 当前 Change；`rondo openspec submit-review` 应沿用现有 `publishCommittedChange()`，**仅将当前 Change 已提交工件**定向发布到配置的远端分支，回读实际 SHA，维持批准版本及跨 Run 交接契约。
 
 **最小兼容点**：当前 `root-git.ts` 的 `checkTarget()` 强制本地 Branch 与 `expectedBranch` 相同。Native 路径应移除此不适用的等名条件（或等效地按环境准备方式区分），但**保留** Git Root/Origin、远端目标 Branch、已提交 Change、Gate、冲突与重试安全、SHA 回读等校验；持久根仓原有分支就绪检查不改变。
 
