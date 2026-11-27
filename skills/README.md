@@ -37,7 +37,7 @@
 - `references/`、`methods/`：需要时读取的参考资料和局部方法。
 - `config/`：Skill 使用的配置；具体读取与渲染以 Rondo 实现为准。
 
-运行配置底稿位于 [workspace-config/](../workspace-config/)；业务逻辑与工具命令以 Skill 正文和 Rondo 为准。新增规则遵守 [01 统一设计规范](../01-multica-openspec-design-guideline.md) 的专业聚焦、KISS 与 One Rule One Owner 原则。
+Workspace 供给清单位于 [workspace-config/](../workspace-config/)；业务逻辑与工具命令以 Skill 正文和 Rondo 为准。新增规则遵守 [01 统一设计规范](../01-multica-openspec-design-guideline.md) 的专业聚焦、KISS 与 One Rule One Owner 原则。
 
 ## 发布与检查
 
@@ -50,8 +50,8 @@ rondo workspace provision --workspace <name>
 # 发布指定 Skill
 rondo workspace sync --workspace <name> --skill <skill-name>
 
-# 仅渲染、检查漂移
-rondo workspace sync --workspace <name> --local-only
+# 预览、检查漂移
+rondo workspace sync --workspace <name> --dry-run
 rondo workspace sync --workspace <name> --check
 ```
 
