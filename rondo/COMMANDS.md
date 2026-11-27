@@ -58,16 +58,17 @@ rondo openspec publish --issue <KEY> [--root-repo <path>] [--minor-design]
 | `openspec install-schema` | 将随包分发的 Schema 安装到 OpenSpec 用户全局目录 |
 | `openspec validate` | 按需只读诊断 Issue 与 Change 身份、Schema、工程工件及 OpenSpec Strict Validation；正常提交由 `submit-review` 执行最终 Gate，无需预先调用 |
 | `openspec read` | 按 Issue 中固定的 `analysis.source` Commit 读取指定版本的 OpenSpec 工件，不跟随可变分支 |
-| `openspec submit-review` | 校验并发布当前 Change 的审核版本，核实固定 Git 来源，登记 `analysis.source` 与 Gate 事实，并进入 `analysis_review` |
+| `openspec submit-review` | 根据 Issue 类型校验并发布当前 Change 的审核版本，核实固定 Git 来源，登记 `analysis.source` 与 Gate 事实，并进入 `analysis_review` |
 | `openspec publish` | 按已批准的 `analysis.source.branch` 发布当前 Change 已提交的 Tasks / Design，确认远端 Git SHA 并登记绑定完整 `analysis.source` 的 `dev.publication`。非实质性 Design 细化使用 `--minor-design` |
 
 `openspec install-schema` 把随 Rondo 包分发的 `openspec/schemas` 安装到 OpenSpec 用户全局目录（`XDG_DATA_HOME` / `%LOCALAPPDATA%` / `~/.local/share` 下的 `openspec/schemas`）。同名 Schema 直接覆盖，其他 Schema 不受影响；不访问网络、不做 OpenSpec CLI 校验。SEA 单文件运行不支持该命令。
 
-`openspec validate` 仅用于按需诊断，不持久化 Gate 结果；`openspec submit-review` 直接指定 Change ID，Change Kind 由 Schema 推导，专业审查与独立验证建议不作为 CLI 输入。提交审核成功后，固定来源由下游按需读取。
+`openspec validate` 仅用于按需诊断，不持久化 Gate 结果；`openspec submit-review` 直接指定 Change ID，Change Kind 由 Schema 推导，专业审查与独立验证建议不作为 CLI 输入。Requirement 首次 Native 发布使用当前根仓 Project Resource 的 `ref`；同一 Change 已有 `analysis.source` 时沿用其固定分支，`--target-branch` 不得覆盖。提交审核成功后，固定来源由下游按需读取。
 
 Requirement 的 `openspec submit-review` 和研发工件 `openspec publish` 使用 Git 2.45 或更高版本，依赖 `git merge-tree` 对三个目录树的三方合并支持。
 
 远端已包含本次改动但无法从历史确定其本地来源时，首次提交审核会创建一笔文件差异为零的 Git 提交，记录来源 SHA。重试会复用这笔提交的远端 SHA。
+
 ## 4. Git 仓库操作：`rondo repo`
 
 ```bash
@@ -135,6 +136,8 @@ rondo workitem writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-
 | `workitem writeback` | 按交付事实回写 TFS 工作项、任务状态、工时及关联信息 |
 
 `workitem sync` 使用当前 Multica Runtime 与 `RONDO_PROJECT_TITLE`，每轮按 Title 唯一解析目标 Project；默认新建 Issue 停放 `backlog`，显式 `todo` 在初始化完成后激活。每轮最多处理 50 项。
+
+`workitem approve` 使用当前 Multica Runtime，要求 Gate 已通过，并核对真实成员批准评论、获批 Commit 及明确的独立验收决定；`--waive-tasks` 记录 Human 明确批准的完整任务豁免集合，并按固定批准版 Tasks 核验编号。同一评论可幂等重试，不允许改写已登记决定。成功回读后按需以 `--no-start` 进入 `in_progress`；不发 Mention、不启动 Run，也不要求 Registry、Agent 或 Run 身份参数。
 
 `workitem admission` 的映射规则：
 

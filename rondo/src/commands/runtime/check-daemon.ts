@@ -1,6 +1,6 @@
 /**
  * runtime check-daemon — daemon 主机的注册与版本体检。
- * 根仓路径由调用方显式提供；本命令不检查项目挂载或交付成员的运行亲和。
+ * 只核实 Daemon 环境标识及其在目标 Workspace 的 Runtime 注册。
  * 退出码：0 PASS / 2 FAIL / 3 UNKNOWN / 64 用法错误。
  */
 import { Command } from "commander";
@@ -16,7 +16,7 @@ function main(argv: string[]): void {
   let workspaceId = "";
   for (let i = 0; i < argv.length; i++) {
     const key = argv[i];
-    if (!["--workspace-id"].includes(key) || !argv[i + 1] || argv[i + 1].startsWith("--")) {
+    if (key !== "--workspace-id" || !argv[i + 1] || argv[i + 1].startsWith("--")) {
       process.stderr.write(`无法识别的参数或缺少值: ${key}\n`);
       throw new ExitSignal(64);
     }
