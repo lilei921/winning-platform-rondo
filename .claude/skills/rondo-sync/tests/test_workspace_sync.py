@@ -81,7 +81,7 @@ class WorkspaceSyncTests(unittest.TestCase):
         (rondo_dir / "package.json").write_text("{}", encoding="utf-8")
         return rondo_dir
 
-    def test_install_rondo_packs_installs_and_removes_global_ps1(self):
+    def test_install_rondo_packs_installs_schema_and_removes_global_ps1(self):
         rondo_dir = self._rondo_dir_with_package()
         global_dir = self.root / "global"
         global_dir.mkdir()
@@ -91,6 +91,7 @@ class WorkspaceSyncTests(unittest.TestCase):
         outputs = {
             ("npm", "pack", "--silent"): tarball.name,
             ("npm", "install", "-g", str(tarball)): "changed 32 packages",
+            ("rondo", "openspec", "install"): '{"result": "PASS"}',
             ("npm", "prefix", "-g"): str(global_dir),
         }
 
@@ -106,6 +107,7 @@ class WorkspaceSyncTests(unittest.TestCase):
         self.assertEqual(commands, [
             ["npm", "pack", "--silent"],
             ["npm", "install", "-g", str(tarball)],
+            ["rondo", "openspec", "install"],
             ["npm", "prefix", "-g"],
         ])
         self.assertTrue(all(call[0][1] == rondo_dir for call in run_text.call_args_list))
@@ -122,6 +124,7 @@ class WorkspaceSyncTests(unittest.TestCase):
         outputs = {
             ("npm", "pack", "--silent"): tarball.name,
             ("npm", "install", "-g", str(tarball)): "changed 32 packages",
+            ("rondo", "openspec", "install"): '{"result": "PASS"}',
         }
 
         def fake_run_text(command, cwd):
@@ -130,7 +133,7 @@ class WorkspaceSyncTests(unittest.TestCase):
         with patch.object(sync, "run_text", side_effect=fake_run_text) as run_text, \
                 patch.object(sync.os, "name", "posix"):
             sync.install_rondo_cli(self.root)
-        self.assertEqual(run_text.call_count, 2)
+        self.assertEqual(run_text.call_count, 3)
 
     def test_resolve_command_resolves_shim_executable_on_windows(self):
         with patch.object(sync.os, "name", "nt"), \

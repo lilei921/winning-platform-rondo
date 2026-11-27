@@ -5,7 +5,7 @@
 也可显式给出 workspace 名称覆盖发现结果。
 
 流水线（每步失败即停止该 workspace，其余 workspace 继续）：
-  0. install   —— 打包本仓 rondo、全局安装，并删除 Windows 的 rondo.ps1 shim
+  0. install   —— 打包本仓 rondo、全局安装、安装 OpenSpec Schema，并删除 Windows 的 rondo.ps1 shim
                   （全局步骤，先于所有 workspace 执行；--dry-run 时只预演）
   1. provision —— 供给 Skill / Agent / Squad / Project / Autopilot 对象
                   （Rondo 按 workspace slug 在内存中合并 Project / MCP 分组配置）
@@ -28,7 +28,7 @@
   python sync_workspace.py --skip-resource-labels  # 跳过默认的 Project Resource label 对齐
   python sync_workspace.py --dry-run
 
-前置步骤默认执行：npm pack → npm install -g → 删除全局 rondo.ps1（Windows）。
+前置步骤默认执行：npm pack → npm install -g → rondo openspec install → 删除全局 rondo.ps1（Windows）。
 只写目标 Multica workspace 与仓内 overlay 文件；不回滚已完成的步骤。
 """
 
@@ -120,7 +120,7 @@ def run_text(command: list[str], cwd: Path) -> str:
 
 
 def install_rondo_cli(root: Path, dry_run: bool = False) -> None:
-    """同步前重新打包 rondo、全局安装，并清理 Windows 下的 rondo.ps1 shim。
+    """同步前重新打包 rondo、全局安装、安装 OpenSpec Schema，并清理 Windows 下的 rondo.ps1 shim。
 
     --dry-run 只打印计划，不写全局环境；失败时抛 SystemExit，由 main 统一报告。
     """
@@ -128,7 +128,7 @@ def install_rondo_cli(root: Path, dry_run: bool = False) -> None:
     if not (rondo_dir / "package.json").is_file():
         raise SystemExit(f"未找到 {rondo_dir / 'package.json'}，无法打包 rondo")
     if dry_run:
-        print("[DRY-RUN] 跳过 rondo 打包、全局安装与 rondo.ps1 清理")
+        print("[DRY-RUN] 跳过 rondo 打包、全局安装、OpenSpec Schema 安装与 rondo.ps1 清理")
         return
     try:
         pack_output = run_text(["npm", "pack", "--silent"], rondo_dir)
@@ -138,6 +138,8 @@ def install_rondo_cli(root: Path, dry_run: bool = False) -> None:
         print(f"[OK] 打包 rondo：{tarball}")
         run_text(["npm", "install", "-g", str(rondo_dir / tarball)], rondo_dir)
         print("[OK] 全局安装 rondo")
+        run_text(["rondo", "openspec", "install"], rondo_dir)
+        print("[OK] 安装 OpenSpec Schema")
         if os.name == "nt":
             prefix = run_text(["npm", "prefix", "-g"], rondo_dir)
             ps1 = Path(prefix) / "rondo.ps1"
@@ -147,7 +149,7 @@ def install_rondo_cli(root: Path, dry_run: bool = False) -> None:
             else:
                 print(f"[SKIP] 删除 {ps1}：文件不存在")
     except (OSError, subprocess.CalledProcessError) as exc:
-        raise SystemExit(f"rondo 打包/全局安装失败：{exc}") from exc
+        raise SystemExit(f"rondo 打包/全局安装/OpenSpec Schema 安装失败：{exc}") from exc
 
 
 def check_python() -> None:
