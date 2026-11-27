@@ -4,7 +4,7 @@ import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
 import { gitOk } from "../../clients/git.js";
 import { runAuthenticatedGit } from "../../clients/authenticated-git.js";
 import { authorizedCheckout } from "../dev/authorized-checkout.js";
-import { validatePrepareRepo } from "../dev/prepare-workspace.js";
+import { resourcePrepareRepo } from "../dev/prepare-workspace.js";
 import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
 import { readBugEvidenceInput, validateBugEvidence } from "../bug/evidence.js";
 import { requiredBugRepos, assertBugReadyForPr } from "../bug/scope.js";
@@ -51,7 +51,7 @@ export function registerPrPrepare(group: Command): void {
         const sha = opts.candidateCommit;
         if (!/^[0-9a-f]{40}$/.test(sha) || !filled(opts.title)) throw new FailError("Candidate SHA 或标题非法");
         const current = await authorizedCheckout(opts.issue, opts.repo, opts.rootRepo);
-        const {client, issue, md, repo, path, branch, tfsId, bug, registry} = current;
+        const {client, issue, md, repo, path, branch, tfsId, bug, resources, rootUrl} = current;
         const rawInput = readBugEvidenceInput(opts.facts);
         const facts = validatePrFacts(rawInput, bug);
         const suppliedIdentity = rawInput as Record<string,unknown>;
@@ -77,7 +77,9 @@ export function registerPrPrepare(group: Command): void {
             md["bug.required_repos"] ? requiredBugRepos(md["bug.required_repos"]) : [opts.repo];
           if (!required.includes(opts.repo) || (md["bug.required_repos"] && JSON.stringify(required)!==JSON.stringify(requiredBugRepos(md["bug.required_repos"]))))
             throw new FailError("Bug required_repos 与固定 Scope 不一致");
-          for(const key of required) validatePrepareRepo(registry[key],loadTfsConfig().serverUrl);
+          if (!md["bug.required_repos"]) for(const key of required) {
+            if (key !== opts.repo) resourcePrepareRepo(resources,key,rootUrl,loadTfsConfig().serverUrl);
+          }
           const refs = gitOk(path,["show","-s","--format=%B",sha],"读取 Candidate Commit").split(/\r?\n/).filter(x=>/^Refs:\s*/i.test(x));
           if (refs.length!==1 || refs[0].trim()!=="Refs: #"+tfsId) throw new FailError("Candidate 必须包含唯一 Refs: #"+tfsId);
         }

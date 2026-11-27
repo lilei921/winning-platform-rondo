@@ -292,6 +292,11 @@ test("Native Requirement Git 操作从 Issue 取得批准 Change，拒绝同 SHA
   writeFileSync(join(dir, ".multica", "daemon_task_context.json"), JSON.stringify({
     managed_by: "multica-daemon-task", issue_id: "issue-1", agent_id: "engineer",
   }));
+  mkdirSync(join(dir, ".multica", "project"), { recursive: true });
+  writeFileSync(join(dir, ".multica", "project", "resources.json"), JSON.stringify({project_id:"project1", resources:[
+    {resource_type:"github_repo",resource_ref:{url:source.repo_url,ref:"integration"}},
+    {resource_type:"github_repo",resource_ref:{url:bizUrl,ref:"integration",default_branch_hint:"integration"}},
+  ]}));
   git(dir, "init", "--bare", remote);
   git(dir, "init", "-b", "integration", hub);
   writeFileSync(join(hub, "code.txt"), "fixture");
