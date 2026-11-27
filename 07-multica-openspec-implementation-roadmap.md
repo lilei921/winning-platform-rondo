@@ -275,13 +275,13 @@ Finalize 每次读取现实外部事实和已完成后置条件，只补缺失�
 
 #### Step 07-B — PR Status Sync 与 Finalize 功能研发
 
-**实施范围**：实现仓库级 PR Materialization、轻量 PR Status Sync Agent / Autopilot / Skill、确定性 `reconcile-pr-status.py` 与 `rondo delivery finalize`；完整处理 `active / abandoned / completed / UNKNOWN` 的状态回流、Human Decision、Post-Merge / Completion Gate、Archive、根仓 Commit、TFS Close 和 Delivery Done。外部 PR 审核和合并仍由 TFS 管理，不复制 Review 状态机。
+**实施范围**：实现仓库级 PR Materialization、轻量 PR Status Sync Agent / Autopilot / Skill、确定性 `reconcile-pr-status.py` 与 `rondo workitem finalize`；完整处理 `active / abandoned / completed / UNKNOWN` 的状态回流、Human Decision、Post-Merge / Completion Gate、Archive、根仓 Commit、TFS Close 和 Delivery Done。外部 PR 审核和合并仍由 TFS 管理，不复制 Review 状态机。
 
 **研发任务拆解（4 项）**：
 
 1. **07-B-01 — PR 创建与幂等关联**：Delivery Lead 在必要 Task / Verification / PR Gate 满足后调用确定性 PR Materialization，每个业务仓库独立创建 PR，登记 `current_pr` 与关联引用，重复调用先回读，不能自动合并。
 2. **07-B-02 — PR Status Sync 与终态聚合**：编写/配置轻量 Agent、Autopilot、Skill 和 `reconcile-pr-status.py`；按 PR / Repository / Project 身份回读事实，区分 `active / completed / abandoned / UNKNOWN`，维护 `current_pr / pr_history`、稳定 `pending_event / event_key`；多个 required PR 按 abandoned 优先、UNKNOWN 停止、全部 completed 才可 Finalize 的规则聚合。
-3. **07-B-03 — 终态回流与确定性 Finalize**：`abandoned` 持久化终态事实，Issue 置 `blocked` 并指派 Delivery Squad，等待 Human Comment；Delivery Lead 经 `route-human-decision.py` 执行 `ANALYSIS / ENGINEERING / RECREATE_PR / CANCEL_DELIVERY` 决策（取消交付专项契约未就绪时安全停止）。全部 required current PR 为 `completed` 后由 PR Status Sync **当前 Run** 调用 `rondo delivery finalize`，依次检查 PR Transition Gate、Post-Merge Workspace Reconciliation、Delivery Completion Gate，再执行 Summary、OpenSpec Archive / 根仓 Commit、TFS Close、Delivery Done；失败恢复只补缺失副作用。
+3. **07-B-03 — 终态回流与确定性 Finalize**：`abandoned` 持久化终态事实，Issue 置 `blocked` 并指派 Delivery Squad，等待 Human Comment；Delivery Lead 经 `route-human-decision.py` 执行 `ANALYSIS / ENGINEERING / RECREATE_PR / CANCEL_DELIVERY` 决策（取消交付专项契约未就绪时安全停止）。全部 required current PR 为 `completed` 后由 PR Status Sync **当前 Run** 调用 `rondo workitem finalize`，依次检查 PR Transition Gate、Post-Merge Workspace Reconciliation、Delivery Completion Gate，再执行 Summary、OpenSpec Archive / 根仓 Commit、TFS Close、Delivery Done；失败恢复只补缺失副作用。
 4. **07-B-04 — PR 终态回流 E2E**：覆盖 active 普通 Review 不触发、abandoned 四类 Human Decision（含原 Engineer / 原 Runtime 定向返工）、RECREATE_PR 的 Candidate / Evidence 重新校验、completed 多 PR 聚合与自动 Finalize、UNKNOWN 安全停止、重复事件去重、归档及 TFS 回写部分失败恢复。
 
 **状态回流契约**（遵循 [02 §11–§12](02-multica-delivery-lifecycle-design.md)）：
@@ -298,7 +298,7 @@ Finalize 每次读取现实外部事实和已完成后置条件，只补缺失�
 
 **Completed / Finalize 边界**：仅 provider `status=completed` 可确认单个 PR 完成；`mergeStatus` / `mergeCommitId` 等仅为辅助信息。多个 required PR 必须全部 completed 才允许 Finalize；PR completed 不等于 Delivery Issue done。Archive、根仓 Commit 或 TFS Close 局部成功时，按当前外部/工程事实回读并只补缺失动作，不回滚已合并 PR 或重跑 Engineer。
 
-**交付物**：PR Materialization、`reconcile-pr-status.py`、轻量 Agent/Autopilot/Skill、`route-human-decision.py`、`rondo delivery finalize`、终态回流与负向/恢复测试。
+**交付物**：PR Materialization、`reconcile-pr-status.py`、轻量 Agent/Autopilot/Skill、`route-human-decision.py`、`rondo workitem finalize`、终态回流与负向/恢复测试。
 
 **验收**：`active` 不误派工；`abandoned` 阻塞后 Human Decision 可复现，返工/重建 PR 不越权；全部 required PR completed 后有界 Finalize 才能关闭；UNKNOWN / partial failure 不误归档或关闭，并可幂等恢复。
 

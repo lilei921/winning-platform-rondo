@@ -20,12 +20,11 @@ function runCli(args, env = {}) {
 const TREE = {
   analysis: ["validate", "publish", "read", "approve"],
   pr: ["prepare", "materialize", "resume", "reconcile-status", "create", "get", "list"],
-  delivery: [ "finalize", "root-prepare", "admission"],
   workspace: ["provision", "sync", "check-daemon"],
   runtime: ["get-context","check-checkout","reconcile"],
   openspec: ["resolve-identity", "install-schema", "publish"],
-  repo: ["get", "get-branch", "fetch", "push"],
-  workitem: ["sync", "writeback", "query", "set-state", "comment", "create", "link-commits", "download-attachment"],
+  repo: ["get", "get-branch", "fetch", "push", "prepare-archive"],
+  workitem: ["sync", "admission", "finalize", "writeback", "query", "set-state", "comment", "create", "link-commits", "download-attachment"],
 };
 
 test("全部命令组:bare 调用 exit 64,stderr 帮助列出全部叶子", () => {
@@ -73,8 +72,8 @@ test("workitem 叶子参数错误:exit 64(set-state 缺 --id/--state)", () => {
   assert.equal(r.stdout, "");
 });
 
-test("delivery root-prepare 不要求 --config，从当前 Runtime 解析环境", () => {
-  const r = runCli(["delivery", "root-prepare", "--issue", "TEST-1"], {
+test("repo prepare-archive 不要求 --config，从当前 Runtime 解析环境", () => {
+  const r = runCli(["repo", "prepare-archive", "--issue", "TEST-1"], {
     MULTICA_WORKSPACE_ID: "", MULTICA_SERVER_URL: "",
   });
   assert.equal(r.status, 3, `rc=${r.status} stdout=${r.stdout.slice(0, 300)}`);
@@ -90,7 +89,7 @@ test("PR Preparation 命名统一，Closeout 拒绝旧配置参数", () => {
     assert.doesNotMatch(help.stderr, /\bpr-prepare\b/);
     assert.doesNotMatch(help.stderr, /(?:^|\s)(?:pr-prep|prepare-pr)(?=\s|$)/m);
   }
-  for (const args of [["dev", "pr-prepare"], ["bug", "pr-prepare"], ["bug", "git"], ["dev", "pr-prep"], ["bug", "prepare-pr"], ["pr","materialize","--issue","X","--config","unused"], ["delivery", "finalize", "--phase", "prepare", "--issue", "X", "--config", "unused"], ["workitem", "writeback", "--issue", "X", "--config", "unused"]]) {
+  for (const args of [["dev", "pr-prepare"], ["bug", "pr-prepare"], ["bug", "git"], ["dev", "pr-prep"], ["bug", "prepare-pr"], ["pr","materialize","--issue","X","--config","unused"], ["workitem", "finalize", "--phase", "prepare", "--issue", "X", "--config", "unused"], ["workitem", "writeback", "--issue", "X", "--config", "unused"]]) {
     assert.notEqual(runCli(args).status, 0, args.join(" "));
   }
 });
@@ -132,7 +131,7 @@ test("doctor 默认文本，统一 JSON 输出兼容原 --format json，冲突�
 
 test("retired stage and handoff are not public commands", () => {
   for (const args of [["analysis", "stage"], ["delivery", "handoff"]]) assert.notEqual(runCli(args).status, 0);
-  for (const args of [["analysis", "validate"], ["analysis", "publish"], ["delivery", "admission"]]) assert.equal(runCli([...args, "--help"]).status, 0);
+  for (const args of [["analysis", "validate"], ["analysis", "publish"], ["workitem", "admission"]]) assert.equal(runCli([...args, "--help"]).status, 0);
 });
 
 test("P0 退役独立进度与完成检查，研发命令不再接受 Change 参数", () => {
@@ -217,6 +216,11 @@ test("OpenSpec 仅保留统一命令组，不注册旧入口", () => {
 });
 
 test("退役入口不再公开", () => {
+  const help = runCli(["--help"]);
+  assert.doesNotMatch(help.stdout, /^\s+delivery(?:\s|$)/m);
+  for (const leaf of ["admission", "root-prepare", "finalize"]) {
+    assert.equal(runCli(["delivery", leaf]).status, 64, leaf);
+  }
   for (const args of [["branch","get"],["query"],["delivery","root-clone"],["runtime","prepare-root"],["runtime","resolve-root-repo"],["pr","worktree"],["tfs"],["tfs","reconcile-workitem"],["tfs","writeback"],["workitem","reconcile-workitem"]]) {
     assert.equal(runCli(args).status,64,args.join(" "));
   }

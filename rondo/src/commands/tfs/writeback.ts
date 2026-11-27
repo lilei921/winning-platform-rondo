@@ -358,7 +358,7 @@ export async function executeWriteback(runtime: MulticaRuntime, issue: IssueReco
   // D3-B：TFS Work Item/Task 管理只允许在 Delivery Prepare 已确认 PR、工程和归档后执行。
   // 不根据任意调用方的声称直接进行外部写入；准备失败或结果未知时保持零 TFS 副作用。
   if (!md["finalize.pending"]) {
-    throw new FailError("TFS Writeback 必须在 delivery finalize --phase prepare 登记 finalize.pending 后执行");
+    throw new FailError("TFS Writeback 必须在 workitem finalize --phase prepare 登记 finalize.pending 后执行");
   }
   // Bug mode consumes the existing Delivery Prepare marker, without requiring
   // an OpenSpec Change or a local root repository on the external TFS writer.

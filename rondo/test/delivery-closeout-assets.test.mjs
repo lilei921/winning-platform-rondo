@@ -34,20 +34,20 @@ test("delivery-closeout 分别保留 Bug 与 Requirement 的收口命令及结�
   const recovery = skill.split("## 已完成 Issue 恢复\n")[1]?.split("## 结果处理\n")[0];
   const commands = (section) => (section ?? "").split("\n").filter(line => line.startsWith("rondo "));
   assert.deepEqual(commands(bug), [
-    "rondo delivery finalize --phase prepare --issue <KEY>",
+    "rondo workitem finalize --phase prepare --issue <KEY>",
     "rondo workitem writeback --issue <KEY>",
-    "rondo delivery finalize --phase complete --issue <KEY>",
+    "rondo workitem finalize --phase complete --issue <KEY>",
   ]);
   assert.deepEqual(commands(requirement), [
-    "rondo delivery root-prepare --issue <KEY>",
-    'rondo delivery finalize --phase prepare --issue <KEY> --root-repo "<root_repo>"',
+    "rondo repo prepare-archive --issue <KEY>",
+    'rondo workitem finalize --phase prepare --issue <KEY> --root-repo "<root_repo>"',
     'rondo workitem writeback --issue <KEY> --root-repo "<root_repo>" --inspect',
     'rondo workitem writeback --issue <KEY> --root-repo "<root_repo>" --task-plan "<plan.json>"',
     'rondo workitem writeback --issue <KEY> --root-repo "<root_repo>"',
-    'rondo delivery finalize --phase complete --issue <KEY> --root-repo "<root_repo>"',
+    'rondo workitem finalize --phase complete --issue <KEY> --root-repo "<root_repo>"',
   ]);
   assert.deepEqual(commands(recovery), [
-    "rondo delivery finalize --phase complete --issue <KEY>",
+    "rondo workitem finalize --phase complete --issue <KEY>",
   ]);
   assert.ok(skill.includes("FAIL") && skill.includes("UNKNOWN"));
   assert.ok(skill.includes("status=prepared") && skill.includes("result=PASS"));

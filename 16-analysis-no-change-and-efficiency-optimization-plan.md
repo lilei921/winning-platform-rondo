@@ -258,7 +258,7 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 
 已确认收敛方向：
 - 删除 Repository Accessibility 和 Admission Boundary 两个独立评估维度；保留 Business Scope、Repository Discovery、Processing Capability，按下述已确认的准入规则判断。实际访问异常与已明确的授权/排除规则仍按实际影响处理，不要求常规逐项调查权限或限制。
-- 统一使用 accepted / needs_human / unsupported 三种专业决策；准入通过命名由 eligible 调整为 accepted，不保留旧命名兼容别名。先确认有效 Decision 已记录，再通过统一的 rondo delivery admission 执行确定性结果处理；不新增 Decision Gate 或自然语言解析。
+- 统一使用 accepted / needs_human / unsupported 三种专业决策；准入通过命名由 eligible 调整为 accepted，不保留旧命名兼容别名。先确认有效 Decision 已记录，再通过统一的 rondo workitem admission 执行确定性结果处理；不新增 Decision Gate 或自然语言解析。
 - 保留 /note 原生静默评论、必要 Evidence 与增量重评；不要求固定 JSON 或 Markdown 字段。取消 supersedes、resume_ref 的固定字段要求，使用原生 Comment 上下文和必要引用；当前 handoff 不解析 Decision 正文，其他实际消费者在实施时核实。写入已明确成功时不强制额外回读，结果不明时先核实。
 - 正文采用 Role & Goal、Working Principles、Admission Criteria、Decision、Delivery 的精简结构；不把方案中的历史说明、内部 CLI 实现或固定调查步骤写入 Instructions。
 
@@ -328,7 +328,7 @@ Delivery 区分真实研发契约与无需研发的分析结果：
 
 确认有效 Decision 已记录后，执行：
 
-rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsupported>
+rondo workitem admission --issue <KEY> --decision <accepted|needs_human|unsupported>
 
 根据命令结果处理后续事项。操作结果不明确时核实实际结果，不重复执行已确认成功的操作。
 
@@ -348,7 +348,7 @@ Decision 是专业结论，Comment 是专业内容的原生载体；CLI 不消�
 将现有 rondo delivery handoff 收敛为唯一公开入口：
 
 ```bash
-rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsupported>
+rondo workitem admission --issue <KEY> --decision <accepted|needs_human|unsupported>
 ```
 
 | Decision | CLI 操作 |

@@ -14,7 +14,7 @@ status: active
 ```bash
 rondo --version
 rondo --help
-rondo delivery --help
+rondo workitem --help
 rondo doctor --help
 ```
 
@@ -33,12 +33,11 @@ rondo doctor --help
 | --- | --- | --- |
 | `analysis` | `validate`、`publish`、`read`、`approve` | 分析事实、Gate、审核提交、工件读取和批准登记 |
 | `pr` | `prepare`、`materialize`、`resume`、`reconcile-status`、`create`、`get`、`list` | PR 准备、创建、查询及状态对账 |
-| `delivery` | `admission`、`finalize`、`root-prepare` | 准入交接与交付收口 |
 | `workspace` | `provision`、`sync`、`check-daemon` | Workspace 资源供给、同步及检查 |
 | `runtime` | `get-context`、`check-checkout`、`reconcile` | 当前 Run 上下文、Checkout 检查及主备协调 |
 | `openspec` | `resolve-identity`、`install-schema`、`publish` | OpenSpec Change 身份解析、Schema 安装与研发工件发布 |
-| `repo` | `get`、`get-branch`、`fetch`、`push` | Git 仓库与分支查询及受控操作 |
-| `workitem` | `sync`、`writeback`、`query`、`set-state`、`comment`、`create`、`link-commits`、`download-attachment` | TFS 工作项同步、回写、查询与操作 |
+| `repo` | `get`、`get-branch`、`fetch`、`push`、`prepare-archive` | Git 仓库查询、准备与受控操作 |
+| `workitem` | `sync`、`admission`、`finalize`、`writeback`、`query`、`set-state`、`comment`、`create`、`link-commits`、`download-attachment` | 工作项同步、准入、收口及查询操作 |
 | 顶级 | `doctor` | 环境体检 |
 
 ## 3. OpenSpec 与 Analysis
@@ -88,6 +87,7 @@ rondo repo get --repo <name|id> [--project <project>]
 rondo repo get-branch --repo <name|id> --branch <branch> [--project <project>]
 rondo repo fetch --issue <KEY> --repo <repo_id> --root-repo <path>
 rondo repo push --issue <KEY> --repo <repo_id> --root-repo <path>
+rondo repo prepare-archive --issue <KEY>
 ```
 
 | 命令 | 功能 |
@@ -96,37 +96,13 @@ rondo repo push --issue <KEY> --repo <repo_id> --root-repo <path>
 | `repo get-branch` | 查询指定 TFS Git 分支及其 HEAD |
 | `repo fetch` | 受控 Fetch 当前授权仓库的目标分支，不执行合并 |
 | `repo push` | 非强制 Push 当前授权 Candidate，确认远端 SHA |
+| `repo prepare-archive` | 在 Task `workdir/<repo-name>` 复用 Multica Checkout，建立 Task 独立本地归档分支，返回 `root_repo` |
 
-## 5. Delivery 与 PR
+`repo prepare-archive` 使用当前 Run 的 Multica Runtime（`MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`），仅用于 Requirement OpenSpec Change，必须在 Multica Task workdir 内运行。CLI 从平台提供的有效 `MULTICA_TASK_ENV_FILE` 补齐缺失的 Task 环境（包括 `MULTICA_TASK_ID`），不覆盖已有有效值；无法确认必要身份时返回 UNKNOWN。优先复用现有 Checkout，必要时直接调用 `multica repo checkout`，校验平台 isolated/Task/Workspace 身份、Origin/Push URL 与 `analysis.source.commit` 的可达性；本地归档分支按 Task 和来源分支隔离。Fetch、普通 Push（`HEAD:refs/heads/<analysis.source.branch>`）及 Readback 均指向 `analysis.source.branch`。不使用 Owner Marker、Cleanup Token 或 `root-cleanup`；平台 Worktree 由 Multica 管理。
 
-### 5.1 `rondo delivery`
+## 5. PR
 
-```bash
-rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsupported>
-rondo delivery finalize --phase prepare|complete --issue <KEY> [--root-repo <path>]
-rondo delivery root-prepare --issue <KEY>
-```
-
-| 命令 | 功能 |
-| --- | --- |
-| `delivery admission` | 执行 Wayfinder 已记录的 Decision：通过时按 `tfs.type` 交接并回读原生 Run，其他结果保留 Wayfinder 并设置对应状态 |
-| `delivery finalize` | `prepare` 核验交付并准备收口；`complete` 在外部回写完成后核验并结束交付 |
-| `delivery root-prepare` | 在 Task `workdir/<repo-name>` 复用 Multica Checkout，建立 Task 独立本地归档分支，返回 `root_repo` |
-
-`delivery root-prepare` 使用当前 Run 的 Multica Runtime（`MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`），仅用于 Requirement OpenSpec Change，必须在 Multica Task workdir 内运行。CLI 从平台提供的有效 `MULTICA_TASK_ENV_FILE` 补齐缺失的 Task 环境（包括 `MULTICA_TASK_ID`），不覆盖已有有效值；无法确认必要身份时返回 UNKNOWN。优先复用现有 Checkout，必要时直接调用 `multica repo checkout`，校验平台 isolated/Task/Workspace 身份、Origin/Push URL 与 `analysis.source.commit` 的可达性；本地归档分支按 Task 和来源分支隔离。Fetch、普通 Push（`HEAD:refs/heads/<analysis.source.branch>`）及 Readback 均指向 `analysis.source.branch`。不使用 Owner Marker、Cleanup Token 或 `root-cleanup`；平台 Worktree 由 Multica 管理。
-
-`delivery admission` 的映射规则：
-
-| `tfs.type` | 交接目标 |
-| --- | --- |
-| `Bug` | `Bug Fix Agent` |
-| `Requirement`、`需求` | `Delivery Squad` |
-
-`accepted` 执行一次 `status=todo + assignee` 更新，通过 Multica 原生机制启动对应 Run。它不重新判断 Wayfinder 的 `accepted` 结论，也不解析 `/note` 或 Evidence。若无法确认结果则返回 `UNKNOWN`，不盲目重复交接。
-
-`delivery admission` 接受 `--issue` 和 `--decision`。`needs_human` / `unsupported` 保留 Wayfinder Assignee，分别设置 `blocked` / `unsupported`，不启动新 Run。Workspace 与服务端从 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL` 读取；CLI 路径可选 `MULTICA_CLI_PATH`（默认 `multica`），并校验 `MULTICA_AGENT_ID` 必须是当前 Workspace 的 Wayfinder Agent。缺失或身份不符返回 `UNKNOWN`，不使用默认 Workspace。交接目标始终从当前 Workspace 查询。完整说明见 `rondo delivery admission --help`。
-
-### 5.2 `rondo pr`
+### 5.1 `rondo pr`
 
 ```bash
 rondo pr prepare --issue <KEY> --repo <完整仓库名称> --root-repo <path> --candidate-commit <sha> --facts <json|-> --title <title> [--validation-cwd <path>] [--required-repos <repo1,repo2>]
@@ -150,33 +126,48 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 | `pr get` | 根据仓库和 PR ID 查询 TFS PR |
 | `pr list` | 按仓库、状态、源分支等条件查询 TFS PR 列表 |
 
-## 6. TFS 工作项
+## 6. 工作项
 
-### 6.1 `rondo workitem`：同步与交付回写
+### 6.1 `rondo workitem`：同步、准入与收口
 
 ```bash
 rondo workitem sync --wiql "<WIQL>" [--initial-status backlog|todo]
+rondo workitem admission --issue <KEY> --decision <accepted|needs_human|unsupported>
+rondo workitem finalize --phase prepare|complete --issue <KEY> [--root-repo <path>]
 rondo workitem writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-plan <plan.json>]
 ```
 
 | 命令 | 功能 |
 | --- | --- |
 | `workitem sync` | 依据 WIQL 查询 TFS Work Item，并创建或更新对应 Multica Issue 及其来源内容 |
+| `workitem admission` | 执行 Wayfinder 已记录的 Decision：通过时按 `tfs.type` 交接并回读原生 Run，其他结果保留 Wayfinder 并设置对应状态 |
+| `workitem finalize` | `prepare` 核验交付并准备收口；`complete` 在外部回写完成后核验并结束交付 |
 | `workitem writeback` | 按交付事实回写 TFS 工作项、任务状态、工时及关联信息 |
 
 `workitem sync` 使用当前 Multica Runtime 与 `RONDO_PROJECT_TITLE`，每轮按 Title 唯一解析目标 Project；默认新建 Issue 停放 `backlog`，显式 `todo` 在初始化完成后激活。每轮最多处理 50 项。
 
+`workitem admission` 的映射规则：
+
+| `tfs.type` | 交接目标 |
+| --- | --- |
+| `Bug` | `Bug Fix Agent` |
+| `Requirement`、`需求` | `Delivery Squad` |
+
+`accepted` 执行一次 `status=todo + assignee` 更新，通过 Multica 原生机制启动对应 Run。它不重新判断 Wayfinder 的 `accepted` 结论，也不解析 `/note` 或 Evidence。若无法确认结果则返回 `UNKNOWN`，不盲目重复交接。
+
+`workitem admission` 接受 `--issue` 和 `--decision`。`needs_human` / `unsupported` 保留 Wayfinder Assignee，分别设置 `blocked` / `unsupported`，不启动新 Run。Workspace 与服务端从 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL` 读取；CLI 路径可选 `MULTICA_CLI_PATH`（默认 `multica`），并校验 `MULTICA_AGENT_ID` 必须是当前 Workspace 的 Wayfinder Agent。缺失或身份不符返回 `UNKNOWN`，不使用默认 Workspace。交接目标始终从当前 Workspace 查询。完整说明见 `rondo workitem admission --help`。
+
 交付收口的常用调用顺序：
 
 ```bash
-rondo delivery root-prepare --issue <KEY>
-rondo delivery finalize --phase prepare --issue <KEY> --root-repo <path>
+rondo repo prepare-archive --issue <KEY>
+rondo workitem finalize --phase prepare --issue <KEY> --root-repo <path>
 rondo workitem writeback --issue <KEY> --root-repo <path> --inspect
 rondo workitem writeback --issue <KEY> --root-repo <path> --task-plan <plan.json>
-rondo delivery finalize --phase complete --issue <KEY> --root-repo <path>
+rondo workitem finalize --phase complete --issue <KEY> --root-repo <path>
 ```
 
-已有任务计划时省略 `--task-plan`。Direct Bug 不执行 root-prepare / inspect，不传 root-repo 或 task-plan，仅执行 prepare、writeback、complete。收口命令使用当前 Multica Runtime，无 Registry 配置。
+已有任务计划时省略 `--task-plan`。Direct Bug 不执行 prepare-archive / inspect，不传 root-repo 或 task-plan，仅执行 prepare、writeback、complete。收口命令使用当前 Multica Runtime，无 Registry 配置。
 
 ### 6.2 `rondo workitem`：基础查询与操作
 
