@@ -1,5 +1,6 @@
 /** Verify the reviewed Change, publish it and record its immutable remote source before review. */
-import { analysisRuntime } from "./runtime.js";
+import { resolveMulticaRuntime } from "../../clients/runtime-context.js";
+import { loadConfig as loadTfsConfig, ConfigError } from "../../tfs/config.js";
 import { multicaPrefix } from "../../clients/multica-environment.js";
 import { MulticaClient, requireIssueMetadata } from "../../clients/multica.js";
 import { dirname, join } from "node:path";
@@ -9,7 +10,7 @@ import { logLine as log, markLeafExecuted } from "../../cli/output.js";
 import { runCommand, runJson } from "../../clients/spawn.js";
 import { resolveRuntimePaths } from "../../clients/runtime-paths.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
-import { assertNativeTaskCheckout, nativeCheckoutExpected, readProjectResources, projectRootResource } from "../../clients/native-checkout.js";
+import { assertNativeTaskCheckout, nativeCheckoutExpected, readProjectResources, projectRootResource, type ProjectResource } from "../../clients/native-checkout.js";
 import { gitOk } from "../../clients/git.js";
 import { publishChange, requirementRoot, rootRepositoryUrl, resolveProjectRootBranch } from "../runtime/root-git.js";
 import { assertAnalysisWritable } from "./guard.js";
@@ -44,11 +45,16 @@ function sameIssueOwner(before: Record<string, unknown>, after: Record<string, u
 }
 const ANALYSIS_CONTRACT_FILE = /^(?:\.openspec\.yaml|proposal\.md|tasks\.md|design\.md|specs\/.+\.md)$/;
 
-function parseArgs(argv: string[]): { issue: string; changeRef: string; cli: string; workspaceId: string | null; rootRepo: string | null; targetBranch: string | null; mode: string | null } {
+function parseArgs(argv: string[]): { issue: string; changeRef: string; rootRepo: string | null; targetBranch: string | null; mode: string | null } {
   const get = (flag: string): string | null => {
     const i = argv.indexOf(flag);
     return i !== -1 && i + 1 < argv.length ? argv[i + 1] : null;
   };
+  const retired = argv.find(a => ["--registry-config", "--workspace-id", "--multica", "--profile"].some(flag => a === flag || a.startsWith(flag + "=")));
+  if (retired) {
+    process.stderr.write("analysis publish 使用当前 Multica Runtime，不接受 " + retired.split("=")[0] + "\n");
+    process.exit(64);
+  }
   const rootRepo = get("--root-repo");
   if (argv.includes("--root-repo") && (!rootRepo?.trim() || rootRepo.startsWith("--"))) {
     process.stderr.write("--root-repo 必须提供非空路径\n");
@@ -56,11 +62,11 @@ function parseArgs(argv: string[]): { issue: string; changeRef: string; cli: str
   }
   const issue = get("--issue");
   const changeRef = get("--change-ref");
-  if (!issue || !changeRef || !get("--workspace-id")) {
-    process.stderr.write("用法: rondo analysis publish --issue <issue-id> --change-ref <id> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>]\n");
+  if (!issue || !changeRef) {
+    process.stderr.write("用法: rondo analysis publish --issue <issue-id> --change-ref <id> [--root-repo <path>] [--target-branch <branch>]\n");
     process.exit(64);
   }
-  return { issue, changeRef, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), rootRepo, targetBranch: get("--target-branch"), mode: get("--mode") };
+  return { issue, changeRef, rootRepo, targetBranch: get("--target-branch"), mode: get("--mode") };
 }
 
 /** 读取唯一推送地址；拒绝凭据 URL，避免在 metadata 中保存认证信息。 */
@@ -71,11 +77,11 @@ function pushRepositoryUrl(root: string): string {
 }
 
 async function main(rawArgs: string[]): Promise<number> {
-  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis publish --issue <issue-id> --change-ref <id> --workspace-id <id> [--root-repo <path>] [--target-branch <branch>] [--multica <cli>] [--profile <name>]\n"); return 0; }
+  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis publish --issue <issue-id> --change-ref <id> [--root-repo <path>] [--target-branch <branch>]\n"); return 0; }
   const args = parseArgs(rawArgs);
-  const ws = ["--workspace-id", args.workspaceId!];
   try {
-    const runtime = analysisRuntime(rawArgs, args.cli, args.workspaceId);
+    const runtime = resolveMulticaRuntime();
+    const ws = ["--workspace-id", runtime.workspace_id];
     const MC = multicaPrefix(runtime);
     assertStableChangeRef(args.changeRef);
     const entries: Record<string, string> = { [GATE_RESULT]: "PASS" };
@@ -140,7 +146,7 @@ async function main(rawArgs: string[]): Promise<number> {
       throw new FailError("根仓与已有 analysis.source 仓库不一致");
     let publicationBranch: string | undefined;
     if (native) {
-      if (!args.rootRepo || process.env.MULTICA_WORKSPACE_ID !== args.workspaceId)
+      if (!args.rootRepo)
         throw new UnknownError("Native 分析发布需要当前 Workspace 和显式根仓路径");
       const workdir = dirname(root);
       assertNativeTaskCheckout(root, workdir, undefined, String(before.id));
@@ -149,34 +155,46 @@ async function main(rawArgs: string[]): Promise<number> {
       const matches = Array.isArray(runs) ? runs.filter(r => r?.id === process.env.MULTICA_TASK_ID) : [];
       if (matches.length !== 1 || matches[0].issue_id !== before.id ||
           matches[0].agent_id !== process.env.MULTICA_AGENT_ID ||
-          matches[0].workspace_id !== args.workspaceId || matches[0].status !== "running")
+          matches[0].workspace_id !== runtime.workspace_id || matches[0].status !== "running")
         throw new UnknownError("当前 Analysis Task / Issue / Agent / Workspace 身份无法确认");
     } else {
       if (args.targetBranch) throw new PreconditionError("--target-branch 仅用于 Native Requirement 分析发布");
     }
     const changeDir = join(root, "openspec", "changes", args.changeRef);
     // Shared real Gate, independent of caller-supplied PASS or old Metadata.
-    const gate = evaluateAnalysisGate({ issue: args.issue, openspecRoot: root, workspaceId: args.workspaceId!, runtime, changeRef: args.changeRef, snapshot: { issue: before, metadata: priorMeta } });
+    const gate = evaluateAnalysisGate({ issue: args.issue, openspecRoot: root, workspaceId: runtime.workspace_id, runtime, changeRef: args.changeRef, snapshot: { issue: before, metadata: priorMeta } });
     if (gate.exitCode !== 0 || gate.payload.result !== "PASS") {
       const reason = gate.payload.reasons.join("; ") || "Analysis Gate 未通过";
       if (gate.payload.result === "FAIL") throw new FailError(reason);
       throw new UnknownError(reason);
     }
-    const resources = readProjectResources(dirname(root), before.project_id, new MulticaClient(runtime));
-    if (!gate.scope) throw new UnknownError("本次 Gate 缺少 Repository Scope");
-    assertProjectRepositoryScope(gate.scope, resources, rootUrl);
+    // Only a new contract needs current Resource membership. Fixed-source recovery
+    // is proved by the existing Git reachability and Gate digest checks below.
+    let resources: ProjectResource[] | undefined;
+    const currentResources = () => resources ??= readProjectResources(dirname(root), before.project_id, new MulticaClient(runtime));
+    let scopeChecked = false;
+    const checkNewScope = () => {
+      if (scopeChecked) return;
+      if (!gate.scope) throw new UnknownError("本次 Gate 缺少 Repository Scope");
+      let serverUrl: string;
+      try { serverUrl = loadTfsConfig().serverUrl; }
+      catch (e) { if (e instanceof ConfigError) throw new UnknownError(e.message); throw e; }
+      assertProjectRepositoryScope(gate.scope, currentResources(), rootUrl, serverUrl);
+      scopeChecked = true;
+    };
     if (requirement) {
-      publicationBranch = pinned?.branch ?? resolveProjectRootBranch(root, resources, rootUrl);
+      if (!pinned) checkNewScope();
+      publicationBranch = pinned?.branch ?? resolveProjectRootBranch(root, currentResources(), rootUrl);
       if (args.targetBranch && args.targetBranch !== publicationBranch)
         throw new PreconditionError("--target-branch 与固定发布来源或 Project Resource ref 冲突");
-    } else projectRootResource(resources, rootUrl);
+    }
     const schema = gate.payload.schema;
     if (!schema) throw new UnknownError("本次 Gate 缺少 Change Schema");
     const derived = analysisMetadataEntries(schema);
     Object.assign(entries, derived);
     const effectiveMeta = { ...priorMeta, ...derived };
     const readContractAt = (commit: string) => committedContract(root, commit, args.changeRef, effectiveMeta);
-    if (gate.payload.issue_id !== String(before.id) || gate.payload.workspace_id !== args.workspaceId ||
+    if (gate.payload.issue_id !== String(before.id) || gate.payload.workspace_id !== runtime.workspace_id ||
         gate.payload.change_ref !== args.changeRef ||
         gate.payload.metadata_digest !== metadataEvidenceDigest(effectiveMeta, args.changeRef) ||
         !/^[a-f0-9]{64}$/.test(gate.payload.change_digest ?? "")) {
@@ -206,6 +224,10 @@ async function main(rawArgs: string[]): Promise<number> {
         rootCommit = { repo_url: recovered.repo_url, branch: recovered.branch, commit: recovered.commit,
           committed: "skipped_no_changes", pushed: true, reused_source: true };
       } else {
+        if (!requirement) {
+          checkNewScope();
+          projectRootResource(currentResources(), rootUrl);
+        }
         const tfsId = String(priorMeta["tfs.id"] ?? "").trim();
         const subject = `analysis: ${args.changeRef} (${args.issue}${tfsId ? ` / tfs ${tfsId}` : ""})`;
         const result = requirement ? await publishChange(root, args.changeRef, args.issue, ANALYSIS_CONTRACT_FILE, subject, {
@@ -225,6 +247,7 @@ async function main(rawArgs: string[]): Promise<number> {
               }
             : undefined,
           validateTree: (commit: string) => {
+            checkNewScope();
             const candidate = readContractAt(commit);
             if (candidate.schema !== schema || candidate.digest !== gateEvidence.change_digest) {
               throw new FailError("候选发布版本与本次真实 Analysis Gate 工程契约不一致");

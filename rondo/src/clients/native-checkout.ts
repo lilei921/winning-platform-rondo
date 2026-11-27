@@ -273,6 +273,14 @@ function selectResource(resources: ProjectResource[], matches: (url: string) => 
 export function projectRepository(resources: ProjectResource[], name: string): RepoResource {
   return selectResource(resources, url => repositoryName(url) === name, "repo_id " + name);
 }
+/** Resolve only a selected business member, excluding the actual engineering root. */
+export function projectBusinessRepository(resources: ProjectResource[], name: string, rootUrl: string): RepoResource {
+  if (name === repositoryName(rootUrl)) throw new FailError("业务仓范围不能包含工程契约根仓 " + name);
+  const selected = projectRepository(resources, name);
+  if (canonicalRepositoryIdentity(selected.url) === canonicalRepositoryIdentity(rootUrl))
+    throw new FailError("业务仓范围不能包含工程契约根仓 " + name);
+  return selected;
+}
 export function projectRootResource(resources: ProjectResource[], rootUrl: string): RepoResource {
   const identity = canonicalRepositoryIdentity(rootUrl);
   return selectResource(resources, url => canonicalRepositoryIdentity(url) === identity, "根仓 URL");

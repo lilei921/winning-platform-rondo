@@ -56,7 +56,7 @@ process.exit(r.status ?? 1);
   const resources = [
     { id: 'r', resource_type: 'github_repo', resource_ref: { url: rootUrl, ref: 'main' } },
     { id: 'biz', resource_type: 'github_repo', resource_ref: { url: repoUrl, ref: 'main', default_branch_hint: 'main' } },
-    { id: 'sibling', resource_type: 'github_repo', resource_ref: { url: 'http://tfs.test/tfs/C/P/_git/sibling', ref: 'main', default_branch_hint: 'main' } },
+    { id: 'sibling', resource_type: 'github_repo', resource_ref: { url: 'http://tfs.test/tfs/C/P/_git/sibling', ref: 'main' } },
   ];
   mkdirSync(join(dir, '.multica', 'project'), { recursive: true });
   writeFileSync(join(dir, '.multica', 'daemon_task_context.json'), JSON.stringify({ managed_by: 'multica-daemon-task', issue_id: 'i', agent_id: 'agent' }));
@@ -85,7 +85,7 @@ process.exit(r.status ?? 1);
   };
   const args = ['pr', 'prepare', '--issue', 'I-1', '--repo', 'biz', '--candidate-commit', sha,
     '--title', '修复空数据', '--root-repo', root];
-  const run = (input, extraEnv = {}, source = '-') => spawnSync(process.execPath, [cli, ...args, '--facts', source], {
+  const run = (input, extraEnv = {}, source = '-', extraArgs = []) => spawnSync(process.execPath, [cli, ...args, '--facts', source, ...extraArgs], {
     input, encoding: 'utf8', env: { ...env, ...extraEnv }, timeout: 30_000,
   });
   const result = (r, status) => {
@@ -114,6 +114,10 @@ process.exit(r.status ?? 1);
   result(run(undefined, {}, join(dir, 'missing.json')), 3);
   assert.deepEqual(state(), initial);
 
+  const firstMulti = result(run(JSON.stringify(evidence), {}, '-', ['--required-repos','biz,sibling']), 0);
+  assert.equal(firstMulti.ready_for_pr, false);
+  assert.deepEqual(JSON.parse(state().issues['I-1'].metadata['bug.required_repos']), ['biz','sibling']);
+  writeFileSync(statePath, JSON.stringify(initial));
   const failedWrite = result(run(JSON.stringify(evidence), { MOCK_FAIL_METADATA_KEY: 'pr' }), 3);
   assert.match(failedWrite.reason, /injected metadata set failure/);
   assert.deepEqual(JSON.parse(state().issues['I-1'].metadata['bug.required_repos']), ['biz']);

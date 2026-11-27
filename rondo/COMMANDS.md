@@ -60,8 +60,8 @@ rondo change resolve-identity --openspec-root <path> [--change-ref <ref>] [--tfs
 ### 3.2 `rondo analysis`
 
 ```bash
-rondo analysis validate --issue <id> --change-ref <id> --openspec-root <path> --workspace-id <id> [--multica <cli>] [--profile <name>]
-rondo analysis publish --issue <id> --change-ref <id> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>] [--profile <name>]
+rondo analysis validate --issue <id> --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>] [--profile <name>]
+rondo analysis publish --issue <id> --change-ref <id> [--root-repo <path>] [--target-branch <branch>]
 rondo analysis read --issue <KEY> --file <Change内相对路径>
 rondo analysis approve --issue <KEY> --comment-id <ID> --commit <SHA> --verify-required true|false [--waive-tasks 3.1,3.2]
 ```

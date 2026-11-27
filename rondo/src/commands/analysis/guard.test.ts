@@ -1,8 +1,5 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { assertAnalysisWritable } from "./guard.js";
 import { analysisRuntime } from "./runtime.js";
 import { classifyTfsType } from "./facts.js";
@@ -37,14 +34,16 @@ test("TFS management type is classified independently of route", () => {
   assert.equal(classifyTfsType("Feature"), null);
 });
 
-test("Registry Workspace identity must match the current Workspace", () => {
-  const dir = mkdtempSync(join(tmpdir(), "rondo-analysis-"));
-  const path = join(dir, "registry.json");
+test("Analysis diagnostics reuse current Runtime and reject environment overrides", () => {
+  const saved = { ...process.env };
   try {
-    writeFileSync(path, JSON.stringify({ runtime: { multica_cli: "multica", workspace_id: "workspace-a" } }));
-    assert.doesNotThrow(() => analysisRuntime(["--registry-config", path], "multica", "workspace-a"));
-    assert.throws(() => analysisRuntime(["--registry-config", path], "multica", "workspace-b"), /Workspace|workspace-id/);
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
+    Object.assign(process.env, { MULTICA_WORKSPACE_ID: "workspace-a", MULTICA_SERVER_URL: "https://multica.example", MULTICA_CLI_PATH: "native-cli" });
+    assert.deepEqual(analysisRuntime([], "multica", null), { workspace_id: "workspace-a", multica_server_url: "https://multica.example", multica_cli: "native-cli" });
+    assert.throws(() => analysisRuntime([], "multica", "workspace-b"), /Workspace/);
+    assert.throws(() => analysisRuntime(["--profile", "other"], "multica", null), /覆盖/);
+    assert.throws(() => analysisRuntime(["--registry-config", "old.json"], "multica", null), /退役/);
+    delete process.env.MULTICA_WORKSPACE_ID;
+    assert.equal(analysisRuntime(["--profile", "diagnostic"], "multica", "workspace-b").workspace_id, "workspace-b");
+    assert.throws(() => analysisRuntime([], "multica", null), /workspace-id/);
+  } finally { process.env = saved; }
 });

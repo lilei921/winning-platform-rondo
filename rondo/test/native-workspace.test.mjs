@@ -5,7 +5,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, realpathSy
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parsePlatformCheckoutOutput, assertNativeTaskCheckout, assertNativeCheckoutBaseline, readProjectResources } from "../dist/clients/native-checkout.js";
-import { resourcePrepareRepo, resolveNativeBusinessPath, validateBusinessCheckout } from "../dist/commands/dev/prepare-workspace.js";
+import { resourcePrepareRepo, requireTargetBranch, resolveNativeBusinessPath, validateBusinessCheckout } from "../dist/commands/dev/prepare-workspace.js";
 
 const branch = "agent/engineer/abcdef123456";
 test("Native Checkout parser recognizes Windows paths and Kept; rejects ambiguous output", () => {
@@ -70,6 +70,12 @@ for (const linked of [true, false]) test(`Native ${linked ? "linked worktree" : 
     const resources = readProjectResources(task, "p");
     const repo = resourcePrepareRepo(resources, "frame", rootUrl, url);
     assert.equal(repo.default_target_branch, "dev");
+    assert.equal(requireTargetBranch(repo, "feature/42"), "dev");
+    const withoutHint = resourcePrepareRepo(resources.map(row => ({...row, resource_ref: {...row.resource_ref, default_branch_hint: undefined}})), "frame", rootUrl, url);
+    assert.equal(withoutHint.repo_url, repoUrl);
+    assert.throws(() => requireTargetBranch(withoutHint, "feature/42"), /default_branch_hint/);
+    assert.throws(() => requireTargetBranch({...repo, default_target_branch:"feature/42"}, "feature/42"), /Candidate/);
+    assert.throws(() => requireTargetBranch({...repo, default_target_branch:"refs/heads/dev"}, "feature/42"), /非法/);
     assert.throws(() => resourcePrepareRepo(resources, "root", rootUrl, url), /根仓/);
     assert.throws(() => resourcePrepareRepo(resources, "missing", rootUrl, url), /缺失/);
     assert.throws(() => resourcePrepareRepo([...resources, resources[1]], "frame", rootUrl, url), /不唯一/);

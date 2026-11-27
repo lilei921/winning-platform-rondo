@@ -8,7 +8,7 @@ import { readGitTree, readGitBlob } from "../../clients/git-tree.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { normalizeContractText } from "../delivery/contract-files.js";
 import { readAnalysisSource, sameAnalysisSource, type AnalysisSource } from "../analysis/source.js";
-import { approvedChange, developmentPublication } from "./requirement-guard.js";
+import { approvedIdentity, developmentPublication } from "./requirement-guard.js";
 import { publishChange, requirementRoot } from "../runtime/root-git.js";
 
 export const executionArtifact = /^(?:tasks\.md|design\.md)$/;
@@ -55,9 +55,9 @@ export function registerDevPublish(group: Command): void {
         const initialSource = readAnalysisSource(initial);
         const cfg = { runtime };
         const multica = client;
-        const approved = await approvedChange(cfg, multica, opts.issue);
+        const approved = approvedIdentity(cfg, multica, opts.issue);
         const source = approved.source;
-        if (!sameAnalysisSource(source, initialSource) || approved.issue.metadata?.["analysis.human_approval"] !== initial["analysis.human_approval"] || approved.issue.metadata?.["tfs.id"] !== initial["tfs.id"]) throw new UnknownError("批准来源在读取 Scope 期间变化");
+        if (!sameAnalysisSource(source, initialSource) || approved.issue.metadata?.["analysis.human_approval"] !== initial["analysis.human_approval"] || approved.issue.metadata?.["tfs.id"] !== initial["tfs.id"]) throw new UnknownError("批准来源在读取授权期间变化");
         const root = requirementRoot(opts.rootRepo);
         const branch = source.branch;
         const original = approved.issue.metadata ?? {};
@@ -67,7 +67,7 @@ export function registerDevPublish(group: Command): void {
           executionArtifact, undefined, { repoUrl: source.repo_url, expectedBranch: branch, approvedCommit: source.commit,
             validateTree: commit => checkPublishContract(root, source, commit, opts.minorDesign === true, previousCommit) });
         const receipt = JSON.stringify({ analysis_source: source, commit: published.commit });
-        const rechecked = await approvedChange(cfg, multica, opts.issue);
+        const rechecked = approvedIdentity(cfg, multica, opts.issue);
         if (rechecked.issue.status !== approved.issue.status) throw new UnknownError("发布期间 Issue 状态变化");
         const current = rechecked.issue.metadata ?? {};
         if (current["analysis.source"] !== original["analysis.source"] ||

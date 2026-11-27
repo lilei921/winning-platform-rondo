@@ -1,9 +1,8 @@
 /** Machine-readable Repository Scope for an OpenSpec Change. No runtime or approval state. */
 import { parse as parseYaml } from "yaml";
 import { FailError } from "../../cli/errors.js";
-import { projectRepository, type ProjectResource } from "../../clients/native-checkout.js";
-import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
-import { repositoryName } from "./source.js";
+import { projectBusinessRepository, type ProjectResource } from "../../clients/native-checkout.js";
+import { assertTfsRepository } from "../../clients/authenticated-git.js";
 
 export function parseRepositoryScope(rawMetadata: string): string[] {
   let metadata: unknown;
@@ -31,12 +30,9 @@ export function parseRepositoryScope(rawMetadata: string): string[] {
 }
 
 /** Verify only the selected Scope against current Project Resources at publication. */
-export function assertProjectRepositoryScope(scope: string[], resources: ProjectResource[], rootUrl: string): void {
-  const rootIdentity = canonicalRepositoryIdentity(rootUrl);
+export function assertProjectRepositoryScope(scope: string[], resources: ProjectResource[], rootUrl: string, serverUrl: string): void {
   for (const key of scope) {
-    if (key === repositoryName(rootUrl)) throw new FailError("x-repositories 不能包含工程契约根仓 " + key);
-    const selected = projectRepository(resources, key);
-    if (canonicalRepositoryIdentity(selected.url) === rootIdentity)
-      throw new FailError("x-repositories 不能包含工程契约根仓 " + key);
+    const selected = projectBusinessRepository(resources, key, rootUrl);
+    assertTfsRepository(selected.url, serverUrl);
   }
 }

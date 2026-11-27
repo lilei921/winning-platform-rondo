@@ -97,6 +97,7 @@ test("Engineer 从批准 SHA 读取缺失工件，在分叉的常驻根仓独立
   git(root, "commit", "-m", "local mixed work");
   const local = git(root, "rev-parse", "HEAD");
   writeFileSync(join(root, work, "tasks.md"), "uncommitted draft");
+  tfs.update(s => { s.requests = []; });
   const published = publish(0);
   assert.notEqual(published.commit, approved);
   assert.notEqual(published.commit, local);
@@ -107,10 +108,7 @@ test("Engineer 从批准 SHA 读取缺失工件，在分叉的常驻根仓独立
   assert.equal(readFileSync(join(root, work, "tasks.md"), "utf8"), "uncommitted draft");
   assert.deepEqual(JSON.parse(metadata()["dev.publication"]), { analysis_source: source, commit: published.commit });
   assert.equal(metadata()["analysis.source"], JSON.stringify(source));
-  assert.ok(tfs.state().requests.every(request => request.query["versionDescriptor.version"] === approved),
-    "Git 发布后不得重复通过 REST 读取研发 SHA");
-  assert.ok(tfs.state().requests.every(request => request.query.path !== "/docs/config/repo-context.yaml"),
-    "研发发布仅消费批准 Scope，不读取远端仓库映射");
+  assert.deepEqual(tfs.state().requests, [], "研发发布不通过 REST 重读批准 Scope 或研发 SHA");
   const saved = readFileSync(state, "utf8");
   const legacy = JSON.parse(saved);
   legacy.metadata["dev.publication"] = JSON.stringify({ analysis_commit: approved, commit: published.commit });
@@ -266,8 +264,8 @@ test("dev publish 拒绝来源不一致及读取期间批准变化；Push 后变
   git(root, "commit", "-am", "complete approved task");
   for (const [patch, reason] of [
     [{ "analysis.source": JSON.stringify(other) }, /Change 身份.*不一致/],
-    [otherChange, /批准来源在读取 Scope 期间变化/],
-    [{ "analysis.human_approval": JSON.stringify({ ...approval, at: "2026-11-20T00:00:00Z" }) }, /批准来源在读取 Scope 期间变化/],
+    [otherChange, /批准来源在读取授权期间变化/],
+    [{ "analysis.human_approval": JSON.stringify({ ...approval, at: "2026-11-20T00:00:00Z" }) }, /批准来源在读取授权期间变化/],
   ]) {
     writeFileSync(state, initial);
     assert.match(runWithEnv(3, drift(2, patch), "dev", "publish").reason, reason);
@@ -331,6 +329,13 @@ test("Native Requirement Git 操作从 Issue 取得批准 Change，拒绝同 SHA
   assert.equal(fetched.result, "PASS");
   assert.equal(fetched.path, hub);
   assert.equal(fetched.branch, "feature/42");
+  const resourceFile = join(dir, ".multica", "project", "resources.json");
+  const resources = JSON.parse(readFileSync(resourceFile, "utf8"));
+  delete resources.resources[1].resource_ref.default_branch_hint;
+  writeFileSync(resourceFile, JSON.stringify(resources));
+  assert.match(runWithEnv(2, env, ...args).reason, /default_branch_hint/);
+  const pushArgs = args.map(a => a === "fetch" ? "push" : a);
+  assert.equal(runWithEnv(0, env, ...pushArgs).result, "PASS");
   assert.deepEqual(metadata(), initial.metadata);
   assert.equal(metadata()["verify_agent.required"], undefined);
 });

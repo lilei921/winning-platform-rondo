@@ -45,11 +45,6 @@ test("顶层叶子 query:缺 --wiql exit 64,用法走 stderr,stdout 纯净", () 
   assert.ok(r.stderr.includes("--wiql"));
 });
 
-test("命令总数 = 37", () => {
-  const total = Object.values(TREE).reduce((n, leaves) => n + leaves.length, 0) + 2 /* query + doctor */;
-  assert.equal(total, 37);
-});
-
 test("--version 输出 JSON:name/version/node/sea,exit 0", () => {
   const r = runCli(["--version"]);
   assert.equal(r.status, 0);

@@ -15,7 +15,7 @@ description: 将当前 Requirement 已完成的 OpenSpec 工程契约发布为�
 
 ```bash
 rondo analysis publish --issue <issue> --change-ref <change_ref> \
-  --workspace-id <workspace> --root-repo "<root>"
+  --root-repo "<root>"
 ```
 
 CLI 负责最终 Gate（含 OpenSpec Strict Validation）、Git 发布、事实登记及审核状态确认。无需手工 Git Add、Commit、Push 或例行预校验；不手填 `analysis.source`，不以可变 HEAD 代替固定来源。
@@ -30,7 +30,7 @@ CLI 负责最终 Gate（含 OpenSpec Strict Validation）、Git 发布、事实�
 
 ```bash
 rondo analysis validate --issue <issue> --change-ref <change_ref> \
-  --openspec-root "<root>" --workspace-id <workspace>
+  --openspec-root "<root>"
 ```
 
 发布确认后，在当前 Issue Comment 提供必要的目标/方案、影响范围、专业审查结论、Independent Verification 建议（`true` / `false`）、依据及必要验证重点、风险/待决事项、固定 Git 来源（仓库、分支、完整 Commit、Change ID）及 Gate 结果。通过固定来源引用工件，默认不另行导出或上传附件，Human 明确要求时除外。
