@@ -28,11 +28,11 @@ description: 使用项目 OpenSpec CLI 与当前 Schema / Artifact Instruction �
 
   来源为 `implicit`、错误或无法确认时，不据此写入。
 - **工件准备**：按当前 Artifact Instruction / Template 与原生 `requires` 准备工件；`apply.requires` 用于判断 Apply Readiness，不是工件写入前置。合法 `skip_specs`、Conditional Design 等取决于当前 Schema、专业语义及原生状态。`specs/**/*.md` 是生成模式而非文件名；有 Delta 时核对实际需要的 Capability 文件。任务内容、格式及验证方法遵循当前 Artifact Instruction / Template，验证深度与变更风险匹配。
-- **Repository Scope**：在当前 Change 的 `.openspec.yaml` 顶层维护非空、去重的业务仓 `repo_id` 字符串列表，从根仓 `docs/config/repo-context.yaml` 选取本次获授权修改的业务仓。
+- **Repository Scope**：根据已确认的工程影响范围，在当前 Change 的 `.openspec.yaml` 顶层维护非空、去重的业务仓完整 Git/TFS 仓库名称列表。
 
   ```yaml
   x-repositories:
-    - dataintegration
+    - winning-dps-df-dataintegration
   ```
 - **授权与一致性**：只修改获授权内容，按需核对受影响工件及依赖。Change 存在或 Issue 为 `in_progress` 不等于写入授权；涉及新的业务选择或实质改变已批准 Goal / Scope / Acceptance / Verification 时，说明待决定事项，不越权写入或自行批准。
 

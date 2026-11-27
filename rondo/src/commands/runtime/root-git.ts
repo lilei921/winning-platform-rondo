@@ -1,7 +1,7 @@
 /** Non-destructive persistent root synchronization and per-Change Git publishing. */
-import { existsSync, lstatSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { assertNativeTaskCheckout, assertNativeCheckoutBaseline, nativeCheckoutExpected, readDaemonTaskContext } from "../../clients/native-checkout.js";
+import { assertNativeTaskCheckout, assertNativeCheckoutBaseline, nativeCheckoutExpected, readDaemonTaskContext, projectRootResource, type ProjectResource } from "../../clients/native-checkout.js";
 import { randomUUID } from "node:crypto";
 import { changeTree, developmentTree, mergeChangeTrees, publishedTree } from "./change-tree.js";
 import { FailError, UnknownError } from "../../cli/errors.js";
@@ -40,13 +40,9 @@ function rootPath(arg?: string | null): string {
   return validateRootRepo(specified, "RONDO_WORKSPACE_PATH");
 }
 
-const rootMapping = "docs/config/repo-context.yaml";
 const rootDirectories = ["openspec/schemas", "openspec/changes"];
 
 function assertRootLayout(root: string, preserveChangeDeletion = false): void {
-  if (!lstatSync(join(root, rootMapping), { throwIfNoEntry: false })?.isFile()) {
-    throw new UnknownError("根仓缺少文件 " + rootMapping);
-  }
   for (const path of rootDirectories) {
     const entry = lstatSync(join(root, path), { throwIfNoEntry: false });
     if (entry?.isDirectory()) continue;
@@ -65,42 +61,26 @@ export function requirementRoot(arg?: string | null): string {
   return root;
 }
 
-/** Check root identity against the existing repository mapping, not a second registry. */
-function rootGitUrls(root: string, revision = "HEAD"): { repoUrl: string; fetchUrl: string; pushUrls: string[] } {
-  const yaml = run(root, ["show", revision + ":docs/config/repo-context.yaml"], "读取已提交的根仓映射");
-  const match = yaml.match(/^[ \t]*-[ \t]+repo_id:[ \t]*root[ \t]*\r?\n([\s\S]*?)(?=^[ \t]*-[ \t]+repo_id:|$(?![\s\S]))/m);
-  const raw = match?.[1].match(/^[ \t]*repo_url:[ \t]*(\S+)[ \t]*$/m)?.[1];
-  if (!raw) throw new UnknownError("根仓 repo-context.yaml 缺少 root.repo_url");
+/** Verify the actual Git fetch and push identity; the caller supplies its authorized source. */
+function rootGitUrls(root: string): { repoUrl: string; fetchUrl: string; pushUrls: string[] } {
   const origins = run(root, ["remote", "get-url", "--all", "origin"], "读取根仓 origin").split(/\r?\n/);
   if (origins.length !== 1) throw new UnknownError("根仓 Origin 非唯一");
   const origin = origins[0];
   const pushUrls = run(root, ["remote", "get-url", "--push", "--all", "origin"], "读取根仓 push origin").split(/\r?\n/);
-  const identity = canonicalRepositoryIdentity(raw);
-  if (pushUrls.length !== 1 || identity !== canonicalRepositoryIdentity(origin) || identity !== canonicalRepositoryIdentity(pushUrls[0])) {
-    throw new FailError("根仓 Origin 与 repo-context.yaml 的 root.repo_url 不一致");
+  const identity = canonicalRepositoryIdentity(origin);
+  if (pushUrls.length !== 1 || identity !== canonicalRepositoryIdentity(pushUrls[0])) {
+    throw new FailError("根仓 Origin 与 Push URL 不一致");
   }
-  return { repoUrl: repositoryUrl(raw).href, fetchUrl: origin, pushUrls };
+  return { repoUrl: repositoryUrl(origin).href, fetchUrl: origin, pushUrls };
 }
 
-export function rootRepositoryUrl(root: string, revision = "HEAD"): string {
-  return rootGitUrls(root, revision).repoUrl;
+export function rootRepositoryUrl(root: string): string {
+  return rootGitUrls(root).repoUrl;
 }
 
-/** Resolve the first Native publication from the current Issue's injected Project Resource. */
-export function resolveProjectRootBranch(root: string, projectId: unknown): string {
-  const repo = canonicalRepositoryIdentity(rootRepositoryUrl(root));
-  let project: { project_id?: unknown; resources?: Array<{ resource_type?: unknown; resource_ref?: { url?: unknown; ref?: unknown } }> };
-  try { project = JSON.parse(readFileSync(join(dirname(root), ".multica", "project", "resources.json"), "utf8")); }
-  catch { throw new UnknownError("无法读取当前 Task 的 Project Resource"); }
-  if (!project || typeof projectId !== "string" || !projectId || project.project_id !== projectId || !Array.isArray(project.resources))
-    throw new UnknownError("Project Resource 与当前 Issue 的 Project 身份不一致");
-  const matches = project.resources.filter(row => {
-    if (row?.resource_type !== "github_repo" || typeof row.resource_ref?.url !== "string") return false;
-    try { return canonicalRepositoryIdentity(row.resource_ref.url) === repo; }
-    catch { return false; }
-  });
-  if (matches.length !== 1) throw new UnknownError("根仓 URL 对应的 Project Resource 缺失或不唯一");
-  const branch = matches[0].resource_ref?.ref;
+/** Resolve the initial publication branch from the matching current Project Resource. */
+export function resolveProjectRootBranch(root: string, resources: ProjectResource[], rootUrl: string): string {
+  const branch = projectRootResource(resources, rootUrl).ref;
   if (typeof branch !== "string" || !branch || branch.startsWith("-") || branch.startsWith("refs/") ||
       git(root, ["check-ref-format", "refs/heads/" + branch]).status !== 0)
     throw new FailError("根仓 Project Resource ref 必须是有效分支");
@@ -213,15 +193,11 @@ export function prepareRoot(arg?: string | null, legacyBranch?: string, remote: 
   const fastForward = Boolean(localTip && localTip !== finalTip);
   if (switched) checkWorktreeOccupancy(root, localTip ? localRef : remoteRef, localRef);
   // Validate the tree that will be consumed before touching the current index or branch.
-  const entries = run(root, ["ls-tree", "-z", "--format=%(objectmode) %(path)", finalTip, "--", rootMapping, ...rootDirectories],
+  const entries = run(root, ["ls-tree", "-z", "--format=%(objectmode) %(path)", finalTip, "--", ...rootDirectories],
     "核对目标根仓布局").split("\0");
-  if (!entries.includes("100644 " + rootMapping) && !entries.includes("100755 " + rootMapping)) {
-    throw new FailError("目标分支 " + branch + " 缺少普通文件 " + rootMapping);
-  }
   for (const path of rootDirectories) {
     if (!entries.includes("040000 " + path)) throw new FailError("目标分支 " + branch + " 缺少目录 " + path);
   }
-  if (switched || fastForward) rootRepositoryUrl(root, finalTip);
   if (switched) {
     // Even a commit with a private index would consume the current worktree's MERGE_HEAD.
     const operation = rootGitOperation(root);
@@ -244,9 +220,9 @@ export function prepareRoot(arg?: string | null, legacyBranch?: string, remote: 
   }
   if (run(root, ["rev-parse", "HEAD"], "核对实际根仓版本") !== finalTip) throw new UnknownError("根仓分支在准备期间发生变化，请重试");
   assertRootLayout(root, !switched);
-  const normative = [rootMapping, "openspec/schemas", "openspec/specs"];
+  const normative = ["openspec/schemas", "openspec/specs"];
   if (run(root, ["status", "--porcelain", "--untracked-files=all", "--", ...normative], "检查根仓规范")) {
-    throw new UnknownError("Schema / Specs / Repository Mapping 存在未提交变更，拒绝使用不确定的规范");
+    throw new UnknownError("Schema / Specs 存在未提交变更，拒绝使用不确定的规范");
   }
   return { root_repo: root, branch, remote_commit: remoteTip, updated: switched || fastForward, preserved_wip: Boolean(dirty) };
 }

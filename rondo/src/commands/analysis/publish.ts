@@ -1,18 +1,17 @@
 /** Verify the reviewed Change, publish it and record its immutable remote source before review. */
 import { analysisRuntime } from "./runtime.js";
 import { multicaPrefix } from "../../clients/multica-environment.js";
-import { requireIssueMetadata } from "../../clients/multica.js";
+import { MulticaClient, requireIssueMetadata } from "../../clients/multica.js";
 import { dirname, join } from "node:path";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { logLine as log, markLeafExecuted } from "../../cli/output.js";
 import { runCommand, runJson } from "../../clients/spawn.js";
-import { loadConfig, type BaseRegistryConfig } from "../../clients/config.js";
 import { resolveRuntimePaths } from "../../clients/runtime-paths.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
-import { assertNativeTaskCheckout, nativeCheckoutExpected } from "../../clients/native-checkout.js";
+import { assertNativeTaskCheckout, nativeCheckoutExpected, readProjectResources, projectRootResource } from "../../clients/native-checkout.js";
 import { gitOk } from "../../clients/git.js";
-import { publishChange, requirementBranch, requirementRoot, rootRepositoryUrl, resolveProjectRootBranch } from "../runtime/root-git.js";
+import { publishChange, requirementRoot, rootRepositoryUrl, resolveProjectRootBranch } from "../runtime/root-git.js";
 import { assertAnalysisWritable } from "./guard.js";
 import { sourceSchemaViolation, changeKindSchemaViolation, assertStableChangeRef, CHANGE_KINDS } from "./change-schema.js";
 import { changeEvidenceDigest, metadataEvidenceDigest } from "./gate-evidence.js";
@@ -25,7 +24,7 @@ import {
 } from "./facts.js";
 
 import { committedContract, readPublishedContract, assertCommittedContractFiles } from "./published-source.js";
-import { assertRegisteredRepositoryScope, parseRepositoryScope, REPOSITORY_CONTEXT_PATH } from "./repository-scope.js";
+import { assertProjectRepositoryScope } from "./repository-scope.js";
 
 const TARGET_STATUS = "analysis_review";
 const GATE_RESULT = "analysis.gate.result";
@@ -45,7 +44,7 @@ function sameIssueOwner(before: Record<string, unknown>, after: Record<string, u
 }
 const ANALYSIS_CONTRACT_FILE = /^(?:\.openspec\.yaml|proposal\.md|tasks\.md|design\.md|specs\/.+\.md)$/;
 
-function parseArgs(argv: string[]): { issue: string; changeRef: string; cli: string; workspaceId: string | null; registryConfig: string | null; rootRepo: string | null; targetBranch: string | null; mode: string | null } {
+function parseArgs(argv: string[]): { issue: string; changeRef: string; cli: string; workspaceId: string | null; rootRepo: string | null; targetBranch: string | null; mode: string | null } {
   const get = (flag: string): string | null => {
     const i = argv.indexOf(flag);
     return i !== -1 && i + 1 < argv.length ? argv[i + 1] : null;
@@ -57,11 +56,11 @@ function parseArgs(argv: string[]): { issue: string; changeRef: string; cli: str
   }
   const issue = get("--issue");
   const changeRef = get("--change-ref");
-  if (!issue || !changeRef || !get("--workspace-id") || !get("--registry-config")) {
-    process.stderr.write("用法: rondo analysis publish --issue <issue-id> --change-ref <id> --registry-config <repo-registry.json> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>]\n");
+  if (!issue || !changeRef || !get("--workspace-id")) {
+    process.stderr.write("用法: rondo analysis publish --issue <issue-id> --change-ref <id> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>]\n");
     process.exit(64);
   }
-  return { issue, changeRef, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), registryConfig: get("--registry-config"), rootRepo, targetBranch: get("--target-branch"), mode: get("--mode") };
+  return { issue, changeRef, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), rootRepo, targetBranch: get("--target-branch"), mode: get("--mode") };
 }
 
 /** 读取唯一推送地址；拒绝凭据 URL，避免在 metadata 中保存认证信息。 */
@@ -72,7 +71,7 @@ function pushRepositoryUrl(root: string): string {
 }
 
 async function main(rawArgs: string[]): Promise<number> {
-  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis publish --issue <issue-id> --change-ref <id> --registry-config <path> --workspace-id <id> [--root-repo <path>] [--target-branch <branch>] [--multica <cli>] [--profile <name>]\n"); return 0; }
+  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis publish --issue <issue-id> --change-ref <id> [--registry-config <path>] --workspace-id <id> [--root-repo <path>] [--target-branch <branch>] [--multica <cli>] [--profile <name>]\n"); return 0; }
   const args = parseArgs(rawArgs);
   const ws = ["--workspace-id", args.workspaceId!];
   try {
@@ -95,9 +94,7 @@ async function main(rawArgs: string[]): Promise<number> {
     if (rawArgs.includes("--mode") && args.mode !== (requirement ? "requirement" : "legacy")) {
       throw new PreconditionError("analysis publish --mode 与当前 tfs.type 不一致，请省略该参数");
     }
-    const cfg = loadConfig<BaseRegistryConfig>(args.registryConfig!, { requireRegistry: false, requireTfs: false });
-    // 根仓资源查询与 Issue 读写使用同一环境，包含显式 --profile/--multica 覆盖。
-    cfg.runtime = runtime;
+    const cfg = { runtime };
 
     // Requirement 审核重放只消费已登记的 PASS、Facts 和固定来源，不重读工件。
     if (!assertAnalysisWritable(before, priorMeta, entries)) {
@@ -138,7 +135,8 @@ async function main(rawArgs: string[]): Promise<number> {
     const saved = requirement && priorMeta["analysis.source"] !== undefined
       ? parseAnalysisSource(priorMeta["analysis.source"]) : undefined;
     const pinned = saved?.change_ref === args.changeRef ? saved : undefined;
-    if (pinned && canonicalRepositoryIdentity(rootRepositoryUrl(root)) !== canonicalRepositoryIdentity(pinned.repo_url))
+    const rootUrl = rootRepositoryUrl(root);
+    if (pinned && canonicalRepositoryIdentity(rootUrl) !== canonicalRepositoryIdentity(pinned.repo_url))
       throw new FailError("根仓与已有 analysis.source 仓库不一致");
     let publicationBranch: string | undefined;
     if (native) {
@@ -153,12 +151,8 @@ async function main(rawArgs: string[]): Promise<number> {
           matches[0].agent_id !== process.env.MULTICA_AGENT_ID ||
           matches[0].workspace_id !== args.workspaceId || matches[0].status !== "running")
         throw new UnknownError("当前 Analysis Task / Issue / Agent / Workspace 身份无法确认");
-      publicationBranch = pinned?.branch ?? resolveProjectRootBranch(root, before.project_id);
-      if (args.targetBranch && args.targetBranch !== publicationBranch)
-        throw new PreconditionError("--target-branch 与固定发布来源或 Project Resource ref 冲突");
     } else {
       if (args.targetBranch) throw new PreconditionError("--target-branch 仅用于 Native Requirement 分析发布");
-      publicationBranch = requirement ? pinned?.branch ?? requirementBranch() : undefined;
     }
     const changeDir = join(root, "openspec", "changes", args.changeRef);
     // Shared real Gate, independent of caller-supplied PASS or old Metadata.
@@ -168,15 +162,20 @@ async function main(rawArgs: string[]): Promise<number> {
       if (gate.payload.result === "FAIL") throw new FailError(reason);
       throw new UnknownError(reason);
     }
+    const resources = readProjectResources(dirname(root), before.project_id, new MulticaClient(runtime));
+    if (!gate.scope) throw new UnknownError("本次 Gate 缺少 Repository Scope");
+    assertProjectRepositoryScope(gate.scope, resources, rootUrl);
+    if (requirement) {
+      publicationBranch = pinned?.branch ?? resolveProjectRootBranch(root, resources, rootUrl);
+      if (args.targetBranch && args.targetBranch !== publicationBranch)
+        throw new PreconditionError("--target-branch 与固定发布来源或 Project Resource ref 冲突");
+    } else projectRootResource(resources, rootUrl);
     const schema = gate.payload.schema;
     if (!schema) throw new UnknownError("本次 Gate 缺少 Change Schema");
     const derived = analysisMetadataEntries(schema);
     Object.assign(entries, derived);
     const effectiveMeta = { ...priorMeta, ...derived };
     const readContractAt = (commit: string) => committedContract(root, commit, args.changeRef, effectiveMeta);
-    const assertScopeAt = (commit: string, rawMetadata: string) =>
-      assertRegisteredRepositoryScope(parseRepositoryScope(rawMetadata), () =>
-        gitOk(root, ["show", `${commit}:${REPOSITORY_CONTEXT_PATH}`], "读取固定 Git 版本的 Repository Scope 映射"));
     if (gate.payload.issue_id !== String(before.id) || gate.payload.workspace_id !== args.workspaceId ||
         gate.payload.change_ref !== args.changeRef ||
         gate.payload.metadata_digest !== metadataEvidenceDigest(effectiveMeta, args.changeRef) ||
@@ -210,7 +209,7 @@ async function main(rawArgs: string[]): Promise<number> {
         const tfsId = String(priorMeta["tfs.id"] ?? "").trim();
         const subject = `analysis: ${args.changeRef} (${args.issue}${tfsId ? ` / tfs ${tfsId}` : ""})`;
         const result = requirement ? await publishChange(root, args.changeRef, args.issue, ANALYSIS_CONTRACT_FILE, subject, {
-          repoUrl: rootRepositoryUrl(root), expectedBranch: publicationBranch!, fixedSourceCommit: pinned?.commit,
+          repoUrl: rootUrl, expectedBranch: publicationBranch!, fixedSourceCommit: pinned?.commit,
           commitWorkingChange: true,
           canRecoverFixedSource: pinned && metadataEvidenceDigest(priorMeta, args.changeRef) === gateEvidence.metadata_digest
             ? (commit: string, localHead: string) => {
@@ -222,7 +221,6 @@ async function main(rawArgs: string[]): Promise<number> {
                   if (local.digest !== gateEvidence.change_digest || local.schema !== schema)
                     throw new FailError("当前已提交分析工件与 Gate 不一致");
                 }
-                assertScopeAt(commit, published.rawMetadata);
                 return true;
               }
             : undefined,
@@ -231,7 +229,6 @@ async function main(rawArgs: string[]): Promise<number> {
             if (candidate.schema !== schema || candidate.digest !== gateEvidence.change_digest) {
               throw new FailError("候选发布版本与本次真实 Analysis Gate 工程契约不一致");
             }
-            assertScopeAt(commit, candidate.rawMetadata);
           },
         }) : publishChange(root, args.changeRef, args.issue, ANALYSIS_CONTRACT_FILE, subject);
         rootCommit = { ...result };
@@ -254,7 +251,6 @@ async function main(rawArgs: string[]): Promise<number> {
           throw new UnknownError("最终固定 Git Commit 与本次真实 Gate 检查的工程契约不一致");
         }
         assertCommittedContractFiles(root, source, effectiveMeta, gateEvidence.change_digest);
-        assertScopeAt(source.commit, gitOk(root, ["show", `${source.commit}:openspec/changes/${args.changeRef}/.openspec.yaml`], "读取固定 Change Metadata"));
       }
       // Requirement 的候选契约及远端可达性已由 publishChange 确认；直接消费固定 SHA。
       rootCommit.commit = source.commit;
