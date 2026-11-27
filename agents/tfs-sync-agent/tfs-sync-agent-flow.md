@@ -10,7 +10,7 @@ flowchart TD
     B["Agent 加载 tfs-sync Skill 与配置"]
     C["rondo tfs reconcile-workitem --config"]
     D{"同步配置有效？"}
-    E["内部调用 rondo query --wiql"]
+    E["内部调用 rondo workitem query --wiql"]
     E2["WIQL：需求 / Bug、@me、排除已验证和已关闭"]
     F{"查询结果有效且 Wayfinder 唯一？"}
     G{"还有待处理 Work Item？"}
@@ -81,7 +81,7 @@ rondo tfs reconcile-workitem --config "<config-path>"
 当前 `sync-config.json` 的 `tfs.query_command` 为：
 
 ```bash
-rondo query --wiql "SELECT [System.Id], [System.WorkItemType], [System.Title], [System.AssignedTo], [System.State], [System.Tags], [System.CreatedDate], [System.ChangedDate] FROM workitems WHERE [System.WorkItemType] IN ('需求','Bug') AND [System.AssignedTo] = @me AND [System.State] <> '已验证' AND [System.State] <> '已关闭' ORDER BY [System.Id]"
+rondo workitem query --wiql "SELECT [System.Id], [System.WorkItemType], [System.Title], [System.AssignedTo], [System.State], [System.Tags], [System.CreatedDate], [System.ChangedDate] FROM workitems WHERE [System.WorkItemType] IN ('需求','Bug') AND [System.AssignedTo] = @me AND [System.State] <> '已验证' AND [System.State] <> '已关闭' ORDER BY [System.Id]"
 ```
 
 - **筛选**：只查询指派给当前 TFS 认证身份（`@me`）的需求和 Bug，排除已验证、已关闭项。

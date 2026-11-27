@@ -61,7 +61,7 @@ npm root -g                 # 全局 node_modules 实际位置
 
 ## 5. 运行期配置
 
-### 5.1 TFS 连接（query/repo/branch/pr/workitem 及 flow 内 TFS 调用）
+### 5.1 TFS 连接（repo/pr/workitem 及 flow 内 TFS 调用）
 
 全局安装包不含 `config/`，通常通过环境变量提供 TFS 连接信息；如使用外置配置文件，可设置 `TFS_CLI_CONFIG` 指向文件。凭证优先使用环境变量，禁止在命令行传递。
 
@@ -91,7 +91,6 @@ $env:MULTICA_REPO_ROOT = "D:/UserProgram/winning-platform-rondo"
 
 交付命令使用当前 Multica Run 的 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`（可选 `MULTICA_CLI_PATH`）。仓库配置以当前 Project Resource 为准，Requirement 的修改授权以已批准 OpenSpec Scope 为准；后续交付消费已登记的 PR Facts。业务仓 `repo_id` / `repo_key` 为完整 Git/TFS 仓库名称。
 
-独立人工运维命令 `pr worktree` 如需管理非 Native 的既有工作树，使用调用者显式提供的配置；不属于 Agent 交付流程。
 
 `workspace provision / sync` 和 `doctor` 可使用 `--profile <name>` 选择 Multica 连接配置（`doctor` 需同时提供 `--workspace-id`）。不要跨环境复用 Workspace Overlay。
 
@@ -101,7 +100,7 @@ $env:MULTICA_REPO_ROOT = "D:/UserProgram/winning-platform-rondo"
 
 ```bash
 # 查询 TFS 工作项
-rondo query --wiql "SELECT [System.Id] FROM workitems WHERE [System.AssignedTo] = @me"
+rondo workitem query --wiql "SELECT [System.Id] FROM workitems WHERE [System.AssignedTo] = @me"
 
 # 只生成本地 Workspace 运行配置
 rondo workspace sync --workspace <name> --local-only
