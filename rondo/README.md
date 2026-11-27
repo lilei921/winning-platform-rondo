@@ -89,21 +89,9 @@ $env:MULTICA_REPO_ROOT = "D:/UserProgram/winning-platform-rondo"
 
 ### 5.3 Multica 交付命令
 
-需要 Repository Registry 的交付命令通过 `--config <repo-registry.json>` 指定配置。`delivery finalize`、`tfs writeback` 和 `pr reconcile-status` 使用当前 Multica Runtime，无需 Registry。其他 Registry 命令中，`runtime.workspace_id` 约束目标 Workspace，`registry` 描述业务仓库信息。例如：
+交付命令使用当前 Multica Run 的 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`（可选 `MULTICA_CLI_PATH`）。仓库配置以当前 Project Resource 为准，Requirement 的修改授权以已批准 OpenSpec Scope 为准；后续交付消费已登记的 PR Facts。业务仓 `repo_id` / `repo_key` 为完整 Git/TFS 仓库名称。
 
-```json
-{
-  "runtime": {
-    "multica_cli": "multica",
-    "workspace_id": "<workspace-id>",
-    "delivery_squad_id": "<delivery-squad-id>",
-    "multica_server_url": "<server-url>"
-  },
-  "registry": {}
-}
-```
-
-按需设置 `runtime.multica_profile` 选择命名连接；不要依赖 CLI 默认 Workspace 代替明确配置。
+独立人工运维命令 `pr worktree` 如需管理非 Native 的既有工作树，使用调用者显式提供的配置；不属于 Agent 交付流程。
 
 `workspace provision / sync` 和 `doctor` 可使用 `--profile <name>` 选择 Multica 连接配置（`doctor` 需同时提供 `--workspace-id`）。不要跨环境复用 Workspace Overlay。
 

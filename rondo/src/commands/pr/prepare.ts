@@ -4,8 +4,8 @@ import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
 import { gitOk } from "../../clients/git.js";
 import { runAuthenticatedGit } from "../../clients/authenticated-git.js";
 import { authorizedCheckout } from "../dev/authorized-checkout.js";
-import { validatePrepareRepo } from "../dev/prepare-workspace.js";
-import { loadConfig as loadTfsConfig } from "../../tfs/config.js";
+import { requireTargetBranch } from "../dev/prepare-workspace.js";
+import { projectBusinessRepository } from "../../clients/native-checkout.js";
 import { readBugEvidenceInput, validateBugEvidence } from "../bug/evidence.js";
 import { requiredBugRepos, assertBugReadyForPr } from "../bug/scope.js";
 import { verifyAndExecuteValidation, ValidationCommandError } from "./validation.js";
@@ -51,7 +51,8 @@ export function registerPrPrepare(group: Command): void {
         const sha = opts.candidateCommit;
         if (!/^[0-9a-f]{40}$/.test(sha) || !filled(opts.title)) throw new FailError("Candidate SHA 或标题非法");
         const current = await authorizedCheckout(opts.issue, opts.repo, opts.rootRepo);
-        const {client, issue, md, repo, path, branch, tfsId, bug, registry} = current;
+        const {client, issue, md, repo, path, branch, tfsId, bug, resources, rootUrl} = current;
+        const target = requireTargetBranch(repo, branch);
         const rawInput = readBugEvidenceInput(opts.facts);
         const facts = validatePrFacts(rawInput, bug);
         const suppliedIdentity = rawInput as Record<string,unknown>;
@@ -77,7 +78,9 @@ export function registerPrPrepare(group: Command): void {
             md["bug.required_repos"] ? requiredBugRepos(md["bug.required_repos"]) : [opts.repo];
           if (!required.includes(opts.repo) || (md["bug.required_repos"] && JSON.stringify(required)!==JSON.stringify(requiredBugRepos(md["bug.required_repos"]))))
             throw new FailError("Bug required_repos 与固定 Scope 不一致");
-          for(const key of required) validatePrepareRepo(registry[key],loadTfsConfig().serverUrl);
+          if (!md["bug.required_repos"]) for(const key of required) {
+            if (key !== opts.repo) projectBusinessRepository(resources,key,rootUrl);
+          }
           const refs = gitOk(path,["show","-s","--format=%B",sha],"读取 Candidate Commit").split(/\r?\n/).filter(x=>/^Refs:\s*/i.test(x));
           if (refs.length!==1 || refs[0].trim()!=="Refs: #"+tfsId) throw new FailError("Candidate 必须包含唯一 Refs: #"+tfsId);
         }
@@ -93,7 +96,7 @@ export function registerPrPrepare(group: Command): void {
         };
         const refresh = async () => {
           const fresh=await authorizedCheckout(opts.issue,opts.repo,opts.rootRepo);
-          if(fresh.issue.id!==issue.id || fresh.issue.status!==issue.status || fresh.revision!==current.revision ||
+          if(fresh.issue.id!==issue.id || fresh.issue.status!==issue.status || fresh.issue.project_id!==issue.project_id || fresh.rootUrl!==rootUrl ||
             fresh.path!==path || JSON.stringify(fresh.repo)!==JSON.stringify(repo) ||
             ["analysis.source","analysis.human_approval","analysis.gate.result","tfs.id","tfs.type","tfs.url","bug.required_repos","finalize.pending","delivery.tfs_written"]
               .some(k=>fresh.md[k]!==md[k])) throw new UnknownError("Validation 期间授权或仓库事实变化");
@@ -105,7 +108,7 @@ export function registerPrPrepare(group: Command): void {
             throw new UnknownError("pr 本仓事实在验证期间变化");
           return JSON.stringify([...after.filter(x=>x.repo_key!==opts.repo),entry]);
         };
-        const prepIdentity = {repo_key:opts.repo,repo_url:repo.repo_url,source_branch:branch,target_branch:repo.default_target_branch,
+        const prepIdentity = {repo_key:opts.repo,repo_url:repo.repo_url,source_branch:branch,target_branch:target,
           candidate_commit:sha,title:opts.title,description:facts.description};
         const {blockers:_, ...professional} = bugFacts;
         const bugIdentity = {...prepIdentity,...professional};

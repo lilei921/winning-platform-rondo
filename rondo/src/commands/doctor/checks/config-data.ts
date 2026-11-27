@@ -60,43 +60,6 @@ export async function checkOpenspecRoot(_ctx: CheckContext): Promise<CheckOutcom
   return { name, level: "WARN", result: "PASS", detail: openspecRoot };
 }
 
-// ---------- repo_registry ----------
-
-export async function checkRepoRegistry(_ctx: CheckContext): Promise<CheckOutcome> {
-  const name = "repo_registry";
-  let monorepoRoot: string;
-  try {
-    ({ monorepoRoot } = resolveMulticaRoot());
-  } catch {
-    // 方案 §4.4：不在根仓运行时降级为 INFO
-    return { name, level: "WARN", result: "INFO", detail: "非 monorepo 上下文，跳过登记仓校验" };
-  }
-  const yamlPath = join(monorepoRoot, "docs", "config", "repo-context.yaml");
-  if (!existsSync(yamlPath)) {
-    return { name, level: "WARN", result: "WARN", detail: `${yamlPath} 不存在`, remediation: "恢复 docs/config/repo-context.yaml（仓登记唯一事实源）" };
-  }
-  const content = readFileSync(yamlPath, "utf8");
-  const repoPaths = [...content.matchAll(/^\s*-?\s*repo_path:\s*(\S+)\s*$/gm)].map((m) => m[1]);
-  if (repoPaths.length === 0) {
-    return { name, level: "WARN", result: "WARN", detail: `${yamlPath} 未解析到任何 repo_path 条目`, remediation: "核对 repo-context.yaml 格式（repo_path 字段）" };
-  }
-  const missing: string[] = [];
-  for (const p of repoPaths) {
-    const abs = resolve(monorepoRoot, p);
-    if (!existsSync(abs) || !existsSync(join(abs, ".git"))) missing.push(p);
-  }
-  if (missing.length > 0) {
-    return {
-      name,
-      level: "WARN",
-      result: "WARN",
-      detail: `${repoPaths.length} 个登记仓中 ${missing.length} 个缺失或非 git 仓: ${missing.join(", ")}（登记漂移会导致定位阶段整体跑偏）`,
-      remediation: "检出缺失子仓，或按 tools/repo_registry.py 修正 docs/config/repo-context.yaml 登记",
-    };
-  }
-  return { name, level: "WARN", result: "PASS", detail: `${repoPaths.length} 个登记仓全部存在且为 git 仓` };
-}
-
 // ---------- tfs_config ----------
 
 type TfsSource = "user_env" | "process_env" | "config_file" | "missing";

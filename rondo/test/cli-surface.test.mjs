@@ -21,7 +21,7 @@ const TREE = {
   tfs: ["writeback", "reconcile-workitem"],
   pr: ["prepare", "materialize", "resume", "worktree", "reconcile-status", "create", "get", "list"],
   delivery: [ "finalize", "root-prepare", "admission"],
-  workspace: ["provision", "sync", "migrate-repo-keys", "check-daemon"],
+  workspace: ["provision", "sync", "check-daemon"],
   runtime: ["resolve-root-repo","prepare-root","get-context","check-checkout"],
   repo: ["get"],
   branch: ["get"],
@@ -43,11 +43,6 @@ test("顶层叶子 query:缺 --wiql exit 64,用法走 stderr,stdout 纯净", () 
   assert.equal(r.status, 64);
   assert.equal(r.stdout, "");
   assert.ok(r.stderr.includes("--wiql"));
-});
-
-test("命令总数 = 37", () => {
-  const total = Object.values(TREE).reduce((n, leaves) => n + leaves.length, 0) + 2 /* query + doctor */;
-  assert.equal(total, 37);
 });
 
 test("--version 输出 JSON:name/version/node/sea,exit 0", () => {

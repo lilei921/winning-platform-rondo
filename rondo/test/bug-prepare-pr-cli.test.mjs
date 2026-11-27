@@ -28,13 +28,6 @@ test('Bug pr prepare CLI (Native resumed checkout): stdin/file, Git identity, qu
   const taskId = native ? '01234567-abcd-ef12-3456-000000000000' : 'run';
   const taskBranch = 'agent/bug-fix-agent/abcdef123456';
   if (native) {
-    mkdirSync(join(root, 'docs', 'config'), { recursive: true });
-    writeFileSync(join(root, 'docs', 'config', 'repo-context.yaml'), JSON.stringify({ repos: [
-      { repo_id: 'root', repo_path: '.', repo_url: rootUrl },
-      { repo_id: 'biz', repo_path: 'biz', repo_url: repoUrl, tfs_project: 'P', default_target_branch: 'main' },
-      { repo_id: 'sibling', repo_path: 'sibling', repo_url: 'http://tfs.test/tfs/C/P/_git/sibling', tfs_project: 'P', default_target_branch: 'main' },
-    ] }));
-    git(root, 'add', 'docs/config/repo-context.yaml');
     git(root, 'config', 'multica.checkout-mode', 'isolated');
     git(root, 'branch', '-m', taskBranch);
   }
@@ -60,15 +53,19 @@ const r = spawnSync('git', args, { stdio: 'inherit' });
 process.exit(r.status ?? 1);
 `, { mode: 0o755 });
 
-  const resource = { id: 'r', resource_type: 'github_repo', resource_ref: { url: rootUrl, ref: 'main' } };
+  const resources = [
+    { id: 'r', resource_type: 'github_repo', resource_ref: { url: rootUrl, ref: 'main' } },
+    { id: 'biz', resource_type: 'github_repo', resource_ref: { url: repoUrl, ref: 'main', default_branch_hint: 'main' } },
+    { id: 'sibling', resource_type: 'github_repo', resource_ref: { url: 'http://tfs.test/tfs/C/P/_git/sibling', ref: 'main' } },
+  ];
   mkdirSync(join(dir, '.multica', 'project'), { recursive: true });
   writeFileSync(join(dir, '.multica', 'daemon_task_context.json'), JSON.stringify({ managed_by: 'multica-daemon-task', issue_id: 'i', agent_id: 'agent' }));
-  writeFileSync(join(dir, '.multica', 'project', 'resources.json'), JSON.stringify({ project_id: 'p', resources: [resource] }));
+  writeFileSync(join(dir, '.multica', 'project', 'resources.json'), JSON.stringify({ project_id: 'p', resources }));
   const initial = {
     issues: { 'I-1': { id: 'i', identifier: 'I-1', project_id: 'p', status: 'todo', assignee_id: 'agent', metadata: {
       'tfs.type': 'Bug', 'tfs.id': '12', 'tfs.url': 'http://tfs.test/tfs/C/P/_workitems?id=12',
     } } },
-    agents_list: [{ name: 'Bug Fix Agent', id: 'agent' }], project_resources: [resource],
+    agents_list: [{ name: 'Bug Fix Agent', id: 'agent' }], project_resources: resources,
     runs: { i: [{ id: taskId, issue_id: 'i', agent_id: 'agent', workspace_id: 'ws', status: 'running', work_dir: dir }] },
   };
   const statePath = join(dir, 'state.json'), config = join(dir, 'config.json'), callsPath = join(dir, 'calls.jsonl');
@@ -88,7 +85,7 @@ process.exit(r.status ?? 1);
   };
   const args = ['pr', 'prepare', '--issue', 'I-1', '--repo', 'biz', '--candidate-commit', sha,
     '--title', '修复空数据', '--root-repo', root];
-  const run = (input, extraEnv = {}, source = '-') => spawnSync(process.execPath, [cli, ...args, '--facts', source], {
+  const run = (input, extraEnv = {}, source = '-', extraArgs = []) => spawnSync(process.execPath, [cli, ...args, '--facts', source, ...extraArgs], {
     input, encoding: 'utf8', env: { ...env, ...extraEnv }, timeout: 30_000,
   });
   const result = (r, status) => {
@@ -117,6 +114,10 @@ process.exit(r.status ?? 1);
   result(run(undefined, {}, join(dir, 'missing.json')), 3);
   assert.deepEqual(state(), initial);
 
+  const firstMulti = result(run(JSON.stringify(evidence), {}, '-', ['--required-repos','biz,sibling']), 0);
+  assert.equal(firstMulti.ready_for_pr, false);
+  assert.deepEqual(JSON.parse(state().issues['I-1'].metadata['bug.required_repos']), ['biz','sibling']);
+  writeFileSync(statePath, JSON.stringify(initial));
   const failedWrite = result(run(JSON.stringify(evidence), { MOCK_FAIL_METADATA_KEY: 'pr' }), 3);
   assert.match(failedWrite.reason, /injected metadata set failure/);
   assert.deepEqual(JSON.parse(state().issues['I-1'].metadata['bug.required_repos']), ['biz']);

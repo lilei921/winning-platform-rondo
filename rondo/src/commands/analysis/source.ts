@@ -26,6 +26,11 @@ export function repositoryUrl(raw: unknown): URL {
   }
 }
 
+/** Repository name is the decoded final segment of the actual TFS Git URL. */
+export function repositoryName(raw: unknown): string {
+  return decodeURIComponent(repositoryUrl(raw).pathname.split("/").at(-1)!);
+}
+
 export function parseAnalysisSource(raw: unknown, changeRef?: string): AnalysisSource {
   let value: unknown;
   try { value = typeof raw === "string" ? JSON.parse(raw) : raw; }

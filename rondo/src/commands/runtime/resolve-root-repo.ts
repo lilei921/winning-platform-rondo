@@ -1,5 +1,4 @@
 /** 显式根仓的本地检查入口；不负责检出、平台发现或执行者授权。 */
-import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { Command } from "commander";
 import { UnknownError } from "../../cli/errors.js";
@@ -19,14 +18,9 @@ function main(rawArgs: string[]): void {
     throw new ExitSignal(64);
   }
   const root = validateRootRepo(rawArgs[1], "--root-repo");
-  const repoContext = join(root, "docs", "config", "repo-context.yaml");
-  if (!existsSync(repoContext)) {
-    throw new UnknownError(`根仓缺少 docs/config/repo-context.yaml（仓库语义与路径映射权威数据）: ${repoContext}`);
-  }
   process.stdout.write(JSON.stringify({
     root_repo: root,
     openspec_root: join(root, "openspec"),
-    repo_context: repoContext,
     source: "explicit_arg",
   }, null, 2) + "\n");
 }

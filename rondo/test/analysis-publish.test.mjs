@@ -49,11 +49,6 @@ function fixture(t, requirement = true, native = false, commitChange = true) {
   git(root, "push", "-u", "origin", "dev");
 
   chmodSync(MOCK, 0o755);
-  const config = join(home, "registry.json");
-  writeFileSync(config, JSON.stringify({ runtime: {
-    multica_cli: MOCK, workspace_id: "ws-test",
-    multica_profile: "private", multica_server_url: "https://private.example",
-  } }));
   const metadata = {
     "tfs.type": requirement ? "需求" : "Bug", "tfs.id": "261056",
     "analysis.change_kind": "corrective",
@@ -61,33 +56,34 @@ function fixture(t, requirement = true, native = false, commitChange = true) {
   const statePath = join(home, "state.json");
   writeFileSync(statePath, JSON.stringify({ status: "in_progress", metadata }));
 
-  const tfs = analysisTfsFixture(t, home, { remote }, { requirementOrigin: requirement });
+  const tfs = analysisTfsFixture(t, home, { remote }, { requirementOrigin: true });
   {
     mkdirSync(join(root, "docs", "config"), { recursive: true });
     mkdirSync(join(root, "openspec", "schemas"), { recursive: true });
-    writeFileSync(join(root, "docs", "config", "repo-context.yaml"),
-      "repos:\n  - repo_id: root\n    repo_type: root-workspace\n    repo_url: " + tfs.repoUrl + "\n  - repo_id: frame\n    repo_type: backend\n");
     writeFileSync(join(root, "openspec", "schemas", ".gitkeep"), "");
-    git(root, "add", "docs/config/repo-context.yaml", "openspec/schemas/.gitkeep");
-    git(root, "-c", "user.email=test@example.invalid", "-c", "user.name=Test", "commit", "-m", "mapping");
+    git(root, "add", "openspec/schemas/.gitkeep");
+    git(root, "-c", "user.email=test@example.invalid", "-c", "user.name=Test", "commit", "-m", "schemas");
     git(root, "push", "origin", "dev");
   }
 
   const taskId = "01234567-abcd-ef12-3456-abcdef123456";
   const taskBranch = "agent/workitem-analyst/abcdef123456";
   const resourcePath = join(home, ".multica", "project", "resources.json");
+  const resources = [
+    { resource_type: "github_repo", resource_ref: { url: tfs.repoUrl, ref: "dev" } },
+    { resource_type: "github_repo", label: "业务仓", resource_ref: { url: tfs.repoUrl.replace(/[^/]+$/, "frame"), ref: "dev", default_branch_hint: "dev" } },
+  ];
+  writeFileSync(statePath, JSON.stringify({ status: "in_progress", metadata, project_resources: resources }));
   if (native) {
     mkdirSync(dirname(resourcePath), { recursive: true });
-    writeFileSync(resourcePath, JSON.stringify({ project_id: "project1", resources: [
-      { resource_type: "github_repo", resource_ref: { url: tfs.repoUrl, ref: "dev" } },
-    ] }));
+    writeFileSync(resourcePath, JSON.stringify({ project_id: "project1", resources }));
     writeFileSync(join(home, ".multica", "daemon_task_context.json"), JSON.stringify({
       managed_by: "multica-daemon-task", issue_id: "issue-1", agent_id: "analyst",
     }));
     git(root, "config", "multica.checkout-mode", "isolated");
     // Match Multica isolated Checkout: branch created from raw SHA, without upstream.
     git(root, "checkout", "-b", taskBranch, git(root, "rev-parse", "HEAD"));
-    writeFileSync(statePath, JSON.stringify({ status: "in_progress", metadata, runs: {
+    writeFileSync(statePath, JSON.stringify({ status: "in_progress", metadata, project_resources: resources, runs: {
       "issue-1": [{ id: taskId, issue_id: "issue-1", agent_id: "analyst", workspace_id: "ws-test", status: "running" }],
     } }));
   }
@@ -108,16 +104,15 @@ function fixture(t, requirement = true, native = false, commitChange = true) {
 
   const env = { ...tfs.env, PATH: bin + delimiter + tfs.env.PATH,
     MOCK_STATE: statePath, MOCK_ROOT_REPO: root,
-    MOCK_EXPECT_PROFILE: "private", MOCK_EXPECT_SERVER: "https://private.example",
+    MOCK_EXPECT_PROFILE: "", MOCK_EXPECT_SERVER: "https://private.example",
+    MULTICA_SERVER_URL: "https://private.example", MULTICA_WORKSPACE_ID: "ws-test", MULTICA_CLI_PATH: MOCK,
     ...(requirement ? { RONDO_WORKSPACE_BRANCH: "dev" } : {}),
     ...(native ? { RONDO_WORKSPACE_BRANCH: "", RONDO_WORKSPACE_PATH: "", MULTICA_TASK_ID: taskId,
       MULTICA_WORKSPACE_ID: "ws-test", MULTICA_AGENT_ID: "analyst" } : {}) };
-  const args = ["--issue", "issue-1", "--openspec-root", root,
-    "--workspace-id", "ws-test", "--registry-config", config, "--multica", MOCK];
+  const args = ["--issue", "issue-1", "--openspec-root", root];
   const gate = (ref = CHANGE) => runCli(["analysis", "validate", "--change-ref", ref, ...args], env);
   const completeAt = (rootArg, cwd, ...extra) => runCli(["analysis", "publish",
     "--issue", "issue-1", "--change-ref", CHANGE,
-    "--workspace-id", "ws-test", "--registry-config", config, "--multica", MOCK,
     "--root-repo", rootArg, ...extra], env, cwd);
   const complete = (...extra) => completeAt(root, undefined, ...extra);
   const state = () => JSON.parse(readFileSync(statePath, "utf8"));
@@ -144,6 +139,7 @@ test("Preview → Complete without Stage: final Gate and fixed Git Contract; no 
   const commands = readFileSync(calls, "utf8").trim().split("\n").map(line => JSON.parse(line));
   assert.equal(commands.filter(a => a.includes("issue") && a.includes("get")).length, 5);
   assert.equal(commands.filter(a => a.includes("metadata") && a.includes("list")).length, 0);
+  assert.equal(commands.filter(a => a[0] === "project" && a[1] === "resource").length, 1);
   const source = JSON.parse(f.state().metadata["analysis.source"]);
   assert.deepEqual(result.body.analysis_source, source);
   assert.equal(source.commit, git(f.remote, "rev-parse", "dev"));
@@ -278,7 +274,7 @@ test("Repository Scope accepts repo_id strings, not objects; diagnostics show th
   writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories:\n  - repo_id: frame\n");
   const invalid = f.complete();
   assert.equal(invalid.exit, 2, JSON.stringify(invalid));
-  assert.match(invalid.body.reason, /x-repositories: \[dataintegration\]/);
+  assert.match(invalid.body.reason, /x-repositories: \[winning-dps-df-dataintegration\]/);
   assert.equal(git(f.root, "rev-parse", "HEAD"), local);
   writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories:\n  - frame\n");
   assert.equal(f.complete().exit, 0);
@@ -303,75 +299,89 @@ test("Analysis Gate refuses a Change belonging to another TFS Work Item before a
   assert.deepEqual(f.state(), state);
 });
 
-test("Analysis Gate refuses unregistered Repository Scope before any publication", t => {
+test("Analysis preview checks format; publication rejects unregistered Project Resource before Git writes", t => {
   const f = fixture(t, true, false, false);
   writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [frame, nonexistent-repo]\n");
   const state = f.state();
   const local = git(f.root, "rev-parse", "HEAD");
   const remote = git(f.remote, "rev-parse", "dev");
   const preview = f.gate();
-  assert.equal(preview.exit, 2);
-  assert.match(preview.body.reasons.join(" "), /未登记的 repo_id: nonexistent-repo/);
-  assert.ok(!preview.body.checks.some(c => c.name === "openspec_validate"));
+  assert.equal(preview.exit, 0);
   const publish = f.complete();
   assert.equal(publish.exit, 2);
-  assert.match(publish.body.reason, /未登记的 repo_id: nonexistent-repo/);
+  assert.match(publish.body.reason, /repo_id nonexistent-repo.*缺失/);
   assert.equal(git(f.root, "rev-parse", "HEAD"), local);
   assert.equal(git(f.remote, "rev-parse", "dev"), remote);
   assert.deepEqual(f.state(), state);
 });
 
-test("Analysis Gate rejects the registered engineering root as a business Repository Scope", t => {
+test("Analysis publication rejects the actual engineering root as business Scope", t => {
   const f = fixture(t, true, false, false);
-  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [frame, root]\n");
+  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [frame, R]\n");
   const state = f.state();
   const local = git(f.root, "rev-parse", "HEAD");
   const remote = git(f.remote, "rev-parse", "dev");
   const preview = f.gate();
-  assert.equal(preview.exit, 2, JSON.stringify(preview));
-  assert.match(preview.body.reasons.join(" "), /不能包含工程契约根仓 root/);
+  assert.equal(preview.exit, 0, JSON.stringify(preview));
   const publish = f.complete();
   assert.equal(publish.exit, 2, JSON.stringify(publish));
+  assert.match(publish.body.reason, /不能包含工程契约根仓 R/);
   assert.equal(git(f.root, "rev-parse", "HEAD"), local);
   assert.equal(git(f.remote, "rev-parse", "dev"), remote);
   assert.deepEqual(f.state(), state);
 });
 
-test("Requirement rejects a scope absent from the final Git candidate despite a valid local mapping", t => {
+test("Requirement rejects an unregistered Scope even when obsolete local mapping lists it", t => {
   const f = fixture(t, true, false, false);
   const mapping = join(f.root, "docs", "config", "repo-context.yaml");
-  writeFileSync(mapping, readFileSync(mapping, "utf8") + "  - repo_id: frame-web\n");
+  writeFileSync(mapping, "repos:\n  - repo_id: frame-web\n");
   writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [frame-web]\n");
   const state = f.state();
   const remote = git(f.remote, "rev-parse", "dev");
   assert.equal(f.gate().exit, 0);
   const publish = f.complete();
   assert.equal(publish.exit, 2, JSON.stringify(publish));
-  assert.match(publish.body.reason, /未登记的 repo_id: frame-web/);
+  assert.match(publish.body.reason, /repo_id frame-web.*缺失/);
   assert.equal(git(f.remote, "rev-parse", "dev"), remote);
   assert.deepEqual(f.state(), state);
 });
 
-test("Requirement fixed source recovery checks scope in that commit, not the working tree", t => {
-  const f = fixture(t, true, false, false);
-  writeFileSync(join(f.change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [frame-web]\n");
-  git(f.root, "add", "openspec/changes/" + CHANGE);
-  git(f.root, "commit", "-m", "previous incomplete publication");
-  git(f.root, "push", "origin", "dev");
-  const remote = git(f.remote, "rev-parse", "dev");
+test("New Analysis rejects a selected Resource outside the configured TFS Collection", t => {
+  const f = fixture(t);
   const state = f.state();
-  state.metadata["analysis.source"] = JSON.stringify({
-    repo_url: f.tfs.repoUrl, branch: "dev", commit: remote, change_ref: CHANGE,
-  });
+  state.project_resources[1].resource_ref.url = f.tfs.repoUrl.replace("/tfs/C/", "/tfs/Other/").replace(/[^/]+$/, "frame");
   f.setState(state);
-  const mapping = join(f.root, "docs", "config", "repo-context.yaml");
-  writeFileSync(mapping, readFileSync(mapping, "utf8") + "  - repo_id: frame-web\n");
-  assert.equal(f.gate().exit, 0);
-  const publish = f.complete();
-  assert.equal(publish.exit, 2, JSON.stringify(publish));
-  assert.match(publish.body.reason, /未登记的 repo_id: frame-web/);
+  const local = git(f.root, "rev-parse", "HEAD"), remote = git(f.remote, "rev-parse", "dev");
+  const result = f.complete();
+  assert.equal(result.exit, 3, JSON.stringify(result));
+  assert.match(result.body.reason, /TFS.*Collection/);
+  assert.equal(git(f.root, "rev-parse", "HEAD"), local);
   assert.equal(git(f.remote, "rev-parse", "dev"), remote);
   assert.deepEqual(f.state(), state);
+});
+
+test("Identical fixed Analysis recovers without Resource membership; a changed contract must check again", t => {
+  const f = fixture(t);
+  f.env.MOCK_FAIL_STATUS = "1";
+  assert.equal(f.complete().exit, 3);
+  const original = f.state(), source = original.metadata["analysis.source"];
+  assert.ok(source);
+  const state = {...original, project_resources: []};
+  f.setState(state);
+  delete f.env.MOCK_FAIL_STATUS;
+  const resumed = f.complete();
+  assert.equal(resumed.exit, 0, JSON.stringify(resumed));
+  assert.equal(f.state().metadata["analysis.source"], source);
+  f.setState({...f.state(), status: "in_progress"});
+  writeFileSync(join(f.change, "proposal.md"), PROPOSAL.replace("restore behavior", "revised behavior"));
+  git(f.root, "add", "openspec/changes/" + CHANGE);
+  git(f.root, "commit", "-m", "revised contract");
+  const remote = git(f.remote, "rev-parse", "dev");
+  const rejected = f.complete();
+  assert.equal(rejected.exit, 2, JSON.stringify(rejected));
+  assert.match(rejected.body.reason, /repo_id frame.*缺失/);
+  assert.equal(git(f.remote, "rev-parse", "dev"), remote);
+  assert.equal(f.state().metadata["analysis.source"], source);
 });
 
 test("旧 metadata PASS 不能绕过最终真实 Gate", t => {
@@ -463,8 +473,7 @@ test("Legacy Publish 拒绝相对 RONDO_WORKSPACE_PATH，即使 cwd 是合法根
   const f = fixture(t, false);
   f.env.RONDO_WORKSPACE_PATH = ".";
   const result = runCli(["analysis", "publish", "--issue", "issue-1",
-    "--change-ref", CHANGE, "--workspace-id", "ws-test", "--registry-config", join(f.home, "registry.json"),
-    "--multica", MOCK], f.env, f.root);
+    "--change-ref", CHANGE], f.env, f.root);
   assert.equal(result.exit, 3, JSON.stringify(result));
   assert.match(result.body.reason, /绝对路径.*RONDO_WORKSPACE_PATH/);
   assert.equal(f.state().metadata["analysis.source"], undefined);
@@ -692,7 +701,6 @@ test("invalid Change ID never publishes or writes metadata", t => {
   const before = f.state();
   assert.equal(f.gate("../invalid").exit, 2);
   const result = runCli(["analysis", "publish", "--issue", "issue-1", "--change-ref", "../invalid",
-    "--workspace-id", "ws-test", "--registry-config", join(f.home, "registry.json"), "--multica", MOCK,
     "--root-repo", f.root, "--mode", "requirement"], f.env);
   assert.equal(result.exit, 2);
   assert.deepEqual(f.state(), before);
@@ -843,8 +851,7 @@ test("Intentional 发布与审核重放无需自报 Review Verdict", t => {
 test("显式 --root-repo 缺值或为空时不回退环境变量", t => {
   const f = fixture(t);
   const args = ["analysis", "publish", "--mode", "requirement", "--issue", "issue-1",
-    "--change-ref", CHANGE, "--workspace-id", "ws-test", "--registry-config", join(f.home, "registry.json"),
-    "--multica", MOCK];
+    "--change-ref", CHANGE];
   for (const flags of [["--root-repo"], ["--root-repo", ""], ["--root-repo", "--target-branch", "dev"]]) {
     const r = spawnSync(process.execPath, [CLI, ...args, ...flags], { encoding: "utf8", cwd: f.root,
       env: { ...process.env, ...f.env, RONDO_WORKSPACE_PATH: f.root } });
@@ -852,4 +859,15 @@ test("显式 --root-repo 缺值或为空时不回退环境变量", t => {
     assert.match(r.stderr, /--root-repo/);
     assert.equal(f.state().metadata["analysis.source"], undefined);
   }
+});
+
+test("Analysis publish rejects retired Runtime overrides before any write", t => {
+  const f = fixture(t), before = f.state();
+  const args = ["analysis", "publish", "--issue", "issue-1", "--change-ref", CHANGE, "--root-repo", f.root];
+  for (const flags of [["--registry-config", "old.json"], ["--workspace-id", "wrong"], ["--profile", "other"], ["--multica", "other"]]) {
+    const result = spawnSync(process.execPath, [CLI, ...args, ...flags], {encoding: "utf8", env: {...process.env, ...f.env}});
+    assert.equal(result.status, 64, result.stdout + result.stderr);
+    assert.match(result.stderr, /当前 Multica Runtime/);
+  }
+  assert.deepEqual(f.state(), before);
 });

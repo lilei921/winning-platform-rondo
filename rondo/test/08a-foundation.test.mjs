@@ -15,7 +15,7 @@ import { gitRuntime } from '../dist/clients/git.js';
 
 const url = 'http://tfs.test/tfs/C/P/_git/biz';
 const rootUrl = 'http://tfs.test/tfs/C/P/_git/winning-platform-monorepo';
-const repo = { repo_path: 'biz', repo_url: url, tfs_repo: 'biz', tfs_project: 'P', default_target_branch: 'main' };
+const repo = { repo_path: 'biz', repo_url: url, default_target_branch: 'main' };
 function git(cwd, ...args) {
   const r = spawnSync('git', ['-C', cwd, ...args], { encoding: 'utf8' });
   assert.equal(r.status, 0, r.stderr); return r.stdout.trim();
@@ -33,9 +33,9 @@ function fixture(t, { rootName = 'winning-platform-monorepo', rootOrigin = rootU
   return { dir, root, remote, rootOrigin };
 }
 
-test('Registry 必须匹配 Collection、Project、Repository，拒绝凭据 URL', () => {
+test('Resource URL 必须匹配 Collection 和实际仓库名，拒绝凭据 URL', () => {
   assert.equal(validatePrepareRepo(repo, 'http://tfs.test/tfs/C'), repo);
-  for (const bad of [{ repo_url: undefined }, { repo_url: url.replace('/C/', '/Other/') }, { tfs_project: 'Other' }, { repo_url: url.replace('http://', 'http://secret@') }, { repo_path: 'NUL' }]) {
+  for (const bad of [{ repo_url: undefined }, { repo_url: url.replace('/C/', '/Other/') }, { repo_url: url.replace('/biz', '/other') }, { repo_url: url.replace('http://', 'http://secret@') }, { repo_path: 'NUL' }]) {
     assert.throws(() => validatePrepareRepo({ ...repo, ...bad }, 'http://tfs.test/tfs/C'));
   }
   assert.throws(() => gitRuntime({ RONDO_GIT_EXECUTABLE: 'relative/git' }), /绝对/);

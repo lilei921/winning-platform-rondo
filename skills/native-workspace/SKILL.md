@@ -20,17 +20,17 @@ rondo runtime check-checkout --root-repo "<实际返回的根仓路径>"
 
 ## 只读业务仓
 
-从已登记 Project Resource 核实 URL 和初始 ref，并与根仓已提交的 `docs/config/repo-context.yaml` 仓库身份对应。仅需只读调查且确实需要本地业务仓时，在当前 Task workdir 执行：
+从当前 Project Resource 核实仓库 URL 和初始 ref。优先复用已取得的 Project 上下文，必要时使用原生 Resource 查询。仅需只读调查且确实需要本地业务仓时，在当前 Task workdir 执行：
 
 ```text
 multica repo checkout <business-url> --ref <resource-ref>
 ```
 
-使用原生命令返回的实际业务仓路径。无 ref 时可省略 `--ref`。
+使用原生命令返回的实际业务仓路径，核实 Git Origin 与 Resource 仓库身份一致。无 ref 时可省略 `--ref`。
 
 ## 研发业务仓
 
-根据当前 Issue 的授权范围确定实际修改的业务仓。Requirement 以已批准版本的 `.openspec.yaml` 中 `x-repositories` 和 `docs/config/repo-context.yaml` 为准；Bug 按诊断结论及已固定的 Bug Scope（如有）确定范围。核实 Project Resource 中对应仓库的 URL 和初始 ref。
+根据当前 Issue 的授权范围确定实际修改的业务仓。Requirement 以已批准版本的 `.openspec.yaml` 中 `x-repositories` 为准；Bug 按诊断结论及已固定的 Bug Scope（如有）确定范围。使用完整 Git/TFS 仓库名称标识，核实当前 Project Resource 中对应仓库的 URL 和初始 ref。
 
 通过 `rondo branch get --project <project> --repo <repo> --name feature/<tfs.id>` 查询远端 Candidate。存在则使用 Candidate 分支；明确不存在时使用已核实的 Resource 初始分支。查询失败或初始 ref 不明时先核实，不用 PR Target 猜测研发基线。
 

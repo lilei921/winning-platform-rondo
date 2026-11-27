@@ -7,12 +7,12 @@ import { analysisArtifactPath, readAnalysisSource, readAnalysisArtifact, parseAn
 import { parseRepositoryScope } from "../analysis/repository-scope.js";
 import { readApprovedVerifyDecision } from "../delivery/verify-decision.js";
 
-export interface ApprovedChange {
+interface ApprovedIdentity {
   issue: IssueRecord;
   source: AnalysisSource;
-  scope: string[];
   tfsId: number;
 }
+export interface ApprovedChange extends ApprovedIdentity { scope: string[] }
 
 export function developmentPublication(md: Record<string, string>): { analysis_source: AnalysisSource; commit: string } | undefined {
   if (md["dev.publication"] === undefined) return undefined;
@@ -44,7 +44,7 @@ export function assertEngineerExecution(multica: MulticaClient, issue: IssueReco
   if (!taskId || !agentId || !currentWorkspace || !process.env.MULTICA_TOKEN || !process.env.MULTICA_DAEMON_PORT) {
     throw new UnknownError("缺少当前 Multica Task / Actor / Workspace 上下文");
   }
-  if (workspaceId && currentWorkspace !== workspaceId) throw new FailError("当前 Workspace 与 Registry 不一致");
+  if (workspaceId && currentWorkspace !== workspaceId) throw new FailError("当前 Workspace 与执行环境不一致");
   const runs = multica.run(["issue", "runs", issue.id, "--active", ...multica.ws(), "--output", "json"],
     "核验当前 Engineer Run", { transient: true });
   if (!Array.isArray(runs)) throw new UnknownError("无法回读当前 Engineer 的活跃 Run");
@@ -58,7 +58,7 @@ export function assertEngineerExecution(multica: MulticaClient, issue: IssueReco
   if (agent?.id !== agentId || agent?.name !== "Engineer") throw new FailError("当前执行者不是已登记的 Engineer Agent");
 }
 
-/** A Native caller has already confirmed the root identity and read its mapping at source.commit. */
+/** A Native caller has already confirmed the root identity. */
 interface ApprovedCheckout {
   root: string;
   source: AnalysisSource;
@@ -73,8 +73,7 @@ export async function readApprovedRepositoryScope(source: AnalysisSource, local?
   return parseRepositoryScope(gitOk(local.root, ["show", source.commit + ":" + path], "读取批准版 Repository Scope"));
 }
 
-export async function approvedChange(cfg: BaseRegistryConfig, multica: MulticaClient, issueRef: string, allowInReview = false,
-  local?: ApprovedCheckout): Promise<ApprovedChange> {
+export function approvedIdentity(cfg: BaseRegistryConfig, multica: MulticaClient, issueRef: string, allowInReview = false): ApprovedIdentity {
   const issue = multica.getIssue(issueRef), md = issue.metadata ?? {};
   // A completed Engineer Run is not active during read-only PR admission.
   if (!allowInReview) assertEngineerExecution(multica, issue, cfg.runtime.workspace_id);
@@ -91,13 +90,13 @@ export async function approvedChange(cfg: BaseRegistryConfig, multica: MulticaCl
   if (!multica.listComments(issue.identifier ?? issue.id).some(c => c.id === decision.commentRef)) {
     throw new FailError("批准评论未在当前 Issue 回读成功");
   }
-  const scope = await readApprovedRepositoryScope(source, local);
-  for (const id of scope) {
-    if (!cfg.registry || !Object.prototype.hasOwnProperty.call(cfg.registry, id)) {
-      throw new FailError("批准的 Repository Scope 在 Registry 中不存在: " + id);
-    }
-  }
-  return { issue, source, scope, tfsId };
+  return { issue, source, tfsId };
+}
+
+export async function approvedChange(cfg: BaseRegistryConfig, multica: MulticaClient, issueRef: string, allowInReview = false,
+  local?: ApprovedCheckout): Promise<ApprovedChange> {
+  const approved = approvedIdentity(cfg, multica, issueRef, allowInReview);
+  return { ...approved, scope: await readApprovedRepositoryScope(approved.source, local) };
 }
 
 export async function guardRepository(cfg: BaseRegistryConfig, multica: MulticaClient, issue: string, repo: string,

@@ -7,7 +7,7 @@ description: 为 Bug 和 Requirement 准备、提交及按需恢复 PR 交付。
 
 以下为正常 PR 准备和提交的输入；Abandoned PR 恢复按对应章节处理。
 
-- 当前 Issue、已授权的业务工作树、实际根仓路径及待交付 Candidate。
+- 当前 Issue、已授权的业务工作树、实际根仓路径及待交付 Candidate。`repo_id` / `repo_key` 使用 Project Resource URL 中的完整 Git/TFS 仓库名称。
 - 当前 Candidate 对应的专业 Facts：验证范围与方法、Code Review 结论及适用的 Bug Evidence。
 
 # Candidate

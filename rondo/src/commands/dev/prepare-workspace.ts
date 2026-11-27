@@ -5,28 +5,43 @@ import { FailError, UnknownError } from "../../cli/errors.js";
 import { gitOk } from "../../clients/git.js";
 import { assertTfsRepository } from "../../clients/authenticated-git.js";
 import { assertNativeTaskCheckout, nativeCheckoutExpected } from "../../clients/native-checkout.js";
+import { repositoryName } from "../analysis/source.js";
+import { projectBusinessRepository, type ProjectResource } from "../../clients/native-checkout.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 
-export interface PrepareRepo { repo_path: string; repo_url: string; tfs_repo?: string; tfs_project?: string; default_target_branch: string }
+export interface PrepareRepo { repo_path: string; repo_url: string; default_target_branch?: string }
 const same = (a: string, b: string) => process.platform === "win32" ? resolve(a).toLowerCase() === resolve(b).toLowerCase() : resolve(a) === resolve(b);
 
 export function validatePrepareRepo(repo: PrepareRepo | undefined, serverUrl: string): PrepareRepo {
-  if (!repo?.repo_url || !repo.repo_path || !repo.default_target_branch) throw new FailError("Registry 缺少 repo_path / repo_url / default_target_branch");
+  if (!repo?.repo_url || !repo.repo_path) throw new FailError("Project Resource 缺少仓库 URL 或仓库名称");
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(repo.repo_path) || /[. ]$/.test(repo.repo_path) ||
       /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(repo.repo_path)) throw new FailError("repo_path 必须为安全的直接子目录");
   const url = assertTfsRepository(repo.repo_url, serverUrl);
-  const parts = url.pathname.split("/").map(decodeURIComponent);
-  if (parts.at(-1)!.toLowerCase() === "winning-platform-monorepo" || repo.repo_path.toLowerCase() === "winning-platform-monorepo") throw new FailError("业务仓映射不得指向根仓");
-  if (!repo.tfs_repo || !repo.tfs_project || repo.tfs_repo.toLowerCase() !== parts.at(-1)!.toLowerCase() ||
-      repo.tfs_project.toLowerCase() !== parts.at(-3)!.toLowerCase()) throw new FailError("Registry URL 与 TFS Project / Repository 不一致");
-  const ref = repo.default_target_branch;
-  if (ref.startsWith("-") || ref.startsWith("refs/") || /[\s~^:?*\[\\\x00-\x1f\x7f]/.test(ref) || ref.includes("..") || ref.includes("@{") ||
-      ref.split("/").some(p => !p || p.startsWith(".") || p.endsWith(".") || p.endsWith(".lock"))) throw new FailError("Registry 目标分支名非法");
+  if (repositoryName(url.href) !== repo.repo_path) throw new FailError("业务仓名称与实际仓库 URL 不一致");
   return repo;
 }
 
+/** Only operations consuming a PR Target need its configuration. */
+export function requireTargetBranch(repo: PrepareRepo, candidate: string): string {
+  const ref = repo.default_target_branch;
+  if (!ref) throw new FailError("Project Resource 缺少 default_branch_hint");
+  if (ref === candidate) throw new FailError("Candidate 与 PR Target 相同");
+  if (ref.startsWith("-") || ref.startsWith("refs/") || /[\s~^:?*\[\\\x00-\x1f\x7f]/.test(ref) || ref.includes("..") || ref.includes("@{") ||
+      ref.split("/").some(p => !p || p.startsWith(".") || p.endsWith(".") || p.endsWith(".lock"))) throw new FailError("Project Resource 目标分支名非法");
+  return ref;
+}
+
+/** Resolve only the currently authorized business repository, not a project-wide mapping. */
+export function resourcePrepareRepo(resources: ProjectResource[], key: string, rootUrl: string, serverUrl: string): PrepareRepo {
+  const selected = projectBusinessRepository(resources, key, rootUrl);
+  return validatePrepareRepo({
+    repo_path: repositoryName(selected.url), repo_url: selected.url,
+    default_target_branch: typeof selected.default_branch_hint === "string" ? selected.default_branch_hint : undefined,
+  }, serverUrl);
+}
+
 function validateDirectBusinessPath(parent: string, repo: Pick<PrepareRepo, "repo_path">): string {
-  // 在调用者遗漏 Registry 校验时也不得允许路径逃逸。
+  // 业务仓路径不得逃逸当前 Task。
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(repo.repo_path) || /[.]$/.test(repo.repo_path)) throw new FailError("业务仓路径非法");
   const path = join(parent, repo.repo_path);
   const entry = lstatSync(path, { throwIfNoEntry: false });

@@ -1,7 +1,7 @@
 /**
  * analysis validate — Analysis Gate 确定性检查（02 §5.4）。
  *
- * 用法: rondo analysis validate --issue <issue-id> --change-ref <id> --openspec-root <path> --workspace-id <id> [--registry-config <path>] [--multica <cli>] [--profile <name>]
+ * 用法: rondo analysis validate --issue <issue-id> --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>] [--profile <name>]
  *
  * 输入：当前 Issue 来源事实、Change ID及 OpenSpec Change 目录。
  * 输出：{ result: PASS | FAIL | UNKNOWN, checks: [...], reasons: [...] }
@@ -26,7 +26,7 @@ import { commandExists } from "../../clients/which.js";
 import { resolveOpenspecRootDir } from "../../clients/runtime-paths.js";
 import { classifyTfsType, analysisMetadataEntries } from "./facts.js";
 import { taskReferences } from "./source.js";
-import { parseRepositoryScope, assertRegisteredRepositoryScope, REPOSITORY_CONTEXT_PATH } from "./repository-scope.js";
+import { parseRepositoryScope } from "./repository-scope.js";
 import { changeEvidenceDigest, metadataEvidenceDigest } from "./gate-evidence.js";
 
 type CheckResult = "PASS" | "FAIL" | "UNKNOWN";
@@ -59,8 +59,8 @@ function parseArgs(argv: string[]): Args {
   const issue = get("--issue");
   const openspecRoot = get("--openspec-root");
   const changeRef = get("--change-ref");
-  if (!issue || !openspecRoot || !get("--workspace-id") || !changeRef) {
-    process.stderr.write("用法: rondo analysis validate --issue <issue-id> --change-ref <id> --openspec-root <path> --workspace-id <id> [--registry-config <path>] [--multica <cli>] [--profile <name>]\n");
+  if (!issue || !openspecRoot || !changeRef) {
+    process.stderr.write("用法: rondo analysis validate --issue <issue-id> --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>] [--profile <name>]\n");
     process.exit(64);
   }
   return { issue, openspecRoot, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), out: get("--out"), changeRef };
@@ -69,6 +69,8 @@ function parseArgs(argv: string[]): Args {
 /** Gate is a read-only check; stdout and Complete share this in-memory result. */
 export interface GateOutcome {
   exitCode: number;
+  /** Scope from the exact metadata bytes included in the Gate digest; not serialized. */
+  scope?: string[];
   payload: {
     result: "PASS" | "FAIL" | "UNKNOWN";
     checks: Check[];
@@ -191,9 +193,7 @@ export function checkAcceptanceContract(schema: ChangeSchema | null, changeDir: 
   const proposal = readText(join(changeDir, "proposal.md"));
   if (!proposal) reasons.push("缺少 proposal.md 或不可读");
   try {
-    const scope = parseRepositoryScope(rawMetadata ?? readText(join(changeDir, ".openspec.yaml")) ?? "");
-    if (!reasons.length) assertRegisteredRepositoryScope(scope, () =>
-      readFileSync(join(dirname(openspecRoot), REPOSITORY_CONTEXT_PATH), "utf8"));
+    parseRepositoryScope(rawMetadata ?? readText(join(changeDir, ".openspec.yaml")) ?? "");
   } catch (error) {
     if (error instanceof UnknownError) return { name: "acceptance_contract", result: "UNKNOWN", reasons: [error.message] };
     if (!(error instanceof FailError)) throw error;
@@ -310,9 +310,13 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
     if (!context) return gateOutcome({ result: "UNKNOWN", checks, reasons: ["Gate 缺少可核验的 Change 身份"] }, 3, null);
     try {
       const { change_dir, metadata, ...identity } = context;
-      const change_digest = changeEvidenceDigest(change_dir, metadata, undefined, true);
-      return gateOutcome({ result, tool_version: TOOL_VERSION, ...identity, change_digest, digest_eol: "lf", checks, reasons }, code, null);
+      let scope: string[] | undefined;
+      const change_digest = changeEvidenceDigest(change_dir, metadata, (name, bytes) => {
+        if (name === ".openspec.yaml") scope = parseRepositoryScope(bytes.toString("utf8"));
+      }, true);
+      return { ...gateOutcome({ result, tool_version: TOOL_VERSION, ...identity, change_digest, digest_eol: "lf", checks, reasons }, code, null), scope };
     } catch (exc) {
+      if (exc instanceof FailError) return gateOutcome({ result: "FAIL", checks, reasons: [exc.message] }, 2, null);
       if (exc instanceof UnknownError) {
         return gateOutcome({ result: "UNKNOWN", checks, reasons: [exc.message] }, 3, null);
       }
@@ -324,15 +328,16 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
 
 /** Preview never persists a file. Complete invokes the same check again before publication. */
 function main(rawArgs: string[]): number {
-  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis validate --issue <issue-id> --change-ref <id> --openspec-root <path> --workspace-id <id> [--registry-config <path>] [--multica <cli>] [--profile <name>]\n"); return 0; }
+  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis validate --issue <issue-id> --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>] [--profile <name>]\n"); return 0; }
   const args = parseArgs(rawArgs);
   if (args.out) return emitResult({ result: "FAIL", checks: [], reasons: ["--out 已退役；Analysis Gate 结果不再持久化"] }, 2, null);
   try {
+    const runtime = analysisRuntime(rawArgs, args.cli, args.workspaceId);
     const outcome = evaluateAnalysisGate({
       issue: args.issue,
       openspecRoot: args.openspecRoot,
-      workspaceId: args.workspaceId!,
-      runtime: analysisRuntime(rawArgs, args.cli, args.workspaceId), changeRef: args.changeRef,
+      workspaceId: runtime.workspace_id!,
+      runtime, changeRef: args.changeRef,
     });
     return emitResult(outcome.payload, outcome.exitCode, null);
   } catch (error) {

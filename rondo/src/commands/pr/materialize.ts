@@ -13,7 +13,6 @@ import { verifiedRepo, type VerifiedRepo } from "../../tfs/api/commit-facts.js";
 import { ensurePrWorkItemLink } from "../../tfs/api/pr-link.js";
 import { normalizeTfsPrWebUrl, parseTfsPrWebUrl } from "../../tfs/api/pr.js";
 import { assertTfsRepository } from "../../clients/authenticated-git.js";
-import { readApprovedRepoMapping } from "../dev/native-prepare.js";
 import { readAnalysisSource } from "../analysis/source.js";
 import { assertBugReadyForPr, assertBugAgentAssignment } from "../bug/scope.js";
 import { assertBugExecution, assertBugSource } from "../bug/authorization.js";
@@ -133,7 +132,7 @@ export function registerPrMaterialize(group: Command): void {
         const branch=candidateBranch(md["tfs.id"]);
         const authorize=(expectedCurrentPr: string | undefined, checkActor = true)=>{
           const fresh=multica.getIssue(issue.id), facts=fresh.metadata??{};
-          if(fresh.status!==issue.status||fresh.assignee_id!==issue.assignee_id||
+          if(fresh.status!==issue.status||fresh.assignee_id!==issue.assignee_id||fresh.project_id!==issue.project_id||
             ["tfs.id","tfs.type","tfs.url","analysis.source","analysis.human_approval","analysis.gate.result",
               "dev.publication","bug.required_repos","finalize.pending","delivery.tfs_written"]
               .some(k=>facts[k]!==md[k]) || (bug && facts["verify_agent.required"]!==md["verify_agent.required"]) || facts.pr!==expectedCurrentPr) throw new UnknownError("PR 物化期间授权或准备事实变化");
@@ -158,8 +157,7 @@ export function registerPrMaterialize(group: Command): void {
           }
         } else {
           const source=readAnalysisSource(md);
-          const registry=await readApprovedRepoMapping(source,server);
-          await checkPublishedChange({runtime,registry},multica,opts.issue,source,md.pr);
+          await checkPublishedChange({runtime},multica,opts.issue,source,md.pr);
         }
         const identities=new Map<string,VerifiedRepo>(), seen=new Set<string>();
         for(const entry of prep) {
@@ -167,6 +165,7 @@ export function registerPrMaterialize(group: Command): void {
             !/^[0-9a-f]{40}$/.test(entry.candidate_commit??"")||!filled(entry.title)||!filled(entry.description)||entry.description.includes("补 TFS 工作项 id")))
             throw new FailError("PR Candidate / Description 无效");
           const url=assertTfsRepository(entry.repo_url,server), parts=url.pathname.split("/").map(decodeURIComponent);
+          if(bug && entry.repo_key!==parts.at(-1)) throw new FailError("repo_key 必须为完整 Git/TFS 仓库名称");
           const repo=await verifiedRepo(api,parts.at(-3)!,parts.at(-1)!);
           const key=repo.projectId+"/"+repo.repoId;
           if(seen.has(key)) throw new FailError("不同 repo_key 指向同一真实 TFS Repository");

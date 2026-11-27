@@ -4,6 +4,9 @@ import { dirname, isAbsolute, join, resolve, win32 } from "node:path";
 import { FailError, UnknownError } from "../cli/errors.js";
 import { runCommand } from "./spawn.js";
 import { validateRootRepo } from "./runtime-paths.js";
+import type { MulticaClient } from "./multica.js";
+import { repositoryName } from "../commands/analysis/source.js";
+import { canonicalRepositoryIdentity } from "../commands/delivery/evidence-repository.js";
 
 /** 由 Git 确认工作树根目录，兼容普通 checkout 与 linked worktree，不依赖平台目录布局。 */
 export function validateNativeCheckout(root: string): { rootRepo: string } {
@@ -231,4 +234,54 @@ export function assertNativeTaskCheckout(path: string, workdir: string, reported
   if (manifest && manifest.workspace_id !== workspaceId) throw new FailError("Native Checkout manifest Workspace 不一致");
   if (manifest && manifest.checkout_branch !== branch) throw new FailError("Native Checkout manifest 分支不一致");
   return branch;
+}
+
+/** Native Project Resource is the only configuration input for repository selection. */
+export interface ProjectResource {
+  resource_type?: unknown;
+  label?: unknown;
+  resource_ref?: { url?: unknown; ref?: unknown; default_branch_hint?: unknown };
+}
+export function readProjectResources(workdir: string, projectId: unknown,
+  client?: Pick<MulticaClient, "run" | "ws">): ProjectResource[] {
+  if (typeof projectId !== "string" || !projectId) throw new UnknownError("当前 Issue 缺少 Project 身份");
+  const path = join(workdir, ".multica", "project", "resources.json");
+  if (existsSync(path)) {
+    let project;
+    try { project = JSON.parse(readFileSync(path, "utf8")); }
+    catch { throw new UnknownError("无法读取当前 Task 的 Project Resource"); }
+    if (project?.project_id !== projectId || !Array.isArray(project.resources))
+      throw new UnknownError("Project Resource 与当前 Issue 的 Project 身份不一致");
+    return project.resources;
+  }
+  if (!client) throw new UnknownError("当前 Task 缺少 Project Resource");
+  const resources = client.run(["project", "resource", "list", projectId, ...client.ws(), "--output", "json"],
+    "查询当前 Project Resource", { transient: true });
+  if (!Array.isArray(resources)) throw new UnknownError("当前 Project Resource 列表无法确认");
+  return resources;
+}
+
+type RepoResource = { url: string; ref?: unknown; default_branch_hint?: unknown };
+function selectResource(resources: ProjectResource[], matches: (url: string) => boolean, what: string): RepoResource {
+  const rows = resources.filter(row => {
+    if (row?.resource_type !== "github_repo" || typeof row.resource_ref?.url !== "string") return false;
+    try { return matches(row.resource_ref.url); } catch { return false; }
+  });
+  if (rows.length !== 1) throw new FailError(what + " 对应的 Project Resource 缺失或不唯一");
+  return rows[0].resource_ref as RepoResource;
+}
+export function projectRepository(resources: ProjectResource[], name: string): RepoResource {
+  return selectResource(resources, url => repositoryName(url) === name, "repo_id " + name);
+}
+/** Resolve only a selected business member, excluding the actual engineering root. */
+export function projectBusinessRepository(resources: ProjectResource[], name: string, rootUrl: string): RepoResource {
+  if (name === repositoryName(rootUrl)) throw new FailError("业务仓范围不能包含工程契约根仓 " + name);
+  const selected = projectRepository(resources, name);
+  if (canonicalRepositoryIdentity(selected.url) === canonicalRepositoryIdentity(rootUrl))
+    throw new FailError("业务仓范围不能包含工程契约根仓 " + name);
+  return selected;
+}
+export function projectRootResource(resources: ProjectResource[], rootUrl: string): RepoResource {
+  const identity = canonicalRepositoryIdentity(rootUrl);
+  return selectResource(resources, url => canonicalRepositoryIdentity(url) === identity, "根仓 URL");
 }

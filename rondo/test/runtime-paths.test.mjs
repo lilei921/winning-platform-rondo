@@ -119,11 +119,10 @@ test("继承的 Git 定位环境变量不能将显式根仓导向其他目录", 
 
 test("本地根仓 CLI 无需平台配置即可解析；缺少显式路径不尝试发现", (t) => {
   const { repo } = fixture(t);
-  mkdirSync(join(repo, "docs", "config"), { recursive: true });
-  writeFileSync(join(repo, "docs", "config", "repo-context.yaml"), "repos: []\n");
   const r = spawnSync(process.execPath, [CLI, "runtime", "resolve-root-repo", "--root-repo", repo], { encoding: "utf8" });
   assert.equal(r.status, 0, r.stderr);
   assert.equal(JSON.parse(r.stdout).root_repo, git(repo, "rev-parse", "--show-toplevel"));
+  assert.equal(JSON.parse(r.stdout).repo_context, undefined);
   for (const [cwd, arg] of [[repo, "."], [dirname(repo), "中文 repo"]]) {
     const relative = spawnSync(process.execPath, [CLI, "runtime", "resolve-root-repo", "--root-repo", arg], { cwd, encoding: "utf8" });
     assert.equal(relative.status, 0, relative.stderr);

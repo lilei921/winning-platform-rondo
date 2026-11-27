@@ -4,9 +4,8 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, realpathSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { parsePlatformCheckoutOutput, assertNativeTaskCheckout, assertNativeCheckoutBaseline } from "../dist/clients/native-checkout.js";
-import { readNativeRepoMapping } from "../dist/commands/dev/native-prepare.js";
-import { resolveNativeBusinessPath, validateBusinessCheckout } from "../dist/commands/dev/prepare-workspace.js";
+import { parsePlatformCheckoutOutput, assertNativeTaskCheckout, assertNativeCheckoutBaseline, readProjectResources } from "../dist/clients/native-checkout.js";
+import { resourcePrepareRepo, requireTargetBranch, resolveNativeBusinessPath, validateBusinessCheckout } from "../dist/commands/dev/prepare-workspace.js";
 
 const branch = "agent/engineer/abcdef123456";
 test("Native Checkout parser recognizes Windows paths and Kept; rejects ambiguous output", () => {
@@ -19,7 +18,7 @@ test("Native Checkout parser recognizes Windows paths and Kept; rejects ambiguou
   assert.throws(() => parsePlatformCheckoutOutput(p + "\nD:\\other", "(branch: " + branch + ")"));
 });
 
-for (const linked of [true, false]) test(`Native ${linked ? "linked worktree" : "isolated checkout"}: committed mapping, identity, baseline and WIP preservation`, () => {
+for (const linked of [true, false]) test(`Native ${linked ? "linked worktree" : "isolated checkout"}: Project Resource, identity, baseline and WIP preservation`, () => {
   const temp = realpathSync(mkdtempSync(join(tmpdir(), "rondo-native-")));
   const keys = ["MULTICA_TASK_ID", "MULTICA_WORKSPACE_ID", "MULTICA_AGENT_ID"];
   const saved = Object.fromEntries(keys.map(k => [k, process.env[k]]));
@@ -59,13 +58,28 @@ for (const linked of [true, false]) test(`Native ${linked ? "linked worktree" : 
     mkdirSync(join(task, ".multica"), { recursive: true });
     mkdirSync(cache, { recursive: true });
     writeFileSync(join(task, ".multica", "daemon_task_context.json"), JSON.stringify({ managed_by: "multica-daemon-task", issue_id: "issue-1", agent_id: "engineer" }));
-    const rootSeed = seed("root", rootUrl, { "AGENTS.md": "# root", "docs/config/repo-context.yaml": JSON.stringify({ repos: [{ repo_id: "root", repo_path: ".", repo_url: rootUrl }, { repo_id: "frame", repo_path: "frame", repo_url: repoUrl, tfs_project: "project", default_target_branch: "dev" }] }) });
+    const rootSeed = seed("root", rootUrl, { "AGENTS.md": "# root" });
+    mkdirSync(join(task, ".multica", "project"), { recursive: true });
+    writeFileSync(join(task, ".multica", "project", "resources.json"), JSON.stringify({ project_id: "p", resources: [
+      {resource_type:"github_repo", resource_ref:{url:rootUrl,ref:"dev"}},
+      {resource_type:"github_repo", label:"业务模块", resource_ref:{url:repoUrl,ref:"main",default_branch_hint:"dev"}},
+    ] }));
     const child = seed("frame", repoUrl, { "source.txt": "initial" });
     checkoutSeed(rootSeed, root, branch, rootUrl);
     assert.equal(assertNativeTaskCheckout(root, task), branch);
-    const mapping = readNativeRepoMapping(root, "HEAD", url);
-    assert.equal(mapping.frame.default_target_branch, "dev");
-    const repo = mapping.frame;
+    const resources = readProjectResources(task, "p");
+    const repo = resourcePrepareRepo(resources, "frame", rootUrl, url);
+    assert.equal(repo.default_target_branch, "dev");
+    assert.equal(requireTargetBranch(repo, "feature/42"), "dev");
+    const withoutHint = resourcePrepareRepo(resources.map(row => ({...row, resource_ref: {...row.resource_ref, default_branch_hint: undefined}})), "frame", rootUrl, url);
+    assert.equal(withoutHint.repo_url, repoUrl);
+    assert.throws(() => requireTargetBranch(withoutHint, "feature/42"), /default_branch_hint/);
+    assert.throws(() => requireTargetBranch({...repo, default_target_branch:"feature/42"}, "feature/42"), /Candidate/);
+    assert.throws(() => requireTargetBranch({...repo, default_target_branch:"refs/heads/dev"}, "feature/42"), /非法/);
+    assert.throws(() => resourcePrepareRepo(resources, "root", rootUrl, url), /根仓/);
+    assert.throws(() => resourcePrepareRepo(resources, "missing", rootUrl, url), /缺失/);
+    assert.throws(() => resourcePrepareRepo([...resources, resources[1]], "frame", rootUrl, url), /不唯一/);
+    assert.throws(() => readProjectResources(task, "other"), /Project 身份/);
     assert.throws(() => resolveNativeBusinessPath(root, { repo_path: '../outside' }), /路径/);
     assert.throws(() => resolveNativeBusinessPath(root, { repo_path: 'root' }), /冲突/);
     // A nested checkout with uncommitted work must never be replaced by a new sibling.

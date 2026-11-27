@@ -118,32 +118,21 @@ test("Identity 核对实际 Change ID 与当前 TFS ID 的独立末尾段", () =
   }
 });
 
-test("Repository Scope 仅接受当前根仓已登记仓库，权威映射不可核实时 UNKNOWN", () => {
+test("Repository Scope preview validates only format without a repository mapping", () => {
   const f = fixture();
   try {
     writeFileSync(join(f.dir, "proposal.md"), "Restore behavior");
     const metadata = join(f.dir, ".openspec.yaml");
-    writeFileSync(metadata, "schema: corrective-change\nx-repositories: [frame, frame-web]\n");
     const check = () => checkAcceptanceContract("corrective-change", f.dir, f.root);
-    assert.equal(check().result, "PASS");
-    writeFileSync(f.mapping, "repos:\n  - repo_id: root\n    repo_type: root-workspace\n  - repo_id: frame\n  - repo_id: frame-web\n  - repo_id: unrelated_legacy\n  - repo_id: 123\n  - null\n");
-    assert.equal(check().result, "PASS");
-    for (const scope of ["root", "frame, root"]) {
-      writeFileSync(metadata, `schema: corrective-change\nx-repositories: [${scope}]\n`);
-      const result = check();
-      assert.equal(result.result, "FAIL");
-      assert.match(result.reasons.join(" "), /不能包含工程契约根仓 root/);
-    }
-    writeFileSync(metadata, "schema: corrective-change\nx-repositories: [frame, unknown-repo]\n");
-    assert.equal(check().result, "FAIL");
-    assert.match(check().reasons.join(" "), /未登记的 repo_id: unknown-repo/);
-    writeFileSync(metadata, "schema: corrective-change\nx-repositories: [frame]\n");
-    for (const invalid of ["repos: [", "repos: {}", "repos: [{repo_id: 123}]"]) {
-      writeFileSync(f.mapping, invalid);
-      assert.equal(check().result, "UNKNOWN");
-    }
+    writeFileSync(metadata, "schema: corrective-change\nx-repositories: [winning-dps-df-frame, winning-dps-df-frame-web]\n");
     rmSync(f.mapping);
-    assert.equal(check().result, "UNKNOWN");
+    assert.equal(check().result, "PASS");
+    writeFileSync(metadata, "schema: corrective-change\nx-repositories: [frame, unknown-repo]\n");
+    assert.equal(check().result, "PASS");
+    for (const scope of ["[]", "[frame, frame]", "[../bad]", "{repo_id: frame}"]) {
+      writeFileSync(metadata, `schema: corrective-change\nx-repositories: ${scope}\n`);
+      assert.equal(check().result, "FAIL");
+    }
   } finally {
     f.dispose();
   }
