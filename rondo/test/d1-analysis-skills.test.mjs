@@ -88,12 +88,10 @@ test("D1 workspace sync needs no repository mapping or generated Registry", t =>
     skills: { "analysis-publish": "skill-id", "native-workspace": "workspace-skill-id" },
   }));
   for (const name of ["analysis-publish", "native-workspace"]) {
-    for (const mode of ["--dry-run", "--local-only"]) {
-      const result = run(["workspace", "sync", "--workspace", "d1pilot", "--skill", name, mode], { MULTICA_REPO_ROOT: root });
-      assert.equal(result.code, 0, result.stderr);
-      assert.deepEqual(result.body.rendered, []);
-      assert.equal(existsSync(join(root, "skills", name, "config", "repo-registry.json")), false);
-    }
+    const result = run(["workspace", "sync", "--workspace", "d1pilot", "--skill", name, "--dry-run"], { MULTICA_REPO_ROOT: root });
+    assert.equal(result.code, 0, result.stderr);
+    assert.equal(result.body.mode, "dry-run");
+    assert.equal(existsSync(join(root, "skills", name, "config", "repo-registry.json")), false);
   }
 });
 

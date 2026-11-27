@@ -597,8 +597,7 @@ function main(rawArgs: string[]): number {
       const envArgs = [...MC, "agent", "env"];
       const readEnv = () => {
         const out = runJson([...envArgs, "get", syncAgentId, ...WS, "--output", "json"], "读取 TFS Sync Agent 环境", undefined, { transient: true }) as { custom_env?: Record<string, string> };
-        const env = out?.custom_env;
-        if (!env) throw new UnknownError("TFS Sync Agent custom_env 缺失");
+        const env = out.custom_env ?? {};
         if (typeof env !== "object" || Array.isArray(env)) throw new UnknownError("TFS Sync Agent custom_env 不可识别");
         return env;
       };
@@ -608,9 +607,7 @@ function main(rawArgs: string[]): number {
       if (current.RONDO_PROJECT_TITLE === title) unchanged.push(label);
       else {
         if (!dryRun) {
-          // Multica 的 **** 保留标记避免将其他（可能已脱敏的）环境变量覆盖。
-          const desired = Object.fromEntries(Object.keys(current).map(key => [key, "****"]));
-          desired.RONDO_PROJECT_TITLE = title;
+          const desired = { ...current, RONDO_PROJECT_TITLE: title };
           runJsonStdin([...envArgs, "set", syncAgentId, ...WS, "--custom-env-stdin", "--output", "json"], "设置 TFS Sync Agent Project Title", JSON.stringify(desired));
           if (readEnv().RONDO_PROJECT_TITLE !== title) throw new UnknownError("RONDO_PROJECT_TITLE 回读不一致");
         }

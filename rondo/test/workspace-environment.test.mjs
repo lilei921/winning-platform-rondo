@@ -114,10 +114,9 @@ else if(key==='agent env') {
   const env=fs.existsSync(path)?JSON.parse(fs.readFileSync(path)): {RONDO_WORKSPACE_BRANCH:'dev',OTHER:'fixture-private-value'};
   if(args[2]==='set') {
     const submitted=JSON.parse(fs.readFileSync(0,'utf8'));
-    if(submitted.OTHER!=='****') throw new Error('missing preserve marker');
-    for(const k of Object.keys(env)) if(!(k in submitted)) delete env[k];
-    for(const [k,v] of Object.entries(submitted)) if(v!=='****') env[k]=v;
-    fs.writeFileSync(path,JSON.stringify(env));
+    for(const k of Object.keys(env)) if(k!=='RONDO_PROJECT_TITLE' && submitted[k]!==env[k]) throw new Error('existing environment changed');
+    fs.writeFileSync(path,JSON.stringify(submitted));
+    out={agent_id:id,custom_env:submitted};
   }
   out={agent_id:id,custom_env:env};
 }
@@ -477,6 +476,14 @@ test("TFS Sync Agent 同步分组 Project Title，保留其他环境变量并幂
   const env = JSON.parse(readFileSync(f.trace + ".sync-agent", "utf8"));
   assert.equal(env.RONDO_PROJECT_TITLE, "BI Project");
   assert.equal(env.OTHER, "fixture-private-value");
+  assert.equal(env.RONDO_WORKSPACE_BRANCH, "dev");
   assert.equal(f.run(...args).code, 0);
   assert.equal(f.calls().filter(a => a.includes("env") && a.includes("set")).length, 1);
+  writeFileSync(f.trace + ".sync-agent", JSON.stringify({ ...env, RONDO_PROJECT_TITLE: "Old Project", TFS_URL: "https://tfs.example", TFS_PAT: "fixture-pat" }));
+  assert.equal(f.run(...args).code, 0);
+  assert.deepEqual(JSON.parse(readFileSync(f.trace + ".sync-agent", "utf8")), { ...env, TFS_URL: "https://tfs.example", TFS_PAT: "fixture-pat" });
+  assert.equal(f.calls().filter(a => a.includes("env") && a.includes("set")).length, 2);
+  writeFileSync(f.trace + ".sync-agent", JSON.stringify({}));
+  assert.equal(f.run(...args).code, 0);
+  assert.deepEqual(JSON.parse(readFileSync(f.trace + ".sync-agent", "utf8")), { RONDO_PROJECT_TITLE: "BI Project" });
 });
