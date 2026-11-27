@@ -88,7 +88,7 @@ function fixture(t, { previousTasks, approvedTasks = "- [ ] 1.1 Verify\n", desig
 
 test("Engineer 从批准 SHA 读取缺失工件，在分叉的常驻根仓独立发布并登记研发 SHA", t => {
   const { root, bare, work, approved, proposal, source, metadata, run, publish, tfs, state } = fixture(t);
-  const fetched = run(0, "analysis", "read", "--file", "tasks.md");
+  const fetched = run(0, "openspec", "read", "--file", "tasks.md");
   assert.equal(fetched.source.commit, approved);
   mkdirSync(join(root, work), { recursive: true });
   writeFileSync(join(root, work, "tasks.md"), fetched.content.replace("[ ]", "[x]"));
@@ -144,7 +144,7 @@ test("本机仍有旧 Tasks 时，依据批准编号与正文勾选并保留远�
   git(analyst, "push");
   const advanced = git(analyst, "rev-parse", "HEAD");
   assert.equal(readFileSync(join(root, work, "tasks.md"), "utf8"), previousTasks);
-  const task = run(0, "analysis", "read", "--file", "tasks.md");
+  const task = run(0, "openspec", "read", "--file", "tasks.md");
   assert.equal(task.source.commit, approved);
   assert.equal(task.content, approvedTasks);
   writeFileSync(join(root, work, "tasks.md"), task.content.replace("[ ] 2.1 ", "[x] 2.1 "));

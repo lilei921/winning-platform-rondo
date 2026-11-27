@@ -13,19 +13,19 @@ import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js"
 import { assertNativeTaskCheckout, nativeCheckoutExpected, readProjectResources, projectRootResource, type ProjectResource } from "../../clients/native-checkout.js";
 import { gitOk } from "../../clients/git.js";
 import { publishChange, requirementRoot, rootRepositoryUrl, resolveProjectRootBranch } from "../runtime/root-git.js";
-import { assertAnalysisWritable } from "./guard.js";
-import { sourceSchemaViolation, changeKindSchemaViolation, assertStableChangeRef, CHANGE_KINDS } from "./change-schema.js";
-import { changeEvidenceDigest, metadataEvidenceDigest } from "./gate-evidence.js";
+import { assertAnalysisWritable } from "../analysis/guard.js";
+import { sourceSchemaViolation, changeKindSchemaViolation, assertStableChangeRef, CHANGE_KINDS } from "../analysis/change-schema.js";
+import { changeEvidenceDigest, metadataEvidenceDigest } from "../analysis/gate-evidence.js";
 import { evaluateAnalysisGate } from "./validate.js";
-import { parseAnalysisSource, readAnalysisSource, repositoryUrl, sameAnalysisSource, type AnalysisSource } from "./source.js";
+import { parseAnalysisSource, readAnalysisSource, repositoryUrl, sameAnalysisSource, type AnalysisSource } from "../analysis/source.js";
 import {
   PreconditionError,
   classifyTfsType,
   analysisMetadataEntries,
-} from "./facts.js";
+} from "../analysis/facts.js";
 
-import { committedContract, readPublishedContract, assertCommittedContractFiles } from "./published-source.js";
-import { assertProjectRepositoryScope } from "./repository-scope.js";
+import { committedContract, readPublishedContract, assertCommittedContractFiles } from "../analysis/published-source.js";
+import { assertProjectRepositoryScope } from "../analysis/repository-scope.js";
 
 const TARGET_STATUS = "analysis_review";
 const GATE_RESULT = "analysis.gate.result";
@@ -375,11 +375,11 @@ async function main(rawArgs: string[]): Promise<number> {
   }
 }
 
-/** commander 注册：group=analysis；参数解析沿用原脚本实现以保证契约逐字节等价。 */
-export function registerAnalysisPublish(group: Command): void {
+/** commander 注册：group=openspec；参数解析沿用原脚本实现以保证契约逐字节等价。 */
+export function registerOpenSpecSubmitReview(group: Command): void {
   group
-    .command("publish")
-    .description("发布 OpenSpec 审核版本，登记来源事实并进入审核状态")
+    .command("submit-review")
+    .description("提交 OpenSpec 审核版本，登记来源事实并进入审核状态")
     .usage("--issue <key> --change-ref <id> [--root-repo <path>] [--target-branch <branch>]")
     .allowUnknownOption(true)
     .allowExcessArguments(true)

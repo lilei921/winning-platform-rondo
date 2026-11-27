@@ -110,8 +110,8 @@ function fixture(t, requirement = true, native = false, commitChange = true) {
     ...(native ? { RONDO_WORKSPACE_BRANCH: "", RONDO_WORKSPACE_PATH: "", MULTICA_TASK_ID: taskId,
       MULTICA_WORKSPACE_ID: "ws-test", MULTICA_AGENT_ID: "analyst" } : {}) };
   const args = ["--issue", "issue-1", "--openspec-root", root];
-  const gate = (ref = CHANGE) => runCli(["analysis", "validate", "--change-ref", ref, ...args], env);
-  const completeAt = (rootArg, cwd, ...extra) => runCli(["analysis", "publish",
+  const gate = (ref = CHANGE) => runCli(["openspec", "validate", "--change-ref", ref, ...args], env);
+  const completeAt = (rootArg, cwd, ...extra) => runCli(["openspec", "submit-review",
     "--issue", "issue-1", "--change-ref", CHANGE,
     "--root-repo", rootArg, ...extra], env, cwd);
   const complete = (...extra) => completeAt(root, undefined, ...extra);
@@ -472,7 +472,7 @@ test("Status 成功但响应丢失，重放校验固定来源且不自动新增 
 test("Legacy Publish 拒绝相对 RONDO_WORKSPACE_PATH，即使 cwd 是合法根仓", t => {
   const f = fixture(t, false);
   f.env.RONDO_WORKSPACE_PATH = ".";
-  const result = runCli(["analysis", "publish", "--issue", "issue-1",
+  const result = runCli(["openspec", "submit-review", "--issue", "issue-1",
     "--change-ref", CHANGE], f.env, f.root);
   assert.equal(result.exit, 3, JSON.stringify(result));
   assert.match(result.body.reason, /绝对路径.*RONDO_WORKSPACE_PATH/);
@@ -700,7 +700,7 @@ test("invalid Change ID never publishes or writes metadata", t => {
   const f = fixture(t);
   const before = f.state();
   assert.equal(f.gate("../invalid").exit, 2);
-  const result = runCli(["analysis", "publish", "--issue", "issue-1", "--change-ref", "../invalid",
+  const result = runCli(["openspec", "submit-review", "--issue", "issue-1", "--change-ref", "../invalid",
     "--root-repo", f.root, "--mode", "requirement"], f.env);
   assert.equal(result.exit, 2);
   assert.deepEqual(f.state(), before);
@@ -850,7 +850,7 @@ test("Intentional 发布与审核重放无需自报 Review Verdict", t => {
 
 test("显式 --root-repo 缺值或为空时不回退环境变量", t => {
   const f = fixture(t);
-  const args = ["analysis", "publish", "--mode", "requirement", "--issue", "issue-1",
+  const args = ["openspec", "submit-review", "--mode", "requirement", "--issue", "issue-1",
     "--change-ref", CHANGE];
   for (const flags of [["--root-repo"], ["--root-repo", ""], ["--root-repo", "--target-branch", "dev"]]) {
     const r = spawnSync(process.execPath, [CLI, ...args, ...flags], { encoding: "utf8", cwd: f.root,
@@ -863,7 +863,7 @@ test("显式 --root-repo 缺值或为空时不回退环境变量", t => {
 
 test("Analysis publish rejects retired Runtime overrides before any write", t => {
   const f = fixture(t), before = f.state();
-  const args = ["analysis", "publish", "--issue", "issue-1", "--change-ref", CHANGE, "--root-repo", f.root];
+  const args = ["openspec", "submit-review", "--issue", "issue-1", "--change-ref", CHANGE, "--root-repo", f.root];
   for (const flags of [["--registry-config", "old.json"], ["--workspace-id", "wrong"], ["--profile", "other"], ["--multica", "other"]]) {
     const result = spawnSync(process.execPath, [CLI, ...args, ...flags], {encoding: "utf8", env: {...process.env, ...f.env}});
     assert.equal(result.status, 64, result.stdout + result.stderr);

@@ -804,7 +804,7 @@ analysis:
     result: PASS  # complete 最终真实 Gate 通过后登记
 ```
 
-实际工程增量的 `analysis.change_kind` 由 `rondo analysis publish` 从通过最终 Gate 的当前 Change Schema 确定性推导并登记、回读，供跨 Run 交接及完成任务统计。它是持久化分类结果，不决定 Skill 顺序或自动化授权。统计完成工作须结合 Issue 的有效完成状态，不以分类字段存在作为完成证据。
+实际工程增量的 `analysis.change_kind` 由 `rondo openspec submit-review` 从通过最终 Gate 的当前 Change Schema 确定性推导并登记、回读，供跨 Run 交接及完成任务统计。它是持久化分类结果，不决定 Skill 顺序或自动化授权。统计完成工作须结合 Issue 的有效完成状态，不以分类字段存在作为完成证据。
 
 专业审查结论与 Independent Verify Recommendation、理由及必要验证重点进入当前 Issue 审核 Comment，不要求结构化 Review Verdict 或 Focus 引用数组。Human Review 后形成的 `analysis.human_approval.verify_agent_required`、Independent Verification Result、Assignment / Owner / Status / Runtime Projection 继续属于 Multica Delivery Truth。
 
@@ -917,7 +917,7 @@ OpenSpec 根仓产物 → Git 跟踪与 Commit，不创建独立 PR，不进入 
 
 ## 5.4 Analysis Gate（分析门禁）
 
-存在实际工程增量时，Workitem Analyst 使用 `analysis-publish`，由 `rondo analysis publish` 执行最终真实 Gate、发布固定来源及写入审核状态；按需使用只读 `validate` 诊断。Gate 本身只返回检查结果，详细执行契约见 [03 §12.1 Analysis Publish](03-workitem-analysis-design.md#analysis-publish)。
+存在实际工程增量时，Workitem Analyst 使用 `analysis-publish`，由 `rondo openspec submit-review` 执行最终真实 Gate、发布固定来源及写入审核状态；按需使用只读 `validate` 诊断。Gate 本身只返回检查结果，详细执行契约见 [03 §12.1 Analysis Publish](03-workitem-analysis-design.md#analysis-publish)。
 
 Analysis Gate 的公共检查和不同 Change Contract 的细项统一引用 [03 Analysis 方案 §11.2](03-workitem-analysis-design.md#analysis-gate)。整体专业准备与确定性检查至少应满足以下条件（并非 CLI 逐项自动检查）：
 
@@ -1040,7 +1040,7 @@ Final Independent Verification Decision
 analysis.human_approval.verify_agent_required = true | false
 ```
 
-仅改变“是否需要 Independent Verify Agent”且不改变 Acceptance Contract、Verification Contract、Scope 或 required Verification Tasks 时，不要求返回 Analysis；Delivery Lead 理解 Human 决定，使用 `rondo analysis approve` 引用真实批准评论、获批 Commit 和明确的独立验收决定，由 CLI 核对 Gate、登记 `analysis.human_approval` 并回读确认。对同一获批 Change 的新决定，在允许的研发状态下更新批准事实，不重新派发已有效委派的工作。缺失、冲突或无法确认时不从 Analyst Recommendation 自动推断最终决定。Human 可明确批准具体已列任务在本轮不执行，由 Delivery Lead 使用 `rondo analysis approve --waive-tasks <refs>` 将完整豁免集合登记在 `analysis.human_approval.waived_tasks`（可选编号数组，缺省为空；复用批准评论及获批 Commit）。CLI 核验编号属于固定批准版 Tasks；同一评论的决定不可改写。Task Waiver 不等同于 Independent Verification 决定，也不取消必要 Candidate Validation 或 Code Review。若 Human 意见实质改变验收行为、必须满足的 Verification Contract 或批准 Scope，须返回 Workitem Analyst 定向更新 Engineering Truth 并重新 Human Review。
+仅改变“是否需要 Independent Verify Agent”且不改变 Acceptance Contract、Verification Contract、Scope 或 required Verification Tasks 时，不要求返回 Analysis；Delivery Lead 理解 Human 决定，使用 `rondo workitem approve` 引用真实批准评论、获批 Commit 和明确的独立验收决定，由 CLI 核对 Gate、登记 `analysis.human_approval` 并回读确认。对同一获批 Change 的新决定，在允许的研发状态下更新批准事实，不重新派发已有效委派的工作。缺失、冲突或无法确认时不从 Analyst Recommendation 自动推断最终决定。Human 可明确批准具体已列任务在本轮不执行，由 Delivery Lead 使用 `rondo workitem approve --waive-tasks <refs>` 将完整豁免集合登记在 `analysis.human_approval.waived_tasks`（可选编号数组，缺省为空；复用批准评论及获批 Commit）。CLI 核验编号属于固定批准版 Tasks；同一评论的决定不可改写。Task Waiver 不等同于 Independent Verification 决定，也不取消必要 Candidate Validation 或 Code Review。若 Human 意见实质改变验收行为、必须满足的 Verification Contract 或批准 Scope，须返回 Workitem Analyst 定向更新 Engineering Truth 并重新 Human Review。
 
 已获准交付的 Approved OpenSpec Change 在进入 Development 前提交到根仓 Git，记录已批准的开发基线。Git Commit 不禁止批准边界内的设计细化和任务更新；需要改变已批准行为、范围、关键技术约束或验收要求时，仍返回既有 Analysis / Human Review。该 Commit 不创建独立 PR，也不进入业务 required PR 集合。
 
@@ -1227,7 +1227,7 @@ Workitem Analyst 是首次专业判断者：根据当前 Acceptance / Verificati
 
 仅对独立性要求的 override 不修改 OpenSpec Engineering Truth，也不要求 Analysis Rework。明确的 Task Waiver 按 Human Approval 登记具体任务，不改变必须满足的 Verification Contract、Acceptance Contract 或 Scope；实质契约变更须返回 Workitem Analyst 定向修订并重新审核。
 
-Human 最终决定批准后，执行事实继续使用现有字段（由 `rondo analysis approve` 依据 Human 决定统一登记并回读；与批准评论及获批版本绑定）：
+Human 最终决定批准后，执行事实继续使用现有字段（由 `rondo workitem approve` 依据 Human 决定统一登记并回读；与批准评论及获批版本绑定）：
 
 ```text
 analysis.human_approval.verify_agent_required = true | false

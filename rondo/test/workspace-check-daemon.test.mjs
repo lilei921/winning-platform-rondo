@@ -37,7 +37,7 @@ console.log(process.env.MC_RUNTIMES);
     const env = { ...process.env, MC_TRACE: trace, MC_RUNTIMES: JSON.stringify(runtimes), MULTICA_DAEMON_ID: daemonId };
     for (const key of Object.keys(env)) if (key.toLowerCase() === "path") delete env[key];
     env.PATH = dir + delimiter + process.env.PATH;
-    const result = spawnSync(process.execPath, [CLI, "workspace", "check-daemon", "--workspace-id", "workspace-1", ...args], { encoding: "utf8", env });
+    const result = spawnSync(process.execPath, [CLI, "runtime", "check-daemon", "--workspace-id", "workspace-1", ...args], { encoding: "utf8", env });
     assert.equal(result.error, undefined, result.error?.message);
     return { ...result, body: result.stdout.trim() ? JSON.parse(result.stdout) : null };
   };
@@ -50,16 +50,15 @@ test("已注册 daemon 通过，只查询 Runtime，不依赖项目挂载、Squa
   const r = f.run();
   assert.equal(r.status, 0, r.stderr);
   assert.equal(r.body.result, "PASS");
-  assert.deepEqual(r.body.checks.map(c => c.name), ["daemon_env", "daemon_registered", "skill_flow"]);
+  assert.deepEqual(r.body.checks.map(c => c.name), ["daemon_env", "daemon_registered", "rondo_version"]);
   assert.deepEqual(f.calls(), [["runtime", "list", "--workspace-id", "workspace-1", "--output", "json"]]);
 });
 
-test("兼容 project-id 入参不触发 Project、Resource、Agent 或 Issue 查询", t => {
+test("不接受与 Runtime 注册核验无关的 Project 参数", t => {
   const f = fixture(t);
-  const r = f.run(["--project-id", "github-only-squad-project"]);
-  assert.equal(r.status, 0, r.stderr);
-  assert.equal(f.calls().length, 1);
-  assert.deepEqual(f.calls()[0].slice(0, 2), ["runtime", "list"]);
+  const r = f.run(["--project-id", "unused"]);
+  assert.equal(r.status, 64, r.stderr);
+  assert.deepEqual(f.calls(), []);
 });
 
 for (const daemonId of ["", "unregistered-daemon"]) {

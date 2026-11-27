@@ -62,7 +62,7 @@ Bug 与 Requirement 的本质区别是修改目标、工程授权及专业验收
 | rondo dev check-change | 按需独立 Completion Check，无 Registry |
 | rondo pr materialize | 统一 PR 创建或复用，内部执行适用 Gate |
 | rondo pr resume | 统一 PR Facts 恢复，无 Registry |
-| rondo analysis read | 从当前 Issue 读取获批工件，无 Registry |
+| rondo openspec read | 从当前 Issue 读取获批工件，无 Registry |
 | rondo change update-progress | 已无 Registry 依赖，保持不变 |
 
 以 tfs.type 为唯一专业路径选择依据（Bug / 需求）；Requirement 使用当前 Issue 的 analysis.source.change_ref 及固定发布来源。分支和已登记交付事实用于校验而非推断业务类型。无需让 Agent 为公共 Git / PR 命令重复传 --mode、--change-ref、--config 或自行选择授权机制。未知类型、冲突事实不得进入默认旧路径。
@@ -172,10 +172,10 @@ Bug 在同一 pr 记录中绑定 Candidate、Branch 与专业证据，不跨对�
 
 ### 4.6 Requirement Publish / Completion
 
-Engineer 使用 analysis read 读取固定批准版本，依据实际研发与验证结果直接更新 `tasks.md` 的完成状态，提交当前 Change 的研发工件；不重复手工 Push 根仓，不创建永久验证报告。
+Engineer 使用 openspec read 读取固定批准版本，依据实际研发与验证结果直接更新 `tasks.md` 的完成状态，提交当前 Change 的研发工件；不重复手工 Push 根仓，不创建永久验证报告。
 
 ```bash
-rondo analysis read --issue <KEY> --file proposal.md
+rondo openspec read --issue <KEY> --file proposal.md
 rondo dev publish --issue <KEY> --root-repo "<root>"
 ```
 
@@ -234,9 +234,9 @@ Requirement approvedChange / guardRepository 继续核对全部获批 repo_id �
 
 Bug Resume 使用 pr / original_prs 的 PR URL、ID、分支和外部 abandoned 状态，pr 准备记录仍存在时核实其仓库身份，不将已清空的事实设为必然前提。复用已有 [PR Status Sync](rondo/src/commands/pr/reconcile-status.ts) / [Closeout PR](rondo/src/commands/delivery/closeout-pr.ts) 的身份解析及核验能力，不复用 completed 状态要求。
 
-analysis read 直接使用 Runtime + analysis.source；change update-progress 已无 Registry 依赖。
+openspec read 直接使用 Runtime + analysis.source；change update-progress 已无 Registry 依赖。
 
-[workspace/sync.ts](rondo/src/commands/workspace/sync.ts) 的 REPO_REGISTRY_SKILLS 移除 bug-delivery、change-development、pull-request，防止自动生成新 Registry。保留 workspace-config/repo-registry.base.json 及其他实际 Registry 消费者（如 analysis-completion、spec-preparation、change-handoff）；本次不改造整个 Workspace 配置体系。
+[workspace/sync-skills.ts](rondo/src/commands/workspace/sync-skills.ts) 的 REPO_REGISTRY_SKILLS 移除 bug-delivery、change-development、pull-request，防止自动生成新 Registry。保留 workspace-config/repo-registry.base.json 及其他实际 Registry 消费者（如 analysis-completion、spec-preparation、change-handoff）；本次不改造整个 Workspace 配置体系。
 
 ## 6. Skill 目标结构
 
@@ -265,7 +265,7 @@ description: 为已完成实现和验证的代码变更准备并创建 PR，适�
 2. 复用当前 Runtime、根仓指定版本映射读取与授权检查，取消目标 CLI 对 Registry 文件的依赖。公共 Run 身份检查仅提取真正相同部分，不改变 Bug 直接指派与 Requirement 获批契约。
 3. 将 bug git 收敛为 dev git，将 bug / dev pr-prepare 收敛为 pr prepare，复用 Candidate、Validation、Review、Facts 与写入回读逻辑；保留必要的专业分支。更新 Completion 对新机器验证来源的检查，保证原有强度。
 4. pr materialize 统一 Issue 驱动入口，消除旧 mode / config / root-repo 参数及旧清理路径；补齐状态 / 授权与真实仓库身份检查、已有 PR 回读和创建 / 复用后的 Work Item 关联确认。
-5. dev publish、dev check-change、analysis read、pr resume 无配置化；保留工程发布、Completion 与恢复语义。取消 Bug 的 analysis.change_kind=corrective：删除被替换的 bug/pr-prepare 写入和回读、bug/authorization.ts 中依赖、bug/finalize-facts.ts 强制校验及 Digest 成分；同步相关回归测试，不改变其他场景分类。
+5. dev publish、dev check-change、openspec read、pr resume 无配置化；保留工程发布、Completion 与恢复语义。取消 Bug 的 analysis.change_kind=corrective：删除被替换的 bug/pr-prepare 写入和回读、bug/authorization.ts 中依赖、bug/finalize-facts.ts 强制校验及 Digest 成分；同步相关回归测试，不改变其他场景分类。
 6. 删除被替换命令注册、旧输入及描述引用路径；更新有效调用点、命令帮助、next 提示及回归测试。不要为旧路径建设兼容层；若共享代码还有其他当前功能消费者，仅调整本次涉及的调用，不扩大清理范围。
 
 ### 阶段二：Skill 合并与资产退役

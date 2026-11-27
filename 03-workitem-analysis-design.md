@@ -183,7 +183,7 @@ Intentional
 
 ### Multica：Delivery Truth（交付事实）
 
-Analysis Handoff Facts **不是新对象**，只是实际工程增量经 `analysis publish` 登记的最小 Issue Metadata。以下是已提交审核的逻辑字段视图；无需工程增量仅通过普通 Comment 回流。
+Analysis Handoff Facts **不是新对象**，只是实际工程增量经 `openspec submit-review` 登记的最小 Issue Metadata。以下是已提交审核的逻辑字段视图；无需工程增量仅通过普通 Comment 回流。
 
 ```yaml
 analysis:
@@ -196,7 +196,7 @@ analysis:
     result: PASS
 ```
 
-`analysis.change_kind` 由 `rondo analysis publish` 从当前 Change Schema 确定性推导，在最终 Gate 通过并核验固定 Git 来源后登记并回读，供交付追溯和统计；不由 Agent 重复填写，也不作为独立 Route、Human Approval 或自动处理授权。
+`analysis.change_kind` 由 `rondo openspec submit-review` 从当前 Change Schema 确定性推导，在最终 Gate 通过并核验固定 Git 来源后登记并回读，供交付追溯和统计；不由 Agent 重复填写，也不作为独立 Route、Human Approval 或自动处理授权。
 
 专业审查结论、Independent Verification 建议及必要验证重点通过 Issue 审核 Comment 表达；工程验证契约仍由 OpenSpec 持有，不建立第二份结构化技术合同。
 
@@ -405,7 +405,7 @@ Change Kind 首次准备时映射到 `corrective-change` / `intentional-change` 
 
 ## 5.5 分类结果与执行约束
 
-Workitem Analyst 以 Issue、来源事实、既定行为依据和 Evidence 支撑语义判断，并选择适用 Change Schema；`rondo analysis publish` 从 Schema 推导并登记服务端 `analysis.change_kind`，供统计和交接。不新增 `analysis-routing.yaml`、`resolve-analysis-route.py` 或独立 `analysis.route`。以当前 Change Schema 为权威。结果不覆盖 `tfs.type`、审批、Gate 或 Task 管理规则。
+Workitem Analyst 以 Issue、来源事实、既定行为依据和 Evidence 支撑语义判断，并选择适用 Change Schema；`rondo openspec submit-review` 从 Schema 推导并登记服务端 `analysis.change_kind`，供统计和交接。不新增 `analysis-routing.yaml`、`resolve-analysis-route.py` 或独立 `analysis.route`。以当前 Change Schema 为权威。结果不覆盖 `tfs.type`、审批、Gate 或 Task 管理规则。
 
 ## 5.6 混合变更与澄清
 
@@ -995,7 +995,7 @@ Verification Contract 由 OpenSpec Engineering Truth 提供：Intentional 主要
 
 在当前 Issue 审核 Comment 中说明是否建议 Independent Verification（true / false）、实际理由及必要验证重点；需要定位工程验证要求时按需引用当前 OpenSpec 工件或任务。无需机器字段或固定引用数组。
 
-Workitem Analyst 是 `verify_agent` 的首次专业判断者，只输出 Recommendation、Reason 与 Focus，不预先写最终 `analysis.human_approval.verify_agent_required`。Human Analysis Review 拥有最终决定权，可以接受或 override Recommendation；Delivery Lead 使用 `rondo analysis approve` 登记 Human 最终决定至 `analysis.human_approval.verify_agent_required`。因此 `analysis.human_approval.verify_agent_required` 不要求与原 Recommendation 相同；`verification.result` 仅在 `analysis.human_approval.verify_agent_required=true` 时表示 Independent Verification（独立验证） 的结果。批准、转换及执行边界见 [主方案 §9.1](02-multica-delivery-lifecycle-design.md#verify-agent-decision) 与 [§13.1](02-multica-delivery-lifecycle-design.md#delivery-facts)。
+Workitem Analyst 是 `verify_agent` 的首次专业判断者，只输出 Recommendation、Reason 与 Focus，不预先写最终 `analysis.human_approval.verify_agent_required`。Human Analysis Review 拥有最终决定权，可以接受或 override Recommendation；Delivery Lead 使用 `rondo workitem approve` 登记 Human 最终决定至 `analysis.human_approval.verify_agent_required`。因此 `analysis.human_approval.verify_agent_required` 不要求与原 Recommendation 相同；`verification.result` 仅在 `analysis.human_approval.verify_agent_required=true` 时表示 Independent Verification（独立验证） 的结果。批准、转换及执行边界见 [主方案 §9.1](02-multica-delivery-lifecycle-design.md#verify-agent-decision) 与 [§13.1](02-multica-delivery-lifecycle-design.md#delivery-facts)。
 
 ### 推荐方法：独立验证增量价值判断
 
@@ -1097,7 +1097,7 @@ Verify 推荐的理由与 Verification Focus 对应当前行为、Verification T
 
 ## 11.2 Analysis Gate：确定性检查与返回
 
-Analysis Gate 只执行确定性检查并返回结果，不发布产物、不修改 Issue Status、不授予研发权限。完整 Analysis 质量要求同时包含 Workitem Analyst 的专业 Review 与现有 Gate；不能把专业判断都描述为已由 CLI 自动检查。`rondo analysis validate --change-ref <id>` 按需只读诊断，与 `publish` 共享真实 Gate，主要检查Issue / Change 身份、Schema、Change 和 Proposal / Specs / Tasks 的基本存在及格式、合法原生 Specs skip、可消费 Task 项及 OpenSpec Validation。Change Kind 由 Schema 推导；不检查 AI Review Verdict 或独立验证推荐字段；本地硬条件失败时不再执行外部原生校验。它**不逐一核对 Proposal 声明的 Capability Spec 文件集合，不判定 Conditional Design 是否必要，也不评价 Root Cause、Task Verification 或 AI Review 的专业语义质量**。准备与 Review 应先完成这些必要判断，再由 Gate 约束它实际可核实的事实。**即使确定性 Gate PASS，只要必要的专业审查未通过，Workitem Analyst 仍不得调用 `analysis-publish` 宣称分析完成或提交审核**；超出自动范围按原有停止规则处理。
+Analysis Gate 只执行确定性检查并返回结果，不发布产物、不修改 Issue Status、不授予研发权限。完整 Analysis 质量要求同时包含 Workitem Analyst 的专业 Review 与现有 Gate；不能把专业判断都描述为已由 CLI 自动检查。`rondo openspec validate --change-ref <id>` 按需只读诊断，与 `publish` 共享真实 Gate，主要检查Issue / Change 身份、Schema、Change 和 Proposal / Specs / Tasks 的基本存在及格式、合法原生 Specs skip、可消费 Task 项及 OpenSpec Validation。Change Kind 由 Schema 推导；不检查 AI Review Verdict 或独立验证推荐字段；本地硬条件失败时不再执行外部原生校验。它**不逐一核对 Proposal 声明的 Capability Spec 文件集合，不判定 Conditional Design 是否必要，也不评价 Root Cause、Task Verification 或 AI Review 的专业语义质量**。准备与 Review 应先完成这些必要判断，再由 Gate 约束它实际可核实的事实。**即使确定性 Gate PASS，只要必要的专业审查未通过，Workitem Analyst 仍不得调用 `analysis-publish` 宣称分析完成或提交审核**；超出自动范围按原有停止规则处理。
 
 ### Analysis 完成条件（专业审查 + 当前确定性检查）
 
@@ -1159,7 +1159,7 @@ reasons:
 
 必要项明确缺失 / 不合法为 `FAIL`，事实 / 身份 / 权限 / 结果无法确认时为 `UNKNOWN`。`PASS` 后仍由 Workitem Analyst 按 [§12.1](#analysis-publish) 发布引用 / Result、写入并回读 `analysis_review`，再等待 Human；不生成 `analysis.human_approval.verify_agent_required`，不等同于获准编码。
 
-Corrective 一致性检查为 `NEEDS_REVISION`、关键结论已失效或 `root_cause.status=unknown` 时，不满足 [§7.3](#analysis-root-cause-confidence) 的**专业提交条件**；`probable` 不自动失败，但须有充分证据和清楚的剩余风险。**现行 `rondo analysis validate` 尚未直接读取 Corrective 一致性 Verdict 或根因可信度来执行这些语义判定**；专业不通过时 Analyst 应修订或停止提交，不得宣称机器 Gate 已自动拦截。确需将它们升级为确定性硬 Gate，须另行明确可读的结果契约并实施测试。现行 CLI 的 FAIL / UNKNOWN 仍按实际检查项返回，禁止绕过。
+Corrective 一致性检查为 `NEEDS_REVISION`、关键结论已失效或 `root_cause.status=unknown` 时，不满足 [§7.3](#analysis-root-cause-confidence) 的**专业提交条件**；`probable` 不自动失败，但须有充分证据和清楚的剩余风险。**现行 `rondo openspec validate` 尚未直接读取 Corrective 一致性 Verdict 或根因可信度来执行这些语义判定**；专业不通过时 Analyst 应修订或停止提交，不得宣称机器 Gate 已自动拦截。确需将它们升级为确定性硬 Gate，须另行明确可读的结果契约并实施测试。现行 CLI 的 FAIL / UNKNOWN 仍按实际检查项返回，禁止绕过。
 
 ## 11.3 专业质量、确定性准备与人工批准的分层
 
@@ -1192,7 +1192,7 @@ Verification Focus 按需在 OpenSpec 或审核 Comment 中表达，不新增机
 
 ## 12.1 `analysis-publish`：发布与提交审核
 
-`analysis-publish` 由 **Workitem Analyst** 在已完成真实工程契约时使用，直接指定当前 Change ID，经 `rondo analysis publish` 执行最终 Gate、固定 Git 发布与审核登记，再发布原生审核摘要。无需工程增量不调用本 Skill。
+`analysis-publish` 由 **Workitem Analyst** 在已完成真实工程契约时使用，直接指定当前 Change ID，经 `rondo openspec submit-review` 执行最终 Gate、固定 Git 发布与审核登记，再发布原生审核摘要。无需工程增量不调用本 Skill。
 
 ### 输入与有限权限
 
@@ -1204,14 +1204,14 @@ Workitem Analyst 只可在当前授权分析任务的提交环节写入 `analysi
 
 ```text
 确认本次 OpenSpec Change、专业结论与必要 Evidence；限定范围 Commit
-→ rondo analysis publish --change-ref <id>
+→ rondo openspec submit-review --change-ref <id>
 → CLI 内部最终真实 Gate、候选 Git 契约一致性及发布可达性核验
 → CLI 核对冲突事实；替换旧审核时先使旧 PASS 失效，登记 Facts、Source、本次 PASS 与 analysis_review 并确认结果
 → PASS 后使用返回的 analysis_source 发布原生审核 Comment
 → 结束本轮分析，等待 Human Review
 ```
 
-Gate 只返回 `PASS / FAIL / UNKNOWN`，不修改 Issue 状态。`publish` 读取指定 Change 和当前 Issue 来源事实执行 Gate，按 Schema 推导 Change Kind，Requirement 候选 Git 契约与本次 Gate 工程摘要一致后，Git 确认候选 Commit 已进入正确目标分支后直接登记固定来源，不重复使用 TFS REST 读取正文或计算摘要；外部副作用边界复用 `issue get` 的同一 Issue/Metadata 快照，核对必要身份、Facts 和审核状态后返回 PASS；同一快照不重复计算已经逐项比较的 Facts 摘要。已登记的 Requirement 审核重放只消费固定来源及审核事实，不重新读取工件；下游按实际需要读取固定 SHA。正常流程不需要 stage 或显式 validate；按需使用 `rondo analysis validate --change-ref <id>` 只读诊断。Gate 不生成持久化文件，也不信任调用方自报 PASS。`publish` 已确认 PASS 时不再机械核对其后置条件，Comment 发布失败仅恢复评论。
+Gate 只返回 `PASS / FAIL / UNKNOWN`，不修改 Issue 状态。`publish` 读取指定 Change 和当前 Issue 来源事实执行 Gate，按 Schema 推导 Change Kind，Requirement 候选 Git 契约与本次 Gate 工程摘要一致后，Git 确认候选 Commit 已进入正确目标分支后直接登记固定来源，不重复使用 TFS REST 读取正文或计算摘要；外部副作用边界复用 `issue get` 的同一 Issue/Metadata 快照，核对必要身份、Facts 和审核状态后返回 PASS；同一快照不重复计算已经逐项比较的 Facts 摘要。已登记的 Requirement 审核重放只消费固定来源及审核事实，不重新读取工件；下游按实际需要读取固定 SHA。正常流程不需要 stage 或显式 validate；按需使用 `rondo openspec validate --change-ref <id>` 只读诊断。Gate 不生成持久化文件，也不信任调用方自报 PASS。`publish` 已确认 PASS 时不再机械核对其后置条件，Comment 发布失败仅恢复评论。
 
 <a id="analysis-summary"></a>
 
@@ -1356,7 +1356,7 @@ Workitem Analyst 对总体分析质量负责：从实际任务、证据与变更
 
 Workitem Analyst 依据当前 Issue 与可信证据判断 `corrective | intentional`；`tfs.type` 保留来源管理语义。首次准备时确定当前 OpenSpec Schema，之后所有 Run 从当前 Change 的原生状态读取；映射与 Artifact 依赖由 [05](05-openspec-schema-implementation-design.md) 维护。
 
-不建立 Analysis Route 配置、路由脚本或新的 Skill 调度表；专业 Skill 按需调用。**现行契约**：仅实际工程增量需要 `change_kind`，`analysis publish` 消费指定 Change，从 Schema 推导分类，通过真实 Gate 后登记并回读 Multica Issue Metadata；Gate / Publish / Finalize 核对其与当前 Change Schema 一致。实际 CLI 发布和 Agent/Skill 加载仍须隔离 Workspace 验证。项目尚未上线，无历史数据迁移任务。
+不建立 Analysis Route 配置、路由脚本或新的 Skill 调度表；专业 Skill 按需调用。**现行契约**：仅实际工程增量需要 `change_kind`，`openspec submit-review` 消费指定 Change，从 Schema 推导分类，通过真实 Gate 后登记并回读 Multica Issue Metadata；Gate / Publish / Finalize 核对其与当前 Change Schema 一致。实际 CLI 发布和 Agent/Skill 加载仍须隔离 Workspace 验证。项目尚未上线，无历史数据迁移任务。
 
 ```text
 Issue / Evidence → Analyst 判断 Change Kind
@@ -1369,7 +1369,7 @@ Issue / Evidence → Analyst 判断 Change Kind
 
 当前仓内的专业配置源文件位于 `projects/multica/agents/workitem-analyst/` 与 `workspace-skills/`；以 `provisioning.json` 回读现行绑定：`codebase-explorer`、`bug-analysis`、`requirement-analysis`、`spec-preparation`、`analysis-publish`。Gate 通过 `analysis-publish` 调用，不直接绑定 Analyst。原 `workitem-analysis` 为 Retired，仅保留历史源文件。
 
-Agent Instructions 与相关 Skill 的职责收敛已通过 #83 合并；`rondo analysis` 的持久化分类、Gate Evidence 一致性及 Change Identity 校验已在相应 CLI PR 中实施。当前仓内实现与远端 Workspace 生效状态应分别核实；不需要历史 Issue 数据迁移。
+Agent Instructions 与相关 Skill 的职责收敛已通过 #83 合并；`Rondo OpenSpec` 提交审核相关的持久化分类、Gate Evidence 一致性及 Change Identity 校验已在相应 CLI PR 中实施。当前仓内实现与远端 Workspace 生效状态应分别核实；不需要历史 Issue 数据迁移。
 
 ## 14.5 专业活动与现行能力映射
 
