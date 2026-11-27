@@ -2,15 +2,10 @@
 # repo_url -> url；default_target_branch -> default_branch_hint；label -> 顶层 label。
 # repo_path 保留用于识别仓库；根仓原文未配置目标分支，保留 null，不推测。
 repos:
-  - repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepo
-    repo_path: "."
-    default_target_branch: null
+  - repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/DP-01-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/_git/winning-platform-monorepowinning-platform-monorepo
+    repo_path: "winning-platform-monorepo"
+    default_target_branch: master
     label: "AI Coding 工程根仓：Agent、Skill、OpenSpec、Docs、Graph、Wiki 及共享工具。"
-
-  - repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-common
-    repo_path: "winning-dps-df-common"
-    default_target_branch: dev
-    label: "公共基础代码：实体、常量、DTO、枚举、工具及共享能力。"
 
   - repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/WiNEX%20DataFactory/_git/winning-dps-df-frame
     repo_path: "winning-dps-df-frame"
@@ -121,13 +116,3 @@ repos:
     repo_path: "winning-dps-df-datamodel-web"
     default_target_branch: dev
     label: "数据模型前端：模型管理、模型设计。"
-
-  - repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/IP-08-%E5%9F%BA%E7%A1%80%E6%95%B0%E6%8D%AE%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-basedata
-    repo_path: "winning-dps-df-basedata"
-    default_target_branch: dev
-    label: "基础数据管理服务：主数据生命周期、组织机构、术语编码、编码体系、字典表、概念域、值域映射、系统/厂商数据同步、MDM 接收。"
-
-  - repo_url: http://tfs2018-web.winning.com.cn:8080/tfs/WN_Data_Platform/IP-08-%E5%9F%BA%E7%A1%80%E6%95%B0%E6%8D%AE%E7%AE%A1%E7%90%86%E8%BD%AF%E4%BB%B6/_git/winning-dps-df-basedata-webui
-    repo_path: "winning-dps-df-basedata-webui"
-    default_target_branch: dev
-    label: "基础数据管理前端。"
