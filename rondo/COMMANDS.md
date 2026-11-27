@@ -25,7 +25,7 @@ rondo doctor --help
 - 退出码：`0` 成功或无须重复执行、`2` 前置条件不满足（FAIL）、`3` 结果不能确认（UNKNOWN）、`64` 命令用法错误。具体结果以命令输出为准。
 - `--help` 的具体输出和退出方式取决于子命令；可通过 `rondo --help` 和各命令组的 `--help` 查看入口。
 
-配置安装、TFS 连接、Multica Workspace 和 Repository Registry 的说明见 [README.md](README.md#5-运行期配置)。本页仅保留命令调用契约。
+配置安装、TFS 连接、Multica Workspace 和 Project Resource 的说明见 [README.md](README.md#5-运行期配置)。本页仅保留命令调用契约。
 
 ## 2. 命令总览
 
@@ -37,7 +37,7 @@ rondo doctor --help
 | `tfs` | `writeback`、`reconcile-workitem` | TFS 工作项同步与交付回写 |
 | `pr` | `prepare`、`materialize`、`resume`、`worktree`、`reconcile-status`、`create`、`get`、`list` | PR 准备、创建、查询、状态对账及 Worktree |
 | `delivery` | `admission`、`finalize` | 准入交接与交付收口 |
-| `workspace` | `provision`、`sync`、`migrate-repo-keys`、`check-daemon` | Workspace 资源供给、同步及检查 |
+| `workspace` | `provision`、`sync`、`check-daemon` | Workspace 资源供给、同步及检查 |
 | `runtime` | `get-context`、`resolve-root-repo`、`check-checkout`、`prepare-root` | 当前 Run 上下文查询、根仓库就绪检查及准备 |
 | `openspec` | `install` | 安装随包分发的 OpenSpec Schema 到用户全局目录 |
 | `repo` | `get` | 查询 TFS Git 仓库 |
@@ -60,8 +60,8 @@ rondo change resolve-identity --openspec-root <path> [--change-ref <ref>] [--tfs
 ### 3.2 `rondo analysis`
 
 ```bash
-rondo analysis validate --issue <id> --change-ref <id> --openspec-root <path> --workspace-id <id> [--registry-config <repo-registry.json>] [--multica <cli>] [--profile <name>]
-rondo analysis publish --issue <id> --change-ref <id> --registry-config <repo-registry.json> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>] [--profile <name>]
+rondo analysis validate --issue <id> --change-ref <id> --openspec-root <path> --workspace-id <id> [--multica <cli>] [--profile <name>]
+rondo analysis publish --issue <id> --change-ref <id> --workspace-id <id> [--multica <cli>] [--root-repo <path>] [--target-branch <branch>] [--profile <name>]
 rondo analysis read --issue <KEY> --file <Change内相对路径>
 rondo analysis approve --issue <KEY> --comment-id <ID> --commit <SHA> --verify-required true|false [--waive-tasks 3.1,3.2]
 ```
@@ -125,7 +125,7 @@ rondo delivery root-prepare --issue <KEY>
 ### 5.2 `rondo pr`
 
 ```bash
-rondo pr prepare --issue <KEY> --repo <repo_id> --root-repo <path> --candidate-commit <sha> --facts <json|-> --title <title> [--validation-cwd <path>] [--required-repos <repo1,repo2>]
+rondo pr prepare --issue <KEY> --repo <完整仓库名称> --root-repo <path> --candidate-commit <sha> --facts <json|-> --title <title> [--validation-cwd <path>] [--required-repos <repo1,repo2>]
 rondo pr materialize --issue <KEY>
 rondo pr resume --issue <KEY> --comment-id <id> --next REWORK|RECREATE_PR
 rondo pr worktree create --config <repo-registry.json> --issue <KEY> --repo <repo_key> --branch <branch> [--base <target>] [--root-repo <path>]
@@ -142,7 +142,7 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 | `pr prepare` | 核对授权、Candidate 与专业 Facts，执行提供的验证命令并登记 PR Preparation；有命令时无需预填 `validation.result`，Bug 无命令时须提供真实替代验证 PASS |
 | `pr materialize` | 核验适用 Gate，逐仓创建或恢复已有 Active / Completed PR、确认 Work Item 关联并在 pr 的对应仓库记录补充 pr_id / pr_url；全部登记后进入 in_review，in_review 仅核验已登记事实 |
 | `pr resume` | 根据 Human Comment 核验 abandoned PR 并恢复 PR Facts；不修改 Issue 状态或启动 Run |
-| `pr worktree` | 使用 `create`、`remove`、`prune` 管理本地 Git Worktree |
+| `pr worktree` | 人工运维：使用显式配置管理非 Native 的既有 Git Worktree，不用于 Agent 交付 |
 | `pr reconcile-status` | 从当前 Run Workspace 扫描 Issue 的 `pr` 已登记记录，核实 `completed` / `abandoned` 等外部状态，不使用 Registry |
 
 `pr reconcile-status` 使用 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL`（可选 `MULTICA_CLI_PATH`，默认 `multica`）；手动执行需具有相同环境及 CLI 认证。
@@ -215,7 +215,6 @@ rondo workitem download-attachment --url <attachment-url> --out <directory> [--n
 ```bash
 rondo workspace provision --workspace <name> [--slug <slug>] [--create-workspace [--display-name <name>]] [--runtime-id <uuid>] [--profile <name>] [--dry-run] [--skip-workflow]
 rondo workspace sync --workspace <name> [--skill <skill>] [--local-only] [--profile <name>] [--dry-run] [--check]
-rondo workspace migrate-repo-keys --workspace <name> [--issue <KEY>] [--config <path>] [--dry-run | --apply] [--backup-dir <directory>]
 rondo workspace check-daemon --workspace-id <id> [--project-id <id>]
 ```
 
@@ -223,7 +222,6 @@ rondo workspace check-daemon --workspace-id <id> [--project-id <id>]
 | --- | --- |
 | `workspace provision` | 根据 Workspace 配置创建或核对 Agent、Skill、Squad、Project 和工作流对象，并记录对象 ID |
 | `workspace sync` | 将本地受管 Skill 内容同步到 Multica Workspace，生成对应运行配置 |
-| `workspace migrate-repo-keys` | 预览或实施 Workspace Issue 中的 Repository Key Metadata 变更；`--apply` 才写入 |
 | `workspace check-daemon` | 检查 Daemon 环境变量、Runtime 注册、挂载唯一性和交付亲和条件 |
 
 `workspace provision` 的 `--dry-run` 只预览；`workspace sync --local-only` 只生成本地配置，`--check` 用于检测同步差异。工作区配置按 `--workspace` 指向对应 Overlay。研发工作区统一按 Project Resource 和实际 Checkout 准备；Provision 不注入 `RONDO_WORKSPACE_BRANCH`，也不修改已有 Agent 环境变量。
@@ -236,14 +234,14 @@ Workitem Analyst、Engineer 和 Bug Fix Agent 绑定 `native-workspace`，直接
 
 ```bash
 rondo runtime get-context
-rondo runtime resolve-root-repo --config <repo-registry.json> (--issue <KEY> | --project-id <id> | --root-repo <path>)
+rondo runtime resolve-root-repo --root-repo <path>
 rondo runtime check-checkout --root-repo <path>
 rondo runtime prepare-root [--root-repo <path>] [--branch <branch>]
 ```
 
 `runtime get-context` 只读获取当前 Multica Agent Run 的 Runtime 信息（`multica_cli`、`multica_server_url`、`workspace_id`、`rondo`、`delivery_squad_id`）。Workspace 和 Server 来自当前 Run 环境变量；按名称 `Delivery Squad` 在当前 Workspace 查找唯一有效 Squad。缺少环境或无法确认目标时返回 `UNKNOWN`（exit 3）；不依赖 `repo-registry.json`，不支持从外部终端猜测默认 Workspace。
 
-`runtime resolve-root-repo` 根据 Issue、Project 或指定路径解析根仓库位置，返回根仓及相关上下文路径信息。`check-checkout` 只读校验已有根仓。`prepare-root` 优先使用 `--root-repo`，省略时读取 `RONDO_WORKSPACE_PATH`。分支取必需的 `RONDO_WORKSPACE_BRANCH`，优先于 `--branch`。命令在原目录检查分支占用、按 Change 分别本地保存切换前的改动，并在安全时快进。历史分叉时保留本地提交和工作区。
+`runtime resolve-root-repo` 只读验证显式 Git 根仓路径并返回根仓与 OpenSpec 路径。`check-checkout` 只读校验已有根仓。`prepare-root` 优先使用 `--root-repo`，省略时读取 `RONDO_WORKSPACE_PATH`。分支取必需的 `RONDO_WORKSPACE_BRANCH`，优先于 `--branch`。命令在原目录检查分支占用、按 Change 分别本地保存切换前的改动，并在安全时快进。历史分叉时保留本地提交和工作区。
 
 ### 7.3 `rondo openspec`
 
@@ -266,7 +264,7 @@ rondo doctor [--require <check1,check2,...>] [--output json | --format text|json
 | 运行时 | `node_runtime`、`npm_registry_config` |
 | CLI 工具 | `openspec_cli`、`rondo_self`、`git`、`python` |
 | 服务连通性 | `internal_npm_registry`、`tfs_api`、`multica_api` |
-| 配置 | `openspec_root`、`repo_registry`、`tfs_config`、`daemon_env` |
+| 配置 | `openspec_root`、`tfs_config`、`daemon_env` |
 | 一致性 | `version_alignment`、`path_precedence`、`workflow_statuses` |
 | 网络 | `network_baseline`（显式选用） |
 

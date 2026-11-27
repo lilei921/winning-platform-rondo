@@ -52,7 +52,7 @@ CLI_CANDIDATES = ("rondo", "skill-flow")
 CLI_LOCAL_FALLBACKS = (
     Path("rondo") / "dist" / "index.js",
 )
-MIN_PYTHON = (3, 7)  # tools/repo_registry.py 使用 from __future__ import annotations
+MIN_PYTHON = (3, 7)
 
 MANIFEST_REL = Path("workspace-config") / "provisioning.json"
 
@@ -151,14 +151,14 @@ def install_rondo_cli(root: Path, dry_run: bool = False) -> None:
 
 
 def check_python() -> None:
-    """检查当前解释器，Rondo 和其他子脚本继续使用同一个 Python。"""
+    """检查当前解释器及资源配置脚本依赖。"""
     major, minor = sys.version_info[:2]
     if (major, minor) < MIN_PYTHON:
         raise SystemExit(
-            f"python {major}.{minor} 过低：tools/repo_registry.py 需要 ≥{MIN_PYTHON[0]}.{MIN_PYTHON[1]}。"
+            f"python {major}.{minor} 过低：rondo-sync 需要 ≥{MIN_PYTHON[0]}.{MIN_PYTHON[1]}。"
         )
     try:
-        import yaml  # noqa: F401  # 验证当前解释器能导入 Rondo 所需的依赖
+        import yaml  # noqa: F401  # 资源配置脚本使用 PyYAML
     except ImportError as exc:
         raise SystemExit(
             f'当前 Python 缺少可用的 PyYAML。请用同一个解释器执行 "{sys.executable}" -m pip install PyYAML。'
@@ -380,8 +380,7 @@ def sync_workspace(
         if dry_run:
             labels_command.append("--dry-run")
         steps.append(("对齐 Project Resource label", None, labels_command))
-    # 把已通过预检的解释器传给 Rondo，兼容仅有 python3 的环境和虚拟环境。
-    env = {**command_env(), "RONDO_WORKSPACE_PYTHON": sys.executable}
+    env = command_env()
     for index, (label, kind, command) in enumerate(steps, start=1):
         print(f"[{index}/{len(steps)}] {label}", flush=True)
         if kind == "bind":

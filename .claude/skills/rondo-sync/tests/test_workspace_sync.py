@@ -209,7 +209,7 @@ class WorkspaceSyncTests(unittest.TestCase):
             self.assertFalse(sync.manifest_backup_path(self.root).exists())
             self.assertEqual(kwargs["cwd"], self.root)
             self.assertFalse(any(key.upper() == "MULTICA_REPO_ROOT" for key in kwargs["env"]))
-            self.assertEqual(kwargs["env"]["RONDO_WORKSPACE_PYTHON"], sys.executable)
+            self.assertNotIn("RONDO_WORKSPACE_PYTHON", kwargs["env"])
             self.assertEqual(kwargs["env"]["PYTHONIOENCODING"], "utf-8")
             calls.append(command)
             if fail:

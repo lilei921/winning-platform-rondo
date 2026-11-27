@@ -98,7 +98,7 @@ python .claude/skills/rondo-sync/scripts/sync_workspace.py winning-lfw --repo-ro
 每个 workspace 依次执行下列步骤，任一步失败即停止该 workspace 并计入失败数，其余 workspace 继续：
 
 1. **provision**（`rondo workspace provision`，默认带 `--skip-workflow`）— 供给 Skill / Agent / Squad / Project / Autopilot 对象，并把解析到的对象 ID 写入 `workspace-config/workspaces/<name>.json` overlay。Rondo 按 workspace slug 在内存中合并分组 Project / MCP 配置，不改写共享 manifest。
-2. **sync**（`rondo workspace sync`）— 按 `docs/config/repo-context.yaml` 渲染仓库映射配置，upsert Skill 文件并逐文件回读校验。
+2. **sync**（`rondo workspace sync`）— 按 Workspace overlay 渲染 TFS 同步配置，upsert Skill 文件并逐文件回读校验。
 3. **绑定 Agent runtime**（仅当显式传入 `--runtime-id`）— provision 只在**新建** Agent 时使用 `--runtime-id`，已存在的 Agent 保留原 runtime；显式指定 runtime 时必须额外改绑，否则该参数对已供给的 workspace 无效。
 4. **禁用 runtime skills** — 关闭 Agent 从 runtime 继承的本地 Skill，避免与仓内 Skill 重复暴露；覆盖所有绑定 workspace 内 runtime 的 Agent（含同事机器），先预览再落盘。是否执行见下节。
 5. **补齐 Agent TFS 环境变量**（`provision_agent_tfs_env.py`）— 为全部 Agent 补齐 `TFS_URL` / `TFS_COLLECTION` / `TFS_PAT`，只增不改；规则与凭据红线见下节。`--dry-run` 会透传给该步骤；`--skip-tfs-env` 可整体跳过。
