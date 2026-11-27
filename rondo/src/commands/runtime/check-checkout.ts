@@ -6,8 +6,8 @@ import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
 
 export function registerRuntimeCheckCheckout(group: Command): void {
-  group.command("check-checkout").description("只读检查指定 Git 根仓与根仓规范是否就绪")
-    .requiredOption("--root-repo <path>")
+  group.command("check-checkout").description("只读校验已准备根仓的就绪状态")
+    .requiredOption("--root-repo <path>", "当前根仓路径")
     .action((opts: { rootRepo: string }) => {
       markLeafExecuted();
       try {

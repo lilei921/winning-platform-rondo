@@ -591,8 +591,9 @@ async function main(argv: string[]): Promise<number> {
 export function registerDeliveryFinalize(group: Command): void {
   group
     .command("finalize")
-    .description("交付收口")
-    .helpOption(false)
+    .description("校验交付条件，准备或完成交付收口")
+    .usage("--phase <prepare|complete> --issue <key> [--root-repo <path>]")
+    .addHelpText("after", "\nRequirement 收口须提供根仓路径。")
     .allowUnknownOption(true)
     .allowExcessArguments(true)
     .action(async (...cbArgs: unknown[]) => {

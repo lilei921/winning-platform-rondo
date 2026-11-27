@@ -116,7 +116,8 @@ export async function recordApproval(client: ApprovalClient, args: ApprovalArgs,
 }
 
 export function registerAnalysisApprove(group: Command): void {
-  group.command("approve").description("登记已明确的 Human Approval（不启动 Run）")
+  group.command("approve").description("登记已确认的人工批准及独立验收决定")
+    .addHelpText("after", "\n登记批准后不启动 Run。")
     .requiredOption("--issue <key>", "当前 Requirement Issue")
     .requiredOption("--comment-id <id>", "Human 批准评论 ID")
     .requiredOption("--commit <sha>", "Human 获批完整 Commit")

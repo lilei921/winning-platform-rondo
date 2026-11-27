@@ -405,8 +405,9 @@ function main(rawArgs: string[]): number {
 export function registerWorkspaceSync(group: Command): void {
   group
     .command("sync")
-    .description("Skill 资产渲染 + 平台同步")
-    .helpOption(false)
+    .description("生成本地运行配置并同步 Skill 资产")
+    .usage("--workspace <name> [--skill <name>] [--local-only] [--profile <name>] [--dry-run] [--check]")
+    .addHelpText("after", "\n--local-only 只生成本地配置；--check 检查差异；--dry-run 预览。")
     .allowUnknownOption(true)
     .allowExcessArguments(true)
     .action((...cbArgs: unknown[]) => {

@@ -27,8 +27,8 @@ function main(rawArgs: string[]): void {
 
 export function registerRuntimeResolveRootRepo(group: Command): void {
   group.command("resolve-root-repo")
-    .description("只读检查显式根仓并返回本地文档路径")
-    .helpOption(false)
+    .description("解析并校验显式根仓及 OpenSpec 路径")
+    .usage("--root-repo <path>")
     .allowUnknownOption(true)
     .allowExcessArguments(true)
     .action((...cbArgs: unknown[]) => {

@@ -7,7 +7,7 @@ owner: winning\li_lei
 
 # Rondo CLI：安装与使用
 
-本目录提供 Multica 统一 CLI **rondo** 的安装、配置与常用操作说明；分发包（`.tgz`）按版本单独构建或分发，不保证随 Git 仓库提供。完整参数见 [COMMANDS.md](COMMANDS.md)。
+**rondo** 是面向 Multica 研发交付的确定性 CLI，提供交付校验、执行、事实管理及平台运维能力。本目录提供安装、配置与常用操作说明；分发包（`.tgz`）按版本单独构建或分发，不保证随 Git 仓库提供。完整参数见 [COMMANDS.md](COMMANDS.md)。
 源码与分发包位于根仓 `rondo/`（包 `@winning/rondo`，命令 `rondo`）。
 
 ## 1. 分发包与版本
@@ -47,7 +47,7 @@ rondo --help           # 命令总览
 rondo doctor           # 只读环境检查
 ```
 
-`rondo --version` 输出本地版本信息，无需连接 TFS；`doctor` 的检查项和要求以当前安装版本的帮助与输出为准。
+`rondo --version` 输出本地版本信息，无需连接 TFS；`--help` / `-h` 输出帮助并返回 0，不执行业务操作；`doctor` 的检查项和要求以当前安装版本的帮助与输出为准。
 
 ### 找不到命令
 

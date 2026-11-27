@@ -44,9 +44,9 @@ export function checkPublishContract(root: string, source: AnalysisSource, candi
 }
 
 export function registerDevPublish(group: Command): void {
-  group.command("publish").description("发布当前 Change 已提交的研发工件，登记远端交付 SHA")
-    .requiredOption("--issue <key>")
-    .option("--root-repo <path>").option("--minor-design", "确认仅细化非实质性 Design")
+  group.command("publish").description("发布已提交的研发工件并登记远端提交事实")
+    .requiredOption("--issue <key>", "Multica Issue 标识")
+    .option("--root-repo <path>", "当前根仓路径").option("--minor-design", "确认仅细化非实质性 Design")
     .action(async (opts: { issue: string; rootRepo?: string; minorDesign?: boolean }) => {
       markLeafExecuted();
       try {

@@ -346,8 +346,8 @@ async function main(rawArgs: string[]): Promise<number> {
 export function registerPrReconcileStatus(group: Command): void {
   group
     .command("reconcile-status")
-    .description("PR 状态对账")
-    .helpOption(false)
+    .description("核实已登记 PR 的远端状态")
+    .usage("[--issue <key> | --recover-done]")
     .allowUnknownOption(true)
     .allowExcessArguments(true)
     .action(async (...cbArgs: unknown[]) => {

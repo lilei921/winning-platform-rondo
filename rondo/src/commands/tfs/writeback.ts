@@ -468,8 +468,8 @@ async function main(rawArgs: string[]): Promise<number> {
 export function registerTfsWriteback(group: Command): void {
   group
     .command("writeback")
-    .description("TFS 收口统一回写：任务物化+commit 关联+任务解决+父项回写（PR 通过后调用，tfs-writeback-decoupling-plan）")
-    .helpOption(false)
+    .description("根据交付事实回写 TFS 工作项")
+    .usage("--issue <key> [--root-repo <path>] [--inspect | --task-plan <plan.json>]")
     .allowUnknownOption(true)
     .allowExcessArguments(true)
     .action(async (...cbArgs: unknown[]) => {

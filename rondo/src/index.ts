@@ -1,19 +1,5 @@
 #!/usr/bin/env node
-/**
- * rondo —— Multica 交付流水线统一 CLI(方案:projects/plans/rondo-cli-merge-plan.md)。
- *
- * 由 rondo(编排层)与 tfs-cli(TFS API 层)合并而来,命令面铺平:
- *   flow 组:change / analysis / dev / tfs / pr(materialize|worktree|reconcile-status)/
- *           delivery / workspace / runtime —— 原 rondo 逐字保留;
- *   TFS API:query / repo get / branch get / pr create|get|list / workitem * —— 原 tfs-cli。
- *
- * 基线语义:退出码 0 成功 / 2 FAIL / 3 UNKNOWN / 64 用法错误;
- * stdout 只出 JSON,日志走 stderr。
- *
- * commander 只做 group/command 两级路由与 --help;
- * 各命令的参数解析沿用原实现(helpOption(false) + allowUnknownOption),
- * 保证 stdout JSON、退出码与用法错误消息逐字节等价。
- */
+/** Rondo CLI 命令注册、帮助、全局输出选项与退出码映射。 */
 
 import { Command, CommanderError, Option } from "commander";
 import { isSea } from "node:sea";
@@ -52,8 +38,9 @@ const program = new Command();
 
 program
   .name("rondo")
-  .description("rondo —— Multica 交付流水线统一 CLI(业务结果默认 JSON;退出码 0/2/3/64)")
-  .addOption(new Option("--output <format>", "显式请求 JSON 输出（业务命令默认 JSON）").choices(["json"]))
+  .description("面向 Multica 研发交付的确定性 CLI，提供交付校验、执行、事实管理及平台运维能力。")
+  .addOption(new Option("--output <format>", "输出 JSON").choices(["json"]))
+  .addHelpText("after", "\n输出约定：业务命令默认输出 JSON，doctor 默认输出文本；诊断信息走 stderr。\n退出码：0 成功，2 FAIL，3 UNKNOWN，64 用法错误。")
   // --version 输出 JSON(方案 §4.4,沿用 tfs-cli 字段形状)
   .version(
     JSON.stringify({ name: "@winning/rondo", version: TOOL_VERSION, node: process.version, sea: isSea() }, null, 2),
@@ -70,48 +57,48 @@ function bareGroup(group: Command): Command {
   });
 }
 
-const change = bareGroup(program.command("change").description("OpenSpec Change 身份与任务进度(冻结契约 §1/§2)"));
+const change = bareGroup(program.command("change").description("OpenSpec Change 身份解析"));
 registerResolveIdentity(change);
 
-const analysis = bareGroup(program.command("analysis").description("Analysis Gate 与收口(02 §5.4/§12.1)"));
+const analysis = bareGroup(program.command("analysis").description("分析校验、发布、读取与批准登记"));
 registerAnalysisValidate(analysis);
 registerAnalysisPublish(analysis);
 registerAnalysisRead(analysis);
 registerAnalysisApprove(analysis);
 
-const dev = bareGroup(program.command("dev").description("Development 研发准备、Git 与发布"));
+const dev = bareGroup(program.command("dev").description("研发 Git 操作与工件发布"));
 registerDevGit(dev);
 registerDevPublish(dev);
 
 
-const tfs = bareGroup(program.command("tfs").description("TFS 统一回写(writeback)/ 对账"));
+const tfs = bareGroup(program.command("tfs").description("TFS 工作项同步与交付回写"));
 registerTfsWriteback(tfs);
 registerTfsReconcileWorkitem(tfs);
 
 // pr 组:flow(materialize/worktree/reconcile-status)+ TFS API(create/get/list)合并,子命令名不交叠(方案 §3.1)
-const pr = bareGroup(program.command("pr").description("PR 物化 / worktree / 状态对账 / TFS PR 事实(create|get|list)"));
+const pr = bareGroup(program.command("pr").description("PR 准备、创建、恢复、状态核实及 Worktree 管理"));
 registerPrMaterialize(pr);
 registerPrPrepare(pr);
 registerPrResume(pr);
 registerPrWorktree(pr);
 registerPrReconcileStatus(pr);
-registerTfsApiLeaf(pr, "create", ["pr", "create"], "创建 TFS PR(幂等核对:重复返回 created:false + existing)");
-registerTfsApiLeaf(pr, "get", ["pr", "get"], "读取 TFS PR 事实(status 原样透传)");
-registerTfsApiLeaf(pr, "list", ["pr", "list"], "列出 TFS PR(--status/--source-branch/--top)");
+registerTfsApiLeaf(pr, "create", ["pr", "create"], "创建 TFS Git PR", "--repo <name|id> --source <branch> --target <branch> --title <title> [--description-file <path>] [--work-items <ids>] [--project <project>]");
+registerTfsApiLeaf(pr, "get", ["pr", "get"], "查询指定 TFS Git PR", "--repo <name|id> --id <id> [--project <project>]");
+registerTfsApiLeaf(pr, "list", ["pr", "list"], "按条件查询 TFS Git PR", "--repo <name|id> [--status active|completed|abandoned] [--source-branch <branch>] [--top <n>] [--project <project>]");
 
-const delivery = bareGroup(program.command("delivery").description("入口交接、Human Decision 路由与交付收口(02 §4.1/§11.2/§12)"));
+const delivery = bareGroup(program.command("delivery").description("准入执行与交付收口"));
 registerDeliveryAdmission(delivery);
 registerDeliveryFinalize(delivery);
 registerCloseoutRoot(delivery);
 
 // workspace 组(运维/供给,与 flow 组隔离)
-const workspace = bareGroup(program.command("workspace").description("平台供给 / 资产同步 / 迁移 / daemon 检查"));
+const workspace = bareGroup(program.command("workspace").description("Workspace 资源供给、同步与检查"));
 registerWorkspaceProvision(workspace);
 registerWorkspaceSync(workspace);
 registerWorkspaceCheckDaemon(workspace);
 
 // runtime 组(运行时路径解析工具)
-const runtime = bareGroup(program.command("runtime").description("运行时路径解析(multi-daemon-root-repo-resolution-plan §4/§7)"));
+const runtime = bareGroup(program.command("runtime").description("Runtime 上下文与根仓管理"));
 registerRuntimeResolveRootRepo(runtime);
 registerRuntimeCheckCheckout(runtime);
 registerRuntimePrepareRoot(runtime);
@@ -122,23 +109,23 @@ const openspec = bareGroup(program.command("openspec").description("OpenSpec Sch
 registerOpenspecInstall(openspec);
 
 // TFS API 叶子(原 tfs-cli):query 顶级;repo/branch/workitem 各自成组
-registerTfsApiLeaf(program, "query", ["query"], "WIQL 查询(--wiql 必填)");
+registerTfsApiLeaf(program, "query", ["query"], "执行 TFS WIQL 查询", "--wiql <WIQL> [--project <project>]");
 
 // doctor:环境体检(只读),顶层 leaf(方案 §10 裁定 2,先例为上方 query)
 registerDoctor(program);
 
-const repo = bareGroup(program.command("repo").description("TFS 仓库事实"));
-registerTfsApiLeaf(repo, "get", ["repo", "get"], "按名/ID 查仓库(found:false → exit 2)");
+const repo = bareGroup(program.command("repo").description("TFS Git 仓库查询"));
+registerTfsApiLeaf(repo, "get", ["repo", "get"], "查询 TFS Git 仓库信息", "--name <repo> [--project <project>]");
 
-const branch = bareGroup(program.command("branch").description("TFS 分支事实"));
-registerTfsApiLeaf(branch, "get", ["branch", "get"], "查分支 HEAD(精确匹配,不回退)");
+const branch = bareGroup(program.command("branch").description("TFS Git 分支查询"));
+registerTfsApiLeaf(branch, "get", ["branch", "get"], "查询指定 TFS Git 分支及 HEAD", "--repo <name|id> --name <branch> [--project <project>]");
 
-const workitem = bareGroup(program.command("workitem").description("TFS 工作项读写(置态/评论/创建/关联/附件)"));
-registerTfsApiLeaf(workitem, "set-state", ["workitem", "set-state"], "置状态(幂等;跨态按类型链逐跳中转)");
-registerTfsApiLeaf(workitem, "comment", ["workitem", "comment"], "评论(Markdown → HTML 落 History)");
-registerTfsApiLeaf(workitem, "create", ["workitem", "create"], "在父项下创建子工作项");
-registerTfsApiLeaf(workitem, "link-commits", ["workitem", "link-commits"], "commit 以 Artifact Link 挂工作项(幂等)");
-registerTfsApiLeaf(workitem, "download-attachment", ["workitem", "download-attachment"], "下载附件(gzip 自动解压)");
+const workitem = bareGroup(program.command("workitem").description("TFS 工作项操作"));
+registerTfsApiLeaf(workitem, "set-state", ["workitem", "set-state"], "更新 TFS 工作项状态", "--id <id> --state <state> [--complete-with-estimate] [--project <project>]");
+registerTfsApiLeaf(workitem, "comment", ["workitem", "comment"], "写入 TFS 工作项评论", "--id <id> --text-file <path> [--project <project>]");
+registerTfsApiLeaf(workitem, "create", ["workitem", "create"], "创建并关联 TFS 子工作项", "--type <type> --title <title> --parent <id> [--description-file <path>] [--estimate <hours>] [--project <project>]");
+registerTfsApiLeaf(workitem, "link-commits", ["workitem", "link-commits"], "将 Git Commit 关联至 TFS 工作项", "--id <id> --repo <name|id> --sha <sha,...> [--project <project>]");
+registerTfsApiLeaf(workitem, "download-attachment", ["workitem", "download-attachment"], "下载 TFS 工作项附件", "--url <url> --out <directory> [--name <file>]");
 
 program.hook("preAction", () => { hydrateMulticaTaskEnvironment(); });
 
@@ -150,7 +137,7 @@ void (async () => {
     await program.parseAsync(process.argv);
     // 无参数 / 裸 group:视为用法错误(exit 64),帮助文本走 stderr 保持 stdout 纯净。
     if (!hasLeafExecuted()) {
-      program.outputHelp();
+      program.outputHelp({ error: true });
       process.exit(64);
     }
   } catch (e) {

@@ -38,7 +38,7 @@ export function installSchemas(source: string, target: string): string[] {
 
 export function registerOpenspecInstall(group: Command): void {
   group.command("install").description("安装随包分发的 OpenSpec Schema 到用户全局目录")
-    .helpOption(false).allowUnknownOption(true).allowExcessArguments(true)
+    .addHelpText("after", "\n同名 Schema 将被覆盖；不访问网络；SEA 单文件运行不支持。")
     .action((...cbArgs: unknown[]) => {
       markLeafExecuted();
       void cbArgs;

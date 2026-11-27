@@ -238,8 +238,9 @@ async function main(argv: string[]): Promise<number> {
 
 export function registerDeliveryAdmission(group: Command): void {
   group.command("admission")
-    .description("执行 Wayfinder 准入 Decision（原生指派或状态更新）")
-    .helpOption(false).allowUnknownOption(true).allowExcessArguments(true)
+    .description("执行已确定的准入决定，更新 Issue 状态或指派")
+    .usage("--issue <key> --decision <accepted|needs_human|unsupported>")
+    .addHelpText("after", "\n使用当前 Multica Runtime，要求执行者为当前 Workspace 的 Wayfinder Agent。").allowUnknownOption(true).allowExcessArguments(true)
     .action(async (...cbArgs: unknown[]) => {
       markLeafExecuted();
       const cmd = cbArgs[cbArgs.length - 1] as Command;

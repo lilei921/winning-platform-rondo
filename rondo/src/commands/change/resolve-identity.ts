@@ -346,8 +346,8 @@ function main(rawArgs: string[]): void {
 export function registerResolveIdentity(group: Command): void {
   group
     .command("resolve-identity")
-    .description("OpenSpec Change Identity 确定性只读解析（冻结契约 §1）")
-    .helpOption(false)
+    .description("根据 Change Ref 或 TFS ID 解析 OpenSpec Change 身份")
+    .usage("--openspec-root <root> [--change-ref <id>] [--tfs-id <id>] [--expect-schema <name>] [--output json]")
     .allowUnknownOption(true)
     .allowExcessArguments(true)
     .action((...cbArgs: unknown[]) => {

@@ -119,8 +119,8 @@ export async function materializeOne(tfs: Pick<TfsClient, "run">, api: Pick<ApiT
 }
 
 export function registerPrMaterialize(group: Command): void {
-  group.command("materialize").description("创建或核实已准备的 PR")
-    .requiredOption("--issue <key>")
+  group.command("materialize").description("创建或核实 PR，登记 PR 事实")
+    .requiredOption("--issue <key>", "Multica Issue 标识")
     .action(async (opts: {issue:string}) => {
       markLeafExecuted();
       try {

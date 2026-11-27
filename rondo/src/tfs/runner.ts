@@ -46,13 +46,14 @@ export async function runTfsApi(argv: string[]): Promise<number> {
 
 /**
  * 注册一个 TFS API 叶子:argv 前缀(如 ["workitem","set-state"])+ 原始参数交 dispatchTfs。
- * helpOption(false) + allowUnknownOption,与 flow 叶子同手法,保证参数契约逐字节等价。
+ * Commander 处理帮助；业务参数仍交给 dispatchTfs。
  */
-export function registerTfsApiLeaf(group: Command, name: string, argvPrefix: string[], description: string): void {
+export function registerTfsApiLeaf(group: Command, name: string, argvPrefix: string[], description: string, usage: string): void {
   group
     .command(name)
     .description(description)
-    .helpOption(false)
+    .usage(usage)
+    .addHelpText("after", "\n配置：通过 TFS_PAT 和 TFS_SERVER_URL（或 TFS_URL / TFS_COLLECTION）连接 TFS；TFS_PROJECT 为默认项目。")
     .allowUnknownOption(true)
     .allowExcessArguments(true)
     .action(async (...cbArgs: unknown[]) => {

@@ -280,8 +280,8 @@ function main(rawArgs: string[]): number {
 export function registerPrWorktree(group: Command): void {
   group
     .command("worktree")
-    .description("worktree 操作")
-    .helpOption(false)
+    .description("管理人工运维使用的 Git Worktree")
+    .usage("<create|remove|prune> --config <path> [--issue <key> --repo <repo> --branch <branch> --base <target>] [--project-id <id> | --root-repo <path>]")
     .allowUnknownOption(true)
     .allowExcessArguments(true)
     .action((...cbArgs: unknown[]) => {

@@ -52,8 +52,8 @@ function main(argv: string[]): void {
 }
 
 export function registerWorkspaceCheckDaemon(group: Command): void {
-  group.command("check-daemon").description("daemon 注册与版本检查")
-    .helpOption(false).allowUnknownOption(true).allowExcessArguments(true)
+  group.command("check-daemon").description("检查 Daemon 注册与运行环境")
+    .usage("--workspace-id <id>").allowUnknownOption(true).allowExcessArguments(true)
     .action((...cbArgs: unknown[]) => {
       markLeafExecuted();
       const cmd = cbArgs[cbArgs.length - 1] as Command;
