@@ -36,7 +36,7 @@ rondo doctor --help
 | `pr` | `prepare`、`materialize`、`resume`、`reconcile-status`、`create`、`get`、`list` | PR 准备、创建、查询及状态对账 |
 | `delivery` | `admission`、`finalize`、`root-prepare` | 准入交接与交付收口 |
 | `workspace` | `provision`、`sync`、`check-daemon` | Workspace 资源供给、同步及检查 |
-| `runtime` | `get-context`、`check-checkout` | 当前 Run 上下文查询及 Checkout 就绪检查 |
+| `runtime` | `get-context`、`check-checkout`、`reconcile` | 当前 Run 上下文、Checkout 检查及主备协调 |
 | `openspec` | `resolve-identity`、`install-schema` | OpenSpec Change 身份解析与 Schema 安装 |
 | `repo` | `get`、`get-branch` | 查询 TFS Git 仓库和分支 |
 | `workitem` | `sync`、`writeback`、`query`、`set-state`、`comment`、`create`、`link-commits`、`download-attachment` | TFS 工作项同步、回写、查询与操作 |
@@ -234,11 +234,14 @@ Workitem Analyst、Engineer 和 Bug Fix Agent 绑定 `native-workspace`，直接
 ```bash
 rondo runtime get-context
 rondo runtime check-checkout --root-repo <path>
+rondo runtime reconcile [--dry-run]
 ```
 
 `runtime get-context` 只读获取当前 Multica Agent Run 的 Runtime 信息（`multica_cli`、`multica_server_url`、`workspace_id`、`rondo`、`delivery_squad_id`）。Workspace 和 Server 来自当前 Run 环境变量；按名称 `Delivery Squad` 在当前 Workspace 查找唯一有效 Squad。缺少环境或无法确认目标时返回 `UNKNOWN`（exit 3）；不依赖 `repo-registry.json`，不支持从外部终端猜测默认 Workspace。
 
 `runtime check-checkout` 只读检查调用者指定的根仓，返回规范根仓路径，核对 `AGENTS.md` 和适用的 Native Task Checkout 身份。不执行检出或分支切换。
+
+`runtime reconcile` 从当前 Workspace 与 `RONDO_RUNTIME_POLICY`（Agent Name → `primary_runtime_id` / `fallback_runtime_id` 的 JSON Object）读取策略，依据 Multica 原生 Runtime `online` / `offline` 状态协调 Agent 绑定。仅在目标不同且同 Provider 时改绑，不管理 Run，不改绑 Vayne 自身。`--dry-run` 只返回计划。无策略、异常及未确认写入分别按现有退出码契约报告。启用前须通过[黑灯计划](../20-lights-out-plan.md)的现网原生能力验收。
 
 ## 8. 环境检查：`rondo doctor`
 

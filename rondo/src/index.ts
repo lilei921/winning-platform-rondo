@@ -16,6 +16,7 @@ import { registerDevPublish } from "./commands/dev/publish.js";
 import { registerDevGit } from "./commands/dev/git.js";
 import { registerRuntimeCheckCheckout } from "./commands/runtime/check-checkout.js";
 import { registerRuntimeGetContext } from "./commands/runtime/get-context.js";
+import { registerRuntimeReconcile } from "./commands/runtime/reconcile.js";
 import { registerPrResume } from "./commands/pr/resume.js";
 import { registerDeliveryAdmission } from "./commands/delivery/handoff.js";
 import { registerTfsReconcileWorkitem } from "./commands/tfs/reconcile-workitem.js";
@@ -86,10 +87,11 @@ registerWorkspaceProvision(workspace);
 registerWorkspaceSync(workspace);
 registerWorkspaceCheckDaemon(workspace);
 
-// runtime 组(运行时路径解析工具)
-const runtime = bareGroup(program.command("runtime").description("Runtime 上下文与 Checkout 检查"));
+// runtime 组
+const runtime = bareGroup(program.command("runtime").description("Runtime 上下文、Checkout 检查与主备协调"));
 registerRuntimeCheckCheckout(runtime);
 registerRuntimeGetContext(runtime);
+registerRuntimeReconcile(runtime);
 
 // OpenSpec 身份解析与 Schema 安装
 const openspec = bareGroup(program.command("openspec").description("OpenSpec Change 身份解析与 Schema 安装"));

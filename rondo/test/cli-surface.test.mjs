@@ -23,7 +23,7 @@ const TREE = {
   pr: ["prepare", "materialize", "resume", "reconcile-status", "create", "get", "list"],
   delivery: [ "finalize", "root-prepare", "admission"],
   workspace: ["provision", "sync", "check-daemon"],
-  runtime: ["get-context","check-checkout"],
+  runtime: ["get-context","check-checkout","reconcile"],
   openspec: ["resolve-identity", "install-schema"],
   repo: ["get", "get-branch"],
   workitem: ["sync", "writeback", "query", "set-state", "comment", "create", "link-commits", "download-attachment"],
