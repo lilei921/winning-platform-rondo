@@ -40,42 +40,40 @@ Autopilot Prompt：执行 Runtime 自动协调。
 
 ## 3. 每个 Agent 独立主备策略
 
-主备配置按 Workspace 独立维护。若通过现有 workspace-config/workspaces/<workspace>.json 供给，使用以下结构（也可直接将内层对象配置到黑灯守卫 custom_env，见 §3.1）。以下 ID 均为示例，不是生产配置：
+每个 Workspace 的黑灯守卫独立维护 `RONDO_RUNTIME_POLICY`，由管理员直接在 Multica Agent Environment Variables（custom_env）中配置。值为下列 JSON 对象的字符串形式；以下 ID 均为示例，不是生产配置：
 
 ```json
 {
-  "runtime_policy": {
-    "Delivery Lead": {
-      "primary_runtime_id": "<local-a>",
-      "fallback_runtime_id": "<server-a>"
-    },
-    "Workitem Analyst": {
-      "primary_runtime_id": "<local-b>",
-      "fallback_runtime_id": "<server-a>"
-    },
-    "Engineer": {
-      "primary_runtime_id": "<local-c>",
-      "fallback_runtime_id": "<server-b>"
-    },
-    "Wayfinder Agent": {
-      "primary_runtime_id": "<local-a>",
-      "fallback_runtime_id": "<server-a>"
-    },
-    "Bug Fix Agent": {
-      "primary_runtime_id": "<local-c>",
-      "fallback_runtime_id": "<server-b>"
-    }
+  "Delivery Lead": {
+    "primary_runtime_id": "<local-a>",
+    "fallback_runtime_id": "<server-a>"
+  },
+  "Workitem Analyst": {
+    "primary_runtime_id": "<local-b>",
+    "fallback_runtime_id": "<server-a>"
+  },
+  "Engineer": {
+    "primary_runtime_id": "<local-c>",
+    "fallback_runtime_id": "<server-b>"
+  },
+  "Wayfinder Agent": {
+    "primary_runtime_id": "<local-a>",
+    "fallback_runtime_id": "<server-a>"
+  },
+  "Bug Fix Agent": {
+    "primary_runtime_id": "<local-c>",
+    "fallback_runtime_id": "<server-b>"
   }
 }
 ```
 
-每个 Agent 单独选择目标；允许共享 Runtime，不要求一对一。以 manifest 中的 Agent 名称解析当前 Workspace 中的真实 Agent ID，写入时使用 ID。未配置的 Agent 不管理；黑灯守卫自身无条件不参与切换。主备均须属于目标 Workspace、具备授权、建议使用相同 Provider 并一次性验收执行环境。不得用当前绑定反推 Primary，也不按机器名称猜测 ID。
+每个 Agent 单独选择目标；允许共享 Runtime，不要求一对一。以配置中的 Agent Name 匹配当前 Workspace 原生 Agent 列表中的真实 Agent ID，写入时使用 ID。未配置的 Agent 不管理；黑灯守卫自身无条件不参与切换。主备均须属于目标 Workspace、具备授权、建议使用相同 Provider 并一次性验收执行环境。不得用当前绑定反推 Primary，也不按机器名称猜测 ID。
 
 配置只表达期望策略，不保存 current_runtime_id、last_switch_time、运行状态或历史计数。当前绑定及在线状态由 Multica 提供。
 
 ### 3.1 RONDO_RUNTIME_POLICY
 
-黑灯守卫的 Agent custom_env 中配置 RONDO_RUNTIME_POLICY，值为 JSON 字符串，内容为上述 runtime_policy 对象本身（不包含外层 runtime_policy 键）。
+`RONDO_RUNTIME_POLICY` 是黑灯守卫专属环境变量，值为上述 JSON Object 的字符串形式，无外层包装。
 
 ```typescript
 interface AgentRuntimePolicy {
@@ -87,7 +85,7 @@ type RuntimePolicy = Record<string, AgentRuntimePolicy>;
 
 Rondo 使用 JSON.parse 解析，Key 为 Workspace 内 Agent Name，Value 仅包含两个真实 Runtime UUID。通过现有 resolveMulticaRuntime() 从 MULTICA_WORKSPACE_ID 与 MULTICA_SERVER_URL 获取当前 Workspace 上下文，再从原生 Agent 列表解析真实 Agent ID。无需在策略中重复配置 workspace_id、agent_id、enabled 或实时状态。无配置、空对象不执行切换；非法 JSON 或无效策略不得猜测写入。配置不得管理黑灯守卫自身。
 
-Workspace overlay 作为供给配置，按需把 runtime_policy 投影为黑灯守卫的 RONDO_RUNTIME_POLICY；供给只更新该键、保留其他 custom_env。也可由管理员直接配置黑灯守卫 env（若采用人工配置模式，不再在 overlay 重复维护相同策略；避免两个配置源同时修改）。两种方式选择其一。首版优先复用现有手工配置能力，批量供给有实际需求再扩展。黑灯守卫首次创建或人工绑定时显式选择服务器 Runtime，后续供给不得覆盖此绑定。
+首版仅采用 Multica 原生 custom_env 人工配置，作为主备策略唯一来源；不在 Workspace overlay 重复维护，不增加配置投影、同步脚本或 Registry。后续确有批量配置需求时再评估 rondo-sync。黑灯守卫首次创建或人工绑定时显式选择服务器 Runtime，后续供给不得覆盖此绑定。
 
 ## 4. Rondo CLI 原生实现
 
@@ -152,11 +150,11 @@ Runtime 切换不迁移本机未提交代码、CLI Session 或本地工作目录
 
 1. P0：完成现网版本、权限、Rondo 命令执行环境与 Cron 的最小 PoC。
 2. P0：新增 Agent、rondo runtime reconcile 命令及单元测试；注册 manifest；按 Workspace 配置每 Agent 主备及黑灯守卫固定服务器绑定；通过现有 Rondo 发布流程供给服务器。
-3. P0：按需调整 provision 的固定绑定及配置投影，并最小调整 .claude/skills/rondo-sync/scripts/sync_workspace.py 的 bind_agent_runtime，避免批量改绑覆盖受管主备策略及黑灯守卫固定绑定。保留非本次受管对象的既有行为，不改变交付 workflow。
+3. P0：按需调整 provision 的固定绑定，并最小调整 .claude/skills/rondo-sync/scripts/sync_workspace.py 的 bind_agent_runtime，避免批量改绑覆盖黑灯守卫固定绑定；明确既有人工批量改绑与自动协调的边界。保留非本次受管对象的既有行为，不改变交付 workflow。
 4. P1：隔离 Workspace 端到端验收后逐 Workspace 配置并启用 Autopilot。未配置主备策略的 Workspace 不执行切换。
 5. P2：仅有实际问题时再考虑防抖、额外告警或向 Multica 上游提原生主备需求。
 
-本计划仅保存设计；不包含生产 Agent/Autopilot 创建、配置写入、部署或代码实施。配置字段、传输方式及 CLI 入口以 PoC 核实为准。
+本计划仅保存设计；不包含生产 Agent/Autopilot 创建、配置写入、部署或代码实施。首版配置方式与 CLI 入口按本文实施；现网能力、权限及原生 Run 迁移行为须通过 PoC 核实。
 
 ## 8. 参考实现
 
