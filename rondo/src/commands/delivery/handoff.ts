@@ -8,9 +8,9 @@ import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
 import { MulticaClient, type IssueRecord } from "../../clients/multica.js";
 
-// admission 接受 --issue 和 --decision；Workspace、CLI 与身份一律来自 Runtime 环境变量，不读外部配置。
+// apply-decision 接受 --issue 和 --decision；Workspace、CLI 与身份一律来自 Runtime 环境变量，不读外部配置。
 const USAGE = [
-  "用法: rondo workitem admission --issue <KEY> --decision <accepted|needs_human|unsupported>",
+  "用法: rondo workitem apply-decision --issue <KEY> --decision <accepted|needs_human|unsupported>",
   "",
   "从 MULTICA_WORKSPACE_ID / MULTICA_SERVER_URL 定位 Workspace，",
   "MULTICA_CLI_PATH 可指定 CLI（默认 multica）。",
@@ -236,8 +236,8 @@ async function main(argv: string[]): Promise<number> {
   }
 }
 
-export function registerDeliveryAdmission(group: Command): void {
-  group.command("admission")
+export function registerWorkitemApplyDecision(group: Command): void {
+  group.command("apply-decision")
     .description("执行已确定的准入决定，更新 Issue 状态或指派")
     .usage("--issue <key> --decision <accepted|needs_human|unsupported>")
     .addHelpText("after", "\n使用当前 Multica Runtime，要求执行者为当前 Workspace 的 Wayfinder Agent。").allowUnknownOption(true).allowExcessArguments(true)

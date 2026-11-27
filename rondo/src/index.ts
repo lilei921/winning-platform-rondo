@@ -19,7 +19,7 @@ import { registerRuntimeCheckDaemon } from "./commands/runtime/check-daemon.js";
 import { registerRuntimeGetContext } from "./commands/runtime/get-context.js";
 import { registerRuntimeReconcile } from "./commands/runtime/reconcile.js";
 import { registerPrResume } from "./commands/pr/resume.js";
-import { registerDeliveryAdmission } from "./commands/delivery/handoff.js";
+import { registerWorkitemApplyDecision } from "./commands/delivery/handoff.js";
 import { registerTfsReconcileWorkitem } from "./commands/tfs/reconcile-workitem.js";
 import { registerTfsWriteback } from "./commands/tfs/writeback.js";
 import { registerPrMaterialize } from "./commands/pr/materialize.js";
@@ -98,7 +98,7 @@ registerCloseoutRoot(repo);
 
 const workitem = bareGroup(program.command("workitem").description("工作项同步、准入、批准、收口与查询操作"));
 registerWorkitemApprove(workitem);
-registerDeliveryAdmission(workitem);
+registerWorkitemApplyDecision(workitem);
 registerDeliveryFinalize(workitem);
 registerTfsReconcileWorkitem(workitem);
 registerTfsWriteback(workitem);
