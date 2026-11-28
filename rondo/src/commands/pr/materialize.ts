@@ -1,3 +1,4 @@
+import { resolveIssueRef } from "../../clients/native-checkout.js";
 /** Materialize all authorized Candidate PRs and verify their Work Item links. */
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -120,12 +121,13 @@ export async function materializeOne(tfs: Pick<TfsClient, "run">, api: Pick<ApiT
 
 export function registerPrMaterialize(group: Command): void {
   group.command("materialize").description("创建或核实 PR，登记 PR 事实")
-    .requiredOption("--issue <key>", "Multica Issue 标识")
-    .action(async (opts: {issue:string}) => {
+    .option("--issue <key-or-id>", "Multica Issue，默认当前 Issue")
+    .action(async (opts: {issue?: string}) => {
       markLeafExecuted();
       try {
+        const issueRef = resolveIssueRef(opts.issue);
         const runtime=resolveMulticaRuntime(), multica=new MulticaClient(runtime);
-        const issue=multica.getIssue(opts.issue), md=issue.metadata??{}, readOnly=issue.status==="in_review";
+        const issue=multica.getIssue(issueRef), md=issue.metadata??{}, readOnly=issue.status==="in_review";
         const bug=md["tfs.type"]==="Bug", tfsId=Number(md["tfs.id"]);
         if(!bug&&md["tfs.type"]!=="需求") throw new FailError("不支持当前 TFS Type");
         if(bug&&(md["analysis.source"] !== undefined||md["analysis.gate.result"])) throw new FailError("Bug 不能混入 OpenSpec Gate");
@@ -157,7 +159,7 @@ export function registerPrMaterialize(group: Command): void {
           }
         } else {
           const source=readAnalysisSource(md);
-          await checkPublishedChange({runtime},multica,opts.issue,source,md.pr);
+          await checkPublishedChange({runtime},multica,issueRef,source,md.pr);
         }
         const identities=new Map<string,VerifiedRepo>(), seen=new Set<string>();
         for(const entry of prep) {

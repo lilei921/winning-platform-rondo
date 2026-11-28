@@ -1,3 +1,4 @@
+import { resolveIssueRef } from "../../clients/native-checkout.js";
 /** Restore PR facts after an explicit Human decision; Multica owns Issue status and Run. */
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
@@ -93,12 +94,12 @@ async function verifyAbandoned(pr: RegisteredPr, checkCandidate: boolean): Promi
 
 export function registerPrResume(group: Command): void {
   group.command("resume").description("根据已确认的人工决定恢复 abandoned PR 的交付事实")
-    .requiredOption("--issue <key>", "Multica Issue 标识").requiredOption("--comment-id <id>", "人工决定评论 ID")
+    .option("--issue <key-or-id>", "Multica Issue，默认当前 Issue").requiredOption("--comment-id <id>", "人工决定评论 ID")
     .requiredOption("--next <REWORK|RECREATE_PR>", "已确认的后续处理决定")
-    .action(async (opts: {issue:string;commentId:string;next:Next}) => {
+    .action(async (opts: {issue?:string;commentId:string;next:Next}) => {
       markLeafExecuted();
       try {
-        const result = await resumePr(new MulticaClient(resolveMulticaRuntime()), opts.issue, opts.commentId, opts.next);
+        const result = await resumePr(new MulticaClient(resolveMulticaRuntime()), resolveIssueRef(opts.issue), opts.commentId, opts.next);
         process.stdout.write(JSON.stringify(result)+"\n");
       } catch (e) {
         if (!(e instanceof FailError || e instanceof UnknownError)) throw e;

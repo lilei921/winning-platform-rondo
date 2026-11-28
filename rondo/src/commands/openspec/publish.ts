@@ -1,3 +1,4 @@
+import { resolveIssueRef } from "../../clients/native-checkout.js";
 /** Publish committed execution artifacts and bind their remote SHA to the approved Analysis. */
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
@@ -45,17 +46,18 @@ export function checkPublishContract(root: string, source: AnalysisSource, candi
 
 export function registerOpenSpecPublish(group: Command): void {
   group.command("publish").description("发布已批准 OpenSpec Change 的研发工件并登记发布事实")
-    .requiredOption("--issue <key>", "Multica Issue 标识")
+    .option("--issue <key-or-id>", "Multica Issue，默认当前 Issue")
     .option("--root-repo <path>", "当前根仓路径").option("--minor-design", "确认仅细化非实质性 Design")
-    .action(async (opts: { issue: string; rootRepo?: string; minorDesign?: boolean }) => {
+    .action(async (opts: { issue?: string; rootRepo?: string; minorDesign?: boolean }) => {
       markLeafExecuted();
       try {
+        const issueRef = resolveIssueRef(opts.issue);
         const runtime = resolveMulticaRuntime(), client = new MulticaClient(runtime);
-        const initial = client.getIssue(opts.issue).metadata ?? {};
+        const initial = client.getIssue(issueRef).metadata ?? {};
         const initialSource = readAnalysisSource(initial);
         const cfg = { runtime };
         const multica = client;
-        const approved = approvedIdentity(cfg, multica, opts.issue);
+        const approved = approvedIdentity(cfg, multica, issueRef);
         const source = approved.source;
         if (!sameAnalysisSource(source, initialSource) || approved.issue.metadata?.["analysis.human_approval"] !== initial["analysis.human_approval"] || approved.issue.metadata?.["tfs.id"] !== initial["tfs.id"]) throw new UnknownError("批准来源在读取授权期间变化");
         const root = requirementRoot(opts.rootRepo);
@@ -67,7 +69,7 @@ export function registerOpenSpecPublish(group: Command): void {
           executionArtifact, undefined, { repoUrl: source.repo_url, expectedBranch: branch, approvedCommit: source.commit,
             validateTree: commit => checkPublishContract(root, source, commit, opts.minorDesign === true, previousCommit) });
         const receipt = JSON.stringify({ analysis_source: source, commit: published.commit });
-        const rechecked = approvedIdentity(cfg, multica, opts.issue);
+        const rechecked = approvedIdentity(cfg, multica, issueRef);
         if (rechecked.issue.status !== approved.issue.status) throw new UnknownError("发布期间 Issue 状态变化");
         const current = rechecked.issue.metadata ?? {};
         if (current["analysis.source"] !== original["analysis.source"] ||

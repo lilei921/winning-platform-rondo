@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, readFileSync, rmSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -22,10 +22,10 @@ function fixture(t) {
   writeFileSync(config, JSON.stringify({ runtime: { multica_cli: MOCK, workspace_id: "ws-test", multica_profile: "private", multica_server_url: "https://private.example" } }));
   const write = value => writeFileSync(stateFile, JSON.stringify({ metadata: { "analysis.source": value === undefined ? undefined : JSON.stringify(value) } }));
   write(source);
-  const run = (file = "tasks.md", extraEnv = {}) => {
+  const run = (file = "tasks.md", extraEnv = {}, implicit = false) => {
     const before = readFileSync(stateFile, "utf8");
-    const r = spawnSync(process.execPath, [CLI, "openspec", "read", "--issue", "WNDF-T", "--file", file], {
-      encoding: "utf8", timeout: 15000,
+    const r = spawnSync(process.execPath, [CLI, "openspec", "read", ...(implicit ? [] : ["--issue", "WNDF-T"]), "--file", file], {
+      encoding: "utf8", timeout: 15000, ...(implicit ? { cwd: dir } : {}),
       env: { ...Object.fromEntries(Object.entries(process.env).filter(([k]) => k.toLowerCase() !== "path")), ...tfs.env,
         MOCK_STATE: stateFile, MULTICA_CLI_PATH: MOCK, MULTICA_WORKSPACE_ID: "ws-test", MULTICA_SERVER_URL: "https://private.example", MOCK_EXPECT_SERVER: "https://private.example", ...extraEnv },
     });
@@ -33,7 +33,7 @@ function fixture(t) {
     assert.equal(readFileSync(stateFile, "utf8"), before, "读取不得写 Issue");
     return { code: r.status, body: JSON.parse(r.stdout) };
   };
-  return { run, tfs, source, write, path, config };
+  return { run, tfs, source, write, path, config, dir };
 }
 
 test("analysis read 无需根仓挂载，按固定 commit 完整返回中文多行正文", t => {
@@ -104,4 +104,19 @@ test("缺少 TFS 凭据返回 UNKNOWN JSON，不产生请求", t => {
   assert.equal(result.code, 3);
   assert.match(result.body.reason, /配置无效/);
   assert.equal(f.tfs.state().requests, undefined);
+});
+
+
+test("openspec read defaults to native Issue and fails closed without valid context", t => {
+  const f = fixture(t);
+  const env = { MULTICA_AGENT_ID: "agent" };
+  const missing = f.run("tasks.md", env, true);
+  assert.equal(missing.code, 3);
+  assert.match(missing.body.reason, /--issue/);
+  mkdirSync(join(f.dir, ".multica"));
+  writeFileSync(join(f.dir, ".multica", "daemon_task_context.json"),
+    JSON.stringify({ managed_by: "multica-daemon-task", agent_id: "agent", issue_id: "issue-1" }));
+  const result = f.run("tasks.md", env, true);
+  assert.equal(result.code, 0, JSON.stringify(result));
+  assert.equal(result.body.content, content);
 });

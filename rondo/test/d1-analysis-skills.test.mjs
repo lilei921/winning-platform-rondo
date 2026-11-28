@@ -134,7 +134,7 @@ test("D2 skill contracts: archive legacy and bind composable Analyst methods", (
   assert.ok(existsSync(join(ARCHIVED_SKILLS, "workitem-analysis", "references", "tasks-md-authoring-contract.md")));
   assert.match(spec, /当前 Artifact Instruction \/ Template/);
   const publish = FRONT("analysis-publish");
-  assert.match(publish, /rondo openspec submit-review --issue/);
+  assert.match(publish, /rondo openspec submit-review --change-ref/);
   assert.ok(!publish.includes("--mode requirement"), "source type is resolved by CLI");
   assert.match(publish, /无需手工 Git Add、Commit、Push 或例行预校验/);
   assert.match(FRONT("bug-analysis"), /替代根因/);

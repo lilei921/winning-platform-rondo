@@ -78,6 +78,29 @@ export function readDaemonTaskContext(workdir: string): DaemonTaskContext | null
   }
 }
 
+/** 单 Issue 命令默认使用当前 daemon Task 的原生 Issue ID；显式 Key / ID 优先。 */
+export function resolveIssueRef(explicit?: string, cwd = process.cwd(), env: NodeJS.ProcessEnv = process.env): string {
+  if (explicit !== undefined) {
+    if (!explicit.trim() || explicit.startsWith("--")) throw new UnknownError("--issue 必须提供有效 Key 或 ID");
+    return explicit;
+  }
+  // 从当前目录或仓库子目录定位最近的 Task workdir，不扫描其他 Task。
+  let dir = resolve(cwd);
+  while (true) {
+    if (existsSync(join(dir, DAEMON_TASK_CONTEXT))) {
+      const context = readDaemonTaskContext(dir);
+      const agentId = env.MULTICA_AGENT_ID?.trim();
+      if (agentId && context?.managed_by === "multica-daemon-task" && context.agent_id === agentId &&
+          typeof context.issue_id === "string" && context.issue_id.trim()) return context.issue_id;
+      break; // 最近的 Context 无效时，不回退其他 Task。
+    }
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  throw new UnknownError("无法确认当前 Issue，请显式提供 --issue <key-or-id>");
+}
+
 /** Native intent must not silently fall back to a legacy Git workflow when identity is incomplete. */
 export function nativeCheckoutExpected(path: string, workdir = dirname(path), legacyBranch?: string): boolean {
   if (platformCheckoutMode(path) !== null) return true;

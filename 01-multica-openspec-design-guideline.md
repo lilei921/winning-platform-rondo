@@ -558,6 +558,8 @@ Rondo CLI 是 Multica + OpenSpec 组合架构中的确定性执行边界，负�
 
 #### Command Semantics and Granularity（命令语义与粒度）
 
+- 单 Issue 命令优先复用 Multica 原生 Task Context 的 `issue_id`，不要求绑定 Issue 的 Agent 重复传递身份。显式 `--issue`（Key 或 ID）优先；无法确认当前 Issue 时停止并要求明确参数。批量扫描保留独立语义，Autopilot 收口显式指定目标；现有授权及业务校验不变。
+
 - 叶子命令以明确对象上的确定性操作命名，例如 `openspec validate`、`openspec submit-review`、`workitem approve`、`pr resume`。生命周期动作可以作为叶子命令；不因此建立阶段命令组。
 - 只有在操作对象、授权前置条件、副作用及失败恢复语义一致时，才考虑合并命令。存在实质不同的授权或副作用时保持独立，不为追求命令数量少而强行合并。
 - 不按每个 API Endpoint 建立命令，不引入通用 Dispatch 层、重复命令树或仅转发旧命令的兼容别名。

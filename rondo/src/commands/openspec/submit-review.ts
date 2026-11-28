@@ -1,3 +1,4 @@
+import { resolveIssueRef } from "../../clients/native-checkout.js";
 /** Verify the reviewed Change, publish it and record its immutable remote source before review. */
 import { resolveMulticaRuntime } from "../../clients/runtime-context.js";
 import { loadConfig as loadTfsConfig, ConfigError } from "../../tfs/config.js";
@@ -45,7 +46,7 @@ function sameIssueOwner(before: Record<string, unknown>, after: Record<string, u
 }
 const ANALYSIS_CONTRACT_FILE = /^(?:\.openspec\.yaml|proposal\.md|tasks\.md|design\.md|specs\/.+\.md)$/;
 
-function parseArgs(argv: string[]): { issue: string; changeRef: string; rootRepo: string | null; targetBranch: string | null; mode: string | null } {
+function parseArgs(argv: string[]): { issue: string | null; changeRef: string; rootRepo: string | null; targetBranch: string | null; mode: string | null } {
   const get = (flag: string): string | null => {
     const i = argv.indexOf(flag);
     return i !== -1 && i + 1 < argv.length ? argv[i + 1] : null;
@@ -62,8 +63,8 @@ function parseArgs(argv: string[]): { issue: string; changeRef: string; rootRepo
   }
   const issue = get("--issue");
   const changeRef = get("--change-ref");
-  if (!issue || !changeRef) {
-    process.stderr.write("用法: rondo analysis publish --issue <issue-id> --change-ref <id> [--root-repo <path>] [--target-branch <branch>]\n");
+  if ((argv.includes("--issue") && (!issue || issue.startsWith("--"))) || !changeRef) {
+    process.stderr.write("用法: rondo analysis publish [--issue <key-or-id>] --change-ref <id> [--root-repo <path>] [--target-branch <branch>]\n");
     process.exit(64);
   }
   return { issue, changeRef, rootRepo, targetBranch: get("--target-branch"), mode: get("--mode") };
@@ -77,9 +78,10 @@ function pushRepositoryUrl(root: string): string {
 }
 
 async function main(rawArgs: string[]): Promise<number> {
-  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis publish --issue <issue-id> --change-ref <id> [--root-repo <path>] [--target-branch <branch>]\n"); return 0; }
-  const args = parseArgs(rawArgs);
+  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis publish [--issue <key-or-id>] --change-ref <id> [--root-repo <path>] [--target-branch <branch>]\n"); return 0; }
+  const parsed = parseArgs(rawArgs);
   try {
+    const args = { ...parsed, issue: resolveIssueRef(parsed.issue ?? undefined) };
     const runtime = resolveMulticaRuntime();
     const ws = ["--workspace-id", runtime.workspace_id];
     const MC = multicaPrefix(runtime);
@@ -380,7 +382,7 @@ export function registerOpenSpecSubmitReview(group: Command): void {
   group
     .command("submit-review")
     .description("提交 OpenSpec 审核版本，登记来源事实并进入审核状态")
-    .usage("--issue <key> --change-ref <id> [--root-repo <path>] [--target-branch <branch>]")
+    .usage("[--issue <key-or-id>] --change-ref <id> [--root-repo <path>] [--target-branch <branch>]")
     .allowUnknownOption(true)
     .allowExcessArguments(true)
     .action(async (...cbArgs: unknown[]) => {

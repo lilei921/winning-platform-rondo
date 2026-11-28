@@ -27,6 +27,8 @@ rondo doctor --help
 
 配置安装、TFS 连接、Multica Workspace 和 Project Resource 的说明见 [README.md](README.md#5-运行期配置)。本页仅保留命令调用契约。
 
+**Issue 定位**：绑定 Issue 的 Run 中，单 Issue 命令的 `--issue <key-or-id>` 可省略；Rondo 从当前目录向上定位最近的 Multica 原生 `.multica/daemon_task_context.json`，使用当前 Agent 对应的 `issue_id`。显式参数优先；无法确认上下文时返回 `UNKNOWN`，请显式指定。批量 `pr reconcile-status` 省略 `--issue` 仍表示扫描；Autopilot 收口命令须明确指定 Issue。
+
 ## 2. 命令总览
 
 | 命令组 | 子命令 | 主要用途 |
@@ -46,10 +48,10 @@ rondo doctor --help
 ```bash
 rondo openspec resolve-identity --openspec-root <path> [--change-ref <ref>] [--tfs-id <id>] [--expect-schema <name>] [--output json]
 rondo openspec install-schema
-rondo openspec validate --issue <id> --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]
-rondo openspec read --issue <KEY> --file <Change内相对路径>
-rondo openspec submit-review --issue <id> --change-ref <id> [--root-repo <path>] [--target-branch <branch>]
-rondo openspec publish --issue <KEY> [--root-repo <path>] [--minor-design]
+rondo openspec validate [--issue <key-or-id>] --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]
+rondo openspec read [--issue <key-or-id>] --file <Change内相对路径>
+rondo openspec submit-review [--issue <key-or-id>] --change-ref <id> [--root-repo <path>] [--target-branch <branch>]
+rondo openspec publish [--issue <key-or-id>] [--root-repo <path>] [--minor-design]
 ```
 
 | 命令 | 功能 |
@@ -74,8 +76,8 @@ Requirement 的 `openspec submit-review` 和研发工件 `openspec publish` 使�
 ```bash
 rondo repo get --repo <name|id> [--project <project>]
 rondo repo get-branch --repo <name|id> --branch <branch> [--project <project>]
-rondo repo fetch --issue <KEY> --repo <repo_id> --root-repo <path>
-rondo repo push --issue <KEY> --repo <repo_id> --root-repo <path>
+rondo repo fetch [--issue <key-or-id>] --repo <repo_id> --root-repo <path>
+rondo repo push [--issue <key-or-id>] --repo <repo_id> --root-repo <path>
 rondo repo prepare-archive --issue <KEY>
 ```
 
@@ -94,9 +96,9 @@ rondo repo prepare-archive --issue <KEY>
 ### 5.1 `rondo pr`
 
 ```bash
-rondo pr prepare --issue <KEY> --repo <完整仓库名称> --root-repo <path> --candidate-commit <sha> --facts <json|-> --title <title> [--validation-cwd <path>] [--required-repos <repo1,repo2>]
-rondo pr materialize --issue <KEY>
-rondo pr resume --issue <KEY> --comment-id <id> --next REWORK|RECREATE_PR
+rondo pr prepare [--issue <key-or-id>] --repo <完整仓库名称> --root-repo <path> --candidate-commit <sha> --facts <json|-> --title <title> [--validation-cwd <path>] [--required-repos <repo1,repo2>]
+rondo pr materialize [--issue <key-or-id>]
+rondo pr resume [--issue <key-or-id>] --comment-id <id> --next REWORK|RECREATE_PR
 rondo pr reconcile-status [--issue <KEY> | --recover-done]
 rondo pr create --repo <name|id> --source <branch> --target <branch> --title <title> [--description-file <path>] [--work-items <id,id>] [--project <project>]
 rondo pr get --repo <name|id> --id <pr-id> [--project <project>]
@@ -121,8 +123,8 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 
 ```bash
 rondo workitem sync --wiql "<WIQL>" [--initial-status backlog|todo]
-rondo workitem apply-decision --issue <KEY> --decision <accepted|needs_human|unsupported>
-rondo workitem approve --issue <KEY> --comment-id <ID> --commit <SHA> --verify-required true|false [--waive-tasks 3.1,3.2]
+rondo workitem apply-decision [--issue <key-or-id>] --decision <accepted|needs_human|unsupported>
+rondo workitem approve [--issue <key-or-id>] --comment-id <ID> --commit <SHA> --verify-required true|false [--waive-tasks 3.1,3.2]
 rondo workitem finalize --phase prepare|complete --issue <KEY> [--root-repo <path>]
 rondo workitem writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-plan <plan.json>]
 ```
@@ -148,7 +150,7 @@ rondo workitem writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-
 
 `accepted` 执行一次 `status=todo + assignee` 更新，通过 Multica 原生机制启动对应 Run。它不重新判断 Wayfinder 的 `accepted` 结论，也不解析 `/note` 或 Evidence。若无法确认结果则返回 `UNKNOWN`，不盲目重复交接。
 
-`workitem apply-decision` 接受 `--issue` 和 `--decision`。`needs_human` / `unsupported` 保留 Wayfinder Assignee，分别设置 `blocked` / `unsupported`，不启动新 Run。Workspace 与服务端从 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL` 读取；CLI 路径可选 `MULTICA_CLI_PATH`（默认 `multica`），并校验 `MULTICA_AGENT_ID` 必须是当前 Workspace 的 Wayfinder Agent。缺失或身份不符返回 `UNKNOWN`，不使用默认 Workspace。交接目标始终从当前 Workspace 查询。完整说明见 `rondo workitem apply-decision --help`。
+`workitem apply-decision` 接受 `--decision` 和可选 `--issue`。`needs_human` / `unsupported` 保留 Wayfinder Assignee，分别设置 `blocked` / `unsupported`，不启动新 Run。Workspace 与服务端从 `MULTICA_WORKSPACE_ID`、`MULTICA_SERVER_URL` 读取；CLI 路径可选 `MULTICA_CLI_PATH`（默认 `multica`），并校验 `MULTICA_AGENT_ID` 必须是当前 Workspace 的 Wayfinder Agent。缺失或身份不符返回 `UNKNOWN`，不使用默认 Workspace。交接目标始终从当前 Workspace 查询。完整说明见 `rondo workitem apply-decision --help`。
 
 交付收口的常用调用顺序：
 

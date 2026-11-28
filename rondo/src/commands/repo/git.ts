@@ -1,3 +1,4 @@
+import { resolveIssueRef } from "../../clients/native-checkout.js";
 import { Command } from "commander";
 import { authorizedCheckout } from "./authorized-checkout.js";
 import { requireTargetBranch } from "./checkout.js";
@@ -8,12 +9,12 @@ import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
 export function registerRepoGit(group: Command): void {
   for (const operation of ["fetch", "push"] as const) {
     group.command(operation).description(operation === "fetch" ? "Fetch 已授权仓库的目标分支" : "非强制 Push 已授权仓库的 Candidate")
-      .requiredOption("--issue <key>", "Multica Issue 标识").requiredOption("--repo <key>", "完整仓库名称")
+      .option("--issue <key-or-id>", "Multica Issue，默认当前 Issue").requiredOption("--repo <key>", "完整仓库名称")
       .requiredOption("--root-repo <path>", "当前根仓路径")
-      .action(async (opts: { issue: string; repo: string; rootRepo: string }) => {
+      .action(async (opts: { issue?: string; repo: string; rootRepo: string }) => {
         markLeafExecuted();
         try {
-          const { repo, path, branch, head } = await authorizedCheckout(opts.issue, opts.repo, opts.rootRepo, operation === "push");
+          const { repo, path, branch, head } = await authorizedCheckout(resolveIssueRef(opts.issue), opts.repo, opts.rootRepo, operation === "push");
           if (operation === "fetch") {
             const target = requireTargetBranch(repo, branch);
             const result = runAuthenticatedGit(repo.repo_url, ["fetch", "--no-tags", repo.repo_url, `refs/heads/${target}:refs/remotes/origin/${target}`], path);

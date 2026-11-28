@@ -1,3 +1,4 @@
+import { resolveIssueRef } from "../../clients/native-checkout.js";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
@@ -42,15 +43,15 @@ export function validatePrFacts(raw: unknown, bug: boolean): Facts {
 export function registerPrPrepare(group: Command): void {
   group.command("prepare").description("校验 Candidate 和交付事实，登记 PR 准备记录")
     .exitOverride()
-    .requiredOption("--issue <key>", "Multica Issue 标识").requiredOption("--repo <key>", "完整仓库名称").requiredOption("--root-repo <path>", "当前根仓路径")
+    .option("--issue <key-or-id>", "Multica Issue，默认当前 Issue").requiredOption("--repo <key>", "完整仓库名称").requiredOption("--root-repo <path>", "当前根仓路径")
     .requiredOption("--candidate-commit <sha>", "Candidate 提交 SHA").requiredOption("--facts <file|->", "交付事实 JSON 文件或标准输入").requiredOption("--title <title>", "PR 标题")
     .option("--validation-cwd <path>", "验证命令执行目录").option("--required-repos <repos>", "本次交付涉及的必需仓库，逗号分隔")
-    .action(async (opts: {issue:string;repo:string;rootRepo:string;candidateCommit:string;facts:string;title:string;validationCwd?:string;requiredRepos?:string}) => {
+    .action(async (opts: {issue?: string;repo:string;rootRepo:string;candidateCommit:string;facts:string;title:string;validationCwd?:string;requiredRepos?:string}) => {
       markLeafExecuted();
       try {
         const sha = opts.candidateCommit;
         if (!/^[0-9a-f]{40}$/.test(sha) || !filled(opts.title)) throw new FailError("Candidate SHA 或标题非法");
-        const current = await authorizedCheckout(opts.issue, opts.repo, opts.rootRepo);
+        const current = await authorizedCheckout(resolveIssueRef(opts.issue), opts.repo, opts.rootRepo);
         const {client, issue, md, repo, path, branch, tfsId, bug, resources, rootUrl} = current;
         const target = requireTargetBranch(repo, branch);
         const rawInput = readBugEvidenceInput(opts.facts);

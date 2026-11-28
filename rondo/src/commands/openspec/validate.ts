@@ -1,7 +1,8 @@
+import { resolveIssueRef } from "../../clients/native-checkout.js";
 /**
  * openspec validate — Analysis Gate 确定性检查（02 §5.4）。
  *
- * 用法: rondo openspec validate --issue <issue-id> --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]
+ * 用法: rondo openspec validate [--issue <key-or-id>] --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]
  *
  * 输入：当前 Issue 来源事实、Change ID及 OpenSpec Change 目录。
  * 输出：{ result: PASS | FAIL | UNKNOWN, checks: [...], reasons: [...] }
@@ -51,7 +52,7 @@ function hasMarkdown(dir: string): boolean {
 
 interface Args { issue: string; openspecRoot: string; cli: string; workspaceId: string | null; out: string | null; changeRef: string }
 
-function parseArgs(argv: string[]): Args {
+function parseArgs(argv: string[]): Omit<Args, "issue"> & { issue: string | null } {
   const get = (flag: string): string | null => {
     const i = argv.indexOf(flag);
     return i !== -1 && i + 1 < argv.length ? argv[i + 1] : null;
@@ -59,8 +60,8 @@ function parseArgs(argv: string[]): Args {
   const issue = get("--issue");
   const openspecRoot = get("--openspec-root");
   const changeRef = get("--change-ref");
-  if (!issue || !openspecRoot || !changeRef) {
-    process.stderr.write("用法: rondo openspec validate --issue <issue-id> --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]\n");
+  if ((argv.includes("--issue") && (!issue || issue.startsWith("--"))) || !openspecRoot || !changeRef) {
+    process.stderr.write("用法: rondo openspec validate [--issue <key-or-id>] --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]\n");
     process.exit(64);
   }
   return { issue, openspecRoot, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), out: get("--out"), changeRef };
@@ -328,13 +329,13 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
 
 /** Preview never persists a file. Complete invokes the same check again before publication. */
 function main(rawArgs: string[]): number {
-  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo openspec validate --issue <issue-id> --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]\n"); return 0; }
+  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo openspec validate [--issue <key-or-id>] --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]\n"); return 0; }
   const args = parseArgs(rawArgs);
   if (args.out) return emitResult({ result: "FAIL", checks: [], reasons: ["--out 已退役；Analysis Gate 结果不再持久化"] }, 2, null);
   try {
     const runtime = analysisRuntime(rawArgs, args.cli, args.workspaceId);
     const outcome = evaluateAnalysisGate({
-      issue: args.issue,
+      issue: resolveIssueRef(args.issue ?? undefined),
       openspecRoot: args.openspecRoot,
       workspaceId: runtime.workspace_id!,
       runtime, changeRef: args.changeRef,
@@ -351,7 +352,7 @@ export function registerOpenSpecValidate(group: Command): void {
   group
     .command("validate")
     .description("校验 Issue 与 OpenSpec Change 的身份及规范")
-    .usage("--issue <key> --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]")
+    .usage("[--issue <key-or-id>] --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]")
     .allowUnknownOption(true)
     .allowExcessArguments(true)
     .action((...cbArgs: unknown[]) => {
