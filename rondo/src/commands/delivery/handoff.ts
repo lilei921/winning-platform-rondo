@@ -9,7 +9,7 @@ import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
 import { MulticaClient, type IssueRecord } from "../../clients/multica.js";
 
-// apply-decision 接受 --issue 和 --decision；Workspace、CLI 与身份一律来自 Runtime 环境变量，不读外部配置。
+// apply-decision 接受 --decision 和可选 --issue；默认使用原生 Task Context。
 const USAGE = [
   "用法: rondo workitem apply-decision [--issue <key-or-id>] --decision <accepted|needs_human|unsupported>",
   "",

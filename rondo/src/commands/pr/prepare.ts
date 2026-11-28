@@ -51,7 +51,8 @@ export function registerPrPrepare(group: Command): void {
       try {
         const sha = opts.candidateCommit;
         if (!/^[0-9a-f]{40}$/.test(sha) || !filled(opts.title)) throw new FailError("Candidate SHA 或标题非法");
-        const current = await authorizedCheckout(resolveIssueRef(opts.issue), opts.repo, opts.rootRepo);
+        const issueRef = resolveIssueRef(opts.issue);
+        const current = await authorizedCheckout(issueRef, opts.repo, opts.rootRepo);
         const {client, issue, md, repo, path, branch, tfsId, bug, resources, rootUrl} = current;
         const target = requireTargetBranch(repo, branch);
         const rawInput = readBugEvidenceInput(opts.facts);
@@ -96,7 +97,7 @@ export function registerPrPrepare(group: Command): void {
           if(remote.status!==0 || remote.stdout.trim()!==sha+"\t"+ref) throw new UnknownError("远端 Candidate SHA 未确认");
         };
         const refresh = async () => {
-          const fresh=await authorizedCheckout(opts.issue,opts.repo,opts.rootRepo);
+          const fresh=await authorizedCheckout(issueRef,opts.repo,opts.rootRepo);
           if(fresh.issue.id!==issue.id || fresh.issue.status!==issue.status || fresh.issue.project_id!==issue.project_id || fresh.rootUrl!==rootUrl ||
             fresh.path!==path || JSON.stringify(fresh.repo)!==JSON.stringify(repo) ||
             ["analysis.source","analysis.human_approval","analysis.gate.result","tfs.id","tfs.type","tfs.url","bug.required_repos","finalize.pending","delivery.tfs_written"]

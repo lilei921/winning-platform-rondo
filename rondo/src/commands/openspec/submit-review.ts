@@ -62,9 +62,10 @@ function parseArgs(argv: string[]): { issue: string | null; changeRef: string; r
     process.exit(64);
   }
   const issue = get("--issue");
+  const invalidIssueOption = argv.some(a => a.startsWith("--issue=")) || argv.filter(a => a === "--issue").length > 1;
   const changeRef = get("--change-ref");
-  if ((argv.includes("--issue") && (!issue || issue.startsWith("--"))) || !changeRef) {
-    process.stderr.write("用法: rondo analysis publish [--issue <key-or-id>] --change-ref <id> [--root-repo <path>] [--target-branch <branch>]\n");
+  if (invalidIssueOption || (argv.includes("--issue") && (!issue || issue.startsWith("--"))) || !changeRef) {
+    process.stderr.write("用法: rondo openspec submit-review [--issue <key-or-id>] --change-ref <id> [--root-repo <path>] [--target-branch <branch>]\n");
     process.exit(64);
   }
   return { issue, changeRef, rootRepo, targetBranch: get("--target-branch"), mode: get("--mode") };
@@ -78,7 +79,7 @@ function pushRepositoryUrl(root: string): string {
 }
 
 async function main(rawArgs: string[]): Promise<number> {
-  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis publish [--issue <key-or-id>] --change-ref <id> [--root-repo <path>] [--target-branch <branch>]\n"); return 0; }
+  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo openspec submit-review [--issue <key-or-id>] --change-ref <id> [--root-repo <path>] [--target-branch <branch>]\n"); return 0; }
   const parsed = parseArgs(rawArgs);
   try {
     const args = { ...parsed, issue: resolveIssueRef(parsed.issue ?? undefined) };

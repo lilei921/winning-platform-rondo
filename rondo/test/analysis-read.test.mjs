@@ -116,6 +116,9 @@ test("openspec read defaults to native Issue and fails closed without valid cont
   mkdirSync(join(f.dir, ".multica"));
   writeFileSync(join(f.dir, ".multica", "daemon_task_context.json"),
     JSON.stringify({ managed_by: "multica-daemon-task", agent_id: "agent", issue_id: "issue-1" }));
+  const stateFile = join(f.dir, "state.json");
+  const state = JSON.parse(readFileSync(stateFile, "utf8"));
+  writeFileSync(stateFile, JSON.stringify({ issues: { "issue-1": { id: "issue-1", identifier: "WNDF-T", metadata: state.metadata } } }));
   const result = f.run("tasks.md", env, true);
   assert.equal(result.code, 0, JSON.stringify(result));
   assert.equal(result.body.content, content);

@@ -58,9 +58,10 @@ function parseArgs(argv: string[]): Omit<Args, "issue"> & { issue: string | null
     return i !== -1 && i + 1 < argv.length ? argv[i + 1] : null;
   };
   const issue = get("--issue");
+  const invalidIssueOption = argv.some(a => a.startsWith("--issue=")) || argv.filter(a => a === "--issue").length > 1;
   const openspecRoot = get("--openspec-root");
   const changeRef = get("--change-ref");
-  if ((argv.includes("--issue") && (!issue || issue.startsWith("--"))) || !openspecRoot || !changeRef) {
+  if (invalidIssueOption || (argv.includes("--issue") && (!issue || issue.startsWith("--"))) || !openspecRoot || !changeRef) {
     process.stderr.write("用法: rondo openspec validate [--issue <key-or-id>] --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]\n");
     process.exit(64);
   }
