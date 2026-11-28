@@ -23,6 +23,6 @@
 - 配置生效无需重新发布 Rondo；后续 Vayne Run 消费新策略。
 - 在 Multica 界面可直接修改 Vayne 的 `RONDO_RUNTIME_POLICY` 单个环境变量。使用原生 CLI 时必须保留其他 custom_env 键和值。
 
-首次启用前，管理员完成固定服务器绑定和现网验收。在 Vayne Run 中使用 `rondo runtime reconcile --dry-run` 核实计划；原生权限及 Run 迁移等 PoC 通过后方可启用定时协调。详见 [黑灯计划](../../../../20-lights-out-plan.md)。
+首次启用前，管理员完成固定服务器绑定和现网验收。在 Vayne Run 中使用 `rondo runtime reconcile --dry-run` 核实计划；原生权限及 Run 迁移等 PoC 通过后方可启用定时协调。详见 [黑灯计划](../../../../02-multica-delivery-lifecycle-design.md#runtime-reconcile)。
 
 首次配置的主备 Runtime ID 保存在对应 workspace 的 `workspace-config/workspaces/<name>.json` overlay 的 `runtime_policy` 段，作为平台策略缺失时的首次写入来源；平台已有策略不被覆盖。完整 `custom_env` 与凭据不入库。

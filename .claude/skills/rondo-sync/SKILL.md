@@ -131,7 +131,7 @@ python .claude/skills/rondo-sync/scripts/sync_workspace.py winning-lfw --repo-ro
    不将凭据作为命令行参数，不打印完整环境变量；只有主备 Runtime ID 允许写入 workspace overlay，完整 `custom_env` 与凭据不入仓。若读取后发现策略已发生并发修改，重新核对本次变更，不覆盖他人的修改。权限不足时由 Agent Owner 或 Workspace Owner/Admin 处理，不绕过原生授权。
 5. **回读确认**：再次执行 env get（按需使用 --show-values），解析策略 JSON，核对本次目标配置以及其他环境变量未被改写；仅报告 workspace、Agent 主备变更及验证结果，不输出凭据。不一致则报告未确认，不盲目重试。
 
-首次启用 Vayne 时，由管理员完成固定服务器绑定、Max Concurrent Tasks=1 及 [黑灯计划](../../../20-lights-out-plan.md) 要求的 PoC，再启用 Autopilot Trigger。维护策略本身不改绑任何 Agent，不触发 Run，不创建或启用 Trigger；后续 Vayne Run 按新策略协调。普通 rondo-sync 供给不主动覆盖 `RONDO_RUNTIME_POLICY`。
+首次启用 Vayne 时，由管理员完成固定服务器绑定、Max Concurrent Tasks=1 及 [黑灯计划](../../../02-multica-delivery-lifecycle-design.md#runtime-reconcile) 要求的 PoC，再启用 Autopilot Trigger。维护策略本身不改绑任何 Agent，不触发 Run，不创建或启用 Trigger；后续 Vayne Run 按新策略协调。普通 rondo-sync 供给不主动覆盖 `RONDO_RUNTIME_POLICY`。
 
 ### workspace overlay 中的首次策略
 
