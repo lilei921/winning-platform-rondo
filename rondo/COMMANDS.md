@@ -38,7 +38,7 @@ rondo doctor --help
 | `runtime` | `get-context`、`check-checkout`、`check-daemon`、`reconcile` | Runtime / Daemon、Checkout 检查及主备协调 |
 | `openspec` | `resolve-identity`、`install-schema`、`validate`、`read`、`submit-review`、`publish` | OpenSpec Change、Schema 与工程工件管理 |
 | `repo` | `get`、`get-branch`、`fetch`、`push`、`prepare-archive` | Git 仓库查询、准备与受控操作 |
-| `workitem` | `sync`、`apply-decision`、`approve`、`finalize`、`writeback`、`query`、`set-state`、`comment`、`create`、`link-commits`、`download-attachment` | 工作项同步、准入、批准、收口及查询操作 |
+| `workitem` | `sync-issue`、`apply-decision`、`approve`、`finalize`、`writeback`、`set-state`、`comment`、`create`、`link-commits`、`download-attachment` | 工作项同步、准入、批准、收口及回写操作 |
 | 顶级 | `doctor` | 环境体检 |
 
 ## 3. OpenSpec
@@ -122,7 +122,7 @@ rondo pr list --repo <name|id> [--status active|completed|abandoned] [--source-b
 ### 6.1 `rondo workitem`：同步、准入与收口
 
 ```bash
-rondo workitem sync --wiql "<WIQL>" [--initial-status backlog|todo]
+rondo workitem sync-issue --wiql "<WIQL>" [--initial-status backlog|todo]
 rondo workitem apply-decision [--issue <key-or-id>] --decision <accepted|needs_human|unsupported>
 rondo workitem approve [--issue <key-or-id>] --comment-id <ID> --commit <SHA> --verify-required true|false [--waive-tasks 3.1,3.2]
 rondo workitem finalize --phase prepare|complete --issue <KEY> [--root-repo <path>]
@@ -131,13 +131,13 @@ rondo workitem writeback --issue <KEY> [--root-repo <path>] [--inspect | --task-
 
 | 命令 | 功能 |
 | --- | --- |
-| `workitem sync` | 依据 WIQL 查询 TFS Work Item，并创建或更新对应 Multica Issue 及其来源内容 |
+| `workitem sync-issue` | 依据 WIQL 查询 TFS Work Item，并创建或更新对应 Multica Issue 及其来源内容 |
 | `workitem apply-decision` | 执行 Wayfinder 已记录的 Decision：通过时按 `tfs.type` 交接并回读原生 Run，其他结果保留 Wayfinder 并设置对应状态 |
 | `workitem approve` | 根据真实 Human 评论、获批 Commit 和明确的独立验收决定登记 Human Approval；按需记录完整任务豁免集合，并回读后将审核中的 Requirement 转入 `in_progress`，不启动 Run |
 | `workitem finalize` | `prepare` 核验交付并准备收口；`complete` 在外部回写完成后核验并结束交付 |
 | `workitem writeback` | 按交付事实回写 TFS 工作项、任务状态、工时及关联信息 |
 
-`workitem sync` 使用当前 Multica Runtime 与 `RONDO_PROJECT_TITLE`，每轮按 Title 唯一解析目标 Project；默认新建 Issue 停放 `backlog`，显式 `todo` 在初始化完成后激活。每轮最多处理 50 项。
+`workitem sync-issue` 使用当前 Multica Runtime 与 `RONDO_PROJECT_TITLE`，每轮按 Title 唯一解析目标 Project；默认新建 Issue 停放 `backlog`，显式 `todo` 在初始化完成后激活。每轮最多处理 50 项。
 
 `workitem approve` 使用当前 Multica Runtime，要求 Gate 已通过，并核对真实成员批准评论、获批 Commit 及明确的独立验收决定；`--waive-tasks` 记录 Human 明确批准的完整任务豁免集合，并按固定批准版 Tasks 核验编号。同一评论可幂等重试，不允许改写已登记决定。成功回读后将审核中的 Issue 转入 `in_progress`，不发 Mention、不启动 Run，也不要求 Registry、Agent 或 Run 身份参数。
 
@@ -167,7 +167,6 @@ rondo workitem finalize --phase complete --issue <KEY> --root-repo <path>
 ### 6.2 `rondo workitem`：基础查询与操作
 
 ```bash
-rondo workitem query --wiql "<WIQL>" [--project <project>]
 rondo workitem set-state --id <id> --state <state> [--complete-with-estimate] [--project <project>]
 rondo workitem comment --id <id> --text-file <path> [--project <project>]
 rondo workitem create --type <type> --title <title> --parent <id> [--description-file <path>] [--estimate <hours>] [--project <project>]
@@ -177,7 +176,6 @@ rondo workitem download-attachment --url <attachment-url> --out <directory> [--n
 
 | 命令 | 功能 |
 | --- | --- |
-| `workitem query` | 执行 WIQL 查询并返回 TFS Work Item 数据 |
 | `workitem set-state` | 将 Work Item 更新到目标状态；`--complete-with-estimate` 同时核对并填写完成工时 |
 | `workitem comment` | 读取本地文件内容并写入 TFS Work Item History |
 | `workitem create` | 创建并关联父 Work Item 下的子工作项，可设置预估工时 |

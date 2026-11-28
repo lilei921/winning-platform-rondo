@@ -99,9 +99,6 @@ $env:MULTICA_REPO_ROOT = "D:/UserProgram/winning-platform-rondo"
 以下为常见入口，全部参数以 [命令参考](COMMANDS.md) 为准：
 
 ```bash
-# 查询 TFS 工作项
-rondo workitem query --wiql "SELECT [System.Id] FROM workitems WHERE [System.AssignedTo] = @me"
-
 # 预览 Workspace Skill 同步
 rondo workspace sync-skills --workspace <name> --dry-run
 

@@ -1,6 +1,6 @@
 {
   "name": "@winning/rondo",
-  "version": "1.2.51",
+  "version": "1.2.52",
   "description": "面向 Multica 研发交付的确定性 CLI，提供交付校验、执行、事实管理及平台运维能力。",
   "type": "module",
   "main": "dist/index.js",

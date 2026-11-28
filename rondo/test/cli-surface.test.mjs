@@ -23,7 +23,7 @@ const TREE = {
   runtime: ["get-context", "check-checkout", "check-daemon", "reconcile"],
   openspec: ["resolve-identity", "install-schema", "validate", "read", "submit-review", "publish"],
   repo: ["get", "get-branch", "fetch", "push", "prepare-archive"],
-  workitem: ["sync", "apply-decision", "approve", "finalize", "writeback", "query", "set-state", "comment", "create", "link-commits", "download-attachment"],
+  workitem: ["sync-issue", "apply-decision", "approve", "finalize", "writeback", "set-state", "comment", "create", "link-commits", "download-attachment"],
 };
 
 test("全部命令组:bare 调用 exit 64,stderr 帮助列出全部叶子", () => {
@@ -36,8 +36,8 @@ test("全部命令组:bare 调用 exit 64,stderr 帮助列出全部叶子", () =
   }
 });
 
-test("workitem query:缺 --wiql exit 64,用法走 stderr,stdout 纯净", () => {
-  const r = runCli(["workitem", "query"]);
+test("workitem sync-issue:缺 --wiql exit 64,用法走 stderr,stdout 纯净", () => {
+  const r = runCli(["workitem", "sync-issue"]);
   assert.equal(r.status, 64);
   assert.equal(r.stdout, "");
   assert.ok(r.stderr.includes("--wiql"));
@@ -94,7 +94,7 @@ test("PR Preparation 命名统一，Closeout 拒绝旧配置参数", () => {
 });
 
 test("全局 --output json 由 Commander 统一消费，不改变子命令输出和退出码", () => {
-  for (const args of [["openspec", "resolve-identity", "--help"], ["openspec", "publish", "--help"], ["runtime", "check-checkout"], ["workitem", "query"]]) {
+  for (const args of [["openspec", "resolve-identity", "--help"], ["openspec", "publish", "--help"], ["runtime", "check-checkout"], ["workitem", "sync-issue"]]) {
     const implicit = runCli(args);
     for (const explicitArgs of [["--output=json", ...args], [...args, "--output", "json"]]) {
       const explicit = runCli(explicitArgs);
@@ -102,7 +102,7 @@ test("全局 --output json 由 Commander 统一消费，不改变子命令输出
       assert.equal(explicit.stdout, implicit.stdout, explicitArgs.join(" "));
     }
   }
-  for (const args of [["openspec", "resolve-identity"], ["runtime", "check-checkout"], ["workitem", "query"], ["doctor"]]) {
+  for (const args of [["openspec", "resolve-identity"], ["runtime", "check-checkout"], ["workitem", "sync-issue"], ["doctor"]]) {
     for (const flags of [["--output", "table"], ["--output"]]) {
       const result = runCli([...args, ...flags]);
       assert.equal(result.status, 64);
@@ -220,16 +220,19 @@ test("退役入口不再公开", () => {
   for (const leaf of ["admission", "root-prepare", "finalize"]) {
     assert.equal(runCli(["delivery", leaf]).status, 64, leaf);
   }
-  for (const args of [["branch","get"],["query"],["delivery","root-clone"],["runtime","prepare-root"],["runtime","resolve-root-repo"],["pr","worktree"],["tfs"],["tfs","reconcile-workitem"],["tfs","writeback"],["workitem","reconcile-workitem"]]) {
+  for (const args of [["branch","get"],["query"],["delivery","root-clone"],["runtime","prepare-root"],["runtime","resolve-root-repo"],["pr","worktree"],["tfs"],["tfs","reconcile-workitem"],["tfs","writeback"],["workitem","reconcile-workitem"],["workitem","sync"],["workitem","query"]]) {
     assert.equal(runCli(args).status,64,args.join(" "));
   }
+  const workitemHelp = runCli(["workitem", "--help"]);
+  assert.doesNotMatch(workitemHelp.stdout, /^\s+(?:sync|query)(?:\s|$)/m);
+  assert.equal(runCli(["workitem", "sync-issue", "--help"]).status, 0);
   const missing = runCli(["repo","get-branch","--repo","example"]);
   assert.equal(missing.status,64);
   assert.match(missing.stderr,/--branch/);
 });
 
-test("workitem sync 只接受 WIQL 参数；Workspace 只公开 Skill 同步命令", () => {
-  for (const args of [["workitem","sync"],["workitem","sync","--config","old.json"],["workspace","sync"],["workspace","sync","--workspace","pilot","--local-only"]]) assert.equal(runCli(args).status,64,args.join(" "));
+test("workitem sync-issue 只接受 WIQL 参数；Workspace 只公开 Skill 同步命令", () => {
+  for (const args of [["workitem","sync-issue"],["workitem","sync-issue","--config","old.json"],["workspace","sync"],["workspace","sync","--workspace","pilot","--local-only"]]) assert.equal(runCli(args).status,64,args.join(" "));
   assert.equal(runCli(["workspace","sync-skills","--help"]).status,0);
 });
 

@@ -32,7 +32,7 @@ function fixture(t, items) {
     setState(value) { writeFileSync(state, JSON.stringify(value)); },
     run(env = {}) {
       writeFileSync(calls, "");
-      const r = spawnSync(process.execPath, [CLI, "workitem", "sync", "--wiql", "SELECT [System.Id] FROM workitems"], {
+      const r = spawnSync(process.execPath, [CLI, "workitem", "sync-issue", "--wiql", "SELECT [System.Id] FROM workitems"], {
         encoding: "utf8", env: { ...process.env, MULTICA_WORKSPACE_ID: "ws-test", MULTICA_SERVER_URL: "https://mock-multica", MULTICA_CLI_PATH: MOCK_MULTICA, RONDO_PROJECT_TITLE: "Sync Project", MOCK_STATE: state, MOCK_TFS_QUERY_FILE: query, MOCK_SYNC_CALLS_FILE: calls, ...env },
       });
       assert.equal(r.error, undefined);
