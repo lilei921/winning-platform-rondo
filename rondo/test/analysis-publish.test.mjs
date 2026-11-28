@@ -34,8 +34,12 @@ function fixture(t, requirement = true, native = false, commitChange = true) {
   const home = realpathSync.native(mkdtempSync(join(tmpdir(), "rondo-fileless-gate-")));
   t.after(() => rmSync(home, { recursive: true, force: true }));
   const remote = join(home, "remote.git"); mkdirSync(remote);
+  const workdir = native ? join(home, "workdir") : home;
+  mkdirSync(workdir, { recursive: true });
+  const configRoot = join(home, "multica-config");
+  if (native) mkdirSync(configRoot);
   git(remote, "init", "--bare");
-  const root = join(home, "root");
+  const root = join(workdir, "root");
   const change = join(root, "openspec", "changes", CHANGE);
   mkdirSync(change, { recursive: true });
   writeFileSync(join(change, ".openspec.yaml"), "schema: corrective-change\nx-repositories: [frame]\n");
@@ -68,7 +72,7 @@ function fixture(t, requirement = true, native = false, commitChange = true) {
 
   const taskId = "01234567-abcd-ef12-3456-abcdef123456";
   const taskBranch = "agent/workitem-analyst/abcdef123456";
-  const resourcePath = join(home, ".multica", "project", "resources.json");
+  const resourcePath = join(workdir, ".multica", "project", "resources.json");
   const resources = [
     { resource_type: "github_repo", resource_ref: { url: tfs.repoUrl, ref: "dev" } },
     { resource_type: "github_repo", label: "业务仓", resource_ref: { url: tfs.repoUrl.replace(/[^/]+$/, "frame"), ref: "dev", default_branch_hint: "dev" } },
@@ -77,7 +81,7 @@ function fixture(t, requirement = true, native = false, commitChange = true) {
   if (native) {
     mkdirSync(dirname(resourcePath), { recursive: true });
     writeFileSync(resourcePath, JSON.stringify({ project_id: "project1", resources }));
-    writeFileSync(join(home, ".multica", "daemon_task_context.json"), JSON.stringify({
+    writeFileSync(join(workdir, ".multica", "daemon_task_context.json"), JSON.stringify({
       managed_by: "multica-daemon-task", issue_id: "issue-1", agent_id: "analyst",
     }));
     git(root, "config", "multica.checkout-mode", "isolated");
@@ -108,16 +112,16 @@ function fixture(t, requirement = true, native = false, commitChange = true) {
     MULTICA_SERVER_URL: "https://private.example", MULTICA_WORKSPACE_ID: "ws-test", MULTICA_CLI_PATH: MOCK,
     ...(requirement ? { RONDO_WORKSPACE_BRANCH: "dev" } : {}),
     ...(native ? { RONDO_WORKSPACE_BRANCH: "", RONDO_WORKSPACE_PATH: "", MULTICA_TASK_ID: taskId,
-      MULTICA_WORKSPACE_ID: "ws-test", MULTICA_AGENT_ID: "analyst" } : {}) };
-  const args = ["--issue", "issue-1", "--openspec-root", root];
-  const gate = (ref = CHANGE) => runCli(["openspec", "validate", "--change-ref", ref, ...args], env);
+      MULTICA_WORKSPACE_ID: "ws-test", MULTICA_AGENT_ID: "analyst", MULTICA_TASK_CONFIG_ROOT: configRoot } : {}) };
+  const issueArgs = native ? [] : ["--issue", "issue-1"];
+  const gate = (ref = CHANGE) => runCli(["openspec", "validate", "--change-ref", ref,
+    ...issueArgs, "--openspec-root", root], env);
   const completeAt = (rootArg, cwd, ...extra) => runCli(["openspec", "submit-review",
-    "--issue", "issue-1", "--change-ref", CHANGE,
-    "--root-repo", rootArg, ...extra], env, cwd);
+    ...issueArgs, "--change-ref", CHANGE, "--root-repo", rootArg, ...extra], env, cwd);
   const complete = (...extra) => completeAt(root, undefined, ...extra);
   const state = () => JSON.parse(readFileSync(statePath, "utf8"));
   const setState = data => writeFileSync(statePath, JSON.stringify(data));
-  return { home, root, change, remote, report, tfs, env, gate, complete, completeAt, state, setState, metadata, taskBranch, resourcePath };
+  return { home, workdir, root, change, remote, report, tfs, env, gate, complete, completeAt, state, setState, metadata, taskBranch, resourcePath };
 }
 
 test("Preview → Complete without Stage: final Gate and fixed Git Contract; no automatic Comment or Gate file", t => {
@@ -509,6 +513,8 @@ test("Bug 不得借旧 mode 参数进入 Requirement 发布路径", t => {
 
 test("Native Analysis without Workspace variables: raw-SHA Task branch, remote advance and single Change publish", t => {
   const f = fixture(t, true, true);
+  const preview = f.gate();
+  assert.equal(preview.exit, 0, JSON.stringify(preview));
   const peer = join(f.home, "peer");
   git(f.home, "clone", "-b", "dev", f.remote, peer);
   writeFileSync(join(peer, "peer.txt"), "remote advance");
@@ -868,6 +874,23 @@ test("Analysis publish rejects retired Runtime overrides before any write", t =>
     const result = spawnSync(process.execPath, [CLI, ...args, ...flags], {encoding: "utf8", env: {...process.env, ...f.env}});
     assert.equal(result.status, 64, result.stdout + result.stderr);
     assert.match(result.stderr, /当前 Multica Runtime/);
+  }
+  assert.deepEqual(f.state(), before);
+});
+
+
+test("OpenSpec commands reject misspelled Issue options before any platform operation", t => {
+  const f = fixture(t, true, true);
+  const commands = [
+    ["openspec", "validate", "--issue-id", "issue-1", "--change-ref", CHANGE, "--openspec-root", f.root],
+    ["openspec", "submit-review", "--issue-id", "issue-1", "--change-ref", CHANGE, "--root-repo", f.root],
+  ];
+  const before = f.state();
+  for (const args of commands) {
+    const result = spawnSync(process.execPath, [CLI, ...args], { encoding: "utf8", env: { ...process.env, ...f.env } });
+    assert.equal(result.status, 64, result.stdout + result.stderr);
+    assert.match(result.stderr, /unknown option.*--issue-id/i);
+    assert.equal(result.stdout, "");
   }
   assert.deepEqual(f.state(), before);
 });

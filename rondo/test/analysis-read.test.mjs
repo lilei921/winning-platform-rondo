@@ -13,6 +13,8 @@ const content = "# Tasks\n\n- [ ] 1.1 中文任务\n  - 验收：保持多行正
 
 function fixture(t) {
   const dir = mkdtempSync(join(tmpdir(), "rondo-analysis-read-"));
+  const configRoot = join(dir, "multica-config");
+  mkdirSync(configRoot);
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const path = "/openspec/changes/fix-101/tasks.md";
   const commit = "a".repeat(40);
@@ -27,7 +29,7 @@ function fixture(t) {
     const r = spawnSync(process.execPath, [CLI, "openspec", "read", ...(implicit ? [] : ["--issue", "WNDF-T"]), "--file", file], {
       encoding: "utf8", timeout: 15000, ...(implicit ? { cwd: dir } : {}),
       env: { ...Object.fromEntries(Object.entries(process.env).filter(([k]) => k.toLowerCase() !== "path")), ...tfs.env,
-        MOCK_STATE: stateFile, MULTICA_CLI_PATH: MOCK, MULTICA_WORKSPACE_ID: "ws-test", MULTICA_SERVER_URL: "https://private.example", MOCK_EXPECT_SERVER: "https://private.example", ...extraEnv },
+        MOCK_STATE: stateFile, MULTICA_CLI_PATH: MOCK, MULTICA_WORKSPACE_ID: "ws-test", MULTICA_SERVER_URL: "https://private.example", MULTICA_TASK_CONFIG_ROOT: configRoot, MOCK_EXPECT_SERVER: "https://private.example", ...extraEnv },
     });
     assert.equal(r.error, undefined, r.error?.message);
     assert.equal(readFileSync(stateFile, "utf8"), before, "读取不得写 Issue");
