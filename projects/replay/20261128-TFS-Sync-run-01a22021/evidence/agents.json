@@ -1,0 +1,10 @@
+{
+  "collected_at": "2026-11-28T11:20:29+08:00",
+  "agents": [
+    {
+      "id": "ecdbd930-275c-4fa5-b27f-b1f2ab08a0fe",
+      "name": "TFS Sync Agent"
+    }
+  ],
+  "warnings": []
+}

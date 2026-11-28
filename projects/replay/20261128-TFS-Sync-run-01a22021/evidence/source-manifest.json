@@ -1,0 +1,48 @@
+{
+  "collected_at": "2026-11-28T11:20:29+08:00",
+  "profile": "cli-default",
+  "server_url": null,
+  "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+  "issue_id": "000cc3be-2f15-409b-b946-5cb953bfb8c0",
+  "read_only_commands": [
+    [
+      "multica",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "autopilot",
+      "get",
+      "000cc3be-2f15-409b-b946-5cb953bfb8c0",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "autopilot",
+      "runs",
+      "000cc3be-2f15-409b-b946-5cb953bfb8c0",
+      "--limit",
+      "1",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "agent",
+      "get",
+      "ecdbd930-275c-4fa5-b27f-b1f2ab08a0fe",
+      "--output",
+      "json"
+    ]
+  ],
+  "sessions": [],
+  "coverage": "partial",
+  "verified_at": "2026-11-28T11:20:29+08:00",
+  "subject_type": "autopilot",
+  "autopilot_id": "000cc3be-2f15-409b-b946-5cb953bfb8c0",
+  "run_window_basis": "triggered_at → completed_at",
+  "requested_last": 1
+}

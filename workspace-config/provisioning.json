@@ -85,7 +85,9 @@
       "dir": "vayne-agent",
       "name": "Vayne",
       "visibility": "workspace",
-      "skills": []
+      "skills": [],
+      "tfs_env": false,
+      "runtime_policy_key": "RONDO_RUNTIME_POLICY"
     }
   ],
   "squad": {

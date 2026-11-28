@@ -6,7 +6,7 @@
   2. 仓库注册表 —— manifest workspace_repos 声明的 URL 均在 multica repo list 中（只增不维护，多余项只提示）
   3. Project    —— 分组 project.title 对应的项目存在，且挂有仓库资源（git URL 或匹配的 local_directory）
   4. Project Resource label —— 匹配仓库清单 URL 的 github_repo 资源 label 与 YAML 一致（全量对齐）
-  5. Agent      —— manifest agents 齐全、Skill 绑定一致、runtime 绑定统一且有效（未失效/尽量在线）、TFS 环境变量键数
+  5. Agent      —— manifest agents 齐全、Skill 绑定一致、runtime 绑定统一且有效（未失效/尽量在线）、TFS 环境变量键数；manifest 声明不用 TFS 的 Agent 改校验 Runtime 策略键存在
   6. Skill      —— managed_skills 均在 workspace Skill 清单中
   7. Squad      —— Delivery Squad 存在，成员数 = squad.members + leader
   8. Autopilot  —— manifest autopilots 均在且为 active（无 trigger 属 MG-5 设计，不报警）
@@ -108,6 +108,16 @@ class Expectation:
         self.agents = {
             a["name"]: sorted(a.get("skills", []))
             for a in manifest.get("agents", []) if a.get("name")
+        }
+        # manifest 声明不依赖 TFS 的 Agent 仍需校验其 Runtime 策略键。
+        self.no_tfs_env = {
+            a["name"] for a in manifest.get("agents", [])
+            if a.get("tfs_env") is False and a.get("name")
+        }
+        self.policy_keys = {
+            a["name"]: a["runtime_policy_key"]
+            for a in manifest.get("agents", [])
+            if a.get("runtime_policy_key") and a.get("name")
         }
         self.skills = sorted(manifest.get("managed_skills", []))
         squad = manifest.get("squad") or {}
@@ -243,6 +253,7 @@ def check_workspace(
         if extra:
             add("INFO", "Agent", f"多余={extra}")
         tfs_missing = []
+        policy_missing = []
         for agent in sorted(agents, key=lambda x: x.get("name") or ""):
             name = agent.get("name")
             if name not in exp.agents:
@@ -254,12 +265,27 @@ def check_workspace(
             if got != exp.agents[name]:
                 add("FAIL", "Agent Skill 绑定",
                     f"{name}: got={got} exp={exp.agents[name]}")
+            if name in exp.no_tfs_env:
+                key = exp.policy_keys.get(name)
+                if key:
+                    try:
+                        env = run_json(
+                            ["multica", "agent", "env", "get", agent["id"],
+                             "--workspace-id", ws_id, "--output", "json"], ws_id)
+                        if key not in ((env.get("custom_env") or {}) if isinstance(env, dict) else {}):
+                            policy_missing.append(f"{name}({key})")
+                    except (RuntimeError, json.JSONDecodeError) as exc:
+                        policy_missing.append(f"{name}(校验失败: {exc})")
+                continue
             env_keys = agent.get("custom_env_key_count")
             if env_keys is not None and env_keys < TFS_ENV_KEY_COUNT:
                 tfs_missing.append(f"{name}({env_keys}键)")
         if tfs_missing:
             add("WARN", "Agent TFS 环境变量",
                 f"{len(tfs_missing)} 个 Agent 不足 {TFS_ENV_KEY_COUNT} 键：{tfs_missing}")
+        if policy_missing:
+            add("WARN", "Runtime 策略",
+                f"未配置：{policy_missing}；按 SKILL.md「Vayne 主备 Runtime 策略维护」配置")
         # runtime 绑定：统一性、失效、在线状态
         try:
             runtimes = run_json(["multica", "runtime", "list", "--output", "json"], ws_id)

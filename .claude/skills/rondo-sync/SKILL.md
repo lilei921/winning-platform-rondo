@@ -102,7 +102,7 @@ python .claude/skills/rondo-sync/scripts/sync_workspace.py winning-lfw --repo-ro
 2. **sync**（`rondo workspace sync-skills`）— 按 Workspace overlay 渲染 TFS 同步配置，upsert Skill 文件并逐文件回读校验。
 3. **绑定 Agent runtime**（仅当显式传入 `--runtime-id`）— provision 只在**新建** Agent 时使用 `--runtime-id`，已存在的 Agent 保留原 runtime；显式指定 runtime 时额外改绑其他 Agent，Vayne 保留固定服务器 Runtime。
 4. **禁用 runtime skills** — 关闭 Agent 从 runtime 继承的本地 Skill，避免与仓内 Skill 重复暴露；覆盖所有绑定 workspace 内 runtime 的 Agent（含同事机器），先预览再落盘。是否执行见下节。
-5. **补齐 Agent TFS 环境变量**（`provision_agent_tfs_env.py`）— 为全部 Agent 补齐 `TFS_URL` / `TFS_COLLECTION` / `TFS_PAT`，只增不改；规则与凭据红线见下节。`--dry-run` 会透传给该步骤；`--skip-tfs-env` 可整体跳过。
+5. **补齐 Agent TFS 环境变量**（`provision_agent_tfs_env.py`）— 为需要使用 TFS 的 Agent 补齐 `TFS_URL` / `TFS_COLLECTION` / `TFS_PAT`，只增不改；manifest 中 `tfs_env: false` 的 Agent（Vayne）整段跳过 TFS 写入，改为只处理其 `runtime_policy_key`：平台已有策略不覆盖；缺失时以 workspace overlay 的 `runtime_policy` 作为首次写入来源并校验主备 Runtime，overlay 也为空则输出 `[WARN]` 提示由用户逐个提供。规则见下节。`--dry-run` 会透传给该步骤；`--skip-tfs-env` 可整体跳过。
 6. **供给 workspace 仓库注册表**（`provision_workspace_repos.py`）— 按 manifest 的 `workspace_repos` 段执行 `multica repo add`，只增不维护；`--dry-run` 会透传；`--skip-repos` 可整体跳过。
 7. **对齐 Project Resource label**（`provision_project_resource_labels.py`）— 按 `docs/config/project-resources.yaml` 的 `label` 设置目标 Project 中匹配仓库的 `github_repo` Resource；全量对齐、写入后回读；`--dry-run` 会透传；`--skip-resource-labels` 可整体跳过。
 
@@ -110,7 +110,7 @@ python .claude/skills/rondo-sync/scripts/sync_workspace.py winning-lfw --repo-ro
 
 ## Vayne 主备 Runtime 策略维护
 
-按需独立执行，不运行全量同步，不打包 Rondo，不触发 Agent Run。模板及配置说明见 [config/runtime-policy.json.example](config/runtime-policy.json.example) 与 [config/runtime-policy.md](config/runtime-policy.md)。
+按需独立执行，不运行全量同步，不打包 Rondo，不触发 Agent Run。全量同步与 `check_workspaces.py` 会校验 `RONDO_RUNTIME_POLICY`：平台已有策略一律保留；首次缺失时从 `workspace-config/workspaces/<name>.json` 的 `runtime_policy` 段写入，该段也为空则只输出 `[WARN]`。主备 Runtime 由用户逐个提供后存入 overlay，Claude 不代为选择。模板及配置说明见 [config/runtime-policy.json.example](config/runtime-policy.json.example) 与 [config/runtime-policy.md](config/runtime-policy.md)。
 
 1. **定位目标**：使用用户明确指定的 workspace；未指定时询问，不使用全量默认目标。用 `multica workspace list --output json` 核实唯一 workspace ID，再执行：
 
@@ -119,19 +119,36 @@ python .claude/skills/rondo-sync/scripts/sync_workspace.py winning-lfw --repo-ro
    multica runtime list --workspace-id <workspace-id> --output json
    ```
 
-   精确匹配唯一 Vayne 与待维护 Agent Name，按用户指定的主备设备、Provider 或 Runtime ID 匹配真实 Runtime。缺失、重名或存在歧义时报告并询问，不猜测。
+   精确匹配唯一 Vayne 与待维护 Agent Name，按用户指定的主备设备或 Runtime ID 匹配真实 Runtime。缺失、重名或存在歧义时报告并询问，不猜测。
 2. **读取现状**：执行 `multica agent env get <vayne-id> --workspace-id <workspace-id> --output json`，获取完整 `custom_env`。当前 CLI 如默认脱敏，使用其原生 `--show-values` 读取实际值（先检查命令 help）；不得在回复或日志中展示其他环境变量值。若无法获得安全的完整配置则停止写入。解析已有 `RONDO_RUNTIME_POLICY` 字符串；首次配置才参考模板，不能用模板覆盖已有策略；非法 JSON 先确认修正内容。
-3. **维护 JSON**：按用户要求新增、修改或删除对应 Agent 的 JSON 节点，其他节点保持不变。确认两个不同的 Runtime ID 属于目标 workspace 且 Provider 相同；不配置 Vayne。列出本次拟变更的 Agent 与主备 Runtime；查询或预览请求不写入。策略不完整或用户未明确主备选择时，只给出候选，不代选。
+3. **维护 JSON**：按用户要求新增、修改或删除对应 Agent 的 JSON 节点，其他节点保持不变。确认两个不同的 Runtime ID 属于目标 workspace；Provider 可不同，不要求一致。不配置 Vayne。列出本次拟变更的 Agent 与主备 Runtime；查询或预览请求不写入。策略不完整或用户未明确主备选择时，只给出候选，不代选。
 4. **写入环境变量**：明确要求保存或修改时，重新读取当前完整 `custom_env`，仅将 `RONDO_RUNTIME_POLICY` 替换为新策略的 JSON 字符串（其余键和值原样保留），将合并后的完整环境变量 JSON 通过 UTF-8 stdin 传给：
 
    ```bash
    multica agent env set <vayne-id> --workspace-id <workspace-id> --custom-env-stdin --output json
    ```
 
-   不将凭据作为命令行参数，不打印完整环境变量，不写入仓库或 overlay。若读取后发现策略已发生并发修改，重新核对本次变更，不覆盖他人的修改。权限不足时由 Agent Owner 或 Workspace Owner/Admin 处理，不绕过原生授权。
+   不将凭据作为命令行参数，不打印完整环境变量；只有主备 Runtime ID 允许写入 workspace overlay，完整 `custom_env` 与凭据不入仓。若读取后发现策略已发生并发修改，重新核对本次变更，不覆盖他人的修改。权限不足时由 Agent Owner 或 Workspace Owner/Admin 处理，不绕过原生授权。
 5. **回读确认**：再次执行 env get（按需使用 --show-values），解析策略 JSON，核对本次目标配置以及其他环境变量未被改写；仅报告 workspace、Agent 主备变更及验证结果，不输出凭据。不一致则报告未确认，不盲目重试。
 
 首次启用 Vayne 时，由管理员完成固定服务器绑定、Max Concurrent Tasks=1 及 [黑灯计划](../../../20-lights-out-plan.md) 要求的 PoC，再启用 Autopilot Trigger。维护策略本身不改绑任何 Agent，不触发 Run，不创建或启用 Trigger；后续 Vayne Run 按新策略协调。普通 rondo-sync 供给不主动覆盖 `RONDO_RUNTIME_POLICY`。
+
+### workspace overlay 中的首次策略
+
+首次配置时由用户逐个给出受管 Agent 的 primary / fallback Runtime ID，按 [config/runtime-policy.json.example](config/runtime-policy.json.example) 的 JSON 结构写入 `workspace-config/workspaces/<name>.json` 的 `runtime_policy` 段（示例）：
+
+```json
+"runtime_policy": {
+  "Engineer": {
+    "primary_runtime_id": "<本机 Runtime UUID>",
+    "primary_runtime_name": "Claude (lileipc)",
+    "fallback_runtime_id": "<服务器 Runtime UUID>",
+    "fallback_runtime_name": "Claude (vayne)"
+  }
+}
+```
+
+同步时仅当平台 `RONDO_RUNTIME_POLICY` 缺失才用该段写入并回读；写入前校验每个 ID 属于目标 workspace 且主备不同（Provider 可不同），附带的 `*_runtime_name` 与 ID 对应，Vayne 自身不纳入策略。平台已有策略永远不覆盖；后续调整走上面的 Vayne 策略维护流程，并同步更新 overlay 作为本地记录。overlay 无 `runtime_policy` 时只输出 `[WARN]`，不猜主备。
 
 ## workspace 分组
 
@@ -195,6 +212,7 @@ python .claude/skills/rondo-sync/scripts/provision_agent_tfs_env.py [workspace] 
 
 规则：
 
+- **manifest 排除**：`agents[]` 中 `tfs_env: false` 的 Agent（Vayne）整段跳过 TFS 写入（含 `--force-tfs-pat`）；若声明 `runtime_policy_key`，则按 overlay 首次写入该策略键（已有不覆盖），overlay 为空时输出 `[WARN]`。
 - **只增不改**：TFS 键一旦在 Agent `custom_env` 中存在（无论值是什么，包括空字符串），即视为用户已配置，一律保留原值不改动，仅补不存在的键；三键都存在的 Agent 直接 `[SKIP]`。既有非 TFS 键不受影响。纠错场景用 `--force-tfs-pat` 仅重写 TFS_PAT 为策略值，需明确意图。
 - **取值来源**：
   - `TFS_URL` = `http://tfs2018-web.winning.com.cn:8080/tfs`（base，不含 collection）
@@ -259,13 +277,13 @@ python .claude/skills/rondo-sync/scripts/check_workspaces.py winning-lfw    # �
 - **仓库注册表**：manifest `workspace_repos` 声明的 URL 均在 `multica repo list` 中；多余项只 `[INFO]`（只增不维护，不视为失败）。
 - **Project**：分组 `project.title` 对应项目存在，且资源命中声明仓库——git URL 精确匹配，或 `local_directory` 的 label / local_path 含仓库名（本地路径资源判 OK，类型不符判 `[WARN]`，无资源判 `[FAIL]`）。
 - **Project Resource label**：命中 `docs/config/project-resources.yaml` URL 的 `github_repo` 资源，label 必须与清单一致；不一致判 `[FAIL]`，未命中清单的资源不要求有 label。
-- **Agent**：manifest `agents[]` 齐全、各 Agent Skill 绑定与 manifest 一致、`custom_env_key_count` ≥ 3（TFS 三键）。
+- **Agent**：manifest `agents[]` 齐全、各 Agent Skill 绑定与 manifest 一致；非 `tfs_env: false` 的 Agent 要求 `custom_env_key_count` ≥ 3（TFS 三键），声明 `runtime_policy_key` 的 Agent 改为回读校验该键存在。
 - **runtime**：绑定失效（runtime 已不在 workspace）判 `[FAIL]`；分散绑定多个 runtime、绑定 runtime 离线判 `[WARN]`。
 - **Skill**：`managed_skills` 均在册；多余（如历史残留的 `workitem-analysis`）只 `[INFO]`。
 - **Squad**：`Delivery Squad` 存在且成员数 = `squad.members` + leader。
 - **Autopilot**：manifest `autopilots` 均在且 active；无 trigger 属 MG-5 设计，不报警。
 
-分级语义：`[OK]` 一致；`[INFO]` 多余项（owner 自有资产，不回滚）；`[WARN]` 可用性风险（runtime 离线、绑定分散、TFS 键不足、Squad 成员数不符）；`[FAIL]` 与 manifest 不一致。任一 `[FAIL]`/`[ERROR]` 该 workspace 计入失败，退出码非零，结尾汇总失败 / 仅告警 / 全通过清单。
+分级语义：`[OK]` 一致；`[INFO]` 多余项（owner 自有资产，不回滚）；`[WARN]` 可用性风险（runtime 离线、绑定分散、TFS 键不足、Runtime 策略键缺失、Squad 成员数不符）；`[FAIL]` 与 manifest 不一致。任一 `[FAIL]`/`[ERROR]` 该 workspace 计入失败，退出码非零，结尾汇总失败 / 仅告警 / 全通过清单。
 
 ## 校验
 
@@ -277,7 +295,7 @@ python .claude/skills/rondo-sync/scripts/check_workspaces.py winning-lfw    # �
 - `Delivery Squad` 存在，成员数与 `squad.members` + leader 一致。
 - Project 标题符合分组：bi 组 workspace 为 `winning-base-winex-bi-monorepo`，其余（含未分组）为顶层默认 `winning-platform-monorepo`；同步期间共享 manifest 保持原文（不生成 `.group-swap.bak`）。
 - manifest 含 `mcp_servers` 时：`multica workspace mcp list <name>` 数量与 manifest 一致；MCP 完整配置只写不可回读，overlay 中的 `mcp_servers` ID 是唯一本地记录。
-- TFS 环境变量步骤输出无 `[FAIL]`：全部 Agent 的 `TFS_URL` / `TFS_COLLECTION` / `TFS_PAT` 三键均已配置（`[SKIP]` 或 `[OK  ]`）。
+- TFS 环境变量步骤输出无 `[FAIL]`：除 manifest 中 `tfs_env: false` 的 Agent（Vayne）外，全部 Agent 的 `TFS_URL` / `TFS_COLLECTION` / `TFS_PAT` 三键均已配置（`[SKIP]` 或 `[OK  ]`）；Vayne 不配置 TFS 三键，其 `runtime_policy_key` 缺失时输出 `[WARN]`，按「Vayne 主备 Runtime 策略维护」另行配置。
 - 仓库注册表步骤输出无 `[FAIL]`：manifest `workspace_repos` 声明的 URL 均在 `multica repo list` 中（`[SKIP]` 或 `[OK  ]`）。
 - Project Resource label 步骤输出无 `[FAIL]`：清单声明且已挂载的 `github_repo` 资源 label 与 `project-resources.yaml` 一致。
 

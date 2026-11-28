@@ -14,6 +14,38 @@
   },
   "delivery_squad_id": "03665e95-a7bd-48f0-afe3-c0860ebac5fc",
   "project": "68b81377-601e-4d6c-84fd-122c05f0308f",
+  "runtime_policy": {
+    "Delivery Lead": {
+      "primary_runtime_id": "15b27db6-56bc-401c-8491-84dcda80eed1",
+      "primary_runtime_name": "Claude (vayne)",
+      "fallback_runtime_id": "a35e3e28-0fd8-44d3-b39c-af9eb326e4bf",
+      "fallback_runtime_name": "Claude (lileipc)"
+    },
+    "Wayfinder Agent": {
+      "primary_runtime_id": "a35e3e28-0fd8-44d3-b39c-af9eb326e4bf",
+      "primary_runtime_name": "Claude (lileipc)",
+      "fallback_runtime_id": "15b27db6-56bc-401c-8491-84dcda80eed1",
+      "fallback_runtime_name": "Claude (vayne)"
+    },
+    "Workitem Analyst": {
+      "primary_runtime_id": "c0ae7474-866b-4bd1-b869-a361ab6d8be3",
+      "primary_runtime_name": "Codex (lileipc)",
+      "fallback_runtime_id": "15b27db6-56bc-401c-8491-84dcda80eed1",
+      "fallback_runtime_name": "Claude (vayne)"
+    },
+    "Bug Fix Agent": {
+      "primary_runtime_id": "15b27db6-56bc-401c-8491-84dcda80eed1",
+      "primary_runtime_name": "Claude (vayne)",
+      "fallback_runtime_id": "a35e3e28-0fd8-44d3-b39c-af9eb326e4bf",
+      "fallback_runtime_name": "Claude (lileipc)"
+    },
+    "Engineer": {
+      "primary_runtime_id": "a35e3e28-0fd8-44d3-b39c-af9eb326e4bf",
+      "primary_runtime_name": "Claude (lileipc)",
+      "fallback_runtime_id": "15b27db6-56bc-401c-8491-84dcda80eed1",
+      "fallback_runtime_name": "Claude (vayne)"
+    }
+  },
   "multica_server_url": "http://172.17.1.97:8080",
   "mcp_servers": {
     "remote-codegraph": {

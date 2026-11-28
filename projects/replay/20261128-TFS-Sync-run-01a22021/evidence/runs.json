@@ -1,0 +1,25 @@
+[
+  {
+    "autopilot_id": "000cc3be-2f15-409b-b946-5cb953bfb8c0",
+    "completed_at": "2026-11-28T11:11:17+08:00",
+    "created_at": "2026-11-28T11:10:04+08:00",
+    "failure_reason": null,
+    "id": "01a22021-a2b9-7ee0-8288-01423352a4b8",
+    "issue_id": "000cc3be-2f15-409b-b946-5cb953bfb8c0",
+    "result": {
+      "output": "本轮 TFS 同步已完成，结果如下：\n\n**同步结果**（`rondo tfs reconcile-workitem --config`，退出码 0，`failed` 为空）\n- created：0\n- updated：0\n- skipped：4（管理字段、正文与附件均无变化）\n- failed：0\n\n**跳过的 Work Item 及对应 Issue**\n| TFS ID | Multica Issue ID | 原因 |\n| --- | --- | --- |\n| 262296 | `01a1ca21-a927-7ef5-adf2-63ae5824cb64` | 无变化 |\n| 262301 | `01a1ca21-ad0b-7cb5-80ec-065678f7875c` | 无变化 |\n| 267862 | `01a2168c-7713-702d-a387-5bc243dc8a60` | 无变化 |\n| 269357 | `01a21b79-6198-74f3-ae35-b5cbd99a66c5` | 无变化 |\n\n无失败原因、无写入结果不明或未确认项。\n\n**待处理事项**：当前工作区的 `tfs-sync` Skill 文档仍指向已下线的 `rondo workitem sync --wiql`，本轮改用现行等价命令 `rondo tfs reconcile-workitem --config`（沿用技能配置中的同一 WIQL 与目标 Project）完成。建议更新 Skill 文档，避免后续定时运行因命令不存在而失败。",
+      "pr_url": "",
+      "session_id": "00f98841-d865-421f-bbde-f40f76d54a82",
+      "work_dir": "/home/lilei/multica_workspaces/winning-lil-b39bad65de56/task-f34cfd4d26b3/workdir"
+    },
+    "source": "schedule",
+    "status": "completed",
+    "task_id": "01a22021-a2ce-79c9-825b-f34cfd4d26b3",
+    "trigger_id": "d9fcb753-f4d8-483c-a3d5-4b9ba82e5f4e",
+    "trigger_payload": null,
+    "triggered_at": "2026-11-28T11:10:04+08:00",
+    "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+    "agent_id": "ecdbd930-275c-4fa5-b27f-b1f2ab08a0fe",
+    "started_at": "2026-11-28T11:10:04+08:00"
+  }
+]

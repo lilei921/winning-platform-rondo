@@ -1,0 +1,23 @@
+{
+  "assignee_id": "ecdbd930-275c-4fa5-b27f-b1f2ab08a0fe",
+  "assignee_type": "agent",
+  "can_manage_access": true,
+  "can_write": true,
+  "created_at": "2026-10-29T10:41:14+08:00",
+  "created_by_id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+  "created_by_type": "member",
+  "description": "使用 `tfs-sync` Skill 完成本轮 TFS Work Item 同步，并报告最终结果及待处理事项。",
+  "execution_mode": "run_only",
+  "id": "000cc3be-2f15-409b-b946-5cb953bfb8c0",
+  "issue_title_template": null,
+  "last_run_at": "2026-11-28T11:10:05+08:00",
+  "pause_reason": null,
+  "project_id": null,
+  "status": "paused",
+  "subscribers": [],
+  "title": "TFS Sync",
+  "updated_at": "2026-11-28T11:17:07+08:00",
+  "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+  "identifier": "TFS-Sync-run-01a22021",
+  "subject_type": "autopilot"
+}

@@ -2,6 +2,10 @@
 """为目标 workspace 的 Agent 补给 TFS 环境变量（TFS_URL / TFS_COLLECTION / TFS_PAT）。
 
 语义：
+  - manifest agents[] 中 `tfs_env: false` 的 Agent（如 Vayne）不配置 TFS 三键；
+    若同时声明 `runtime_policy_key`，只处理该 Runtime 策略键：workspace overlay 的
+    `runtime_policy` 作为首次写入来源，平台已有策略一律保留不覆盖；缺失时输出
+    [WARN] 提示由用户逐个提供主备 Runtime 并写入 overlay。
   - 只增不改：Agent custom_env 中 TFS 键一旦存在（无论值是什么，
     包括空字符串），即视为用户已配置，一律保留不改动；仅补不存在的键。
     三个键都存在的 Agent 直接跳过。
@@ -38,6 +42,7 @@ import sys
 import encoding_bootstrap  # noqa: F401  # 先于任何输出完成 UTF-8 自举
 from cli_retry import run_cli
 from pathlib import Path
+from workspace_paths import MANIFEST_REL, find_repo_root
 
 import yaml
 
@@ -61,6 +66,63 @@ PLACEHOLDER_PAT = "not config"
 PAT_WORKSPACE_ALIASES = {"rondo-test": "lilei"}
 
 PAT_REGISTRY_PATH = Path(__file__).resolve().parent.parent / "config" / "tfs-pat.yaml"
+
+
+def load_agent_env_rules(root: Path) -> tuple[set[str], dict[str, str]]:
+    """按 manifest 解析环境变量规则：不用 TFS 的 Agent 与需要校验的 Runtime 策略键。"""
+    manifest = json.loads((root / MANIFEST_REL).read_text(encoding="utf-8"))
+    agents = manifest.get("agents") or []
+    no_tfs = {a["name"] for a in agents if a.get("tfs_env") is False and a.get("name")}
+    policy_keys = {
+        a["name"]: a["runtime_policy_key"]
+        for a in agents if a.get("runtime_policy_key") and a.get("name")
+    }
+    return no_tfs, policy_keys
+
+
+def load_overlay_runtime_policy(root: Path, slug: str) -> dict:
+    """读取 workspace overlay 保存的首次 Runtime 策略；文件缺失或为空返回 {}。"""
+    path = root / "workspace-config" / "workspaces" / f"{slug}.json"
+    if not path.is_file():
+        return {}
+    overlay = json.loads(path.read_text(encoding="utf-8"))
+    policy = overlay.get("runtime_policy")
+    return policy if isinstance(policy, dict) else {}
+
+
+def list_workspace_runtimes(ws_id: str) -> dict[str, str]:
+    """取 workspace 内 runtime id -> name，用于校验 overlay 策略的主备绑定。"""
+    out = run_read(["multica", "runtime", "list", "--workspace-id", ws_id, "--output", "json"])
+    if out.returncode != 0:
+        raise SystemExit(f"runtime list 失败: {out.stderr.strip()[:200]}")
+    items = json.loads(out.stdout)
+    return {r["id"]: r.get("name") for r in items if r.get("id")}
+
+
+def validate_runtime_policy(policy: dict, runtimes: dict[str, str], excluded: set[str]) -> list[str]:
+    """首次写入前校验：主备 ID 属于 workspace 且不同，附带的名称与 ID 匹配；Vayne 自身不纳入策略。"""
+    problems = []
+    for name, cfg in policy.items():
+        if name in excluded:
+            problems.append(f"{name}: 不纳入策略")
+            continue
+        if not isinstance(cfg, dict):
+            problems.append(f"{name}: 配置不是对象")
+            continue
+        primary, fallback = cfg.get("primary_runtime_id"), cfg.get("fallback_runtime_id")
+        if not primary or not fallback:
+            problems.append(f"{name}: 缺少主备 Runtime ID")
+        elif primary == fallback:
+            problems.append(f"{name}: 主备 Runtime ID 相同")
+        elif primary not in runtimes or fallback not in runtimes:
+            problems.append(f"{name}: Runtime ID 不属于该 workspace")
+        else:
+            for id_key, name_key in (("primary_runtime_id", "primary_runtime_name"),
+                                     ("fallback_runtime_id", "fallback_runtime_name")):
+                expected = cfg.get(name_key)
+                if expected is not None and expected != runtimes[cfg[id_key]]:
+                    problems.append(f"{name}: {name_key} 与 Runtime ID 不匹配")
+    return problems
 
 
 def run(args: list[str], stdin_text: str | None = None) -> subprocess.CompletedProcess:
@@ -138,6 +200,10 @@ def main() -> None:
 
     ws_id, ws_slug = resolve_workspace_id(args.workspace_id or args.workspace)
     print(f"目标 workspace: {ws_slug} ({ws_id})")
+    root = find_repo_root()
+    no_tfs_agents, policy_keys = load_agent_env_rules(root)
+    # overlay 的 runtime_policy 是首次写入来源；平台已有策略一律保留，不覆盖。
+    overlay_policy = load_overlay_runtime_policy(root, ws_slug)
 
     # TFS_PAT 策略：registry 登记的 owner 用其真实 PAT，
     # 白名单回退本机 git extraheader，其余用占位值
@@ -151,7 +217,8 @@ def main() -> None:
     agents = json.loads(out.stdout)
     print(f"agent 数: {len(agents)}")
 
-    skipped, updated, failed = [], [], []
+    skipped, excluded, updated, failed = [], [], [], []
+    policy_ok, policy_written, policy_planned, policy_missing, policy_failed = [], [], [], [], []
     for a in agents:
         aid = a["id"]
         name = a.get("name", aid)
@@ -162,6 +229,42 @@ def main() -> None:
             failed.append((name, f"env get: {g.stderr.strip()[:120]}"))
             continue
         current = json.loads(g.stdout).get("custom_env") or {}
+
+        # manifest 声明不用 TFS 的 Agent：不写 TFS 键，只处理 Runtime 策略键。
+        if name in no_tfs_agents:
+            excluded.append(name)
+            key = policy_keys.get(name)
+            if not key:
+                continue
+            if key in current:
+                policy_ok.append((name, key))
+                continue
+            if not overlay_policy:
+                policy_missing.append((name, key))
+                continue
+            problems = validate_runtime_policy(
+                overlay_policy, list_workspace_runtimes(ws_id), no_tfs_agents)
+            if problems:
+                policy_failed.append((name, problems))
+                continue
+            value = json.dumps(overlay_policy, ensure_ascii=False, separators=(",", ":"))
+            if args.dry_run:
+                policy_planned.append((name, key))
+                continue
+            s = run(["multica", "agent", "env", "set", aid,
+                     "--workspace-id", ws_id, "--custom-env-stdin"],
+                    stdin_text=json.dumps({**current, key: value}, ensure_ascii=False))
+            if s.returncode != 0:
+                policy_failed.append((name, [f"env set: {s.stderr.strip()[:120]}"]))
+                continue
+            v = run_read(["multica", "agent", "env", "get", aid,
+                          "--workspace-id", ws_id, "--output", "json"])
+            got = json.loads(v.stdout).get("custom_env") or {}
+            if got.get(key) != value:
+                policy_failed.append((name, ["策略键回读不一致"]))
+            else:
+                policy_written.append((name, key))
+            continue
 
         # 只增不改：键存在即视为用户已配置（含空字符串），一律保留；
         # 仅补不存在的键。--force-tfs-pat 时 TFS_PAT 例外，按策略重写（纠错用）
@@ -199,13 +302,25 @@ def main() -> None:
 
     for name in skipped:
         print(f"  [SKIP] {name} | TFS 三键已配置，不改动")
+    for name in excluded:
+        print(f"  [SKIP] {name} | manifest 声明不配置 TFS 三键")
     for name, missing, dry in updated:
         tag = "[DRY ]" if dry else "[OK  ]"
         print(f"  {tag} {name} | 补齐 {missing}")
     for name, err in failed:
         print(f"  [FAIL] {name} | {err}")
-    print(f"跳过 {len(skipped)}，{'预演补齐' if args.dry_run else '已补齐'} {len(updated)}，失败 {len(failed)}")
-    sys.exit(1 if failed else 0)
+    for name, key in policy_ok:
+        print(f"  [SKIP] {name} | {key} 已配置，不覆盖")
+    for name, key in policy_planned:
+        print(f"  [DRY ] {name} | 预演写入 {key}（来源：workspace overlay）")
+    for name, key in policy_written:
+        print(f"  [OK  ] {name} | 首次写入 {key}（来源：workspace overlay）")
+    for name, err in policy_failed:
+        print(f"  [FAIL] {name} | 策略写入失败：{'; '.join(err)}")
+    for name, key in policy_missing:
+        print(f"  [WARN] {name} 未配置 {key}；由用户逐个提供主备 Runtime 后写入 workspace overlay")
+    print(f"跳过 {len(skipped) + len(excluded)}，{'预演补齐' if args.dry_run else '已补齐'} {len(updated)}，失败 {len(failed) + len(policy_failed)}，策略缺失 {len(policy_missing)}")
+    sys.exit(1 if failed or policy_failed else 0)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,32 @@
+{
+  "schema": "multica-issue-replay/v2",
+  "profile": "cli-default",
+  "server_url": null,
+  "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+  "issue_id": "000cc3be-2f15-409b-b946-5cb953bfb8c0",
+  "identifier": "TFS-Sync-run-01a22021",
+  "collected_at": "2026-11-28T11:20:29+08:00",
+  "coverage": "partial",
+  "sessions": [],
+  "agents": [
+    {
+      "id": "ecdbd930-275c-4fa5-b27f-b1f2ab08a0fe",
+      "name": "TFS Sync Agent"
+    }
+  ],
+  "agent_warnings": [],
+  "agent_directories": {
+    "ecdbd930-275c-4fa5-b27f-b1f2ab08a0fe": "tfs-sync"
+  },
+  "session_directories": {},
+  "run_count": 1,
+  "active_run_count": 0,
+  "tool_calls_total": 0,
+  "subagent_tool_calls_total": 0,
+  "gaps": [
+    "session 00f98841-d865-421f-bbde-f40f76d54a82 导出失败：未找到唯一的本地会话来源，可补充 --codex-home / --claude-home 并核对 Run provider"
+  ],
+  "subject_type": "autopilot",
+  "autopilot_id": "000cc3be-2f15-409b-b946-5cb953bfb8c0",
+  "title": "TFS Sync"
+}

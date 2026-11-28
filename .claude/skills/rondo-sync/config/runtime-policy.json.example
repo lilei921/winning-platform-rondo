@@ -1,22 +1,32 @@
 {
   "Delivery Lead": {
     "primary_runtime_id": "<本机Runtime UUID>",
-    "fallback_runtime_id": "<服务器Runtime UUID>"
+    "primary_runtime_name": "Claude (lileipc)",
+    "fallback_runtime_id": "<服务器Runtime UUID>",
+    "fallback_runtime_name": "Claude (vayne)"
   },
   "Workitem Analyst": {
     "primary_runtime_id": "<本机Runtime UUID>",
-    "fallback_runtime_id": "<服务器Runtime UUID>"
+    "primary_runtime_name": "<本机Runtime名称>",
+    "fallback_runtime_id": "<服务器Runtime UUID>",
+    "fallback_runtime_name": "<服务器Runtime名称>"
   },
   "Engineer": {
     "primary_runtime_id": "<本机Runtime UUID>",
-    "fallback_runtime_id": "<服务器Runtime UUID>"
+    "primary_runtime_name": "<本机Runtime名称>",
+    "fallback_runtime_id": "<服务器Runtime UUID>",
+    "fallback_runtime_name": "<服务器Runtime名称>"
   },
   "Wayfinder Agent": {
     "primary_runtime_id": "<本机Runtime UUID>",
-    "fallback_runtime_id": "<服务器Runtime UUID>"
+    "primary_runtime_name": "<本机Runtime名称>",
+    "fallback_runtime_id": "<服务器Runtime UUID>",
+    "fallback_runtime_name": "<服务器Runtime名称>"
   },
   "Bug Fix Agent": {
     "primary_runtime_id": "<本机Runtime UUID>",
-    "fallback_runtime_id": "<服务器Runtime UUID>"
+    "primary_runtime_name": "<本机Runtime名称>",
+    "fallback_runtime_id": "<服务器Runtime UUID>",
+    "fallback_runtime_name": "<服务器Runtime名称>"
   }
 }

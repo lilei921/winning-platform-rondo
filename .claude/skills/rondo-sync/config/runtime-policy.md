@@ -8,9 +8,11 @@
 | --- | --- |
 | JSON Key | 当前 Workspace 内的准确 Agent Name |
 | primary_runtime_id | 优先使用的本机 Runtime UUID |
+| primary_runtime_name | 可选，主 Runtime 的可读名称（如 `Claude (lileipc)`），必须与 ID 对应 |
 | fallback_runtime_id | 本机离线时使用的备用服务器 Runtime UUID |
+| fallback_runtime_name | 可选，备用 Runtime 的可读名称，必须与 ID 对应 |
 
-每个 Agent 独立设置主备，允许共享 Runtime；两个 ID 必须不同且属于当前 Workspace，首版限定相同 Provider。未配置的 Agent 不参与协调，Vayne 自身不纳入策略。
+每个 Agent 独立设置主备，允许共享 Runtime；两个 ID 必须不同且属于当前 Workspace，Provider 可不同。未配置的 Agent 不参与协调，Vayne 自身不纳入策略。
 
 ## 配置与维护
 
@@ -23,4 +25,4 @@
 
 首次启用前，管理员完成固定服务器绑定和现网验收。在 Vayne Run 中使用 `rondo runtime reconcile --dry-run` 核实计划；原生权限及 Run 迁移等 PoC 通过后方可启用定时协调。详见 [黑灯计划](../../../../20-lights-out-plan.md)。
 
-不保存生产 Runtime ID、完整 custom_env 或凭据至仓库，不新增配置同步机制。
+首次配置的主备 Runtime ID 保存在对应 workspace 的 `workspace-config/workspaces/<name>.json` overlay 的 `runtime_policy` 段，作为平台策略缺失时的首次写入来源；平台已有策略不被覆盖。完整 `custom_env` 与凭据不入库。
