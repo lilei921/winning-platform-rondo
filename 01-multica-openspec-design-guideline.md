@@ -132,7 +132,7 @@ Multica Runtime 内部继续保持：
 
 #### Specialist Focus（专业聚焦）
 
-Delivery Squad 成员必须优先承担自身专业职责：Workitem Analyst 负责需求 / 问题分析与 OpenSpec Engineering Contract；Engineer 负责代码实现、开发侧验证和工程证据；Verify Agent 负责按需独立验收；Delivery Lead 负责协作、派发决策、Human 意图理解与语义异常处理。
+Delivery Squad 成员必须优先承担自身专业职责：Workitem Analyst 负责需求 / 问题分析与 OpenSpec Engineering Contract；Engineer 负责代码实现、开发侧验证和工程证据；独立验收按 Human 决定及实际能力处理（当前限制见 [02 §9](02-multica-delivery-lifecycle-design.md#independent-verification)）；Delivery Lead 负责协作、派发决策、Human 意图理解与语义异常处理。
 
 TFS 来源拉取、TFS 工作项 / 子任务管理、状态和工时回写、PR 状态巡检等跨系统支撑及确定性管理操作，原则上由 Squad 外的 Autopilot、平台原生能力或确定性 Script / CLI 承担；不得仅因某专业成员需要消费结果，就将管理流程、外部状态维护与故障恢复写成其专业执行契约。不得为转移机械操作额外创建无必要的 Agent / Run。
 
@@ -270,7 +270,7 @@ PR 生命周期与异常处理由 [Delivery 主方案 §11](02-multica-delivery-
 | 工程任务 | `OpenSpec Task` | `tasks.md` 中的 Implementation Task 或按需 Verification Task |
 | 实现任务 | `Implementation Task` | 产生代码、配置或其他工程修改，并包含与该任务对应的 Task-level Verification |
 | 变更级验证任务 | `Verification Task` | 仅在完整行为必须跨 Task / Module / Repository / System / User Journey 组合后验证时创建；Regression / Integration / E2E 是可选验证方法，不是独立 Stage |
-| 独立验证活动 | `Independent Verification` | Human 明确要求独立验证时由 Verify Agent 对固定候选版本执行的独立行为验收；属于 Delivery Activity，不是新的 OpenSpec Artifact 或 Multica Stage |
+| 独立验证活动 | `Independent Verification` | Human 明确要求时对固定候选版本实施的独立行为验收；属于 Delivery Activity，不是新的 OpenSpec Artifact 或 Multica Stage。当前自动收口限制见 [02 §9](02-multica-delivery-lifecycle-design.md#independent-verification) |
 | 仓库级修改对象 | `Repository Change` | 某个 Repository 的代码修改与交付范围 |
 | 仓库级代码交付对象 | `PR` | 一个 Repository 的 Pull Request |
 
@@ -300,11 +300,11 @@ OpenSpec Tasks 表达工程工作分解；Engineer 消费已批准的完整 Chan
 
 ```text
 TFS Type                = 来源管理事实（Bug / Requirement），不可由 Agent 改写
-Technical Change Kind   = corrective | intentional（Workitem Analyst 根据证据判断，记录在 Multica Issue analysis.change_kind）
+Technical Change Kind   = corrective | intentional（需工程变更的 Requirement，由 Workitem Analyst 判断并通过审核发布登记 analysis.change_kind）
 OpenSpec Schema         = 当前 Change 的 Artifact Contract（首次准备时确定并持久化）
 ```
 
-**不再设置独立的 Analysis / Delivery Route 执行模型**，不创建 `analysis-routing.yaml` 或独立的 `analysis.route` 持久化字段。`analysis.change_kind` 是 Multica Issue Metadata 中唯一的技术变更性质分类结果，用于跨 Run 的交付记录与统计，不是第二次决策或 Skill / Workflow 路由。专业能力由 Workitem Analyst 根据实际问题按需组合；自动处理范围取决于当前授权、风险、证据与可交付能力，不能仅凭 Change Kind 默认放行。Schema 决定 Artifact 集合、依赖、生成指令与 Apply 前置，不决定 Agent / Human Approval / Verify required / Status / PR 生命周期。
+**不再设置独立的 Analysis / Delivery Route 执行模型**，不创建 `analysis-routing.yaml` 或独立的 `analysis.route` 持久化字段。`analysis.change_kind` 是已提交工程契约的 Requirement 的技术变更性质分类事实，用于跨 Run 的交付记录与统计；独立 Bug 及无工程增量的分析不要求写入该字段，不是第二次决策或 Skill / Workflow 路由。专业能力由 Workitem Analyst 根据实际问题按需组合；自动处理范围取决于当前授权、风险、证据与可交付能力，不能仅凭 Change Kind 默认放行。Schema 决定 Artifact 集合、依赖、生成指令与 Apply 前置，不决定 Agent / Human Approval / Verify required / Status / PR 生命周期。
 
 #### 1.4.4 Canonical OpenSpec Schema IDs（统一 OpenSpec Schema 标识）
 
@@ -319,7 +319,7 @@ Schema ID 使用项目规范的 kebab-case `<technical-change-kind>-change` 命�
 
 Change 首次准备时选择并持久化 Schema，后续 Workitem Analyst、Engineer、Finalize 从 `.openspec.yaml` / 原生事实读取，不在每个 Run 重新推断。
 
-当前自动交付仅接受 `corrective-change` 与 `intentional-change`。其他 Schema（如 `sdd`）不作为自动交付的合法输入，须停止并澄清；项目尚未上线，不建立历史 Change 兼容通路。
+当前自动交付仅接受 `corrective-change` 与 `intentional-change`。其他 Schema（如 `sdd`）不作为自动交付的合法输入，须停止并澄清。
 
 当前 OpenSpec 使用 **统一 Change Model + 分型项目 Schema**。Schema 专业产物定义位于 [03 Analysis 方案 §9 OpenSpec Preparation](03-workitem-analysis-design.md#openspec-change-contract)，本手册只维护 Canonical ID、职责边界和跨文档命名规则。
 
@@ -406,11 +406,11 @@ Wayfinder 的准入结论 `accepted | needs_human | unsupported` 属于 **Triage
 
 #### 1.4.8 Technical Change Kind 与自动处理边界
 
-`corrective` 表示恢复有证据支持的既定行为；`intentional` 表示主动改变预期行为、业务规则或能力。Workitem Analyst 负责基于证据判断，并将结果在存在工程增量时通过 `rondo openspec submit-review` 写入 Multica Issue Metadata `analysis.change_kind`（string）；Gate 和 Publish 核对该分类与当前 OpenSpec Change 的 `.openspec.yaml.schema` 一致。技术分类是专业判断及统计维度，不是 Workflow、Skill 链或自动化授权。
+`corrective` 表示恢复有证据支持的既定行为；`intentional` 表示主动改变预期行为、业务规则或能力。Workitem Analyst 负责基于证据判断，并将需工程变更的 Requirement 的分类通过 `rondo openspec submit-review` 写入 Multica Issue Metadata `analysis.change_kind`（string）；Gate 和 Publish 核对该分类与当前 OpenSpec Change 的 `.openspec.yaml.schema` 一致。技术分类是专业判断及统计维度，不是 Workflow、Skill 链或自动化授权。
 
 超出授权、证据或当前自动处理能力的复杂变更须停止并交 Delivery Lead / Human；不另建复杂度 Route。紧急程度与排期由 Human 管理，不创建 `hotfix` 分类。执行分类与方法边界由 [03 §5](03-workitem-analysis-design.md#analysis-section-05) 维护，Schema 归属由 [05](05-openspec-schema-implementation-design.md) 维护。
 
-**实施约定**：当前项目尚未上线，无历史分类数据迁移要求。目标运行契约将 `analysis.change_kind` 写入 Multica 服务器端 Issue Metadata，`analysis.route` 不再使用；验证代码、Skill 和 Workspace 后再发布。完成任务的统计以有效 Issue 完成事实（如 `done`）与分类字段联合过滤，不能把 Stage 的待审核分类直接计为已交付。
+**统计口径**：Requirement 的技术分类由 `analysis.change_kind` 持有，交付统计须结合有效 Issue 完成事实（如 `done`）；审核通过不是交付完成。独立 Bug 按 `tfs.type` 识别，无需补写技术分类。
 
 <a id="gate-terminology"></a>
 
@@ -603,7 +603,7 @@ Issue Metadata 是 Multica 原生 Issue 上供跨 Run 确定性消费的最小�
 }
 ```
 
-`analysis.source` 解码后为 `{ repo_url, branch, commit, change_ref }`；PR 集合 `pr` 解码后为 JSON Array，每个实际交付仓由 `repo_key` 唯一标识，同一记录承载准备事实并在物化后补充 `pr_id` / `pr_url`。外层字符串与内层 JSON 类型不可混淆，例如Requirement 的 `analysis.human_approval.verify_agent_required` 为 JSON boolean（`workitem approve --verify-required true|false`）；不得擅自改变存储类型。
+`analysis.source` 解码后为 `{ repo_url, branch, commit, change_ref }`；PR 集合 `pr` 解码后为 JSON Array，每个实际交付仓由 `repo_key` 唯一标识，同一记录承载准备事实并在物化后补充 `pr_id` / `pr_url`。外层字符串与内层 JSON 类型不可混淆。Requirement 的 `analysis.human_approval` 为 JSON Object，包含 `decision`（`approved`）、`by`、`at`、`comment_ref`、`source`、`verify_agent_required`（JSON boolean），按需包含 `waived_tasks`（不重复的任务编号字符串数组，缺省表示无豁免）。批准与豁免均绑定当前固定 `analysis.source` 和 Human 批准评论，不能从 Analyst 建议推导。独立 Bug 的 `verify_agent.required` 是外层字符串事实；其值为 `"true"` 时阻断自动 Finalize。当前独立验收能力边界见 [02 §9](02-multica-delivery-lifecycle-design.md#independent-verification)。
 
 #### Ownership and Lifecycle（归属与生命周期）
 
@@ -615,9 +615,11 @@ Issue Metadata 是 Multica 原生 Issue 上供跨 Run 确定性消费的最小�
 | 研发发布 | `dev.publication` | `openspec publish` |
 | PR 交付与恢复 | `pr`、`pr.abandoned` | `pr` 命令组按对应事实契约维护 |
 | 独立 Bug 范围 | `bug.required_repos` | `pr prepare` |
+| 独立 Bug 验收要求 | `verify_agent.required` | Human 明确决定；现行 Bug 收口消费该字符串事实，不通过 Requirement 批准命令登记 |
 | 收口与外部回写 | `finalize.pending`、`delivery.tfs_written`、`delivery.tfs_task_plan` | `pr reconcile-status`、`workitem finalize` / `writeback` 按对应事实契约维护 |
+| 最终摘要引用 | `delivery.summary_comment_id` | `workitem finalize --phase complete`；Comment 为正文权威，引用缺失不等于未发布 |
 
-上表用于说明事实的逻辑归属，不是完整字段字典或额外授权规则。当前交付事实映射见 [02 §13.1](02-multica-delivery-lifecycle-design.md#delivery-facts)，具体字段结构、类型、必填条件和校验以对应 Rondo 实现及测试为准。
+上表用于说明事实的逻辑归属，不是完整字段字典或额外授权规则。跨阶段消费与收口见 [02 §13](02-multica-delivery-lifecycle-design.md#delivery-facts)，具体字段结构、类型、必填条件和校验以对应 Rondo 实现及测试为准。
 
 #### Minimal Sufficient Facts（最小充分事实）
 
@@ -634,8 +636,8 @@ Issue Metadata 是 Multica 原生 Issue 上供跨 Run 确定性消费的最小�
 ### 1.9 Project Resource、工作区与事实权威
 
 - Project Resource 的顶层 `label` 提供业务职责、常用别名及检索线索；源码决定实际行为。仓库 URL 与初始 ref 由 `resource_ref.url`、`resource_ref.ref` 提供；当前 Resource ref 也是新 PR 的 Target 配置来源，已登记 PR 使用已确认的实际分支。完整 Git/TFS 仓库名称是统一 `repo_id` / `repo_key`，不另建独立运行时 Registry。
-- Requirement 授权范围由获批 `.openspec.yaml` 的 `x-repositories` 持有，实际交付范围由 `pr` 记录持有；Bug 按诊断结论与已固定的 `bug.required_repos`。根仓身份与固定分析版本由 `analysis.source` 持有。
-- Multica 原生 Checkout 负责实际工作区；根仓、业务仓均为当前 Task workdir 的直属独立 Git 仓，使用原生命令返回的路径，按需准备，不以预设路径或独立映射替代实际事实。具体方法由 [06](06-method-skill-library-implementation-design.md#native-workspace) 与 [native-workspace](skills/native-workspace/SKILL.md) 维护。
+- Repository Scope 的工程授权契约见 [05 §3](05-openspec-schema-implementation-design.md#openspec-schema-section-05)，Bug 范围与实际交付仓消费见 [04 §3](04-engineer-development-design.md#3-输入批准与范围)。根仓身份与固定分析版本由 `analysis.source` 持有。
+- Multica 原生 Checkout 持有实际工作区身份，不以预设路径或独立映射替代实际事实。具体布局与准备方法由 [06](06-method-skill-library-implementation-design.md#native-workspace) 与 [native-workspace](skills/native-workspace/SKILL.md) 维护。
 - Issue Context 优先显式 `--issue`，否则由 Rondo 从 Multica Task Context 解析当前 Issue；Autopilot 批量跨 Issue 操作明确目标。仅在具体操作确实依赖当前 Task 身份时校验该身份，不为无关读写强制额外环境字段。实现见 [native-checkout.ts](rondo/src/clients/native-checkout.ts)、[runtime-context.ts](rondo/src/clients/runtime-context.ts)。
 - 运行时协调由 Vayne 与 `rondo runtime reconcile` 完成，Multica 仍持有 Agent 绑定、Run 调度及恢复。配置、切换规则与待验收项见 [02](02-multica-delivery-lifecycle-design.md#runtime-reconcile)、[07](07-multica-openspec-implementation-roadmap.md)。
 
@@ -1068,7 +1070,7 @@ Deterministic Gate / Guard / Route
 
 ### 4.2 Squad（小队）与 Squad Instructions（小队指令）
 
-当前 Delivery Squad 的默认协作模式是**单一 Issue + 原生 `@mention` + 各成员独立 Run**。`Sub-Issue` 是 Multica 原生能力，但不是本项目当前常规交付路径；仓内已有相关执行分支暂保留待专门回归和退役，不能据此要求 Leader 日常创建。
+当前 Delivery Squad 的默认协作模式是**单一 Issue + 原生 `@mention` + 各成员独立 Run**。`Sub-Issue` 是 Multica 原生能力，但不是本项目当前常规交付路径；不将 OpenSpec Tasks 投影成子 Issue 或 Stage。
 
 对于需要多个 Agent 协作完成同一个工作对象的场景，本规范增加 Squad 维度。
 
@@ -2460,7 +2462,7 @@ Script 的确定性不等于重复调用无副作用，更不等于跨系统原�
 
 Workitem Analyst 与 Engineer 保持不同 Agent / Run。必要分析产物的写入、批准基线持久化、接收方读取当前版本及其职责内的独立判断，属于多角色交接的正常成本；不能以 Token / 时间优化为由合并角色、取消必要证据、假定会话自动共享或压缩掉审核信息。
 
-交接应提供当前工作对象、批准依据、权威产物位置、适用版本 / 修订范围、当前 `task_refs` / Tasks 与验证要求。文件必须在接收方的授权环境中可访问，不以仅属于另一个 Run 的临时目录作为唯一来源。已登记、可跨 Run 持续读取的共享工作区可以按领域契约保存受控的未提交修改；接收方必须区分已提交批准基线、当前受控修改与最终 Git 持久化，不把文件写入成功当作 Git Commit。共享内容丢失或关键 Evidence 不可读时停止自动推进，由相应协调角色处理恢复，不凭旧完成结果重建进度。同一资料被不同角色按职责读取，不自动等于重复分析。Delivery 的提交时点与最终收口规则由 [02 §6](02-multica-delivery-lifecycle-design.md#human-analysis-review) 和 [§12.4](02-multica-delivery-lifecycle-design.md#final-completion) 维护。
+交接应提供当前工作对象、批准依据、权威产物位置、固定版本与必要验证要求。Requirement 研发以获批完整 Change 为对象；跨 Run 使用固定 Git 来源、已登记 Candidate/PR 与可访问 Evidence，不依赖上一 Run 的临时路径或未提交工作树。关键事实不可读时停止受影响操作并协调恢复，不凭旧完成结果重建进度。同一资料被不同角色按职责读取，不自动等于重复分析。批准及收口规则见 [02 §6](02-multica-delivery-lifecycle-design.md#human-analysis-review) 与 [§12.3](02-multica-delivery-lifecycle-design.md#final-completion)，工作区恢复方法见 [06](06-method-skill-library-implementation-design.md#native-workspace)。
 
 优化对象是同一详细内容的多份维护、无新事实的整轮重做、无关历史和全量文档加载、重复派发，以及仅为文档包装 / 机械收口新增的专业接力。正常角色交接和实际有价值的专项审查仍然保留；不设置通用的 Run 数或文档长度硬上限。
 
@@ -3032,7 +3034,7 @@ LLM 负责需要上下文判断的 Semantic Reasoning（语义推理）；明确
 **跨系统协作规则：**
 
 - **Project Skill 消费当前 Change 的 Artifact Contract，不复制其内容标准。** 方法、内容语义、输出结构的具体协作及冲突处理见 [§3.4](#skill-artifact-contract-boundary)。
-- **OpenSpec Task 属于 `tasks.md`，不属于 Multica Issue。** Multica 使用 `task_refs` 引用并分派工程工作，不因 Task 数量自动创建 Issue。
+- **OpenSpec Task 属于 `tasks.md`，不属于 Multica Issue。** Engineer 消费完整获批 Change；Task 编号用于工程进度和必要事实引用，不因 Task 数量创建 Issue 或 Run。
 - **Multica Issue 承担交付运行与协作。** Requirement 在当前 Issue 中通过原生 `@mention` 交接获批 Change；独立 Bug 使用原生 Assignment。
 - **OpenSpec Artifact Readiness / Validation / Apply Ready 不等于 Multica Delivery Gate / Human Approval。** 两类检查分别履行工程契约与交付决策职责。
 - **Multica Agent Instructions、Project Skill、OpenSpec Artifact Instruction 与 Artifact Template 不互相替代。** 角色约束、工作执行方法、工件生成语义及输出结构各有权威 Owner。

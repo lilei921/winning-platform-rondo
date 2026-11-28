@@ -32,7 +32,7 @@
 | [pull-request](skills/pull-request/SKILL.md) | 候选分支、PR 准备、物化及交付 | Engineer、Bug Fix |
 | [workitem-finalize](skills/workitem-finalize/SKILL.md) | 已确认 PR 终态后的归档、回写、完成 | PR Status Sync |
 
-Delivery Lead、TFS Sync、Vayne 直接使用适用的原生或 Rondo 命令，不为单一确定性操作新增 Skill。PR 状态同步由 Agent Instructions 直接调用命令，再按已确认结果调用收口 Skill。不存在默认的固定 Verify Skill/Agent 绑定；Human 需要独立验证时按实际可用成员处理。
+Delivery Lead、TFS Sync、Vayne 直接使用适用的原生或 Rondo 命令，不为单一确定性操作新增 Skill。PR 状态同步由 Agent Instructions 直接调用命令，再按已确认结果调用收口 Skill。独立验收的当前能力限制与处理边界见 [02 §9](02-multica-delivery-lifecycle-design.md#independent-verification)。
 
 <a id="native-workspace"></a>
 
@@ -53,13 +53,13 @@ rondo runtime check-checkout --root-repo <实际返回路径>
 
 ### 3.2 业务仓
 
-按 Project Resource 的 url/ref 获取实际仓库，核实 Git Origin。只读 Checkout 不创建 Candidate。获授权的研发使用完整仓库名称，按 Requirement 批准 Scope 或直接 Bug 的真实修复范围处理：
+按 Project Resource 的 url/ref 获取实际仓库，核实 Git Origin。只读 Checkout 不创建 Candidate。获授权的研发使用完整仓库名称，按 [05 §3](05-openspec-schema-implementation-design.md#openspec-schema-section-05) 的获批 Scope 或 [04 §3](04-engineer-development-design.md#3-输入批准与范围) 的 Bug 范围处理：
 
 ```bash
 rondo repo get-branch --project <project> --repo <repo> --branch feature/<tfs.id>
 ```
 
-若远端 Candidate 存在，以其为 Checkout ref；确认不存在才使用 Resource ref。未知结果停止。复用原生 Task Branch；检查候选版本和仓库身份。重入时 Fetch 并核实当前 HEAD 包含 Candidate，不擅自切换 ref、merge、reset、clean 或覆盖未知本地改动。PR 新建目标分支取 Resource ref；已登记 PR 以已固定事实为准。Candidate 的 Push、Prepare、Materialize 归 [04](04-engineer-development-design.md)。
+若远端 Candidate 存在，以其为 Checkout ref；确认不存在才使用 Resource ref。未知结果停止。复用原生 Task Branch；检查候选版本和仓库身份。重入时 Fetch 并核实当前 HEAD 包含 Candidate，不擅自切换 ref、merge、reset、clean 或覆盖未知本地改动。Candidate 的 Push、PR Target、Prepare、Materialize 归 [04 §9](04-engineer-development-design.md#development-section-09)。
 
 ### 3.3 跨 Run 恢复
 

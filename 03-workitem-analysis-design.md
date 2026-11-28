@@ -15,7 +15,7 @@ Workitem Analyst 对准确、可实施、可验证的专业结论负责，而非
 | 存在需要实施的工程增量 | 必要 OpenSpec 工件、专业审查、固定 Git 审核版本、Human Review 摘要 |
 | 关键事实、授权或处理能力不足 | 明确缺口、影响与待决定事项；保留已确认成果 |
 
-无增量不是 Gate FAIL，不伪造 Change 或机器事实；未知不能当作无变更。Comment 本身不表示 TFS 已关闭或 Issue 已 Done。
+无增量不是 Gate FAIL，不伪造 Change 或机器事实；未知不能当作无变更。无工程增量不等于问题已解决，不得将尚未确认的现场部署、运行验证视为已经完成，也不得借此绕过已生效的工程契约、Human Approval、研发派发或 PR。以普通 Comment 回流结论，不额外为此 @Lead；Comment 本身不表示 TFS 已关闭或 Issue 已 Done。关键事实或意图未确定时按实际缺口补证或澄清。
 
 ## 2. Role 与边界
 
@@ -86,7 +86,7 @@ TFS Type 是外部管理事实，不由 Agent 改写。Wayfinder 按来源类型
 
 仅在存在工程增量且身份、性质、写入授权明确时使用 spec-preparation。优先复用唯一 Change，必要时用 `rondo openspec resolve-identity` 按已知 change_ref 和/或 tfs.id 定位。ACTIVE_FOUND 复用；NOT_FOUND 满足创建条件才新建；ARCHIVED_FOUND / CONFLICT / INVALID / UNKNOWN 停止有关写入并说明问题。Change ID 末尾是独立 TFS ID 段，见 [05 §5](05-openspec-schema-implementation-design.md#openspec-schema-section-05)。
 
-按项目原生 Schema、Artifact Instructions、Template、状态和依赖准备工件；合法 skip_specs、Conditional Design 以实际契约为准。可信状态直接复用，不要求例行重复 schema which/status/instructions。获批 Repository Scope 是 .openspec.yaml 顶层非空去重的完整业务仓名称列表；Agent 按实际影响判断，Rondo 校验当前 Project Resource 成员关系及排除根仓。不要将候选仓、允许范围和实际交付仓混为一谈。
+按项目原生 Schema、Artifact Instructions、Template、状态和依赖准备工件；合法 skip_specs、Conditional Design 以实际契约为准。可信状态直接复用，不要求例行重复 schema which/status/instructions。Agent 按实际影响确定需要提交审核的 Repository Scope，遵循 [05 §3](05-openspec-schema-implementation-design.md#openspec-schema-section-05) 的唯一授权载体及确定性校验；不要将候选仓、允许范围和实际交付仓混为一谈。
 
 不擅自改写已批准 Goal / Scope / Acceptance / Verification。发现实质影响先澄清并重新审核。具体工件内容与权限归 [05](05-openspec-schema-implementation-design.md)；CLI 不承担技术方案或 Root Cause 判断。
 
@@ -94,7 +94,7 @@ TFS Type 是外部管理事实，不由 Agent 改写。Wayfinder 按来源类型
 
 ## 10. Independent Verification 建议
 
-根据实际变更风险、开发侧验证能力及独立验收要求给出是否需要、依据及必要验证重点；可引用工程契约。最终由 Human 决定，建议不是批准，也不减少必要开发验证。无需独立 Review 文件或另建专用任务。没有相应配置时按 [02 §9](02-multica-delivery-lifecycle-design.md) 处理能力缺口。
+根据实际变更风险、开发侧验证能力及独立验收要求给出是否需要、依据及必要验证重点；可引用工程契约。最终由 Human 决定，建议不是批准，也不减少必要开发验证。无需独立 Review 文件或另建专用任务。现行独立验收能力限制、Human 决定及自动收口边界见 [02 §9](02-multica-delivery-lifecycle-design.md#independent-verification)，不因实现缺口改写专业建议。
 
 <a id="analysis-section-11"></a>
 
@@ -102,7 +102,7 @@ TFS Type 是外部管理事实，不由 Agent 改写。Wayfinder 按来源类型
 
 专业审查检查结论和工件是否准确、完整、一致、可实施、可验证；核实范围、方案、验收、任务与必要验证是否真实对应。修正发现的阻塞，保留真实结论、风险与引用。不强制 ai-review.md、ai_review Metadata、facts.json 或 Review Verdict 文件。
 
-Rondo 最终 Gate 与语义 Review 分层。现行检查集合由 [gate-evidence.ts](rondo/src/commands/analysis/gate-evidence.ts)、[validate.ts](rondo/src/commands/openspec/validate.ts) 维护：identity、change、acceptance_contract、tasks、openspec_validate。校验当前 Issue 与 TFS ID、Change 后缀、Schema、Repository Scope 与必要工程工件；按实际情况执行 OpenSpec Strict Validation。Gate 不以关键词匹配代替专业质量。当前工件与来源绑定，FAIL/UNKNOWN 不放行。不额外写 Gate JSON。
+专业 Review 不由确定性 Gate 代替；最终 Gate 的检查范围、固定版本证据及失败边界由 [05 §8](05-openspec-schema-implementation-design.md#openspec-schema-section-15) 维护。Analyst 消费实际结果并定向修订，不重复 CLI 检查或额外持久化 Gate 工件。
 
 <a id="analysis-section-12"></a>
 

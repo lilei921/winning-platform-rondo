@@ -82,7 +82,7 @@ x-repositories:
 
 ## 6. Tasks 与验证契约
 
-tasks.md 是同一 Change 的工程任务列表，使用唯一数字编号（如 1.1、1.2），每项描述预期结果及验证方式；不按 Agent 类型、PR 数量或 TFS 子任务强制分组。验证包含必要任务级验证、按实际影响选择的 Change 级集成/回归/E2E，以及 Human 要求时的独立验收。独立验收不替代 Engineer 自身验证，不强制另建工件或固定角色。
+tasks.md 是同一 Change 的工程任务列表，使用唯一数字编号（如 1.1、1.2），每项描述预期结果及验证方式；不按 Agent 类型、PR 数量或 TFS 子任务强制分组。工程契约包含必要任务级验证及按实际影响选择的 Change 级集成/回归/E2E；独立验收的 Human 决定与当前自动收口限制由 [02 §9](02-multica-delivery-lifecycle-design.md#independent-verification) 维护，不是 Schema 的独立 Artifact 或 Apply Gate。
 
 批准后任务编号、正文及授权范围不变。任务复选框仅表示已实际完成；Human 明确豁免的未执行任务保持未勾选，以 `analysis.human_approval.waived_tasks` 作为豁免事实。需要实质调整任务或契约时重新获得授权。Native OpenSpec 的状态或 validate 成功不能单独证明交付完成。
 
@@ -110,7 +110,7 @@ tasks.md 是同一 Change 的工程任务列表，使用唯一数字编号（如
 
 ## 8. Analysis Gate 与证据
 
-正常审核使用 `rondo openspec submit-review`；最终 Gate 执行必要身份、Schema、Scope、工程工件及 OpenSpec Strict Validation，并在发布完成后登记可信审核来源。`rondo openspec validate` 用于按需诊断，不另设常规重复 Gate。确定性校验不替代专业判断。
+正常审核使用 `rondo openspec submit-review`，执行现行 Gate：`identity`（当前 Issue、TFS ID 与 Change 后缀）、`change`（Change 身份、Schema 及必要工件）、`tasks`（工程任务可消费性）、`acceptance_contract`（适用验收工件、合法 Scope 及当前 Project Resource 成员关系）、`openspec_validate`（OpenSpec Strict Validation）。具体执行及短路条件以 [validate.ts](rondo/src/commands/openspec/validate.ts) 为准。发布成功并确认固定审核来源后才登记 Gate PASS。`rondo openspec validate` 用于按需诊断，不另设常规重复 Gate。确定性校验不以关键词匹配替代专业判断，也不要求额外 Gate JSON。
 
 当前 Gate Evidence 对 Change metadata、proposal、tasks、存在的 design 与 specs Markdown 计算工程契约证据；关联必要来源 metadata 与 change_ref。具体哈希、归一化和比较以 [gate-evidence.ts](rondo/src/commands/analysis/gate-evidence.ts) 和 [validate.ts](rondo/src/commands/openspec/validate.ts) 为准。机器校验失败或发布结果不确定不得推进审核。
 
@@ -120,7 +120,7 @@ tasks.md 是同一 Change 的工程任务列表，使用唯一数字编号（如
 
 ## 9. Archive Contract
 
-仅 Requirement 在 PR 已确认完成后进入归档准备。以批准的 `analysis.source` 固定根仓及版本为基础，按 [02 §12](02-multica-delivery-lifecycle-design.md) 的收口顺序执行；使用 `rondo repo prepare-archive` 获取实际根仓。校验 Task 完成或真实批准豁免、适用验证与 PR 事实、当前契约和授权研发差异。
+仅 Requirement 在 PR 已确认完成后进入归档准备。以批准的 `analysis.source` 固定根仓及版本为基础，按 [02 §12](02-multica-delivery-lifecycle-design.md) 的收口顺序执行；使用 `rondo repo prepare-archive` 获取实际根仓。校验 Task 完成或真实批准豁免、适用验证与 PR 事实、当前契约和授权研发差异。独立验收要求导致现行 Finalize UNKNOWN 时不得归档或推进收口，具体适用条件见 [02 §9](02-multica-delivery-lifecycle-design.md#independent-verification)。
 
 - 有 Delta Specs 时按原生 Archive 语义更新主规格；合法 skip_specs 时不制造规格变化。
 - 仅提交当前 Change 的归档及适用主规格变化，不夹带无关修改。已有归档或部分成功时先核实外部事实，复用已成功动作。

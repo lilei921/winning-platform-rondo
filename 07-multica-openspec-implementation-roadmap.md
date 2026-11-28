@@ -24,7 +24,7 @@
 | Runtime 主备 | [Vayne](agents/vayne-agent/instructions.md)、[reconcile.ts](rondo/src/commands/runtime/reconcile.ts)、[provisioning](workspace-config/provisioning.json) | 实际平台切换 PoC、主备配置、Autopilot 实际触发 |
 | Skill / Agent 同步 | [provisioning.json](workspace-config/provisioning.json)、[rondo-sync](.claude/skills/rondo-sync/SKILL.md) | 实际 Workspace 配置回读、运行版本与绑定 |
 
-受管配置未固定注册 Verify Agent；Human 要求独立验收时必须核实可用能力，不宣称独立验证链路已经正式部署。
+Independent Verification 仍有实现缺口：受管配置未注册 Verify Agent，当前 Rondo 能登记/消费验收要求，但未实现独立 PASS 的消费闭环。要求独立验收时按 [02 §9](02-multica-delivery-lifecycle-design.md#independent-verification) 阻断自动 Finalize；此项不是单纯配置或 Runtime E2E 待确认。只在实际需要且获得授权时另行补齐能力，本次不新增实现。
 
 ## 3. 实施顺序
 
@@ -42,14 +42,15 @@
 |---|---|
 | TFS 同步 | 当前 Project，WIQL，来源版本/附件，重复同步不误建 Issue |
 | Wayfinder | 三维准入、accepted 分流，需人处理/unsupported 有真实依据，暂时故障不误判 |
-| 无工程增量 | 普通 Comment，未制造无意义 Change 或强制 PR |
+| 无工程增量 | 普通 Comment，不制造 Change，不把部署待确认当作解决，不绕过已生效的工程契约或交付授权 |
 | Requirement 分析 | 正确 Schema/Scope/Identity、最小工件、一次最终 Gate、固定来源可读取 |
 | Human Approval | 评论与 Commit 一致；独立验证明确决定；真实豁免编号可消费 |
+| Independent Verification（当前限制） | Requirement 要求为 true 或独立 Bug 字符串要求为 "true" 时，Finalize 返回 UNKNOWN，不归档、不写回；完整 PASS 消费尚待按实际需求实现 |
 | Native Workspace | 根仓/业务仓平级，真实路径、正确 ref/Origin、已有成果可复用，不误改其他工作区 |
 | 研发与 PR | 授权内单/多仓 Candidate，真实验证和 Code Review，任务实际进度、豁免不误勾选；部分 PR 写入恢复 |
 | 直接 Bug | 不使用 OpenSpec；按 Bug Scope 修复，真实回归/替代验证，唯一 Refs 尾注、登记 PR |
 | PR 状态同步 | 扫描符合条件 Issue，active/未知不推进，abandoned 记录事实；全部 completed 才收口 |
-| 收口 | Requirement 归档固定分析来源、任务计划/Commit/TFS 回写；Bug 直接回写；Complete 前确认真实外部条件 |
+| 收口 | 按 02 §12 核实固定来源归档、任务/Commit、TFS 目标状态与工时、父项评论；Bug 直接回写；Complete 核对真实外部条件与最终摘要，重复执行不重复创建摘要 |
 | 恢复与幂等 | 部分成功、网络中断、已完成残留 pending、重复运行、授权冲突及 UNKNOWN 均安全处理 |
 | Runtime 主备 | 主在线优先、主明确离线切备、主恢复切回；双离线 FAIL、未知 UNKNOWN；已绑定不重复写；失败隔离、配置错误 |
 | Runtime PoC | 核实改绑对执行中 Run、排队、离线恢复、跨 Provider 模型及 Autopilot 固定服务器 Runtime 的实际影响，不用静态代码推断平台保证 |

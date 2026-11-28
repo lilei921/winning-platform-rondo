@@ -17,7 +17,7 @@ Engineer 对已批准 Change 的正确、可维护、可验证实现负责；一
 
 ## 3. 输入、批准与范围
 
-- Requirement：使用 `rondo openspec read --file <Change内相对路径>` 按固定 analysis.source 读取批准版本；Human Approval 与固定 Commit 一致。授权仓库是批准 .openspec.yaml 的 x-repositories，完整 Git/TFS 仓库名称。
+- Requirement：使用 `rondo openspec read --file <Change内相对路径>` 按固定 analysis.source 读取批准版本；Human Approval 与固定 Commit 一致。仓库授权范围以 [05 §3](05-openspec-schema-implementation-design.md#openspec-schema-section-05) 的获批 Scope 为准。
 - Bug：当前直接授权 Issue、Expected/Actual Behavior、可信根因、修复范围与已有 Evidence；已固定 bug.required_repos 时必须遵守。首次多仓准备固定完整必要集合。
 - Project Resource 提供 URL 与 ref，实际工作树由原生 Checkout 返回，使用真实 Git 身份。批准范围、Resource 可用集合、实际修改仓及登记 PR 各有不同语义。
 
@@ -25,7 +25,7 @@ Engineer 对已批准 Change 的正确、可维护、可验证实现负责；一
 
 ## 4. 研发执行
 
-以实际源码、项目规范和获批要求建立事实基线。优先复用现有代码、测试及有效 Evidence；按风险选择小步修改、反馈与验证。确需本地工程仓时使用 [native-workspace](skills/native-workspace/SKILL.md)，不强制为只读调查 Checkout。工程根仓与业务仓平级、独立 Git，按实际返回路径工作。保留 Task Branch，Candidate 分支统一 feature/<tfs.id>；已经存在的 Candidate 优先续接。不得因 Checkout 或跨 Runtime 恢复失败强制 Reset 或清理原成果。
+以实际源码、项目规范和获批要求建立事实基线。优先复用现有代码、测试及有效 Evidence；按风险选择小步修改、反馈与验证。按需使用 [native-workspace](skills/native-workspace/SKILL.md) 准备实际工程仓，工作区布局、原生 Checkout、Candidate 续接及恢复边界见 [06 §3](06-method-skill-library-implementation-design.md#native-workspace)。研发交付的 Candidate 分支与受控 Git 操作见本方案 §9。
 
 ## 5. Ground 与反馈
 
@@ -37,7 +37,7 @@ Engineer 对已批准 Change 的正确、可维护、可验证实现负责；一
 
 ## 7. Development Verification
 
-验证分为任务级、必要的跨任务/模块/仓库集成或回归、Human 要求的 Independent Verification；后者不是 Engineer 验证的替代品。根据实际技术栈、改动和风险选择足以支持当前完成声明的测试/构建/回归。不得仅因已有 checkbox、历史 PASS 或远程镜像就声明当前 Candidate 已验证。
+Engineer 负责任务级及必要的跨任务/模块/仓库集成或回归验证；Human 要求的独立验收不替代这些职责，现行能力与收口限制见 [02 §9](02-multica-delivery-lifecycle-design.md#independent-verification)。根据实际技术栈、改动和风险选择足以支持当前完成声明的测试/构建/回归。不得仅因已有 checkbox、历史 PASS 或远程镜像就声明当前 Candidate 已验证。
 
 PR Prepare 时 Requirement 必须提供 validation.command；Bug 有适用本地命令时提供。CLI 执行实际命令并登记结果，无需事前填写 PASS。Bug 确无适用命令才允许提供真实替代验证 PASS、引用及原因、范围、结果、局限；失败不得降级为替代证据。同一 Candidate 已有命令失败时重新执行命令。研发过程中的必要调试和验证不受限制。
 
