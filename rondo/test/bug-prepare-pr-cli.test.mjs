@@ -21,12 +21,7 @@ test('Bug pr prepare CLI (Native resumed checkout): stdin/file, Git identity, qu
   const native = true;
   const dir = realpathSync(mkdtempSync(join(tmpdir(), 'rondo-bug-cli-')));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
-  const taskRoot = join(dir, 'task');
-  const workdir = join(taskRoot, 'workdir');
-  const configRoot = join(taskRoot, 'multica-config');
-  mkdirSync(workdir, { recursive: true });
-  mkdirSync(configRoot, { recursive: true });
-  const root = join(workdir, 'winning-platform-monorepo'), hub = join(workdir, 'biz'), remote = join(dir, 'remote.git');
+  const root = join(dir, 'winning-platform-monorepo'), hub = join(dir, 'biz'), remote = join(dir, 'remote.git');
   mkdirSync(root); mkdirSync(hub); mkdirSync(remote);
   git(root, 'init', '-b', 'main'); git(root, 'remote', 'add', 'origin', rootUrl);
   writeFileSync(join(root, 'AGENTS.md'), '规则\n');
@@ -63,15 +58,15 @@ process.exit(r.status ?? 1);
     { id: 'biz', resource_type: 'github_repo', resource_ref: { url: repoUrl, ref: 'main' } },
     { id: 'sibling', resource_type: 'github_repo', resource_ref: { url: 'http://tfs.test/tfs/C/P/_git/sibling', ref: 'main' } },
   ];
-  mkdirSync(join(workdir, '.multica', 'project'), { recursive: true });
-  writeFileSync(join(workdir, '.multica', 'daemon_task_context.json'), JSON.stringify({ managed_by: 'multica-daemon-task', issue_id: 'i', agent_id: 'agent' }));
-  writeFileSync(join(workdir, '.multica', 'project', 'resources.json'), JSON.stringify({ project_id: 'p', resources }));
+  mkdirSync(join(dir, '.multica', 'project'), { recursive: true });
+  writeFileSync(join(dir, '.multica', 'daemon_task_context.json'), JSON.stringify({ managed_by: 'multica-daemon-task', issue_id: 'i', agent_id: 'agent' }));
+  writeFileSync(join(dir, '.multica', 'project', 'resources.json'), JSON.stringify({ project_id: 'p', resources }));
   const initial = {
     issues: { 'I-1': { id: 'i', identifier: 'I-1', project_id: 'p', status: 'todo', assignee_id: 'agent', metadata: {
       'tfs.type': 'Bug', 'tfs.id': '12', 'tfs.url': 'http://tfs.test/tfs/C/P/_workitems?id=12',
     } } },
     agents_list: [{ name: 'Bug Fix Agent', id: 'agent' }], project_resources: resources,
-    runs: { i: [{ id: taskId, issue_id: 'i', agent_id: 'agent', workspace_id: 'ws', status: 'running', work_dir: workdir }] },
+    runs: { i: [{ id: taskId, issue_id: 'i', agent_id: 'agent', workspace_id: 'ws', status: 'running', work_dir: dir }] },
   };
   const statePath = join(dir, 'state.json'), config = join(dir, 'config.json'), callsPath = join(dir, 'calls.jsonl');
   writeFileSync(statePath, JSON.stringify(initial));
@@ -79,7 +74,7 @@ process.exit(r.status ?? 1);
     biz: { repo_path: 'biz', repo_url: repoUrl, tfs_repo: 'biz', tfs_project: 'P', default_target_branch: 'main' },
   } }));
   const env = { ...process.env, MOCK_STATE: statePath, MOCK_SYNC_CALLS_FILE: callsPath,
-    MULTICA_CLI_PATH: mock, MULTICA_SERVER_URL: 'http://multica.test', MULTICA_TASK_ID: taskId, MULTICA_TASK_CONFIG_ROOT: configRoot, MULTICA_AGENT_ID: 'agent', MULTICA_WORKSPACE_ID: 'ws', MULTICA_TOKEN: 'fixture', MULTICA_DAEMON_PORT: '1',
+    MULTICA_CLI_PATH: mock, MULTICA_SERVER_URL: 'http://multica.test', MULTICA_TASK_ID: taskId, MULTICA_AGENT_ID: 'agent', MULTICA_WORKSPACE_ID: 'ws', MULTICA_TOKEN: 'fixture', MULTICA_DAEMON_PORT: '1',
     TFS_SERVER_URL: 'http://tfs.test/tfs/C', TFS_PAT: 'fixture', RONDO_GIT_EXECUTABLE: transport };
   const evidence = {
     expected_behavior: '返回列表', actual_behavior: '空数据时失败', fix_summary: '处理空数据',
@@ -88,7 +83,7 @@ process.exit(r.status ?? 1);
     validation: { result: 'PASS', summary: '定向测试通过', evidence_refs: ['run:fixture/test'] },
     code_review: { result: 'PASS', summary: '修改范围已审查', evidence_refs: ['run:fixture/review'], findings: [] }, blockers: [], description:'修复空数据；已完成回归。',
   };
-  const args = ['pr', 'prepare', '--repo', 'biz', '--candidate-commit', sha,
+  const args = ['pr', 'prepare', '--issue', 'I-1', '--repo', 'biz', '--candidate-commit', sha,
     '--title', '修复空数据', '--root-repo', root];
   const run = (input, extraEnv = {}, source = '-', extraArgs = []) => spawnSync(process.execPath, [cli, ...args, '--facts', source, ...extraArgs], {
     input, encoding: 'utf8', env: { ...env, ...extraEnv }, timeout: 30_000,
@@ -119,7 +114,7 @@ process.exit(r.status ?? 1);
     result(run(input), 2);
     assert.deepEqual(state(), initial);
   }
-  assert.match(result(run(JSON.stringify(evidence), { MULTICA_AGENT_ID: 'other' }), 3).reason, /当前 Issue/);
+  assert.match(result(run(JSON.stringify(evidence), { MULTICA_AGENT_ID: 'other' }), 3).reason, /daemon Task/);
   assert.deepEqual(state(), initial);
   result(run(undefined, {}, join(dir, 'missing.json')), 3);
   assert.deepEqual(state(), initial);

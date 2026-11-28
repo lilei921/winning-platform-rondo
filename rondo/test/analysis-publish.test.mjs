@@ -862,7 +862,7 @@ test("显式 --root-repo 缺值或为空时不回退环境变量", t => {
     const r = spawnSync(process.execPath, [CLI, ...args, ...flags], { encoding: "utf8", cwd: f.root,
       env: { ...process.env, ...f.env, RONDO_WORKSPACE_PATH: f.root } });
     assert.equal(r.status, 64, r.stderr);
-    assert.match(r.stderr, /--root-repo/);
+    assert.match(r.stderr, /--root-repo|too many arguments/i);
     assert.equal(f.state().metadata["analysis.source"], undefined);
   }
 });

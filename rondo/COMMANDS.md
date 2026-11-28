@@ -27,7 +27,7 @@ rondo doctor --help
 
 配置安装、TFS 连接、Multica Workspace 和 Project Resource 的说明见 [README.md](README.md#5-运行期配置)。本页仅保留命令调用契约。
 
-**Issue 定位**：绑定 Issue 的 Run 中，单 Issue 命令的 `--issue <key-or-id>` 可省略；Rondo 根据 Multica 提供的 `MULTICA_TASK_CONFIG_ROOT` 定位同级 `workdir/.multica/daemon_task_context.json`，读取当前 Agent 对应的 `issue_id`。显式参数优先；无法确认上下文时返回 `UNKNOWN`，请显式指定。批量 `pr reconcile-status` 省略 `--issue` 仍表示扫描；Autopilot 收口命令须明确指定 Issue。
+**Issue 定位**：绑定 Issue 的 Run 中，单 Issue 命令的 `--issue <key-or-id>` 可省略；Rondo 从当前目录向上定位最近的 Multica 原生 `.multica/daemon_task_context.json`，使用当前 Agent 对应的 `issue_id`。显式参数优先；无法确认上下文时返回 `UNKNOWN`，请显式指定。批量 `pr reconcile-status` 省略 `--issue` 仍表示扫描；Autopilot 收口命令须明确指定 Issue。
 
 ## 2. 命令总览
 

@@ -13,8 +13,11 @@ const content = "# Tasks\n\n- [ ] 1.1 中文任务\n  - 验收：保持多行正
 
 function fixture(t) {
   const dir = mkdtempSync(join(tmpdir(), "rondo-analysis-read-"));
-  const configRoot = join(dir, "multica-config");
-  mkdirSync(configRoot);
+  const taskRoot = join(dir, "task");
+  const workdir = join(taskRoot, "workdir");
+  const configRoot = join(taskRoot, "multica-config");
+  mkdirSync(workdir, { recursive: true });
+  mkdirSync(configRoot, { recursive: true });
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const path = "/openspec/changes/fix-101/tasks.md";
   const commit = "a".repeat(40);
@@ -35,7 +38,7 @@ function fixture(t) {
     assert.equal(readFileSync(stateFile, "utf8"), before, "读取不得写 Issue");
     return { code: r.status, body: JSON.parse(r.stdout) };
   };
-  return { run, tfs, source, write, path, config, dir };
+  return { run, tfs, source, write, path, config, dir, workdir };
 }
 
 test("analysis read 无需根仓挂载，按固定 commit 完整返回中文多行正文", t => {
@@ -115,8 +118,8 @@ test("openspec read defaults to native Issue and fails closed without valid cont
   const missing = f.run("tasks.md", env, true);
   assert.equal(missing.code, 3);
   assert.match(missing.body.reason, /--issue/);
-  mkdirSync(join(f.dir, ".multica"));
-  writeFileSync(join(f.dir, ".multica", "daemon_task_context.json"),
+  mkdirSync(join(f.workdir, ".multica"), { recursive: true });
+  writeFileSync(join(f.workdir, ".multica", "daemon_task_context.json"),
     JSON.stringify({ managed_by: "multica-daemon-task", agent_id: "agent", issue_id: "issue-1" }));
   const stateFile = join(f.dir, "state.json");
   const state = JSON.parse(readFileSync(stateFile, "utf8"));
