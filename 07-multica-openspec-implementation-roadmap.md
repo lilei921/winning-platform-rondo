@@ -265,7 +265,7 @@ Finalize 每次读取现实外部事实和已完成后置条件，只补缺失�
 
 1. **07-A-01 — 实现 TFS Work Item 确定性同步**：维护 `rondo workitem sync`，覆盖来源变化、Issue 映射/幂等、Wayfinder 指派及首次激活；交付 CLI 实现及确定性单元测试。
 2. **07-A-02 — 配置自动执行入口**：编写/完善 TFS Sync Autopilot Prompt、Agent Instructions，接入 `rondo workitem sync` 并解决 Runtime Offline；交付可执行的定时配置、运行与回读证据；Agent 不复制同步业务逻辑。
-3. **07-A-03 — 真实入口 E2E 验收**：验证查询范围与来源变化、重复同步、来源变化、部分失败恢复和 Wayfinder Run 实际启动；分别确认 Issue 同步成功与下游 Run 成功。
+3. **07-A-03 — 真实入口 E2E 验收**：验证查询范围、重复同步、来源变化、部分失败恢复和 Wayfinder Run 实际启动；分别确认 Issue 同步成功与下游 Run 成功。
 
 **交付物**：`rondo workitem sync`、Agent Instructions 与 Autopilot Prompt、同步幂等测试和正式定时 E2E 证据。
 
