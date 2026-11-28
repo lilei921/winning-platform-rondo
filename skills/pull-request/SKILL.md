@@ -15,8 +15,8 @@ description: 为 Bug 和 Requirement 准备、提交及按需恢复 PR 交付。
 按需更新远端事实；提交业务代码后以非强制方式发布 Candidate（Bug Commit 保留唯一 `Refs: #<tfs.id>` 尾注）。
 
 ```bash
-rondo repo fetch --issue <KEY> --repo <repo_id> --root-repo "<root>"
-rondo repo push --issue <KEY> --repo <repo_id> --root-repo "<root>"
+rondo repo fetch --repo <repo_id> --root-repo "<root>"
+rondo repo push --repo <repo_id> --root-repo "<root>"
 ```
 
 Fetch 不执行合并。
@@ -46,7 +46,7 @@ Fetch 不执行合并。
 Bug 在同一 Facts 中补充 `expected_behavior`、`actual_behavior`、`fix_summary`、`root_cause`（confidence 为 confirmed/probable、summary、evidence_refs；probable 补充 remaining_risk）、`regression`（PASS、summary、evidence_refs），以及 validation / code_review 的 evidence_refs。证据应真实可核查；Regression、Code Review 等专业 PASS 必须有已确认的依据，不以尚未执行的命令作为成功证据。
 
 ```bash
-rondo pr prepare --issue <KEY> --repo <repo_id> --root-repo "<root>" --candidate-commit <sha> --facts "<temporary-json>" --title "<title>"
+rondo pr prepare --repo <repo_id> --root-repo "<root>" --candidate-commit <sha> --facts "<temporary-json>" --title "<title>"
 ```
 
 使用临时 Facts 文件时，保留至 `pr prepare` 执行结束。
@@ -60,7 +60,7 @@ CLI 在 Issue 的 `pr` 中按仓库登记准备事实，`blockers` 为空是输�
 完成全部实际交付仓的 PR Preparation；Bug 根据 `ready_for_pr` 确认准备完整性；Requirement 的研发工件已发布，所有 Tasks 已完成或由 Human Approval 明确豁免。
 
 ```bash
-rondo pr materialize --issue <KEY>
+rondo pr materialize
 ```
 
 根据返回结果确认 PR 交付情况；出现异常时核实原因并处理，不通过手工修改交付事实绕过检查。
@@ -70,7 +70,7 @@ rondo pr materialize --issue <KEY>
 Human 明确授权当前待恢复仓库后，恢复 PR Facts：
 
 ```bash
-rondo pr resume --issue <KEY> --comment-id <id> --next REWORK|RECREATE_PR
+rondo pr resume --comment-id <id> --next REWORK|RECREATE_PR
 ```
 
 - `REWORK`：使失效准备事实失效；Requirement 保留实际交付仓范围及其他有效 PR，Bug 保留固定必要仓集合并重新准备。按 Human 意图开展分析或研发，实质契约变化重新批准。

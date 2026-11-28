@@ -1,3 +1,4 @@
+import { resolveIssueRef } from "../../clients/native-checkout.js";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { markLeafExecuted } from "../../cli/output.js";
@@ -118,15 +119,15 @@ export async function recordApproval(client: ApprovalClient, args: ApprovalArgs,
 export function registerWorkitemApprove(group: Command): void {
   group.command("approve").description("登记已确认的人工批准及独立验收决定")
     .addHelpText("after", "\n登记批准后不启动 Run。")
-    .requiredOption("--issue <key>", "当前 Requirement Issue")
+    .option("--issue <key-or-id>", "Multica Issue，默认当前 Issue")
     .requiredOption("--comment-id <id>", "Human 批准评论 ID")
     .requiredOption("--commit <sha>", "Human 获批完整 Commit")
     .requiredOption("--verify-required <boolean>", "明确的独立验收决定 true|false")
     .option("--waive-tasks <refs>", "Human 明确批准豁免的全部任务编号，逗号分隔；省略表示无豁免")
-    .action(async (args: ApprovalArgs) => {
+    .action(async (args: Omit<ApprovalArgs, "issue"> & { issue?: string }) => {
       markLeafExecuted();
       try {
-        const result = await recordApproval(new MulticaClient(resolveMulticaRuntime()), args);
+        const result = await recordApproval(new MulticaClient(resolveMulticaRuntime()), { ...args, issue: resolveIssueRef(args.issue) });
         process.stdout.write(JSON.stringify(result, null, 2) + "\n");
       } catch (err) {
         const failed = err instanceof FailError;

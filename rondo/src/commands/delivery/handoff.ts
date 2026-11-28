@@ -1,3 +1,4 @@
+import { resolveIssueRef } from "../../clients/native-checkout.js";
 /**
  * Wayfinder -> Delivery owner handoff.
  * Only deterministic routing and one native Assignment Trigger live here.
@@ -8,9 +9,9 @@ import { FailError, UnknownError } from "../../cli/errors.js";
 import { ExitSignal, markLeafExecuted } from "../../cli/output.js";
 import { MulticaClient, type IssueRecord } from "../../clients/multica.js";
 
-// apply-decision 接受 --issue 和 --decision；Workspace、CLI 与身份一律来自 Runtime 环境变量，不读外部配置。
+// apply-decision 接受 --decision 和可选 --issue；默认使用原生 Task Context。
 const USAGE = [
-  "用法: rondo workitem apply-decision --issue <KEY> --decision <accepted|needs_human|unsupported>",
+  "用法: rondo workitem apply-decision [--issue <key-or-id>] --decision <accepted|needs_human|unsupported>",
   "",
   "从 MULTICA_WORKSPACE_ID / MULTICA_SERVER_URL 定位 Workspace，",
   "MULTICA_CLI_PATH 可指定 CLI（默认 multica）。",
@@ -41,7 +42,7 @@ export function resolveHandoffTarget(tfsType: string): Route | null {
 }
 
 type Decision = "accepted" | "needs_human" | "unsupported";
-function parseArgs(argv: string[]): { issue: string; decision: Decision } | null {
+function parseArgs(argv: string[]): { issue?: string; decision: Decision } | null {
   const values: Record<string, string> = {};
   for (let i = 0; i < argv.length; i += 2) {
     const flag = argv[i], value = argv[i + 1];
@@ -49,7 +50,7 @@ function parseArgs(argv: string[]): { issue: string; decision: Decision } | null
     values[flag] = value;
   }
   const decision = values["--decision"];
-  return values["--issue"] && ["accepted", "needs_human", "unsupported"].includes(decision)
+  return ["accepted", "needs_human", "unsupported"].includes(decision)
     ? { issue: values["--issue"], decision: decision as Decision } : null;
 }
 
@@ -115,7 +116,7 @@ async function main(argv: string[]): Promise<number> {
       throw new UnknownError("缺少 Multica Runtime Workspace / Server，禁止使用默认环境交接");
     }
     const client = new MulticaClient(runtime);
-    const issue = client.getIssue(args.issue) as Issue;
+    const issue = client.getIssue(resolveIssueRef(args.issue)) as Issue;
     const issueKey = issue.identifier ?? issue.id;
     const tfsType = issue.metadata?.["tfs.type"];
     const tfsId = issue.metadata?.["tfs.id"];
@@ -239,7 +240,7 @@ async function main(argv: string[]): Promise<number> {
 export function registerWorkitemApplyDecision(group: Command): void {
   group.command("apply-decision")
     .description("执行已确定的准入决定，更新 Issue 状态或指派")
-    .usage("--issue <key> --decision <accepted|needs_human|unsupported>")
+    .usage("[--issue <key-or-id>] --decision <accepted|needs_human|unsupported>")
     .addHelpText("after", "\n使用当前 Multica Runtime，要求执行者为当前 Workspace 的 Wayfinder Agent。").allowUnknownOption(true).allowExcessArguments(true)
     .action(async (...cbArgs: unknown[]) => {
       markLeafExecuted();

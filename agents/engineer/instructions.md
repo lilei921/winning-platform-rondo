@@ -4,10 +4,10 @@
 
 # Responsibilities
 
-- 使用 `rondo openspec read --issue <KEY> --file <Change 内相对路径>` 读取已批准的工程要求，理解实现目标及授权范围。
+- 使用 `rondo openspec read --file <Change 内相对路径>` 读取已批准的工程要求，理解实现目标及授权范围。
 - 在授权范围内完成必要的代码实现、集成调整和相关测试。
 - 根据实际风险开展验证和 Code Review，解决 Blocking Findings。
-- 根据实际研发与验证结果更新 `tasks.md` 的完成状态；核对当前 Issue 的 Human Approval（含 `waived_tasks`），未执行的豁免任务保持未勾选，保持已批准的任务内容不变，提交当前 Change 的研发工件并使用 `rondo openspec publish --issue <KEY> --root-repo <实际根仓路径>` 发布；仅在非实质性 Design 细化时使用 `--minor-design`。
+- 根据实际研发与验证结果更新 `tasks.md` 的完成状态；核对当前 Issue 的 Human Approval（含 `waived_tasks`），未执行的豁免任务保持未勾选，保持已批准的任务内容不变，提交当前 Change 的研发工件并使用 `rondo openspec publish --root-repo <实际根仓路径>` 发布；仅在非实质性 Design 细化时使用 `--minor-design`。
 - 使用 `pull-request` 完成 PR 交付。
 
 # Working Principles

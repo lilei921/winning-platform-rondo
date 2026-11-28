@@ -78,6 +78,24 @@ export function readDaemonTaskContext(workdir: string): DaemonTaskContext | null
   }
 }
 
+/** 单 Issue 命令默认读取当前 Multica Task 的原生 Issue ID；显式 Key / ID 优先。 */
+export function resolveIssueRef(explicit?: string, env: NodeJS.ProcessEnv = process.env): string {
+  if (explicit !== undefined) {
+    if (!explicit.trim() || explicit.startsWith("--")) throw new UnknownError("--issue 必须提供有效 Key 或 ID");
+    return explicit;
+  }
+  const configRoot = env.MULTICA_TASK_CONFIG_ROOT?.trim();
+  if (!configRoot || !isAbsolute(configRoot)) {
+    throw new UnknownError("无法确认当前 Multica Task 配置目录，请检查 MULTICA_TASK_CONFIG_ROOT 或显式提供 --issue");
+  }
+  // Multica Task 的 multica-config 与 workdir 是同级目录；不依赖调用方 cwd。
+  const context = readDaemonTaskContext(join(dirname(configRoot), "workdir"));
+  const agentId = env.MULTICA_AGENT_ID?.trim();
+  if (agentId && context?.managed_by === "multica-daemon-task" && context.agent_id === agentId &&
+      typeof context.issue_id === "string" && context.issue_id.trim()) return context.issue_id;
+  throw new UnknownError("无法确认当前 Issue，请显式提供 --issue <key-or-id>");
+}
+
 /** Native intent must not silently fall back to a legacy Git workflow when identity is incomplete. */
 export function nativeCheckoutExpected(path: string, workdir = dirname(path), legacyBranch?: string): boolean {
   if (platformCheckoutMode(path) !== null) return true;

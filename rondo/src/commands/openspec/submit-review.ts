@@ -1,10 +1,11 @@
+import { resolveIssueRef } from "../../clients/native-checkout.js";
 /** Verify the reviewed Change, publish it and record its immutable remote source before review. */
 import { resolveMulticaRuntime } from "../../clients/runtime-context.js";
 import { loadConfig as loadTfsConfig, ConfigError } from "../../tfs/config.js";
 import { multicaPrefix } from "../../clients/multica-environment.js";
 import { MulticaClient, requireIssueMetadata } from "../../clients/multica.js";
 import { dirname, join } from "node:path";
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { logLine as log, markLeafExecuted } from "../../cli/output.js";
 import { runCommand, runJson } from "../../clients/spawn.js";
@@ -45,28 +46,16 @@ function sameIssueOwner(before: Record<string, unknown>, after: Record<string, u
 }
 const ANALYSIS_CONTRACT_FILE = /^(?:\.openspec\.yaml|proposal\.md|tasks\.md|design\.md|specs\/.+\.md)$/;
 
-function parseArgs(argv: string[]): { issue: string; changeRef: string; rootRepo: string | null; targetBranch: string | null; mode: string | null } {
-  const get = (flag: string): string | null => {
-    const i = argv.indexOf(flag);
-    return i !== -1 && i + 1 < argv.length ? argv[i + 1] : null;
-  };
-  const retired = argv.find(a => ["--registry-config", "--workspace-id", "--multica", "--profile"].some(flag => a === flag || a.startsWith(flag + "=")));
-  if (retired) {
-    process.stderr.write("analysis publish 使用当前 Multica Runtime，不接受 " + retired.split("=")[0] + "\n");
-    process.exit(64);
-  }
-  const rootRepo = get("--root-repo");
-  if (argv.includes("--root-repo") && (!rootRepo?.trim() || rootRepo.startsWith("--"))) {
-    process.stderr.write("--root-repo 必须提供非空路径\n");
-    process.exit(64);
-  }
-  const issue = get("--issue");
-  const changeRef = get("--change-ref");
-  if (!issue || !changeRef) {
-    process.stderr.write("用法: rondo analysis publish --issue <issue-id> --change-ref <id> [--root-repo <path>] [--target-branch <branch>]\n");
-    process.exit(64);
-  }
-  return { issue, changeRef, rootRepo, targetBranch: get("--target-branch"), mode: get("--mode") };
+interface SubmitReviewOptions {
+  issue?: string;
+  changeRef: string;
+  rootRepo?: string;
+  targetBranch?: string;
+  mode?: string | boolean;
+  registryConfig?: string;
+  workspaceId?: string;
+  multica?: string;
+  profile?: string;
 }
 
 /** 读取唯一推送地址；拒绝凭据 URL，避免在 metadata 中保存认证信息。 */
@@ -76,10 +65,28 @@ function pushRepositoryUrl(root: string): string {
   return repositoryUrl(urls[0]).href;
 }
 
-async function main(rawArgs: string[]): Promise<number> {
-  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis publish --issue <issue-id> --change-ref <id> [--root-repo <path>] [--target-branch <branch>]\n"); return 0; }
-  const args = parseArgs(rawArgs);
+async function main(options: SubmitReviewOptions): Promise<number> {
+  const retired = options.registryConfig !== undefined ? "--registry-config"
+    : options.workspaceId !== undefined ? "--workspace-id"
+    : options.multica !== undefined ? "--multica"
+    : options.profile !== undefined ? "--profile" : null;
+  if (retired) {
+    process.stderr.write("analysis publish 使用当前 Multica Runtime，不接受 " + retired + "\n");
+    return 64;
+  }
+  if (!options.changeRef?.trim() || (options.rootRepo !== undefined && !options.rootRepo.trim()) ||
+      (options.issue !== undefined && (!options.issue.trim() || options.issue.startsWith("--")))) {
+    process.stderr.write("用法: rondo openspec submit-review [--issue <key-or-id>] --change-ref <id> [--root-repo <path>] [--target-branch <branch>]\n");
+    return 64;
+  }
   try {
+    const args = {
+      issue: resolveIssueRef(options.issue),
+      changeRef: options.changeRef,
+      rootRepo: options.rootRepo ?? null,
+      targetBranch: options.targetBranch ?? null,
+      mode: options.mode === undefined ? null : String(options.mode),
+    };
     const runtime = resolveMulticaRuntime();
     const ws = ["--workspace-id", runtime.workspace_id];
     const MC = multicaPrefix(runtime);
@@ -97,7 +104,7 @@ async function main(rawArgs: string[]): Promise<number> {
     if (!tfsKind) throw new UnknownError(`tfs.type 缺失或不支持: ${String(priorMeta["tfs.type"] ?? "")}`);
     const requirement = tfsKind === "requirement";
     // 已部署的调用可继续传旧参数，但它只核对来源类型，不能选择或绕过发布路径。
-    if (rawArgs.includes("--mode") && args.mode !== (requirement ? "requirement" : "legacy")) {
+    if (args.mode !== null && args.mode !== (requirement ? "requirement" : "legacy")) {
       throw new PreconditionError("analysis publish --mode 与当前 tfs.type 不一致，请省略该参数");
     }
     const cfg = { runtime };
@@ -375,17 +382,23 @@ async function main(rawArgs: string[]): Promise<number> {
   }
 }
 
-/** commander 注册：group=openspec；参数解析沿用原脚本实现以保证契约逐字节等价。 */
+/** commander 注册：未知参数由 CLI 直接拒绝，Issue 可从当前 Task Context 解析。 */
 export function registerOpenSpecSubmitReview(group: Command): void {
   group
     .command("submit-review")
     .description("提交 OpenSpec 审核版本，登记来源事实并进入审核状态")
-    .usage("--issue <key> --change-ref <id> [--root-repo <path>] [--target-branch <branch>]")
-    .allowUnknownOption(true)
-    .allowExcessArguments(true)
-    .action(async (...cbArgs: unknown[]) => {
+    .usage("[--issue <key-or-id>] --change-ref <id> [--root-repo <path>] [--target-branch <branch>]")
+    .option("--issue <key-or-id>", "Multica Issue，默认当前 Issue")
+    .requiredOption("--change-ref <id>", "OpenSpec Change ID")
+    .option("--root-repo <path>", "当前根仓路径")
+    .option("--target-branch <branch>", "目标分支")
+    .addOption(new Option("--mode [mode]").hideHelp())
+    .addOption(new Option("--registry-config <path>").hideHelp())
+    .addOption(new Option("--workspace-id <id>").hideHelp())
+    .addOption(new Option("--multica <cli>").hideHelp())
+    .addOption(new Option("--profile <profile>").hideHelp())
+    .action(async (options: SubmitReviewOptions) => {
       markLeafExecuted();
-      const cmd = cbArgs[cbArgs.length - 1] as Command;
-      process.exitCode = await main(cmd.args);
+      process.exitCode = await main(options);
     });
 }
