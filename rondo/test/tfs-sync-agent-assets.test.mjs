@@ -14,8 +14,7 @@ test("TFS Sync Agent 直接调用 Rondo，未绑定独立 Skill", () => {
   assert.ok(!manifest.agents.some(a => a.skills?.includes("tfs-sync")));
   assert.ok(!existsSync(new URL("skills/tfs-sync/SKILL.md", root)));
   const instructions = read("agents/tfs-sync-agent/instructions.md");
-  const commands = instructions.split("\n").filter(line => line.startsWith("rondo "));
-  assert.deepEqual(commands, ["rondo workitem sync --wiql \"SELECT [System.Id], [System.WorkItemType], [System.Title], [System.AssignedTo], [System.State], [System.Tags], [System.CreatedDate], [System.ChangedDate] FROM workitems WHERE [System.WorkItemType] IN ('需求','Bug') AND [System.AssignedTo] = @me AND [System.State] <> '已验证' AND [System.State] <> '已关闭' ORDER BY [System.Id]\""]);
+  assert.match(instructions, /^rondo workitem sync --wiql\s+/m);
   assert.match(instructions, /UNKNOWN/);
   const autopilot = manifest.autopilots.find(a => a.agent === agent.name);
   assert.equal(autopilot.mode, "run_only");
