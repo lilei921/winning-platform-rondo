@@ -119,7 +119,7 @@ process.exit(r.status ?? 1);
     result(run(input), 2);
     assert.deepEqual(state(), initial);
   }
-  assert.match(result(run(JSON.stringify(evidence), { MULTICA_AGENT_ID: 'other' }), 3).reason, /daemon Task/);
+  assert.match(result(run(JSON.stringify(evidence), { MULTICA_AGENT_ID: 'other' }), 3).reason, /当前 Issue/);
   assert.deepEqual(state(), initial);
   result(run(undefined, {}, join(dir, 'missing.json')), 3);
   assert.deepEqual(state(), initial);
