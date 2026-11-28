@@ -244,8 +244,6 @@ Squad      = Delivery Squad
 | 入口准入探索 | `Wayfinder Agent` | Agent | Squad 外 Intake Triage（准入评估） | Wayfinder / WayTriager |
 | 分析成员 | `Workitem Analyst` | Agent | Member | Analyst / Workitem Analyst Agent |
 | Requirement 研发成员 | `Engineer` | Agent | Member | Requirement Engineer Agent |
-| 后端研发成员 | `Backend Engineer` | Agent | Member / Engineer | Backend Agent |
-| 前端研发成员 | `Frontend Engineer` | Agent | Member / Engineer | Frontend Agent |
 | 独立缺陷修复 | `Bug Fix Agent` | Agent | Squad 外 | Bug Engineer |
 | 独立验证成员（按需配置） | `Verify Agent` | Agent | Member / Independent Verification Executor | Verify / Verifier / Verification Agent |
 | TFS 同步 | `TFS Sync Agent` | Agent | Squad 外 Agent | Sync Agent |

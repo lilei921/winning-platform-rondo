@@ -40,7 +40,7 @@ flowchart LR
 | [skills/](skills/README.md) · [mcps/](mcps/README.md) | 专业方法与工具配置 |
 | [openspec/](openspec/config.yaml) | Schema 与 Artifact 模板 |
 | [rondo/](rondo/README.md) | CLI 源码、构建、测试与使用说明 |
-| [workspace-config/](workspace-config/) · [projects/](projects/description.md) | Workspace 受管配置与 Project 描述 |
+| [workspace-config/](workspace-config/) · [projects/](projects/) | Workspace 受管配置与 Project 描述 |
 | [validation/](validation/) · [archive/](archive/) | 实际验证与历史资料 |
 
 ## 设计文档
