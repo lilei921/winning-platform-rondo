@@ -16,7 +16,7 @@ import { analysisRuntime } from "../analysis/runtime.js";
 import type { RuntimeConfig } from "../../clients/config.js";
 import { existsSync, readFileSync, realpathSync, readdirSync, lstatSync } from "node:fs";
 import { basename, dirname, isAbsolute, join } from "node:path";
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
 import { assertStableChangeRef, matchesTfsChangeId, readChangeMetadata, parseChangeSchema, sourceSchemaViolation, changeKindFromSchema, type ChangeSchema } from "../analysis/change-schema.js";
 import { markLeafExecuted } from "../../cli/output.js";
@@ -50,22 +50,15 @@ function hasMarkdown(dir: string): boolean {
   return false;
 }
 
-interface Args { issue: string; openspecRoot: string; cli: string; workspaceId: string | null; out: string | null; changeRef: string }
-
-function parseArgs(argv: string[]): Omit<Args, "issue"> & { issue: string | null } {
-  const get = (flag: string): string | null => {
-    const i = argv.indexOf(flag);
-    return i !== -1 && i + 1 < argv.length ? argv[i + 1] : null;
-  };
-  const issue = get("--issue");
-  const invalidIssueOption = argv.some(a => a.startsWith("--issue=")) || argv.filter(a => a === "--issue").length > 1;
-  const openspecRoot = get("--openspec-root");
-  const changeRef = get("--change-ref");
-  if (invalidIssueOption || (argv.includes("--issue") && (!issue || issue.startsWith("--"))) || !openspecRoot || !changeRef) {
-    process.stderr.write("用法: rondo openspec validate [--issue <key-or-id>] --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]\n");
-    process.exit(64);
-  }
-  return { issue, openspecRoot, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), out: get("--out"), changeRef };
+interface Args {
+  issue?: string;
+  openspecRoot: string;
+  cli?: string;
+  workspaceId?: string;
+  out?: string;
+  changeRef: string;
+  profile?: string;
+  registryConfig?: string;
 }
 
 /** Gate is a read-only check; stdout and Complete share this in-memory result. */
@@ -329,14 +322,17 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
 }
 
 /** Preview never persists a file. Complete invokes the same check again before publication. */
-function main(rawArgs: string[]): number {
-  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo openspec validate [--issue <key-or-id>] --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]\n"); return 0; }
-  const args = parseArgs(rawArgs);
-  if (args.out) return emitResult({ result: "FAIL", checks: [], reasons: ["--out 已退役；Analysis Gate 结果不再持久化"] }, 2, null);
+function main(args: Args): number {
+  if (args.out !== undefined) return emitResult({ result: "FAIL", checks: [], reasons: ["--out 已退役；Analysis Gate 结果不再持久化"] }, 2, null);
   try {
-    const runtime = analysisRuntime(rawArgs, args.cli, args.workspaceId);
+    const runtimeArgs: string[] = [];
+    if (args.registryConfig !== undefined) runtimeArgs.push("--registry-config", args.registryConfig);
+    if (args.workspaceId !== undefined) runtimeArgs.push("--workspace-id", args.workspaceId);
+    if (args.cli !== undefined) runtimeArgs.push("--multica", args.cli);
+    if (args.profile !== undefined) runtimeArgs.push("--profile", args.profile);
+    const runtime = analysisRuntime(runtimeArgs, args.cli ?? "multica", args.workspaceId ?? null);
     const outcome = evaluateAnalysisGate({
-      issue: resolveIssueRef(args.issue ?? undefined),
+      issue: resolveIssueRef(args.issue),
       openspecRoot: args.openspecRoot,
       workspaceId: runtime.workspace_id!,
       runtime, changeRef: args.changeRef,
@@ -348,17 +344,22 @@ function main(rawArgs: string[]): number {
   }
 }
 
-/** commander 注册：group=openspec；参数解析沿用原脚本实现以保证契约逐字节等价。 */
+/** commander 注册：未知参数由 CLI 直接拒绝，Issue 可从当前 Task Context 解析。 */
 export function registerOpenSpecValidate(group: Command): void {
   group
     .command("validate")
     .description("校验 Issue 与 OpenSpec Change 的身份及规范")
     .usage("[--issue <key-or-id>] --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]")
-    .allowUnknownOption(true)
-    .allowExcessArguments(true)
-    .action((...cbArgs: unknown[]) => {
+    .option("--issue <key-or-id>", "Multica Issue，默认当前 Issue")
+    .requiredOption("--change-ref <id>", "OpenSpec Change ID")
+    .requiredOption("--openspec-root <path>", "OpenSpec 根目录")
+    .option("--workspace-id <id>", "Multica Workspace")
+    .option("--multica <cli>", "Multica CLI 路径")
+    .addOption(new Option("--profile <profile>").hideHelp())
+    .addOption(new Option("--registry-config <path>").hideHelp())
+    .addOption(new Option("--out <path>").hideHelp())
+    .action((args: Args) => {
       markLeafExecuted();
-      const cmd = cbArgs[cbArgs.length - 1] as Command;
-      process.exit(main(cmd.args));
+      process.exitCode = main(args);
     });
 }

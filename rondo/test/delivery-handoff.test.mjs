@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, writeFileSync, rmSync, chmodSync, copyFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync, rmSync, chmodSync, copyFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, delimiter } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,7 +17,7 @@ const AGENTS = [
 ];
 const SQUADS = [{ id: "squad-1", name: "Delivery Squad", leader_id: "lead-1" }];
 
-// handoff 只接受 --issue；所有用例统一走 Runtime 环境变量（含 Task 身份）。
+// handoff 默认从当前 Multica Task Context 解析 Issue；显式参数仍可覆盖。
 const NATIVE_RUNTIME = {
   MULTICA_WORKSPACE_ID: "ws-1",
   MULTICA_SERVER_URL: "http://multica.test",
@@ -45,6 +45,14 @@ function initialState(type = "Bug") {
 function fixture(t, initial = initialState()) {
   const dir = mkdtempSync(join(tmpdir(), "rondo-delivery-handoff-"));
   t.after(() => rmSync(dir, { force: true, recursive: true }));
+  const taskRoot = join(dir, "task");
+  const workdir = join(taskRoot, "workdir");
+  const configRoot = join(taskRoot, "multica-config");
+  mkdirSync(join(workdir, ".multica"), { recursive: true });
+  mkdirSync(configRoot, { recursive: true });
+  writeFileSync(join(workdir, ".multica", "daemon_task_context.json"), JSON.stringify({
+    managed_by: "multica-daemon-task", issue_id: "issue-1", agent_id: "wayfinder-1",
+  }));
   chmodSync(MOCK, 0o755);
   // 从 PATH 解析原生 "multica" 可执行文件；Runtime 身份由环境变量提供。
   const multicaShim = join(dir, process.platform === "win32" ? "multica.cmd" : "multica");
@@ -60,7 +68,7 @@ function fixture(t, initial = initialState()) {
   const write = (state) => writeFileSync(statePath, JSON.stringify(state));
   const pathKey = Object.keys(process.env).find(key => key.toLowerCase() === "path") ?? "PATH";
   const run = (extraEnv = {}, decision = "accepted") => {
-    const r = spawnSync(process.execPath, [CLI, "workitem", "apply-decision", "--issue", "WNDF-T", "--decision", decision], {
+    const r = spawnSync(process.execPath, [CLI, "workitem", "apply-decision", "--decision", decision], {
       encoding: "utf8",
       env: {
         ...process.env,
@@ -68,6 +76,7 @@ function fixture(t, initial = initialState()) {
         MOCK_STATE: statePath,
         MOCK_REQUIRE_TASK_RUNTIME: "1",
         ...NATIVE_RUNTIME,
+        MULTICA_TASK_CONFIG_ROOT: configRoot,
         ...extraEnv,
       },
     });

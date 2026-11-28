@@ -62,32 +62,41 @@ test("Complete process env takes precedence; invalid optional field does not pre
 });
 
 
-test("Issue reference uses explicit Key/ID or nearest native Task Context from nested checkout", t => {
+test("Issue reference uses explicit Key/ID or current Task Context from Multica config root", t => {
   const dir = mkdtempSync(join(tmpdir(), "rondo-issue-context-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
-  const child = join(dir, "repo", "src");
-  mkdirSync(child, { recursive: true });
-  mkdirSync(join(dir, ".multica"));
-  const file = join(dir, ".multica", "daemon_task_context.json");
+  const taskRoot = join(dir, "task");
+  const configRoot = join(taskRoot, "multica-config");
+  const workdir = join(taskRoot, "workdir");
+  mkdirSync(configRoot, { recursive: true });
+  mkdirSync(join(workdir, ".multica"), { recursive: true });
+  const contextFile = join(workdir, ".multica", "daemon_task_context.json");
+  const envFile = join(dir, "task-env.json");
   const id = "01a21b79-6198-74f3-ae35-b5cbd99a66c5";
-  const env = { MULTICA_AGENT_ID: "agent" };
-  writeFileSync(file, JSON.stringify({ managed_by: "multica-daemon-task", agent_id: "agent", issue_id: id }));
-  assert.equal(resolveIssueRef(undefined, dir, env), id);
-  assert.equal(resolveIssueRef(undefined, child, env), id);
-  assert.equal(resolveIssueRef("LEI-69", child, {}), "LEI-69");
-  assert.equal(resolveIssueRef(id, child, {}), id);
-  assert.throws(() => resolveIssueRef("", child, env), /--issue/);
-  assert.throws(() => resolveIssueRef(undefined, child, {}), /--issue/);
-  assert.throws(() => resolveIssueRef(undefined, child, { MULTICA_AGENT_ID: "other" }), /--issue/);
-  mkdirSync(join(child, ".multica"));
-  writeFileSync(join(child, ".multica", "daemon_task_context.json"), "invalid");
-  assert.throws(() => resolveIssueRef(undefined, child, env), /--issue/);
-  rmSync(file);
-  assert.throws(() => resolveIssueRef(undefined, dir, env), /--issue/);
-  for (const context of [{ managed_by: "multica-daemon-task", agent_id: "agent" },
+  writeFileSync(envFile, JSON.stringify({ active: true, env: {
+    MULTICA_TASK_ID: "task-1", MULTICA_TASK_CONFIG_ROOT: configRoot, MULTICA_TASK_SLOT: 0, MULTICA_TOKEN: "fixture",
+  } }));
+  const env: NodeJS.ProcessEnv = { MULTICA_TASK_ENV_FILE: envFile, MULTICA_AGENT_ID: "agent" };
+  hydrateMulticaTaskEnvironment(env);
+  assert.equal(env.MULTICA_TASK_CONFIG_ROOT, configRoot);
+  writeFileSync(contextFile, JSON.stringify({ managed_by: "multica-daemon-task", agent_id: "agent", issue_id: id }));
+  assert.equal(resolveIssueRef(undefined, env), id);
+  assert.equal(resolveIssueRef("LEI-69", {}), "LEI-69");
+  assert.equal(resolveIssueRef(id, {}), id);
+  assert.throws(() => resolveIssueRef("", env), /--issue/);
+  assert.throws(() => resolveIssueRef(undefined, { MULTICA_AGENT_ID: "agent" }), /MULTICA_TASK_CONFIG_ROOT/);
+  assert.throws(() => resolveIssueRef(undefined, { ...env, MULTICA_TASK_CONFIG_ROOT: "relative/config" }), /MULTICA_TASK_CONFIG_ROOT/);
+  assert.throws(() => resolveIssueRef(undefined, { ...env, MULTICA_AGENT_ID: "other" }), /--issue/);
+  writeFileSync(contextFile, "invalid");
+  assert.throws(() => resolveIssueRef(undefined, env), /--issue/);
+  for (const context of [
     { managed_by: "other", agent_id: "agent", issue_id: id },
-    { managed_by: "multica-daemon-task", agent_id: "agent", issue_id: "" }]) {
-    writeFileSync(file, JSON.stringify(context));
-    assert.throws(() => resolveIssueRef(undefined, dir, env), /--issue/);
+    { managed_by: "multica-daemon-task", agent_id: "agent", issue_id: "" },
+    { managed_by: "multica-daemon-task", agent_id: "", issue_id: id },
+  ]) {
+    writeFileSync(contextFile, JSON.stringify(context));
+    assert.throws(() => resolveIssueRef(undefined, env), /--issue/);
   }
+  rmSync(contextFile);
+  assert.throws(() => resolveIssueRef(undefined, env), /--issue/);
 });
