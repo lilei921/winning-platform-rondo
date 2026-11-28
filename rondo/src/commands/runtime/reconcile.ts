@@ -113,14 +113,7 @@ export function reconcileRuntime(
       continue;
     }
     const primaryRuntime = p[0], fallbackRuntime = f[0];
-    if (!text(primaryRuntime.provider) || !text(fallbackRuntime.provider)) {
-      unknown("主备 Runtime Provider 不可确认", name);
-      continue;
-    }
-    if (primaryRuntime.provider !== fallbackRuntime.provider) {
-      fail("主备 Runtime 必须使用相同 Provider", name);
-      continue;
-    }
+    // 主备 Provider 允许不同：策略只表达期望的 Runtime，不校验 Provider 组合。
     const target = primaryRuntime.status === "online" ? primary :
       primaryRuntime.status === "offline" && fallbackRuntime.status === "online" ? fallback : undefined;
     if (!target) {
@@ -138,13 +131,10 @@ export function reconcileRuntime(
       continue;
     }
     if (current) {
+      // 允许跨 Provider 改绑；平台可能清空不兼容的模型配置，由管理员在策略侧评估。
       const bound = runtimes.filter(r => r.id === current);
-      if (bound.length !== 1 || !text(bound[0].provider)) {
-        unknown("当前 Runtime Provider 不可确认", name);
-        continue;
-      }
-      if (bound[0].provider !== primaryRuntime.provider) {
-        fail("不自动跨 Provider 改绑", name);
+      if (bound.length !== 1) {
+        unknown("当前 Runtime 不可确认", name);
         continue;
       }
     }

@@ -74,7 +74,7 @@ multica autopilot trigger-add <autopilot-id> --workspace-id <id> --kind schedule
 }
 ```
 
-每个 Agent 单独选择目标；允许共享 Runtime，不要求一对一。以配置中的 Agent Name 匹配当前 Workspace 原生 Agent 列表中的真实 Agent ID，写入时使用 ID。未配置的 Agent 不管理；Vayne 自身无条件不参与切换。主备均须属于目标 Workspace、具备授权，首版限定相同 Provider，并在配置时一次性验收执行环境。若当前绑定的其他 Runtime 与目标 Provider 不兼容，也不自动改绑，避免平台修改模型配置。不得用当前绑定反推 Primary，也不按机器名称猜测 ID。
+每个 Agent 单独选择目标；允许共享 Runtime，不要求一对一。以配置中的 Agent Name 匹配当前 Workspace 原生 Agent 列表中的真实 Agent ID，写入时使用 ID。未配置的 Agent 不管理；Vayne 自身无条件不参与切换。主备均须属于目标 Workspace、具备授权，并在配置时一次性验收执行环境。2026-11-28 起已放开 Provider 限制：主备可不同 Provider，也允许跨 Provider 改绑；跨 Provider 可能触发平台清空不兼容模型配置，由管理员在策略侧评估。不得用当前绑定反推 Primary，也不按机器名称猜测 ID。
 
 配置只表达期望策略，不保存 current_runtime_id、last_switch_time、运行状态或历史计数。当前绑定及在线状态由 Multica 提供。
 
@@ -90,7 +90,7 @@ interface AgentRuntimePolicy {
 type RuntimePolicy = Record<string, AgentRuntimePolicy>;
 ```
 
-Rondo 使用 JSON.parse 解析，Key 为 Workspace 内 Agent Name，Value 仅包含两个真实 Runtime UUID。通过现有 resolveMulticaRuntime() 从 MULTICA_WORKSPACE_ID 与 MULTICA_SERVER_URL 获取当前 Workspace 上下文，再从原生 Agent 列表解析真实 Agent ID。无需在策略中重复配置 workspace_id、agent_id、enabled 或实时状态。无配置、空对象不执行切换，并明确报告未配置或空策略；非法 JSON 或非对象整体配置不执行任何写入。单个 Agent 配置无效、无法解析、Runtime 缺失或 Provider 不兼容时，报告该项异常并继续处理其他有效项。配置不得管理 Vayne 自身。
+Rondo 使用 JSON.parse 解析，Key 为 Workspace 内 Agent Name，Value 仅包含两个真实 Runtime UUID。通过现有 resolveMulticaRuntime() 从 MULTICA_WORKSPACE_ID 与 MULTICA_SERVER_URL 获取当前 Workspace 上下文，再从原生 Agent 列表解析真实 Agent ID。无需在策略中重复配置 workspace_id、agent_id、enabled 或实时状态。无配置、空对象不执行切换，并明确报告未配置或空策略；非法 JSON 或非对象整体配置不执行任何写入。单个 Agent 配置无效、无法解析或 Runtime 缺失时，报告该项异常并继续处理其他有效项。配置不得管理 Vayne 自身。
 
 首版仅采用 Multica 原生 custom_env 人工配置，作为主备策略唯一来源；不在 Workspace overlay 重复维护，不增加配置投影、同步脚本或 Registry。后续确有批量配置需求时再评估 rondo-sync。首次 provision 按既有机制创建 Vayne，管理员随后人工绑定服务器 Runtime、设置 max concurrent tasks=1 和主备策略，再启用 Autopilot。既有 provision 不改写已存在 Agent 的 runtime_id，保持原样；sync_workspace.py 的 bind_agent_runtime 增加排除 Vayne 的条件。无需新增固定 Runtime 配置字段或通用供给机制。
 
@@ -166,7 +166,7 @@ multica agent update --workspace-id <id> <agent-id> --runtime-id <runtime-id> --
 
 Multica 上游 commit 392ca3d 的 server/internal/handler/agent.go 与 server/pkg/db/queries/agent.sql 实现 ReassignPendingAgentTasksToRuntime，改绑事务中迁移 queued/deferred，dispatched/running/waiting_local_directory 保留原 Runtime。对应测试 agent_runtime_switch_tasks_test.go 覆盖待派发任务迁移、拒绝改绑时保持任务，以及跨 Runtime 重试时旧 Session 归属；这里只核实源码，未执行上游测试。此前核验的 0.6.1 对应 commit 2ea01ae4e 未发现此迁移，领取要求 Agent 与 Run runtime_id 一致。因此不能以当前上游源码代替现网版本验收。若现网不支持安全的待派发 Run 迁移和已派发 Run 非抢占式执行，则不启用自动协调，优先升级至具备原生能力的版本；不用数据库补写或自行 rerun 掩盖。
 
-Runtime 切换不迁移本机未提交代码、CLI Session 或本地工作目录。跨机接续依赖已持久化工程事实及现有 native-workspace 能力。现有权限、Provider、Model/Thinking Level、Rondo CLI、TFS/Git 与构建工具需兼容；不同 Provider 可能触发平台清空不兼容模型配置，首版不自动跨 Provider 改绑。
+Runtime 切换不迁移本机未提交代码、CLI Session 或本地工作目录。跨机接续依赖已持久化工程事实及现有 native-workspace 能力。现有权限、Provider、Model/Thinking Level、Rondo CLI、TFS/Git 与构建工具需兼容；不同 Provider 可能触发平台清空不兼容模型配置；当前实现允许跨 Provider 改绑，管理员需自行确认模型配置兼容。
 
 权限前置：真实 Vayne Autopilot Run 使用原生注入的 MULTICA_TOKEN，在隔离 Workspace 验证 runtime list、agent list、agent update 权限。上游 canManageAgent 要求 Agent Owner 或 Workspace Owner/Admin，Private Runtime 还要求相应访问授权（含 Agent Owner 的访问）。读取成功不代表改绑有权限。优先使用原生角色与 Runtime Sharing；若仍无法授权，不启用自动协调，不提前引入 PAT 代理或替代权限体系。
 

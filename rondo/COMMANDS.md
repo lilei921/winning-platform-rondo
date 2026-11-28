@@ -219,7 +219,7 @@ rondo runtime reconcile [--dry-run]
 
 `runtime check-checkout` 只读检查调用者指定的根仓，返回规范根仓路径，核对 `AGENTS.md` 和适用的 Native Task Checkout 身份。不执行检出或分支切换。
 
-`runtime reconcile` 从当前 Workspace 与 `RONDO_RUNTIME_POLICY`（Agent Name → `primary_runtime_id` / `fallback_runtime_id` 的 JSON Object）读取策略，依据 Multica 原生 Runtime `online` / `offline` 状态协调 Agent 绑定。仅在目标不同且同 Provider 时改绑，不管理 Run，不改绑 Vayne 自身。`--dry-run` 只返回计划。无策略、异常及未确认写入分别按现有退出码契约报告。启用前须通过[黑灯计划](../20-lights-out-plan.md)的现网原生能力验收。
+`runtime reconcile` 从当前 Workspace 与 `RONDO_RUNTIME_POLICY`（Agent Name → `primary_runtime_id` / `fallback_runtime_id` 的 JSON Object）读取策略，依据 Multica 原生 Runtime `online` / `offline` 状态协调 Agent 绑定。仅在目标不同时改绑，不校验主备及当前绑定的 Provider 是否一致（跨 Provider 可能触发平台清空不兼容的模型配置，由管理员在策略侧评估），不管理 Run，不改绑 Vayne 自身。`--dry-run` 只返回计划。无策略、异常及未确认写入分别按现有退出码契约报告。启用前须通过[黑灯计划](../20-lights-out-plan.md)的现网原生能力验收。
 
 ## 8. 环境检查：`rondo doctor`
 

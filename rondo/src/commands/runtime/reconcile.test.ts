@@ -72,15 +72,23 @@ test("双方离线、未知状态及缺失 Runtime 不改绑", () => {
   assert.equal(writes(f).length, 0);
 });
 
-test("主备或当前 Provider 不兼容时不改绑", () => {
+test("主备及当前 Provider 不同仍按策略改绑", () => {
+  // 主备 Provider 不同：primary 离线时允许切到 claude 备机。
   const f = fixture();
   f.runtimes[1].provider = "claude";
-  assert.equal(reconcileRuntime(policy, () => f.client).result, "FAIL");
-  assert.equal(writes(f).length, 0);
+  assert.deepEqual(reconcileRuntime(policy, () => f.client), {
+    result: "PASS",
+    changed: [{ agent: "Engineer", from: "local", to: "server" }],
+    errors: [],
+  });
+  assert.equal(writes(f).length, 1);
+  // 当前绑定与目标 Provider 不同：允许从 claude 改绑回 codex primary。
   const g = fixture("online", "online", "other");
   g.runtimes.push(runtime("other", "online", "claude"));
-  assert.equal(reconcileRuntime(policy, () => g.client).result, "FAIL");
-  assert.equal(writes(g).length, 0);
+  assert.deepEqual(reconcileRuntime(policy, () => g.client).changed, [
+    { agent: "Engineer", from: "other", to: "local" },
+  ]);
+  assert.equal(writes(g).length, 1);
 });
 
 test("缺失或非法配置不访问平台；空对象安全 no-op", () => {
