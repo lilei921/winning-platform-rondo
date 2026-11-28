@@ -17,7 +17,6 @@
 | [workitem-finalize](workitem-finalize/SKILL.md) | PR 终态后的 TFS Writeback 与 Issue 收口 |
 | [requirement-analysis](requirement-analysis/SKILL.md) | Intentional 需求澄清与方案分析 |
 | [spec-preparation](spec-preparation/SKILL.md) | 通过 OpenSpec CLI 准备和修订 Change 工件 |
-| [tfs-sync](tfs-sync/SKILL.md) | TFS Work Item 与 Issue 同步 |
 
 ## 已归档或保留但不受管
 

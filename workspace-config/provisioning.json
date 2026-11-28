@@ -13,7 +13,6 @@
     "workitem-finalize",
     "requirement-analysis",
     "spec-preparation",
-    "tfs-sync",
     "native-workspace"
   ],
   "agents": [
@@ -69,9 +68,7 @@
       "dir": "tfs-sync-agent",
       "name": "TFS Sync Agent",
       "visibility": "workspace",
-      "skills": [
-        "tfs-sync"
-      ]
+      "skills": []
     },
     {
       "dir": "pr-status-sync-agent",

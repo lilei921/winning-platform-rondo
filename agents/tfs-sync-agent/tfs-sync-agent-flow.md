@@ -1,13 +1,12 @@
 # TFS Sync Agent 主流程
 
-> 视角：TFS Sync Agent → `tfs-sync` Skill → Rondo CLI。只展示主要节点与关键判断。
+> 视角：TFS Sync Agent → Rondo CLI。只展示主要节点与关键判断。
 
 ## 流程图
 
 ```mermaid
 flowchart TD
     A([Autopilot / 人工触发])
-    B["Agent 加载 tfs-sync Skill 与配置"]
     C["rondo workitem sync --wiql"]
     D{"同步配置有效？"}
     E["内部调用 rondo workitem query --wiql"]
@@ -34,7 +33,7 @@ flowchart TD
     Y["报告汇总及待处理项"]
     Z([结束])
 
-    A --> B --> C --> D
+    A --> C --> D
     D -->|是| E --> E2 --> F
     F -->|是| G
     G -->|是| H --> I
@@ -70,7 +69,7 @@ flowchart TD
 
 ### 1. 同步主命令（Agent 调用）
 
-执行 [tfs-sync Skill](../../skills/tfs-sync/SKILL.md) 中的 WIQL 同步命令。Rondo 使用当前 Runtime 与 `RONDO_PROJECT_TITLE` 在当前 Workspace 内解析目标 Project，并通过进程内 TFS Client 查询、下载附件及对账 Issue。
+直接执行 [Agent Instructions](./instructions.md) 中的 WIQL 同步命令。Rondo 使用当前 Runtime 与 `RONDO_PROJECT_TITLE` 在当前 Workspace 内解析目标 Project，并通过进程内 TFS Client 查询、下载附件及对账 Issue。
 
 - **筛选**：只查询指派给当前 TFS 认证身份（`@me`）的需求和 Bug，排除已验证、已关闭项。
 - **排序与上限**：按 `System.Id` 升序；主命令最多处理查询结果的前 50 项（不是自动分页）。
@@ -88,5 +87,4 @@ flowchart TD
 ## 实现依据
 
 - [Agent Instructions](./instructions.md)
-- [tfs-sync Skill](../../skills/tfs-sync/SKILL.md)
 - [Rondo 对账实现](../../rondo/src/commands/tfs/reconcile-workitem.ts)
