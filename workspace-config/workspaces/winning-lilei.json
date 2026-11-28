@@ -4,13 +4,13 @@
     "analysis-publish": "93dfdeb9-65df-4b52-b722-dd2c5330fe24",
     "bug-analysis": "283a02ff-5a9a-4cbb-b667-7dfeb2b8210b",
     "codebase-explorer": "3ee1db3e-63d5-4a12-8c49-da2d72dd670e",
-    "delivery-closeout": "83b72fe2-b559-43cc-a1c0-ef3a134a9283",
     "diagnosing-bugs": "c78bd45f-25c4-4524-8473-83e76554b1a2",
     "native-workspace": "54006856-c588-426f-805e-998889c5e29c",
     "pull-request": "1cbb0636-44cf-4a83-a401-199410075de5",
     "requirement-analysis": "8f4b09c3-2b46-42bd-98ea-1ce2ab6c1a21",
     "spec-preparation": "9258f32a-3351-4c4f-b39f-a4a1d2ec77c6",
-    "tfs-sync": "8dfb6ec3-3ffe-4fd8-bcf0-2203e038a1aa"
+    "tfs-sync": "8dfb6ec3-3ffe-4fd8-bcf0-2203e038a1aa",
+    "workitem-finalize": "f85e7556-2a57-4a7d-8a14-b7f0ae984558"
   },
   "delivery_squad_id": "03665e95-a7bd-48f0-afe3-c0860ebac5fc",
   "project": "68b81377-601e-4d6c-84fd-122c05f0308f",

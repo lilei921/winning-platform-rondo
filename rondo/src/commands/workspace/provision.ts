@@ -688,7 +688,7 @@ function main(rawArgs: string[]): number {
       workflow_skipped: skipWorkflow,
       overlay_written: overlayWritten,
       ...(mcpSpecs.length ? { mcp_configuration: "WRITE_ONLY_NOT_VERIFIED", mcp_runtime: "NOT_RUN" } : {}),
-      next: dryRun ? null : `rondo workspace sync --workspace ${args.workspace}${overlay.multica_profile ? ` --profile ${overlay.multica_profile}` : ""}`,
+      next: dryRun ? null : `rondo workspace sync-skills --workspace ${args.workspace}${overlay.multica_profile ? ` --profile ${overlay.multica_profile}` : ""}`,
     }, null, 2) + "\n");
     return workflowUnknown ? 3 : check && (created.length || updated.length) ? 2 : 0;
   } catch (exc) {

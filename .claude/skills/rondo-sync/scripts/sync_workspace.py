@@ -330,7 +330,8 @@ def sync_workspace(
         # 默认跳过 workflow 前置检查与状态供给（97 等服务端无 workflow API）；
         # 服务端支持时可用 --with-workflow 恢复。
         provision.append("--skip-workflow")
-    sync = cli + ["workspace", "sync", "--workspace", name]
+    # CLI 已将 workspace sync 改名为 sync-skills（旧名被显式拒绝，退出码 64）。
+    sync = cli + ["workspace", "sync-skills", "--workspace", name]
     if dry_run:
         provision.append("--dry-run")
         sync.append("--dry-run")

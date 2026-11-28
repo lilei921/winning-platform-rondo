@@ -244,6 +244,8 @@ class WorkspaceSyncTests(unittest.TestCase):
             self.assertEqual(code, 0)
             self.assertEqual(len(calls), 2)
             self.assertIn("--skip-workflow", calls[0])
+            self.assertEqual(calls[1][:4], ["node", "local-cli", "workspace", "sync-skills"])
+            self.assertIn("--workspace", calls[1])
             for command in calls:
                 self.assertEqual("--dry-run" in command, dry_run)
 

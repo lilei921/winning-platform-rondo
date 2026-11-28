@@ -233,7 +233,7 @@ test("provision 保存环境；重复执行继承环境且拒绝跨 profile 覆�
   assert.equal(r.code, 0, r.stderr);
   const overlay = JSON.parse(readFileSync(f.overlay, "utf8"));
   assert.equal(overlay.multica_profile, "private"); assert.equal(overlay.multica_server_url, "https://private.example");
-  assert.match(r.body.next, /--profile private/);
+  assert.match(r.body.next, /^rondo workspace sync-skills --workspace pilot --profile private$/);
   assert.equal(f.run("workspace", "provision", "--workspace", "pilot").code, 0);
   const before = readFileSync(f.overlay, "utf8"); const count = f.calls().length;
   assert.equal(f.run("workspace", "provision", "--workspace", "pilot", "--profile", "cloud").code, 3);
