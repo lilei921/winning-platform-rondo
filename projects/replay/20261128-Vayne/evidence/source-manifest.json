@@ -1,0 +1,99 @@
+{
+  "collected_at": "2026-11-28T12:29:01+08:00",
+  "profile": "cli-default",
+  "server_url": null,
+  "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+  "issue_id": "b1186fa2-1948-448b-b724-15108fff71cd",
+  "read_only_commands": [
+    [
+      "multica",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "autopilot",
+      "get",
+      "b1186fa2-1948-448b-b724-15108fff71cd",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "autopilot",
+      "runs",
+      "b1186fa2-1948-448b-b724-15108fff71cd",
+      "--limit",
+      "2",
+      "--output",
+      "json"
+    ],
+    [
+      "multica",
+      "--workspace-id",
+      "a9469044-700c-4206-80d2-b39bad65de56",
+      "agent",
+      "get",
+      "879ea55a-8da2-4f2e-8066-0a264fd76a82",
+      "--output",
+      "json"
+    ]
+  ],
+  "sessions": [
+    {
+      "verification_schema": "claude_public_messages",
+      "coverage_granularity": "public text + tool_use/tool_result",
+      "invalid_jsonl_lines": 0,
+      "identity_mismatch_files": [],
+      "conflicting_uuids": [],
+      "source_public_tool_count": 3,
+      "exported_tool_count": 3,
+      "source_user_messages": 1,
+      "source_assistant_messages": 2,
+      "messages_match": true,
+      "missing_tool_ids": [],
+      "extra_tool_ids": [],
+      "tool_order_matches": true,
+      "tool_results_match": true,
+      "missing_tool_results": [],
+      "orphan_tool_results": [],
+      "duplicate_tool_ids": [],
+      "duplicate_tool_results": [],
+      "unsupported_events": {},
+      "complete": true,
+      "session_id": "21ab78a2-ac53-4bc2-a949-391a37092e00",
+      "subagents": [],
+      "inline_sidechain_records": 0,
+      "missing_subagent_ids": [],
+      "provider": "claude",
+      "sources": [
+        {
+          "path": "C:\\Users\\lilei\\.claude\\projects\\D--Multica-default-winning-lil-b39bad65de56-task-c6c54589fe55-workdir\\21ab78a2-ac53-4bc2-a949-391a37092e00.jsonl",
+          "size_bytes": 317960,
+          "sha256": "8688bf81ce75075e4d66b46360b65b660cec7a21fc656610553c225da12c005c"
+        }
+      ],
+      "run_coverage": {
+        "method": "claude_public_request_and_completion",
+        "run_intervals": {
+          "01a2204f-69a1-7d6e-8eca-b7fde32c20f8": [
+            {
+              "started_at": "2026-11-28T04:00:03.976Z",
+              "completed_at": "2026-11-28T04:00:24.790Z",
+              "message_id": "8a503000-6518-455c-bf9a-9e7590974a4a",
+              "matched_by": "platform_final_output"
+            }
+          ]
+        },
+        "uncovered_run_ids": [],
+        "complete": true
+      },
+      "sources_stable": true
+    }
+  ],
+  "coverage": "partial",
+  "verified_at": "2026-11-28T12:29:02+08:00",
+  "subject_type": "autopilot",
+  "autopilot_id": "b1186fa2-1948-448b-b724-15108fff71cd",
+  "run_window_basis": "triggered_at → completed_at",
+  "requested_last": 2
+}

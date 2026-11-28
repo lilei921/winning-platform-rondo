@@ -1,0 +1,52 @@
+{
+  "schema": "multica-issue-replay/v2",
+  "profile": "cli-default",
+  "server_url": null,
+  "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+  "issue_id": "b1186fa2-1948-448b-b724-15108fff71cd",
+  "identifier": "Vayne",
+  "collected_at": "2026-11-28T12:29:01+08:00",
+  "coverage": "partial",
+  "sessions": [
+    {
+      "session_id": "21ab78a2-ac53-4bc2-a949-391a37092e00",
+      "provider": "claude",
+      "run_ids": [
+        "01a2204f-69a1-7d6e-8eca-b7fde32c20f8"
+      ],
+      "agent_ids": [
+        "879ea55a-8da2-4f2e-8066-0a264fd76a82"
+      ],
+      "started_at": "2026-11-28T12:00:05+08:00",
+      "completed_at": "2026-11-28T12:00:32+08:00",
+      "tool_calls_total": 3,
+      "replay": "vayne/20261128-1200-21ab78a2/replay.json",
+      "timeline": "vayne/20261128-1200-21ab78a2/timeline.md",
+      "verification": "PASS"
+    }
+  ],
+  "agents": [
+    {
+      "id": "879ea55a-8da2-4f2e-8066-0a264fd76a82",
+      "name": "Vayne"
+    }
+  ],
+  "agent_warnings": [],
+  "agent_directories": {
+    "879ea55a-8da2-4f2e-8066-0a264fd76a82": "vayne"
+  },
+  "session_directories": {
+    "21ab78a2-ac53-4bc2-a949-391a37092e00": "vayne/20261128-1200-21ab78a2"
+  },
+  "run_count": 2,
+  "active_run_count": 1,
+  "tool_calls_total": 3,
+  "subagent_tool_calls_total": 0,
+  "gaps": [
+    "Run 01a22061-b912-7cc9-94e6-d3450560fd0b 尚未终止或状态未知：skipped",
+    "Run 01a22061-b912-7cc9-94e6-d3450560fd0b 没有 session_id，也未按 work_dir 定位到本地会话"
+  ],
+  "subject_type": "autopilot",
+  "autopilot_id": "b1186fa2-1948-448b-b724-15108fff71cd",
+  "title": "Vayne"
+}

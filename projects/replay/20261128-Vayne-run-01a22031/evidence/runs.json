@@ -1,0 +1,25 @@
+[
+  {
+    "autopilot_id": "b1186fa2-1948-448b-b724-15108fff71cd",
+    "completed_at": "2026-11-28T11:29:34+08:00",
+    "created_at": "2026-11-28T11:27:03+08:00",
+    "failure_reason": null,
+    "id": "01a22031-2eba-763e-b99e-b3a7a138acee",
+    "issue_id": "b1186fa2-1948-448b-b724-15108fff71cd",
+    "result": {
+      "output": "## Runtime 自动协调结果\n\n**结果：FAIL** — 本次无任何绑定变更（`changed: []`）。\n\n**需人工处理的异常（1 项）**\n\n| Agent | 问题 |\n|---|---|\n| Workitem Analyst | 主备 Runtime Provider 不一致。主=`Codex (lileipc)`（codex），备=`Claude (vayne)`（claude），协调器拒绝改绑 |\n\n**建议**：人工修正 `RONDO_RUNTIME_POLICY` 中 Workitem Analyst 的主备配置。当前 workspace 只有一个 codex runtime，没有同 Provider 的备机；建议将 primary 改为 `Claude (lileipc)`，fallback 保留 `Claude (vayne)`，与 Wayfinder Agent / Engineer / Delivery Lead / Bug Fix Agent 的策略保持一致，修正后重跑 `rondo runtime reconcile`。\n\n其余 4 个 Agent 策略正常，当前绑定已符合目标，无需变更。",
+      "pr_url": "",
+      "session_id": "daf072fa-8196-459c-8c92-2876bf7d3630",
+      "work_dir": "D:\\Multica\\default\\winning-lil-b39bad65de56\\task-a374bae83285\\workdir"
+    },
+    "source": "manual",
+    "status": "completed",
+    "task_id": "01a22031-2ebd-74a0-beff-a374bae83285",
+    "trigger_id": null,
+    "trigger_payload": null,
+    "triggered_at": "2026-11-28T11:27:03+08:00",
+    "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+    "agent_id": "879ea55a-8da2-4f2e-8066-0a264fd76a82",
+    "started_at": "2026-11-28T11:27:03+08:00"
+  }
+]

@@ -1,0 +1,49 @@
+{
+  "schema": "multica-issue-replay/v2",
+  "profile": "cli-default",
+  "server_url": "http://172.17.1.97:8080",
+  "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+  "issue_id": "b1186fa2-1948-448b-b724-15108fff71cd",
+  "identifier": "Vayne-run-01a22031",
+  "collected_at": "2026-11-28T11:33:13+08:00",
+  "coverage": "complete",
+  "sessions": [
+    {
+      "session_id": "daf072fa-8196-459c-8c92-2876bf7d3630",
+      "provider": "claude",
+      "run_ids": [
+        "01a22031-2eba-763e-b99e-b3a7a138acee"
+      ],
+      "agent_ids": [
+        "879ea55a-8da2-4f2e-8066-0a264fd76a82"
+      ],
+      "started_at": "2026-11-28T11:27:03+08:00",
+      "completed_at": "2026-11-28T11:29:34+08:00",
+      "tool_calls_total": 19,
+      "replay": "vayne/20261128-1126-daf072fa/replay.json",
+      "timeline": "vayne/20261128-1126-daf072fa/timeline.md",
+      "verification": "PASS"
+    }
+  ],
+  "agents": [
+    {
+      "id": "879ea55a-8da2-4f2e-8066-0a264fd76a82",
+      "name": "Vayne"
+    }
+  ],
+  "agent_warnings": [],
+  "agent_directories": {
+    "879ea55a-8da2-4f2e-8066-0a264fd76a82": "vayne"
+  },
+  "session_directories": {
+    "daf072fa-8196-459c-8c92-2876bf7d3630": "vayne/20261128-1126-daf072fa"
+  },
+  "run_count": 1,
+  "active_run_count": 0,
+  "tool_calls_total": 19,
+  "subagent_tool_calls_total": 0,
+  "gaps": [],
+  "subject_type": "autopilot",
+  "autopilot_id": "b1186fa2-1948-448b-b724-15108fff71cd",
+  "title": "Vayne"
+}

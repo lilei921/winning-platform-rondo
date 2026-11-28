@@ -1,0 +1,23 @@
+{
+  "assignee_id": "879ea55a-8da2-4f2e-8066-0a264fd76a82",
+  "assignee_type": "agent",
+  "can_manage_access": true,
+  "can_write": true,
+  "created_at": "2026-11-28T10:49:54+08:00",
+  "created_by_id": "17e47b21-3ade-446a-bfa6-cd8229c0977a",
+  "created_by_type": "member",
+  "description": "执行 Runtime 自动协调。",
+  "execution_mode": "run_only",
+  "id": "b1186fa2-1948-448b-b724-15108fff71cd",
+  "issue_title_template": null,
+  "last_run_at": "2026-11-28T12:20:05+08:00",
+  "pause_reason": null,
+  "project_id": null,
+  "status": "paused",
+  "subscribers": [],
+  "title": "Vayne",
+  "updated_at": "2026-11-28T12:25:44+08:00",
+  "workspace_id": "a9469044-700c-4206-80d2-b39bad65de56",
+  "identifier": "Vayne",
+  "subject_type": "autopilot"
+}
