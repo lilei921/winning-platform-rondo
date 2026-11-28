@@ -54,7 +54,7 @@ flowchart LR
 
 - Git 交付：[Bug Fix 基础](08a-remote-analysis-bug-fix-foundation.md) · [Requirement 远程交付](08b-requirement-remote-git-delivery.md) · [根仓分支与发布](08b-requirement-root-branch-and-publish-plan.md) · [Repository Scope](09a-repository-scope-authority-analysis.md)
 - Workspace 与 Closeout：[Native Repo 工作区准备](12-native-repo-workspace-preparation-design.md) · [Delivery Closeout 无配置化](12-delivery-closeout-config-removal-plan.md)
-- 分析与工件优化：[Workitem Analyst 约束评审](13-workitem-analyst-constraint-optimization-review.md) · [过程工件精简](workitem-analyst-review-artifacts-simplification-2026-11-21.md)
+- 分析与工件优化：[Workitem Analyst 约束评审](13-workitem-analyst-constraint-optimization-review.md) · [过程工件精简](17-workitem-analyst-review-artifacts-simplification-2026-11-21.md)
 
 </details>
 
