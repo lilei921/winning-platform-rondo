@@ -153,19 +153,19 @@ description: 根据已批准的 OpenSpec Change 完成软件实现、开发侧�
 
 ```bash
 # 按批准来源读取工程任务
-rondo analysis read --issue <issue> --file tasks.md
+rondo openspec read --issue <issue> --file tasks.md
 
 # 在 Task workdir 中按 native-workspace 准备获授权的研发仓库
 multica repo checkout <business-url> --ref <verified-ref>
 
 # 发布已提交的研发工件
-rondo dev publish --issue <issue> --root-repo "<root>"
+rondo openspec publish --issue <issue> --root-repo "<root>"
 
 # 创建或核实 PR，内部执行 Change 完成检查
 rondo pr materialize --issue <issue>
 ```
 
-`analysis read` 读取批准版本，不等于最新执行进度；Engineer 根据实际验证结果直接更新本地 `tasks.md` 的 checkbox，保持批准任务正文与编号不变。继续执行前核对当前已发布的工件，交付前完成受控发布与回读。
+`openspec read` 读取批准版本，不等于最新执行进度；Engineer 根据实际验证结果直接更新本地 `tasks.md` 的 checkbox，保持批准任务正文与编号不变。继续执行前核对当前已发布的工件，交付前完成受控发布与回读。
 
 通过 Rondo 核对批准来源与授权。只读工件和派发消息时不操作 Git。进入研发时，按需使用 native-workspace 和 Multica 原生 Checkout 准备根仓及业务工作区。研发完成后发布当前 Change 的研发工件，`rondo pr materialize` 内部执行 Completion Check。按当前可用的 Change 级 CLI 入口执行，不自行拼装不受支持的参数。
 
@@ -204,10 +204,10 @@ Workspace 路径、分支准备与根仓 Git 发布以 08-B 的运行契约为�
 | 能力 / 入口 | 当前情况 | 新路线所需结果 |
 | --- | --- | --- |
 | `runtime prepare-root` | 已有受控 TFS Git Fetch 入口，项目分支准备逻辑待修复 | Analysis / Development 共用常驻根仓准备。按项目配置的分支准备并 Fetch，安全时快进。历史分叉时保留本地提交和工作区，Engineer 仍按获批 SHA 读取。 |
-| `analysis read` | 已支持 | 按获批 `analysis.source` 读取固定版本 Change 工件 |
+| `openspec read` | 已支持 | 按获批 `analysis.source` 读取固定版本 Change 工件 |
 | 原生 Tasks 编辑 | Engineer 直接维护 checkbox | 真实完成后更新，保持任务正文和编号；进度由研发发布固定 SHA |
 | `requirement-guard` | 当前 Requirement 授权入口 | 新 Change 级模式仅只读核对当前 Multica Actor / Run、Human Approval、Change、Repository Scope |
-| `dev publish` | 受控 Git 发布与远端回读 | 从 Issue 批准来源定位 Change，发布已提交的 `tasks.md` 与适用的 Design 细化，登记研发 SHA，保留获批分析 SHA。 |
+| `openspec publish` | 受控 Git 发布与远端回读 | 从 Issue 批准来源定位 Change，发布已提交的 `tasks.md` 与适用的 Design 细化，登记研发 SHA，保留获批分析 SHA。 |
 | `pr prepare` / `pr materialize` 内部完成检查 | 无独立 Change 完成检查入口 | Change 级检查真实 Candidate、Evidence、原生 Tasks 全量进度与 PR Preparation，不使用派发 Task 编号集合 |
 | `pr materialize` | 已实现新模式且旧路径独立 | 新模式在创建任何 PR 前整体校验 Completion、批准和实际有代码变更仓库的 Candidate / `pr` 对账；支持远端 PR 描述，逐仓幂等恢复 |
 

@@ -31,7 +31,7 @@ export function developmentPublication(md: Record<string, string>): { analysis_s
 export function readDevelopmentCommit(md: Record<string, string>, source: AnalysisSource): string {
   const receipt = developmentPublication(md);
   if (!receipt || !sameAnalysisSource(receipt.analysis_source, source)) {
-    throw new UnknownError("当前批准版本缺少有效的研发发布记录，请执行 rondo dev publish");
+    throw new UnknownError("当前批准版本缺少有效的研发发布记录，请执行 rondo openspec publish");
   }
   return receipt.commit;
 }

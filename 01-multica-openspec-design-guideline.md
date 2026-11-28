@@ -1,15 +1,17 @@
 # Multica + OpenSpec Unified Design Guideline（统一设计规范）
 
-> Version: 1.16.13  
-> Scope: Multica Runtime（运行时）与 OpenSpec Engineering Contract（工程契约）的组合架构；Agent / Squad / Instructions / Skill / Runtime Context、OpenSpec Change / Schema / Artifact / Template / Instruction、跨系统术语与职责边界、公共原生机制及来源引用规范  
-> Date: 2026-11-06  
+> Version: 1.16.14  
+> Scope: Multica Runtime（运行时）、OpenSpec Engineering Contract（工程契约）与 Rondo CLI（确定性执行层）的组合架构；Agent / Squad / Instructions / Skill / Runtime Context、OpenSpec Change / Schema / Artifact / Template / Instruction、CLI 命令对象归属与职责边界、Issue Metadata 数据设计、公共原生机制及来源引用规范  
+> Date: 2026-11-27  
 > Author: winning/li_lei
 
-本规范是当前研发交付体系的统一上位设计规范，用于指导 Multica Runtime 与 OpenSpec Engineering Contract 的组合设计、配置设计与评审。具体业务流程、Schema / Template 实现、触发机制、调度方式及运行时适配由对应下游方案确定；文中的 Gate（门禁） / Route（路由）等设计约定不表示相关机制已经实现。
+本规范是当前研发交付体系的统一上位设计规范，用于指导 Multica Runtime、OpenSpec Engineering Contract 与 Rondo CLI 的组合设计、配置设计与评审。具体业务流程、Schema / Template 实现、触发机制、调度方式及运行时适配由对应下游方案确定；文中的 Gate（门禁） / Route（路由）等设计约定不表示相关机制已经实现。
 
 ## 目录
 
 - [1. 总则（General）](#1-总则general)
+  - [1.7 Rondo CLI Design（Rondo 命令行设计）](#rondo-cli-design)
+  - [1.8 Issue Metadata Design（交付事实数据设计）](#issue-metadata-design)
 - [2. Multica Native Mechanisms（Multica 原生机制）](#2-multica-native-mechanismsmultica-原生机制)
 - [3. OpenSpec Engineering Contract（工程契约与原生机制）](#openspec-core-mechanism)
 - [4. Multica Runtime Context & Squad（运行上下文与协作）](#mechanism-shared-context)
@@ -31,7 +33,7 @@
 
 ### 1.1 目的（Purpose）
 
-本规范用于统一 Multica + OpenSpec 组合架构中以下资产的职责和设计方式：
+本规范用于统一 Multica + OpenSpec + Rondo 组合架构中以下资产的职责和设计方式：
 
 **Multica Runtime：**
 
@@ -52,6 +54,10 @@
 - OpenSpec Artifact Template（工件模板）
 - OpenSpec Artifact Instruction（工件指令）
 - Artifact Dependency / Apply Readiness（工件依赖 / 应用就绪）
+
+**Rondo CLI：**
+
+- 公开命令体系、命令对象归属与确定性执行边界
 
 核心目标是避免：
 
@@ -248,7 +254,7 @@ Squad      = Delivery Squad
 
 `TFS Sync Agent` 与 `PR Status Sync Agent` 都在 Delivery Squad 外通过 Multica Autopilot 运行；前者绑定 `tfs-sync` Skill；后者直接调用 `rondo pr reconcile-status` 并使用 `delivery-closeout` Skill，负责已登记 PR 的状态核对与有界 Finalize，并在满足条件的 Requirement Closeout 中规划 TFS 子任务及估时；不负责创建 / 合并 PR 或解释 Review 意见。
 
-`Wayfinder Agent` 独立于 Delivery Squad，是自动 TFS 入口的默认 Intake Triage：按需使用 `codebase-explorer` 调查准入所需工程证据，由 Wayfinder Instructions 维护准入判断；`accepted` 后按 TFS 来源类型交给 `Bug Fix Agent` 或 `Delivery Squad`，三种 Decision 的确定性执行通过 `rondo delivery admission` 完成。明确直接委派的 Analysis 可以不经过 Wayfinder；Wayfinder Decision 不作为所有 Analysis 的强制 Gate。它不替代 `Workitem Analyst` 的 Change Kind / Analysis Route、Root Cause、需求方案和 OpenSpec Preparation。`codebase-explorer` 参考原有 `context-analysis` 的定位方法，但独立绑定、独立演进；两者仅通过 Evidence References 交接，不共享 Skill 及完成标准。准入、交接和异常由 [Delivery 主方案 §4.1.1](02-multica-delivery-lifecycle-design.md#delivery-intake) 维护，Evidence 增量复用由 [03 §6](03-workitem-analysis-design.md#analysis-section-06) 维护。
+`Wayfinder Agent` 独立于 Delivery Squad，是自动 TFS 入口的默认 Intake Triage：按需使用 `codebase-explorer` 调查准入所需工程证据，由 Wayfinder Instructions 维护准入判断；`accepted` 后按 TFS 来源类型交给 `Bug Fix Agent` 或 `Delivery Squad`，三种 Decision 的确定性执行通过 `rondo workitem apply-decision` 完成。明确直接委派的 Analysis 可以不经过 Wayfinder；Wayfinder Decision 不作为所有 Analysis 的强制 Gate。它不替代 `Workitem Analyst` 的 Change Kind / Analysis Route、Root Cause、需求方案和 OpenSpec Preparation。`codebase-explorer` 参考原有 `context-analysis` 的定位方法，但独立绑定、独立演进；两者仅通过 Evidence References 交接，不共享 Skill 及完成标准。准入、交接和异常由 [Delivery 主方案 §4.1.1](02-multica-delivery-lifecycle-design.md#delivery-intake) 维护，Evidence 增量复用由 [03 §6](03-workitem-analysis-design.md#analysis-section-06) 维护。
 
 PR 生命周期与异常处理由 [Delivery 主方案 §11](02-multica-delivery-lifecycle-design.md#pr-status-sync) 维护。
 
@@ -393,7 +399,7 @@ unsupported
 done
 ```
 
-Wayfinder 的准入结论 `accepted | needs_human | unsupported` 属于 **Triage Decision**，并非三种同名 Issue Status：`accepted` 经 `rondo delivery admission --decision accepted` 单次 Assignment Update 交给 `todo + Bug Fix Agent / Delivery Squad`，由 Multica 启动对应下游 Run；`needs_human` 使用 `blocked` 等待人工补充；`unsupported` 对应上表的自定义 Issue Status `unsupported`。二者均由 `rondo delivery admission` 设置状态，保留 Wayfinder 指派且不启动新 Run。
+Wayfinder 的准入结论 `accepted | needs_human | unsupported` 属于 **Triage Decision**，并非三种同名 Issue Status：`accepted` 经 `rondo workitem apply-decision --decision accepted` 单次 Assignment Update 交给 `todo + Bug Fix Agent / Delivery Squad`，由 Multica 启动对应下游 Run；`needs_human` 使用 `blocked` 等待人工补充；`unsupported` 对应上表的自定义 Issue Status `unsupported`。二者均由 `rondo workitem apply-decision` 设置状态，保留 Wayfinder 指派且不启动新 Run。
 
 `unsupported` 表示**当前能力、授权或自动化边界下不支持交付**，不是执行失败，也不是永久不支持；必须有可追溯的排除证据，单纯信息不足应归入 `needs_human`。该状态只终止 Multica 当前自动交付路径，不完成或关闭原始 TFS Work Item；能力或授权变化后，Human 在原 Issue 回复必要信息，并在保留 Wayfinder Assignee 的情况下将状态改为 `todo` 触发重新准入；不要求解除、重新指派或 `@mention`。使用前须按当前安装版本回读 Workspace 的自定义状态配置及其终态行为。准入不授权编码，也不替代 Human Analysis Review。
 
@@ -401,7 +407,7 @@ Wayfinder 的准入结论 `accepted | needs_human | unsupported` 属于 **Triage
 
 #### 1.4.8 Technical Change Kind 与自动处理边界
 
-`corrective` 表示恢复有证据支持的既定行为；`intentional` 表示主动改变预期行为、业务规则或能力。Workitem Analyst 负责基于证据判断，并将结果在存在工程增量时通过 `rondo analysis publish` 写入 Multica Issue Metadata `analysis.change_kind`（string）；Gate 和 Publish 核对该分类与当前 OpenSpec Change 的 `.openspec.yaml.schema` 一致。技术分类是专业判断及统计维度，不是 Workflow、Skill 链或自动化授权。
+`corrective` 表示恢复有证据支持的既定行为；`intentional` 表示主动改变预期行为、业务规则或能力。Workitem Analyst 负责基于证据判断，并将结果在存在工程增量时通过 `rondo openspec submit-review` 写入 Multica Issue Metadata `analysis.change_kind`（string）；Gate 和 Publish 核对该分类与当前 OpenSpec Change 的 `.openspec.yaml.schema` 一致。技术分类是专业判断及统计维度，不是 Workflow、Skill 链或自动化授权。
 
 超出授权、证据或当前自动处理能力的复杂变更须停止并交 Delivery Lead / Human；不另建复杂度 Route。紧急程度与排期由 Human 管理，不创建 `hotfix` 分类。执行分类与方法边界由 [03 §5](03-workitem-analysis-design.md#analysis-section-05) 维护，Schema 归属由 [05](05-openspec-schema-implementation-design.md) 维护。
 
@@ -530,8 +536,94 @@ Supporting Evidence（补充证据） 是 Artifact 或 External Reference 的一
 
 删除固定 Markdown 不等于删除 Contract；应先把技术事实迁移到明确 Artifact Owner，把交付事实映射到 Multica 原生事实，再取消重复载体。
 
+<a id="rondo-cli-design"></a>
 
+### 1.7 Rondo CLI Design（Rondo 命令行设计）
 
+Rondo CLI 是 Multica + OpenSpec 组合架构中的确定性执行边界，负责可程序化的校验、执行与事实管理；不承担 Agent 的语义判断或 Skill 的专业方法，也不建立独立业务事实源。Engineering Truth 仍由 OpenSpec 持有，Delivery Truth 仍由 Multica 原生对象持有。
+
+#### Object-Oriented CLI（面向操作对象的 CLI）
+
+公开命令组按实际管理对象或业务域划分，不按研发流程阶段、Agent 角色或底层服务提供方划分。命令组应回答“正在操作什么对象”，而不是“当前处于哪个流程阶段”或“由哪个 Agent 执行”。
+
+- `openspec`：Change、Schema 与工程工件。
+- `workitem`：工作项及其准入、批准、收口和同步事实。
+- `pr`：Pull Request 及其准备、创建、恢复和状态核实。
+- `repo`：Git Repository、Branch 与受控仓库操作。
+- `runtime`：Runtime、Daemon 与当前执行上下文。
+- `workspace`：Workspace 资源供给与 Skill 同步。
+- `doctor`：跨对象的环境诊断，可作为顶层诊断命令。
+
+底层系统不是命令组归属的唯一依据：TFS Work Item 操作归入 `workitem`，TFS Git PR 操作归入 `pr`；不因它们都通过 TFS API 实现而另建 `tfs` 命令组。类似地，`analysis`、`development`、`delivery` 等流程阶段或角色名称，不作为公开命令组的默认分类。
+
+#### Command Semantics and Granularity（命令语义与粒度）
+
+- 叶子命令以明确对象上的确定性操作命名，例如 `openspec validate`、`openspec submit-review`、`workitem approve`、`pr resume`。生命周期动作可以作为叶子命令；不因此建立阶段命令组。
+- 只有在操作对象、授权前置条件、副作用及失败恢复语义一致时，才考虑合并命令。存在实质不同的授权或副作用时保持独立，不为追求命令数量少而强行合并。
+- 不按每个 API Endpoint 建立命令，不引入通用 Dispatch 层、重复命令树或仅转发旧命令的兼容别名。
+- CLI 参数只承载执行所必需的输入；语义判断、业务取舍及人工决定由相应 Agent / Human 完成，CLI 只校验和记录明确决定，不推断授权。
+
+#### Responsibility Boundary（职责边界）
+
+| 层 | 职责 |
+|---|---|
+| Agent | 基于上下文进行专业分析、语义判断与决策 |
+| Skill | 提供可复用的场景化执行方法、步骤与必要资料 |
+| Rondo CLI | 执行确定性校验、操作及权威事实读写 |
+| Multica / OpenSpec | 分别持有 Delivery Truth / Engineering Truth |
+
+命令归属调整时，应在同一变更中更新命令注册、调用方、帮助信息、设计文档与测试；除非已确认存在必须支持的外部消费者，不保留旧命令别名或额外转发层。
+
+<a id="issue-metadata-design"></a>
+
+### 1.8 Issue Metadata Design（交付事实数据设计）
+
+Issue Metadata 是 Multica 原生 Issue 上供跨 Run 确定性消费的最小交付事实集合，不是独立业务对象或第二套状态机。Rondo CLI 管理项目自定义机器事实的格式与确定性读写；Multica 原生 Status、Assignment、Run、Comment 等仍由平台持有，OpenSpec 工件、Git Commit 和 TFS 外部事实各自保持权威归属。
+
+#### Data Format（数据格式）
+
+- **Flat Key-Value Map**：当前 Rondo 管理的 Metadata 使用 `Record<string, string>`。Key 为独立字符串；有命名空间的 Key 使用点分隔，例如 `tfs.id`、`analysis.source`。点号表示逻辑归属，不表示物理嵌套路径。新 Key 优先采用稳定业务对象 / 事实语义，字段名使用 `snake_case`；不为每个 Agent 或 Run 建立独立命名空间。
+- **Scalar Value**：单一事实直接使用字符串，例如 `"12345"`、`"PASS"`、`"true"`；枚举、标识和时间使用约定的稳定表示，时间使用 ISO 8601。禁止依赖显示名称、隐式类型转换或空字符串表示未知授权。
+- **Structured Value**：需要共同校验、消费及更新的关联事实使用一个 JSON Object 或 JSON Array，经 `JSON.stringify` 序列化为单个 Metadata Value。内部保留 JSON 原生类型，例如 boolean、number、array；不把关联对象拆成多份重复的 Key，也不把无关事实塞进一个全局大 JSON。
+- **Missing Fact**：缺失字段表示尚无该事实；可选字段按实际契约省略。缺失、非法或冲突的必要事实不得被默认解释为已批准、已通过或已完成；由对应命令按契约返回 `FAIL` / `UNKNOWN`。不新增通用状态字段、版本包装或统一 Metadata Schema Registry。
+
+以下为实际存储形态示意（外层是 Metadata Map，结构化 Value 是 JSON 字符串；示例不是要求所有 Issue 都具备的字段集合）：
+
+```json
+{
+  "source": "tfs",
+  "tfs.id": "12345",
+  "analysis.change_kind": "intentional",
+  "analysis.gate.result": "PASS",
+  "analysis.source": "{\"repo_url\":\"https://tfs.example.com/tfs/Collection/Project/_git/root\",\"branch\":\"main\",\"commit\":\"0123456789abcdef0123456789abcdef01234567\",\"change_ref\":\"12345-example\"}",
+  "delivery.tfs_written": "true"
+}
+```
+
+`analysis.source` 解码后为 `{ repo_url, branch, commit, change_ref }`；PR 集合 `pr` 解码后为 JSON Array，每个实际交付仓由 `repo_key` 唯一标识，同一记录承载准备事实并在物化后补充 `pr_id` / `pr_url`。外层字符串与内层 JSON 类型不可混淆，例如独立 Bug 的 `verify_agent.required` 为字符串，而 `analysis.human_approval` 内的 `verify_agent_required` 为 JSON boolean。
+
+#### Ownership and Lifecycle（归属与生命周期）
+
+| 事实域 | 当前代表性 Key | 主要写入责任 |
+|---|---|---|
+| 来源 | `source`、`tfs.id`、`tfs.type`、`tfs.url`、`tfs.changed_at` | `workitem sync` |
+| 审核版本 | `analysis.source`、`analysis.change_kind`、`analysis.gate.result` | `openspec submit-review` |
+| 人工批准 | `analysis.human_approval` | Human 决策，`workitem approve` 校验并登记 |
+| 研发发布 | `dev.publication` | `openspec publish` |
+| PR 交付与恢复 | `pr`、`pr.abandoned` | `pr` 命令组按对应事实契约维护 |
+| 独立 Bug 范围 | `bug.required_repos` | `pr prepare` |
+| 收口与外部回写 | `finalize.pending`、`delivery.tfs_written`、`delivery.tfs_task_plan` | `pr reconcile-status`、`workitem finalize` / `writeback` 按对应事实契约维护 |
+
+上表用于说明事实的逻辑归属，不是完整字段字典或额外授权规则。当前交付事实映射见 [02 §13.1](02-multica-delivery-lifecycle-design.md#delivery-facts)，具体字段结构、类型、必填条件和校验以对应 Rondo 实现及测试为准。
+
+#### Minimal Sufficient Facts（最小充分事实）
+
+- 只有跨 Run 消费、确定性校验、外部副作用追溯或必要恢复需要时，才新增持久化机器事实。原生对象已有的状态不复制；工程内容通过固定 Git Commit / Change 引用；普通专业结论保留在 Comment 中，无工程增量不强制生成工程 Metadata。
+- 同一业务事实由唯一责任域定义；同一事实随生命周期演进时优先复用现有记录。为绑定批准版本或候选证据而保存的不可变引用属于独立事实，不等同于冗余快照。
+- 状态变化、事实写入与恢复由对应 CLI 按实际契约执行；必要时核实真实外部结果，不盲目重试未知副作用。临时恢复标记在完成后清理，不建立独立状态机。
+- Metadata 不作为流程编排器、Prompt 缓存或通用日志容器；不存储凭据、重复工件正文或可从权威来源直接获得且无需持久化的派生数据。
+
+新增或修改 Metadata 时，同步核对写入方、消费方及回归测试；不因文档规范而批量重命名现有 Key 或引入迁移机制。
 
 <a id="section-2"></a>
 
@@ -630,7 +722,7 @@ Key 在创建状态时确定，修改 Display Name 不改变 Key；部署和调�
 
 来源：[Comments](#source-comments)、[Mention / Reply 路由](#source-mentions)、[Squads](#source-squads)，文档核对日期 2026-09-29。实际触发以当前上下文、预览、Access 和安装版本为准，不复制完整原生触发表。
 
-**本项目约定：** 人审决定仍来自真实 Human 意见；评论触发不是批准。领域方案定义审核入口与原始反馈引用，成员 Skill 定义输出和停止条件。Wayfinder 以同一 Issue 的 `/note` Comment 持久化**准入结论、关键 Evidence References、未知项和交接建议**：首次或人工状态触发的 Wayfinder Run 可以发布顶层 `/note`；存在明确 Human 补充评论时，可在对应线程使用 `--parent` 关联回复，不凭空要求评论父 ID。确认有效 Decision 已记录后，`accepted` 通过 `rondo delivery admission --decision accepted` 按当前 `tfs.type` 执行单次 `status=todo + assignee=<目标 ID>` Update，走原生 Assignment Trigger；`/note` 的静默行为还须核查 `comment.created` Wakeup 规则。`/note` 的非触发语义参见 [官方 Mention / Comment 路由](https://multica.ai/docs/mentioning-agents)，具体 CLI / API 仍以安装版本实测为准。Comment 是 Supporting Evidence / Delivery Handoff，不是独立 Engineering Truth，也不替代实际工程变更的 OpenSpec Change。无需工程增量时，Analysis 专业结论直接记录在当前 Issue Comment，复用原生回流，不创建工程契约或研发批准事实。
+**本项目约定：** 人审决定仍来自真实 Human 意见；评论触发不是批准。领域方案定义审核入口与原始反馈引用，成员 Skill 定义输出和停止条件。Wayfinder 以同一 Issue 的 `/note` Comment 持久化**准入结论、关键 Evidence References、未知项和交接建议**：首次或人工状态触发的 Wayfinder Run 可以发布顶层 `/note`；存在明确 Human 补充评论时，可在对应线程使用 `--parent` 关联回复，不凭空要求评论父 ID。确认有效 Decision 已记录后，`accepted` 通过 `rondo workitem apply-decision --decision accepted` 按当前 `tfs.type` 执行单次 `status=todo + assignee=<目标 ID>` Update，走原生 Assignment Trigger；`/note` 的静默行为还须核查 `comment.created` Wakeup 规则。`/note` 的非触发语义参见 [官方 Mention / Comment 路由](https://multica.ai/docs/mentioning-agents)，具体 CLI / API 仍以安装版本实测为准。Comment 是 Supporting Evidence / Delivery Handoff，不是独立 Engineering Truth，也不替代实际工程变更的 OpenSpec Change。无需工程增量时，Analysis 专业结论直接记录在当前 Issue Comment，复用原生回流，不创建工程契约或研发批准事实。
 
 <a id="mechanism-cli-version"></a>
 
@@ -2906,6 +2998,12 @@ Workflow
 | Config | Parameters（环境参数与配置） |
 | Script / Deterministic Gate / Route | Deterministic Execution / Control（确定性执行与控制） |
 
+**Rondo CLI 职责：**
+
+| 资产 | 核心职责 |
+|---|---|
+| Rondo CLI | Deterministic Validation / Execution / Fact Management（确定性校验、执行与事实管理） |
+
 LLM 负责需要上下文判断的 Semantic Reasoning（语义推理）；明确硬条件由相应确定性机制检查，人工批准仍归 Human。
 
 **OpenSpec Engineering Contract 资产职责：**
@@ -2936,6 +3034,8 @@ LLM 负责需要上下文判断的 Semantic Reasoning（语义推理）；明确
 - **Minimal Sufficient**：仅保留正确执行、验证和交付所需信息。
 - **Contract First**：明确职责、输入、规则、输出与停止条件。
 - **One Rule, One Owner**：每条规则和权威事实由唯一 Owner 维护。
+- **Object-Oriented CLI**：公开命令组按实际操作对象 / 业务域划分，叶子命令表达确定性操作；不按研发阶段、Agent 角色或底层 API 提供方组织。
+- **Minimal Metadata**：以原生 Issue 的平面 Key-Value 保存最小机器事实，关联事实使用 JSON Value；遵循唯一归属，不复制原生状态或工程正文。详见 [§1.8](#issue-metadata-design)。
 - **Reference, not Replication**：跨资产和跨系统通过引用关联，不复制权威正文。
 
 **专业方法与产物原则：**
@@ -2945,7 +3045,7 @@ LLM 负责需要上下文判断的 Semantic Reasoning（语义推理）；明确
 - Evidence 保留在对应 Artifact 或明确引用中；Package 只是事实的逻辑集合，Summary 只是呈现视图，不新增 Truth Source。
 - 删除重复文档不得删除原有的执行、验证或交付契约。
 
-以上作为 Multica + OpenSpec 组合架构、配置资产及研发交付方案的统一设计和评审边界。
+以上作为 Multica + OpenSpec + Rondo 组合架构、配置资产及研发交付方案的统一设计和评审边界。
 
 ---
 
@@ -3034,6 +3134,13 @@ Multica 公共机制的准确含义、官方 URL、来源支持范围和核对�
 ---
 
 ## 附录 C. 版本记录
+
+### v1.16.14 Rondo CLI 与 Issue Metadata 设计（2026-11-27）
+
+- 明确 Rondo CLI 的确定性执行边界及 Agent / Skill / CLI 职责分工。
+- 公开命令组按实际操作对象 / 业务域划分，叶子命令按确定性操作命名；不按研发阶段、Agent 角色或底层服务提供方组织。
+- 明确命令合并条件、兼容别名边界及命令归属调整时的同步要求。
+- 明确 Issue Metadata 的平面 Key-Value、JSON Value、事实归属及最小持久化规则。
 
 ### v1.16.11 Multica 原生 Agent / Skill 对齐（2026-11-04）
 

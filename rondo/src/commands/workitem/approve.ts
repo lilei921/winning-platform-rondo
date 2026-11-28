@@ -3,9 +3,9 @@ import { FailError, UnknownError } from "../../cli/errors.js";
 import { markLeafExecuted } from "../../cli/output.js";
 import { MulticaClient } from "../../clients/multica.js";
 import { resolveMulticaRuntime } from "../../clients/runtime-context.js";
-import { parseAnalysisSource, readAnalysisArtifact, readAnalysisSource, sameAnalysisSource } from "./source.js";
+import { parseAnalysisSource, readAnalysisArtifact, readAnalysisSource, sameAnalysisSource } from "../analysis/source.js";
 import { readApprovedVerifyDecision, parseWaivedTasks } from "../delivery/verify-decision.js";
-import { readTaskProgress, assertWaiverRefs } from "../dev/change-completion.js";
+import { readTaskProgress, assertWaiverRefs } from "../openspec/change-completion.js";
 
 interface ApprovalArgs {
   issue: string;
@@ -115,7 +115,7 @@ export async function recordApproval(client: ApprovalClient, args: ApprovalArgs,
     verify_agent_required: required, waived_tasks: waivedTasks };
 }
 
-export function registerAnalysisApprove(group: Command): void {
+export function registerWorkitemApprove(group: Command): void {
   group.command("approve").description("登记已确认的人工批准及独立验收决定")
     .addHelpText("after", "\n登记批准后不启动 Run。")
     .requiredOption("--issue <key>", "当前 Requirement Issue")

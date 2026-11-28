@@ -15,8 +15,8 @@ description: 为 Bug 和 Requirement 准备、提交及按需恢复 PR 交付。
 按需更新远端事实；提交业务代码后以非强制方式发布 Candidate（Bug Commit 保留唯一 `Refs: #<tfs.id>` 尾注）。
 
 ```bash
-rondo dev git --operation fetch --issue <KEY> --repo <repo_id> --root-repo "<root>"
-rondo dev git --operation push --issue <KEY> --repo <repo_id> --root-repo "<root>"
+rondo repo fetch --issue <KEY> --repo <repo_id> --root-repo "<root>"
+rondo repo push --issue <KEY> --repo <repo_id> --root-repo "<root>"
 ```
 
 Fetch 不执行合并。

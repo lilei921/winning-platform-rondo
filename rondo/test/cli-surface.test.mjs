@@ -16,17 +16,14 @@ function runCli(args, env = {}) {
   return result;
 }
 
-/** 当前完整命令树；包含 analysis read 和顶层叶子 doctor。 */
+/** 当前完整命令树；按实际操作对象组织。 */
 const TREE = {
-  analysis: ["validate", "publish", "read", "approve"],
-  dev: ["git", "publish"],
   pr: ["prepare", "materialize", "resume", "reconcile-status", "create", "get", "list"],
-  delivery: [ "finalize", "root-prepare", "admission"],
-  workspace: ["provision", "sync", "check-daemon"],
-  runtime: ["get-context","check-checkout"],
-  openspec: ["resolve-identity", "install-schema"],
-  repo: ["get", "get-branch"],
-  workitem: ["sync", "writeback", "query", "set-state", "comment", "create", "link-commits", "download-attachment"],
+  workspace: ["provision", "sync-skills"],
+  runtime: ["get-context", "check-checkout", "check-daemon", "reconcile"],
+  openspec: ["resolve-identity", "install-schema", "validate", "read", "submit-review", "publish"],
+  repo: ["get", "get-branch", "fetch", "push", "prepare-archive"],
+  workitem: ["sync", "apply-decision", "approve", "finalize", "writeback", "query", "set-state", "comment", "create", "link-commits", "download-attachment"],
 };
 
 test("全部命令组:bare 调用 exit 64,stderr 帮助列出全部叶子", () => {
@@ -74,8 +71,8 @@ test("workitem 叶子参数错误:exit 64(set-state 缺 --id/--state)", () => {
   assert.equal(r.stdout, "");
 });
 
-test("delivery root-prepare 不要求 --config，从当前 Runtime 解析环境", () => {
-  const r = runCli(["delivery", "root-prepare", "--issue", "TEST-1"], {
+test("repo prepare-archive 不要求 --config，从当前 Runtime 解析环境", () => {
+  const r = runCli(["repo", "prepare-archive", "--issue", "TEST-1"], {
     MULTICA_WORKSPACE_ID: "", MULTICA_SERVER_URL: "",
   });
   assert.equal(r.status, 3, `rc=${r.status} stdout=${r.stdout.slice(0, 300)}`);
@@ -86,18 +83,18 @@ test("delivery root-prepare 不要求 --config，从当前 Runtime 解析环境"
 
 
 test("PR Preparation 命名统一，Closeout 拒绝旧配置参数", () => {
-  for (const group of ["dev"]) {
+  for (const group of ["repo", "openspec"]) {
     const help = runCli([group]);
     assert.doesNotMatch(help.stderr, /\bpr-prepare\b/);
     assert.doesNotMatch(help.stderr, /(?:^|\s)(?:pr-prep|prepare-pr)(?=\s|$)/m);
   }
-  for (const args of [["dev", "pr-prepare"], ["bug", "pr-prepare"], ["bug", "git"], ["dev", "pr-prep"], ["bug", "prepare-pr"], ["pr","materialize","--issue","X","--config","unused"], ["delivery", "finalize", "--phase", "prepare", "--issue", "X", "--config", "unused"], ["workitem", "writeback", "--issue", "X", "--config", "unused"]]) {
+  for (const args of [["dev", "pr-prepare"], ["bug", "pr-prepare"], ["bug", "git"], ["dev", "pr-prep"], ["bug", "prepare-pr"], ["pr","materialize","--issue","X","--config","unused"], ["workitem", "finalize", "--phase", "prepare", "--issue", "X", "--config", "unused"], ["workitem", "writeback", "--issue", "X", "--config", "unused"]]) {
     assert.notEqual(runCli(args).status, 0, args.join(" "));
   }
 });
 
 test("全局 --output json 由 Commander 统一消费，不改变子命令输出和退出码", () => {
-  for (const args of [["openspec", "resolve-identity", "--help"], ["dev", "publish", "--help"], ["runtime", "check-checkout"], ["workitem", "query"]]) {
+  for (const args of [["openspec", "resolve-identity", "--help"], ["openspec", "publish", "--help"], ["runtime", "check-checkout"], ["workitem", "query"]]) {
     const implicit = runCli(args);
     for (const explicitArgs of [["--output=json", ...args], [...args, "--output", "json"]]) {
       const explicit = runCli(explicitArgs);
@@ -131,25 +128,25 @@ test("doctor 默认文本，统一 JSON 输出兼容原 --format json，冲突�
   assert.match(conflict.stderr, /冲突/);
 });
 
-test("retired stage and handoff are not public commands", () => {
-  for (const args of [["analysis", "stage"], ["delivery", "handoff"]]) assert.notEqual(runCli(args).status, 0);
-  for (const args of [["analysis", "validate"], ["analysis", "publish"], ["delivery", "admission"]]) assert.equal(runCli([...args, "--help"]).status, 0);
+test("阶段命令组已退役，操作归入对应对象命令组", () => {
+  for (const args of [["analysis"], ["analysis", "validate"], ["analysis", "publish"], ["analysis", "read"], ["analysis", "approve"], ["workspace", "check-daemon"], ["delivery", "handoff"], ["workitem", "admission"]]) assert.equal(runCli(args).status, 64, args.join(" "));
+  for (const args of [["openspec", "validate"], ["openspec", "submit-review"], ["openspec", "read"], ["workitem", "approve"], ["workitem", "apply-decision"]]) assert.equal(runCli([...args, "--help"]).status, 0, args.join(" "));
 });
 
 test("P0 退役独立进度与完成检查，研发命令不再接受 Change 参数", () => {
-  const help = runCli(["dev", "--help"]);
+  const help = runCli(["openspec", "--help"]);
   assert.equal(help.status, 0);
   for (const command of ["check-completion", "contract-hash"]) {
     assert.ok(!(help.stdout + help.stderr).includes(command));
-    assert.notEqual(runCli(["dev", command]).status, 0);
+    assert.notEqual(runCli(["openspec", command]).status, 0);
   }
   for (const args of [["change", "update-progress"], ["dev", "check-change"]]) assert.notEqual(runCli(args).status, 0, args.join(" "));
   assert.doesNotMatch(help.stdout + help.stderr, /\bprepare\b/);
   for (const command of ["publish"]) {
-    const help = runCli(["dev", command, "--help"]);
+    const help = runCli(["openspec", command, "--help"]);
     assert.equal(help.status, 0);
     assert.doesNotMatch(help.stdout + help.stderr, /--change-ref/);
-    const args = ["dev", command, "--issue", "X", "--change-ref", "old"];
+    const args = ["openspec", command, "--issue", "X", "--change-ref", "old"];
     const rejected = runCli(args);
     assert.notEqual(rejected.status, 0, args.join(" "));
     assert.match(rejected.stderr, /--change-ref/);
@@ -218,6 +215,11 @@ test("OpenSpec 仅保留统一命令组，不注册旧入口", () => {
 });
 
 test("退役入口不再公开", () => {
+  const help = runCli(["--help"]);
+  assert.doesNotMatch(help.stdout, /^\s+delivery(?:\s|$)/m);
+  for (const leaf of ["admission", "root-prepare", "finalize"]) {
+    assert.equal(runCli(["delivery", leaf]).status, 64, leaf);
+  }
   for (const args of [["branch","get"],["query"],["delivery","root-clone"],["runtime","prepare-root"],["runtime","resolve-root-repo"],["pr","worktree"],["tfs"],["tfs","reconcile-workitem"],["tfs","writeback"],["workitem","reconcile-workitem"]]) {
     assert.equal(runCli(args).status,64,args.join(" "));
   }
@@ -226,6 +228,22 @@ test("退役入口不再公开", () => {
   assert.match(missing.stderr,/--branch/);
 });
 
-test("workitem sync 只接受 WIQL 参数；workspace sync 拒绝已移除的 local-only", () => {
-  for (const args of [["workitem","sync"],["workitem","sync","--config","old.json"],["workspace","sync","--workspace","pilot","--local-only"]]) assert.equal(runCli(args).status,64,args.join(" "));
+test("workitem sync 只接受 WIQL 参数；Workspace 只公开 Skill 同步命令", () => {
+  for (const args of [["workitem","sync"],["workitem","sync","--config","old.json"],["workspace","sync"],["workspace","sync","--workspace","pilot","--local-only"]]) assert.equal(runCli(args).status,64,args.join(" "));
+  assert.equal(runCli(["workspace","sync-skills","--help"]).status,0);
+});
+
+test("repo Git 独立叶子与 OpenSpec 发布替代 dev；旧入口不再注册", () => {
+  for (const args of [["dev"], ["dev", "git"], ["dev", "publish"], ["repo", "git"]]) {
+    assert.equal(runCli(args).status, 64, args.join(" "));
+  }
+  assert.doesNotMatch(runCli(["--help"]).stdout, /^\\s+dev(?:\\s|$)/m);
+  for (const operation of ["fetch", "push"]) {
+    const help = runCli(["repo", operation, "--help"]);
+    assert.equal(help.status, 0);
+    assert.doesNotMatch(help.stdout, /--operation/);
+    for (const flag of ["--issue", "--repo", "--root-repo"]) assert.match(help.stdout, new RegExp(flag));
+    assert.equal(runCli(["repo", operation]).status, 64);
+    assert.equal(runCli(["repo", operation, "--issue", "X", "--repo", "Y", "--root-repo", ".", "--operation", operation]).status, 64);
+  }
 });

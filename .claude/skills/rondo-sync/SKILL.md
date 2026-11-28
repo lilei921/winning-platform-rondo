@@ -1,9 +1,9 @@
 ---
 name: rondo-sync
-description: Use when synchronizing Multica workspace assets — Skill、Agent、Squad、Project、Autopilot、MCP、workspace 仓库注册表、Project Resource label — into the winning-* workspaces that the admin user belongs to, or into explicitly named workspaces. 触发词：同步 workspace、同步 agent 和 skill、把 skill 同步到 workspace、Multica 同步、provision workspace、设置 Project Resource label。
+description: Use when synchronizing Multica workspace assets — Skill、Agent、Squad、Project、Autopilot、MCP、workspace 仓库注册表、Project Resource label — into the winning-* workspaces that the admin user belongs to, or into explicitly named workspaces. 触发词：同步 workspace、同步 agent 和 skill、把 skill 同步到 workspace、Multica 同步、provision workspace、设置 Project Resource label、配置 Vayne、维护 RONDO_RUNTIME_POLICY、调整 Agent 主备 Runtime。
 metadata:
   author: winning\li_lei
-  version: 1.9.0
+  version: 1.9.1
 ---
 
 # Multica Workspace Sync
@@ -16,6 +16,7 @@ metadata:
 - 需要把上述资产同步到个别指定 workspace。
 - 需要确认某 workspace 的 Skill 文件与 Agent 绑定是否与仓内一致。
 - 需要为 workspace 的 Agent 补齐 TFS 环境变量（TFS_URL / TFS_COLLECTION / TFS_PAT）。
+- 需要为指定 workspace 的 Vayne 查询、配置或调整 `RONDO_RUNTIME_POLICY`（见「Vayne 主备 Runtime 策略维护」，独立操作，不运行全量同步）。
 - 需要为 workspace 供给 workspace 级仓库注册表（`multica repo add`，只增不维护）。
 - 需要按 `docs/config/project-resources.yaml` 的 label 对齐当前 Project 中仓库 Resource 的 label。
 - 需要回读校验一批 workspace 的 MCP / 仓库注册表 / Project / Project Resource label / Agent / Skill / Squad / Autopilot / runtime 绑定是否与 manifest 一致（`check_workspaces.py`，只读）。
@@ -99,13 +100,38 @@ python .claude/skills/rondo-sync/scripts/sync_workspace.py winning-lfw --repo-ro
 
 1. **provision**（`rondo workspace provision`，默认带 `--skip-workflow`）— 供给 Skill / Agent / Squad / Project / Autopilot 对象，并把解析到的对象 ID 写入 `workspace-config/workspaces/<name>.json` overlay。Rondo 按 workspace slug 在内存中合并分组 Project / MCP 配置，不改写共享 manifest。TFS Sync Agent 缺少 `RONDO_PROJECT_TITLE` 时按分组 `project.title` 补齐，已有值（含空字符串）及其他环境变量保留。
 2. **sync**（`rondo workspace sync`）— 按 Workspace overlay 渲染 TFS 同步配置，upsert Skill 文件并逐文件回读校验。
-3. **绑定 Agent runtime**（仅当显式传入 `--runtime-id`）— provision 只在**新建** Agent 时使用 `--runtime-id`，已存在的 Agent 保留原 runtime；显式指定 runtime 时必须额外改绑，否则该参数对已供给的 workspace 无效。
+3. **绑定 Agent runtime**（仅当显式传入 `--runtime-id`）— provision 只在**新建** Agent 时使用 `--runtime-id`，已存在的 Agent 保留原 runtime；显式指定 runtime 时额外改绑其他 Agent，Vayne 保留固定服务器 Runtime。
 4. **禁用 runtime skills** — 关闭 Agent 从 runtime 继承的本地 Skill，避免与仓内 Skill 重复暴露；覆盖所有绑定 workspace 内 runtime 的 Agent（含同事机器），先预览再落盘。是否执行见下节。
 5. **补齐 Agent TFS 环境变量**（`provision_agent_tfs_env.py`）— 为全部 Agent 补齐 `TFS_URL` / `TFS_COLLECTION` / `TFS_PAT`，只增不改；规则与凭据红线见下节。`--dry-run` 会透传给该步骤；`--skip-tfs-env` 可整体跳过。
 6. **供给 workspace 仓库注册表**（`provision_workspace_repos.py`）— 按 manifest 的 `workspace_repos` 段执行 `multica repo add`，只增不维护；`--dry-run` 会透传；`--skip-repos` 可整体跳过。
 7. **对齐 Project Resource label**（`provision_project_resource_labels.py`）— 按 `docs/config/project-resources.yaml` 的 `label` 设置目标 Project 中匹配仓库的 `github_repo` Resource；全量对齐、写入后回读；`--dry-run` 会透传；`--skip-resource-labels` 可整体跳过。
 
 同步不再设置 `RONDO_WORKSPACE_PATH` 和 `RONDO_WORKSPACE_BRANCH`，也不主动删除 Agent 已有的这两个配置。
+
+## Vayne 主备 Runtime 策略维护
+
+按需独立执行，不运行全量同步，不打包 Rondo，不触发 Agent Run。模板及配置说明见 [config/runtime-policy.json.example](config/runtime-policy.json.example) 与 [config/runtime-policy.md](config/runtime-policy.md)。
+
+1. **定位目标**：使用用户明确指定的 workspace；未指定时询问，不使用全量默认目标。用 `multica workspace list --output json` 核实唯一 workspace ID，再执行：
+
+   ```bash
+   multica agent list --workspace-id <workspace-id> --output json
+   multica runtime list --workspace-id <workspace-id> --output json
+   ```
+
+   精确匹配唯一 Vayne 与待维护 Agent Name，按用户指定的主备设备、Provider 或 Runtime ID 匹配真实 Runtime。缺失、重名或存在歧义时报告并询问，不猜测。
+2. **读取现状**：执行 `multica agent env get <vayne-id> --workspace-id <workspace-id> --output json`，获取完整 `custom_env`。当前 CLI 如默认脱敏，使用其原生 `--show-values` 读取实际值（先检查命令 help）；不得在回复或日志中展示其他环境变量值。若无法获得安全的完整配置则停止写入。解析已有 `RONDO_RUNTIME_POLICY` 字符串；首次配置才参考模板，不能用模板覆盖已有策略；非法 JSON 先确认修正内容。
+3. **维护 JSON**：按用户要求新增、修改或删除对应 Agent 的 JSON 节点，其他节点保持不变。确认两个不同的 Runtime ID 属于目标 workspace 且 Provider 相同；不配置 Vayne。列出本次拟变更的 Agent 与主备 Runtime；查询或预览请求不写入。策略不完整或用户未明确主备选择时，只给出候选，不代选。
+4. **写入环境变量**：明确要求保存或修改时，重新读取当前完整 `custom_env`，仅将 `RONDO_RUNTIME_POLICY` 替换为新策略的 JSON 字符串（其余键和值原样保留），将合并后的完整环境变量 JSON 通过 UTF-8 stdin 传给：
+
+   ```bash
+   multica agent env set <vayne-id> --workspace-id <workspace-id> --custom-env-stdin --output json
+   ```
+
+   不将凭据作为命令行参数，不打印完整环境变量，不写入仓库或 overlay。若读取后发现策略已发生并发修改，重新核对本次变更，不覆盖他人的修改。权限不足时由 Agent Owner 或 Workspace Owner/Admin 处理，不绕过原生授权。
+5. **回读确认**：再次执行 env get（按需使用 --show-values），解析策略 JSON，核对本次目标配置以及其他环境变量未被改写；仅报告 workspace、Agent 主备变更及验证结果，不输出凭据。不一致则报告未确认，不盲目重试。
+
+首次启用 Vayne 时，由管理员完成固定服务器绑定、Max Concurrent Tasks=1 及 [黑灯计划](../../../20-lights-out-plan.md) 要求的 PoC，再启用 Autopilot Trigger。维护策略本身不改绑任何 Agent，不触发 Run，不创建或启用 Trigger；后续 Vayne Run 按新策略协调。普通 rondo-sync 供给不主动覆盖 `RONDO_RUNTIME_POLICY`。
 
 ## workspace 分组
 
@@ -215,7 +241,7 @@ Agent 绑定的是**某台机器的** runtime，workspace 里可同时存在多�
 
 需要无条件执行或彻底关闭时用 `--disable-runtime-skills always|never`。
 
-同理，缺省不改动既有 Agent 的绑定；确需换绑时显式传 `--runtime-id`。
+同理，缺省不改动既有 Agent 的绑定；确需批量换绑时显式传 `--runtime-id`，Vayne 除外。
 
 ## 状态校验（check）
 
@@ -246,7 +272,7 @@ python .claude/skills/rondo-sync/scripts/check_workspaces.py winning-lfw    # �
 同步后回读目标 workspace，与其他已同步 workspace 对齐（以下逐项已由 `check_workspaces.py` 自动化，见「状态校验（check）」节）：
 
 - Agent 数量与 `workspace-config/provisioning.json` 的 `agents[]` 一致，且 Skill 绑定数一致。
-- 所有 Agent 绑定同一 runtime。
+- Agent 绑定有效的 workspace runtime；Vayne 固定服务器 Runtime，受管 Agent 按各自主备策略绑定，不要求全部 Agent 绑定同一 runtime。
 - workspace Skill 数量与 `managed_skills` 一致。
 - `Delivery Squad` 存在，成员数与 `squad.members` + leader 一致。
 - Project 标题符合分组：bi 组 workspace 为 `winning-base-winex-bi-monorepo`，其余（含未分组）为顶层默认 `winning-platform-monorepo`；同步期间共享 manifest 保持原文（不生成 `.group-swap.bak`）。
@@ -263,7 +289,7 @@ overlay 文件是仓内唯一记录平台对象 ID 的位置，随同步产生�
 - 不新增/删除 Project Resource，不改 `ref` / `default_branch_hint`；label 更新按仓库清单全量对齐，不写回 `project-resources.yaml`。
 - 不修改业务子仓代码，不改仓内 Skill 内容，不触发 Agent Run。
 - runtime 必须在目标 workspace 内；跨 workspace 使用别处的 runtime id 会被拒绝。
-- 未显式指定 `--runtime-id` 时不改绑既有 Agent 的 runtime，只在新建 Agent 时使用选中的 runtime。
+- 未显式指定 `--runtime-id` 时不改绑既有 Agent 的 runtime，只在新建 Agent 时使用选中的 runtime；显式批量改绑也排除 Vayne。
 - 禁用 runtime skills 只影响目标 Agent 自身绑定关系，不修改 runtime 机器上的文件；同事机器的 runtime 同样在禁用范围内。
 - `skipped_unregistered` 中的 Skill（如 `tfs-writeback`）不在 `managed_skills` 清单内，不供给、不报错。
 

@@ -42,7 +42,7 @@ multica issue comment add <issue> --content-file "<decision-file>" --workspace-i
 确认有效 Decision 已记录后，执行：
 
 ```bash
-rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsupported>
+rondo workitem apply-decision --issue <KEY> --decision <accepted|needs_human|unsupported>
 ```
 
 `accepted` 进入对应下游；`needs_human` 保留本人指派并进入 `blocked`；`unsupported` 保留本人指派并进入 `unsupported`。根据命令结果处理后续事项，操作结果不明确时核实实际结果，不重复执行已确认成功的操作。

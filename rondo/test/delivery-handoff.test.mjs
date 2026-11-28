@@ -60,7 +60,7 @@ function fixture(t, initial = initialState()) {
   const write = (state) => writeFileSync(statePath, JSON.stringify(state));
   const pathKey = Object.keys(process.env).find(key => key.toLowerCase() === "path") ?? "PATH";
   const run = (extraEnv = {}, decision = "accepted") => {
-    const r = spawnSync(process.execPath, [CLI, "delivery", "admission", "--issue", "WNDF-T", "--decision", decision], {
+    const r = spawnSync(process.execPath, [CLI, "workitem", "apply-decision", "--issue", "WNDF-T", "--decision", decision], {
       encoding: "utf8",
       env: {
         ...process.env,

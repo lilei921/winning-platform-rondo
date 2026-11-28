@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { validatePrepareRepo } from '../dist/commands/dev/prepare-workspace.js';
+import { validatePrepareRepo } from '../dist/commands/repo/checkout.js';
 import { validateNativeCheckout, platformCheckoutMode, platformTaskSuffix, assertPlatformCheckoutIdentity, readPlatformCheckoutManifest, nativeCheckoutExpected, readDaemonTaskContext } from '../dist/clients/native-checkout.js';
 import { assertBugExecution, assertBugStart, assertBugSource } from '../dist/commands/bug/authorization.js';
 import { ensureDeliverySummary } from '../dist/commands/delivery/summary.js';

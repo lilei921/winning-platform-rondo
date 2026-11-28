@@ -246,7 +246,7 @@ test("analysis-publish sync no longer renders a Repository Registry", t => {
     workspace_id: "ws-1", skills: { "analysis-publish": "skill-1" },
   });
   f.write("skills/analysis-publish/SKILL.md", "---\nname: analysis-publish\ndescription: fixture\n---\n");
-  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "analysis-publish", "--dry-run");
+  const result = f.run("workspace", "sync-skills", "--workspace", "pilot", "--skill", "analysis-publish", "--dry-run");
   assert.equal(result.code, 0, JSON.stringify(result.body));
   assert.equal(result.body.mode, "dry-run");
   assert.equal(existsSync(join(dirname(f.overlay), "..", "..", "skills", "analysis-publish", "config", "repo-registry.json")), false);
@@ -255,7 +255,7 @@ test("analysis-publish sync no longer renders a Repository Registry", t => {
 test("旧 Analyst overlay 同步必须先完成供给，不能静默跳过新 Skills", t => {
   const f = fixture(t);
   f.write(f.shared + "workspaces/pilot.json", { workspace_id: "ws-1", skills: { "workitem-analysis": "old" }, provisioning_required: ["spec-preparation"] });
-  const r = f.run("workspace", "sync", "--workspace", "pilot", "--dry-run");
+  const r = f.run("workspace", "sync-skills", "--workspace", "pilot", "--dry-run");
   assert.equal(r.code, 3); assert.match(r.body.reason, /provision/); assert.equal(f.calls().length, 0);
 });
 
@@ -264,10 +264,10 @@ test("sync dry-run 报告缺失引用且不上传；正式同步在上传前阻�
   f.write(f.shared + "provisioning.json", { managed_skills: ["demo"] });
   f.write(f.shared + "workspaces/pilot.json", { workspace_id: "ws-1", skills: { "demo": "skill-1" } });
   f.write("skills/demo/SKILL.md", "缺页：`references/missing.md`\n");
-  const preview = f.run("workspace", "sync", "--workspace", "pilot", "--dry-run");
+  const preview = f.run("workspace", "sync-skills", "--workspace", "pilot", "--dry-run");
   assert.equal(preview.code, 0, preview.stderr);
   assert.match(preview.stderr, /references 引用问题.*1/);
-  const actual = f.run("workspace", "sync", "--workspace", "pilot");
+  const actual = f.run("workspace", "sync-skills", "--workspace", "pilot");
   assert.equal(actual.code, 3, actual.stderr);
   assert.match(actual.body.reason, /references 引用缺页/);
   assert.ok(f.calls().every(a => !a.includes("skill")), "引用不完整时不访问远端 Skill");
@@ -292,7 +292,7 @@ test("同步上传和校验统一使用无 BOM 的 UTF-8 LF，切换检出格式
   const asWindows = (text) => "\uFEFF" + text.replaceAll("\n", "\r\n");
   const skillPath = f.write("skills/demo/SKILL.md", asWindows(skill));
   const notePath = f.write("skills/demo/references/note.md", asWindows(note));
-  const sync = (...args) => f.run("workspace", "sync", "--workspace", "pilot", ...args);
+  const sync = (...args) => f.run("workspace", "sync-skills", "--workspace", "pilot", ...args);
   const first = sync();
   assert.equal(first.code, 0, first.stderr);
   assert.equal(readFileSync(f.trace + ".skill", "utf8"), skill);
@@ -324,7 +324,7 @@ test("对象供给中断后保留恢复标志，sync 不得发布半成品绑定
   assert.equal(r.code, 3);
   const overlay = JSON.parse(readFileSync(f.overlay, "utf8"));
   assert.deepEqual(overlay.provisioning_required, ["spec-preparation"]);
-  assert.equal(f.run("workspace", "sync", "--workspace", "pilot", "--dry-run").code, 3);
+  assert.equal(f.run("workspace", "sync-skills", "--workspace", "pilot", "--dry-run").code, 3);
 });
 
 for (const scenario of ["no-runtime", "new-bad"]) test(`新建工作区在 ${scenario} 中断时保留环境与恢复 ID`, t => {
@@ -338,7 +338,7 @@ for (const scenario of ["no-runtime", "new-bad"]) test(`新建工作区在 ${sce
   assert.equal(overlay.multica_server_url, "https://private.example");
   assert.deepEqual(overlay.provisioning_required, ["spec-preparation"]);
   assert.equal(r.body.overlay_written, true);
-  assert.equal(f.run("workspace", "sync", "--workspace", "pilot", "--dry-run").code, 3);
+  assert.equal(f.run("workspace", "sync-skills", "--workspace", "pilot", "--dry-run").code, 3);
 });
 
 test("已绑定工作区不因错误 slug 创建额外对象", t => {
@@ -368,7 +368,7 @@ test("spec-preparation no longer renders Repository Registry", t => {
     workspace_id: "ws-1", skills: { "spec-preparation": "skill-1" },
   });
   f.write("skills/spec-preparation/SKILL.md", "---\nname: spec-preparation\ndescription: fixture\n---\n");
-  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "spec-preparation", "--dry-run");
+  const result = f.run("workspace", "sync-skills", "--workspace", "pilot", "--skill", "spec-preparation", "--dry-run");
   assert.equal(result.code, 0, JSON.stringify(result.body));
   assert.equal(result.body.mode, "dry-run");
   assert.equal(existsSync(join(dirname(f.overlay), "..", "..", "skills", "spec-preparation", "config", "repo-registry.json")), false);
@@ -383,14 +383,14 @@ test("spec-preparation sync deletes a stale remote Repository Registry attachmen
   const localRegistry = join(dirname(f.overlay), "..", "..", "skills", "spec-preparation", "config", "repo-registry.json");
   assert.equal(existsSync(localRegistry), false);
 
-  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "spec-preparation");
+  const result = f.run("workspace", "sync-skills", "--workspace", "pilot", "--skill", "spec-preparation");
   assert.equal(result.code, 0, JSON.stringify(result.body));
   assert.deepEqual(result.body.deleted_remote, ["spec-preparation/config/repo-registry.json"]);
   assert.ok(f.calls().some(args =>
     args.includes("skill") && args[args.indexOf("skill") + 1] === "files" && args[args.indexOf("skill") + 2] === "delete" && args.at(-1) === "stale-registry"));
   assert.equal(existsSync(f.trace + ".stale"), false);
 
-  const check = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "spec-preparation", "--check");
+  const check = f.run("workspace", "sync-skills", "--workspace", "pilot", "--skill", "spec-preparation", "--check");
   assert.equal(check.code, 0, JSON.stringify(check.body));
   assert.equal(check.body.result, "PASS");
 });
@@ -400,7 +400,7 @@ test("pr-status-sync no longer renders Repository Registry", t => {
     workspace_id: "ws-1", skills: { "pr-status-sync": "skill-1" },
   });
   f.write("skills/pr-status-sync/SKILL.md", "---\nname: pr-status-sync\ndescription: fixture\n---\n");
-  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "pr-status-sync", "--dry-run");
+  const result = f.run("workspace", "sync-skills", "--workspace", "pilot", "--skill", "pr-status-sync", "--dry-run");
   assert.equal(result.code, 0, JSON.stringify(result.body));
   assert.equal(result.body.mode, "dry-run");
   assert.equal(existsSync(join(dirname(f.overlay), "..", "..", "skills", "pr-status-sync", "config", "repo-registry.json")), false);
@@ -415,14 +415,14 @@ test("pr-status-sync sync deletes a stale remote Repository Registry attachment"
   const localRegistry = join(dirname(f.overlay), "..", "..", "skills", "pr-status-sync", "config", "repo-registry.json");
   assert.equal(existsSync(localRegistry), false);
 
-  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "pr-status-sync");
+  const result = f.run("workspace", "sync-skills", "--workspace", "pilot", "--skill", "pr-status-sync");
   assert.equal(result.code, 0, JSON.stringify(result.body));
   assert.deepEqual(result.body.deleted_remote, ["pr-status-sync/config/repo-registry.json"]);
   assert.ok(f.calls().some(args =>
     args.includes("skill") && args[args.indexOf("skill") + 1] === "files" && args[args.indexOf("skill") + 2] === "delete" && args.at(-1) === "stale-registry"));
   assert.equal(existsSync(f.trace + ".stale"), false);
 
-  const check = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "pr-status-sync", "--check");
+  const check = f.run("workspace", "sync-skills", "--workspace", "pilot", "--skill", "pr-status-sync", "--check");
   assert.equal(check.code, 0, JSON.stringify(check.body));
   assert.equal(check.body.result, "PASS");
 });
@@ -432,7 +432,7 @@ test("delivery-closeout no longer renders Repository Registry", t => {
     workspace_id: "ws-1", skills: { "delivery-closeout": "skill-1" },
   });
   f.write("skills/delivery-closeout/SKILL.md", "---\nname: delivery-closeout\ndescription: fixture\n---\n");
-  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "delivery-closeout", "--dry-run");
+  const result = f.run("workspace", "sync-skills", "--workspace", "pilot", "--skill", "delivery-closeout", "--dry-run");
   assert.equal(result.code, 0, JSON.stringify(result.body));
   assert.equal(result.body.mode, "dry-run");
   assert.equal(existsSync(join(dirname(f.overlay), "..", "..", "skills", "delivery-closeout", "config", "repo-registry.json")), false);
@@ -447,14 +447,14 @@ test("delivery-closeout sync deletes a stale remote Repository Registry attachme
   const localRegistry = join(dirname(f.overlay), "..", "..", "skills", "delivery-closeout", "config", "repo-registry.json");
   assert.equal(existsSync(localRegistry), false);
 
-  const result = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "delivery-closeout");
+  const result = f.run("workspace", "sync-skills", "--workspace", "pilot", "--skill", "delivery-closeout");
   assert.equal(result.code, 0, JSON.stringify(result.body));
   assert.deepEqual(result.body.deleted_remote, ["delivery-closeout/config/repo-registry.json"]);
   assert.ok(f.calls().some(args =>
     args.includes("skill") && args[args.indexOf("skill") + 1] === "files" && args[args.indexOf("skill") + 2] === "delete" && args.at(-1) === "stale-registry"));
   assert.equal(existsSync(f.trace + ".stale"), false);
 
-  const check = f.run("workspace", "sync", "--workspace", "pilot", "--skill", "delivery-closeout", "--check");
+  const check = f.run("workspace", "sync-skills", "--workspace", "pilot", "--skill", "delivery-closeout", "--check");
   assert.equal(check.code, 0, JSON.stringify(check.body));
   assert.equal(check.body.result, "PASS");
 });

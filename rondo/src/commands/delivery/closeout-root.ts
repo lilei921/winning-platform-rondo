@@ -347,7 +347,7 @@ async function invoke(argv: string[]): Promise<number> {
 }
 
 export function registerCloseoutRoot(group: Command): void {
-  group.command("root-prepare")
+  group.command("prepare-archive")
       .description("准备 OpenSpec 归档所需的根仓和本地分支")
       .usage("--issue <key>").allowUnknownOption(true).allowExcessArguments(true)
       .action(async (...values: unknown[]) => {

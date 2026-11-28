@@ -282,7 +282,7 @@ def bind_agent_runtime(root: Path, workspace_id: str, runtime_id: str, dry_run: 
     agents = run_json(
         ["multica", "agent", "list", "--workspace-id", workspace_id, "--output", "json"], root,
     )
-    drift = [a for a in agents if a.get("runtime_id") != runtime_id]
+    drift = [a for a in agents if a.get("name") != "Vayne" and a.get("runtime_id") != runtime_id]
     if not drift:
         return 0
     for agent in drift:

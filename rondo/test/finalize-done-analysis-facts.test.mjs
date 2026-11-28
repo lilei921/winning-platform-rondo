@@ -28,7 +28,7 @@ function runDone(t, metadata) {
   const stateFile = join(root, "state.json");
   chmodSync(MOCK, 0o755);
   writeFileSync(stateFile, JSON.stringify({ status: "done", metadata }));
-  const out = spawnSync(process.execPath, [CLI, "delivery", "finalize", "--phase", "complete",
+  const out = spawnSync(process.execPath, [CLI, "workitem", "finalize", "--phase", "complete",
     "--issue", "issue-1"], {
     encoding: "utf8",
     env: { ...process.env, MOCK_STATE: stateFile, MULTICA_CLI_PATH: MOCK, MULTICA_WORKSPACE_ID: "ws-test", MULTICA_SERVER_URL: "http://multica.test" },

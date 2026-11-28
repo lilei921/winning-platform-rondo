@@ -99,7 +99,7 @@ Multica Resource ref 原生语义是 Checkout 起点，并非平台天然定义�
 
 Closeout 继续以 analysis.source.repo_url / branch 为根仓准备和 Archive 的权威来源。closeout-root.ts 的 platformIsolatedMode/verifyPlatformCheckout 仍依赖 cache 形态，按 §4.2 的实际平台身份证据修复，保留自身授权、批准 SHA、Task-local Archive Branch、远端快进及回读机制。
 
-PR Status Sync Task 可以处理多个业务 Issue；不得要求其 Task 与目标业务 Issue 一一绑定，也不得要求已有合法 rondo/closeout/<task-suffix>/<target> 归档分支当前 HEAD 必须是 agent/...。dev git / pr prepare 保留当前业务 Issue 的 Task 归属校验，delivery root-prepare 保留自己的收口授权及原 Task Checkout 分支身份核验。不合并业务入口，不重构归档或 TFS 回写。
+PR Status Sync Task 可以处理多个业务 Issue；不得要求其 Task 与目标业务 Issue 一一绑定，也不得要求已有合法 rondo/closeout/<task-suffix>/<target> 归档分支当前 HEAD 必须是 agent/...。dev git / pr prepare 保留当前业务 Issue 的 Task 归属校验，repo prepare-archive 保留自己的收口授权及原 Task Checkout 分支身份核验。不合并业务入口，不重构归档或 TFS 回写。
 
 ### 4.4 Native Workspace 按需准备，采用平级布局
 
@@ -125,11 +125,11 @@ Task workdir/
 | 已批准 Requirement 研发根仓 | `multica repo checkout <source.repo_url> --ref <source.branch>` | 当前 Task workdir | 已批准 analysis.source.branch |
 | 只读业务调查 | `multica repo checkout <business-url> --ref <resource-ref>` | 当前 Task workdir | 业务仓 Resource ref |
 | Requirement / Bug 研发 | `multica repo checkout <business-url> --ref <ref>` | 当前 Task workdir | 已发布 Candidate 优先，否则 Resource ref |
-| Requirement 收口根仓 | 现有 `rondo delivery root-prepare --issue <KEY>` | 当前 Task workdir | 固定 analysis.source；沿用现有归档分支准备机制 |
+| Requirement 收口根仓 | 现有 `rondo repo prepare-archive --issue <KEY>` | 当前 Task workdir | 固定 analysis.source；沿用现有归档分支准备机制 |
 
 根仓直接 Checkout 后使用实际返回路径，执行现有 `rondo runtime check-checkout --root-repo "<root>"`。首次根仓以已登记 Project Resource 的明确 URL/ref 为依据，不按名称、列表顺序或默认分支推测；Requirement 首次发布要求明确有效的分支。其他 Resource 无 ref 时可省略 --ref。Engineer 使用已批准的来源并核实根仓包含批准 commit，研发授权仍由现有业务 Guard 执行。
 
-Multica 以 cwd 决定目录；native-workspace Skill 统一在 Task workdir 执行原生 Checkout，不绑定 Shell 或操作系统。业务 Checkout 在根仓的父目录执行，delivery root-prepare 保持原有入口；不新增 Checkout 命令、路径注册表或通用 Workspace 管理机制。
+Multica 以 cwd 决定目录；native-workspace Skill 统一在 Task workdir 执行原生 Checkout，不绑定 Shell 或操作系统。业务 Checkout 在根仓的父目录执行，repo prepare-archive 保持原有入口；不新增 Checkout 命令、路径注册表或通用 Workspace 管理机制。
 
 #### 4.4.2 必要就绪与边界
 
@@ -234,6 +234,6 @@ flowchart TD
 
 上述步骤属于同一优化任务，不另建子项目或新工作流。
 
-直接复用 Multica 原生命令及现有 delivery root-prepare；不新增 runtime checkout 或其他简单 Checkout 封装，不新增 Workspace Manager、Path Registry、Checkout Manifest、双布局支持、目录迁移、分支同步机制、Workspace Preflight Skill、过程性 Metadata 或新的分析发布命令；不重构 Analysis Gate、Human Approval、Repository Scope、Git 发布算法、交付生命周期及 TFS 回写。
+直接复用 Multica 原生命令及现有 repo prepare-archive；不新增 runtime checkout 或其他简单 Checkout 封装，不新增 Workspace Manager、Path Registry、Checkout Manifest、双布局支持、目录迁移、分支同步机制、Workspace Preflight Skill、过程性 Metadata 或新的分析发布命令；不重构 Analysis Gate、Human Approval、Repository Scope、Git 发布算法、交付生命周期及 TFS 回写。
 
 本文件为方案记录，尚未修改实现、测试或运行环境；P0/P1 及验收均待实施。

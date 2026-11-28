@@ -1,4 +1,4 @@
-/** workspace sync — 同步受管 Skill 资产并回读确认。 */
+/** workspace sync-skills — 同步受管 Skill 资产并回读确认。 */
 
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
@@ -76,12 +76,12 @@ function main(rawArgs: string[]): number {
   const args = parseArgs(rawArgs);
   if (typeof args.workspace !== "string" || !args.workspace) {
     process.stderr.write(
-      "用法: rondo workspace sync --workspace <name> [--skill <name>] [--profile <name>] [--dry-run]\n",
+      "用法: rondo workspace sync-skills --workspace <name> [--skill <name>] [--profile <name>] [--dry-run]\n",
     );
     return 64;
   }
   if (Object.keys(args).some(key => !["workspace", "skill", "profile", "dry-run", "check"].includes(key))) {
-    process.stderr.write("workspace sync 存在未知参数\n");
+    process.stderr.write("workspace sync-skills 存在未知参数\n");
     return 64;
   }
   const dryRun = args["dry-run"] === true;
@@ -290,9 +290,9 @@ function main(rawArgs: string[]): number {
 }
 
 /** commander 注册：group=workspace；参数解析沿用原脚本实现以保证契约逐字节等价。 */
-export function registerWorkspaceSync(group: Command): void {
+export function registerWorkspaceSyncSkills(group: Command): void {
   group
-    .command("sync")
+    .command("sync-skills")
     .description("同步 Skill 资产")
     .usage("--workspace <name> [--skill <name>] [--profile <name>] [--dry-run] [--check]")
     .addHelpText("after", "\n--check 检查差异；--dry-run 预览。")

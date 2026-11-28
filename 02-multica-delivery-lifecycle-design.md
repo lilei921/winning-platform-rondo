@@ -178,7 +178,7 @@ status = todo（同步完成后自动启动）
 Wayfinder Intake Triage（codebase-explorer 深入探索）
  ↓
 /note Comment 持久化并回读确认 → 准入结论
- ├─ accepted → rondo delivery admission（按 tfs.type 单次 todo + Bug Fix Agent / Delivery Squad Update）
+ ├─ accepted → rondo workitem apply-decision（按 tfs.type 单次 todo + Bug Fix Agent / Delivery Squad Update）
  ├─ needs_human → status = blocked + assignee = Wayfinder（Human Comment 唤醒后重评）
  └─ unsupported → unsupported（终止当前自动交付路径）
  （仅 accepted 且满足启动条件时继续）
@@ -283,7 +283,7 @@ Run Boundary 是 Multica 运行与交接约束，不等于引入新的 Stage、I
 | Engineer 完成 → Parent Delivery / Delivery Lead | **父级回流后按需新的协调 Run** | 读取当前有效 completion / evidence facts，聚合、按需独立 Verify、PR 物化；不得重复派发已完成 Task Set |
 | Delivery Lead 触发 PR Materialization | **不为确定性 capability 额外唤醒 Engineer** | 一次协调 Run 内消费 PR Preparation Facts 并调用 `pull-request`；只有新 Engineering Semantic Work 才重新委派 Engineer |
 | 外部 PR 处于 `active` | **PR Status Sync 可以多次 Autopilot Run** | NO-OP，不唤醒 Lead / Engineer；不得误记为业务完成 |
-| PR `completed` → Finalize | **同一个 PR Status Sync Run 内完成** | 调用 `rondo delivery finalize`，正常成功路径不专门唤醒 Delivery Lead |
+| PR `completed` → Finalize | **同一个 PR Status Sync Run 内完成** | 调用 `rondo workitem finalize`，正常成功路径不专门唤醒 Delivery Lead |
 | Gate / Script 检查 | **本身不要求新建 Agent Run** | 确定性工具属于调用方当前 Run；`FAIL` / `UNKNOWN` 仍按相应阶段规则处理 |
 
 **术语边界：** 本文计数使用 **Multica Agent Run**，不把它直接等同于 Claude / Codex 的 CLI Session（底层工具会话）。一个 Run 如何创建或复用 CLI 进程 / Session、上下文和工作目录，是 Runtime Adapter 与安装版本的实现和验收事项；流程方案不对二者作固定一一对应承诺。公共机制定义见[统一规范 §2.4](01-multica-openspec-design-guideline.md#mechanism-issue-run)。
@@ -310,7 +310,7 @@ Members
 └── Verify Agent
 ```
 
-自动 TFS 入口通过 Wayfinder 准入且满足启动条件后，由 `rondo delivery admission` 将 Issue 交给 Bug Fix Agent 或 Delivery Squad；准入之前由 Wayfinder Agent 持有，不触发 Squad Leader。明确直接委派的 Analysis 不要求先经过 Wayfinder；两种入口的 Human Analysis Review 均不改变。Leader-first、Instructions 与 Roster 的接收范围见 [指导手册：Squad](01-multica-openspec-design-guideline.md#mechanism-squad)。
+自动 TFS 入口通过 Wayfinder 准入且满足启动条件后，由 `rondo workitem apply-decision` 将 Issue 交给 Bug Fix Agent 或 Delivery Squad；准入之前由 Wayfinder Agent 持有，不触发 Squad Leader。明确直接委派的 Analysis 不要求先经过 Wayfinder；两种入口的 Human Analysis Review 均不改变。Leader-first、Instructions 与 Roster 的接收范围见 [指导手册：Squad](01-multica-openspec-design-guideline.md#mechanism-squad)。
 
 ---
 
@@ -602,7 +602,7 @@ tfs.url: "<url>"
 tfs.changed_at: "<changed-date>"
 ```
 
-来源初始化完成后先进入下述 Wayfinder Intake Triage；`accepted` 后由 `rondo delivery admission` 按 `tfs.type` 移交：Requirement 的 Squad-owned Issue 启动 Delivery Lead，Bug Issue 启动 Bug Fix Agent。`backlog → todo` 的具体触发与首次处理、失败恢复分别见 [§4.1.1](#delivery-intake) 和 [§4.2](#delivery-start)。
+来源初始化完成后先进入下述 Wayfinder Intake Triage；`accepted` 后由 `rondo workitem apply-decision` 按 `tfs.type` 移交：Requirement 的 Squad-owned Issue 启动 Delivery Lead，Bug Issue 启动 Bug Fix Agent。`backlog → todo` 的具体触发与首次处理、失败恢复分别见 [§4.1.1](#delivery-intake) 和 [§4.2](#delivery-start)。
 
 ---
 
@@ -627,19 +627,19 @@ tfs.changed_at: "<changed-date>"
 
 `accepted`、`needs_human`、`unsupported` 的语义由 [Wayfinder Instructions](agents/wayfinder-agent/instructions.md) 定义。本项目典型场景：已定位授权 Repository 但 Root Cause 未明，可进入后续专业分析；多候选系统无法消歧或权限待授权，需 Human 补充；外部封闭系统已确认禁止修改且无可行授权路径，则属于明确硬性排除。复杂度、Repository 数量或单一工具故障不能独立证明不支持。
 
-**交接顺序**：先按 [Wayfinder Instructions](agents/wayfinder-agent/instructions.md) 确认有效 Decision 已记录在 `/note`，再执行 `rondo delivery admission --issue <KEY> --decision <accepted|needs_human|unsupported>`。CLI 不解析 Comment 正文；仅 accepted 执行目标映射、Assignment 与 Run 校验，其他分支保留 Wayfinder Assignee，分别设置 blocked / unsupported，不启动新 Run。
+**交接顺序**：先按 [Wayfinder Instructions](agents/wayfinder-agent/instructions.md) 确认有效 Decision 已记录在 `/note`，再执行 `rondo workitem apply-decision --issue <KEY> --decision <accepted|needs_human|unsupported>`。CLI 不解析 Comment 正文；仅 accepted 执行目标映射、Assignment 与 Run 校验，其他分支保留 Wayfinder Assignee，分别设置 blocked / unsupported，不启动新 Run。
 
 Decision Comment 的内容、来源版本引用和有效性判断统一遵循 [Wayfinder Instructions](agents/wayfinder-agent/instructions.md)。本场景以原 Issue 的 `/note` 为交付事实入口，按需引用工程 Evidence，不新增独立 Triage Artifact 或平行事实源。
 
 **Decision 消费：** Workitem Analyst 读取当前有效 `/note` Decision 及 Evidence 时遵循 [Wayfinder Instructions](agents/wayfinder-agent/instructions.md)，不得凭 Comment 自述推断 Root Cause 或已获研发批准。明确直接委派、未经过准入的 Analysis 不需要补造 Decision。
 
-交接前核对来源版本并确认 `/note` 持久化；目标更新、预期 Run 回读及 UNKNOWN 恢复由 `rondo delivery admission` 执行。未经确认不报告交接成功。
+交接前核对来源版本并确认 `/note` 持久化；目标更新、预期 Run 回读及 UNKNOWN 恢复由 `rondo workitem apply-decision` 执行。未经确认不报告交接成功。
 
 初版不自动重评估已移交 Squad、`needs_human` 或 `unsupported` 的 Issue；TFS Changed Date 增量同步只更新来源字段。
 
 **来源实质变更复核（不新增 Gate）**：Workitem Analyst 在提交 `analysis_review` 前、Delivery Lead 在依据 Human APPROVED 提交批准基线或启动 Development 前，应核对当前 `tfs.changed_at` 与本轮 Analysis 所依据的来源版本。版本发生变化时，读取来源差异并判断：仅备注、排期等不影响 Engineering Contract 的管理变更，记录差异后可继续；影响需求目标、Expected Behavior、交付范围、系统归属、授权或验收要求的实质变更，必须先复核或更新 Analysis / OpenSpec Contract，并按既有 Human Review 规则处理受影响的批准边界，不得基于旧结论启动研发。无法确认变化性质时停止推进并澄清。不要求自动重跑 Wayfinder，也不增加独立状态、脚本或 Gate。
 
-人工补充或能力扩展后的重新准入沿用原 Issue。Human 补充 Comment 后通过 Multica 原生 Comment Trigger 唤醒 Wayfinder；Wayfinder 增量评估、在触发线程记录新 `/note`，结果不明时回读，由 Wayfinder 调用 `rondo delivery admission` 执行本次 Decision。Human 不需先改 `todo`。
+人工补充或能力扩展后的重新准入沿用原 Issue。Human 补充 Comment 后通过 Multica 原生 Comment Trigger 唤醒 Wayfinder；Wayfinder 增量评估、在触发线程记录新 `/note`，结果不明时回读，由 Wayfinder 调用 `rondo workitem apply-decision` 执行本次 Decision。Human 不需先改 `todo`。
 
 **`unsupported` 恢复边界**：以当前 Workspace 实际有效的终止 Status 为准（当前 Manifest 将 `unsupported` 定义为 `cancelled` Category）；该分支的 Comment 唤醒与恢复仍需独立验证，结果不明时停止。
 
@@ -649,7 +649,7 @@ Decision Comment 的内容、来源版本引用和有效性判断统一遵循 [W
 
 ## 4.2 Issue（交付事项）启动
 
-自动 TFS 入口的 Issue 需有已确认的 `accepted` Decision，再由 Wayfinder 调用 `rondo delivery admission` 完成 Assignment Trigger 交接，启动 Bug Fix Agent 或 Delivery Lead；此动作只进入 Analysis，不构成 Human Approval 或编码授权。明确直接委派的 Analysis 不以 Wayfinder Decision 为前置。
+自动 TFS 入口的 Issue 需有已确认的 `accepted` Decision，再由 Wayfinder 调用 `rondo workitem apply-decision` 完成 Assignment Trigger 交接，启动 Bug Fix Agent 或 Delivery Lead；此动作只进入 Analysis，不构成 Human Approval 或编码授权。明确直接委派的 Analysis 不以 Wayfinder Decision 为前置。
 
 已通过准入的 Requirement `todo + Squad` Issue 由 Multica 原生 Assignment Trigger 自动启动 Lead。Bug Issue 则直接启动 Bug Fix Agent，不进入下述 Squad 分析路径。首次进入交付流程且尚未开展 Analysis 的 Issue，由 Delivery Lead 直接通过 `@mention` 将专业分析工作交给 Workitem Analyst：
 
@@ -804,7 +804,7 @@ analysis:
     result: PASS  # complete 最终真实 Gate 通过后登记
 ```
 
-实际工程增量的 `analysis.change_kind` 由 `rondo analysis publish` 从通过最终 Gate 的当前 Change Schema 确定性推导并登记、回读，供跨 Run 交接及完成任务统计。它是持久化分类结果，不决定 Skill 顺序或自动化授权。统计完成工作须结合 Issue 的有效完成状态，不以分类字段存在作为完成证据。
+实际工程增量的 `analysis.change_kind` 由 `rondo openspec submit-review` 从通过最终 Gate 的当前 Change Schema 确定性推导并登记、回读，供跨 Run 交接及完成任务统计。它是持久化分类结果，不决定 Skill 顺序或自动化授权。统计完成工作须结合 Issue 的有效完成状态，不以分类字段存在作为完成证据。
 
 专业审查结论与 Independent Verify Recommendation、理由及必要验证重点进入当前 Issue 审核 Comment，不要求结构化 Review Verdict 或 Focus 引用数组。Human Review 后形成的 `analysis.human_approval.verify_agent_required`、Independent Verification Result、Assignment / Owner / Status / Runtime Projection 继续属于 Multica Delivery Truth。
 
@@ -917,7 +917,7 @@ OpenSpec 根仓产物 → Git 跟踪与 Commit，不创建独立 PR，不进入 
 
 ## 5.4 Analysis Gate（分析门禁）
 
-存在实际工程增量时，Workitem Analyst 使用 `analysis-publish`，由 `rondo analysis publish` 执行最终真实 Gate、发布固定来源及写入审核状态；按需使用只读 `validate` 诊断。Gate 本身只返回检查结果，详细执行契约见 [03 §12.1 Analysis Publish](03-workitem-analysis-design.md#analysis-publish)。
+存在实际工程增量时，Workitem Analyst 使用 `analysis-publish`，由 `rondo openspec submit-review` 执行最终真实 Gate、发布固定来源及写入审核状态；按需使用只读 `validate` 诊断。Gate 本身只返回检查结果，详细执行契约见 [03 §12.1 Analysis Publish](03-workitem-analysis-design.md#analysis-publish)。
 
 Analysis Gate 的公共检查和不同 Change Contract 的细项统一引用 [03 Analysis 方案 §11.2](03-workitem-analysis-design.md#analysis-gate)。整体专业准备与确定性检查至少应满足以下条件（并非 CLI 逐项自动检查）：
 
@@ -1040,7 +1040,7 @@ Final Independent Verification Decision
 analysis.human_approval.verify_agent_required = true | false
 ```
 
-仅改变“是否需要 Independent Verify Agent”且不改变 Acceptance Contract、Verification Contract、Scope 或 required Verification Tasks 时，不要求返回 Analysis；Delivery Lead 理解 Human 决定，使用 `rondo analysis approve` 引用真实批准评论、获批 Commit 和明确的独立验收决定，由 CLI 核对 Gate、登记 `analysis.human_approval` 并回读确认。对同一获批 Change 的新决定，在允许的研发状态下更新批准事实，不重新派发已有效委派的工作。缺失、冲突或无法确认时不从 Analyst Recommendation 自动推断最终决定。Human 可明确批准具体已列任务在本轮不执行，由 Delivery Lead 使用 `rondo analysis approve --waive-tasks <refs>` 将完整豁免集合登记在 `analysis.human_approval.waived_tasks`（可选编号数组，缺省为空；复用批准评论及获批 Commit）。CLI 核验编号属于固定批准版 Tasks；同一评论的决定不可改写。Task Waiver 不等同于 Independent Verification 决定，也不取消必要 Candidate Validation 或 Code Review。若 Human 意见实质改变验收行为、必须满足的 Verification Contract 或批准 Scope，须返回 Workitem Analyst 定向更新 Engineering Truth 并重新 Human Review。
+仅改变“是否需要 Independent Verify Agent”且不改变 Acceptance Contract、Verification Contract、Scope 或 required Verification Tasks 时，不要求返回 Analysis；Delivery Lead 理解 Human 决定，使用 `rondo workitem approve` 引用真实批准评论、获批 Commit 和明确的独立验收决定，由 CLI 核对 Gate、登记 `analysis.human_approval` 并回读确认。对同一获批 Change 的新决定，在允许的研发状态下更新批准事实，不重新派发已有效委派的工作。缺失、冲突或无法确认时不从 Analyst Recommendation 自动推断最终决定。Human 可明确批准具体已列任务在本轮不执行，由 Delivery Lead 使用 `rondo workitem approve --waive-tasks <refs>` 将完整豁免集合登记在 `analysis.human_approval.waived_tasks`（可选编号数组，缺省为空；复用批准评论及获批 Commit）。CLI 核验编号属于固定批准版 Tasks；同一评论的决定不可改写。Task Waiver 不等同于 Independent Verification 决定，也不取消必要 Candidate Validation 或 Code Review。若 Human 意见实质改变验收行为、必须满足的 Verification Contract 或批准 Scope，须返回 Workitem Analyst 定向更新 Engineering Truth 并重新 Human Review。
 
 已获准交付的 Approved OpenSpec Change 在进入 Development 前提交到根仓 Git，记录已批准的开发基线。Git Commit 不禁止批准边界内的设计细化和任务更新；需要改变已批准行为、范围、关键技术约束或验收要求时，仍返回既有 Analysis / Human Review。该 Commit 不创建独立 PR，也不进入业务 required PR 集合。
 
@@ -1181,7 +1181,7 @@ Multica 原生 Sub-Issue / Stage 可用于独立事项的协作，不作为当�
 
 ## 8.1 Engineer Execution
 
-Engineer 消费当前获批 Change，在授权 Scope 内实现、验证、审查并发布业务 Candidate；更新实际完成的 OpenSpec Tasks，使用 `rondo dev publish` 固定本轮研发工件版本。专业方法见 [09](09-unified-engineer-development-design.md) 与 [04](04-engineer-development-design.md)。已批准豁免依据 Human Approval，不虚假勾选。
+Engineer 消费当前获批 Change，在授权 Scope 内实现、验证、审查并发布业务 Candidate；更新实际完成的 OpenSpec Tasks，使用 `rondo openspec publish` 固定本轮研发工件版本。专业方法见 [09](09-unified-engineer-development-design.md) 与 [04](04-engineer-development-design.md)。已批准豁免依据 Human Approval，不虚假勾选。
 
 每个实际交付仓独立执行 `rondo pr prepare`，提供真实的验证、Code Review、Candidate 和专业 PR Description。
 
@@ -1227,7 +1227,7 @@ Workitem Analyst 是首次专业判断者：根据当前 Acceptance / Verificati
 
 仅对独立性要求的 override 不修改 OpenSpec Engineering Truth，也不要求 Analysis Rework。明确的 Task Waiver 按 Human Approval 登记具体任务，不改变必须满足的 Verification Contract、Acceptance Contract 或 Scope；实质契约变更须返回 Workitem Analyst 定向修订并重新审核。
 
-Human 最终决定批准后，执行事实继续使用现有字段（由 `rondo analysis approve` 依据 Human 决定统一登记并回读；与批准评论及获批版本绑定）：
+Human 最终决定批准后，执行事实继续使用现有字段（由 `rondo workitem approve` 依据 Human 决定统一登记并回读；与批准评论及获批版本绑定）：
 
 ```text
 analysis.human_approval.verify_agent_required = true | false
@@ -1685,11 +1685,11 @@ same-run 使用 `issue-closeout` 按 Prepare → TFS Writeback → Complete 收�
 同一 PR Status Sync Run 内执行三个确定性命令，分别报告结果：
 
 ```text
-rondo delivery finalize --phase prepare
+rondo workitem finalize --phase prepare
   → PR Transition / Delivery Gate → Workspace Reconciliation → OpenSpec Archive + Git Push
 rondo workitem writeback
   → TFS 管理子任务、合法工时、Commit 关联、状态链与回读（完整 PASS 才可继续）
-rondo delivery finalize --phase complete
+rondo workitem finalize --phase complete
   → 确认 TFS 写回事实 → Final Summary → Issue done → 清 pending
 ```
 
@@ -1903,7 +1903,7 @@ UNKNOWN
 
 ## 12.4 Final Completion（最终完成）
 
-**D3-B 现行实施契约（2026-11-10）**：Engineering Completion 与 TFS Work Item 管理分属不同责任域；`Workitem Analyst`/OpenSpec 不承担 TFS 工时，`PR Status Sync Agent` 作为外部终态与收口触发入口，不替代工程专业判断。现行实现已将 `rondo delivery finalize` 的 TFS 业务调用拆成外部 `rondo workitem writeback` 能力，`issue-closeout` 在同一 PR Status Sync Run 核实 Archive/Writeback，再设置 Issue `done`。**TFS Writeback 不完整、失败或 UNKNOWN 时不允许 `done`；保留 `finalize.pending` 并有界恢复，不重复工程/PR/归档。**详细分步及兼容验收以 [D3-B 专项方案](../plans/d3b-external-tfs-management-decoupling-plan-2026-11-10.md) 为准。本节以下对收口顺序的描述，以本段独立 Writeback 和最终 `done` 硬依赖为准；运行环境仍需真实 Workspace E2E 验收。
+**D3-B 现行实施契约（2026-11-10）**：Engineering Completion 与 TFS Work Item 管理分属不同责任域；`Workitem Analyst`/OpenSpec 不承担 TFS 工时，`PR Status Sync Agent` 作为外部终态与收口触发入口，不替代工程专业判断。现行实现已将 `rondo workitem finalize` 的 TFS 业务调用拆成外部 `rondo workitem writeback` 能力，`issue-closeout` 在同一 PR Status Sync Run 核实 Archive/Writeback，再设置 Issue `done`。**TFS Writeback 不完整、失败或 UNKNOWN 时不允许 `done`；保留 `finalize.pending` 并有界恢复，不重复工程/PR/归档。**详细分步及兼容验收以 [D3-B 专项方案](../plans/d3b-external-tfs-management-decoupling-plan-2026-11-10.md) 为准。本节以下对收口顺序的描述，以本段独立 Writeback 和最终 `done` 硬依赖为准；运行环境仍需真实 Workspace E2E 验收。
 
 Delivery Completion Gate PASS 后，`issue-closeout` 按当前事实完成：
 
@@ -1929,7 +1929,7 @@ Change Archive 包含将已实现且已批准的 Delta（如有）纳入主规�
 
 此处按 [§6.1](#section-6-1) 的提交规则执行**最终根仓 Git Commit**：消费初始批准基线、后续受控修订和共享工作区中尚未提交的当前 Delivery 修改，将其与必要归档 / 主规格更新一并记录。调用前确认实际登记的持久共享根仓及 Evidence 可读取；修改丢失或关键证据不可读时停止并交 Delivery Lead，不要求 Engineer 补中间 Commit，也不凭旧完成记录自动重建内容。
 
-修复 / 规格与实现的语义一致性在 Analysis、Development / Verification 中解决。`rondo delivery finalize` 消费已有可靠结果，不在 PR 完成后重新执行一轮 LLM 需求分析。
+修复 / 规格与实现的语义一致性在 Analysis、Development / Verification 中解决。`rondo workitem finalize` 消费已有可靠结果，不在 PR 完成后重新执行一轮 LLM 需求分析。
 
 ```text
 既有 Delivery Completion Gate PASS
@@ -2408,7 +2408,7 @@ workspace-skills/
 │   │   ├── materialize-development.py
 │   │   ├── route-verify-result.py
 │   │   ├── route-human-decision.py
-│   │   └── rondo delivery finalize
+│   │   └── rondo workitem finalize
 │   └── references/
 │
 ├── delivery-gate/

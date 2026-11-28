@@ -14,9 +14,9 @@ description: 对 PR 已合并的 Bug 和 Requirement 执行交付收口。
 逐条执行，确认当前操作成功后继续：
 
 ```bash
-rondo delivery finalize --phase prepare --issue <KEY>
+rondo workitem finalize --phase prepare --issue <KEY>
 rondo workitem writeback --issue <KEY>
-rondo delivery finalize --phase complete --issue <KEY>
+rondo workitem finalize --phase complete --issue <KEY>
 ```
 
 ## Requirement 收口
@@ -24,7 +24,7 @@ rondo delivery finalize --phase complete --issue <KEY>
 ### 根仓准备
 
 ```bash
-rondo delivery root-prepare --issue <KEY>
+rondo repo prepare-archive --issue <KEY>
 ```
 
 使用成功返回的 `root_repo` 执行后续操作。本轮相同 `analysis.source.repo_url` 和 `analysis.source.branch` 的 Issue 复用根仓，切换组时重新准备。
@@ -32,7 +32,7 @@ rondo delivery root-prepare --issue <KEY>
 ### Prepare
 
 ```bash
-rondo delivery finalize --phase prepare --issue <KEY> --root-repo "<root_repo>"
+rondo workitem finalize --phase prepare --issue <KEY> --root-repo "<root_repo>"
 ```
 
 ### TFS Writeback
@@ -88,7 +88,7 @@ rondo workitem writeback --issue <KEY> --root-repo "<root_repo>"
 ### Complete
 
 ```bash
-rondo delivery finalize --phase complete --issue <KEY> --root-repo "<root_repo>"
+rondo workitem finalize --phase complete --issue <KEY> --root-repo "<root_repo>"
 ```
 
 ## 已完成 Issue 恢复
@@ -96,7 +96,7 @@ rondo delivery finalize --phase complete --issue <KEY> --root-repo "<root_repo>"
 Issue 已为 `done` 且存在残留 `finalize.pending` 时，执行：
 
 ```bash
-rondo delivery finalize --phase complete --issue <KEY>
+rondo workitem finalize --phase complete --issue <KEY>
 ```
 
 ## 结果处理

@@ -11,8 +11,8 @@ import { readAnalysisSource, type AnalysisSource } from "../analysis/source.js";
 import { canonicalRepositoryIdentity } from "../delivery/evidence-repository.js";
 import { candidateBranch } from "../pr/candidate-branch.js";
 import { registeredPrs } from "../pr/facts.js";
-import { guardRepository } from "./requirement-guard.js";
-import { resourcePrepareRepo, resolveNativeBusinessPath, validateBusinessCheckout } from "./prepare-workspace.js";
+import { guardRepository } from "../analysis/requirement-guard.js";
+import { resourcePrepareRepo, resolveNativeBusinessPath, validateBusinessCheckout } from "./checkout.js";
 
 export async function authorizedCheckout(issueKey: string, repoKey: string, rootRepo: string, requireActiveRun = true) {
   const runtime = resolveMulticaRuntime(), client = new MulticaClient(runtime);

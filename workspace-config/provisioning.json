@@ -80,6 +80,12 @@
       "skills": [
         "delivery-closeout"
       ]
+    },
+    {
+      "dir": "vayne-agent",
+      "name": "Vayne",
+      "visibility": "workspace",
+      "skills": []
     }
   ],
   "squad": {
@@ -183,6 +189,13 @@
       "mode": "run_only",
       "prompt_file": "agents/pr-status-sync-agent/autopilot-prompt.md",
       "schedule_note": "*/15 * * * * Asia/Shanghai（同上）"
+    },
+    {
+      "title": "Vayne",
+      "agent": "Vayne",
+      "mode": "run_only",
+      "prompt_file": "agents/vayne-agent/autopilot-prompt.md",
+      "schedule_note": "*/10 8-9,17-18 * * *; 0 10,19 * * * Asia/Shanghai（人工启用，先完成黑灯计划 PoC）"
     }
   ]
 }

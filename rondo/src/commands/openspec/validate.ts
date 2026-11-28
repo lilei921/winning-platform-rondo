@@ -1,7 +1,7 @@
 /**
- * analysis validate — Analysis Gate 确定性检查（02 §5.4）。
+ * openspec validate — Analysis Gate 确定性检查（02 §5.4）。
  *
- * 用法: rondo analysis validate --issue <issue-id> --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]
+ * 用法: rondo openspec validate --issue <issue-id> --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]
  *
  * 输入：当前 Issue 来源事实、Change ID及 OpenSpec Change 目录。
  * 输出：{ result: PASS | FAIL | UNKNOWN, checks: [...], reasons: [...] }
@@ -11,23 +11,23 @@
  * 检查项由 ANALYSIS_GATE_CHECKS 定义，供 Gate 生成与消费共同使用。
  */
 
-import { analysisRuntime } from "./runtime.js";
+import { analysisRuntime } from "../analysis/runtime.js";
 import type { RuntimeConfig } from "../../clients/config.js";
 import { existsSync, readFileSync, realpathSync, readdirSync, lstatSync } from "node:fs";
 import { basename, dirname, isAbsolute, join } from "node:path";
 import { Command } from "commander";
 import { FailError, UnknownError } from "../../cli/errors.js";
-import { assertStableChangeRef, matchesTfsChangeId, readChangeMetadata, parseChangeSchema, sourceSchemaViolation, changeKindFromSchema, type ChangeSchema } from "./change-schema.js";
+import { assertStableChangeRef, matchesTfsChangeId, readChangeMetadata, parseChangeSchema, sourceSchemaViolation, changeKindFromSchema, type ChangeSchema } from "../analysis/change-schema.js";
 import { markLeafExecuted } from "../../cli/output.js";
 import { TOOL_VERSION } from "../../cli/version.js";
 import { runCommand } from "../../clients/spawn.js";
 import { MulticaClient, requireIssueMetadata } from "../../clients/multica.js";
 import { commandExists } from "../../clients/which.js";
 import { resolveOpenspecRootDir } from "../../clients/runtime-paths.js";
-import { classifyTfsType, analysisMetadataEntries } from "./facts.js";
-import { taskReferences } from "./source.js";
-import { parseRepositoryScope } from "./repository-scope.js";
-import { changeEvidenceDigest, metadataEvidenceDigest } from "./gate-evidence.js";
+import { classifyTfsType, analysisMetadataEntries } from "../analysis/facts.js";
+import { taskReferences } from "../analysis/source.js";
+import { parseRepositoryScope } from "../analysis/repository-scope.js";
+import { changeEvidenceDigest, metadataEvidenceDigest } from "../analysis/gate-evidence.js";
 
 type CheckResult = "PASS" | "FAIL" | "UNKNOWN";
 interface Check { name: string; result: CheckResult; reasons: string[] }
@@ -60,7 +60,7 @@ function parseArgs(argv: string[]): Args {
   const openspecRoot = get("--openspec-root");
   const changeRef = get("--change-ref");
   if (!issue || !openspecRoot || !changeRef) {
-    process.stderr.write("用法: rondo analysis validate --issue <issue-id> --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]\n");
+    process.stderr.write("用法: rondo openspec validate --issue <issue-id> --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]\n");
     process.exit(64);
   }
   return { issue, openspecRoot, cli: get("--multica") ?? "multica", workspaceId: get("--workspace-id"), out: get("--out"), changeRef };
@@ -328,7 +328,7 @@ export function evaluateAnalysisGate(input: { issue: string; openspecRoot: strin
 
 /** Preview never persists a file. Complete invokes the same check again before publication. */
 function main(rawArgs: string[]): number {
-  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo analysis validate --issue <issue-id> --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]\n"); return 0; }
+  if (rawArgs.includes("--help") || rawArgs.includes("-h")) { process.stdout.write("用法: rondo openspec validate --issue <issue-id> --change-ref <id> --openspec-root <path> [--workspace-id <id>] [--multica <cli>]\n"); return 0; }
   const args = parseArgs(rawArgs);
   if (args.out) return emitResult({ result: "FAIL", checks: [], reasons: ["--out 已退役；Analysis Gate 结果不再持久化"] }, 2, null);
   try {
@@ -346,8 +346,8 @@ function main(rawArgs: string[]): number {
   }
 }
 
-/** commander 注册：group=analysis；参数解析沿用原脚本实现以保证契约逐字节等价。 */
-export function registerAnalysisValidate(group: Command): void {
+/** commander 注册：group=openspec；参数解析沿用原脚本实现以保证契约逐字节等价。 */
+export function registerOpenSpecValidate(group: Command): void {
   group
     .command("validate")
     .description("校验 Issue 与 OpenSpec Change 的身份及规范")
