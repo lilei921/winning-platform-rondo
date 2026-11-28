@@ -278,12 +278,12 @@ python .claude/skills/rondo-sync/scripts/check_workspaces.py winning-lfw    # �
 - **Project**：分组 `project.title` 对应项目存在，且资源命中声明仓库——git URL 精确匹配，或 `local_directory` 的 label / local_path 含仓库名（本地路径资源判 OK，类型不符判 `[WARN]`，无资源判 `[FAIL]`）。
 - **Project Resource label**：命中 `docs/config/project-resources.yaml` URL 的 `github_repo` 资源，label 必须与清单一致；不一致判 `[FAIL]`，未命中清单的资源不要求有 label。
 - **Agent**：manifest `agents[]` 齐全、各 Agent Skill 绑定与 manifest 一致；非 `tfs_env: false` 的 Agent 要求 `custom_env_key_count` ≥ 3（TFS 三键），声明 `runtime_policy_key` 的 Agent 改为回读校验该键存在。
-- **runtime**：绑定失效（runtime 已不在 workspace）判 `[FAIL]`；分散绑定多个 runtime、绑定 runtime 离线判 `[WARN]`。
+- **runtime**：绑定失效（runtime 已不在 workspace）判 `[FAIL]`；绑定 runtime 离线、全部 Agent 未绑定判 `[WARN]`。Agent 分散绑定多个 runtime 属允许状态（主备策略、同事机器），不告警。
 - **Skill**：`managed_skills` 均在册；多余（如历史残留的 `workitem-analysis`）只 `[INFO]`。
 - **Squad**：`Delivery Squad` 存在且成员数 = `squad.members` + leader。
 - **Autopilot**：manifest `autopilots` 均在且 active；无 trigger 属 MG-5 设计，不报警。
 
-分级语义：`[OK]` 一致；`[INFO]` 多余项（owner 自有资产，不回滚）；`[WARN]` 可用性风险（runtime 离线、绑定分散、TFS 键不足、Runtime 策略键缺失、Squad 成员数不符）；`[FAIL]` 与 manifest 不一致。任一 `[FAIL]`/`[ERROR]` 该 workspace 计入失败，退出码非零，结尾汇总失败 / 仅告警 / 全通过清单。
+分级语义：`[OK]` 一致；`[INFO]` 多余项（owner 自有资产，不回滚）；`[WARN]` 可用性风险（runtime 离线、TFS 键不足、Runtime 策略键缺失、Squad 成员数不符）；`[FAIL]` 与 manifest 不一致。任一 `[FAIL]`/`[ERROR]` 该 workspace 计入失败，退出码非零，结尾汇总失败 / 仅告警 / 全通过清单。
 
 ## 校验
 

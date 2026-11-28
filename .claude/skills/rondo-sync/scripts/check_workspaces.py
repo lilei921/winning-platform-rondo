@@ -6,7 +6,7 @@
   2. 仓库注册表 —— manifest workspace_repos 声明的 URL 均在 multica repo list 中（只增不维护，多余项只提示）
   3. Project    —— 分组 project.title 对应的项目存在，且挂有仓库资源（git URL 或匹配的 local_directory）
   4. Project Resource label —— 匹配仓库清单 URL 的 github_repo 资源 label 与 YAML 一致（全量对齐）
-  5. Agent      —— manifest agents 齐全、Skill 绑定一致、runtime 绑定统一且有效（未失效/尽量在线）、TFS 环境变量键数；manifest 声明不用 TFS 的 Agent 改校验 Runtime 策略键存在
+  5. Agent      —— manifest agents 齐全、Skill 绑定一致、runtime 绑定有效（未失效/尽量在线；允许分散绑定多个 runtime）、TFS 环境变量键数；manifest 声明不用 TFS 的 Agent 改校验 Runtime 策略键存在
   6. Skill      —— managed_skills 均在 workspace Skill 清单中
   7. Squad      —— Delivery Squad 存在，成员数 = squad.members + leader
   8. Autopilot  —— manifest autopilots 均在且为 active（无 trigger 属 MG-5 设计，不报警）
@@ -286,7 +286,7 @@ def check_workspace(
         if policy_missing:
             add("WARN", "Runtime 策略",
                 f"未配置：{policy_missing}；按 SKILL.md「Vayne 主备 Runtime 策略维护」配置")
-        # runtime 绑定：统一性、失效、在线状态
+        # runtime 绑定：允许多 runtime 分散（主备策略、同事机器），只校验失效、在线与是否完全未绑定
         try:
             runtimes = run_json(["multica", "runtime", "list", "--output", "json"], ws_id)
             if isinstance(runtimes, dict):
@@ -303,10 +303,6 @@ def check_workspace(
         for rid in stale:
             add("FAIL", "runtime",
                 f"{len(bound[rid])} 个 Agent 绑定失效 runtime {rid[:8]}（已不在 workspace）")
-        if len(bound) > 1:
-            dist = [f"{(rt_map.get(r) or {}).get('name') or r[:8]}×{len(n)}"
-                    for r, n in bound.items()]
-            add("WARN", "runtime", f"Agent 绑定分散在 {len(bound)} 个 runtime：{dist}")
         for rid, agent_names in bound.items():
             runtime = rt_map.get(rid)
             if runtime and runtime.get("status") != "online":
