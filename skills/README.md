@@ -14,7 +14,7 @@
 | [change-development](change-development/SKILL.md) | Engineer 对完整 Change 的实现、验证及 PR 交付 |
 | [codebase-explorer](codebase-explorer/SKILL.md) | 代码库只读探索与影响分析 |
 | [diagnosing-bugs](diagnosing-bugs/SKILL.md) | 基于证据定位和验证 Bug |
-| [delivery-closeout](delivery-closeout/SKILL.md) | PR 终态后的 TFS Writeback 与 Issue 收口 |
+| [workitem-finalize](workitem-finalize/SKILL.md) | PR 终态后的 TFS Writeback 与 Issue 收口 |
 | [requirement-analysis](requirement-analysis/SKILL.md) | Intentional 需求澄清与方案分析 |
 | [spec-preparation](spec-preparation/SKILL.md) | 通过 OpenSpec CLI 准备和修订 Change 工件 |
 | [tfs-sync](tfs-sync/SKILL.md) | TFS Work Item 与 Issue 同步 |
@@ -23,7 +23,7 @@
 
 | 资产 | 说明 |
 | --- | --- |
-| [tfs-writeback](../archive/03-skills/tfs-writeback/SKILL.md) | 历史方法资产；当前由 `delivery-closeout` 使用 Rondo Writeback 命令，不单独发布为受管 Skill |
+| [tfs-writeback](../archive/03-skills/tfs-writeback/SKILL.md) | 历史方法资产；当前由 `workitem-finalize` 使用 Rondo Writeback 命令，不单独发布为受管 Skill |
 | [workitem-analysis](../archive/skills-2026-11-24/workitem-analysis/SKILL.md) | 已归档的退役 Skill，仅供历史追溯 |
 | [development-execution](../archive/skills-2026-11-24/development-execution/SKILL.md)、[backend-engineering](../archive/skills-2026-11-24/backend-engineering/SKILL.md)、[frontend-engineering](../archive/skills-2026-11-24/frontend-engineering/SKILL.md) | 已归档的旧 Task Set / 分角色研发方法，已由统一 Engineer 路线替代 |
 | [delivery-flow](../archive/skills-2026-11-24/delivery-flow/SKILL.md)、[delivery-gate](../archive/skills-2026-11-24/delivery-gate/SKILL.md)、[pull-request](../archive/skills-2026-11-24/pull-request/SKILL.md) | 已归档的旧协作与交付方法 |

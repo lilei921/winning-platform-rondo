@@ -1,9 +1,9 @@
 ---
-name: delivery-closeout
-description: 对 PR 已合并的 Bug 和 Requirement 执行交付收口。
+name: workitem-finalize
+description: 对 PR 已合并的 Bug 和 Requirement 执行最终收口，包括按需归档工程成果、TFS 回写及 Issue 完成。
 ---
 
-# Delivery Closeout
+# Workitem Finalize
 
 根据待收口 Issue `<KEY>` 的 `tfs.type`，选择 Bug 或 Requirement 流程；已为 `done` 的 Issue 按恢复流程处理。
 
