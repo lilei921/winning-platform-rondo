@@ -259,15 +259,15 @@ Finalize 每次读取现实外部事实和已完成后置条件，只补缺失�
 
 #### Step 07-A — TFS Sync 自动入口研发
 
-**实施范围**：TFS Sync Autopilot / Thin Agent / `tfs-sync` 只负责触发、运行与报告；增量同步、Issue 创建/去重、来源保存、Wayfinder 指派与 todo 激活由确定性 `reconcile-workitem.py` 完成；按 ChangedDate 增量处理，已有 Issue 不复位 Status/Owner；修复正式定时 Runtime Offline。
+**实施范围**：TFS Sync Autopilot / Thin Agent 只负责触发、直接调用 Rondo CLI 与报告；由 `rondo workitem sync` 确定性执行来源查询、Issue 对账、来源保存及 Wayfinder 指派；按当前 WIQL 查询范围与来源变化同步，已有 Issue 不复位 Status/Owner；首次激活遵循 02 方案的阶段约定；修复正式定时 Runtime Offline。
 
 **研发任务拆解（3 项）**：
 
-1. **07-A-01 — 实现 TFS Work Item 增量同步脚本**：开发/完善 `reconcile-workitem.py`，覆盖 ChangedDate、Issue 映射/幂等、来源变化、Wayfinder 指派和 todo 状态；交付同步脚本及确定性单元测试。
-2. **07-A-02 — 配置自动执行入口**：编写/完善 TFS Sync Autopilot Prompt、Agent Instructions、`tfs-sync` Skill，接入脚本并解决 Runtime Offline；交付可执行的定时配置、运行与回读证据；Agent 不复制同步业务逻辑。
-3. **07-A-03 — 真实入口 E2E 验收**：验证 ChangedDate 增量边界、重复同步、来源变化、部分失败恢复和 Wayfinder Run 实际启动；分别确认 Issue 同步成功与下游 Run 成功。
+1. **07-A-01 — 实现 TFS Work Item 确定性同步**：维护 `rondo workitem sync`，覆盖来源变化、Issue 映射/幂等、Wayfinder 指派及首次激活；交付 CLI 实现及确定性单元测试。
+2. **07-A-02 — 配置自动执行入口**：编写/完善 TFS Sync Autopilot Prompt、Agent Instructions，接入 `rondo workitem sync` 并解决 Runtime Offline；交付可执行的定时配置、运行与回读证据；Agent 不复制同步业务逻辑。
+3. **07-A-03 — 真实入口 E2E 验收**：验证查询范围、重复同步、来源变化、部分失败恢复和 Wayfinder Run 实际启动；分别确认 Issue 同步成功与下游 Run 成功。
 
-**交付物**：`reconcile-workitem.py`、轻量入口配置与必要 Skill、增量/幂等测试和正式定时 E2E 证据。
+**交付物**：`rondo workitem sync`、Agent Instructions 与 Autopilot Prompt、同步幂等测试和正式定时 E2E 证据。
 
 **验收**：真实 TFS Work Item 幂等同步，成功指派并触发 Wayfinder；未知结果先回读，不重复 Issue / Run；正式定时 Runtime 可运行。
 

@@ -252,7 +252,7 @@ Squad      = Delivery Squad
 
 其中 `Leader`、`Member`、`Squad Leader`、`Engineer`、`Specialist Agent` 只能用于描述类型、关系或角色类别；当指向具体 Multica 配置对象时，必须使用对应 Canonical Name。
 
-`TFS Sync Agent` 与 `PR Status Sync Agent` 都在 Delivery Squad 外通过 Multica Autopilot 运行；前者绑定 `tfs-sync` Skill；后者直接调用 `rondo pr reconcile-status` 并使用 `workitem-finalize` Skill，负责已登记 PR 的状态核对与有界 Finalize，并在满足条件的 Requirement Closeout 中规划 TFS 子任务及估时；不负责创建 / 合并 PR 或解释 Review 意见。
+`TFS Sync Agent` 与 `PR Status Sync Agent` 都在 Delivery Squad 外通过 Multica Autopilot 运行；前者直接调用 `rondo workitem sync`，不绑定 Skill；后者直接调用 `rondo pr reconcile-status` 并使用 `workitem-finalize` Skill，负责已登记 PR 的状态核对与有界 Finalize，并在满足条件的 Requirement Closeout 中规划 TFS 子任务及估时；不负责创建 / 合并 PR 或解释 Review 意见。
 
 `Wayfinder Agent` 独立于 Delivery Squad，是自动 TFS 入口的默认 Intake Triage：按需使用 `codebase-explorer` 调查准入所需工程证据，由 Wayfinder Instructions 维护准入判断；`accepted` 后按 TFS 来源类型交给 `Bug Fix Agent` 或 `Delivery Squad`，三种 Decision 的确定性执行通过 `rondo workitem apply-decision` 完成。明确直接委派的 Analysis 可以不经过 Wayfinder；Wayfinder Decision 不作为所有 Analysis 的强制 Gate。它不替代 `Workitem Analyst` 的 Change Kind / Analysis Route、Root Cause、需求方案和 OpenSpec Preparation。`codebase-explorer` 参考原有 `context-analysis` 的定位方法，但独立绑定、独立演进；两者仅通过 Evidence References 交接，不共享 Skill 及完成标准。准入、交接和异常由 [Delivery 主方案 §4.1.1](02-multica-delivery-lifecycle-design.md#delivery-intake) 维护，Evidence 增量复用由 [03 §6](03-workitem-analysis-design.md#analysis-section-06) 维护。
 
@@ -1735,7 +1735,7 @@ Skill 应以 **Capability / Method / Scenario** 为中心，而不是以 Agent �
 例如：
 
 ```text
-tfs-sync
+codebase-explorer
 delivery-flow
 pr-transition
 integration-verification
@@ -1879,7 +1879,7 @@ Multica 官方明确要求的核心内容仍然覆盖：
 
 适用时使用 `Validation` 描述 Completion Check、Evidence Check、Test、Gate 或确定性校验；纯参考型 Skill 不强制单列 Validation 或独立 Output Artifact，但不得因此省略当前工作已有的必要安全与质量约束。
 
-可选在标题后加一句 `Capability Outcome: <可验证的局部能力结果>`，不得重复 Agent 的 Professional Goal。对于 `bug-analysis`，局部目标可以是“基于证据定位缺陷根因、确定影响范围与验证建议”；对 `tfs-sync` 等结果已由 `description` / `Output` 明确的 Skill，不强制另写 Goal 章节。
+可选在标题后加一句 `Capability Outcome: <可验证的局部能力结果>`，不得重复 Agent 的 Professional Goal。对于 `bug-analysis`，局部目标可以是“基于证据定位缺陷根因、确定影响范围与验证建议”；对结果已由 `description` / `Output` 明确的 Skill，不强制另写 Goal 章节。
 
 不要求每个 Skill 都单独维护 `Deterministic Checks` 章节；存在确定性检查时，应在 `Validation` 中说明调用什么 Gate / Script 以及如何解释结果。
 
@@ -2204,7 +2204,7 @@ Autopilot Prompt 原则上只维护以下四类内容：
 例如：
 
 ```text
-执行 `tfs-sync` Skill。
+执行 `workitem-finalize` Skill。
 ```
 
 #### 8.2.3 本次 Run（运行）的边界

@@ -127,7 +127,7 @@ TFS Close / Issue Done
 | **Frontend Engineer** | 前端专业成员 | 在已批准范围与当前 Task Set 内完成前端实现、本地与必要浏览器验证、Code Review 和整改 | 交付当前 Task Set 的工程成果与 Evidence；不把技术步骤自行扩展成新的交付任务 |
 | **Flink Engineer** | Flink / 流处理专业成员 | 在已批准范围与当前 Task Set 内完成流处理实现、相关行为验证、Code Review 和整改 | 交付当前 Task Set 的工程成果与 Evidence；涉及已批准 Contract / Scope 的实质变更时升级 |
 | **Verify Agent** | 按需参与的 Delivery-level 独立验证成员 | 在 `analysis.human_approval.verify_agent_required=true` 时消费已批准 OpenSpec Acceptance / Verification Contract（验证契约），对固定候选 Commit Set 做 independent verification 并归因 Finding | 交付 Verification Report 与失败证据；不拥有 Requirement / Scenario / Verification Task 的 Engineering Contract；可在批准范围内承担 assigned Verification Task 的 Runtime Execution，不替代 Engineer 的 Task Verification / Local Validation / Code Review |
-| **TFS Sync Agent** | Squad 外的 Autopilot Thin Adapter | 通过 `tfs-sync` 获取 TFS 原始事实、调用确定性同步并汇总结果 | 新建 Issue 由 Wayfinder 持有并在完整初始化后受控激活；不做准入语义判断或直接启动 Squad 研发 |
+| **TFS Sync Agent** | Squad 外的 Autopilot Thin Adapter | 直接调用 `rondo workitem sync` 获取 TFS 原始事实、执行确定性同步并汇总结果 | 新建 Issue 由 Wayfinder 持有并在完整初始化后受控激活；不做准入语义判断或直接启动 Squad 研发 |
 | **Wayfinder Agent** | Squad 外的 Intake Triage Agent | 使用独立的 `codebase-explorer` 按需深入探索 Repository、代码、调用链与 Spec；依据 Wayfinder Instructions 形成 `accepted / needs_human / unsupported` 结论 | 确认 `/note` Comment 已记录后受控交接；不做正式 Root Cause / Technical Change Kind 判断 / OpenSpec Preparation |
 | **PR Status Sync Agent** | PR 状态核实与同步 | 核实已登记 PR 的外部状态，直接调用 `rondo pr reconcile-status` 完成状态对账，使用 `workitem-finalize` 完成符合条件的交付收口，并交付异常与待处理事项 | 对状态事实的准确性负责；不解释 Review 意见、不推断 abandoned 原因或替代交付决策 |
 
@@ -556,7 +556,7 @@ Multica Autopilot
       ↓
 TFS Sync Agent（Thin Adapter）
       ↓
-tfs-sync deterministic script
+rondo workitem sync
       ↓
 Structured Script Result
       ↓
@@ -2349,7 +2349,7 @@ Workitem Analyst 的需求与问题分析不依赖当前 Roster 或具体 Agent 
 | Flink Engineer | Member / Sub-Issue Owner | development-execution / flink-engineering |
 | Verify Agent | Member | acceptance-verification |
 | Wayfinder Agent | Squad 外 Intake Triage | codebase-explorer |
-| TFS Sync Agent | Squad 外 Thin Adapter | tfs-sync |
+| TFS Sync Agent | Squad 外 Thin Adapter | 无（直接调用 Rondo CLI） |
 | PR Status Sync Agent | Squad 外 Thin Adapter | workitem-finalize |
 
 说明：
@@ -2372,11 +2372,6 @@ Workitem Analyst 的需求与问题分析不依赖当前 Roster 或具体 Agent 
 
 ```text
 workspace-skills/
-│
-├── tfs-sync/
-│   ├── SKILL.md
-│   └── scripts/
-│       └── reconcile-workitem.py
 │
 ├── codebase-explorer/        # Wayfinder 独立代码库探索
 ├── workitem-analysis/   # Retired：历史源文件，不参与新绑定
