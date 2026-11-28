@@ -712,7 +712,7 @@ async function main(wiql: string, initialStatus: string): Promise<number> {
 /** 注册工作项同步命令。 */
 export function registerTfsReconcileWorkitem(group: Command): void {
   group
-    .command("sync")
+    .command("sync-issue")
     .description("将 TFS 工作项同步为 Multica Issue")
     .requiredOption("--wiql <WIQL>", "TFS 查询范围")
     .option("--initial-status <status>", "新建 Issue 初始状态（backlog / todo）", "backlog")

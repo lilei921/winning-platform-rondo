@@ -7,9 +7,9 @@
 ```mermaid
 flowchart TD
     A([Autopilot / 人工触发])
-    C["rondo workitem sync --wiql"]
+    C["rondo workitem sync-issue --wiql"]
     D{"同步配置有效？"}
-    E["内部调用 rondo workitem query --wiql"]
+    E["内部执行 TFS WIQL 查询"]
     E2["WIQL：需求 / Bug、@me、排除已验证和已关闭"]
     F{"查询结果有效且 Wayfinder 唯一？"}
     G{"还有待处理 Work Item？"}

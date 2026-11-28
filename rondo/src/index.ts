@@ -102,7 +102,6 @@ registerWorkitemApplyDecision(workitem);
 registerDeliveryFinalize(workitem);
 registerTfsReconcileWorkitem(workitem);
 registerTfsWriteback(workitem);
-registerTfsApiLeaf(workitem, "query", ["workitem", "query"], "执行 TFS WIQL 查询", "--wiql <WIQL> [--project <project>]");
 registerTfsApiLeaf(workitem, "set-state", ["workitem", "set-state"], "更新 TFS 工作项状态", "--id <id> --state <state> [--complete-with-estimate] [--project <project>]");
 registerTfsApiLeaf(workitem, "comment", ["workitem", "comment"], "写入 TFS 工作项评论", "--id <id> --text-file <path> [--project <project>]");
 registerTfsApiLeaf(workitem, "create", ["workitem", "create"], "创建并关联 TFS 子工作项", "--type <type> --title <title> --parent <id> [--description-file <path>] [--estimate <hours>] [--project <project>]");

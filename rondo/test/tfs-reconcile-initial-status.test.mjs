@@ -26,7 +26,7 @@ function fixture(t, initialStatus) {
     state() { return JSON.parse(readFileSync(statePath, "utf8")); },
     run() {
       writeFileSync(callsFile, "");
-      const r = spawnSync(process.execPath, [CLI, "workitem", "sync", "--wiql", "SELECT [System.Id] FROM workitems", ...(initialStatus === undefined ? [] : ["--initial-status", initialStatus])], {
+      const r = spawnSync(process.execPath, [CLI, "workitem", "sync-issue", "--wiql", "SELECT [System.Id] FROM workitems", ...(initialStatus === undefined ? [] : ["--initial-status", initialStatus])], {
         encoding: "utf8",
         env: { ...process.env, MULTICA_WORKSPACE_ID: "ws-test", MULTICA_SERVER_URL: "https://mock-multica", MULTICA_CLI_PATH: MOCK_MULTICA, RONDO_PROJECT_TITLE: "Sync Project", MOCK_STATE: statePath, MOCK_TFS_QUERY_FILE: queryFile, MOCK_SYNC_CALLS_FILE: callsFile },
       });
