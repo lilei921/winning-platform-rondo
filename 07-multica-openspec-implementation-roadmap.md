@@ -149,7 +149,7 @@ Workitem Analyst
 
 ### 3.6 PR / Finalize 的外部事实、幂等和安全停止
 
-PR 平台的 `status` 是 `pr-status-sync` 判定依据：`active` 等待；`completed` 允许核查 Finalize；`abandoned` 进入异常与人工决策；冲突或未知事实返回 UNKNOWN。不得复制外部 PR Review 状态机。
+PR 平台的 `status` 是 `rondo pr reconcile-status` 判定依据：`active` 等待；`completed` 允许核查 Finalize；`abandoned` 进入异常与人工决策；冲突或未知事实返回 UNKNOWN。不得复制外部 PR Review 状态机。
 
 Finalize 每次读取现实外部事实和已完成后置条件，只补缺失动作：PR completed → Post-Merge Reconciliation → Completion Gate → Archive / 根仓 Commit → TFS Close → Delivery Issue Done。`CANCEL_DELIVERY` 的完整后置条件尚未定义：在专项契约补齐前，只做安全停止和人工处理，不臆造自动取消机制。
 

@@ -42,19 +42,19 @@
 | Owner | 职责 | 不承担 |
 | --- | --- | --- |
 | **PR Status Sync Agent** | 在 PR 全部 completed 且 Prepare PASS 后，基于 `tasks.md`、执行证据和可用 Commit 决定任务分组、总结性描述、工时及 Commit 独占分配，报告异常 | 不直接修改 TFS；不修改研发成果或制造 Commit |
-| **`pr-status-sync` Skill** | 核实和对账已登记 PR 外部状态，产生 `finalize` / `resume_finalize` | 不拆任务、不估时 |
-| **`issue-closeout` Skill** | 指导 Prepare、条件性规划、Writeback、Complete 的顺序与停止条件 | 不替代 Agent 的语义判断；不自行实现 TFS HTTP 写入 |
+| **`rondo pr reconcile-status`** | 核实和对账已登记 PR 外部状态，产生 `finalize` / `resume_finalize` | 不拆任务、不估时 |
+| **`delivery-closeout` Skill** | 指导 Prepare、条件性规划、Writeback、Complete 的顺序与停止条件 | 不替代 Agent 的语义判断；不自行实现 TFS HTTP 写入 |
 | **Rondo** | 校验身份、计划、可用业务 Commit 和全局 Task 独占归属；创建/认领任务；按计划关联并回读子任务 Commit；回写 TFS | 不机械按 checkbox 拆分，不伪造或重复分配 Commit，不决定无依据的业务映射 |
 | **TFS** | 子任务、工时字段和 Commit `ArtifactLink` 的权威数据 | 不充当 OpenSpec 工程事实源 |
 
-正常触发：`rondo pr reconcile-status` 输出明确 `finalize` 或 `resume_finalize`；PR Status Sync Agent 在同一 Run 内使用 `issue-closeout`。没有符合条件的 PR 终态时，不触发 TFS 子任务创建。
+正常触发：`rondo pr reconcile-status` 输出明确 `finalize` 或 `resume_finalize`；PR Status Sync Agent 在同一 Run 内使用 `delivery-closeout`。没有符合条件的 PR 终态时，不触发 TFS 子任务创建。
 
 ## 4. 目标执行流程
 
 ```text
 PR Status Sync Agent
-  └─ pr-status-sync → action=finalize / resume_finalize
-       └─ issue-closeout
+  └─ rondo pr reconcile-status → action=finalize / resume_finalize
+       └─ delivery-closeout
             1. rondo workitem finalize --phase prepare
                ├─ PASS, status=prepared → 继续
                └─ already=done → 结束（不得重写）
@@ -262,7 +262,7 @@ TFS 子任务标题：住院病案质量指标优化 - 实现接口与权限控�
 - 复用 `tools/rondo/src/tfs/api/workitem.ts` 已有工时与 `workitem link-commits` 能力；按**项目 GUID + 仓库 GUID + 完整 SHA**比对 Commit，修复当前只按 SHA 判重导致的错仓复用风险。链接前需检查其他 TFS Task 占用；链接后再次验证目标和全局独占关系。
 - 扩展 `tools/rondo/src/tfs/api/query.ts` 现有 `$expand=all` 输出中的 Commit `ArtifactLink` 只读投影，供 `workitem writeback` 与 `verifyTfsWriteback` 校验准确链接；不另建 Commit Link 状态表或新独立 CLI。
 - Rondo 的 `delivery/finalize.ts` 保持 Prepare/Complete 边界；增强现有 `verifyTfsWriteback` 的新任务、工时、Commit Link 和 Task 间独占核验。
-- `provisioning.json` 已给 PR Status Sync Agent 绑定 `pr-status-sync` 与 `issue-closeout`，不新增绑定或受管 Skill。
+- `provisioning.json` 为 PR Status Sync Agent 绑定 `delivery-closeout`；PR 状态同步由 Agent 直接调用 Rondo CLI，不新增受管 Skill。
 - **不改** Workitem Analyst、Engineer、Bug Fix Agent、Delivery Squad、OpenSpec Schema/Template、`spec-preparation` 对 `tasks.md` 的写作契约。
 - 保留旧 `dev.dispatch` / Bug Writeback 路径，避免当前其他路线回归。
 

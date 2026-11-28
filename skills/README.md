@@ -15,7 +15,6 @@
 | [codebase-explorer](codebase-explorer/SKILL.md) | 代码库只读探索与影响分析 |
 | [diagnosing-bugs](diagnosing-bugs/SKILL.md) | 基于证据定位和验证 Bug |
 | [delivery-closeout](delivery-closeout/SKILL.md) | PR 终态后的 TFS Writeback 与 Issue 收口 |
-| [pr-status-sync](pr-status-sync/SKILL.md) | 外部 PR 状态核实与同步 |
 | [requirement-analysis](requirement-analysis/SKILL.md) | Intentional 需求澄清与方案分析 |
 | [spec-preparation](spec-preparation/SKILL.md) | 通过 OpenSpec CLI 准备和修订 Change 工件 |
 | [tfs-sync](tfs-sync/SKILL.md) | TFS Work Item 与 Issue 同步 |

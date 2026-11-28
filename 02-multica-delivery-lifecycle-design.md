@@ -62,7 +62,7 @@
 - **Deterministic First，Semantic Fallback 适用于明确硬条件与可靠事实；专业分析、成员选择和协作安排由相应 Agent 正常承担，不以脚本先返回 `UNKNOWN` 为前提；**
 - **确定性机制返回 `UNKNOWN` 或出现事实冲突时，Delivery Lead 协调适当的 Specialist / Human 查明原因、补充信息；不得据此覆盖明确 `FAIL` 或替代人工批准；**
 - Delivery Lead 不替代 Workitem Analyst、Engineer、Verify Agent 的专业工作，但负责决定当前需要哪种专业能力、如何组织成员协作以及何时需要 Human；
-- PR 审核过程由 TFS / PR Platform 管理；Multica 不复制外部 Review 状态机。`pr-status-sync` 只依据 TFS 实际可观测的 PR `status` 检测终态：`completed` 表示正常完成，`abandoned` 表示当前 PR 已无法继续并进入人工决策；`active` 保持等待，未知或异常数据返回 `UNKNOWN`。
+- PR 审核过程由 TFS / PR Platform 管理；Multica 不复制外部 Review 状态机。`rondo pr reconcile-status` 只依据 TFS 实际可观测的 PR `status` 检测终态：`completed` 表示正常完成，`abandoned` 表示当前 PR 已无法继续并进入人工决策；`active` 保持等待，未知或异常数据返回 `UNKNOWN`。
 
 ---
 
@@ -129,7 +129,7 @@ TFS Close / Issue Done
 | **Verify Agent** | 按需参与的 Delivery-level 独立验证成员 | 在 `analysis.human_approval.verify_agent_required=true` 时消费已批准 OpenSpec Acceptance / Verification Contract（验证契约），对固定候选 Commit Set 做 independent verification 并归因 Finding | 交付 Verification Report 与失败证据；不拥有 Requirement / Scenario / Verification Task 的 Engineering Contract；可在批准范围内承担 assigned Verification Task 的 Runtime Execution，不替代 Engineer 的 Task Verification / Local Validation / Code Review |
 | **TFS Sync Agent** | Squad 外的 Autopilot Thin Adapter | 通过 `tfs-sync` 获取 TFS 原始事实、调用确定性同步并汇总结果 | 新建 Issue 由 Wayfinder 持有并在完整初始化后受控激活；不做准入语义判断或直接启动 Squad 研发 |
 | **Wayfinder Agent** | Squad 外的 Intake Triage Agent | 使用独立的 `codebase-explorer` 按需深入探索 Repository、代码、调用链与 Spec；依据 Wayfinder Instructions 形成 `accepted / needs_human / unsupported` 结论 | 确认 `/note` Comment 已记录后受控交接；不做正式 Root Cause / Technical Change Kind 判断 / OpenSpec Preparation |
-| **PR Status Sync Agent** | PR 状态核实与同步 | 核实已登记 PR 的外部状态，使用 `pr-status-sync` 完成状态对账并交付异常与待处理事项 | 对状态事实的准确性负责；不解释 Review 意见、不推断 abandoned 原因或替代交付决策 |
+| **PR Status Sync Agent** | PR 状态核实与同步 | 核实已登记 PR 的外部状态，直接调用 `rondo pr reconcile-status` 完成状态对账，使用 `delivery-closeout` 完成符合条件的交付收口，并交付异常与待处理事项 | 对状态事实的准确性负责；不解释 Review 意见、不推断 abandoned 原因或替代交付决策 |
 
 ### 2.1.1 Professional Goal 与 Capability Composition（专业目标和能力组合）
 
@@ -1568,7 +1568,7 @@ PR Materialization
 
 # 11. PR Status Sync & Exception Handling（PR 状态同步与异常）
 
-PR 审核发生在 TFS / PR Platform。Multica 不复制审核过程；`pr-status-sync` 只读取已登记的 current required PR，并依据 provider `status` 做确定性终态检测。
+PR 审核发生在 TFS / PR Platform。Multica 不复制审核过程；`rondo pr reconcile-status` 只读取已登记的 current required PR，并依据 provider `status` 做确定性终态检测。
 
 运行模型：
 
@@ -1577,12 +1577,12 @@ Multica Autopilot
       ↓
 PR Status Sync Agent（状态核实与同步）
       ↓
-skill-flow pr reconcile-status
+rondo pr reconcile-status
       ↓
 Structured Script Result
 ```
 
-PR 状态识别与同步副作用由确定性命令负责；Agent 交付核实结果，不自行解释 Review 语义。后续收口由独立 `issue-closeout` 能力按本生命周期的触发约定执行，不属于 `pr-status-sync` Skill 的内部步骤。
+PR 状态识别与同步副作用由确定性命令负责；Agent 交付核实结果，不自行解释 Review 语义。Agent 根据已确认的 `finalize` / `resume_finalize` 结果使用 `delivery-closeout` Skill 执行交付收口。
 
 查询：
 
@@ -2350,7 +2350,7 @@ Workitem Analyst 的需求与问题分析不依赖当前 Roster 或具体 Agent 
 | Verify Agent | Member | acceptance-verification |
 | Wayfinder Agent | Squad 外 Intake Triage | codebase-explorer |
 | TFS Sync Agent | Squad 外 Thin Adapter | tfs-sync |
-| PR Status Sync Agent | Squad 外 Thin Adapter | pr-status-sync |
+| PR Status Sync Agent | Squad 外 Thin Adapter | delivery-closeout |
 
 说明：
 
@@ -2401,11 +2401,6 @@ workspace-skills/
 │   │   └── materialize-pr.py
 │   └── references/
 │       └── pr-materialization-contract.md
-│
-├── pr-status-sync/
-│   ├── SKILL.md
-│   └── scripts/
-│       └── reconcile-pr-status.py
 │
 ├── delivery-flow/
 │   ├── SKILL.md
@@ -2907,7 +2902,7 @@ Multica 机制及官方 URL 统一在 [指导手册来源索引](01-multica-open
 
 - 取消机器层面的 `Rejected` Significant Event；正式以 provider `status=active|completed|abandoned` 作为 PR 状态事实，其他值或异常结构进入 `UNKNOWN`；
 - `active` 统一 NO-OP；`completed` 为 Success Event；`abandoned` 为 Exceptional Stop Event，并进入 `blocked + Human Decision`；
-- `Rejected / Discarded` 不再由 `pr-status-sync` 推断，只允许作为 Human 对 `abandoned` 原因的分类；Human 同时明确 `ANALYSIS / ENGINEERING / RECREATE_PR / CANCEL_DELIVERY` 等下一步；
+- `Rejected / Discarded` 不再由 `rondo pr reconcile-status` 推断，只允许作为 Human 对 `abandoned` 原因的分类；Human 同时明确 `ANALYSIS / ENGINEERING / RECREATE_PR / CANCEL_DELIVERY` 等下一步；
 - 删除 Reviewer Vote 相关设计；普通审核过程继续由 TFS 管理，不进入 Multica Delivery 状态模型；
 - Completion 只认 `provider_status=completed`；`mergeStatus / mergeCommitId / mergeCommitMessage` 仅作为 provider 辅助信息，不得触发完成；
 - `completedDate` 统一归一化为 `provider_closed_at`，必须结合 `provider_status` 解释，不再无条件映射为 `merged_at`；
