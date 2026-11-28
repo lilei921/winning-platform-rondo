@@ -7,32 +7,36 @@ import { fileURLToPath } from "node:url";
 const multicaRoot = fileURLToPath(new URL("../../", import.meta.url));
 const read = (path) => readFileSync(join(multicaRoot, path), "utf8");
 
-test("delivery-closeout 名称、Manifest 与 Agent 绑定一致", () => {
+test("workitem-finalize 名称、Manifest 与 Agent 绑定一致", () => {
   const manifest = JSON.parse(read("workspace-config/provisioning.json"));
-  const skillDir = join(multicaRoot, "skills/delivery-closeout");
-  const skill = read("skills/delivery-closeout/SKILL.md");
-  assert.equal(skill.split("\n")[1], "name: delivery-closeout");
+  const skillDir = join(multicaRoot, "skills/workitem-finalize");
+  const skill = read("skills/workitem-finalize/SKILL.md");
+  assert.equal(skill.split("\n")[1], "name: workitem-finalize");
   assert.ok(!existsSync(join(skillDir, "config/repo-registry.json")));
   assert.ok(!existsSync(join(multicaRoot, "skills/issue-closeout")));
-  assert.ok(manifest.managed_skills.includes("delivery-closeout"));
+  assert.ok(!existsSync(join(multicaRoot, "skills/delivery-closeout")));
+  assert.ok(manifest.managed_skills.includes("workitem-finalize"));
   assert.ok(!manifest.managed_skills.includes("issue-closeout"));
+  assert.ok(!manifest.managed_skills.includes("delivery-closeout"));
   const agent = manifest.agents.find((a) => a.name === "PR Status Sync Agent");
   assert.ok(!existsSync(join(multicaRoot, "skills/pr-status-sync")));
   assert.ok(!manifest.managed_skills.includes("pr-status-sync"));
   assert.ok(!manifest.agents.some((a) => a.skills?.includes("pr-status-sync")));
-  assert.ok(agent?.skills.includes("delivery-closeout"));
+  assert.ok(agent?.skills.includes("workitem-finalize"));
   assert.ok(!manifest.agents.some((a) => a.skills?.includes("issue-closeout")));
+  assert.ok(!manifest.agents.some((a) => a.skills?.includes("delivery-closeout")));
   const instructions = read("agents/pr-status-sync-agent/instructions.md");
   assert.ok(instructions.includes("rondo pr reconcile-status"));
-  assert.ok(instructions.includes("finalize") && instructions.includes("resume_finalize") && instructions.includes("delivery-closeout"));
+  assert.ok(instructions.includes("finalize") && instructions.includes("resume_finalize") && instructions.includes("workitem-finalize"));
   assert.ok(!read("agents/pr-status-sync-agent/autopilot-prompt.md").includes("pr-status-sync"));
   const syncSkills = readFileSync(new URL("../src/commands/workspace/sync-skills.ts", import.meta.url), "utf8");
-  assert.ok(!syncSkills.includes('"delivery-closeout"'), "Workspace Skill Sync 不应渲染 Closeout Registry");
+  assert.ok(!syncSkills.includes('"workitem-finalize"'), "Workspace Skill Sync 不应渲染 Closeout Registry");
   assert.ok(!syncSkills.includes('"issue-closeout"'));
+  assert.ok(!syncSkills.includes('"delivery-closeout"'));
 });
 
-test("delivery-closeout 分别保留 Bug 与 Requirement 的收口命令及结果契约", () => {
-  const skill = read("skills/delivery-closeout/SKILL.md");
+test("workitem-finalize 分别保留 Bug 与 Requirement 的收口命令及结果契约", () => {
+  const skill = read("skills/workitem-finalize/SKILL.md");
   assert.ok(!skill.includes("--config"));
   const bug = skill.split("## Bug 收口\n")[1]?.split("## Requirement 收口\n")[0];
   const requirement = skill.split("## Requirement 收口\n")[1]?.split("## 已完成 Issue 恢复\n")[0];

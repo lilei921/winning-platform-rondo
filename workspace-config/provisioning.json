@@ -10,7 +10,7 @@
     "pull-request",
     "codebase-explorer",
     "diagnosing-bugs",
-    "delivery-closeout",
+    "workitem-finalize",
     "requirement-analysis",
     "spec-preparation",
     "tfs-sync",
@@ -78,7 +78,7 @@
       "name": "PR Status Sync Agent",
       "visibility": "workspace",
       "skills": [
-        "delivery-closeout"
+        "workitem-finalize"
       ]
     },
     {

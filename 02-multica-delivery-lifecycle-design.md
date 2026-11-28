@@ -129,7 +129,7 @@ TFS Close / Issue Done
 | **Verify Agent** | 按需参与的 Delivery-level 独立验证成员 | 在 `analysis.human_approval.verify_agent_required=true` 时消费已批准 OpenSpec Acceptance / Verification Contract（验证契约），对固定候选 Commit Set 做 independent verification 并归因 Finding | 交付 Verification Report 与失败证据；不拥有 Requirement / Scenario / Verification Task 的 Engineering Contract；可在批准范围内承担 assigned Verification Task 的 Runtime Execution，不替代 Engineer 的 Task Verification / Local Validation / Code Review |
 | **TFS Sync Agent** | Squad 外的 Autopilot Thin Adapter | 通过 `tfs-sync` 获取 TFS 原始事实、调用确定性同步并汇总结果 | 新建 Issue 由 Wayfinder 持有并在完整初始化后受控激活；不做准入语义判断或直接启动 Squad 研发 |
 | **Wayfinder Agent** | Squad 外的 Intake Triage Agent | 使用独立的 `codebase-explorer` 按需深入探索 Repository、代码、调用链与 Spec；依据 Wayfinder Instructions 形成 `accepted / needs_human / unsupported` 结论 | 确认 `/note` Comment 已记录后受控交接；不做正式 Root Cause / Technical Change Kind 判断 / OpenSpec Preparation |
-| **PR Status Sync Agent** | PR 状态核实与同步 | 核实已登记 PR 的外部状态，直接调用 `rondo pr reconcile-status` 完成状态对账，使用 `delivery-closeout` 完成符合条件的交付收口，并交付异常与待处理事项 | 对状态事实的准确性负责；不解释 Review 意见、不推断 abandoned 原因或替代交付决策 |
+| **PR Status Sync Agent** | PR 状态核实与同步 | 核实已登记 PR 的外部状态，直接调用 `rondo pr reconcile-status` 完成状态对账，使用 `workitem-finalize` 完成符合条件的交付收口，并交付异常与待处理事项 | 对状态事实的准确性负责；不解释 Review 意见、不推断 abandoned 原因或替代交付决策 |
 
 ### 2.1.1 Professional Goal 与 Capability Composition（专业目标和能力组合）
 
@@ -1582,7 +1582,7 @@ rondo pr reconcile-status
 Structured Script Result
 ```
 
-PR 状态识别与同步副作用由确定性命令负责；Agent 交付核实结果，不自行解释 Review 语义。Agent 根据已确认的 `finalize` / `resume_finalize` 结果使用 `delivery-closeout` Skill 执行交付收口。
+PR 状态识别与同步副作用由确定性命令负责；Agent 交付核实结果，不自行解释 Review 语义。Agent 根据已确认的 `finalize` / `resume_finalize` 结果使用 `workitem-finalize` Skill 执行交付收口。
 
 查询：
 
@@ -2350,7 +2350,7 @@ Workitem Analyst 的需求与问题分析不依赖当前 Roster 或具体 Agent 
 | Verify Agent | Member | acceptance-verification |
 | Wayfinder Agent | Squad 外 Intake Triage | codebase-explorer |
 | TFS Sync Agent | Squad 外 Thin Adapter | tfs-sync |
-| PR Status Sync Agent | Squad 外 Thin Adapter | delivery-closeout |
+| PR Status Sync Agent | Squad 外 Thin Adapter | workitem-finalize |
 
 说明：
 
